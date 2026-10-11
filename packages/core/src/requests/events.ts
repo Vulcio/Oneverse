@@ -129,3 +129,9 @@ export const RespondAssignmentSchema = z.strictObject({
   note: clearableText(300),
 });
 export type RespondAssignmentRequest = z.input<typeof RespondAssignmentSchema>;
+
+/** Asking for a replacement on one's place, with a note for those offered it. */
+export const RequestSwapSchema = z.strictObject({
+  note: clearableText(300),
+});
+export type RequestSwapRequest = z.input<typeof RequestSwapSchema>;

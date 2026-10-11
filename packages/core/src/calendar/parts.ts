@@ -50,6 +50,22 @@ export function signedUpPeople(answers: { userId: string; answer: AvailabilityAn
   return [...new Set(answers.filter((one) => one.answer === "AVAILABLE").map((one) => one.userId))];
 }
 
+/**
+ * Who's offered someone's place when they ask for a replacement (issue
+ * #235, phase 7): the members who cover its part, not the one asking, not
+ * already on that part, and not unavailable that date (or away).
+ */
+export function swapCandidates(
+  part: EventPart,
+  members: (PartMember & { userId: string; answer: AvailabilityAnswer | null })[],
+  lineup: { userId: string; partKey: string; status: AssignmentStatus }[],
+  requesterId: string,
+): string[] {
+  const key = partKey(part);
+  const onIt = new Set(lineup.filter((one) => one.partKey === key && one.status !== "DECLINED").map((one) => one.userId));
+  return members.filter((member) => member.userId !== requesterId && !onIt.has(member.userId) && member.answer !== "UNAVAILABLE" && coversPart(member, part)).map((member) => member.userId);
+}
+
 /** One part on a date: who covers it, by answer, and how many short of what it needs. */
 export interface PartCoverage {
   key: string;

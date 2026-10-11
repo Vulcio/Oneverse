@@ -29,6 +29,10 @@ export const NOTIFICATION_KINDS = [
   "SCHEDULE_DECLINED",
   // A team admin took one off a part.
   "UNSCHEDULED",
+  // Someone asks for a replacement on a part one plays: take it.
+  "SWAP_OFFERED",
+  // Someone took the place of the one who asked (to them, and the team's admins).
+  "SWAP_TAKEN",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

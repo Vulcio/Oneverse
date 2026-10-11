@@ -1,9 +1,10 @@
 import { coversPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer } from "@songverse/core";
-import { AlertTriangle, Check, Clock, X } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, Check, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
+import { Input } from "#/components/ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
 import { NativeSelect } from "#/components/ui/native-select";
 import { apiClient } from "#/lib/api-client";
@@ -50,16 +51,19 @@ export function LineupLine({
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
+  // The place one's asking a replacement for, with its note being written.
+  const [asking, setAsking] = useState<{ id: string; note: string } | null>(null);
   const shown = lineup.filter((place) => place.status !== "DECLINED");
   const mine = lineup.filter((place) => place.mine);
+  const takeable = lineup.filter((place) => place.canTake);
   if (lineup.length === 0) return null;
-  const answer = (place: LineupPlace, status: "ACCEPTED" | "DECLINED") => {
+  const run = (work: () => Promise<unknown>) => {
     setBusy(true);
-    void apiClient
-      .respondTeamEventPart(teamId, eventId, date, place.id, { status })
+    void work()
       .then(onChanged)
       .finally(() => setBusy(false));
   };
+  const answer = (place: LineupPlace, status: "ACCEPTED" | "DECLINED") => run(() => apiClient.respondTeamEventPart(teamId, eventId, date, place.id, { status }));
   return (
     <div className="flex flex-col gap-1.5" data-testid="lineup-line">
       {mine.map((place) => (
@@ -90,6 +94,61 @@ export function LineupLine({
               </button>
             </>
           )}
+          {/* A swap (issue #235, phase 7): asking those who play the part to take one's place. */}
+          {place.status !== "DECLINED" ? (
+            place.swap ? (
+              <>
+                <Badge variant="warning" data-testid="lineup-swap-asked">
+                  <ArrowLeftRight />
+                  {t("teamCalendar.swapAsked")}
+                </Badge>
+                <button type="button" className="text-xs text-muted-foreground underline-offset-2 hover:underline" disabled={busy} onClick={() => run(() => apiClient.cancelTeamEventSwap(teamId, eventId, date, place.id))} data-testid="lineup-swap-cancel">
+                  {t("teamCalendar.swapCancel")}
+                </button>
+              </>
+            ) : asking?.id === place.id ? (
+              <span className="flex basis-full flex-wrap items-center gap-2">
+                <Input
+                  autoFocus
+                  className="h-7 max-w-xs text-xs"
+                  value={asking.note}
+                  maxLength={300}
+                  placeholder={t("teamCalendar.swapNote")}
+                  onChange={(event) => setAsking({ id: place.id, note: event.target.value })}
+                  data-testid="lineup-swap-note"
+                />
+                <Button
+                  size="sm"
+                  className="h-7"
+                  disabled={busy}
+                  onClick={() => {
+                    const note = asking.note.trim();
+                    setAsking(null);
+                    run(() => apiClient.requestTeamEventSwap(teamId, eventId, date, place.id, note ? { note } : {}));
+                  }}
+                  data-testid="lineup-swap-send"
+                >
+                  {t("teamCalendar.swapSend")}
+                </Button>
+                <button type="button" className="text-xs text-muted-foreground underline-offset-2 hover:underline" onClick={() => setAsking(null)}>
+                  {t("teamCalendar.swapCancel")}
+                </button>
+              </span>
+            ) : (
+              <button type="button" className="text-xs text-muted-foreground underline-offset-2 hover:underline" disabled={busy} onClick={() => setAsking({ id: place.id, note: "" })} data-testid="lineup-swap-ask">
+                {t("teamCalendar.swapAsk")}
+              </button>
+            )
+          ) : null}
+        </div>
+      ))}
+      {takeable.map((place) => (
+        <div key={place.id} className="flex flex-wrap items-center gap-2 text-sm" data-swap-offered={place.id}>
+          <Button size="sm" variant="outline" className="h-7" disabled={busy} onClick={() => run(() => apiClient.takeTeamEventSwap(teamId, eventId, date, place.id))} data-testid="lineup-swap-take">
+            <ArrowLeftRight />
+            {t("teamCalendar.swapTake", { part: partLabel(partOf(parts, place.partKey)), name: place.displayName })}
+          </Button>
+          {place.swap?.note ? <span className="text-xs text-muted-foreground italic">"{place.swap.note}"</span> : null}
         </div>
       ))}
       {shown.length > 0 ? (
@@ -197,6 +256,12 @@ export function LineupDialog({
                           {conflictWord[conflict]}
                         </Badge>
                       ))}
+                      {place.swap ? (
+                        <Badge variant="warning" data-testid="lineup-swap-asked">
+                          <ArrowLeftRight />
+                          {t("teamCalendar.swapAsked")}
+                        </Badge>
+                      ) : null}
                       {place.note ? <span className="text-xs text-muted-foreground italic">"{place.note}"</span> : null}
                       <button
                         type="button"

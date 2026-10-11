@@ -535,6 +535,24 @@
           }
         },
         {
+          "name": "a place offered",
+          "args": [
+            "SWAP_OFFERED",
+            {
+              "event": "Morning service",
+              "date": "2026-10-18",
+              "team": "Worship team",
+              "part": "BACKING_VOCALS",
+              "by": "Sam"
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Sam needs someone for Backing vocals: Morning service on Sun, Oct 18",
+            "body": "Worship team - take it on My calendar"
+          }
+        },
+        {
           "name": "a part with its own name",
           "args": [
             "SCHEDULE_DECLINED",
@@ -626,6 +644,14 @@
             "UNSCHEDULED": {
               "email": true,
               "push": true
+            },
+            "SWAP_OFFERED": {
+              "email": true,
+              "push": true
+            },
+            "SWAP_TAKEN": {
+              "email": true,
+              "push": true
             }
           }
         },
@@ -689,6 +715,14 @@
               "push": true
             },
             "UNSCHEDULED": {
+              "email": true,
+              "push": true
+            },
+            "SWAP_OFFERED": {
+              "email": true,
+              "push": true
+            },
+            "SWAP_TAKEN": {
               "email": true,
               "push": true
             }
@@ -762,6 +796,14 @@
                 "push": true
               },
               "UNSCHEDULED": {
+                "email": true,
+                "push": true
+              },
+              "SWAP_OFFERED": {
+                "email": true,
+                "push": true
+              },
+              "SWAP_TAKEN": {
                 "email": true,
                 "push": true
               }
@@ -912,6 +954,128 @@
             }
           ],
           "expected": true
+        }
+      ]
+    },
+    "swapCandidates": {
+      "about": "Who's offered someone's place when they ask for a replacement: members who cover its part, not the one asking, not already on it, not unavailable (or away) that date.",
+      "params": [
+        "part",
+        "members",
+        "lineup",
+        "requesterId"
+      ],
+      "cases": [
+        {
+          "name": "drums",
+          "args": [
+            {
+              "part": "DRUMS",
+              "count": 1
+            },
+            [
+              {
+                "userId": "asker",
+                "instruments": [
+                  "DRUMS"
+                ],
+                "techRoles": [],
+                "answer": "AVAILABLE"
+              },
+              {
+                "userId": "free",
+                "instruments": [
+                  "DRUMS"
+                ],
+                "techRoles": [],
+                "answer": null
+              },
+              {
+                "userId": "maybe",
+                "instruments": [
+                  "DRUMS",
+                  "PERCUSSION"
+                ],
+                "techRoles": [],
+                "answer": "IF_NEEDED"
+              },
+              {
+                "userId": "busy",
+                "instruments": [
+                  "DRUMS"
+                ],
+                "techRoles": [],
+                "answer": "UNAVAILABLE"
+              },
+              {
+                "userId": "keys",
+                "instruments": [
+                  "PIANO"
+                ],
+                "techRoles": [],
+                "answer": "AVAILABLE"
+              },
+              {
+                "userId": "already",
+                "instruments": [
+                  "DRUMS"
+                ],
+                "techRoles": [],
+                "answer": "AVAILABLE"
+              }
+            ],
+            [
+              {
+                "userId": "asker",
+                "partKey": "DRUMS",
+                "status": "ACCEPTED"
+              },
+              {
+                "userId": "already",
+                "partKey": "DRUMS",
+                "status": "PENDING"
+              }
+            ],
+            "asker"
+          ],
+          "expected": [
+            "free",
+            "maybe"
+          ]
+        },
+        {
+          "name": "a named part: anyone free",
+          "args": [
+            {
+              "name": "Slides",
+              "count": 1
+            },
+            [
+              {
+                "userId": "asker",
+                "instruments": [],
+                "techRoles": [],
+                "answer": "AVAILABLE"
+              },
+              {
+                "userId": "anyone",
+                "instruments": [],
+                "techRoles": [],
+                "answer": null
+              }
+            ],
+            [
+              {
+                "userId": "asker",
+                "partKey": "name:slides",
+                "status": "ACCEPTED"
+              }
+            ],
+            "asker"
+          ],
+          "expected": [
+            "anyone"
+          ]
         }
       ]
     },

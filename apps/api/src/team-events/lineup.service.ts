@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { eventDates, eventFallsOn, localDate, partKey, type AssignPartRequest, type NotificationData, type RespondAssignmentRequest } from "@songverse/core";
+import { coversPart, effectiveAnswer, eventDates, eventFallsOn, localDate, partKey, swapCandidates, type AssignPartRequest, type NotificationData, type RequestSwapRequest, type RespondAssignmentRequest } from "@songverse/core";
 import { Prisma } from "@songverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -140,5 +140,87 @@ export class LineupService {
       );
     }
     return { id: updated.id, status: updated.status, note: updated.note };
+  }
+
+  /** One's own place on a coming date, not declined: the one to swap. */
+  private async ownPlace(teamId: string, eventId: string, date: string, assignmentId: string, userId: string) {
+    const row = await this.prisma.client.teamEventAssignment.findFirst({ where: { id: assignmentId, eventId, date: day(date), userId, event: { teamId } } });
+    if (!row || row.status === "DECLINED") throw new NotFoundException("Not on the line-up");
+    return row;
+  }
+
+  /**
+   * Someone asks for a replacement (a swap): the members who play the part,
+   * not on it already and not unavailable or away that date, are offered it
+   * (swapCandidates). Their place stays theirs until someone takes it.
+   */
+  async requestSwap(teamId: string, eventId: string, date: string, assignmentId: string, userId: string, dto: RequestSwapRequest) {
+    const row = await this.ownPlace(teamId, eventId, date, assignmentId, userId);
+    const event = await this.comingDate(teamId, eventId, date);
+    const part = partsOf(event).find((one) => partKey(one) === row.partKey);
+    if (!part) throw new BadRequestException(["That part isn't one this event needs any more"]);
+    await this.prisma.client.teamEventAssignment.update({ where: { id: row.id }, data: { swapRequestedAt: new Date(), swapNote: dto.note || null } });
+    const [members, answers, away, lineup, me] = await Promise.all([
+      this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }),
+      this.prisma.client.teamEventAnswer.findMany({ where: { eventId, date: day(date) }, select: { userId: true, answer: true } }),
+      this.prisma.client.userAway.findMany({ where: { user: { teamMemberships: { some: { teamId } } }, from: { lte: day(date) }, to: { gte: day(date) } }, select: { userId: true, from: true, to: true } }),
+      this.prisma.client.teamEventAssignment.findMany({ where: { eventId, date: day(date) }, select: { userId: true, partKey: true, status: true } }),
+      this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
+    ]);
+    const answered = members.map(({ userId: member, user }) => {
+      const own = answers.find((answer) => answer.userId === member)?.answer ?? null;
+      const ranges = away.filter((range) => range.userId === member).map((range) => ({ from: dateText(range.from), to: dateText(range.to) }));
+      return { userId: member, ...user, answer: effectiveAnswer(own, ranges, date).answer };
+    });
+    const offered = swapCandidates(part, answered, lineup, userId);
+    const data = { event: this.titleOn(event, date), date, team: event.team.name, by: me?.displayName ?? "", ...(await this.partData(event, row.partKey)) };
+    const notified = await this.notifications.notify(offered.map((candidate) => ({ userId: candidate, kind: "SWAP_OFFERED" as const, data, url: "/calendar" })));
+    return { id: row.id, swapRequestedAt: new Date().toISOString(), notified };
+  }
+
+  /** The replacement no longer looked for: the place stays theirs. */
+  async cancelSwap(teamId: string, eventId: string, date: string, assignmentId: string, userId: string): Promise<void> {
+    const row = await this.ownPlace(teamId, eventId, date, assignmentId, userId);
+    await this.prisma.client.teamEventAssignment.update({ where: { id: row.id }, data: { swapRequestedAt: null, swapNote: null } });
+  }
+
+  /**
+   * A member takes the place of someone who asked for a replacement: the
+   * first to do so gets it (accepted, and available that date); the one
+   * replaced and the team's admins are told. Taken already: a conflict.
+   */
+  async takeSwap(teamId: string, eventId: string, date: string, assignmentId: string, userId: string) {
+    const event = await this.comingDate(teamId, eventId, date);
+    const row = await this.prisma.client.teamEventAssignment.findFirst({ where: { id: assignmentId, eventId, date: day(date), event: { teamId } } });
+    if (!row || !row.swapRequestedAt || row.status === "DECLINED") throw new ConflictException("Someone already took it, or it's no longer offered");
+    if (row.userId === userId) throw new BadRequestException(["It's your own place"]);
+    const part = partsOf(event).find((one) => partKey(one) === row.partKey);
+    const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { user: { select: { instruments: true, techRoles: true, displayName: true } } } });
+    if (!member || !part || !coversPart(member.user, part)) throw new BadRequestException(["You don't play that part"]);
+    let created;
+    try {
+      created = await this.prisma.client.$transaction(async (tx) => {
+        // Only while it's still offered: the first one wins.
+        const { count } = await tx.teamEventAssignment.deleteMany({ where: { id: row.id, swapRequestedAt: { not: null } } });
+        if (count === 0) throw new ConflictException("Someone already took it");
+        return tx.teamEventAssignment.create({ data: { eventId, date: day(date), partKey: row.partKey, userId, status: "ACCEPTED", respondedAt: new Date(), assignedByUserId: row.assignedByUserId } });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("You're already on that part");
+      throw error;
+    }
+    await this.prisma.client.teamEventAnswer.upsert({
+      where: { eventId_date_userId: { eventId, date: day(date), userId } },
+      create: { eventId, date: day(date), userId, answer: "AVAILABLE" },
+      update: { answer: "AVAILABLE", answeredByUserId: null },
+    });
+    const admins = await this.prisma.client.teamMembership.findMany({ where: { teamId, role: "ADMIN" }, select: { userId: true } });
+    const data = { event: this.titleOn(event, date), date, team: event.team.name, by: member.user.displayName, ...(await this.partData(event, row.partKey)) };
+    const told = [...new Set([row.userId, ...admins.map((admin) => admin.userId)])];
+    await this.notifications.notify(
+      told.map((person) => ({ userId: person, kind: "SWAP_TAKEN" as const, data, url: person === row.userId ? "/calendar" : `/teams/${teamId}` })),
+      userId,
+    );
+    return { id: created.id, userId, partKey: created.partKey, status: created.status };
   }
 }

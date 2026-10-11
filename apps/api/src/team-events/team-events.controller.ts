@@ -6,7 +6,7 @@ import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RespondAssignmentDto, CreateTeamEventDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
+import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AvailabilityService } from "./availability.service.js";
 import { LineupService } from "./lineup.service.js";
@@ -162,6 +162,37 @@ export class TeamEventsController {
   ) {
     if (!user) throw new UnauthorizedException();
     return this.lineup.respond(teamId, eventId, dateParam(date), assignmentId, user.id, dto);
+  }
+
+  /** One asks for a replacement on their place: those who play the part are offered it. */
+  @Post("events/:eventId/dates/:date/lineup/:assignmentId/swap")
+  @UseGuards(TeamMemberGuard)
+  requestSwap(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param("teamId") teamId: string,
+    @Param("eventId") eventId: string,
+    @Param("date") date: string,
+    @Param("assignmentId") assignmentId: string,
+    @Body() dto: RequestSwapDto,
+  ) {
+    if (!user) throw new UnauthorizedException();
+    return this.lineup.requestSwap(teamId, eventId, dateParam(date), assignmentId, user.id, dto);
+  }
+
+  @Delete("events/:eventId/dates/:date/lineup/:assignmentId/swap")
+  @UseGuards(TeamMemberGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  cancelSwap(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
+    if (!user) throw new UnauthorizedException();
+    return this.lineup.cancelSwap(teamId, eventId, dateParam(date), assignmentId, user.id);
+  }
+
+  /** A member takes the place offered: the first one gets it. */
+  @Post("events/:eventId/dates/:date/lineup/:assignmentId/take")
+  @UseGuards(TeamMemberGuard)
+  takeSwap(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
+    if (!user) throw new UnauthorizedException();
+    return this.lineup.takeSwap(teamId, eventId, dateParam(date), assignmentId, user.id);
   }
 
   /** The set for a date is ready: the people signed up for it are told (issue #235). */

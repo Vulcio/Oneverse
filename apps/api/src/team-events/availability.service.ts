@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { AVAILABILITY_ANSWERS, partCoverage, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@songverse/core";
+import { AVAILABILITY_ANSWERS, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@songverse/core";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
@@ -46,6 +46,8 @@ export class AvailabilityService {
     const from = dates.reduce((min, d) => (d.date < min ? d.date : min), dates[0]!.date);
     const to = dates.reduce((max, d) => (d.date > max ? d.date : max), dates[0]!.date);
     const memberRows = isAdmin ? await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }) : [];
+    // What the viewer plays: places offered for a swap they could take.
+    const viewer = await this.prisma.client.user.findUnique({ where: { id: viewerId }, select: { instruments: true, techRoles: true } });
     const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
     const userIds = members.includes(viewerId) ? members : [...members, viewerId];
     const [answers, away, lineupRows] = await Promise.all([
@@ -104,7 +106,21 @@ export class AvailabilityService {
           else if (shown?.answer === "UNAVAILABLE") conflicts.push("UNAVAILABLE");
           if (elsewhere.has(row.id)) conflicts.push("ELSEWHERE");
         }
-        return { id: row.id, userId: row.userId, displayName: row.user.displayName, partKey: row.partKey, status: row.status, mine, note: isAdmin || mine ? row.note : null, conflicts };
+        const part = date.parts?.find((one) => partKey(one) === row.partKey);
+        const onIt = placed.some((other) => other.userId === viewerId && other.partKey === row.partKey && other.status !== "DECLINED");
+        return {
+          id: row.id,
+          userId: row.userId,
+          displayName: row.user.displayName,
+          partKey: row.partKey,
+          status: row.status,
+          mine,
+          note: isAdmin || mine ? row.note : null,
+          conflicts,
+          // A replacement looked for (issue #235, phase 7), and whether the viewer could take it.
+          swap: row.swapRequestedAt && row.status !== "DECLINED" ? { requestedAt: row.swapRequestedAt.toISOString(), note: row.swapNote } : null,
+          canTake: !!row.swapRequestedAt && row.status !== "DECLINED" && !mine && !onIt && !!part && !!viewer && coversPart(viewer, part),
+        };
       });
       return { ...date, myAnswer, counts, coverage, lineup };
     });
@@ -212,6 +228,7 @@ export class AvailabilityService {
     if (to < from) throw new BadRequestException(["to must not be before from"]);
     if (daysBetween(from, to) > MAX_RANGE_DAYS) throw new BadRequestException([`to must be at most ${MAX_RANGE_DAYS} days after from`]);
     const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, role: true, team: { select: { name: true, color: true, avatarUrl: true } } } });
+    const me = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { instruments: true, techRoles: true } });
     const events = await this.prisma.client.teamEvent.findMany({ where: { teamId: { in: memberships.map((m) => m.teamId) } }, include: withDates });
     const [answers, away, lineupRows] = await Promise.all([
       this.prisma.client.teamEventAnswer.findMany({ where: { userId, eventId: { in: events.map((e) => e.id) }, date: { gte: day(from), lte: day(to) } } }),
@@ -249,7 +266,23 @@ export class AvailabilityService {
             // Who's on which part; one's own place to accept or decline.
             lineup: lineupRows
               .filter((row) => row.eventId === event.id && dateText(row.date) === date.date)
-              .map((row) => ({ id: row.id, userId: row.userId, displayName: row.user.displayName, partKey: row.partKey, status: row.status, mine: row.userId === userId, note: row.userId === userId ? row.note : null, conflicts: [] as LineupConflict[] })),
+              .map((row) => {
+                const part = partsOf(event).find((one) => partKey(one) === row.partKey);
+                const offered = !!row.swapRequestedAt && row.status !== "DECLINED";
+                const onIt = lineupRows.some((other) => other.eventId === row.eventId && dateText(other.date) === date.date && other.userId === userId && other.partKey === row.partKey && other.status !== "DECLINED");
+                return {
+                  id: row.id,
+                  userId: row.userId,
+                  displayName: row.user.displayName,
+                  partKey: row.partKey,
+                  status: row.status,
+                  mine: row.userId === userId,
+                  note: row.userId === userId ? row.note : null,
+                  conflicts: [] as LineupConflict[],
+                  swap: offered ? { requestedAt: row.swapRequestedAt!.toISOString(), note: row.swapNote } : null,
+                  canTake: offered && row.userId !== userId && !onIt && !!part && !!me && coversPart(me, part),
+                };
+              }),
           };
         });
       })

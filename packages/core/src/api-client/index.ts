@@ -36,7 +36,7 @@ import type { SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamR
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { UpdateSetlistItemRequest } from "../requests/sets.js";
-import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest } from "../requests/events.js";
+import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
@@ -863,6 +863,9 @@ export interface LineupPlace {
   mine: boolean;
   note: string | null;
   conflicts: ("AWAY" | "UNAVAILABLE" | "ELSEWHERE")[];
+  /** A replacement looked for (a swap), and whether the viewer could take the place. */
+  swap: { requestedAt: string; note: string | null } | null;
+  canTake: boolean;
 }
 
 export interface MyEventDate extends EventDate {
@@ -1884,6 +1887,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<void>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}`, { method: "DELETE" }),
     respondTeamEventPart: (teamId: string, eventId: string, date: string, assignmentId: string, data: RespondAssignmentRequest) =>
       request<{ id: string; status: AssignmentStatus; note: string | null }>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}/response`, { method: "PUT", body: JSON.stringify(data) }),
+    requestTeamEventSwap: (teamId: string, eventId: string, date: string, assignmentId: string, data: RequestSwapRequest = {}) =>
+      request<{ id: string; swapRequestedAt: string; notified: number }>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}/swap`, { method: "POST", body: JSON.stringify(data) }),
+    cancelTeamEventSwap: (teamId: string, eventId: string, date: string, assignmentId: string) =>
+      request<void>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}/swap`, { method: "DELETE" }),
+    takeTeamEventSwap: (teamId: string, eventId: string, date: string, assignmentId: string) =>
+      request<{ id: string; userId: string; partKey: string; status: AssignmentStatus }>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}/take`, { method: "POST" }),
     listTeamAnswerRequests: (teamId: string) => request<TeamAnswerRequest[]>(`/teams/${teamId}/answer-requests`),
     askTeamForAnswers: (teamId: string, data: CreateAnswerRequestRequest) =>
       request<TeamAnswerRequest & { notified: number }>(`/teams/${teamId}/answer-requests`, { method: "POST", body: JSON.stringify(data) }),

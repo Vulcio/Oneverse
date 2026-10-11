@@ -1191,6 +1191,9 @@ model TeamEventAssignment {
   assignedByUserId String?
   createdAt        DateTime         @default(now())
   respondedAt      DateTime?
+  // They asked for a replacement (a swap): offered to those who play the part; the first to take it gets the place.
+  swapRequestedAt  DateTime?
+  swapNote         String?
 
   event      TeamEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user       User      @relation("Assignments", fields: [userId], references: [id], onDelete: Cascade)

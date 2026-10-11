@@ -31,7 +31,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { coversPart, partCoverage, signedUpPeople, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import type { z } from "zod";
 
 /**
@@ -1234,6 +1234,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "tomorrow, with a place", args: ["EVENT_TOMORROW", { event: "Morning service", date: "2026-10-18", team: "Worship team", startTime: "10:00", place: "Main hall" }, "en"] },
           { name: "tomorrow, without one", args: ["EVENT_TOMORROW", { event: "Morning service", date: "2026-10-18", team: "Worship team", startTime: "10:00" }, "en"] },
           { name: "scheduled, in French: the part in their words", args: ["SCHEDULED", { event: "Culte", date: "2026-10-18", team: "Louange", part: "DRUMS" }, "fr"] },
+          { name: "a place offered", args: ["SWAP_OFFERED", { event: "Morning service", date: "2026-10-18", team: "Worship team", part: "BACKING_VOCALS", by: "Sam" }, "en"] },
           { name: "a part with its own name", args: ["SCHEDULE_DECLINED", { event: "Morning service", date: "2026-10-18", team: "Worship team", partName: "Slides", by: "Sam" }, "en"] },
           { name: "the set is ready", args: ["SET_READY", { event: "Morning service", date: "2026-10-18", team: "Worship team", count: 6 }, "en"] },
         ],
@@ -1280,6 +1281,36 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a role they have", args: [{ instruments: [], techRoles: ["SOUND_ENGINEER"] }, { part: "SOUND_ENGINEER", count: 1 }] },
           { name: "one they don't", args: [{ instruments: ["DRUMS"], techRoles: [] }, { part: "BASS_GUITAR", count: 1 }] },
           { name: "a named part: anyone", args: [{ instruments: [], techRoles: [] }, { name: "Worship leader", count: 1 }] },
+        ],
+      },
+      swapCandidates: {
+        about: "Who's offered someone's place when they ask for a replacement: members who cover its part, not the one asking, not already on it, not unavailable (or away) that date.",
+        params: ["part", "members", "lineup", "requesterId"],
+        run: swapCandidates,
+        cases: [
+          {
+            name: "drums",
+            args: [
+              { part: "DRUMS", count: 1 },
+              [
+                { userId: "asker", instruments: ["DRUMS"], techRoles: [], answer: "AVAILABLE" },
+                { userId: "free", instruments: ["DRUMS"], techRoles: [], answer: null },
+                { userId: "maybe", instruments: ["DRUMS", "PERCUSSION"], techRoles: [], answer: "IF_NEEDED" },
+                { userId: "busy", instruments: ["DRUMS"], techRoles: [], answer: "UNAVAILABLE" },
+                { userId: "keys", instruments: ["PIANO"], techRoles: [], answer: "AVAILABLE" },
+                { userId: "already", instruments: ["DRUMS"], techRoles: [], answer: "AVAILABLE" },
+              ],
+              [
+                { userId: "asker", partKey: "DRUMS", status: "ACCEPTED" },
+                { userId: "already", partKey: "DRUMS", status: "PENDING" },
+              ],
+              "asker",
+            ],
+          },
+          {
+            name: "a named part: anyone free",
+            args: [{ name: "Slides", count: 1 }, [{ userId: "asker", instruments: [], techRoles: [], answer: "AVAILABLE" }, { userId: "anyone", instruments: [], techRoles: [], answer: null }], [{ userId: "asker", partKey: "name:slides", status: "ACCEPTED" }], "asker"],
+          },
         ],
       },
       signedUpPeople: {

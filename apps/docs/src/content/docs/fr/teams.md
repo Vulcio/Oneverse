@@ -36,6 +36,8 @@ Une fois les postes d'une date fixés, ses administrateurs choisissent qui tient
 
 L'équipe du jour signale ce qui coince : quelqu'un **Absent**, qui **A répondu pas disponible**, ou qui **Joue ailleurs à ce moment-là** - sur un autre événement en même temps, de n'importe laquelle de ses équipes. Chaque poste montre combien il en a sur combien il en faut, et **Manque** compte ceux de l'équipe du jour une fois qu'elle existe.
 
+**Un empêchement ?** À côté de votre place, **Chercher un remplaçant**, avec un mot si vous voulez, puis **Demander**. Les membres qui tiennent ce poste - pas déjà dessus, ni absents ou indisponibles ce jour-là - sont prévenus, et voient **Prendre Batterie à la place de Alex** dans le calendrier de l'équipe et **Mon calendrier**. Le premier qui la prend a la place, acceptée (et **Disponible** ce jour-là) ; vous et les administrateurs de l'équipe êtes prévenus. D'ici là la place reste la vôtre, marquée **Cherche un remplaçant** ; **Annuler** retire la demande.
+
 **Qui est inscrit à une date** : une fois son équipe du jour faite, les personnes placées - sollicitées ou ayant accepté, pas celles qui ont décliné ; jusque-là, ceux qui ont répondu **Disponible**. Ce sont eux qui voient sa liste dans leur barre latérale, la trouvent dans leur lien de calendrier, et reçoivent rappels et notifications.
 
 ### Votre lien de calendrier
