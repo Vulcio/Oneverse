@@ -31,7 +31,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { coversPart, partCoverage, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import type { z } from "zod";
 
 /**
@@ -1265,6 +1265,42 @@ export const CONFORMANCE: ConformanceArea[] = [
                 { kind: "EVENT_DATE_CHANGED", data: { event: "Culte", date: "2026-10-25", team: "Louange", startTime: "09:30" } },
               ],
               "fr",
+            ],
+          },
+        ],
+      },
+      coversPart: {
+        about: "Whether a member covers a part an event needs (issue #235): they listed its instrument or role (dashboard > Roles); a part with a name of the team's, anyone.",
+        params: ["member", "part"],
+        run: coversPart,
+        cases: [
+          { name: "an instrument they play", args: [{ instruments: ["DRUMS", "PIANO"], techRoles: [] }, { part: "PIANO", count: 1 }] },
+          { name: "a role they have", args: [{ instruments: [], techRoles: ["SOUND_ENGINEER"] }, { part: "SOUND_ENGINEER", count: 1 }] },
+          { name: "one they don't", args: [{ instruments: ["DRUMS"], techRoles: [] }, { part: "BASS_GUITAR", count: 1 }] },
+          { name: "a named part: anyone", args: [{ instruments: [], techRoles: [] }, { name: "Worship leader", count: 1 }] },
+        ],
+      },
+      partCoverage: {
+        about: "How a date's parts are covered by the members' answers: per part, those covering it available or if needed, and how many it's short.",
+        params: ["parts", "members"],
+        run: partCoverage,
+        cases: [
+          {
+            name: "two vocals, drums, sound",
+            args: [
+              [
+                { part: "LEAD_VOCALS", count: 1 },
+                { part: "BACKING_VOCALS", count: 2 },
+                { part: "DRUMS", count: 1 },
+                { part: "SOUND_ENGINEER", count: 1 },
+                { name: "Slides", count: 1 },
+              ],
+              [
+                { instruments: ["LEAD_VOCALS", "BACKING_VOCALS"], techRoles: [], answer: "AVAILABLE" },
+                { instruments: ["BACKING_VOCALS"], techRoles: [], answer: "IF_NEEDED" },
+                { instruments: ["DRUMS"], techRoles: [], answer: "UNAVAILABLE" },
+                { instruments: [], techRoles: ["SOUND_ENGINEER"], answer: null },
+              ],
             ],
           },
         ],

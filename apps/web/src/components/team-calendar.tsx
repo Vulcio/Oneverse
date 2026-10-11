@@ -1,6 +1,6 @@
-import { addDays, localDate, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary } from "@songverse/core";
+import { addDays, coversPart, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary } from "@songverse/core";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { Ban, CalendarPlus, CircleCheck, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, X } from "lucide-react";
+import { Ban, CalendarPlus, CircleCheck, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "#/components/confirm-button";
@@ -16,6 +16,7 @@ import { Label } from "#/components/ui/label";
 import { NativeSelect } from "#/components/ui/native-select";
 import { Textarea } from "#/components/ui/textarea";
 import { apiClient } from "#/lib/api-client";
+import { useInstrumentLabel } from "#/lib/instruments";
 import { formatSetDate } from "#/lib/setlists";
 import { cn } from "#/lib/utils";
 
@@ -24,6 +25,16 @@ const SHOWN_WEEKS = 8;
 
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
+/** A part's name (issue #235, phase 7): its instrument or role in the reader's language, or the team's own name for it. */
+function usePartLabel(customInstruments: readonly CustomInstrument[]): (part: EventPart) => string {
+  const { t } = useTranslation();
+  const instrumentLabel = useInstrumentLabel(customInstruments);
+  return (part) => {
+    if (!part.part) return part.name ?? "";
+    return (TECH_ROLES as readonly string[]).includes(part.part) ? t(`roles.techRole.${part.part}`) : instrumentLabel(part.part);
+  };
+}
+
 /**
  * A team's calendar (issue #235): its coming dates, every event's, each
  * with its set. Its admins add and edit events, cancel or restore a date,
@@ -31,8 +42,9 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * are made; ask for answers by a deadline, and tell the people signed up
  * for a date that its set is ready (reminders, issue #235).
  */
-export function TeamCalendar({ teamId, isAdmin }: { teamId: string; isAdmin: boolean }) {
+export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { teamId: string; isAdmin: boolean; customInstruments?: readonly CustomInstrument[] }) {
   const { t, i18n } = useTranslation();
+  const partLabel = usePartLabel(customInstruments);
   const navigate = useNavigate();
   const router = useRouter();
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
@@ -164,6 +176,18 @@ export function TeamCalendar({ teamId, isAdmin }: { teamId: string; isAdmin: boo
                           {t("teamCalendar.setReadyBadge")}
                         </Badge>
                       ) : null}
+                      {/* For the admins: the parts no one available covers yet (issue #235, phase 7). */}
+                      {!date.cancelled && date.coverage?.some((part) => part.missing > 0) ? (
+                        <Badge variant="warning" data-testid="calendar-short">
+                          <Users />
+                          {t("teamCalendar.partShort", {
+                            parts: date.coverage
+                              .filter((part) => part.missing > 0)
+                              .map((part) => `${partLabel(part)}${part.missing > 1 ? ` ×${part.missing}` : ""}`)
+                              .join(", "),
+                          })}
+                        </Badge>
+                      ) : null}
                     </div>
                     {date.place ? (
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -274,6 +298,7 @@ export function TeamCalendar({ teamId, isAdmin }: { teamId: string; isAdmin: boo
         <AnswersDialog
           teamId={teamId}
           date={answersOf}
+          partLabel={partLabel}
           title={`${answersOf.title}, ${dayFormat.format(new Date(`${answersOf.date}T12:00:00Z`))}`}
           onClose={() => {
             setAnswersOf(null);
@@ -296,6 +321,9 @@ export function TeamCalendar({ teamId, isAdmin }: { teamId: string; isAdmin: boo
         <EventDialog
           teamId={teamId}
           event={editing === "new" ? null : editing}
+          teamNames={[...new Set(events.flatMap((one) => one.parts.filter((part) => !part.part && part.name).map((part) => part.name!)))]}
+          customInstruments={customInstruments}
+          partLabel={partLabel}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);
@@ -322,7 +350,7 @@ function AnswerCounts({ counts, onOpen }: { counts: NonNullable<TeamEventDateSum
 }
 
 /** Every member's answer for a date, with their notes; an admin answers for someone (marked as answered by them). */
-function AnswersDialog({ teamId, date, title, onClose }: { teamId: string; date: TeamEventDateSummary; title: string; onClose: () => void }) {
+function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: string; date: TeamEventDateSummary; title: string; partLabel: (part: EventPart) => string; onClose: () => void }) {
   const { t } = useTranslation();
   const [members, setMembers] = useState<MemberEventAnswer[] | null>(null);
   const load = useCallback(() => apiClient.listTeamEventDateAnswers(teamId, date.eventId, date.date).then(setMembers), [teamId, date]);
@@ -336,6 +364,29 @@ function AnswersDialog({ teamId, date, title, onClose }: { teamId: string; date:
           <DialogTitle>{t("teamCalendar.whoCanPlay")}</DialogTitle>
           <p className="text-sm text-muted-foreground">{title}</p>
         </DialogHeader>
+        {/* By part (issue #235, phase 7): who covers each, available or if needed, and how many it's short. */}
+        {members && date.parts.length > 0 ? (
+          <div className="flex flex-col gap-1.5 rounded-md border p-3" data-testid="answers-by-part">
+            <span className="text-xs font-medium text-muted-foreground">{t("teamCalendar.byPart")}</span>
+            <ul className="flex flex-col gap-1 text-sm">
+              {date.parts.map((part) => {
+                const covering = members.filter((member) => coversPart(member, part));
+                const available = covering.filter((member) => member.answer === "AVAILABLE").map((member) => member.displayName);
+                const ifNeeded = covering.filter((member) => member.answer === "IF_NEEDED").map((member) => member.displayName);
+                return (
+                  <li key={partKey(part)} className="flex flex-wrap items-baseline gap-x-2" data-part={partKey(part)}>
+                    <span className="font-medium">{partLabel(part)}</span>
+                    <span className="text-xs text-muted-foreground">{t("teamCalendar.partNeeded", { count: part.count })}</span>
+                    <span className={cn("text-xs", available.length < part.count ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400")}>
+                      {available.length > 0 ? `✓ ${available.join(", ")}` : t("teamCalendar.partNobody")}
+                    </span>
+                    {ifNeeded.length > 0 ? <span className="text-xs text-muted-foreground">{t("teamCalendar.partIfNeeded", { names: ifNeeded.join(", ") })}</span> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
         <ul className="flex max-h-[60vh] flex-col divide-y overflow-y-auto">
           {(members ?? []).map((member) => (
             <li key={member.userId} className="flex flex-col gap-1.5 py-2.5" data-member={member.userId}>
@@ -414,8 +465,25 @@ function SetsAhead({ teamId, onSaved }: { teamId: string; onSaved: () => Promise
 }
 
 /** Adding or editing an event: its title, first date and time, how long, where, and whether it repeats. */
-function EventDialog({ teamId, event, onClose, onSaved }: { teamId: string; event: TeamEvent | null; onClose: () => void; onSaved: () => Promise<void> }) {
+function EventDialog({
+  teamId,
+  event,
+  teamNames,
+  customInstruments,
+  partLabel,
+  onClose,
+  onSaved,
+}: {
+  teamId: string;
+  event: TeamEvent | null;
+  teamNames: string[];
+  customInstruments: readonly CustomInstrument[];
+  partLabel: (part: EventPart) => string;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
   const { t } = useTranslation();
+  const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
   const [title, setTitle] = useState(event?.title ?? "");
   const [date, setDate] = useState(event?.date ?? localDate(new Date(), browserZone()));
   const [startTime, setStartTime] = useState(event?.startTime ?? "10:00");
@@ -434,7 +502,7 @@ function EventDialog({ teamId, event, onClose, onSaved }: { teamId: string; even
     setBusy(true);
     setError(null);
     const repeat = everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null;
-    const body = { title, date, startTime, durationMinutes: Number(duration), timeZone, place: place || null, note: note || null, repeat };
+    const body = { title, date, startTime, durationMinutes: Number(duration), timeZone, place: place || null, note: note || null, repeat, parts: parts.map((part) => (part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count })) };
     try {
       if (event) await apiClient.updateTeamEvent(teamId, event.id, body);
       else await apiClient.createTeamEvent(teamId, body);
@@ -509,6 +577,7 @@ function EventDialog({ teamId, event, onClose, onSaved }: { teamId: string; even
             <Label htmlFor="event-note">{t("teamCalendar.note")}</Label>
             <Textarea id="event-note" value={note} maxLength={1000} rows={2} onChange={(e) => setNote(e.target.value)} />
           </div>
+          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} customInstruments={customInstruments} partLabel={partLabel} />
         </form>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
@@ -596,5 +665,137 @@ function AskDialog({ teamId, onClose, onAsked }: { teamId: string; onClose: () =
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * The parts an event needs (issue #235, phase 7), each with how many:
+ * picked from the instruments, an admin's added instruments and the roles
+ * people list on their dashboard, the team's own names used before, or a
+ * new name.
+ */
+function PartsEditor({
+  parts,
+  onChange,
+  teamNames,
+  customInstruments,
+  partLabel,
+}: {
+  parts: EventPart[];
+  onChange: (parts: EventPart[]) => void;
+  teamNames: string[];
+  customInstruments: readonly CustomInstrument[];
+  partLabel: (part: EventPart) => string;
+}) {
+  const { t } = useTranslation();
+  const [naming, setNaming] = useState<string | null>(null);
+  const taken = new Set(parts.map((part) => partKey(part)));
+  const add = (part: EventPart) => {
+    if (!taken.has(partKey(part))) onChange([...parts, part]);
+  };
+  const choices = (keys: readonly string[]) => keys.filter((key) => !taken.has(key)).map((key) => ({ key, label: partLabel({ part: key, count: 1 }) }));
+  const instruments = [...choices(INSTRUMENTS), ...choices(customInstruments.map((instrument) => instrument.id))];
+  const names = teamNames.filter((name) => !taken.has(partKey({ name, count: 1 })));
+
+  return (
+    <div className="col-span-2 flex flex-col gap-2" data-testid="event-parts">
+      <Label>{t("teamCalendar.parts")}</Label>
+      <p className="text-xs text-muted-foreground">{t("teamCalendar.partsHint")}</p>
+      {parts.length > 0 ? (
+        <ul className="flex flex-col gap-1.5">
+          {parts.map((part, index) => (
+            <li key={partKey(part)} className="flex items-center gap-2" data-part={partKey(part)}>
+              <span className="min-w-0 flex-1 truncate text-sm">{partLabel(part)}</span>
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                value={part.count}
+                aria-label={`${partLabel(part)} - ${t("teamCalendar.partCount")}`}
+                className="h-8 w-16"
+                onChange={(e) => onChange(parts.map((one, at) => (at === index ? { ...one, count: Math.min(20, Math.max(1, Number(e.target.value) || 1)) } : one)))}
+              />
+              <button
+                type="button"
+                className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label={t("teamCalendar.partRemove", { part: partLabel(part) })}
+                onClick={() => onChange(parts.filter((_, at) => at !== index))}
+              >
+                <X className="size-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {naming === null ? (
+        <NativeSelect
+          value=""
+          aria-label={t("teamCalendar.addPart")}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === "__other") setNaming("");
+            else if (value.startsWith("name:")) add({ name: value.slice(5), count: 1 });
+            else if (value) add({ part: value, count: 1 });
+          }}
+          data-testid="event-part-add"
+        >
+          <option value="">{t("teamCalendar.addPart")}</option>
+          <optgroup label={t("teamCalendar.partInstruments")}>
+            {instruments.map((choice) => (
+              <option key={choice.key} value={choice.key}>
+                {choice.label}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label={t("teamCalendar.partRoles")}>
+            {choices(TECH_ROLES).map((choice) => (
+              <option key={choice.key} value={choice.key}>
+                {choice.label}
+              </option>
+            ))}
+          </optgroup>
+          {names.length > 0 ? (
+            <optgroup label={t("teamCalendar.partTeamNames")}>
+              {names.map((name) => (
+                <option key={name} value={`name:${name}`}>
+                  {name}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          <option value="__other">{t("teamCalendar.partOther")}</option>
+        </NativeSelect>
+      ) : (
+        <div className="flex gap-2">
+          <Input
+            autoFocus
+            value={naming}
+            maxLength={60}
+            placeholder={t("teamCalendar.partNamePlaceholder")}
+            onChange={(e) => setNaming(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (naming.trim()) add({ name: naming.trim(), count: 1 });
+                setNaming(null);
+              } else if (e.key === "Escape") setNaming(null);
+            }}
+            data-testid="event-part-name"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!naming.trim()}
+            onClick={() => {
+              add({ name: naming.trim(), count: 1 });
+              setNaming(null);
+            }}
+            data-testid="event-part-name-add"
+          >
+            {t("teamCalendar.partAdd")}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

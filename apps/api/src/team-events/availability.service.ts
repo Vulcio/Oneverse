@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { AVAILABILITY_ANSWERS, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@songverse/core";
+import { AVAILABILITY_ANSWERS, partCoverage, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@songverse/core";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
@@ -37,13 +37,15 @@ export class AvailabilityService {
 
   /**
    * The viewer's answer on each of `dates`, and for the team's admins the
-   * counts among its members. Dates come from TeamEventsService.dates().
+   * counts among its members and how its parts are covered (issue #235,
+   * phase 7). Dates come from TeamEventsService.dates().
    */
-  async withAnswers<T extends { eventId: string; date: string }>(teamId: string, viewerId: string, isAdmin: boolean, dates: T[]) {
+  async withAnswers<T extends { eventId: string; date: string; parts?: EventPart[] }>(teamId: string, viewerId: string, isAdmin: boolean, dates: T[]) {
     if (dates.length === 0) return [];
     const from = dates.reduce((min, d) => (d.date < min ? d.date : min), dates[0]!.date);
     const to = dates.reduce((max, d) => (d.date > max ? d.date : max), dates[0]!.date);
-    const members = isAdmin ? (await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true } })).map((m) => m.userId) : [viewerId];
+    const memberRows = isAdmin ? await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }) : [];
+    const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
     const userIds = members.includes(viewerId) ? members : [...members, viewerId];
     const [answers, away] = await Promise.all([
       this.prisma.client.teamEventAnswer.findMany({
@@ -61,14 +63,17 @@ export class AvailabilityService {
       const mine = given.find((answer) => answer.userId === viewerId);
       const myAnswer = { ...effectiveAnswer(mine?.answer ?? null, away.get(viewerId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId };
       let counts: AnswerCounts | null = null;
+      let coverage: ReturnType<typeof partCoverage> | null = null;
       if (isAdmin) {
         counts = { AVAILABLE: 0, IF_NEEDED: 0, UNAVAILABLE: 0, NONE: 0 };
-        for (const userId of members) {
+        const answered = memberRows.map(({ userId, user }) => {
           const own = given.find((answer) => answer.userId === userId)?.answer ?? null;
-          counts[effectiveAnswer(own, away.get(userId) ?? [], date.date).answer ?? "NONE"]++;
-        }
+          return { ...user, answer: effectiveAnswer(own, away.get(userId) ?? [], date.date).answer };
+        });
+        for (const member of answered) counts[member.answer ?? "NONE"]++;
+        if (date.parts?.length) coverage = partCoverage(date.parts, answered);
       }
-      return { ...date, myAnswer, counts };
+      return { ...date, myAnswer, counts, coverage };
     });
   }
 
@@ -113,7 +118,7 @@ export class AvailabilityService {
     if (!event || !eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const members = await this.prisma.client.teamMembership.findMany({
       where: { teamId },
-      select: { role: true, user: { select: { id: true, displayName: true, avatarUrl: true, instruments: true } } },
+      select: { role: true, user: { select: { id: true, displayName: true, avatarUrl: true, instruments: true, techRoles: true } } },
     });
     const userIds = members.map((m) => m.user.id);
     const [answers, away] = await Promise.all([
@@ -131,6 +136,7 @@ export class AvailabilityService {
           displayName: user.displayName,
           avatarUrl: user.avatarUrl,
           instruments: user.instruments,
+          techRoles: user.techRoles,
           role,
           ...shown,
           note: own?.note ?? (shown.away ? (ranges[0]?.note ?? null) : null),

@@ -772,6 +772,192 @@
         }
       ]
     },
+    "coversPart": {
+      "about": "Whether a member covers a part an event needs (issue #235): they listed its instrument or role (dashboard > Roles); a part with a name of the team's, anyone.",
+      "params": [
+        "member",
+        "part"
+      ],
+      "cases": [
+        {
+          "name": "an instrument they play",
+          "args": [
+            {
+              "instruments": [
+                "DRUMS",
+                "PIANO"
+              ],
+              "techRoles": []
+            },
+            {
+              "part": "PIANO",
+              "count": 1
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "a role they have",
+          "args": [
+            {
+              "instruments": [],
+              "techRoles": [
+                "SOUND_ENGINEER"
+              ]
+            },
+            {
+              "part": "SOUND_ENGINEER",
+              "count": 1
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "one they don't",
+          "args": [
+            {
+              "instruments": [
+                "DRUMS"
+              ],
+              "techRoles": []
+            },
+            {
+              "part": "BASS_GUITAR",
+              "count": 1
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "a named part: anyone",
+          "args": [
+            {
+              "instruments": [],
+              "techRoles": []
+            },
+            {
+              "name": "Worship leader",
+              "count": 1
+            }
+          ],
+          "expected": true
+        }
+      ]
+    },
+    "partCoverage": {
+      "about": "How a date's parts are covered by the members' answers: per part, those covering it available or if needed, and how many it's short.",
+      "params": [
+        "parts",
+        "members"
+      ],
+      "cases": [
+        {
+          "name": "two vocals, drums, sound",
+          "args": [
+            [
+              {
+                "part": "LEAD_VOCALS",
+                "count": 1
+              },
+              {
+                "part": "BACKING_VOCALS",
+                "count": 2
+              },
+              {
+                "part": "DRUMS",
+                "count": 1
+              },
+              {
+                "part": "SOUND_ENGINEER",
+                "count": 1
+              },
+              {
+                "name": "Slides",
+                "count": 1
+              }
+            ],
+            [
+              {
+                "instruments": [
+                  "LEAD_VOCALS",
+                  "BACKING_VOCALS"
+                ],
+                "techRoles": [],
+                "answer": "AVAILABLE"
+              },
+              {
+                "instruments": [
+                  "BACKING_VOCALS"
+                ],
+                "techRoles": [],
+                "answer": "IF_NEEDED"
+              },
+              {
+                "instruments": [
+                  "DRUMS"
+                ],
+                "techRoles": [],
+                "answer": "UNAVAILABLE"
+              },
+              {
+                "instruments": [],
+                "techRoles": [
+                  "SOUND_ENGINEER"
+                ],
+                "answer": null
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "key": "LEAD_VOCALS",
+              "part": "LEAD_VOCALS",
+              "name": null,
+              "count": 1,
+              "available": 1,
+              "ifNeeded": 0,
+              "missing": 0
+            },
+            {
+              "key": "BACKING_VOCALS",
+              "part": "BACKING_VOCALS",
+              "name": null,
+              "count": 2,
+              "available": 1,
+              "ifNeeded": 1,
+              "missing": 1
+            },
+            {
+              "key": "DRUMS",
+              "part": "DRUMS",
+              "name": null,
+              "count": 1,
+              "available": 0,
+              "ifNeeded": 0,
+              "missing": 1
+            },
+            {
+              "key": "SOUND_ENGINEER",
+              "part": "SOUND_ENGINEER",
+              "name": null,
+              "count": 1,
+              "available": 0,
+              "ifNeeded": 0,
+              "missing": 1
+            },
+            {
+              "key": "name:slides",
+              "part": null,
+              "name": "Slides",
+              "count": 1,
+              "available": 1,
+              "ifNeeded": 1,
+              "missing": 0
+            }
+          ]
+        }
+      ]
+    },
     "dayBeforeReminderDue": {
       "about": "Whether a date's day-before reminder is due: the day before, from 18:00 to midnight in the event's zone; not on the day itself.",
       "params": [

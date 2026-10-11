@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { AVAILABILITY_ANSWERS, isCalendarDate, isTimeOfDay, isTimeZone, SETS_AHEAD_WEEKS } from "../calendar/index.js";
+import { AVAILABILITY_ANSWERS, EVENT_PART_COUNT_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -15,6 +15,21 @@ const RepeatSchema = z.strictObject({
   until: optional(date("repeat.until")).describe("Its last date (included); left out, it goes on"),
 });
 
+/** A part an event needs: an instrument or role key (or custom instrument ID), or a name of the team's, and how many. */
+const EventPartSchema = z
+  .strictObject({
+    part: optional(z.string().trim().min(1).max(64)),
+    name: optional(z.string().trim().min(1).max(60)),
+    count: z.number().int().min(1).max(EVENT_PART_COUNT_MAX),
+  })
+  .refine((part) => !!part.part !== !!part.name, "Each part needs either part or name, not both");
+
+const eventParts = z
+  .array(EventPartSchema)
+  .max(EVENT_PARTS_LIMIT)
+  .refine((parts) => new Set(parts.map((part) => partKey(part))).size === parts.length, "parts must not list the same part twice")
+  .describe("The parts it needs (issue #235): instruments, roles or names, with how many");
+
 export const CreateTeamEventSchema = z.strictObject({
   title: requiredText(120),
   date: date("date").describe("Its first date, YYYY-MM-DD"),
@@ -24,6 +39,7 @@ export const CreateTeamEventSchema = z.strictObject({
   place: optional(z.string().trim().max(200)),
   note: optional(z.string().trim().max(1000)),
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
+  parts: optional(eventParts),
 });
 export type CreateTeamEventRequest = z.input<typeof CreateTeamEventSchema>;
 
@@ -37,6 +53,7 @@ export const UpdateTeamEventSchema = z.strictObject({
   place: clearableText(200),
   note: clearableText(1000),
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
+  parts: eventParts.optional(),
 });
 export type UpdateTeamEventRequest = z.input<typeof UpdateTeamEventSchema>;
 

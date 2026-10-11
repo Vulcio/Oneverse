@@ -1050,6 +1050,9 @@ model TeamEvent {
   // Null: a one-off.
   repeatEveryWeeks Int?
   repeatUntil      DateTime? @db.Date
+  // The parts it needs (issue #235, phase 7): [{ part, name, count }] - an
+  // instrument or role key (or custom instrument ID), or a name of its own.
+  parts            Json?
   createdByUserId  String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

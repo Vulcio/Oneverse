@@ -37,7 +37,7 @@ import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { AnswerEventDateRequest, CreateAnswerRequestRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest } from "../requests/events.js";
-import type { AvailabilityAnswer, EventDate, EventRepeat } from "../calendar/index.js";
+import type { AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
@@ -799,6 +799,8 @@ export interface TeamEvent {
   place: string | null;
   note: string | null;
   repeat: EventRepeat | null;
+  /** The parts it needs (issue #235, phase 7). */
+  parts: EventPart[];
 }
 
 /** A date of a team's event, with its set. */
@@ -819,6 +821,9 @@ export interface TeamEventDateSummary extends EventDate {
   myAnswer: MyEventAnswer;
   /** For the team's admins: how its members answered (NONE: no answer yet). */
   counts: Record<AvailabilityAnswer | "NONE", number> | null;
+  /** For the team's admins: how its parts are covered by the answers. */
+  coverage: PartCoverage[] | null;
+  parts: EventPart[];
 }
 
 /** Someone's answer for a date: their own, or Not available on a day they're away (`away`); null when not answered. */
@@ -836,6 +841,7 @@ export interface MemberEventAnswer {
   displayName: string;
   avatarUrl: string | null;
   instruments: string[];
+  techRoles: string[];
   role: TeamRole;
   answer: AvailabilityAnswer | null;
   away: boolean;

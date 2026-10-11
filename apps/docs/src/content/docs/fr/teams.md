@@ -24,6 +24,12 @@ Sous chaque date, dites si vous pouvez jouer : **Disponible**, **Si besoin** (li
 
 Les administrateurs de l'équipe voient, à côté de chaque date, combien de membres sont disponibles, si besoin, pas disponibles, et n'ont pas répondu. Un clic ouvre **Qui peut jouer** : la réponse de chacun, avec ses notes et ses absences. Un administrateur peut y répondre pour un membre qui n'utilise pas Songverse ; c'est marqué comme répondu par lui.
 
+### Postes nécessaires
+
+Dans la fenêtre d'un événement, **Postes nécessaires** liste ce dont il a besoin et combien : **Ajouter un poste** choisit un instrument ou un rôle que chacun indique sous **Rôles** sur son tableau de bord (Ingénieur du son, Opérateur média…), un instrument ajouté par un administrateur, un nom déjà utilisé par l'équipe, ou **Un autre nom…** (« Responsable de louange », « Projection »). Un membre couvre les instruments et rôles qu'il a indiqués ; tout le monde couvre un poste nommé par l'équipe.
+
+Les administrateurs de l'équipe voient alors, à côté de chaque date à venir, ce qui manque : **Manque : Batterie, Ingénieur du son** nomme les postes pour lesquels pas assez de membres qui les couvrent ont répondu **Disponible**. **Qui peut jouer** commence par les postes : qui couvre chacun et est disponible, qui jouerait si besoin, ou **Personne de disponible pour l'instant**.
+
 ### Votre lien de calendrier
 
 Dans **Mon calendrier**, **Lien de calendrier** met les dates où vous êtes inscrit (réponse **Disponible**) dans votre propre calendrier : **Obtenir mon lien de calendrier**, puis **Ajouter à Google Agenda**, **Ajouter à Calendrier Apple** ou **Ajouter à Outlook** - ou **Copier le lien** et l'ajouter à n'importe quelle application de calendrier comme abonnement (« À partir de l'URL », « S'abonner à un calendrier »). Chaque date s'affiche avec son équipe, son lieu et un lien vers sa liste, de trois mois en arrière à un an à l'avance ; les dates annulées en disparaissent.

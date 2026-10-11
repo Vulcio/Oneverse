@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, daysBetween, eventDates, eventFallsOn, localDate, type EventDate, type EventTiming } from "@songverse/core";
+import { addDays, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@songverse/core";
 import type { Prisma } from "@songverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -25,6 +25,11 @@ export function timingOf(event: EventRow): EventTiming {
 
 export function changesOf(event: EventRow) {
   return event.dates.map((row) => ({ date: dateText(row.date), cancelled: row.cancelled, startTime: row.startTime, title: row.title }));
+}
+
+/** The parts an event needs (issue #235, phase 7), as stored. */
+export function partsOf(event: { parts: Prisma.JsonValue }): EventPart[] {
+  return Array.isArray(event.parts) ? (event.parts as unknown as EventPart[]) : [];
 }
 
 export const withDates = { dates: { include: { setlist: { select: { id: true, _count: { select: { items: true } } } } } } } as const;
@@ -95,7 +100,19 @@ export class TeamEventsService {
       place: event.place,
       note: event.note,
       repeat: timingOf(event).repeat ?? null,
+      parts: partsOf(event),
     };
+  }
+
+  /** Parts that name an instrument or role must be one: built in, or an admin's custom instrument. */
+  private async checkParts(parts: EventPart[] | undefined): Promise<Prisma.InputJsonValue | undefined> {
+    if (!parts) return undefined;
+    const keys = parts.map((part) => part.part).filter((key): key is string => !!key);
+    const known = new Set<string>([...INSTRUMENTS, ...TECH_ROLES]);
+    const custom = new Set((await this.prisma.client.customInstrument.findMany({ where: { id: { in: keys.filter((key) => !known.has(key)) } }, select: { id: true } })).map((row) => row.id));
+    const unknown = keys.filter((key) => !known.has(key) && !custom.has(key));
+    if (unknown.length > 0) throw new BadRequestException(unknown.map((key) => `parts: "${key}" isn't an instrument or a role`));
+    return parts.map((part) => (part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }));
   }
 
   async list(teamId: string) {
@@ -127,6 +144,7 @@ export class TeamEventsService {
         note: dto.note || null,
         repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
         repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
+        parts: await this.checkParts(dto.parts),
         createdByUserId: userId,
       },
       include: withDates,
@@ -153,6 +171,7 @@ export class TeamEventsService {
         note: dto.note,
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
+        parts: await this.checkParts(dto.parts),
       },
     });
     const after = await this.find(teamId, eventId);
@@ -236,6 +255,8 @@ export class TeamEventsService {
       songCount: row?.setlist?._count.items ?? 0,
       // When an admin said its set is ready (issue #235).
       setReadyAt: row?.setReadyAt?.toISOString() ?? null,
+      // The parts it needs (issue #235, phase 7).
+      parts: partsOf(event),
     };
   }
 

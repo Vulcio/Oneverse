@@ -24,6 +24,12 @@ Under each date, say whether you can play: **Available**, **If needed** (free if
 
 The team's admins see, beside each date, how many members are available, if needed, not available, and haven't answered. Clicking it opens **Who can play**: everyone's answer, with their notes and days away. An admin can answer there for a member who doesn't use Songverse; it shows as answered by them.
 
+### Parts needed
+
+In an event's dialog, **Parts needed** lists what it needs and how many: **Add a part** picks an instrument or a role people list under **Roles** on their dashboard (Sound engineer, Media operator…), one an admin added, a name the team used before, or **Another name…** ("Worship leader", "Slides"). A member covers the instruments and roles they listed; anyone covers a part with a name of the team's own.
+
+The team's admins then see, beside each coming date, what's short: **Short: Drums, Sound engineer** names the parts that not enough members who cover them have answered **Available**. **Who can play** starts with the parts: who covers each and is available, who would play if needed, or **No one available yet**.
+
 ### Your calendar link
 
 On **My calendar**, **Calendar link** puts the dates you signed up for (answered **Available**) in your own calendar: **Get my calendar link**, then **Add to Google Calendar**, **Add to Apple Calendar** or **Add to Outlook** - or **Copy link** and add it to any calendar app as a subscription ("From URL", "Subscribe to calendar"). Each date shows with its team, place and a link to its set, from three months back to a year ahead; cancelled dates leave it.
