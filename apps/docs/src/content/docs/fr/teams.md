@@ -30,20 +30,28 @@ Dans la fenêtre d'un événement, **Postes nécessaires** liste ce dont il a be
 
 Les administrateurs de l'équipe voient alors, à côté de chaque date à venir, ce qui manque : **Manque : Batterie, Ingénieur du son** nomme les postes pour lesquels pas assez de membres qui les couvrent ont répondu **Disponible**. **Qui peut jouer** commence par les postes : qui couvre chacun et est disponible, qui jouerait si besoin, ou **Personne de disponible pour l'instant**.
 
+### Équipe du jour
+
+Une fois les postes d'une date fixés, ses administrateurs choisissent qui tient quoi : **Équipe du jour** à côté de la date liste chaque poste avec les personnes placées, et **Ajouter quelqu'un** y place un membre - ceux qui le tiennent d'abord, avec leur réponse, puis les autres. Chacun est prévenu et répond dans le calendrier de l'équipe ou **Mon calendrier** : **Prévu : Batterie**, **Accepter** ou **Décliner** (un administrateur qui se place lui-même est accepté d'emblée). Accepter répond aussi **Disponible** pour cette date ; décliner prévient les administrateurs de l'équipe. Un administrateur peut retirer quelqu'un d'un poste ; il est prévenu.
+
+L'équipe du jour signale ce qui coince : quelqu'un **Absent**, qui **A répondu pas disponible**, ou qui **Joue ailleurs à ce moment-là** - sur un autre événement en même temps, de n'importe laquelle de ses équipes. Chaque poste montre combien il en a sur combien il en faut, et **Manque** compte ceux de l'équipe du jour une fois qu'elle existe.
+
+**Qui est inscrit à une date** : une fois son équipe du jour faite, les personnes placées - sollicitées ou ayant accepté, pas celles qui ont décliné ; jusque-là, ceux qui ont répondu **Disponible**. Ce sont eux qui voient sa liste dans leur barre latérale, la trouvent dans leur lien de calendrier, et reçoivent rappels et notifications.
+
 ### Votre lien de calendrier
 
-Dans **Mon calendrier**, **Lien de calendrier** met les dates où vous êtes inscrit (réponse **Disponible**) dans votre propre calendrier : **Obtenir mon lien de calendrier**, puis **Ajouter à Google Agenda**, **Ajouter à Calendrier Apple** ou **Ajouter à Outlook** - ou **Copier le lien** et l'ajouter à n'importe quelle application de calendrier comme abonnement (« À partir de l'URL », « S'abonner à un calendrier »). Chaque date s'affiche avec son équipe, son lieu et un lien vers sa liste, de trois mois en arrière à un an à l'avance ; les dates annulées en disparaissent.
+Dans **Mon calendrier**, **Lien de calendrier** met les dates où vous êtes inscrit (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) dans votre propre calendrier : **Obtenir mon lien de calendrier**, puis **Ajouter à Google Agenda**, **Ajouter à Calendrier Apple** ou **Ajouter à Outlook** - ou **Copier le lien** et l'ajouter à n'importe quelle application de calendrier comme abonnement (« À partir de l'URL », « S'abonner à un calendrier »). Chaque date s'affiche avec son équipe, son lieu et un lien vers sa liste, de trois mois en arrière à un an à l'avance ; les dates annulées en disparaissent.
 
 Le calendrier se met à jour tout seul, mais les applications de calendrier vérifient les changements à leur rythme - toutes les quelques heures (Google peut mettre jusqu'à un jour). Toute personne ayant le lien voit ces dates : gardez-le pour vous. **Réinitialiser le lien** en crée un nouveau et arrête l'ancien ; **Désactiver** le supprime.
 
 ### Les listes que vous voyez
 
-La liste d'une date s'affiche dans votre barre latérale quand vous avez répondu **Disponible** - répondre l'y met, retirer la réponse l'enlève. Les autres dates à venir de l'équipe restent sur la page **Listes de chants** et dans le calendrier de l'équipe. Une fois la date passée, sa liste quitte la barre latérale et la liste : celles auxquelles vous avez participé sont sur la page **Listes de chants** sous **Archives**, et toutes les dates passées sont sur la page de l'équipe sous **Dates passées**. Les listes que vous créez vous-même s'affichent comme avant. Les listes gardées hors ligne suivent la même règle.
+La liste d'une date s'affiche dans votre barre latérale quand vous y êtes inscrit (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) : répondre **Disponible** l'y met, ou être placé dans son équipe du jour, et le retirer l'enlève. Les autres dates à venir de l'équipe restent sur la page **Listes de chants** et dans le calendrier de l'équipe. Une fois la date passée, sa liste quitte la barre latérale et la liste : celles auxquelles vous avez participé sont sur la page **Listes de chants** sous **Archives**, et toutes les dates passées sont sur la page de l'équipe sous **Dates passées**. Les listes que vous créez vous-même s'affichent comme avant. Les listes gardées hors ligne suivent la même règle.
 
 ### Rappels
 
 - **Demander les réponses** (administrateurs) : choisissez les dates (**Du**, **Au**) et **Répondre d'ici le**, puis **Demander**. Les membres qui n'ont pas encore répondu à certaines de ces dates sont prévenus tout de suite - pas ceux absents à ces dates - puis, s'ils n'ont toujours pas répondu, la veille de l'échéance. La demande s'affiche en haut du calendrier pour tous jusqu'à l'échéance ; **Ne plus demander** (×) la retire.
-- **La veille** : chacun de ceux inscrits à une date (réponse **Disponible**) reçoit un rappel la veille, à partir de 18:00 dans le fuseau horaire de l'événement, avec l'heure, le lieu et la liste.
+- **La veille** : chacun de ceux inscrits à une date (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) reçoit un rappel la veille, à partir de 18:00 dans le fuseau horaire de l'événement, avec l'heure, le lieu et la liste.
 - **Dire que la liste est prête** (administrateurs, dans le menu **…** d'une date, une fois sa liste créée) : les personnes inscrites sont prévenues, et la date affiche **Liste prête**. **Le redire** après d'autres changements.
 
 Comme toutes les notifications, ils s'affichent sous la cloche, et par e-mail ou sur vos appareils selon vos choix (voir [Notifications](/fr/account/#notifications)).
@@ -52,7 +60,7 @@ Comme toutes les notifications, ils s'affichent sous la cloche, et par e-mail ou
 
 La cloche en haut de chaque page montre combien de notifications vous n'avez pas lues ; appuyez dessus pour les voir, des plus récentes aux plus anciennes. Appuyer sur l'une d'elles ouvre ce qu'elle concerne et la marque comme lue ; **Tout marquer comme lu** remet le compteur à zéro, et **Voir les plus anciennes** charge les précédentes. Vous êtes prévenu :
 
-- quand une date pour laquelle vous êtes inscrit (réponse **Disponible**) est annulée, ou que son heure ou son titre change - aussi quand tout l'événement change ou est supprimé ;
+- quand une date pour laquelle vous êtes inscrit (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) est annulée, ou que son heure ou son titre change - aussi quand tout l'événement change ou est supprimé ;
 - quand un administrateur de l'équipe répond pour vous, avec sa réponse.
 
 Celui qui fait le changement n'en est pas prévenu. Elles peuvent aussi arriver par e-mail, comme vous le choisissez dans les [réglages de votre compte](/fr/account/#notifications), quand le serveur les envoie.

@@ -36,8 +36,8 @@ import type { SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamR
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { UpdateSetlistItemRequest } from "../requests/sets.js";
-import type { AnswerEventDateRequest, CreateAnswerRequestRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest } from "../requests/events.js";
-import type { AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
+import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest } from "../requests/events.js";
+import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
@@ -824,6 +824,8 @@ export interface TeamEventDateSummary extends EventDate {
   /** For the team's admins: how its parts are covered by the answers. */
   coverage: PartCoverage[] | null;
   parts: EventPart[];
+  /** Who's on which part (issue #235, phase 7). */
+  lineup: LineupPlace[];
 }
 
 /** Someone's answer for a date: their own, or Not available on a day they're away (`away`); null when not answered. */
@@ -851,6 +853,18 @@ export interface MemberEventAnswer {
 }
 
 /** A date of one of someone's teams, on their own calendar. */
+/** Someone on a part for a date (issue #235, phase 7). Notes and clashes are shown to the team's admins and the person. */
+export interface LineupPlace {
+  id: string;
+  userId: string;
+  displayName: string;
+  partKey: string;
+  status: AssignmentStatus;
+  mine: boolean;
+  note: string | null;
+  conflicts: ("AWAY" | "UNAVAILABLE" | "ELSEWHERE")[];
+}
+
 export interface MyEventDate extends EventDate {
   eventId: string;
   title: string;
@@ -865,6 +879,8 @@ export interface MyEventDate extends EventDate {
   setlistId: string | null;
   songCount: number;
   myAnswer: MyEventAnswer;
+  parts: EventPart[];
+  lineup: LineupPlace[];
 }
 
 /** A team admin asking for answers for some dates, by a deadline (issue #235). */
@@ -1862,6 +1878,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     removeMyPushDevice: (id: string) => request<void>(`/users/me/push-subscriptions/${id}`, { method: "DELETE" }),
     testMyPushDevices: () => request<void>("/users/me/push-subscriptions/test", { method: "POST" }),
     markMyNotificationsRead: (ids?: string[]) => request<{ unread: number }>("/users/me/notifications/read", { method: "POST", body: JSON.stringify(ids ? { ids } : {}) }),
+    assignTeamEventPart: (teamId: string, eventId: string, date: string, data: AssignPartRequest) =>
+      request<LineupPlace>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup`, { method: "POST", body: JSON.stringify(data) }),
+    unassignTeamEventPart: (teamId: string, eventId: string, date: string, assignmentId: string) =>
+      request<void>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}`, { method: "DELETE" }),
+    respondTeamEventPart: (teamId: string, eventId: string, date: string, assignmentId: string, data: RespondAssignmentRequest) =>
+      request<{ id: string; status: AssignmentStatus; note: string | null }>(`/teams/${teamId}/events/${eventId}/dates/${date}/lineup/${assignmentId}/response`, { method: "PUT", body: JSON.stringify(data) }),
     listTeamAnswerRequests: (teamId: string) => request<TeamAnswerRequest[]>(`/teams/${teamId}/answer-requests`),
     askTeamForAnswers: (teamId: string, data: CreateAnswerRequestRequest) =>
       request<TeamAnswerRequest & { notified: number }>(`/teams/${teamId}/answer-requests`, { method: "POST", body: JSON.stringify(data) }),

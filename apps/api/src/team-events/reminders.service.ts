@@ -3,6 +3,7 @@ import { addDays, dayBeforeReminderDue, deadlineReminderDue, eventDates, localDa
 import { Prisma } from "@songverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { signedUpFor, signupKey } from "./signups.js";
 import { changesOf, dateText, day, TeamEventsService, timingOf, withDates } from "./team-events.service.js";
 
 type RequestRow = Prisma.TeamAnswerRequestGetPayload<{ include: { createdBy: { select: { displayName: true } } } }>;
@@ -104,7 +105,7 @@ export class RemindersService {
     const [admin, team, people] = await Promise.all([
       this.prisma.client.user.findUnique({ where: { id: by }, select: { displayName: true } }),
       this.teamName(teamId),
-      this.prisma.client.teamEventAnswer.findMany({ where: { eventId, date: day(date), answer: "AVAILABLE" }, select: { userId: true } }),
+      signedUpFor(this.prisma.client, [{ eventId, date }]).then((found) => (found.get(signupKey(eventId, date)) ?? []).map((userId) => ({ userId }))),
     ]);
     const [shown] = eventDates(timingOf(event), date, date, changesOf(event));
     const notified = await this.notifications.notify(
@@ -135,7 +136,7 @@ export class RemindersService {
           if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") continue;
           throw error;
         }
-        const people = await this.prisma.client.teamEventAnswer.findMany({ where: { eventId: event.id, date: day(date.date), answer: "AVAILABLE" }, select: { userId: true } });
+        const people = ((await signedUpFor(this.prisma.client, [{ eventId: event.id, date: date.date }])).get(signupKey(event.id, date.date)) ?? []).map((userId) => ({ userId }));
         const setlist = rows.get(date.date)?.setlist;
         dayBefore += await this.notifications.notify(
           people.map(({ userId }) => ({

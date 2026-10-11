@@ -23,6 +23,12 @@ export const NOTIFICATION_KINDS = [
   "EVENT_TOMORROW",
   // A team admin says the set for a date one signed up for is ready.
   "SET_READY",
+  // A team admin scheduled one on a part for a date: accept or decline.
+  "SCHEDULED",
+  // Someone declined a part they were scheduled on (to the team's admins).
+  "SCHEDULE_DECLINED",
+  // A team admin took one off a part.
+  "UNSCHEDULED",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -42,6 +48,10 @@ export interface NotificationData {
   place?: string;
   /** How many: dates without an answer, songs in a set. */
   count?: number;
+  /** A part: an instrument or role key, put into words in the reader's language. */
+  part?: string;
+  /** A part's own name (a team's, or an admin's custom instrument), when its key has none. */
+  partName?: string;
 }
 
 const fill = (template: string, values: Record<string, string>) => template.replace(/\{\{(\w+)\}\}/g, (_, name: string) => values[name] ?? "");
@@ -49,6 +59,16 @@ const fill = (template: string, values: Record<string, string>) => template.repl
 /** A date as a notification names it: "Sun, Oct 12" / "dim. 12 oct.". */
 export function notificationDate(date: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+}
+
+/** A part in words: its instrument or role in the reader's language, else its own name. */
+function partWords(data: NotificationData, messages: Messages): string {
+  if (data.part) {
+    const roles = messages.roles as { instrument: Record<string, string>; techRole: Record<string, string> };
+    const known = roles.instrument[data.part] ?? roles.techRole[data.part];
+    if (known) return known;
+  }
+  return data.partName ?? data.part ?? "";
 }
 
 /** A notification in words: its title and a line under it, in the language of `messages` (`locale` formats the date). */
@@ -66,6 +86,7 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
     // After the team, when there's one: "Worship team · Main hall".
     place: data.place ? ` · ${data.place}` : "",
     count: data.count === undefined ? "" : String(data.count),
+    part: partWords(data, messages),
   };
   return { title: fill(words.title, values), body: fill(words.body, values) };
 }

@@ -363,6 +363,8 @@ model User {
   notifications       Notification[]
   pushSubscriptions   PushSubscription[]
   answerRequestsMade  TeamAnswerRequest[] @relation("AnswerRequestsMade")
+  assignments         TeamEventAssignment[] @relation("Assignments")
+  assignmentsMade     TeamEventAssignment[] @relation("AssignmentsMade")
   // How each kind of notification reaches them (issue #236): push, email; quiet hours.
   notificationSettings Json?
 
@@ -1062,6 +1064,7 @@ model TeamEvent {
   dates     TeamEventDate[]
   answers   TeamEventAnswer[]
   reminders TeamEventReminder[]
+  lineup    TeamEventAssignment[]
 
   @@index([teamId])
 }
@@ -1164,6 +1167,37 @@ model TeamEventDate {
   setlist Setlist?  @relation(fields: [setlistId], references: [id], onDelete: SetNull)
 
   @@unique([eventId, date])
+}
+
+// Someone scheduled on a part for one date of an event (issue #235, phase
+// 7): asked (PENDING), then ACCEPTED or DECLINED. `partKey` is the part's
+// key in the event's parts (partKey in @songverse/core). Once a date has a
+// line-up, the people on it - not declining - are who signed up for it.
+enum AssignmentStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model TeamEventAssignment {
+  id               String           @id @default(cuid())
+  eventId          String
+  date             DateTime         @db.Date
+  partKey          String
+  userId           String
+  status           AssignmentStatus @default(PENDING)
+  // Their note when answering ("I can do keys instead").
+  note             String?
+  assignedByUserId String?
+  createdAt        DateTime         @default(now())
+  respondedAt      DateTime?
+
+  event      TeamEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user       User      @relation("Assignments", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User?     @relation("AssignmentsMade", fields: [assignedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, date, partKey, userId])
+  @@index([userId, date])
 }
 
 // A reminder sent for one date of an event (issue #235), so it's sent once:

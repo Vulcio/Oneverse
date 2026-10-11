@@ -1,4 +1,4 @@
-import { addDays, localDate, type AwayDays, type MyEventDate } from "@songverse/core";
+import { addDays, localDate, type AwayDays, type CustomInstrument, type MyEventDate } from "@songverse/core";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { MapPin, Repeat } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -7,6 +7,7 @@ import { AwayDaysCard } from "#/components/away-days-card";
 import { CalendarFeedCard } from "#/components/calendar-feed-card";
 import { EntityAvatar } from "#/components/entity-avatar";
 import { EventAnswer } from "#/components/event-answer";
+import { LineupLine, usePartLabel } from "#/components/lineup";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
@@ -34,6 +35,11 @@ function MyCalendarPage() {
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
   const [dates, setDates] = useState<MyEventDate[] | null>(null);
   const [away, setAway] = useState<AwayDays[]>([]);
+  const [customInstruments, setCustomInstruments] = useState<CustomInstrument[]>([]);
+  const partLabel = usePartLabel(customInstruments);
+  useEffect(() => {
+    void apiClient.listCustomInstruments().then(setCustomInstruments, () => {});
+  }, []);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -117,6 +123,9 @@ function MyCalendarPage() {
                             onClear={() => act(() => apiClient.clearTeamEventDateAnswer(date.teamId, date.eventId, date.date))}
                           />
                         </div>
+                      ) : null}
+                      {!date.cancelled ? (
+                        <LineupLine teamId={date.teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} onChanged={() => act(async () => {})} />
                       ) : null}
                     </div>
                     {!date.cancelled && date.setlistId ? (

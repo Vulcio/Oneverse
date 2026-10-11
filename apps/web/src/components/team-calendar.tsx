@@ -15,8 +15,8 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { NativeSelect } from "#/components/ui/native-select";
 import { Textarea } from "#/components/ui/textarea";
+import { LineupDialog, LineupLine, usePartLabel } from "#/components/lineup";
 import { apiClient } from "#/lib/api-client";
-import { useInstrumentLabel } from "#/lib/instruments";
 import { formatSetDate } from "#/lib/setlists";
 import { cn } from "#/lib/utils";
 
@@ -25,15 +25,6 @@ const SHOWN_WEEKS = 8;
 
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
-/** A part's name (issue #235, phase 7): its instrument or role in the reader's language, or the team's own name for it. */
-function usePartLabel(customInstruments: readonly CustomInstrument[]): (part: EventPart) => string {
-  const { t } = useTranslation();
-  const instrumentLabel = useInstrumentLabel(customInstruments);
-  return (part) => {
-    if (!part.part) return part.name ?? "";
-    return (TECH_ROLES as readonly string[]).includes(part.part) ? t(`roles.techRole.${part.part}`) : instrumentLabel(part.part);
-  };
-}
 
 /**
  * A team's calendar (issue #235): its coming dates, every event's, each
@@ -55,6 +46,8 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
   const [events, setEvents] = useState<TeamEvent[]>([]);
   const [editing, setEditing] = useState<TeamEvent | "new" | null>(null);
   const [answersOf, setAnswersOf] = useState<TeamEventDateSummary | null>(null);
+  // The date whose line-up is open, by event and date: shown fresh from `dates` after each change.
+  const [lineupOf, setLineupOf] = useState<{ eventId: string; date: string } | null>(null);
   const [requests, setRequests] = useState<TeamAnswerRequest[]>([]);
   const [asking, setAsking] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -205,7 +198,16 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                           onClear={() => act(() => apiClient.clearTeamEventDateAnswer(teamId, date.eventId, date.date))}
                         />
                         {date.counts ? <AnswerCounts counts={date.counts} onOpen={() => setAnswersOf(date)} /> : null}
+                        {isAdmin && date.parts.length > 0 ? (
+                          <Button variant="outline" size="sm" className="h-7" onClick={() => setLineupOf({ eventId: date.eventId, date: date.date })} data-testid="calendar-lineup">
+                            <Users />
+                            {t("teamCalendar.lineup")}
+                          </Button>
+                        ) : null}
                       </div>
+                    ) : null}
+                    {!date.cancelled ? (
+                      <LineupLine teamId={teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} onChanged={() => act(async () => {})} />
                     ) : null}
                   </div>
                   {!date.cancelled && date.setlistId ? (
@@ -306,6 +308,22 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
           }}
         />
       ) : null}
+      {(() => {
+        const open = lineupOf && dates?.find((one) => one.eventId === lineupOf.eventId && one.date === lineupOf.date);
+        return open ? (
+          <LineupDialog
+            teamId={teamId}
+            eventId={open.eventId}
+            date={open.date}
+            title={`${open.title}, ${dayFormat.format(new Date(`${open.date}T12:00:00Z`))}`}
+            parts={open.parts}
+            lineup={open.lineup}
+            partLabel={partLabel}
+            onChanged={load}
+            onClose={() => setLineupOf(null)}
+          />
+        ) : null;
+      })()}
       {asking ? (
         <AskDialog
           teamId={teamId}

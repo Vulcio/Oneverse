@@ -30,20 +30,28 @@ In an event's dialog, **Parts needed** lists what it needs and how many: **Add a
 
 The team's admins then see, beside each coming date, what's short: **Short: Drums, Sound engineer** names the parts that not enough members who cover them have answered **Available**. **Who can play** starts with the parts: who covers each and is available, who would play if needed, or **No one available yet**.
 
+### Line-up
+
+Once a date's parts are set, its admins choose who plays what: **Line-up** beside the date lists each part with the people on it, and **Add someone** puts a member on it - those who play it first, with their answer, then the others. Each person is told and answers on the team's calendar or **My calendar**: **You're on Drums**, **Accept** or **Decline** (an admin putting themselves on a part is accepted at once). Accepting also answers **Available** for that date; declining tells the team's admins. An admin can take someone off a part; they're told.
+
+The line-up flags what clashes: someone **Away**, who **Said not available**, or **Playing elsewhere then** - on another event at the same time, of any of their teams. Each part shows how many it has of how many it needs, and **Short** counts those on the line-up once a date has one.
+
+**Who's signed up for a date**: once it has a line-up, the people on it - asked or accepted, not declining; until then, those who answered **Available**. That's who sees its set in their sidebar, finds it in their calendar link, and is reminded and told about it.
+
 ### Your calendar link
 
-On **My calendar**, **Calendar link** puts the dates you signed up for (answered **Available**) in your own calendar: **Get my calendar link**, then **Add to Google Calendar**, **Add to Apple Calendar** or **Add to Outlook** - or **Copy link** and add it to any calendar app as a subscription ("From URL", "Subscribe to calendar"). Each date shows with its team, place and a link to its set, from three months back to a year ahead; cancelled dates leave it.
+On **My calendar**, **Calendar link** puts the dates you signed up for (see [Line-up](/teams/#line-up)) in your own calendar: **Get my calendar link**, then **Add to Google Calendar**, **Add to Apple Calendar** or **Add to Outlook** - or **Copy link** and add it to any calendar app as a subscription ("From URL", "Subscribe to calendar"). Each date shows with its team, place and a link to its set, from three months back to a year ahead; cancelled dates leave it.
 
 The calendar keeps itself up to date, but calendar apps look for changes on their own schedule - every few hours (Google can take up to a day). Anyone with the link can see those dates, so keep it to yourself: **Reset link** makes a new one and stops the old one; **Turn off** removes it.
 
 ### Which sets you see
 
-A date's set shows in your sidebar when you've said you're **Available** for it - answering puts it there, taking the answer back removes it. The team's other coming dates are still on the **Sets** page and the team's calendar. Once a date is over, its set leaves the sidebar and the list: the ones you took part in are on the **Sets** page under **Archive**, and every past date is on the team's page under **Past dates**. Sets you make yourself are listed as before. Sets kept for offline use follow the same rule.
+A date's set shows in your sidebar when you're signed up for it (see [Line-up](/teams/#line-up)): answering **Available** puts it there, or being put on its line-up, and taking that back removes it. The team's other coming dates are still on the **Sets** page and the team's calendar. Once a date is over, its set leaves the sidebar and the list: the ones you took part in are on the **Sets** page under **Archive**, and every past date is on the team's page under **Past dates**. Sets you make yourself are listed as before. Sets kept for offline use follow the same rule.
 
 ### Reminders
 
 - **Ask for answers** (admins): choose the dates (**From**, **To**) and **Answer by**, then **Ask**. Members with some of those dates still unanswered are told straight away - not those away for them - and, if they still haven't answered, reminded the day before the deadline. The request shows at the top of the calendar for everyone until the deadline is over; **Stop asking** (×) removes it.
-- **The day before**: everyone signed up for a date (answered **Available**) is reminded the day before, from 18:00 in the event's time zone, with its time, place and set.
+- **The day before**: everyone signed up for a date (see [Line-up](/teams/#line-up)) is reminded the day before, from 18:00 in the event's time zone, with its time, place and set.
 - **Tell them the set is ready** (admins, in a date's **…** menu, once it has a set): the people signed up are told, and the date shows **Set ready**. **Tell them again** after more changes.
 
 Like every notification, they show under the bell, and by email or on your devices as you choose (see [Notifications](/account/#notifications)).
@@ -52,7 +60,7 @@ Like every notification, they show under the bell, and by email or on your devic
 
 The bell at the top of every page shows how many notifications you haven't read; press it for the list, newest first. Pressing one opens what it's about and marks it read; **Mark all as read** clears the count, and **Show older** loads earlier ones. You're told:
 
-- when a date you signed up for (answered **Available**) is cancelled, or its time or title changes - also when the whole event changes or is deleted;
+- when a date you signed up for (see [Line-up](/teams/#line-up)) is cancelled, or its time or title changes - also when the whole event changes or is deleted;
 - when a team admin answers for you, with their answer.
 
 Whoever made the change isn't told about it. They can also come by email, as you choose in your [account settings](/account/#notifications), when the server sends them.

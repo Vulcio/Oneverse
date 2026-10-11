@@ -3,7 +3,8 @@ import { AVAILABILITY_ANSWERS, partCoverage, type EventPart, daysBetween, effect
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
-import { changesOf, dateText, day, timingOf, withDates, type EventRow } from "./team-events.service.js";
+import { placesElsewhere, type LineupConflict } from "./lineup.service.js";
+import { changesOf, dateText, day, partsOf, timingOf, withDates, type EventRow } from "./team-events.service.js";
 
 /** The longest range of dates asked for at once. */
 const MAX_RANGE_DAYS = 400;
@@ -40,19 +41,35 @@ export class AvailabilityService {
    * counts among its members and how its parts are covered (issue #235,
    * phase 7). Dates come from TeamEventsService.dates().
    */
-  async withAnswers<T extends { eventId: string; date: string; parts?: EventPart[] }>(teamId: string, viewerId: string, isAdmin: boolean, dates: T[]) {
+  async withAnswers<T extends { eventId: string; date: string; startsAt: string; endsAt: string; parts?: EventPart[] }>(teamId: string, viewerId: string, isAdmin: boolean, dates: T[]) {
     if (dates.length === 0) return [];
     const from = dates.reduce((min, d) => (d.date < min ? d.date : min), dates[0]!.date);
     const to = dates.reduce((max, d) => (d.date > max ? d.date : max), dates[0]!.date);
     const memberRows = isAdmin ? await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }) : [];
     const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
     const userIds = members.includes(viewerId) ? members : [...members, viewerId];
-    const [answers, away] = await Promise.all([
+    const [answers, away, lineupRows] = await Promise.all([
       this.prisma.client.teamEventAnswer.findMany({
         where: { eventId: { in: [...new Set(dates.map((d) => d.eventId))] }, date: { gte: day(from), lte: day(to) }, userId: { in: userIds } },
       }),
       this.awayOf(userIds, from, to),
+      this.prisma.client.teamEventAssignment.findMany({
+        where: { eventId: { in: [...new Set(dates.map((d) => d.eventId))] }, date: { gte: day(from), lte: day(to) } },
+        include: { user: { select: { displayName: true } } },
+        orderBy: { createdAt: "asc" },
+      }),
     ]);
+    // For the admins: the places that clash with another of the person's, at the same time.
+    const dateOf = new Map(dates.map((d) => [key(d.eventId, d.date), d]));
+    const elsewhere = isAdmin
+      ? await placesElsewhere(
+          this.prisma.client,
+          lineupRows.flatMap((row) => {
+            const when = dateOf.get(key(row.eventId, dateText(row.date)));
+            return when && row.status !== "DECLINED" ? [{ id: row.id, userId: row.userId, eventId: row.eventId, date: when.date, startsAt: when.startsAt, endsAt: when.endsAt }] : [];
+          }),
+        )
+      : new Set<string>();
     const byDate = new Map<string, typeof answers>();
     for (const answer of answers) {
       const k = key(answer.eventId, dateText(answer.date));
@@ -62,18 +79,34 @@ export class AvailabilityService {
       const given = byDate.get(key(date.eventId, date.date)) ?? [];
       const mine = given.find((answer) => answer.userId === viewerId);
       const myAnswer = { ...effectiveAnswer(mine?.answer ?? null, away.get(viewerId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId };
+      const placed = lineupRows.filter((row) => row.eventId === date.eventId && dateText(row.date) === date.date);
       let counts: AnswerCounts | null = null;
       let coverage: ReturnType<typeof partCoverage> | null = null;
+      const shownOf = new Map<string, { answer: AvailabilityAnswer | null; away: boolean }>();
       if (isAdmin) {
         counts = { AVAILABLE: 0, IF_NEEDED: 0, UNAVAILABLE: 0, NONE: 0 };
         const answered = memberRows.map(({ userId, user }) => {
           const own = given.find((answer) => answer.userId === userId)?.answer ?? null;
-          return { ...user, answer: effectiveAnswer(own, away.get(userId) ?? [], date.date).answer };
+          const shown = effectiveAnswer(own, away.get(userId) ?? [], date.date);
+          shownOf.set(userId, shown);
+          return { ...user, answer: shown.answer };
         });
         for (const member of answered) counts[member.answer ?? "NONE"]++;
-        if (date.parts?.length) coverage = partCoverage(date.parts, answered);
+        if (date.parts?.length) coverage = partCoverage(date.parts, answered, placed);
       }
-      return { ...date, myAnswer, counts, coverage };
+      // Who's on which part (issue #235, phase 7): for everyone; their notes and the clashes, for the admins and themselves.
+      const lineup = placed.map((row) => {
+        const mine = row.userId === viewerId;
+        const conflicts: LineupConflict[] = [];
+        if (isAdmin && row.status !== "DECLINED") {
+          const shown = shownOf.get(row.userId);
+          if (shown?.away) conflicts.push("AWAY");
+          else if (shown?.answer === "UNAVAILABLE") conflicts.push("UNAVAILABLE");
+          if (elsewhere.has(row.id)) conflicts.push("ELSEWHERE");
+        }
+        return { id: row.id, userId: row.userId, displayName: row.user.displayName, partKey: row.partKey, status: row.status, mine, note: isAdmin || mine ? row.note : null, conflicts };
+      });
+      return { ...date, myAnswer, counts, coverage, lineup };
     });
   }
 
@@ -180,9 +213,14 @@ export class AvailabilityService {
     if (daysBetween(from, to) > MAX_RANGE_DAYS) throw new BadRequestException([`to must be at most ${MAX_RANGE_DAYS} days after from`]);
     const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, role: true, team: { select: { name: true, color: true, avatarUrl: true } } } });
     const events = await this.prisma.client.teamEvent.findMany({ where: { teamId: { in: memberships.map((m) => m.teamId) } }, include: withDates });
-    const [answers, away] = await Promise.all([
+    const [answers, away, lineupRows] = await Promise.all([
       this.prisma.client.teamEventAnswer.findMany({ where: { userId, eventId: { in: events.map((e) => e.id) }, date: { gte: day(from), lte: day(to) } } }),
       this.awayOf([userId], from, to),
+      this.prisma.client.teamEventAssignment.findMany({
+        where: { eventId: { in: events.map((e) => e.id) }, date: { gte: day(from), lte: day(to) } },
+        include: { user: { select: { displayName: true } } },
+        orderBy: { createdAt: "asc" },
+      }),
     ]);
     const answerOf = new Map(answers.map((answer) => [key(answer.eventId, dateText(answer.date)), answer]));
     return events
@@ -207,6 +245,11 @@ export class AvailabilityService {
             setlistId: row?.setlist?.id ?? null,
             songCount: row?.setlist?._count.items ?? 0,
             myAnswer: { ...effectiveAnswer(mine?.answer ?? null, away.get(userId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId },
+            parts: partsOf(event),
+            // Who's on which part; one's own place to accept or decline.
+            lineup: lineupRows
+              .filter((row) => row.eventId === event.id && dateText(row.date) === date.date)
+              .map((row) => ({ id: row.id, userId: row.userId, displayName: row.user.displayName, partKey: row.partKey, status: row.status, mine: row.userId === userId, note: row.userId === userId ? row.note : null, conflicts: [] as LineupConflict[] })),
           };
         });
       })

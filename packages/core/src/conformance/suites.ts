@@ -31,7 +31,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { coversPart, partCoverage, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { coversPart, partCoverage, signedUpPeople, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import type { z } from "zod";
 
 /**
@@ -1233,6 +1233,8 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "answers due, in French", args: ["ANSWER_DEADLINE", { team: "Louange", deadline: "2026-10-20", count: 3 }, "fr"] },
           { name: "tomorrow, with a place", args: ["EVENT_TOMORROW", { event: "Morning service", date: "2026-10-18", team: "Worship team", startTime: "10:00", place: "Main hall" }, "en"] },
           { name: "tomorrow, without one", args: ["EVENT_TOMORROW", { event: "Morning service", date: "2026-10-18", team: "Worship team", startTime: "10:00" }, "en"] },
+          { name: "scheduled, in French: the part in their words", args: ["SCHEDULED", { event: "Culte", date: "2026-10-18", team: "Louange", part: "DRUMS" }, "fr"] },
+          { name: "a part with its own name", args: ["SCHEDULE_DECLINED", { event: "Morning service", date: "2026-10-18", team: "Worship team", partName: "Slides", by: "Sam" }, "en"] },
           { name: "the set is ready", args: ["SET_READY", { event: "Morning service", date: "2026-10-18", team: "Worship team", count: 6 }, "en"] },
         ],
       },
@@ -1280,6 +1282,26 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a named part: anyone", args: [{ instruments: [], techRoles: [] }, { name: "Worship leader", count: 1 }] },
         ],
       },
+      signedUpPeople: {
+        about: "Who signed up for a date: once it has a line-up (someone scheduled, not declining), the people scheduled - asked or accepted; until then, those who answered Available.",
+        params: ["answers", "lineup"],
+        run: signedUpPeople,
+        cases: [
+          { name: "no line-up: those available", args: [[{ userId: "a", answer: "AVAILABLE" }, { userId: "b", answer: "IF_NEEDED" }], []] },
+          {
+            name: "a line-up: those scheduled, whatever they answered",
+            args: [
+              [{ userId: "a", answer: "AVAILABLE" }, { userId: "b", answer: "IF_NEEDED" }],
+              [
+                { userId: "b", status: "PENDING" },
+                { userId: "c", status: "ACCEPTED" },
+                { userId: "a", status: "DECLINED" },
+              ],
+            ],
+          },
+          { name: "everyone scheduled declined: back to those available", args: [[{ userId: "a", answer: "AVAILABLE" }], [{ userId: "b", status: "DECLINED" }]] },
+        ],
+      },
       partCoverage: {
         about: "How a date's parts are covered by the members' answers: per part, those covering it available or if needed, and how many it's short.",
         params: ["parts", "members"],
@@ -1300,6 +1322,20 @@ export const CONFORMANCE: ConformanceArea[] = [
                 { instruments: ["BACKING_VOCALS"], techRoles: [], answer: "IF_NEEDED" },
                 { instruments: ["DRUMS"], techRoles: [], answer: "UNAVAILABLE" },
                 { instruments: [], techRoles: ["SOUND_ENGINEER"], answer: null },
+              ],
+            ],
+          },
+          {
+            name: "with a line-up: short of who's scheduled",
+            args: [
+              [
+                { part: "DRUMS", count: 1 },
+                { part: "BACKING_VOCALS", count: 2 },
+              ],
+              [{ instruments: ["DRUMS", "BACKING_VOCALS"], techRoles: [], answer: "AVAILABLE" }],
+              [
+                { partKey: "BACKING_VOCALS", status: "ACCEPTED" },
+                { partKey: "BACKING_VOCALS", status: "DECLINED" },
               ],
             ],
           },

@@ -3,6 +3,7 @@ import { addDays, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate,
 import type { Prisma } from "@songverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { signedUpFor, signupKey } from "./signups.js";
 import type { CreateTeamEventDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
 
 /** The longest range of dates asked for at once. */
@@ -48,10 +49,16 @@ export class TeamEventsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  /** Who signed up (answered Available) for an event's coming dates, from `today`: each date and its people. */
+  /** Who signed up for an event's coming dates, from `today` (signedUpFor): each date and its people. */
   private async signedUp(eventId: string, today: string): Promise<{ date: string; userId: string }[]> {
-    const rows = await this.prisma.client.teamEventAnswer.findMany({ where: { eventId, answer: "AVAILABLE", date: { gte: day(today) } }, select: { date: true, userId: true } });
-    return rows.map((row) => ({ date: dateText(row.date), userId: row.userId }));
+    const where = { eventId, date: { gte: day(today) } };
+    const [answers, lineup] = await Promise.all([
+      this.prisma.client.teamEventAnswer.findMany({ where: { ...where, answer: "AVAILABLE" }, select: { date: true } }),
+      this.prisma.client.teamEventAssignment.findMany({ where, select: { date: true } }),
+    ]);
+    const dates = [...new Set([...answers, ...lineup].map((row) => dateText(row.date)))];
+    const people = await signedUpFor(this.prisma.client, dates.map((date) => ({ eventId, date })));
+    return dates.flatMap((date) => (people.get(signupKey(eventId, date)) ?? []).map((userId) => ({ date, userId })));
   }
 
   private async teamName(teamId: string): Promise<string> {

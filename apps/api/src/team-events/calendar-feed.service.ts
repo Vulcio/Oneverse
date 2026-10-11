@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { addDays, calendarFeed, eventDates, localDate, type CalendarFeedEntry } from "@songverse/core";
 import { createHash, randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { signedUpFor, signupKey } from "./signups.js";
 import { changesOf, dateText, timingOf, withDates } from "./team-events.service.js";
 
 /** How far back and ahead a feed lists the dates signed up for. */
@@ -51,10 +52,16 @@ export class CalendarFeedService {
     const today = new Date().toISOString().slice(0, 10);
     const from = addDays(today, -BACK_DAYS);
     const to = addDays(today, AHEAD_DAYS);
-    const answers = await this.prisma.client.teamEventAnswer.findMany({
-      where: { userId, answer: "AVAILABLE", date: { gte: new Date(`${from}T00:00:00Z`), lte: new Date(`${to}T00:00:00Z`) }, event: { team: { memberships: { some: { userId } } } } },
-      select: { eventId: true, date: true },
-    });
+    // The dates they might have signed up for - answered Available, or scheduled on - then the rule (signedUpFor).
+    const range = { userId, date: { gte: new Date(`${from}T00:00:00Z`), lte: new Date(`${to}T00:00:00Z`) } };
+    const [available, scheduled] = await Promise.all([
+      this.prisma.client.teamEventAnswer.findMany({ where: { ...range, answer: "AVAILABLE", event: { team: { memberships: { some: { userId } } } } }, select: { eventId: true, date: true } }),
+      this.prisma.client.teamEventAssignment.findMany({ where: { ...range, status: { not: "DECLINED" } }, select: { eventId: true, date: true } }),
+    ]);
+    const signedUp = await signedUpFor(this.prisma.client, [...available, ...scheduled].map((row) => ({ eventId: row.eventId, date: dateText(row.date) })));
+    const answers = [...new Map([...available, ...scheduled].map((row) => [signupKey(row.eventId, dateText(row.date)), row])).values()].filter((row) =>
+      signedUp.get(signupKey(row.eventId, dateText(row.date)))?.includes(userId),
+    );
     const events = await this.prisma.client.teamEvent.findMany({
       where: { id: { in: [...new Set(answers.map((answer) => answer.eventId))] } },
       include: { ...withDates, team: { select: { name: true } } },

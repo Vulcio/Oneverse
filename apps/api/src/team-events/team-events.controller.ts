@@ -6,9 +6,10 @@ import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { AnswerEventDateDto, CreateAnswerRequestDto, CreateTeamEventDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
+import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RespondAssignmentDto, CreateTeamEventDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AvailabilityService } from "./availability.service.js";
+import { LineupService } from "./lineup.service.js";
 import { RemindersService } from "./reminders.service.js";
 import { TeamEventsService } from "./team-events.service.js";
 
@@ -30,6 +31,7 @@ export class TeamEventsController {
     private readonly events: TeamEventsService,
     private readonly availability: AvailabilityService,
     private readonly reminders: RemindersService,
+    private readonly lineup: LineupService,
     private readonly access: AccessPolicyService,
   ) {}
 
@@ -131,6 +133,37 @@ export class TeamEventsController {
   }
 
   /** A date's set now, however far ahead: to plan it. */
+  /** A member put on a part for a date (issue #235, phase 7): they're asked, and told. */
+  @Post("events/:eventId/dates/:date/lineup")
+  @UseGuards(TeamAdminGuard)
+  assign(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: AssignPartDto) {
+    if (!user) throw new UnauthorizedException();
+    return this.lineup.assign(teamId, eventId, dateParam(date), dto, user.id);
+  }
+
+  @Delete("events/:eventId/dates/:date/lineup/:assignmentId")
+  @UseGuards(TeamAdminGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  unassign(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
+    if (!user) throw new UnauthorizedException();
+    return this.lineup.unassign(teamId, eventId, dateParam(date), assignmentId, user.id);
+  }
+
+  /** The person scheduled accepts or declines their place. */
+  @Put("events/:eventId/dates/:date/lineup/:assignmentId/response")
+  @UseGuards(TeamMemberGuard)
+  respond(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param("teamId") teamId: string,
+    @Param("eventId") eventId: string,
+    @Param("date") date: string,
+    @Param("assignmentId") assignmentId: string,
+    @Body() dto: RespondAssignmentDto,
+  ) {
+    if (!user) throw new UnauthorizedException();
+    return this.lineup.respond(teamId, eventId, dateParam(date), assignmentId, user.id, dto);
+  }
+
   /** The set for a date is ready: the people signed up for it are told (issue #235). */
   @Post("events/:eventId/dates/:date/set-ready")
   @UseGuards(TeamAdminGuard)

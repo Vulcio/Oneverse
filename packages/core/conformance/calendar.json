@@ -518,6 +518,41 @@
           }
         },
         {
+          "name": "scheduled, in French: the part in their words",
+          "args": [
+            "SCHEDULED",
+            {
+              "event": "Culte",
+              "date": "2026-10-18",
+              "team": "Louange",
+              "part": "DRUMS"
+            },
+            "fr"
+          ],
+          "expected": {
+            "title": "Batterie : vous êtes prévu pour Culte du dim. 18 oct.",
+            "body": "Louange - acceptez ou déclinez dans Mon calendrier"
+          }
+        },
+        {
+          "name": "a part with its own name",
+          "args": [
+            "SCHEDULE_DECLINED",
+            {
+              "event": "Morning service",
+              "date": "2026-10-18",
+              "team": "Worship team",
+              "partName": "Slides",
+              "by": "Sam"
+            },
+            "en"
+          ],
+          "expected": {
+            "title": "Sam can't play Slides on Sun, Oct 18",
+            "body": "Morning service, Worship team"
+          }
+        },
+        {
           "name": "the set is ready",
           "args": [
             "SET_READY",
@@ -579,6 +614,18 @@
             "SET_READY": {
               "email": true,
               "push": true
+            },
+            "SCHEDULED": {
+              "email": true,
+              "push": true
+            },
+            "SCHEDULE_DECLINED": {
+              "email": true,
+              "push": true
+            },
+            "UNSCHEDULED": {
+              "email": true,
+              "push": true
             }
           }
         },
@@ -630,6 +677,18 @@
               "push": true
             },
             "SET_READY": {
+              "email": true,
+              "push": true
+            },
+            "SCHEDULED": {
+              "email": true,
+              "push": true
+            },
+            "SCHEDULE_DECLINED": {
+              "email": true,
+              "push": true
+            },
+            "UNSCHEDULED": {
               "email": true,
               "push": true
             }
@@ -691,6 +750,18 @@
                 "push": true
               },
               "SET_READY": {
+                "email": true,
+                "push": true
+              },
+              "SCHEDULED": {
+                "email": true,
+                "push": true
+              },
+              "SCHEDULE_DECLINED": {
+                "email": true,
+                "push": true
+              },
+              "UNSCHEDULED": {
                 "email": true,
                 "push": true
               }
@@ -844,6 +915,87 @@
         }
       ]
     },
+    "signedUpPeople": {
+      "about": "Who signed up for a date: once it has a line-up (someone scheduled, not declining), the people scheduled - asked or accepted; until then, those who answered Available.",
+      "params": [
+        "answers",
+        "lineup"
+      ],
+      "cases": [
+        {
+          "name": "no line-up: those available",
+          "args": [
+            [
+              {
+                "userId": "a",
+                "answer": "AVAILABLE"
+              },
+              {
+                "userId": "b",
+                "answer": "IF_NEEDED"
+              }
+            ],
+            []
+          ],
+          "expected": [
+            "a"
+          ]
+        },
+        {
+          "name": "a line-up: those scheduled, whatever they answered",
+          "args": [
+            [
+              {
+                "userId": "a",
+                "answer": "AVAILABLE"
+              },
+              {
+                "userId": "b",
+                "answer": "IF_NEEDED"
+              }
+            ],
+            [
+              {
+                "userId": "b",
+                "status": "PENDING"
+              },
+              {
+                "userId": "c",
+                "status": "ACCEPTED"
+              },
+              {
+                "userId": "a",
+                "status": "DECLINED"
+              }
+            ]
+          ],
+          "expected": [
+            "b",
+            "c"
+          ]
+        },
+        {
+          "name": "everyone scheduled declined: back to those available",
+          "args": [
+            [
+              {
+                "userId": "a",
+                "answer": "AVAILABLE"
+              }
+            ],
+            [
+              {
+                "userId": "b",
+                "status": "DECLINED"
+              }
+            ]
+          ],
+          "expected": [
+            "a"
+          ]
+        }
+      ]
+    },
     "partCoverage": {
       "about": "How a date's parts are covered by the members' answers: per part, those covering it available or if needed, and how many it's short.",
       "params": [
@@ -916,6 +1068,7 @@
               "count": 1,
               "available": 1,
               "ifNeeded": 0,
+              "scheduled": 0,
               "missing": 0
             },
             {
@@ -925,6 +1078,7 @@
               "count": 2,
               "available": 1,
               "ifNeeded": 1,
+              "scheduled": 0,
               "missing": 1
             },
             {
@@ -934,6 +1088,7 @@
               "count": 1,
               "available": 0,
               "ifNeeded": 0,
+              "scheduled": 0,
               "missing": 1
             },
             {
@@ -943,6 +1098,7 @@
               "count": 1,
               "available": 0,
               "ifNeeded": 0,
+              "scheduled": 0,
               "missing": 1
             },
             {
@@ -952,7 +1108,65 @@
               "count": 1,
               "available": 1,
               "ifNeeded": 1,
+              "scheduled": 0,
               "missing": 0
+            }
+          ]
+        },
+        {
+          "name": "with a line-up: short of who's scheduled",
+          "args": [
+            [
+              {
+                "part": "DRUMS",
+                "count": 1
+              },
+              {
+                "part": "BACKING_VOCALS",
+                "count": 2
+              }
+            ],
+            [
+              {
+                "instruments": [
+                  "DRUMS",
+                  "BACKING_VOCALS"
+                ],
+                "techRoles": [],
+                "answer": "AVAILABLE"
+              }
+            ],
+            [
+              {
+                "partKey": "BACKING_VOCALS",
+                "status": "ACCEPTED"
+              },
+              {
+                "partKey": "BACKING_VOCALS",
+                "status": "DECLINED"
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "key": "DRUMS",
+              "part": "DRUMS",
+              "name": null,
+              "count": 1,
+              "available": 1,
+              "ifNeeded": 0,
+              "scheduled": 0,
+              "missing": 1
+            },
+            {
+              "key": "BACKING_VOCALS",
+              "part": "BACKING_VOCALS",
+              "name": null,
+              "count": 2,
+              "available": 1,
+              "ifNeeded": 0,
+              "scheduled": 1,
+              "missing": 1
             }
           ]
         }

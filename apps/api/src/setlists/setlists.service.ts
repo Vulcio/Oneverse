@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { type SavedDisplaySettings, chartEdgeChords, isPastDate, signedUp, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue } from "@songverse/core";
+import { type SavedDisplaySettings, chartEdgeChords, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue } from "@songverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { signedUpFor, signupKey } from "../team-events/signups.js";
 import { songbookReferencesOf } from "../songbooks/songbook-references.js";
 import type {
   AddSetlistItemDto,
@@ -87,13 +88,8 @@ export class SetlistsService {
     const memberTeams = new Set(memberships.map((m) => m.teamId));
     // An event's set (issue #235): whether the viewer signed up for its date, and whether it's over.
     const eventDates = rows.flatMap((set) => (set.eventDateOf ? [set.eventDateOf] : []));
-    const answers = eventDates.length
-      ? await this.prisma.client.teamEventAnswer.findMany({
-          where: { userId: user.id, OR: eventDates.map((date) => ({ eventId: date.eventId, date: date.date })) },
-          select: { eventId: true, date: true, answer: true },
-        })
-      : [];
-    const signedUpFor = new Set(answers.filter((answer) => signedUp(answer.answer)).map((answer) => `${answer.eventId}|${answer.date.toISOString()}`));
+    // Scheduled on it once it has a line-up, else answered Available (signedUpFor).
+    const people = await signedUpFor(this.prisma.client, eventDates.map((date) => ({ eventId: date.eventId, date: date.date.toISOString().slice(0, 10) })));
     const now = new Date();
     const adminTeams = new Set(memberships.filter((m) => m.role === "ADMIN").map((m) => m.teamId));
 
@@ -105,7 +101,7 @@ export class SetlistsService {
         canEdit: user.isGlobalAdmin || set.ownerUserId === user.id || (!!set.ownerTeamId && adminTeams.has(set.ownerTeamId)),
         isGuest,
         ...(set.eventDateOf && {
-          signedUp: signedUpFor.has(`${set.eventDateOf.eventId}|${set.eventDateOf.date.toISOString()}`),
+          signedUp: !!people.get(signupKey(set.eventDateOf.eventId, set.eventDateOf.date.toISOString().slice(0, 10)))?.includes(user.id),
           past: isPastDate(set.eventDateOf.date.toISOString().slice(0, 10), now, set.eventDateOf.event.timeZone),
         }),
       };
