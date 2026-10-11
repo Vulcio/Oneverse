@@ -113,7 +113,8 @@ function MyCalendarPage() {
                           </span>
                         ) : null}
                       </div>
-                      {!date.cancelled ? (
+                      {/* A guest on another team's line-up answers for their place, not the date. */}
+                      {!date.cancelled && !date.guest ? (
                         <div className="mt-1">
                           <EventAnswer
                             value={date.myAnswer}

@@ -116,11 +116,18 @@ export const CreateAnswerRequestSchema = z
   .refine((request) => request.deadline <= request.to, { message: "deadline must not be after to", path: ["deadline"] });
 export type CreateAnswerRequestRequest = z.input<typeof CreateAnswerRequestSchema>;
 
-/** Someone scheduled on a part for a date (issue #235, phase 7): a member, and the part's key (partKey). */
-export const AssignPartSchema = z.strictObject({
-  userId: z.string().trim().min(1).max(64),
-  part: z.string().trim().min(1).max(80).describe("The part's key: its instrument or role, or name: and its name"),
-});
+/**
+ * Someone scheduled on a part for a date (issue #235, phase 7), and the
+ * part's key (partKey): a member or one of the admin's People (`userId`),
+ * or someone without an account, by name, for reference (`guestName`).
+ */
+export const AssignPartSchema = z
+  .strictObject({
+    userId: optional(z.string().trim().min(1).max(64)),
+    guestName: optional(z.string().trim().min(1).max(80)),
+    part: z.string().trim().min(1).max(80).describe("The part's key: its instrument or role, or name: and its name"),
+  })
+  .refine((place) => !!place.userId !== !!place.guestName, "Each place needs either userId or guestName, not both");
 export type AssignPartRequest = z.input<typeof AssignPartSchema>;
 
 /** The person scheduled answers: accepted or declined, with a note for the team's admins. */

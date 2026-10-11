@@ -36,6 +36,8 @@ Once a date's parts are set, its admins choose who plays what: **Line-up** besid
 
 The line-up flags what clashes: someone **Away**, who **Said not available**, or **Playing elsewhere then** - on another event at the same time, of any of their teams. Each part shows how many it has of how many it needs, and **Short** counts those on the line-up once a date has one.
 
+**Guests**: **Add someone** also lists **Your People (guests)** - people you're connected with on [People](/people/) who aren't in the team. A guest is told and answers like a member, sees that date on their **My calendar** and its set (read-only), and loses it when taken off. **Someone without an account…** adds a name for reference: they're on the line-up, marked **No account**, but never told anything.
+
 **Can't make it?** Beside your place, **Ask for a replacement**, with a note if you like, then **Ask**. The members who play that part - not on it already, not away or unavailable that date - are told, and see **Take Drums from Alex** on the team's calendar and **My calendar**. The first to take it gets the place, accepted (and **Available** that date); you and the team's admins are told. Until then the place stays yours, marked **Looking for a replacement**; **Cancel** takes the request back.
 
 **Who's signed up for a date**: once it has a line-up, the people on it - asked or accepted, not declining; until then, those who answered **Available**. That's who sees its set in their sidebar, finds it in their calendar link, and is reminded and told about it.

@@ -975,6 +975,11 @@ const en = {
     },
   },
   teamCalendar: {
+    lineupPeople: "Your People (guests)",
+    lineupOutside: "Someone without an account…",
+    lineupOutsideName: "Their name",
+    guestBadge: "Guest",
+    externalBadge: "No account",
     swapAsk: "Ask for a replacement",
     swapAsked: "Looking for a replacement",
     swapCancel: "Cancel",

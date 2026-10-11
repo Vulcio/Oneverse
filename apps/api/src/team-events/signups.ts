@@ -20,12 +20,13 @@ export async function signedUpFor(prisma: Client, dates: { eventId: string; date
   const where = { OR: unique.map((one) => ({ eventId: one.eventId, date: day(one.date) })) };
   const [answers, lineup] = await Promise.all([
     prisma.teamEventAnswer.findMany({ where, select: { eventId: true, date: true, userId: true, answer: true } }),
-    prisma.teamEventAssignment.findMany({ where, select: { eventId: true, date: true, userId: true, status: true } }),
+    // Guests without an account (no userId) fill a part, but aren't anyone to tell.
+    prisma.teamEventAssignment.findMany({ where: { ...where, userId: { not: null } }, select: { eventId: true, date: true, userId: true, status: true } }),
   ]);
   for (const one of unique) {
     const key = signupKey(one.eventId, one.date);
     const matches = <T extends { eventId: string; date: Date }>(row: T) => row.eventId === one.eventId && dateText(row.date) === one.date;
-    out.set(key, signedUpPeople(answers.filter(matches), lineup.filter(matches)));
+    out.set(key, signedUpPeople(answers.filter(matches), lineup.filter(matches).map((row) => ({ ...row, userId: row.userId! }))));
   }
   return out;
 }

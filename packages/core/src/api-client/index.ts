@@ -856,10 +856,13 @@ export interface MemberEventAnswer {
 /** Someone on a part for a date (issue #235, phase 7). Notes and clashes are shown to the team's admins and the person. */
 export interface LineupPlace {
   id: string;
-  userId: string;
+  /** Null for a guest without an account. */
+  userId: string | null;
   displayName: string;
   partKey: string;
   status: AssignmentStatus;
+  /** A guest: one of an admin's People ("account"), or someone without an account ("external"). */
+  guest: "account" | "external" | null;
   mine: boolean;
   note: string | null;
   conflicts: ("AWAY" | "UNAVAILABLE" | "ELSEWHERE")[];
@@ -884,6 +887,8 @@ export interface MyEventDate extends EventDate {
   myAnswer: MyEventAnswer;
   parts: EventPart[];
   lineup: LineupPlace[];
+  /** On another team's line-up, as a guest. */
+  guest: boolean;
 }
 
 /** A team admin asking for answers for some dates, by a deadline (issue #235). */

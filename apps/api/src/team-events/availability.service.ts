@@ -46,6 +46,8 @@ export class AvailabilityService {
     const from = dates.reduce((min, d) => (d.date < min ? d.date : min), dates[0]!.date);
     const to = dates.reduce((max, d) => (d.date > max ? d.date : max), dates[0]!.date);
     const memberRows = isAdmin ? await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }) : [];
+    // The team's members: anyone else on a line-up is a guest.
+    const memberIds = new Set((await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true } })).map((m) => m.userId));
     // What the viewer plays: places offered for a swap they could take.
     const viewer = await this.prisma.client.user.findUnique({ where: { id: viewerId }, select: { instruments: true, techRoles: true } });
     const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
@@ -68,7 +70,7 @@ export class AvailabilityService {
           this.prisma.client,
           lineupRows.flatMap((row) => {
             const when = dateOf.get(key(row.eventId, dateText(row.date)));
-            return when && row.status !== "DECLINED" ? [{ id: row.id, userId: row.userId, eventId: row.eventId, date: when.date, startsAt: when.startsAt, endsAt: when.endsAt }] : [];
+            return when && row.userId && row.status !== "DECLINED" ? [{ id: row.id, userId: row.userId, eventId: row.eventId, date: when.date, startsAt: when.startsAt, endsAt: when.endsAt }] : [];
           }),
         )
       : new Set<string>();
@@ -101,7 +103,7 @@ export class AvailabilityService {
         const mine = row.userId === viewerId;
         const conflicts: LineupConflict[] = [];
         if (isAdmin && row.status !== "DECLINED") {
-          const shown = shownOf.get(row.userId);
+          const shown = row.userId ? shownOf.get(row.userId) : undefined;
           if (shown?.away) conflicts.push("AWAY");
           else if (shown?.answer === "UNAVAILABLE") conflicts.push("UNAVAILABLE");
           if (elsewhere.has(row.id)) conflicts.push("ELSEWHERE");
@@ -111,9 +113,11 @@ export class AvailabilityService {
         return {
           id: row.id,
           userId: row.userId,
-          displayName: row.user.displayName,
+          displayName: row.user?.displayName ?? row.guestName ?? "",
           partKey: row.partKey,
           status: row.status,
+          // A guest (issue #235, phase 7): one of an admin's People, or someone without an account.
+          guest: !row.userId ? ("external" as const) : memberIds.has(row.userId) ? null : ("account" as const),
           mine,
           note: isAdmin || mine ? row.note : null,
           conflicts,
@@ -229,7 +233,14 @@ export class AvailabilityService {
     if (daysBetween(from, to) > MAX_RANGE_DAYS) throw new BadRequestException([`to must be at most ${MAX_RANGE_DAYS} days after from`]);
     const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, role: true, team: { select: { name: true, color: true, avatarUrl: true } } } });
     const me = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { instruments: true, techRoles: true } });
-    const events = await this.prisma.client.teamEvent.findMany({ where: { teamId: { in: memberships.map((m) => m.teamId) } }, include: withDates });
+    const memberTeams = new Set(memberships.map((m) => m.teamId));
+    // A guest's dates too (issue #235, phase 7): the events of other teams they're on a line-up for.
+    const guestOn = await this.prisma.client.teamEventAssignment.findMany({ where: { userId, date: { gte: day(from), lte: day(to) }, event: { teamId: { notIn: [...memberTeams] } } }, select: { eventId: true, date: true } });
+    const guestDates = new Set(guestOn.map((row) => key(row.eventId, dateText(row.date))));
+    const events = await this.prisma.client.teamEvent.findMany({
+      where: { OR: [{ teamId: { in: [...memberTeams] } }, { id: { in: guestOn.map((row) => row.eventId) } }] },
+      include: { ...withDates, team: { select: { name: true, color: true, avatarUrl: true } } },
+    });
     const [answers, away, lineupRows] = await Promise.all([
       this.prisma.client.teamEventAnswer.findMany({ where: { userId, eventId: { in: events.map((e) => e.id) }, date: { gte: day(from), lte: day(to) } } }),
       this.awayOf([userId], from, to),
@@ -242,9 +253,10 @@ export class AvailabilityService {
     const answerOf = new Map(answers.map((answer) => [key(answer.eventId, dateText(answer.date)), answer]));
     return events
       .flatMap((event) => {
-        const team = memberships.find((m) => m.teamId === event.teamId)!;
+        const membership = memberships.find((m) => m.teamId === event.teamId);
         const rows = new Map(event.dates.map((row) => [dateText(row.date), row]));
-        return eventDates(timingOf(event), from, to, changesOf(event)).map((date) => {
+        // In another team's event as a guest: only the dates one's on the line-up.
+        return eventDates(timingOf(event), from, to, changesOf(event)).filter((date) => membership || guestDates.has(key(event.id, date.date))).map((date) => {
           const mine = answerOf.get(key(event.id, date.date));
           const row = rows.get(date.date);
           return {
@@ -255,10 +267,11 @@ export class AvailabilityService {
             timeZone: event.timeZone,
             repeats: !!event.repeatEveryWeeks,
             teamId: event.teamId,
-            teamName: team.team.name,
-            teamColor: team.team.color,
-            teamAvatarUrl: team.team.avatarUrl,
-            isAdmin: team.role === "ADMIN",
+            teamName: event.team.name,
+            teamColor: event.team.color,
+            teamAvatarUrl: event.team.avatarUrl,
+            isAdmin: membership?.role === "ADMIN",
+            guest: !membership,
             setlistId: row?.setlist?.id ?? null,
             songCount: row?.setlist?._count.items ?? 0,
             myAnswer: { ...effectiveAnswer(mine?.answer ?? null, away.get(userId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId },
@@ -273,9 +286,10 @@ export class AvailabilityService {
                 return {
                   id: row.id,
                   userId: row.userId,
-                  displayName: row.user.displayName,
+                  displayName: row.user?.displayName ?? row.guestName ?? "",
                   partKey: row.partKey,
                   status: row.status,
+                  guest: !row.userId ? ("external" as const) : row.userId === userId && !memberTeams.has(event.teamId) ? ("account" as const) : null,
                   mine: row.userId === userId,
                   note: row.userId === userId ? row.note : null,
                   conflicts: [] as LineupConflict[],

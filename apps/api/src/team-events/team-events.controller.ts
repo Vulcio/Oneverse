@@ -151,7 +151,7 @@ export class TeamEventsController {
 
   /** The person scheduled accepts or declines their place. */
   @Put("events/:eventId/dates/:date/lineup/:assignmentId/response")
-  @UseGuards(TeamMemberGuard)
+  // Not only members: a guest answers for their own place (the service checks it is theirs).
   respond(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param("teamId") teamId: string,
@@ -166,7 +166,7 @@ export class TeamEventsController {
 
   /** One asks for a replacement on their place: those who play the part are offered it. */
   @Post("events/:eventId/dates/:date/lineup/:assignmentId/swap")
-  @UseGuards(TeamMemberGuard)
+  // Not only members: a guest answers for their own place (the service checks it is theirs).
   requestSwap(
     @CurrentUser() user: AuthenticatedUser | undefined,
     @Param("teamId") teamId: string,
@@ -180,7 +180,7 @@ export class TeamEventsController {
   }
 
   @Delete("events/:eventId/dates/:date/lineup/:assignmentId/swap")
-  @UseGuards(TeamMemberGuard)
+  // Not only members: a guest answers for their own place (the service checks it is theirs).
   @HttpCode(HttpStatus.NO_CONTENT)
   cancelSwap(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
     if (!user) throw new UnauthorizedException();

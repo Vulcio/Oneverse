@@ -978,6 +978,11 @@ const fr: typeof en = {
     },
   },
   teamCalendar: {
+    lineupPeople: "Vos personnes (invités)",
+    lineupOutside: "Quelqu'un sans compte…",
+    lineupOutsideName: "Son nom",
+    guestBadge: "Invité",
+    externalBadge: "Sans compte",
     swapAsk: "Chercher un remplaçant",
     swapAsked: "Cherche un remplaçant",
     swapCancel: "Annuler",

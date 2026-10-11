@@ -1,4 +1,4 @@
-import { coversPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer } from "@songverse/core";
+import { coversPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@songverse/core";
 import { AlertTriangle, ArrowLeftRight, Check, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -197,10 +197,16 @@ export function LineupDialog({
 }) {
   const { t } = useTranslation();
   const [members, setMembers] = useState<MemberEventAnswer[]>([]);
+  // The admin's People (#79), to schedule as guests (issue #235, phase 7).
+  const [people, setPeople] = useState<Person[]>([]);
+  // The part someone without an account is being added to, and their name.
+  const [naming, setNaming] = useState<{ part: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     void apiClient.listTeamEventDateAnswers(teamId, eventId, date).then(setMembers);
+    void apiClient.getPeople().then((overview) => setPeople(overview.people), () => {});
   }, [teamId, eventId, date]);
+  const memberIds = new Set(members.map((member) => member.userId));
 
   const run = async (work: () => Promise<unknown>) => {
     setError(null);
@@ -249,7 +255,12 @@ export function LineupDialog({
                     <div key={place.id} className={cn("flex flex-wrap items-center gap-2 text-sm", place.status === "DECLINED" && "text-muted-foreground line-through")} data-place={place.userId} data-status={place.status}>
                       <Icon className="size-3.5" aria-label={statusWord[place.status]} />
                       <span>{place.displayName}</span>
-                      <span className="text-xs text-muted-foreground">{statusWord[place.status]}</span>
+                      {place.guest ? (
+                        <Badge variant="outline" data-guest={place.guest}>
+                          {place.guest === "external" ? t("teamCalendar.externalBadge") : t("teamCalendar.guestBadge")}
+                        </Badge>
+                      ) : null}
+                      {place.guest !== "external" ? <span className="text-xs text-muted-foreground">{statusWord[place.status]}</span> : null}
                       {place.conflicts.map((conflict) => (
                         <Badge key={conflict} variant="warning" data-conflict={conflict}>
                           <AlertTriangle />
@@ -275,13 +286,40 @@ export function LineupDialog({
                     </div>
                   );
                 })}
+                {naming?.part === key ? (
+                  <div className="flex max-w-xs gap-2">
+                    <Input
+                      autoFocus
+                      className="h-8 text-xs"
+                      value={naming.name}
+                      maxLength={80}
+                      placeholder={t("teamCalendar.lineupOutsideName")}
+                      onChange={(event) => setNaming({ part: key, name: event.target.value })}
+                      data-testid="lineup-outside-name"
+                    />
+                    <Button
+                      size="sm"
+                      className="h-8"
+                      disabled={!naming.name.trim()}
+                      onClick={() => {
+                        const guestName = naming.name.trim();
+                        setNaming(null);
+                        void run(() => apiClient.assignTeamEventPart(teamId, eventId, date, { guestName, part: key }));
+                      }}
+                      data-testid="lineup-outside-add"
+                    >
+                      {t("teamCalendar.partAdd")}
+                    </Button>
+                  </div>
+                ) : null}
                 <NativeSelect
                   value=""
                   aria-label={`${partLabel(part)} - ${t("teamCalendar.lineupAdd")}`}
                   className="h-8 max-w-xs text-xs"
                   onChange={(event) => {
                     const userId = event.target.value;
-                    if (userId) void run(() => apiClient.assignTeamEventPart(teamId, eventId, date, { userId, part: key }));
+                    if (userId === "__outside") setNaming({ part: key, name: "" });
+                    else if (userId) void run(() => apiClient.assignTeamEventPart(teamId, eventId, date, { userId, part: key }));
                   }}
                   data-testid="lineup-add"
                 >
@@ -302,6 +340,18 @@ export function LineupDialog({
                       ))}
                     </optgroup>
                   ) : null}
+                  {people.some((person) => !memberIds.has(person.id) && !on.has(person.id)) ? (
+                    <optgroup label={t("teamCalendar.lineupPeople")}>
+                      {people
+                        .filter((person) => !memberIds.has(person.id) && !on.has(person.id))
+                        .map((person) => (
+                          <option key={person.id} value={person.id}>
+                            {person.displayName}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ) : null}
+                  <option value="__outside">{t("teamCalendar.lineupOutside")}</option>
                 </NativeSelect>
               </li>
             );

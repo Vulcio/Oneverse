@@ -3,7 +3,7 @@ import { coversPart, effectiveAnswer, eventDates, eventFallsOn, localDate, partK
 import { Prisma } from "@songverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { changesOf, dateText, day, partsOf, timingOf, withDates, type EventRow } from "./team-events.service.js";
+import { changesOf, dateText, day, partsOf, TeamEventsService, timingOf, withDates, type EventRow } from "./team-events.service.js";
 
 type Client = PrismaService["client"];
 
@@ -52,7 +52,23 @@ export class LineupService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly events: TeamEventsService,
   ) {}
+
+  /** Whether two people are connected in People (#79): an admin can schedule their People as guests. */
+  private async connected(a: string, b: string): Promise<boolean> {
+    const found = await this.prisma.client.connection.findFirst({
+      where: { status: "ACCEPTED", OR: [{ requesterId: a, addresseeId: b }, { requesterId: b, addresseeId: a }] },
+      select: { id: true },
+    });
+    return !!found;
+  }
+
+  /** A guest with an account (not in the team) sees the date's set, read-only, as a guest of it. */
+  private async letSeeSet(teamId: string, eventId: string, date: string, userId: string) {
+    const { setlistId } = await this.events.ensureDateSet(teamId, eventId, date);
+    if (setlistId) await this.prisma.client.setlistGuest.upsert({ where: { setlistId_userId: { setlistId, userId } }, create: { setlistId, userId }, update: {} });
+  }
 
   /** The event on a date that's coming and not cancelled: scheduling is for those. */
   private async comingDate(teamId: string, eventId: string, date: string): Promise<EventRow & { team: { name: string } }> {
@@ -77,27 +93,45 @@ export class LineupService {
     return shown?.title || event.title;
   }
 
-  /** A member put on a part for a date: asked (they're told), or accepted at once when admins schedule themselves. */
+  /**
+   * Someone put on a part for a date: a member, or a guest - one of the
+   * admin's People (they're told and answer like a member, and see the
+   * date's set), or someone without an account, by name, for reference
+   * only (accepted, never told). Admins scheduling themselves: accepted.
+   */
   async assign(teamId: string, eventId: string, date: string, dto: AssignPartRequest, by: string) {
     const event = await this.comingDate(teamId, eventId, date);
     if (!partsOf(event).some((part) => partKey(part) === dto.part)) throw new BadRequestException(["part isn't one this event needs"]);
-    const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: dto.userId } } });
-    if (!member) throw new BadRequestException(["userId isn't a member of the team"]);
-    const self = dto.userId === by;
+    let guest = false;
+    if (dto.userId) {
+      const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: dto.userId } } });
+      guest = !member;
+      if (guest && !(await this.connected(by, dto.userId))) throw new BadRequestException(["userId isn't a member of the team or one of your People"]);
+    }
+    const accepted = !dto.userId || dto.userId === by;
     let row;
     try {
       row = await this.prisma.client.teamEventAssignment.create({
-        data: { eventId, date: day(date), partKey: dto.part, userId: dto.userId, assignedByUserId: by, ...(self ? { status: "ACCEPTED", respondedAt: new Date() } : {}) },
+        data: {
+          eventId,
+          date: day(date),
+          partKey: dto.part,
+          userId: dto.userId ?? null,
+          guestName: dto.userId ? null : dto.guestName,
+          assignedByUserId: by,
+          ...(accepted ? { status: "ACCEPTED", respondedAt: new Date() } : {}),
+        },
         include: { user: { select: { displayName: true } } },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("They're already on that part");
       throw error;
     }
-    if (!self) {
+    if (dto.userId && guest) await this.letSeeSet(teamId, eventId, date, dto.userId);
+    if (dto.userId && !accepted) {
       await this.notifications.notify([{ userId: dto.userId, kind: "SCHEDULED", data: { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, dto.part)) }, url: "/calendar" }]);
     }
-    return { id: row.id, userId: row.userId, displayName: row.user.displayName, partKey: row.partKey, status: row.status };
+    return { id: row.id, userId: row.userId, displayName: row.user?.displayName ?? row.guestName ?? "", partKey: row.partKey, status: row.status, guest: row.userId ? (guest ? "account" : null) : "external" };
   }
 
   /** Someone taken off a part; told, unless they'd declined it. */
@@ -105,6 +139,12 @@ export class LineupService {
     const row = await this.prisma.client.teamEventAssignment.findFirst({ where: { id: assignmentId, eventId, date: day(date), event: { teamId } }, include: { event: { include: { ...withDates, team: { select: { name: true } } } } } });
     if (!row) throw new NotFoundException("Not on the line-up");
     await this.prisma.client.teamEventAssignment.delete({ where: { id: row.id } });
+    if (!row.userId) return;
+    // A guest with no other place that date no longer sees its set.
+    const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: row.userId } } });
+    const stillOn = await this.prisma.client.teamEventAssignment.count({ where: { eventId, date: day(date), userId: row.userId } });
+    const setlistId = row.event.dates.find((one) => dateText(one.date) === date)?.setlist?.id;
+    if (!member && !stillOn && setlistId) await this.prisma.client.setlistGuest.deleteMany({ where: { setlistId, userId: row.userId } });
     if (row.userId !== by && row.status !== "DECLINED" && date >= localDate(new Date(), row.event.timeZone)) {
       await this.notifications.notify([{ userId: row.userId, kind: "UNSCHEDULED", data: { event: this.titleOn(row.event, date), date, team: row.event.team.name, ...(await this.partData(row.event, row.partKey)) }, url: "/calendar" }]);
     }
@@ -164,7 +204,7 @@ export class LineupService {
       this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }),
       this.prisma.client.teamEventAnswer.findMany({ where: { eventId, date: day(date) }, select: { userId: true, answer: true } }),
       this.prisma.client.userAway.findMany({ where: { user: { teamMemberships: { some: { teamId } } }, from: { lte: day(date) }, to: { gte: day(date) } }, select: { userId: true, from: true, to: true } }),
-      this.prisma.client.teamEventAssignment.findMany({ where: { eventId, date: day(date) }, select: { userId: true, partKey: true, status: true } }),
+      this.prisma.client.teamEventAssignment.findMany({ where: { eventId, date: day(date), userId: { not: null } }, select: { userId: true, partKey: true, status: true } }),
       this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
     ]);
     const answered = members.map(({ userId: member, user }) => {
@@ -172,7 +212,7 @@ export class LineupService {
       const ranges = away.filter((range) => range.userId === member).map((range) => ({ from: dateText(range.from), to: dateText(range.to) }));
       return { userId: member, ...user, answer: effectiveAnswer(own, ranges, date).answer };
     });
-    const offered = swapCandidates(part, answered, lineup, userId);
+    const offered = swapCandidates(part, answered, lineup.map((one) => ({ ...one, userId: one.userId! })), userId);
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by: me?.displayName ?? "", ...(await this.partData(event, row.partKey)) };
     const notified = await this.notifications.notify(offered.map((candidate) => ({ userId: candidate, kind: "SWAP_OFFERED" as const, data, url: "/calendar" })));
     return { id: row.id, swapRequestedAt: new Date().toISOString(), notified };
@@ -216,7 +256,7 @@ export class LineupService {
     });
     const admins = await this.prisma.client.teamMembership.findMany({ where: { teamId, role: "ADMIN" }, select: { userId: true } });
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by: member.user.displayName, ...(await this.partData(event, row.partKey)) };
-    const told = [...new Set([row.userId, ...admins.map((admin) => admin.userId)])];
+    const told = [...new Set([row.userId!, ...admins.map((admin) => admin.userId)])];
     await this.notifications.notify(
       told.map((person) => ({ userId: person, kind: "SWAP_TAKEN" as const, data, url: person === row.userId ? "/calendar" : `/teams/${teamId}` })),
       userId,

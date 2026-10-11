@@ -9,9 +9,12 @@ let page;
 const step = stepper(() => page);
 const admin = await user("Lineup web admin");
 const drummer = await user("Lineup web drummer");
+const friend = await user("Lineup web friend");
 sql(`update "User" set instruments='{DRUMS}' where id='${drummer.id}'`);
 const team = await api(admin, "POST", "/teams", { name: `Lineup web ${stamp}` });
 sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "updatedAt") values ('tmlw${stamp}', '${team.id}', '${drummer.id}', 'MEMBER', now(), now())`);
+// One of the admin's People (#79), not in the team: a guest to schedule.
+sql(`insert into "Connection" (id, "requesterId", "addresseeEmail", "addresseeId", status, "respondedAt") values ('cnlw${stamp}', '${admin.id}', '${friend.email}', '${friend.id}', 'ACCEPTED', now())`);
 const plus = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const first = plus(3);
 const event = await api(admin, "POST", `/teams/${team.id}/events`, { title: "Morning service", date: first, startTime: "10:00", timeZone: "UTC", parts: [{ part: "DRUMS", count: 1 }] });
@@ -44,6 +47,22 @@ try {
     await date.locator('[data-my-place="ACCEPTED"]').waitFor();
   });
 
+  await step("guests: one of the admin's People, and someone without an account", async () => {
+    await page.context().clearCookies();
+    await signIn(page, admin);
+    await page.goto(`${WEB}/teams/${team.id}`);
+    await row().getByTestId("calendar-lineup").click();
+    const drums = page.getByTestId("lineup-dialog").locator('[data-lineup-part="DRUMS"]');
+    await drums.getByTestId("lineup-add").selectOption({ label: "Lineup web friend" });
+    await drums.locator(`[data-place="${friend.id}"]`).getByText("Guest").waitFor();
+    await drums.getByTestId("lineup-add").selectOption("__outside");
+    await drums.getByTestId("lineup-outside-name").fill("Mo (sub)");
+    await drums.getByTestId("lineup-outside-add").click();
+    await drums.getByText("Mo (sub)").waitFor();
+    await drums.locator('[data-guest="external"]').getByText("No account").waitFor();
+    await page.getByRole("button", { name: "Close" }).last().click();
+  });
+
   await step("the admin sees it accepted, and takes them off", async () => {
     await page.context().clearCookies();
     await signIn(page, admin);
@@ -52,7 +71,7 @@ try {
     const place = page.getByTestId("lineup-dialog").locator(`[data-place="${drummer.id}"][data-status="ACCEPTED"]`);
     await place.waitFor();
     await place.getByTestId("lineup-remove").click();
-    await page.getByTestId("lineup-dialog").getByText("No one yet").waitFor();
+    await page.getByTestId("lineup-dialog").locator(`[data-place="${drummer.id}"]`).waitFor({ state: "detached" });
   });
 } finally {
   await browser.close();
