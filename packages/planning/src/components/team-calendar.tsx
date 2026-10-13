@@ -552,8 +552,8 @@ function EventDialog({
   const [daysBefore, setDaysBefore] = useState(String(event?.rehearsalFor?.daysBefore ?? 3));
   const parentEvent = teamEvents.find((one) => one.id === rehearsalOf) ?? null;
   const [title, setTitle] = useState(event?.title ?? "");
-  const [date, setDate] = useState(event?.date ?? localDate(new Date(), browserZone()));
-  const [startTime, setStartTime] = useState(event?.startTime ?? "10:00");
+  const [date, setDate] = useState(event?.date ?? firstDateAt(DEFAULT_START));
+  const [startTime, setStartTime] = useState(event?.startTime ?? DEFAULT_START);
   const [duration, setDuration] = useState(String(event?.durationMinutes ?? 90));
   const [timeZone, setTimeZone] = useState(event?.timeZone ?? browserZone());
   const [place, setPlace] = useState(event?.place ?? "");
@@ -732,6 +732,16 @@ function EventDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** A new event's start time, until it's changed. */
+export const DEFAULT_START = "10:00";
+
+/** A new event's first date: today, unless `time` has passed here already - then tomorrow, so it isn't over as it's made. */
+export function firstDateAt(time: string): string {
+  const today = localDate(new Date(), browserZone());
+  const now = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: browserZone() }).format(new Date());
+  return now < time ? today : addDays(today, 1);
 }
 
 /** A part as the API takes it: a position (issue #241) by its ID, an instrument or role by its key, else its name. */

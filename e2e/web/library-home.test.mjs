@@ -71,8 +71,11 @@ await step("a shelf longer than the window: no scrollbar, buttons to go through 
 });
 
 await step("a song opened is recently viewed; starred, it's a favorite", async () => {
+  // The view is noted in the background: waited for, or leaving the page can beat it (CI).
+  const viewed = page.waitForResponse((response) => response.url().endsWith(`/song-versions/${older.id}/views`) && response.request().method() === "POST");
   await card("newest", `Zephyr hymn ${stamp}`).click();
   await page.waitForURL(new RegExp(`/library/${older.id}(\\?|$)`)); // with where it was opened from
+  await viewed;
   const star = page.getByRole("button", { name: "Add to favorites" });
   await star.click();
   await page.getByRole("button", { name: "Remove from favorites" }).waitFor();

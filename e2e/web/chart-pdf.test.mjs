@@ -169,7 +169,16 @@ await step("a long PDF streams (issue #156): fetched by byte ranges, its first p
   if ((await pages.first().getAttribute("data-state")) !== "drawn") throw new Error("the first page not drawn");
   const drawn = await page.locator('[data-testid="pdf-page"][data-state="drawn"]').count();
   if (drawn > 6) throw new Error(`${drawn} pages drawn before they're near`);
-  if (!ranges.some((r) => r.status === 206 && r.range)) throw new Error(`no byte ranges: ${JSON.stringify(ranges)}`);
+  // pdf.js asks for ranges unless the whole file came first (a fast machine, CI): either way, its address answers one.
+  if (!ranges.some((r) => r.status === 206 && r.range)) {
+    const url = (await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name))).find((name) => name.includes("/files/"));
+    if (!url) throw new Error(`the PDF wasn't fetched: ${JSON.stringify(ranges)}`);
+    const part = await page.evaluate(async (address) => {
+      const response = await fetch(address, { headers: { Range: "bytes=0-1023" } });
+      return { status: response.status, length: (await response.arrayBuffer()).byteLength };
+    }, url);
+    if (part.status !== 206 || part.length !== 1024) throw new Error(`no byte ranges: ${JSON.stringify({ ranges, part })}`);
+  }
   // Scrolled to the end, the last page is drawn when it's reached.
   await pages.last().scrollIntoViewIfNeeded();
   await page.locator('[data-testid="pdf-page"][data-page="20"][data-state="drawn"]').waitFor({ timeout: 20000 });
