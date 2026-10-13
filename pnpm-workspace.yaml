@@ -19,6 +19,9 @@ overrides:
   # Vite+ (issue #159): every Vite and Vitest in the workspace is the one
   # vite-plus bundles, so plugins (TanStack Start's) and vp test share one copy.
   # Upgrade these two with the vite-plus version in the package.json files.
+  # An override doesn't reach a peer pnpm installs itself: the API (better-auth's
+  # optional @tanstack/react-start peer) names vite as that core too, or a plain
+  # Vite comes back into the lockfile when the workspace's peers are resolved again.
   vite@*: npm:@voidzero-dev/vite-plus-core@1.0.0
   vitest@*: 5.0.1
   # One @types/node (Node 22, what runs everything): Vite+'s core is installed
