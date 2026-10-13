@@ -16,3 +16,4 @@ export * from "./invitations.js";
 export * from "./events.js";
 export * from "./notifications.js";
 export * from "./messages.js";
+export * from "./organizations.js";

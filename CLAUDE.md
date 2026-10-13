@@ -82,6 +82,17 @@ Both `StorageSettings` and `AuthSettings` are managed through
 There's no more "settings only used by the web app, so it skips the API"
 case — see the next section for why.
 
+## Organisations
+
+A server has none (Songverse on its own, the default), one that everyone is
+in, or several (issue #241, Planiverse; Admin > Organisations,
+`apps/api/src/organizations/`). With none, nothing about them shows: keep
+Songverse working the same without them. A team may be part of one
+(`Team.organizationId`); a team's members are always its organisation's
+members - add people to a team's organisation with `joinTeamOrganization()`
+wherever they join a team. Songs, songbooks and sets stay owned by people
+and teams, never by an organisation.
+
 ## Song content
 
 `SongVersion.documentJson` is a SongDocument v2 (`docs/song-document-v2.md`):

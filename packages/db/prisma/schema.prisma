@@ -307,6 +307,7 @@ model User {
 
   // Relations
   teamMemberships     TeamMembership[]
+  organizationMemberships OrganizationMembership[]
   ownedVersions       SongVersion[]          @relation("VersionOwnerUser")
   contributorCredits  VersionContributor[]
   ownedArrangements   Arrangement[]          @relation("ArrangementOwnerUser")
@@ -500,8 +501,72 @@ model Team {
   events              TeamEvent[]
   answerRequests      TeamAnswerRequest[]
   setsAheadWeeks      Int                    @default(4)
+  // The organisation it's part of (issue #241), or none: a team of its own,
+  // as in Songverse alone. Its members are the organisation's members too.
+  organizationId      String?
+  organization        Organization?          @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 
   @@index([slug])
+  @@index([organizationId])
+}
+
+// An organisation (issue #241, Planiverse): a church, a club... whose teams
+// it plans together. An instance has none (Songverse alone), one, or
+// several (Admin > Organisations, OrganizationSettings).
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  // A key of ENTITY_COLORS in @songverse/core (null: one derived from the name).
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships OrganizationMembership[]
+  inviteLinks OrganizationInviteLink[]
+  teams       Team[]
+}
+
+model OrganizationMembership {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           TeamRole @default(MEMBER)
+  joinedAt       DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model OrganizationInviteLink {
+  id             String    @id @default(cuid())
+  organizationId String
+  token          String    @unique @default(cuid())
+  role           TeamRole  @default(MEMBER)
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime?
+  usedCount      Int       @default(0)
+  maxUses        Int?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// Whether the instance has organisations (issue #241), set in Admin >
+// Organisations: each field null takes its env var, then the default.
+model OrganizationSettings {
+  id        String   @id @default("singleton")
+  // NONE (Songverse alone), SINGLE (one, everyone in it) or MULTI (ORGANIZATION_MODE).
+  mode      String?
+  // With several: anyone may create one, not only global admins (ORGANIZATIONS_OPEN).
+  anyoneCreates Boolean?
+  updatedAt DateTime @updatedAt
 }
 
 model TeamMembership {

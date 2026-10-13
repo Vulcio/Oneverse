@@ -2,11 +2,15 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { customInstrumentIds } from "../instruments/instruments.service.js";
 import { orderInstruments, orderTechRoles, slugify, type TeamRoleValue } from "@songverse/core";
 import { Prisma } from "@songverse/db";
+import { joinTeamOrganization } from "../organizations/organizations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import type { CreateInviteLinkDto } from "./dto/create-invite-link.dto.js";
 import type { CreateTeamDto } from "./dto/create-team.dto.js";
 import type { UpdateTeamDto } from "./dto/update-team.dto.js";
+
+/** The organisation a team is part of (issue #241). */
+const withOrganization = { organization: { select: { id: true, name: true, color: true } } } as const;
 
 @Injectable()
 export class TeamsService {
@@ -18,7 +22,7 @@ export class TeamsService {
   async findMyTeams(userId: string) {
     const memberships = await this.prisma.client.teamMembership.findMany({
       where: { userId },
-      include: { team: true },
+      include: { team: { include: withOrganization } },
     });
     return memberships.map((m) => ({
       id: m.team.id,
@@ -28,13 +32,14 @@ export class TeamsService {
       currentUserRole: m.role,
       color: m.team.color,
       avatarUrl: m.team.avatarUrl,
+      organization: m.team.organization,
     }));
   }
 
   async findOne(userId: string, teamId: string) {
     const membership = await this.prisma.client.teamMembership.findUnique({
       where: { teamId_userId: { teamId, userId } },
-      include: { team: true },
+      include: { team: { include: withOrganization } },
     });
     if (!membership) throw new NotFoundException("Team not found");
     return {
@@ -45,6 +50,7 @@ export class TeamsService {
       currentUserRole: membership.role,
       color: membership.team.color,
       avatarUrl: membership.team.avatarUrl,
+      organization: membership.team.organization,
     };
   }
 
@@ -244,15 +250,12 @@ export class TeamsService {
       };
     }
 
-    await this.prisma.client.$transaction([
-      this.prisma.client.teamMembership.create({
-        data: { teamId: link.teamId, userId, role: link.role },
-      }),
-      this.prisma.client.teamInviteLink.update({
-        where: { id: link.id },
-        data: { usedCount: { increment: 1 } },
-      }),
-    ]);
+    await this.prisma.client.$transaction(async (tx) => {
+      await tx.teamMembership.create({ data: { teamId: link.teamId, userId, role: link.role } });
+      await tx.teamInviteLink.update({ where: { id: link.id }, data: { usedCount: { increment: 1 } } });
+      // A team's members are its organisation's too (issue #241).
+      await joinTeamOrganization(tx, link.teamId, [userId]);
+    });
 
     return {
       id: link.team.id,

@@ -36,6 +36,7 @@ import {
   MicVocal,
   Waypoints,
   Music,
+  Building2,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -77,6 +78,7 @@ import {
   useSidebar,
 } from "#/components/ui/sidebar";
 import { initials } from "#/lib/initials";
+import { useMyOrganizations } from "#/lib/organizations";
 import { cn } from "#/lib/utils";
 
 export function AppSidebar({
@@ -330,6 +332,7 @@ function MainNav({
   docsView: string;
 }) {
   const { t, i18n } = useTranslation();
+  const organizations = useMyOrganizations();
   // Upcoming and undated sets come first (the API's order); past ones are
   // on the Sets page. A team's event sets only for dates you signed up for (issue #235).
   const sidebarSets = setlists.filter((set) => setListing(set) === "sidebar");
@@ -420,6 +423,16 @@ function MainNav({
             }))}
           />
 
+          {/* The organisations one's in (issue #241), when the server has them. */}
+          {organizations && organizations.mode !== "NONE" && (organizations.organizations.length > 0 || organizations.canCreate) ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={pathname.startsWith("/organizations")} tooltip={t("nav.organizations")} render={<Link to="/organizations" data-testid="sidebar-organizations" />}>
+                <Building2 />
+                <span>{t("nav.organizations")}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : null}
+
           {/* The people you share songs with (issue #77). */}
           <SidebarMenuItem>
             <SidebarMenuButton isActive={pathname.startsWith("/people")} tooltip={t("nav.people")} render={<Link to="/people" />}>
@@ -501,6 +514,7 @@ function AdminNav({ pathname }: { pathname: string }) {
   const sections = [
     { to: "/admin/users" as const, label: t("nav.adminUsers"), icon: Users },
     { to: "/admin/teams" as const, label: t("nav.adminTeams"), icon: UsersRound },
+    { to: "/admin/organizations" as const, label: t("nav.adminOrganizations"), icon: Building2 },
     { to: "/admin/roles" as const, label: t("nav.adminRoles"), icon: BadgeCheck },
     { to: "/admin/instruments" as const, label: t("nav.adminInstruments"), icon: Guitar },
     { to: "/admin/auth" as const, label: t("nav.adminAuth"), icon: KeyRound },

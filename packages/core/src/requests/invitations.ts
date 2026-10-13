@@ -3,7 +3,7 @@ import { z } from "zod";
 import { optional } from "./fields.js";
 
 /** Sign-up by invitation only (issue #198): where an invitation to create an account can come from. */
-export const SIGNUP_PASS_KINDS = ["signup", "team", "set"] as const;
+export const SIGNUP_PASS_KINDS = ["signup", "team", "set", "organization"] as const;
 export type SignupPassKind = (typeof SIGNUP_PASS_KINDS)[number];
 
 /** POST /admin/invitations: invites an email to sign up (again, for one already invited: a new link). */

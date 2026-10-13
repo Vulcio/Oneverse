@@ -43,6 +43,16 @@ To invite someone, enter their email under **Email to invite** and choose **Invi
 
 Every team, with its roles, members, songs and **storage pool**: what's on a team's songs counts there, whoever uploaded it, not against the uploader. **Roles…** gives the team roles: each one applies to every member, and a storage tier sets the team's pool.
 
+### Organisations
+
+Whether the server has organisations - a church, a club - grouping teams to plan together (see [Organisations](/organizations/)). Under **Organisations on this server**:
+
+- **None: Songverse on its own** - the default; nobody sees organisations;
+- **One: everyone who signs in is in it** - **Create the organisation** (a **Name**, and **Its admin's email (optional)** if it isn't you), once;
+- **Several, each kept apart** - global admins create them under **New organisation**; with **Anyone can create an organisation** ticked, anyone can, from **Organisations** in the sidebar.
+
+It shows where each setting comes from - saved here, the `ORGANIZATION_MODE` and `ORGANIZATIONS_OPEN` environment variables, or the default - with **Save configuration** and **Revert to environment variables**. **All organisations** lists them with their teams, members and admins; **Delete organisation** leaves their teams on their own.
+
 ### Roles
 
 The one place that says what people may do beyond their own and their teams' songs. A role can allow:

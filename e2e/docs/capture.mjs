@@ -62,8 +62,8 @@ Early in the [Bm]morning our [E]song shall rise to [A]Thee;
 ];
 
 const LOCALES = {
-  en: { user: "Alex Martin", email: "alex.martin@example.com", bandmate: "Sam Taylor", guest: "Jordan Kim", friend: "Chris Lane", asking: "Taylor Reed", reviewer: "Robin Lee", why: "It's 'relieved', with one l.", team: "Morning Band", set: "Sunday service", arrangement: "Sunday band", songbook: "Hymns", note: "Softly, piano only", addedLine: "Sing it a|gain", service: "Morning service", rehearsal: "Rehearsal", hall: "Main hall", zone: "Europe/London" },
-  fr: { user: "Camille Durand", email: "camille.durand@example.com", bandmate: "Hugo Petit", guest: "Lucas Martin", friend: "Chloe Bernard", asking: "Emma Roux", reviewer: "Alice Moreau", why: "C'est « relieved », avec un seul l.", team: "Groupe du matin", set: "Culte du dimanche", arrangement: "Groupe du dimanche", songbook: "Cantiques", note: "Doucement, piano seul", addedLine: "Chante-le en|core", service: "Culte du matin", rehearsal: "Répétition", hall: "Grande salle", zone: "Europe/Paris" },
+  en: { user: "Alex Martin", email: "alex.martin@example.com", bandmate: "Sam Taylor", guest: "Jordan Kim", friend: "Chris Lane", asking: "Taylor Reed", reviewer: "Robin Lee", why: "It's 'relieved', with one l.", team: "Morning Band", set: "Sunday service", arrangement: "Sunday band", songbook: "Hymns", note: "Softly, piano only", addedLine: "Sing it a|gain", service: "Morning service", rehearsal: "Rehearsal", hall: "Main hall", zone: "Europe/London", organization: "Grace Church", welcome: "Welcome team" },
+  fr: { user: "Camille Durand", email: "camille.durand@example.com", bandmate: "Hugo Petit", guest: "Lucas Martin", friend: "Chloe Bernard", asking: "Emma Roux", reviewer: "Alice Moreau", why: "C'est « relieved », avec un seul l.", team: "Groupe du matin", set: "Culte du dimanche", arrangement: "Groupe du dimanche", songbook: "Cantiques", note: "Doucement, piano seul", addedLine: "Chante-le en|core", service: "Culte du matin", rehearsal: "Répétition", hall: "Grande salle", zone: "Europe/Paris", organization: "Église de la Grâce", welcome: "Équipe d'accueil" },
 };
 
 const nextSunday = () => {
@@ -432,6 +432,14 @@ try {
     await api(asking, "POST", "/people/requests", { email: text.email });
     await api(me, "PUT", `/song-versions/${grace.id}/shares/${guest.id}`, { canEdit: false });
     await shoot("people", "/people", () => page.getByTestId("people-list").waitFor());
+    // Organisations (issue #241): on a server with several, one with the team and a welcome team in it.
+    sql(`insert into "OrganizationSettings" (id, mode, "anyoneCreates", "updatedAt") values ('singleton', 'MULTI', true, now()) on conflict (id) do update set mode='MULTI', "anyoneCreates"=true`);
+    const organization = await api(me, "POST", "/organizations", { name: text.organization });
+    await api(me, "PUT", `/teams/${team.id}/organization`, { organizationId: organization.id });
+    const welcome = await api(me, "POST", "/teams", { name: text.welcome });
+    await api(me, "PUT", `/teams/${welcome.id}/organization`, { organizationId: organization.id });
+    await api(guest, "POST", `/organizations/join/${(await api(me, "POST", `/organizations/${organization.id}/invite-links`, {})).token}`);
+    await shoot("organization", `/organizations/${organization.id}`, () => page.getByTestId("organization-teams").waitFor(), { fullPage: true });
     await shoot("share-song", `/library/${grace.id}`, async () => {
       await page.getByRole("button", { name: /^(Share|Partager)$/ }).click();
       await page.getByTestId("song-shares").waitFor();

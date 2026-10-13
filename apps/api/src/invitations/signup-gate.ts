@@ -8,7 +8,7 @@ import { getEffectiveSecuritySettings } from "../security/security-settings.js";
  * user-create hook (auth/better-auth.ts) calls them, outside Nest.
  *
  * Let in: an email invited by an admin; or whoever opened a pass - an
- * invitation's link, a team's invite link, a set's share link - which the
+ * invitation's link, a team's or an organisation's invite link, a set's share link - which the
  * API kept in a cookie (`PASS_COOKIE`) for the account made next, by email
  * or by Google (whose callback reaches the API with that cookie too).
  */
@@ -50,6 +50,11 @@ export async function passIsValid(pass: SignupPass, now = new Date()): Promise<b
   }
   if (pass.kind === "team") {
     const link = await prisma.teamInviteLink.findUnique({ where: { token: pass.token }, select: { expiresAt: true, maxUses: true, usedCount: true } });
+    return !!link && (!link.expiresAt || link.expiresAt > now) && (link.maxUses === null || link.usedCount < link.maxUses);
+  }
+  if (pass.kind === "organization") {
+    // An organisation's invite link (issue #241), as a team's.
+    const link = await prisma.organizationInviteLink.findUnique({ where: { token: pass.token }, select: { expiresAt: true, maxUses: true, usedCount: true } });
     return !!link && (!link.expiresAt || link.expiresAt > now) && (link.maxUses === null || link.usedCount < link.maxUses);
   }
   return !!(await prisma.setlistShareLink.findUnique({ where: { token: pass.token }, select: { id: true } }));

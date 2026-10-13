@@ -30,6 +30,7 @@ import {
   Users,
   UsersRound,
   CalendarDays,
+  Building2,
 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -54,6 +55,7 @@ import { deviceStorage } from "#/lib/offline-data";
 import { setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
 import { useSmartLists } from "#/lib/smart-lists";
 import { filtersOf, parseLibrarySearch } from "#/routes/_protected/library/-library-search";
+import { useMyOrganizations } from "#/lib/organizations";
 import { cn } from "#/lib/utils";
 
 type Section = "library" | "sets" | "songbooks" | "teams" | "people" | "review" | "admin";
@@ -94,6 +96,7 @@ export function NestedSidebar({
     if (section) setPanel(section);
   }, [section]);
   const canReview = session.isGlobalAdmin || session.isReviewer;
+  const organizations = useMyOrganizations();
 
   const rail: { section: Section; to: "/library" | "/sets" | "/songbooks" | "/teams" | "/people" | "/review" | "/admin"; label: string; icon: ReactNode }[] = [
     { section: "library", to: "/library", label: t("nav.library"), icon: <Music2 /> },
@@ -140,6 +143,15 @@ export function NestedSidebar({
           </TooltipTrigger>
           <TooltipContent side="right">{t("nav.calendar")}</TooltipContent>
         </Tooltip>
+        {/* The organisations one's in (issue #241), when the server has them: a page of its own. */}
+        {organizations && organizations.mode !== "NONE" && (organizations.organizations.length > 0 || organizations.canCreate) ? (
+          <Tooltip>
+            <TooltipTrigger render={<Link to="/organizations" aria-label={t("nav.organizations")} data-active={pathname.startsWith("/organizations")} data-testid="sidebar-organizations" className={cn("flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4", pathname.startsWith("/organizations") && "bg-sidebar-accent text-sidebar-accent-foreground")} />}>
+              <Building2 />
+            </TooltipTrigger>
+            <TooltipContent side="right">{t("nav.organizations")}</TooltipContent>
+          </Tooltip>
+        ) : null}
         {/* The metronome (issue #2): a page of its own, no panel. */}
         <Tooltip>
           <TooltipTrigger render={<Link to="/metronome" aria-label={t("nav.metronome")} className="flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4" />}>

@@ -61,6 +61,7 @@ export default defineConfig({
             { slug: "metronome" },
             { slug: "songbooks" },
             { slug: "teams" },
+            { slug: "organizations" },
             { slug: "people" },
             { slug: "offline" },
           ],

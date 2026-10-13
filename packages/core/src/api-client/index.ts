@@ -33,6 +33,7 @@ import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
 import type { z } from "zod";
 import type { SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
+import type { CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { UpdateSetlistItemRequest } from "../requests/sets.js";
@@ -773,6 +774,71 @@ export interface TeamSummary {
   color: string | null;
   /** Its picture, if it has one. */
   avatarUrl: string | null;
+  /** The organisation it's part of (issue #241), if any. */
+  organization?: { id: string; name: string; color: string | null } | null;
+}
+
+/** An organisation (issue #241) one is in. */
+export interface OrganizationSummary {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  color: string | null;
+  currentUserRole: TeamRole;
+  memberCount: number;
+  teamCount: number;
+}
+
+/** GET /organizations: the instance's mode, whether one may create one, and one's own. */
+export interface MyOrganizations {
+  mode: OrganizationMode;
+  canCreate: boolean;
+  organizations: OrganizationSummary[];
+}
+
+/** A team of an organisation, as its members see it. */
+export interface OrganizationTeam {
+  id: string;
+  name: string;
+  color: string | null;
+  avatarUrl: string | null;
+  memberCount: number;
+  /** Whether one is in it. */
+  mine: boolean;
+}
+
+export interface OrganizationDetail extends OrganizationSummary {
+  teams: OrganizationTeam[];
+}
+
+export interface OrganizationMember {
+  userId: string;
+  displayName: string;
+  email: string;
+  avatarUrl: string | null;
+  role: TeamRole;
+  joinedAt: string;
+}
+
+/** Admin > Organisations (issue #241): the mode and who may create one, where each comes from, and every organisation. */
+export interface AdminOrganizations {
+  source: "database" | "env" | "none";
+  settings: {
+    mode: SecuritySetting<OrganizationMode>;
+    anyoneCreates: SecuritySetting<boolean>;
+  };
+  organizations: AdminOrganization[];
+}
+
+export interface AdminOrganization {
+  id: string;
+  name: string;
+  slug: string;
+  createdAt: string;
+  memberCount: number;
+  teamCount: number;
+  admins: { id: string; displayName: string; email: string }[];
 }
 
 export interface TeamMember {
@@ -1855,6 +1921,29 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<TeamInviteLink>(`/teams/${teamId}/invite-links`, { method: "POST", body: JSON.stringify(data) }),
     revokeTeamInviteLink: (teamId: string, linkId: string) =>
       request<void>(`/teams/${teamId}/invite-links/${linkId}`, { method: "DELETE" }),
+    /** The organisation a team is part of (issue #241), or null for none. */
+    setTeamOrganization: (teamId: string, organizationId: string | null) =>
+      request<TeamSummary>(`/teams/${teamId}/organization`, { method: "PUT", body: JSON.stringify({ organizationId }) }),
+
+    // Organisations (issue #241).
+    listMyOrganizations: () => request<MyOrganizations>("/organizations"),
+    createOrganization: (data: CreateOrganizationRequest) => request<OrganizationSummary>("/organizations", { method: "POST", body: JSON.stringify(data) }),
+    getOrganization: (organizationId: string) => request<OrganizationDetail>(`/organizations/${organizationId}`),
+    updateOrganization: (organizationId: string, data: UpdateOrganizationRequest) =>
+      request<OrganizationDetail>(`/organizations/${organizationId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteOrganization: (organizationId: string) => request<void>(`/organizations/${organizationId}`, { method: "DELETE" }),
+    listOrganizationMembers: (organizationId: string) => request<OrganizationMember[]>(`/organizations/${organizationId}/members`),
+    updateOrganizationMemberRole: (organizationId: string, userId: string, role: TeamRole) =>
+      request<OrganizationMember>(`/organizations/${organizationId}/members/${userId}`, { method: "PATCH", body: JSON.stringify({ role }) }),
+    removeOrganizationMember: (organizationId: string, userId: string) => request<void>(`/organizations/${organizationId}/members/${userId}`, { method: "DELETE" }),
+    leaveOrganization: (organizationId: string) => request<void>(`/organizations/${organizationId}/leave`, { method: "POST" }),
+    listOrganizationInviteLinks: (organizationId: string) => request<TeamInviteLink[]>(`/organizations/${organizationId}/invite-links`),
+    createOrganizationInviteLink: (organizationId: string, data: CreateInviteLinkInput) =>
+      request<TeamInviteLink>(`/organizations/${organizationId}/invite-links`, { method: "POST", body: JSON.stringify(data) }),
+    revokeOrganizationInviteLink: (organizationId: string, linkId: string) => request<void>(`/organizations/${organizationId}/invite-links/${linkId}`, { method: "DELETE" }),
+    joinOrganizationByToken: (token: string) => request<OrganizationSummary>(`/organizations/join/${token}`, { method: "POST" }),
+    /** Takes a team out of the organisation (its admins). */
+    removeOrganizationTeam: (organizationId: string, teamId: string) => request<void>(`/organizations/${organizationId}/teams/${teamId}`, { method: "DELETE" }),
 
     // A team's calendar (issue #235).
     listTeamEvents: (teamId: string) => request<TeamEvent[]>(`/teams/${teamId}/events`),
@@ -2466,6 +2555,11 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminGetSecuritySettings: () => request<SecuritySettingsSummary>("/admin/security"),
     adminSaveSecuritySettings: (data: SaveSecuritySettingsRequest) => request<void>("/admin/security", { method: "PUT", body: JSON.stringify(data) }),
     adminClearSecuritySettings: () => request<void>("/admin/security", { method: "DELETE" }),
+    adminGetOrganizations: () => request<AdminOrganizations>("/admin/organizations"),
+    adminSaveOrganizationSettings: (data: SaveOrganizationSettingsRequest) => request<void>("/admin/organizations/settings", { method: "PUT", body: JSON.stringify(data) }),
+    adminClearOrganizationSettings: () => request<void>("/admin/organizations/settings", { method: "DELETE" }),
+    adminCreateOrganization: (data: CreateOrganizationRequest) => request<AdminOrganization>("/admin/organizations", { method: "POST", body: JSON.stringify(data) }),
+    adminDeleteOrganization: (organizationId: string) => request<void>(`/admin/organizations/${organizationId}`, { method: "DELETE" }),
     adminGetNotificationSettings: () => request<NotificationServerSettingsSummary>("/admin/notifications"),
     adminSaveNotificationSettings: (data: SaveNotificationServerSettingsRequest) => request<void>("/admin/notifications", { method: "PUT", body: JSON.stringify(data) }),
     adminClearNotificationSettings: () => request<void>("/admin/notifications", { method: "DELETE" }),

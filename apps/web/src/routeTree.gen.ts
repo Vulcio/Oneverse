@@ -24,6 +24,7 @@ import { Route as ProtectedReviewRouteImport } from './routes/_protected/review'
 import { Route as ProtectedScreensRouteImport } from './routes/_protected/screens'
 import { Route as ProtectedTunerRouteImport } from './routes/_protected/tuner'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as JoinOrganizationTokenRouteImport } from './routes/join-organization.$token'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as SetInviteTokenRouteImport } from './routes/set-invite.$token'
 import { Route as TransferTokenRouteImport } from './routes/transfer.$token'
@@ -33,6 +34,7 @@ import { Route as ProtectedAdminCatalogsRouteImport } from './routes/_protected/
 import { Route as ProtectedAdminInstrumentsRouteImport } from './routes/_protected/admin/instruments'
 import { Route as ProtectedAdminMetadataRouteImport } from './routes/_protected/admin/metadata'
 import { Route as ProtectedAdminNotificationsRouteImport } from './routes/_protected/admin/notifications'
+import { Route as ProtectedAdminOrganizationsRouteImport } from './routes/_protected/admin/organizations'
 import { Route as ProtectedAdminRolesRouteImport } from './routes/_protected/admin/roles'
 import { Route as ProtectedAdminSecurityRouteImport } from './routes/_protected/admin/security'
 import { Route as ProtectedAdminStemSeparationRouteImport } from './routes/_protected/admin/stem-separation'
@@ -45,6 +47,8 @@ import { Route as ProtectedLibraryArtistsRouteImport } from './routes/_protected
 import { Route as ProtectedLibraryNewRouteImport } from './routes/_protected/library/new'
 import { Route as ProtectedLibraryProgressionsRouteImport } from './routes/_protected/library/progressions'
 import { Route as ProtectedLibrarySongsRouteImport } from './routes/_protected/library/songs'
+import { Route as ProtectedOrganizationsIndexRouteImport } from './routes/_protected/organizations/index'
+import { Route as ProtectedOrganizationsOrganizationIdRouteImport } from './routes/_protected/organizations/$organizationId'
 import { Route as ProtectedReviewIndexRouteImport } from './routes/_protected/review/index'
 import { Route as ProtectedReviewSubmissionIdRouteImport } from './routes/_protected/review/$submissionId'
 import { Route as ProtectedSetsIndexRouteImport } from './routes/_protected/sets/index'
@@ -140,6 +144,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JoinOrganizationTokenRoute = JoinOrganizationTokenRouteImport.update({
+  id: '/join-organization/$token',
+  path: '/join-organization/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinTokenRoute = JoinTokenRouteImport.update({
   id: '/join/$token',
   path: '/join/$token',
@@ -185,6 +194,12 @@ const ProtectedAdminNotificationsRoute =
   ProtectedAdminNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
+    getParentRoute: () => ProtectedAdminRoute,
+  } as any)
+const ProtectedAdminOrganizationsRoute =
+  ProtectedAdminOrganizationsRouteImport.update({
+    id: '/organizations',
+    path: '/organizations',
     getParentRoute: () => ProtectedAdminRoute,
   } as any)
 const ProtectedAdminRolesRoute = ProtectedAdminRolesRouteImport.update({
@@ -250,6 +265,18 @@ const ProtectedLibrarySongsRoute = ProtectedLibrarySongsRouteImport.update({
   path: '/library/songs',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedOrganizationsIndexRoute =
+  ProtectedOrganizationsIndexRouteImport.update({
+    id: '/organizations/',
+    path: '/organizations/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
+const ProtectedOrganizationsOrganizationIdRoute =
+  ProtectedOrganizationsOrganizationIdRouteImport.update({
+    id: '/organizations/$organizationId',
+    path: '/organizations/$organizationId',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedReviewIndexRoute = ProtectedReviewIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -377,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/screens': typeof ProtectedScreensRoute
   '/tuner': typeof ProtectedTunerRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
@@ -385,6 +413,7 @@ export interface FileRoutesByFullPath {
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
+  '/admin/organizations': typeof ProtectedAdminOrganizationsRoute
   '/admin/roles': typeof ProtectedAdminRolesRoute
   '/admin/security': typeof ProtectedAdminSecurityRoute
   '/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
@@ -396,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/library/new': typeof ProtectedLibraryNewRoute
   '/library/progressions': typeof ProtectedLibraryProgressionsRoute
   '/library/songs': typeof ProtectedLibrarySongsRoute
+  '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/review/$submissionId': typeof ProtectedReviewSubmissionIdRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
   '/sets/new': typeof ProtectedSetsNewRoute
@@ -407,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/teams/new': typeof ProtectedTeamsNewRoute
   '/admin/': typeof ProtectedAdminIndexRoute
   '/library/': typeof ProtectedLibraryIndexRoute
+  '/organizations/': typeof ProtectedOrganizationsIndexRoute
   '/review/': typeof ProtectedReviewIndexRoute
   '/sets/': typeof ProtectedSetsIndexRoute
   '/songbook-catalogs/': typeof ProtectedSongbookCatalogsIndexRoute
@@ -432,6 +463,7 @@ export interface FileRoutesByTo {
   '/screens': typeof ProtectedScreensRoute
   '/tuner': typeof ProtectedTunerRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
@@ -440,6 +472,7 @@ export interface FileRoutesByTo {
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
+  '/admin/organizations': typeof ProtectedAdminOrganizationsRoute
   '/admin/roles': typeof ProtectedAdminRolesRoute
   '/admin/security': typeof ProtectedAdminSecurityRoute
   '/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
@@ -451,6 +484,7 @@ export interface FileRoutesByTo {
   '/library/new': typeof ProtectedLibraryNewRoute
   '/library/progressions': typeof ProtectedLibraryProgressionsRoute
   '/library/songs': typeof ProtectedLibrarySongsRoute
+  '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/review/$submissionId': typeof ProtectedReviewSubmissionIdRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
   '/sets/new': typeof ProtectedSetsNewRoute
@@ -462,6 +496,7 @@ export interface FileRoutesByTo {
   '/teams/new': typeof ProtectedTeamsNewRoute
   '/admin': typeof ProtectedAdminIndexRoute
   '/library': typeof ProtectedLibraryIndexRoute
+  '/organizations': typeof ProtectedOrganizationsIndexRoute
   '/review': typeof ProtectedReviewIndexRoute
   '/sets': typeof ProtectedSetsIndexRoute
   '/songbook-catalogs': typeof ProtectedSongbookCatalogsIndexRoute
@@ -491,6 +526,7 @@ export interface FileRoutesById {
   '/_protected/screens': typeof ProtectedScreensRoute
   '/_protected/tuner': typeof ProtectedTunerRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
@@ -499,6 +535,7 @@ export interface FileRoutesById {
   '/_protected/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/_protected/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/_protected/admin/notifications': typeof ProtectedAdminNotificationsRoute
+  '/_protected/admin/organizations': typeof ProtectedAdminOrganizationsRoute
   '/_protected/admin/roles': typeof ProtectedAdminRolesRoute
   '/_protected/admin/security': typeof ProtectedAdminSecurityRoute
   '/_protected/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
@@ -510,6 +547,7 @@ export interface FileRoutesById {
   '/_protected/library/new': typeof ProtectedLibraryNewRoute
   '/_protected/library/progressions': typeof ProtectedLibraryProgressionsRoute
   '/_protected/library/songs': typeof ProtectedLibrarySongsRoute
+  '/_protected/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/_protected/review/$submissionId': typeof ProtectedReviewSubmissionIdRoute
   '/_protected/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
   '/_protected/sets/new': typeof ProtectedSetsNewRoute
@@ -521,6 +559,7 @@ export interface FileRoutesById {
   '/_protected/teams/new': typeof ProtectedTeamsNewRoute
   '/_protected/admin/': typeof ProtectedAdminIndexRoute
   '/_protected/library/': typeof ProtectedLibraryIndexRoute
+  '/_protected/organizations/': typeof ProtectedOrganizationsIndexRoute
   '/_protected/review/': typeof ProtectedReviewIndexRoute
   '/_protected/sets/': typeof ProtectedSetsIndexRoute
   '/_protected/songbook-catalogs/': typeof ProtectedSongbookCatalogsIndexRoute
@@ -550,6 +589,7 @@ export interface FileRouteTypes {
     | '/screens'
     | '/tuner'
     | '/invite/$token'
+    | '/join-organization/$token'
     | '/join/$token'
     | '/set-invite/$token'
     | '/transfer/$token'
@@ -558,6 +598,7 @@ export interface FileRouteTypes {
     | '/admin/instruments'
     | '/admin/metadata'
     | '/admin/notifications'
+    | '/admin/organizations'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/stem-separation'
@@ -569,6 +610,7 @@ export interface FileRouteTypes {
     | '/library/new'
     | '/library/progressions'
     | '/library/songs'
+    | '/organizations/$organizationId'
     | '/review/$submissionId'
     | '/sets/$setlistId'
     | '/sets/new'
@@ -580,6 +622,7 @@ export interface FileRouteTypes {
     | '/teams/new'
     | '/admin/'
     | '/library/'
+    | '/organizations/'
     | '/review/'
     | '/sets/'
     | '/songbook-catalogs/'
@@ -605,6 +648,7 @@ export interface FileRouteTypes {
     | '/screens'
     | '/tuner'
     | '/invite/$token'
+    | '/join-organization/$token'
     | '/join/$token'
     | '/set-invite/$token'
     | '/transfer/$token'
@@ -613,6 +657,7 @@ export interface FileRouteTypes {
     | '/admin/instruments'
     | '/admin/metadata'
     | '/admin/notifications'
+    | '/admin/organizations'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/stem-separation'
@@ -624,6 +669,7 @@ export interface FileRouteTypes {
     | '/library/new'
     | '/library/progressions'
     | '/library/songs'
+    | '/organizations/$organizationId'
     | '/review/$submissionId'
     | '/sets/$setlistId'
     | '/sets/new'
@@ -635,6 +681,7 @@ export interface FileRouteTypes {
     | '/teams/new'
     | '/admin'
     | '/library'
+    | '/organizations'
     | '/review'
     | '/sets'
     | '/songbook-catalogs'
@@ -663,6 +710,7 @@ export interface FileRouteTypes {
     | '/_protected/screens'
     | '/_protected/tuner'
     | '/invite/$token'
+    | '/join-organization/$token'
     | '/join/$token'
     | '/set-invite/$token'
     | '/transfer/$token'
@@ -671,6 +719,7 @@ export interface FileRouteTypes {
     | '/_protected/admin/instruments'
     | '/_protected/admin/metadata'
     | '/_protected/admin/notifications'
+    | '/_protected/admin/organizations'
     | '/_protected/admin/roles'
     | '/_protected/admin/security'
     | '/_protected/admin/stem-separation'
@@ -682,6 +731,7 @@ export interface FileRouteTypes {
     | '/_protected/library/new'
     | '/_protected/library/progressions'
     | '/_protected/library/songs'
+    | '/_protected/organizations/$organizationId'
     | '/_protected/review/$submissionId'
     | '/_protected/sets/$setlistId'
     | '/_protected/sets/new'
@@ -693,6 +743,7 @@ export interface FileRouteTypes {
     | '/_protected/teams/new'
     | '/_protected/admin/'
     | '/_protected/library/'
+    | '/_protected/organizations/'
     | '/_protected/review/'
     | '/_protected/sets/'
     | '/_protected/songbook-catalogs/'
@@ -712,6 +763,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ScreenRoute: typeof ScreenRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  JoinOrganizationTokenRoute: typeof JoinOrganizationTokenRoute
   JoinTokenRoute: typeof JoinTokenRoute
   SetInviteTokenRoute: typeof SetInviteTokenRoute
   TransferTokenRoute: typeof TransferTokenRoute
@@ -824,6 +876,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/join-organization/$token': {
+      id: '/join-organization/$token'
+      path: '/join-organization/$token'
+      fullPath: '/join-organization/$token'
+      preLoaderRoute: typeof JoinOrganizationTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$token': {
       id: '/join/$token'
       path: '/join/$token'
@@ -885,6 +944,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/admin/notifications'
       preLoaderRoute: typeof ProtectedAdminNotificationsRouteImport
+      parentRoute: typeof ProtectedAdminRoute
+    }
+    '/_protected/admin/organizations': {
+      id: '/_protected/admin/organizations'
+      path: '/organizations'
+      fullPath: '/admin/organizations'
+      preLoaderRoute: typeof ProtectedAdminOrganizationsRouteImport
       parentRoute: typeof ProtectedAdminRoute
     }
     '/_protected/admin/roles': {
@@ -969,6 +1035,20 @@ declare module '@tanstack/react-router' {
       path: '/library/songs'
       fullPath: '/library/songs'
       preLoaderRoute: typeof ProtectedLibrarySongsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/organizations/': {
+      id: '/_protected/organizations/'
+      path: '/organizations'
+      fullPath: '/organizations/'
+      preLoaderRoute: typeof ProtectedOrganizationsIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/organizations/$organizationId': {
+      id: '/_protected/organizations/$organizationId'
+      path: '/organizations/$organizationId'
+      fullPath: '/organizations/$organizationId'
+      preLoaderRoute: typeof ProtectedOrganizationsOrganizationIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/review/': {
@@ -1120,6 +1200,7 @@ interface ProtectedAdminRouteChildren {
   ProtectedAdminInstrumentsRoute: typeof ProtectedAdminInstrumentsRoute
   ProtectedAdminMetadataRoute: typeof ProtectedAdminMetadataRoute
   ProtectedAdminNotificationsRoute: typeof ProtectedAdminNotificationsRoute
+  ProtectedAdminOrganizationsRoute: typeof ProtectedAdminOrganizationsRoute
   ProtectedAdminRolesRoute: typeof ProtectedAdminRolesRoute
   ProtectedAdminSecurityRoute: typeof ProtectedAdminSecurityRoute
   ProtectedAdminStemSeparationRoute: typeof ProtectedAdminStemSeparationRoute
@@ -1135,6 +1216,7 @@ const ProtectedAdminRouteChildren: ProtectedAdminRouteChildren = {
   ProtectedAdminInstrumentsRoute: ProtectedAdminInstrumentsRoute,
   ProtectedAdminMetadataRoute: ProtectedAdminMetadataRoute,
   ProtectedAdminNotificationsRoute: ProtectedAdminNotificationsRoute,
+  ProtectedAdminOrganizationsRoute: ProtectedAdminOrganizationsRoute,
   ProtectedAdminRolesRoute: ProtectedAdminRolesRoute,
   ProtectedAdminSecurityRoute: ProtectedAdminSecurityRoute,
   ProtectedAdminStemSeparationRoute: ProtectedAdminStemSeparationRoute,
@@ -1181,6 +1263,7 @@ interface ProtectedRouteChildren {
   ProtectedLibraryNewRoute: typeof ProtectedLibraryNewRoute
   ProtectedLibraryProgressionsRoute: typeof ProtectedLibraryProgressionsRoute
   ProtectedLibrarySongsRoute: typeof ProtectedLibrarySongsRoute
+  ProtectedOrganizationsOrganizationIdRoute: typeof ProtectedOrganizationsOrganizationIdRoute
   ProtectedSetsSetlistIdRoute: typeof ProtectedSetsSetlistIdRoute
   ProtectedSetsNewRoute: typeof ProtectedSetsNewRoute
   ProtectedSongbookCatalogsCatalogIdRoute: typeof ProtectedSongbookCatalogsCatalogIdRoute
@@ -1190,6 +1273,7 @@ interface ProtectedRouteChildren {
   ProtectedTeamsTeamIdRoute: typeof ProtectedTeamsTeamIdRoute
   ProtectedTeamsNewRoute: typeof ProtectedTeamsNewRoute
   ProtectedLibraryIndexRoute: typeof ProtectedLibraryIndexRoute
+  ProtectedOrganizationsIndexRoute: typeof ProtectedOrganizationsIndexRoute
   ProtectedSetsIndexRoute: typeof ProtectedSetsIndexRoute
   ProtectedSongbookCatalogsIndexRoute: typeof ProtectedSongbookCatalogsIndexRoute
   ProtectedSongbooksIndexRoute: typeof ProtectedSongbooksIndexRoute
@@ -1217,6 +1301,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedLibraryNewRoute: ProtectedLibraryNewRoute,
   ProtectedLibraryProgressionsRoute: ProtectedLibraryProgressionsRoute,
   ProtectedLibrarySongsRoute: ProtectedLibrarySongsRoute,
+  ProtectedOrganizationsOrganizationIdRoute:
+    ProtectedOrganizationsOrganizationIdRoute,
   ProtectedSetsSetlistIdRoute: ProtectedSetsSetlistIdRoute,
   ProtectedSetsNewRoute: ProtectedSetsNewRoute,
   ProtectedSongbookCatalogsCatalogIdRoute:
@@ -1227,6 +1313,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedTeamsTeamIdRoute: ProtectedTeamsTeamIdRoute,
   ProtectedTeamsNewRoute: ProtectedTeamsNewRoute,
   ProtectedLibraryIndexRoute: ProtectedLibraryIndexRoute,
+  ProtectedOrganizationsIndexRoute: ProtectedOrganizationsIndexRoute,
   ProtectedSetsIndexRoute: ProtectedSetsIndexRoute,
   ProtectedSongbookCatalogsIndexRoute: ProtectedSongbookCatalogsIndexRoute,
   ProtectedSongbooksIndexRoute: ProtectedSongbooksIndexRoute,
@@ -1251,6 +1338,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ScreenRoute: ScreenRoute,
   InviteTokenRoute: InviteTokenRoute,
+  JoinOrganizationTokenRoute: JoinOrganizationTokenRoute,
   JoinTokenRoute: JoinTokenRoute,
   SetInviteTokenRoute: SetInviteTokenRoute,
   TransferTokenRoute: TransferTokenRoute,

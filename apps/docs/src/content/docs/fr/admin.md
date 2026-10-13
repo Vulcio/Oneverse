@@ -51,6 +51,16 @@ Comment l'API se protège. **Limiter les requêtes** plafonne le nombre de requ�
 
 Chaque équipe, avec ses rôles, ses membres, ses chants et son **espace de stockage** : ce qui est sur les chants d'une équipe y compte, quel que soit qui l'a envoyé, et non pour la personne qui l'a envoyé. **Rôles…** donne des rôles à l'équipe : chacun s'applique à tous ses membres, et un palier de stockage fixe l'espace de l'équipe.
 
+### Organisations
+
+Si le serveur a des organisations - une église, un club - qui regroupent des équipes pour planifier ensemble (voir [Organisations](/fr/organizations/)). Sous **Organisations sur ce serveur** :
+
+- **Aucune : Songverse seul** - par défaut ; personne ne voit d'organisations ;
+- **Une seule : toute personne qui se connecte en fait partie** - **Créer l'organisation** (un **Nom**, et l'**E-mail de son administrateur (facultatif)** si ce n'est pas vous), une fois ;
+- **Plusieurs, chacune à part** - les administrateurs globaux les créent sous **Nouvelle organisation** ; avec **Tout le monde peut créer une organisation** coché, tout le monde le peut, depuis **Organisations** dans la barre latérale.
+
+La page indique d'où vient chaque réglage - enregistré ici, les variables d'environnement `ORGANIZATION_MODE` et `ORGANIZATIONS_OPEN`, ou la valeur par défaut - avec **Enregistrer la configuration** et **Revenir aux variables d'environnement**. **Toutes les organisations** les liste avec leurs équipes, membres et administrateurs ; **Supprimer l'organisation** laisse leurs équipes à part entière.
+
 ### Rôles
 
 Le seul endroit qui dit ce que chacun peut faire au-delà de ses chants et de ceux de ses équipes. Un rôle peut permettre de :

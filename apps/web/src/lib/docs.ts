@@ -17,6 +17,8 @@ const PAGES: [RegExp, string][] = [
   [/^\/screens/, "screens"],
   [/^\/songbook/, "songbooks"],
   [/^\/teams/, "teams"],
+  [/^\/organizations/, "organizations"],
+  [/^\/join-organization/, "organizations"],
   [/^\/calendar/, "teams"],
   [/^\/(admin|review)/, "admin"],
   [/^\/dashboard/, "account"],
