@@ -127,7 +127,8 @@ await step("Live: the key transposes for now, G+1 shown; back to the set's key",
   const panel = page.getByTestId("live-transpose");
   await panel.getByRole("button", { name: "Up a semitone" }).click();
   await page.getByTestId("live-key").getByText("+1").waitFor();
-  if (!(await page.getByTestId("live-key").innerText()).startsWith("Ab")) throw new Error(await page.getByTestId("live-key").innerText());
+  // Flats and sharps as their signs (issue #230): A♭.
+  if (!(await page.getByTestId("live-key").innerText()).startsWith("A♭")) throw new Error(await page.getByTestId("live-key").innerText());
   await page.locator('[data-chord="Ab"]').first().waitFor();
   await panel.getByRole("button", { name: "Back to the set's key" }).click();
   if ((await page.getByTestId("live-key").innerText()).trim() !== "G") throw new Error("not back");
