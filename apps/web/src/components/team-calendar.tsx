@@ -33,7 +33,18 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * are made; ask for answers by a deadline, and tell the people signed up
  * for a date that its set is ready (reminders, issue #235).
  */
-export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { teamId: string; isAdmin: boolean; customInstruments?: readonly CustomInstrument[] }) {
+export function TeamCalendar({
+  teamId,
+  isAdmin,
+  customInstruments = [],
+  withSets = true,
+}: {
+  teamId: string;
+  isAdmin: boolean;
+  customInstruments?: readonly CustomInstrument[];
+  /** False for a group that only plans (issue #241): its dates have no set. */
+  withSets?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const partLabel = usePartLabel(customInstruments);
   const navigate = useNavigate();
@@ -97,7 +108,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
         <div className="flex flex-col gap-1.5">
           <CardTitle className="text-sm">{t("teamCalendar.title")}</CardTitle>
-          <CardDescription>{t("teamCalendar.description")}</CardDescription>
+          <CardDescription>{withSets ? t("teamCalendar.description") : t("teamCalendar.descriptionPlanning")}</CardDescription>
         </div>
         {isAdmin ? (
           <div className="flex flex-wrap gap-2">
@@ -140,7 +151,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
           </div>
         ))}
         {dates === null ? null : dates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{isAdmin ? t("teamCalendar.noEventsAdmin") : t("teamCalendar.noEvents")}</p>
+          <p className="text-sm text-muted-foreground">{isAdmin ? (withSets ? t("teamCalendar.noEventsAdmin") : t("teamCalendar.noEventsAdminPlanning")) : t("teamCalendar.noEvents")}</p>
         ) : (
           <ul className="flex flex-col divide-y" aria-label={t("teamCalendar.title")}>
             {dates.map((date) => {
@@ -223,7 +234,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                       {t("teamCalendar.openSet")}
                       <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
                     </Button>
-                  ) : !date.cancelled && !rehearsal && isAdmin ? (
+                  ) : !date.cancelled && !rehearsal && isAdmin && withSets ? (
                     <Button variant="outline" size="sm" className="col-start-2 row-start-1" onClick={() => void planSet(date)} data-testid="calendar-plan-set">
                       {t("teamCalendar.planSet")}
                     </Button>
@@ -304,7 +315,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
             </Button>
           ) : null}
         </div>
-        {isAdmin ? <SetsAhead teamId={teamId} onSaved={load} /> : null}
+        {isAdmin && withSets ? <SetsAhead teamId={teamId} onSaved={load} /> : null}
       </CardContent>
       {answersOf ? (
         <AnswersDialog

@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
@@ -18,6 +19,7 @@ import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { CreateInviteLinkDto } from "./dto/create-invite-link.dto.js";
 import { CreateTeamDto } from "./dto/create-team.dto.js";
+import { ListTeamsQueryDto } from "./dto/list-teams-query.dto.js";
 import { InviteLinkResponseDto } from "./dto/invite-link-response.dto.js";
 import { TeamMemberResponseDto } from "./dto/team-member-response.dto.js";
 import { TeamResponseDto } from "./dto/team-response.dto.js";
@@ -34,9 +36,9 @@ export class TeamsController {
 
   @Get()
   @ApiOkResponse({ type: TeamResponseDto, isArray: true })
-  findMyTeams(@CurrentUser() user?: AuthenticatedUser): ReturnType<TeamsService["findMyTeams"]> {
+  findMyTeams(@CurrentUser() user: AuthenticatedUser | undefined, @Query() query: ListTeamsQueryDto): ReturnType<TeamsService["findMyTeams"]> {
     if (!user) throw new UnauthorizedException();
-    return this.teamsService.findMyTeams(user.id);
+    return this.teamsService.findMyTeams(user.id, query.all ?? false);
   }
 
   @Post()

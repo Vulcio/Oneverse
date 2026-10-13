@@ -505,9 +505,31 @@ model Team {
   // as in Songverse alone. Its members are the organisation's members too.
   organizationId      String?
   organization        Organization?          @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  // A group of an organisation (issue #241): whether it's a Songverse team -
+  // songs, songbooks, sets - or only plans (a welcome team, a cleaning rota);
+  // the group it's under, in the same organisation; the positions of its own
+  // its members cover ("Greeter", "Coffee"), besides instruments and roles.
+  usesSongverse       Boolean                @default(true)
+  parentId            String?
+  parent              Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
+  subgroups           Team[]                 @relation("Subgroups")
+  positions           TeamPosition[]
 
   @@index([slug])
   @@index([organizationId])
+  @@index([parentId])
+}
+
+// A position of a group's own (issue #241): "Greeter", "Coffee", "Hall".
+model TeamPosition {
+  id        String   @id @default(cuid())
+  teamId    String
+  name      String
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, name])
 }
 
 // An organisation (issue #241, Planiverse): a church, a club... whose teams
@@ -574,6 +596,8 @@ model TeamMembership {
   teamId    String
   userId    String
   role      TeamRole @default(MEMBER)
+  // The group's own positions they cover (TeamPosition ids, issue #241).
+  positionIds String[] @default([])
   joinedAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
 

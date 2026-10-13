@@ -1,4 +1,4 @@
-import type { OrganizationSummary, TeamRole } from "@songverse/core";
+import type { OrganizationDetail, OrganizationSummary, TeamPosition, TeamRole, TeamSummary } from "@songverse/core";
 import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,10 @@ import { AppearanceCard } from "#/components/appearance-card";
 import { EntityAvatar } from "#/components/entity-avatar";
 import { Label } from "#/components/ui/label";
 import { NativeSelect } from "#/components/ui/native-select";
+import { Input } from "#/components/ui/input";
+import { X } from "lucide-react";
+import { cn } from "#/lib/utils";
+import { groupTree, withSubgroups } from "#/lib/organizations";
 import { ConfirmButton } from "#/components/confirm-button";
 import { InviteLinksCard } from "#/components/invite-links-card";
 import { TeamCalendar } from "#/components/team-calendar";
@@ -22,13 +26,16 @@ export const Route = createFileRoute("/_protected/teams/$teamId")({
     const team = await apiClient.getTeam(params.teamId).catch(() => null);
     if (!team) throw redirect({ to: "/dashboard" });
 
-    const [members, inviteLinks, customInstruments, organizations] = await Promise.all([
+    const [members, inviteLinks, customInstruments, organizations, positions, organization] = await Promise.all([
       apiClient.listTeamMembers(params.teamId),
       team.currentUserRole === "ADMIN" ? apiClient.listTeamInviteLinks(params.teamId) : [],
       apiClient.listCustomInstruments(),
       apiClient.listMyOrganizations().catch(() => null),
+      apiClient.listTeamPositions(params.teamId),
+      // Its organisation's groups (issue #241), for where it sits.
+      team.organization ? apiClient.getOrganization(team.organization.id).catch(() => null) : null,
     ]);
-    return { session: context.session, team, members, inviteLinks, customInstruments, organizations };
+    return { session: context.session, team, members, inviteLinks, customInstruments, organizations, positions, organization };
   },
   component: TeamDetail,
 });
@@ -36,7 +43,7 @@ export const Route = createFileRoute("/_protected/teams/$teamId")({
 function TeamDetail() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { session, team, members, inviteLinks, customInstruments, organizations } = Route.useLoaderData();
+  const { session, team, members, inviteLinks, customInstruments, organizations, positions, organization } = Route.useLoaderData();
   const isAdmin = team.currentUserRole === "ADMIN";
 
   const isSoleMember = members.length === 1;
@@ -197,7 +204,7 @@ function TeamDetail() {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {/* Its services and rehearsals, each date with its set (issue #235). */}
-      <TeamCalendar teamId={team.id} isAdmin={isAdmin} customInstruments={customInstruments} />
+      <TeamCalendar teamId={team.id} isAdmin={isAdmin} customInstruments={customInstruments} withSets={team.usesSongverse !== false} />
 
       <div className="grid grid-cols-1 items-start gap-6 @6xl:grid-cols-2">
       <Card>
@@ -224,6 +231,8 @@ function TeamDetail() {
                         <p className="text-xs text-muted-foreground">{member.email}</p>
                       </div>
                       <RoleBadges instruments={member.instruments} techRoles={member.techRoles} customInstruments={customInstruments} />
+                      {/* The group's own positions they cover (issue #241): they and its admins tick them. */}
+                      <MemberPositions teamId={team.id} userId={member.userId} positions={positions} covered={member.positionIds ?? []} editable={isAdmin || isSelf} onChanged={refresh} onError={setError} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -274,6 +283,11 @@ function TeamDetail() {
           onChanged={() => router.invalidate()}
         />
       ) : null}
+
+      {isAdmin || positions.length > 0 ? <PositionsCard teamId={team.id} positions={positions} isAdmin={isAdmin} onChanged={refresh} onError={setError} /> : null}
+
+      {/* Where it sits in its organisation, and whether it uses Songverse (issue #241). */}
+      {isAdmin && organization ? <GroupCard team={team} organization={organization} onChanged={refresh} onError={setError} /> : null}
 
       {/* The organisation it's part of (issue #241): its admins choose among those they run. */}
       {isAdmin && organizations && organizations.mode !== "NONE" ? <TeamOrganizationCard teamId={team.id} current={team.organization ?? null} organizations={organizations.organizations} onChanged={refresh} onError={setError} /> : null}
@@ -347,6 +361,188 @@ function TeamOrganizationCard({
           </NativeSelect>
         </div>
         <Button disabled={saving || choice === (current?.id ?? "")} onClick={() => void save()} data-testid="team-organization-save">
+          {saving ? t("organizations.saving") : t("organizations.save")}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** A group's own positions (issue #241): its admins add and remove them. */
+function PositionsCard({ teamId, positions, isAdmin, onChanged, onError }: { teamId: string; positions: TeamPosition[]; isAdmin: boolean; onChanged: () => Promise<void>; onError: (message: string) => void }) {
+  const { t } = useTranslation();
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true);
+    try {
+      await action();
+      await onChanged();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card data-testid="team-positions">
+      <CardHeader>
+        <CardTitle className="text-sm">{t("organizations.positions")}</CardTitle>
+        <CardDescription>{t("organizations.positionsHint")}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {positions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("organizations.noPositions")}</p>
+        ) : (
+          <ul className="flex flex-wrap gap-2">
+            {positions.map((position) => (
+              <li key={position.id} className="flex items-center gap-1 rounded-md border px-2 py-1 text-sm" data-position={position.name}>
+                {position.name}
+                {isAdmin ? (
+                  <button type="button" className="rounded p-0.5 text-muted-foreground hover:text-foreground" aria-label={t("organizations.removePosition", { name: position.name })} disabled={busy} onClick={() => void run(() => apiClient.deleteTeamPosition(teamId, position.id))}>
+                    <X className="size-3.5" />
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {isAdmin ? (
+          <form
+            className="flex items-end gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void run(async () => {
+                await apiClient.createTeamPosition(teamId, name.trim());
+                setName("");
+              });
+            }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="position-name">{t("organizations.newPosition")}</Label>
+              <Input id="position-name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} className="w-48" />
+            </div>
+            <Button type="submit" variant="outline" disabled={busy || !name.trim()} data-testid="position-add">
+              {t("organizations.addPosition")}
+            </Button>
+          </form>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** The group's positions someone covers: toggled by them or its admins, shown to the others. */
+function MemberPositions({
+  teamId,
+  userId,
+  positions,
+  covered,
+  editable,
+  onChanged,
+  onError,
+}: {
+  teamId: string;
+  userId: string;
+  positions: TeamPosition[];
+  covered: string[];
+  editable: boolean;
+  onChanged: () => Promise<void>;
+  onError: (message: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const shown = editable ? positions : positions.filter((position) => covered.includes(position.id));
+  if (shown.length === 0) return null;
+
+  async function toggle(id: string) {
+    setBusy(true);
+    try {
+      await apiClient.setTeamMemberPositions(teamId, userId, covered.includes(id) ? covered.filter((one) => one !== id) : [...covered, id]);
+      await onChanged();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1" data-member-positions={userId}>
+      {shown.map((position) => {
+        const on = covered.includes(position.id);
+        return editable ? (
+          <button
+            key={position.id}
+            type="button"
+            aria-pressed={on}
+            disabled={busy}
+            onClick={() => void toggle(position.id)}
+            className={cn("rounded-full border px-2 py-0.5 text-xs", on ? "border-primary bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+          >
+            {position.name}
+          </button>
+        ) : (
+          <span key={position.id} className="rounded-full border border-primary bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+            {position.name}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/** For a group's admins (issue #241): whether it uses Songverse, and the group it's under. */
+function GroupCard({ team, organization, onChanged, onError }: { team: TeamSummary; organization: OrganizationDetail; onChanged: () => Promise<void>; onError: (message: string) => void }) {
+  const { t } = useTranslation();
+  const [usesSongverse, setUsesSongverse] = useState(team.usesSongverse !== false);
+  const [parentId, setParentId] = useState(team.parentId ?? "");
+  const [saving, setSaving] = useState(false);
+  // Not under itself or a group under it.
+  const excluded = withSubgroups(organization.teams, team.id);
+  const changed = usesSongverse !== (team.usesSongverse !== false) || parentId !== (team.parentId ?? "");
+
+  async function save() {
+    setSaving(true);
+    try {
+      await apiClient.updateTeamGroup(team.id, { usesSongverse, parentId: parentId || null });
+      await onChanged();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card data-testid="team-group-card">
+      <CardHeader>
+        <CardTitle className="text-sm">{t("organizations.groupCard")}</CardTitle>
+        <CardDescription>{t("organizations.groupCardHint", { name: organization.name })}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="team-parent">{t("organizations.under")}</Label>
+          <NativeSelect id="team-parent" value={parentId} onChange={(e) => setParentId(e.target.value)} data-testid="team-parent">
+            <option value="">{t("organizations.atTheTop")}</option>
+            {groupTree(organization.teams)
+              .filter(({ group }) => !excluded.has(group.id))
+              .map(({ group, depth }) => (
+                <option key={group.id} value={group.id}>
+                  {`${"\u00a0\u00a0".repeat(depth)}${group.name}`}
+                </option>
+              ))}
+          </NativeSelect>
+        </div>
+        <label className="flex items-start gap-3">
+          <input type="checkbox" className="mt-1 size-4" checked={usesSongverse} onChange={(e) => setUsesSongverse(e.target.checked)} data-testid="team-uses-songverse" />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">{t("organizations.usesSongverse")}</span>
+            <span className="text-xs text-muted-foreground">{t("organizations.usesSongverseHint")}</span>
+          </span>
+        </label>
+        <Button className="self-start" disabled={saving || !changed} onClick={() => void save()} data-testid="team-group-save">
           {saving ? t("organizations.saving") : t("organizations.save")}
         </Button>
       </CardContent>

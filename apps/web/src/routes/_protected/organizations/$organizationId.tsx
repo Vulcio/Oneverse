@@ -1,11 +1,12 @@
-import type { TeamRole } from "@songverse/core";
-import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import type { OrganizationTeam, TeamRole } from "@songverse/core";
+import { createFileRoute, Link, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "#/components/confirm-button";
 import { EntityAvatar } from "#/components/entity-avatar";
 import { InviteLinksCard } from "#/components/invite-links-card";
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
+import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
@@ -15,7 +16,7 @@ import { Textarea } from "#/components/ui/textarea";
 import { apiClient } from "#/lib/api-client";
 import { sizedAvatarUrl } from "#/lib/avatar-url";
 import { initials } from "#/lib/initials";
-import { forgetMyOrganizations } from "#/lib/organizations";
+import { forgetMyOrganizations, groupTree } from "#/lib/organizations";
 
 export const Route = createFileRoute("/_protected/organizations/$organizationId")({
   loader: async ({ context, params }) => {
@@ -114,26 +115,30 @@ function OrganizationPage() {
         <div className="flex flex-col gap-6">
           <Card data-testid="organization-teams">
             <CardHeader>
-              <CardTitle className="text-sm">{t("organizations.teams")}</CardTitle>
+              <CardTitle className="text-sm">{t("organizations.groups")}</CardTitle>
               {isAdmin ? <CardDescription>{t("organizations.addTeamHint")}</CardDescription> : null}
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-4">
               {organization.teams.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t("organizations.noTeams")}</p>
               ) : (
                 <ul className="flex flex-col divide-y">
-                  {organization.teams.map((team) => (
-                    <li key={team.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0" data-team={team.id}>
+                  {/* Each group under the one it's in (issue #241). */}
+                  {groupTree(organization.teams).map(({ group: team, depth }) => (
+                    <li key={team.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0" style={{ paddingInlineStart: `${depth * 1.5}rem` }} data-team={team.id} data-depth={depth}>
                       <div className="flex min-w-0 items-center gap-3">
                         <EntityAvatar name={team.name} color={team.color} avatarUrl={team.avatarUrl} size={32} />
                         <div className="min-w-0">
-                          {team.mine ? (
-                            <Link to="/teams/$teamId" params={{ teamId: team.id }} className="text-sm font-medium hover:text-primary">
-                              {team.name}
-                            </Link>
-                          ) : (
-                            <p className="text-sm font-medium">{team.name}</p>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {team.mine ? (
+                              <Link to="/teams/$teamId" params={{ teamId: team.id }} className="text-sm font-medium hover:text-primary">
+                                {team.name}
+                              </Link>
+                            ) : (
+                              <p className="text-sm font-medium">{team.name}</p>
+                            )}
+                            {team.usesSongverse ? null : <Badge variant="outline">{t("organizations.onlyPlans")}</Badge>}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {t("organizations.members", { count: team.memberCount })}
                             {team.mine ? ` · ${t("organizations.yourTeam")}` : ""}
@@ -149,6 +154,7 @@ function OrganizationPage() {
                   ))}
                 </ul>
               )}
+              {isAdmin ? <NewGroupForm organizationId={organization.id} groups={organization.teams} onError={setError} /> : null}
             </CardContent>
           </Card>
 
@@ -245,6 +251,71 @@ function OrganizationPage() {
             />
           </div>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+/** For the organisation's admins: a group of it, that only plans or uses Songverse, under another or at the top. */
+function NewGroupForm({ organizationId, groups, onError }: { organizationId: string; groups: OrganizationTeam[]; onError: (message: string) => void }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [usesSongverse, setUsesSongverse] = useState(false);
+  const [parentId, setParentId] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  if (!open) {
+    return (
+      <Button variant="outline" size="sm" className="self-start" onClick={() => setOpen(true)} data-testid="organization-new-group">
+        {t("organizations.newGroup")}
+      </Button>
+    );
+  }
+
+  async function create() {
+    setCreating(true);
+    try {
+      const group = await apiClient.createOrganizationGroup(organizationId, { name, usesSongverse, ...(parentId ? { parentId } : {}) });
+      await navigate({ to: "/teams/$teamId", params: { teamId: group.id } });
+    } catch (err) {
+      onError(err instanceof Error ? err.message : String(err));
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 rounded-md border p-3" data-testid="organization-group-form">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="group-name">{t("organizations.name")}</Label>
+        <Input id="group-name" value={name} maxLength={100} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="group-parent">{t("organizations.under")}</Label>
+        <NativeSelect id="group-parent" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+          <option value="">{t("organizations.atTheTop")}</option>
+          {groupTree(groups).map(({ group, depth }) => (
+            <option key={group.id} value={group.id}>
+              {`${"\u00a0\u00a0".repeat(depth)}${group.name}`}
+            </option>
+          ))}
+        </NativeSelect>
+      </div>
+      <label className="flex items-start gap-3">
+        <input type="checkbox" className="mt-1 size-4" checked={usesSongverse} onChange={(e) => setUsesSongverse(e.target.checked)} data-testid="group-uses-songverse" />
+        <span className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">{t("organizations.usesSongverse")}</span>
+          <span className="text-xs text-muted-foreground">{t("organizations.usesSongverseHint")}</span>
+        </span>
+      </label>
+      <div className="flex gap-2">
+        <Button size="sm" disabled={creating || name.trim().length < 2} onClick={() => void create()} data-testid="group-create">
+          {creating ? t("organizations.creating") : t("organizations.createGroup")}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          {t("teams.cancel")}
+        </Button>
       </div>
     </div>
   );

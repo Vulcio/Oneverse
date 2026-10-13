@@ -84,6 +84,7 @@ export class SetlistAccessService {
   }
 
   async assertTeamAdmin(user: AuthenticatedUser, teamId: string): Promise<void> {
+    await this.policy.assertSongverseTeam(teamId);
     if (user.isGlobalAdmin) {
       const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { id: true } });
       if (!team) throw new NotFoundException("Team not found");

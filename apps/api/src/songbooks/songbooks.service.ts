@@ -206,6 +206,7 @@ export class SongbooksService {
     }
     if (opts.teamId) {
       if (!(await this.access.teamRole(user.id, opts.teamId))) throw new ForbiddenException("Not a member of this team");
+      await this.access.assertSongverseTeam(opts.teamId);
       return { ownerScope: "TEAM", ownerUserId: null, ownerTeamId: opts.teamId };
     }
     return { ownerScope: "USER", ownerUserId: user.id, ownerTeamId: null };

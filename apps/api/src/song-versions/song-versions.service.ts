@@ -965,6 +965,7 @@ export class SongVersionsService {
     let ownerTeamId: string | null = null;
     if (dto.teamId) {
       if (!(await this.access.teamRole(user.id, dto.teamId))) throw new ForbiddenException("Not a member of this team");
+      await this.access.assertSongverseTeam(dto.teamId);
       ownerTeamId = dto.teamId;
     }
     const ownerScope = ownerTeamId ? "TEAM" : "USER";

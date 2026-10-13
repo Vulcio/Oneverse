@@ -26,6 +26,20 @@ export async function joinTeamOrganization(db: Db, teamId: string, userIds: stri
 }
 
 /**
+ * Teams leaving their organisation's tree (issue #241): not under a group
+ * any more, and their subgroups not under them.
+ */
+export function leaveTree(db: Db, teamIds: string[]) {
+  return db.team.updateMany({ where: { OR: [{ id: { in: teamIds } }, { parentId: { in: teamIds } }] }, data: { parentId: null } });
+}
+
+/** Teams out of their organisation: on their own, as Songverse teams again (a group that only planned would be nowhere). */
+async function leaveOrganization(db: Db, teamIds: string[]) {
+  await leaveTree(db, teamIds);
+  await db.team.updateMany({ where: { id: { in: teamIds } }, data: { organizationId: null, usesSongverse: true } });
+}
+
+/**
  * Organisations (issue #241, Planiverse): the teams an organisation plans
  * together, its members and admins. With the instance's mode at "none"
  * (Songverse alone) they're out of sight: every call here but Admin's is
@@ -35,7 +49,7 @@ export async function joinTeamOrganization(db: Db, teamId: string, userIds: stri
 export class OrganizationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async mode() {
+  async mode() {
     const { mode } = await getEffectiveOrganizationSettings();
     if (mode === "NONE") throw new NotFoundException("Organisations are turned off");
     return mode;
@@ -56,7 +70,7 @@ export class OrganizationsService {
   }
 
   /** The viewer's role in it; a global admin counts as one of its admins. */
-  private async roleOf(viewer: Viewer, organizationId: string): Promise<TeamRoleValue | null> {
+  async roleOf(viewer: Viewer, organizationId: string): Promise<TeamRoleValue | null> {
     const membership = await this.prisma.client.organizationMembership.findUnique({ where: { organizationId_userId: { organizationId, userId: viewer.id } }, select: { role: true } });
     return membership?.role ?? (viewer.isGlobalAdmin ? "ADMIN" : null);
   }
@@ -130,12 +144,24 @@ export class OrganizationsService {
       where: { id: organizationId },
       include: {
         ...OrganizationsService.counts,
-        teams: { orderBy: { name: "asc" }, select: { id: true, name: true, color: true, avatarUrl: true, _count: { select: { memberships: true } }, memberships: { where: { userId: viewer.id }, select: { id: true } } } },
+        teams: {
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, color: true, avatarUrl: true, usesSongverse: true, parentId: true, _count: { select: { memberships: true } }, memberships: { where: { userId: viewer.id }, select: { id: true } } },
+        },
       },
     });
     return {
       ...this.summary(organization, role),
-      teams: organization.teams.map((team) => ({ id: team.id, name: team.name, color: team.color, avatarUrl: team.avatarUrl, memberCount: team._count.memberships, mine: team.memberships.length > 0 })),
+      teams: organization.teams.map((team) => ({
+        id: team.id,
+        name: team.name,
+        color: team.color,
+        avatarUrl: team.avatarUrl,
+        memberCount: team._count.memberships,
+        mine: team.memberships.length > 0,
+        usesSongverse: team.usesSongverse,
+        parentId: team.parentId,
+      })),
     };
   }
 
@@ -155,7 +181,7 @@ export class OrganizationsService {
   /** Its teams stay, on their own again (onDelete: SetNull); its memberships and links go with it. */
   async remove(viewer: Viewer, organizationId: string) {
     await this.assertAdmin(viewer, organizationId);
-    await this.prisma.client.organization.delete({ where: { id: organizationId } });
+    await this.deleteOrganization(organizationId);
   }
 
   async members(viewer: Viewer, organizationId: string) {
@@ -256,7 +282,11 @@ export class OrganizationsService {
   /** A team taken out by the organisation's admins: on its own again, its members and songs untouched. */
   async removeTeam(viewer: Viewer, organizationId: string, teamId: string) {
     await this.assertAdmin(viewer, organizationId);
-    const { count } = await this.prisma.client.team.updateMany({ where: { id: teamId, organizationId }, data: { organizationId: null } });
+    const count = await this.prisma.client.$transaction(async (tx) => {
+      const count = await tx.team.count({ where: { id: teamId, organizationId } });
+      if (count) await leaveOrganization(tx, [teamId]);
+      return count;
+    });
     if (count === 0) throw new NotFoundException("Team not found in this organisation");
   }
 
@@ -271,11 +301,13 @@ export class OrganizationsService {
       if ((await this.roleOf(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Only the organisation's admins can add a team to it");
       const members = await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true } });
       await this.prisma.client.$transaction(async (tx) => {
+        const before = await tx.team.findUniqueOrThrow({ where: { id: teamId }, select: { organizationId: true } });
+        if (before.organizationId !== organizationId) await leaveTree(tx, [teamId]);
         await tx.team.update({ where: { id: teamId }, data: { organizationId } });
         await joinTeamOrganization(tx, teamId, members.map((member) => member.userId));
       });
     } else {
-      await this.prisma.client.team.update({ where: { id: teamId }, data: { organizationId: null } });
+      await this.prisma.client.$transaction((tx) => leaveOrganization(tx, [teamId]));
     }
   }
 
@@ -312,7 +344,16 @@ export class OrganizationsService {
   }
 
   async adminRemove(organizationId: string) {
-    const { count } = await this.prisma.client.organization.deleteMany({ where: { id: organizationId } });
-    if (count === 0) throw new NotFoundException("Organisation not found");
+    if (!(await this.prisma.client.organization.findUnique({ where: { id: organizationId }, select: { id: true } }))) throw new NotFoundException("Organisation not found");
+    await this.deleteOrganization(organizationId);
+  }
+
+  /** Its teams on their own again, out of its tree. */
+  private async deleteOrganization(organizationId: string) {
+    await this.prisma.client.$transaction(async (tx) => {
+      const teams = await tx.team.findMany({ where: { organizationId }, select: { id: true } });
+      await leaveOrganization(tx, teams.map((team) => team.id));
+      await tx.organization.delete({ where: { id: organizationId } });
+    });
   }
 }

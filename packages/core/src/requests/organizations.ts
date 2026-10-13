@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { ENTITY_COLORS } from "../constants/index.js";
-import { clearableText, optional } from "./fields.js";
+import { clearableText, optional, queryBoolean } from "./fields.js";
 
 /**
  * Organisations (issue #241, Planiverse): whether an instance has none
@@ -38,3 +38,34 @@ export const SetTeamOrganizationSchema = z.strictObject({
   organizationId: z.string().min(1).nullable(),
 });
 export type SetTeamOrganizationRequest = z.input<typeof SetTeamOrganizationSchema>;
+
+/** POST /organizations/:id/groups (its admins): a group of the organisation, under another one or not. */
+export const CreateGroupSchema = z.strictObject({
+  name: z.string().trim().min(2).max(100),
+  description: optional(z.string().trim().max(500)),
+  usesSongverse: z.boolean().optional().describe("A Songverse team (songs, songbooks, sets), or one that only plans (the default)"),
+  parentId: optional(z.string().min(1)).describe("The group it's under, in the same organisation"),
+});
+export type CreateGroupRequest = z.input<typeof CreateGroupSchema>;
+
+/** PATCH /teams/:id/group (the team's admins): a field left out keeps its value; parentId null puts it at the top. */
+export const UpdateGroupSchema = z.strictObject({
+  usesSongverse: z.boolean().optional(),
+  parentId: z.string().min(1).nullable().optional(),
+});
+export type UpdateGroupRequest = z.input<typeof UpdateGroupSchema>;
+
+/** A group's own position: "Greeter", "Coffee". */
+export const TeamPositionSchema = z.strictObject({
+  name: z.string().trim().min(1).max(60),
+});
+
+/** PUT /teams/:id/members/:userId/positions (themselves or the team's admins): the group's positions they cover. */
+export const SetMemberPositionsSchema = z.strictObject({
+  positionIds: z.array(z.string().min(1)).max(100),
+});
+
+/** GET /teams: Songverse's teams, or with `all` the groups that only plan too. */
+export const ListTeamsQuerySchema = z.strictObject({
+  all: optional(queryBoolean()),
+});

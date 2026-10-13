@@ -99,6 +99,7 @@ export class ArrangementsService {
       if (!user.isGlobalAdmin && (await this.access.teamRole(user.id, dto.teamId)) !== "ADMIN") {
         throw new ForbiddenException("Team admin role required to add a version for this team");
       }
+      await this.access.assertSongverseTeam(dto.teamId);
     }
     let document = newArrangementDocument(song.document, songVersionId, itemId);
     if (dto.copyFromId) {

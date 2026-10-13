@@ -33,7 +33,7 @@ import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
 import type { z } from "zod";
 import type { SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
-import type { CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
+import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { UpdateSetlistItemRequest } from "../requests/sets.js";
@@ -776,6 +776,16 @@ export interface TeamSummary {
   avatarUrl: string | null;
   /** The organisation it's part of (issue #241), if any. */
   organization?: { id: string; name: string; color: string | null } | null;
+  /** A Songverse team (songs, songbooks, sets), or a group that only plans (issue #241). */
+  usesSongverse?: boolean;
+  /** The group it's under, in its organisation. */
+  parentId?: string | null;
+}
+
+/** A group's own position (issue #241): "Greeter", "Coffee". */
+export interface TeamPosition {
+  id: string;
+  name: string;
 }
 
 /** An organisation (issue #241) one is in. */
@@ -806,6 +816,9 @@ export interface OrganizationTeam {
   memberCount: number;
   /** Whether one is in it. */
   mine: boolean;
+  usesSongverse: boolean;
+  /** The group it's under, if any. */
+  parentId: string | null;
 }
 
 export interface OrganizationDetail extends OrganizationSummary {
@@ -850,6 +863,8 @@ export interface TeamMember {
   joinedAt: string;
   instruments: string[];
   techRoles: TechRoleValue[];
+  /** The group's own positions they cover (TeamPosition ids, issue #241). */
+  positionIds?: string[];
 }
 
 /** A team's event (issue #235). */
@@ -1890,7 +1905,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getTransfer: (token: string) => request<TransferPreview>(`/transfers/${encodeURIComponent(token)}`),
     claimTransfer: (token: string) =>
       request<void>(`/transfers/${encodeURIComponent(token)}/claim`, { method: "POST" }),
-    listTeams: () => request<TeamSummary[]>("/teams"),
+    /** Songverse's teams; with `all`, an organisation's groups that only plan too (issue #241). */
+    listTeams: (all = false) => request<TeamSummary[]>(all ? "/teams?all=true" : "/teams"),
     createTeam: (data: { name: string; slug?: string; description?: string }) =>
       request<TeamSummary>("/teams", {
         method: "POST",
@@ -1942,6 +1958,19 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<TeamInviteLink>(`/organizations/${organizationId}/invite-links`, { method: "POST", body: JSON.stringify(data) }),
     revokeOrganizationInviteLink: (organizationId: string, linkId: string) => request<void>(`/organizations/${organizationId}/invite-links/${linkId}`, { method: "DELETE" }),
     joinOrganizationByToken: (token: string) => request<OrganizationSummary>(`/organizations/join/${token}`, { method: "POST" }),
+    /** A group of the organisation (its admins), run by whoever makes it. */
+    createOrganizationGroup: (organizationId: string, data: CreateGroupRequest) =>
+      request<TeamSummary>(`/organizations/${organizationId}/groups`, { method: "POST", body: JSON.stringify(data) }),
+    /** Whether a team uses Songverse, and the group it's under (its admins). */
+    updateTeamGroup: (teamId: string, data: UpdateGroupRequest) => request<TeamSummary>(`/teams/${teamId}/group`, { method: "PATCH", body: JSON.stringify(data) }),
+    listTeamPositions: (teamId: string) => request<TeamPosition[]>(`/teams/${teamId}/positions`),
+    createTeamPosition: (teamId: string, name: string) => request<TeamPosition>(`/teams/${teamId}/positions`, { method: "POST", body: JSON.stringify({ name }) }),
+    renameTeamPosition: (teamId: string, positionId: string, name: string) =>
+      request<TeamPosition>(`/teams/${teamId}/positions/${positionId}`, { method: "PATCH", body: JSON.stringify({ name }) }),
+    deleteTeamPosition: (teamId: string, positionId: string) => request<void>(`/teams/${teamId}/positions/${positionId}`, { method: "DELETE" }),
+    /** The positions someone covers in a group: themselves, or its admins. */
+    setTeamMemberPositions: (teamId: string, userId: string, positionIds: string[]) =>
+      request<{ positionIds: string[] }>(`/teams/${teamId}/members/${userId}/positions`, { method: "PUT", body: JSON.stringify({ positionIds }) }),
     /** Takes a team out of the organisation (its admins). */
     removeOrganizationTeam: (organizationId: string, teamId: string) => request<void>(`/organizations/${organizationId}/teams/${teamId}`, { method: "DELETE" }),
 

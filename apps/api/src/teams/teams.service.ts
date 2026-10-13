@@ -19,9 +19,10 @@ export class TeamsService {
     private readonly storage: StorageService,
   ) {}
 
-  async findMyTeams(userId: string) {
+  /** One's Songverse teams; with `all`, an organisation's groups that only plan too (issue #241). */
+  async findMyTeams(userId: string, all = false) {
     const memberships = await this.prisma.client.teamMembership.findMany({
-      where: { userId },
+      where: { userId, ...(all ? {} : { team: { usesSongverse: true } }) },
       include: { team: { include: withOrganization } },
     });
     return memberships.map((m) => ({
@@ -33,6 +34,8 @@ export class TeamsService {
       color: m.team.color,
       avatarUrl: m.team.avatarUrl,
       organization: m.team.organization,
+      usesSongverse: m.team.usesSongverse,
+      parentId: m.team.parentId,
     }));
   }
 
@@ -51,6 +54,8 @@ export class TeamsService {
       color: membership.team.color,
       avatarUrl: membership.team.avatarUrl,
       organization: membership.team.organization,
+      usesSongverse: membership.team.usesSongverse,
+      parentId: membership.team.parentId,
     };
   }
 
@@ -115,6 +120,7 @@ export class TeamsService {
       joinedAt: m.joinedAt,
       instruments: orderInstruments(m.user.instruments, custom),
       techRoles: orderTechRoles(m.user.techRoles),
+      positionIds: m.positionIds,
     }));
   }
 

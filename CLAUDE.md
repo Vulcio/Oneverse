@@ -92,6 +92,12 @@ Songverse working the same without them. A team may be part of one
 members - add people to a team's organisation with `joinTeamOrganization()`
 wherever they join a team. Songs, songbooks and sets stay owned by people
 and teams, never by an organisation.
+An organisation's groups are teams too: one that only plans
+(`usesSongverse: false`) owns no songs, songbooks, sets or arrangements -
+`AccessPolicyService.assertSongverseTeam()` where a team becomes an owner -
+and isn't in `GET /teams` unless asked (`?all=true`). Groups sit under one
+another (`Team.parentId`, same organisation) without sharing members, and
+have positions of their own (`TeamPosition`, `TeamMembership.positionIds`).
 
 ## Song content
 

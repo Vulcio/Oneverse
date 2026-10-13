@@ -334,6 +334,7 @@ export class TeamEventsService {
   async ensureDateSet(teamId: string, eventId: string, date: string) {
     const event = await this.find(teamId, eventId);
     if (event.rehearsalForId) throw new BadRequestException(["A rehearsal uses its event's set"]);
+    if (!(await this.usesSongverse(event.teamId))) throw new BadRequestException(["A group that doesn't use Songverse has no sets"]);
     if (!eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const setlistId = await this.makeSet(event, date, true);
     if (!setlistId) throw new BadRequestException(["That date is cancelled"]);
@@ -350,6 +351,8 @@ export class TeamEventsService {
     if (row?.cancelled) return null;
     if (row?.setlistId) return row.setlistId;
     if (row?.setCreatedAt && !again) return null;
+    // A group that only plans (issue #241): its dates have no set.
+    if (!(await this.usesSongverse(event.teamId))) return null;
     return this.prisma.client.$transaction(async (tx) => {
       const set = await tx.setlist.create({ data: { ownerTeamId: event.teamId, name: row?.title || event.title, eventDate: day(date) } });
       await tx.teamEventDate.upsert({
@@ -376,9 +379,13 @@ export class TeamEventsService {
     return made;
   }
 
+  private async usesSongverse(teamId: string) {
+    return (await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { usesSongverse: true } }))?.usesSongverse ?? false;
+  }
+
   /** Every team's coming sets (the daily job). */
   async makeAllSets(): Promise<number> {
-    const events = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: null }, select: { id: true } });
+    const events = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: null, team: { usesSongverse: true } }, select: { id: true } });
     let made = 0;
     for (const { id } of events) made += await this.makeSets(id);
     return made;

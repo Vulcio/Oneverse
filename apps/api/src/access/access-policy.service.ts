@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@songverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 
@@ -51,6 +51,15 @@ export class AccessPolicyService {
   async teamIds(userId: string): Promise<string[]> {
     const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true } });
     return memberships.map((m) => m.teamId);
+  }
+
+  /**
+   * Songs, songbooks, sets and arrangements belong to Songverse's teams only,
+   * not to an organisation's groups that only plan (issue #241).
+   */
+  async assertSongverseTeam(teamId: string): Promise<void> {
+    const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { usesSongverse: true } });
+    if (team && !team.usesSongverse) throw new BadRequestException(["teamId must be a team that uses Songverse"]);
   }
 
   /** The user's role in a team, or null when they're not in it. */
