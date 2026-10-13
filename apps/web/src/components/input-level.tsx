@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Recorder } from "#/lib/recorder";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** Read every 50 ms; judged over the last 1.5 s. */
 const EVERY_MS = 50;

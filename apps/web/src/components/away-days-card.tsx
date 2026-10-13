@@ -3,12 +3,12 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Calendar } from "#/components/ui/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
-import { calendarLocale, fromDayKey, toDayKey } from "#/lib/dates";
+import { Button } from "@songverse/ui/components/button";
+import { Calendar } from "@songverse/ui/components/calendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
+import { calendarLocale, fromDayKey, toDayKey } from "@songverse/ui/lib/dates";
 import { formatSetDate } from "#/lib/setlists";
 
 type Range = { from: string; to: string; note: string | null };

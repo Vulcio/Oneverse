@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { cn } from "#/lib/utils";
+import { cn } from "../lib/utils";
 
 const VARIANTS = {
   default: "bg-primary/10 text-primary",

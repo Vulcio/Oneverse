@@ -2,8 +2,8 @@ import type { AdminRole } from "@songverse/core";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
+import { Button } from "@songverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
 import { formatBytes } from "#/lib/format-bytes";
 
 /** A role's short account of what it allows, for a list or a badge's title. */

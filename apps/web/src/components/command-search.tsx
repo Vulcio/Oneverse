@@ -11,7 +11,7 @@ import { LyricsSnippet } from "#/components/lyrics-snippet";
 import { useMode } from "#/lib/mode";
 import { deviceStorage } from "#/lib/offline-data";
 import { formatSetDate, setlistTitle } from "#/lib/setlists";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 const SONG_LIMIT = 8;
 

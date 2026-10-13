@@ -3,20 +3,20 @@ import type { Column, ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
+import { Badge } from "@songverse/ui/components/badge";
+import { Button } from "@songverse/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
+} from "@songverse/ui/components/dropdown-menu";
 import { sizedAvatarUrl } from "#/lib/avatar-url";
 import { formatBytes } from "#/lib/format-bytes";
 import { initials } from "#/lib/initials";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 export type UserAction = "roles" | "ban" | "unban" | "delete" | "newTransferLink" | "deleteNow";
 

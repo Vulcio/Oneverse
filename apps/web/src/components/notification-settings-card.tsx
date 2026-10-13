@@ -2,9 +2,9 @@ import { NOTIFICATION_KINDS, type MyNotificationPreferences, type NotificationCh
 import { BellOff, BellRing, Send, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Input } from "#/components/ui/input";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Input } from "@songverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
 import { currentSubscription, deviceLabel, pushSupported, subscribe } from "#/lib/push";
 import { formatSetDate } from "#/lib/setlists";

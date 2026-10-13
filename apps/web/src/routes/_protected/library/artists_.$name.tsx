@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import { ArtistPicture } from "#/components/artist-picture";
 import { ImageCropDialog } from "#/components/image-crop-dialog";
 import { SongCover } from "#/components/library-home";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent } from "#/components/ui/card";
-import { Textarea } from "#/components/ui/textarea";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent } from "@songverse/ui/components/card";
+import { Textarea } from "@songverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 
 /**

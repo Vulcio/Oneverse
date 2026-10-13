@@ -15,7 +15,7 @@ import { unloadStems } from "#/lib/stem-engine";
 import type { AppSession } from "#/lib/server-auth";
 import { nestedSidebarFor } from "#/lib/sidebar-kind";
 import { ItemPanel, NestedSidebar } from "#/components/nested-sidebar";
-import { SidebarInset, SidebarProvider, useSidebar } from "#/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, useSidebar } from "@songverse/ui/components/sidebar";
 
 export function AppShell({
   session,

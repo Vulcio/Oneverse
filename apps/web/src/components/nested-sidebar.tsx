@@ -35,13 +35,13 @@ import {
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AccountMenuContent } from "#/components/app-sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
 import { TransitionPicker, TransitionSymbol } from "#/components/set-transition";
 import { setDetailValue, toggleSetDetail, useSetDetails } from "#/lib/set-details";
-import { Input } from "#/components/ui/input";
-import { SidebarRail, useSidebar } from "#/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
+import { Input } from "@songverse/ui/components/input";
+import { SidebarRail, useSidebar } from "@songverse/ui/components/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@songverse/ui/components/tooltip";
 import { apiClient } from "#/lib/api-client";
 import { sizedAvatarUrl } from "#/lib/avatar-url";
 import { docsUrl, docsView } from "#/lib/docs";
@@ -56,7 +56,7 @@ import { setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
 import { useSmartLists } from "#/lib/smart-lists";
 import { filtersOf, parseLibrarySearch } from "#/routes/_protected/library/-library-search";
 import { useMyOrganizations } from "#/lib/organizations";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 type Section = "library" | "sets" | "songbooks" | "teams" | "people" | "review" | "admin";
 const SECTIONS: Section[] = ["library", "sets", "songbooks", "teams", "people", "review", "admin"];

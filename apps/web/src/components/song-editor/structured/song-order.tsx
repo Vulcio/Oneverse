@@ -2,9 +2,9 @@ import { generateId, ID_PREFIXES, passChanged, transposeKey, type SectionInstanc
 import { ArrowLeft, ArrowRight, Copy, KeyRound, Link2, ListRestart, MessageSquare, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { NativeSelect } from "#/components/ui/native-select";
-import { cn } from "#/lib/utils";
+import { Button } from "@songverse/ui/components/button";
+import { NativeSelect } from "@songverse/ui/components/native-select";
+import { cn } from "@songverse/ui/lib/utils";
 
 const KEY_STEPS = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6];
 

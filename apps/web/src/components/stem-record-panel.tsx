@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InputLevel } from "#/components/input-level";
 import { PartPicker, usePartLabel, type PartChoice } from "#/components/part-picker";
-import { Button } from "#/components/ui/button";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Button } from "@songverse/ui/components/button";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { Recorder, type Take } from "#/lib/recorder";
 import {
@@ -22,7 +22,7 @@ import {
   useStems,
   type StemSong,
 } from "#/lib/stem-engine";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** A take can be this long at most: its WAV file stays under the upload limit for audio (50 MB). */
 const MAX_BYTES = 50 * 1024 * 1024 - 1024;

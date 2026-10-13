@@ -3,9 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Button } from "@songverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 
 /**

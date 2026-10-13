@@ -14,14 +14,14 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, GripVertical, Pencil, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
+import { Badge } from "@songverse/ui/components/badge";
+import { Button } from "@songverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import type { SetProgress } from "#/lib/set-progress";
 import { transposeLabel } from "#/lib/setlists";
-import { NativeSelect } from "#/components/ui/native-select";
-import { Input } from "#/components/ui/input";
+import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Input } from "@songverse/ui/components/input";
 import { TransitionChordsPicker, TransitionSymbol, TransitionVariations } from "#/components/set-transition";
 
 /** The key a song of the set is played in: its own, moved by its arrangement, then by the set. */

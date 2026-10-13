@@ -3,10 +3,10 @@ import { useRouter } from "@tanstack/react-router";
 import { Bell, CheckCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
+import { Button } from "@songverse/ui/components/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** How often the badge asks for the unread count while the page is shown. */
 const POLL_MS = 60_000;

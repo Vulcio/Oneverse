@@ -5,8 +5,8 @@ import { AuthCard } from "#/components/auth-card";
 import { LocaleProvider } from "#/components/locale-provider";
 import { apiClient } from "#/lib/api-client";
 import { getSession, getVisitorLocale } from "#/lib/server-auth";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { loadLocale } from "#/lib/i18n";
 
 export const Route = createFileRoute("/join-organization/$token")({

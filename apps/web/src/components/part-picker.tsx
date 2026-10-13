@@ -1,8 +1,8 @@
 import { INSTRUMENT_PARTS, partKind, VOICE_PARTS, type PartKind, type StemPart } from "@songverse/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Input } from "#/components/ui/input";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Input } from "@songverse/ui/components/input";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 
 export interface PartChoice {
   stemPart: StemPart | null;

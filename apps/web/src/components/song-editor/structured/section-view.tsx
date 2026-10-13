@@ -2,9 +2,9 @@ import { SECTION_TYPES } from "@songverse/core";
 import { NodeViewContent, NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Link2, ListMinus, ListPlus, MoreHorizontal, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
-import { NativeSelect } from "#/components/ui/native-select";
-import { cn } from "#/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
+import { NativeSelect } from "@songverse/ui/components/native-select";
+import { cn } from "@songverse/ui/lib/utils";
 import { BlockTools, ToolButton } from "./block-tools";
 import { deleteSection, duplicateLinked, duplicateSection, moveBlock, setSung } from "./extensions";
 

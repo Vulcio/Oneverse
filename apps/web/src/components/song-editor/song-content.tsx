@@ -2,10 +2,10 @@ import { chordProFromPdfText, detectImportFormatDetails, SUPPORTED_IMPORT_FORMAT
 import { ClipboardPaste, FileText, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Label } from "#/components/ui/label";
-import { Textarea } from "#/components/ui/textarea";
-import { cn } from "#/lib/utils";
+import { Button } from "@songverse/ui/components/button";
+import { Label } from "@songverse/ui/components/label";
+import { Textarea } from "@songverse/ui/components/textarea";
+import { cn } from "@songverse/ui/lib/utils";
 import { formatBytes } from "#/lib/format-bytes";
 import { pdfTextItems } from "#/lib/pdf-text";
 import { isPdf } from "./attachment-types";

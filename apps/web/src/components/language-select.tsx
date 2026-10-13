@@ -1,8 +1,8 @@
 import { ISO_639_1_CODES, getLanguageDisplayName } from "@songverse/core";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NativeSelect } from "#/components/ui/native-select";
-import { cn } from "#/lib/utils";
+import { NativeSelect } from "@songverse/ui/components/native-select";
+import { cn } from "@songverse/ui/lib/utils";
 
 interface LanguageSelectProps {
   id?: string;

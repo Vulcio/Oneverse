@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 
 /**
  * A button for something that can't be undone: the first click asks, and

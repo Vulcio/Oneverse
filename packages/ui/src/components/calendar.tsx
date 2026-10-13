@@ -2,9 +2,9 @@ import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react
 import { useEffect, useRef, type ComponentProps } from "react";
 import { DayPicker, getDefaultClassNames, type DayButton } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { buttonVariants } from "#/components/ui/button";
-import { calendarLocale, useWeekStart } from "#/lib/dates";
-import { cn } from "#/lib/utils";
+import { buttonVariants } from "./button";
+import { calendarLocale, useWeekStart } from "../lib/dates";
+import { cn } from "../lib/utils";
 
 /**
  * shadcn/ui's Calendar: react-day-picker (v9) styled with the app's tokens.

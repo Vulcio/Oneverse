@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { MonitorUp, Presentation, RadioTower, Volume2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,11 +9,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
+} from "@songverse/ui/components/dropdown-menu";
 import { useMetronome } from "#/lib/metronome-engine";
 import { useStems } from "#/lib/stem-engine";
 import { disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /**
  * Sync play (issue #13) for a set: on or off, who leads, and Lead or End

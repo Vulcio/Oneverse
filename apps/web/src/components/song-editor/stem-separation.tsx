@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { AudioWaveform } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 
 /** Still to come from the server: the quick stems, or the finer ones that replace them. */

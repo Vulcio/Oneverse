@@ -1,10 +1,10 @@
 import { CATALOG_ENTRY_FIELDS, emptyCatalogEntry, serializeCatalogCsv, type SongbookCatalogImportResult } from "@songverse/core";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { Label } from "#/components/ui/label";
-import { Textarea } from "#/components/ui/textarea";
+import { Button } from "@songverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { Label } from "@songverse/ui/components/label";
+import { Textarea } from "@songverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 import { downloadBlob } from "#/lib/download";
 

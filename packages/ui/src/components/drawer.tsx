@@ -1,6 +1,6 @@
 import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
 import type { ComponentProps } from "react";
-import { cn } from "#/lib/utils";
+import { cn } from "../lib/utils";
 
 /**
  * A sheet from the bottom of the screen (shadcn's Drawer, on Base UI's).

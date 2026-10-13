@@ -2,9 +2,9 @@ import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "#/components/confirm-button";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Input } from "#/components/ui/input";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Input } from "@songverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
 
 /** The same address as a subscription link (webcal:), which calendar apps open as "subscribe". */

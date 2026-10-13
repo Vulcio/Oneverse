@@ -2,9 +2,9 @@ import type { LinkCandidate, SongVersionLink } from "@songverse/core";
 import { Search, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
+import { Button } from "@songverse/ui/components/button";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
 
 export function StreamingLinkRow({
   id,

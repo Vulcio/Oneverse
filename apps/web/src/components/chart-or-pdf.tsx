@@ -2,12 +2,12 @@ import type { Attachment, ChartPreferences, LiveViewValue } from "@songverse/cor
 import { FileText, Loader2, Music } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "#/components/ui/card";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Card, CardContent } from "@songverse/ui/components/card";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { loadPdfjs, pdfjsWasmUrl } from "#/lib/pdfjs";
 import { fileLoader, songFiles } from "#/lib/song-files";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** A song's PDFs: its sheet music, its original chart. */
 function pdfsOf(attachments: Attachment[]): Attachment[] {

@@ -12,11 +12,11 @@ import { PresentPanel } from "#/components/present-panel";
 import { TransitionChordsChooser, TransitionSymbol, TransitionVariations, transitionText } from "#/components/set-transition";
 import { CapoBadge } from "#/components/capo-badge";
 import { ChartWithDiagrams, ChordSteps, type ChordStep } from "#/components/chord-diagrams";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 import { SyncControl } from "#/components/sync-control";
-import { SidebarTrigger } from "#/components/ui/sidebar";
+import { SidebarTrigger } from "@songverse/ui/components/sidebar";
 import { chartDisplayProps, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 const SPEEDS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
 

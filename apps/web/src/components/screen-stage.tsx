@@ -10,7 +10,7 @@ import { SCREEN_FONT_FAMILIES, sectionEnergy, type RenderedChart, type ScreenMod
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { SongChart } from "#/components/song-chart";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** A song on a screen: its slides (as every screen and Live cut them), and what's shown around them. */
 export interface StageSong {

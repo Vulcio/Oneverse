@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Gauge } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "#/components/ui/card";
+import { Card, CardContent } from "@songverse/ui/components/card";
 
 export const Route = createFileRoute("/_protected/tuner")({
   component: TunerPage,

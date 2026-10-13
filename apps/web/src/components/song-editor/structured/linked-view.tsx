@@ -15,8 +15,8 @@ import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from "@tipta
 import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Link2, Lock, LockOpen, Minus, MoreHorizontal, Plus, RotateCcw, Trash2, Unlink2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
-import { cn } from "#/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
+import { cn } from "@songverse/ui/lib/utils";
 import { editorToSections } from "./document";
 import { BlockTools, ToolButton } from "./block-tools";
 import { deleteLinked, moveBlock } from "./extensions";

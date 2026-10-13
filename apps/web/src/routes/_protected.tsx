@@ -5,7 +5,7 @@ import { AppShell } from "#/components/app-shell";
 import { keepAppDataOffline, loadAppData } from "#/lib/app-data";
 import { useOfflineSync } from "#/lib/offline-data";
 import { createI18n, loadLocale } from "#/lib/i18n";
-import { WeekStartContext } from "#/lib/dates";
+import { WeekStartContext } from "@songverse/ui/lib/dates";
 
 /**
  * Pathless layout route — gates every route nested under `_protected/` in

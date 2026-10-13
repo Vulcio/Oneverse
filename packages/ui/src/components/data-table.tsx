@@ -12,8 +12,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useState } from "react";
-import { Input } from "#/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "#/components/ui/table";
+import { Input } from "./input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- must match the library's declaration

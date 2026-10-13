@@ -1,8 +1,8 @@
 import { entityColor, type EntityColor } from "@songverse/core";
-import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
 import { sizedAvatarUrl } from "#/lib/avatar-url";
 import { initials } from "#/lib/initials";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** Each colour's swatch and initials, in shades that read on light and dark themes (issue #161). */
 export const ENTITY_COLOR_CLASSES: Record<EntityColor, string> = {

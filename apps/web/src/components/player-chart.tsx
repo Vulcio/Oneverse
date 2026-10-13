@@ -7,7 +7,7 @@ import { chartDisplayProps, displayModeOf, displaySeed, useDiagramPlayer, useDis
 import { useMode } from "#/lib/mode";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 const EMPTY: ChartPreferences = { $schema: "chart-preferences/v1", hiddenChordIds: [], simplifyChords: false, hideBassNotes: false };
 

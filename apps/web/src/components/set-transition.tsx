@@ -3,11 +3,11 @@ import { ArrowDown, ArrowRight, ArrowRightLeft, ChevronLeft, ChevronRight, Chevr
 import { useMemo, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { ChordRow, ChordSteps } from "#/components/chord-diagrams";
-import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
-import { cn } from "#/lib/utils";
+import { Button } from "@songverse/ui/components/button";
+import { Input } from "@songverse/ui/components/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
+import { cn } from "@songverse/ui/lib/utils";
 
 /**
  * What happens after a song of a set (issue #199), as a symbol: a square

@@ -1,6 +1,6 @@
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "#/lib/utils";
+import { cn } from "../lib/utils";
 
 /** A list to pick one from (shadcn's Select, on Base UI's): items can carry an icon, as a native select's can't. */
 function Select<Value>(props: SelectPrimitive.Root.Props<Value>) {

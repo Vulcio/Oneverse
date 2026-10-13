@@ -3,12 +3,12 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "#/components/confirm-button";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { Label } from "#/components/ui/label";
-import { Textarea } from "#/components/ui/textarea";
+import { Badge } from "@songverse/ui/components/badge";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { Label } from "@songverse/ui/components/label";
+import { Textarea } from "@songverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err));

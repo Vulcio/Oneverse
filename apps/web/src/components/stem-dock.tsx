@@ -39,7 +39,7 @@ import { SpeedControl, speedPercent } from "#/components/speed-control";
 import { StemRecordPanel } from "#/components/stem-record-panel";
 import { CueEditor, SectionLane, sectionsGradient, useCueNames } from "#/components/stem-cues";
 import { StemTrackActions } from "#/components/stem-track-actions";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 import { setMode } from "#/lib/mode";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { setRecordingClick, useRecordingClick } from "#/lib/recording-click";
@@ -76,7 +76,7 @@ import {
   type StemTrack,
 } from "#/lib/stem-engine";
 import { sizedAvatarUrl } from "#/lib/avatar-url";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 const NO_PARTS: Record<string, boolean> = {};
 const COMBINED_KEY = "songverse.stems.combined";

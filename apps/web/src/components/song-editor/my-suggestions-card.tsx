@@ -2,8 +2,8 @@ import type { Suggestion } from "@songverse/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "#/components/confirm-button";
-import { Badge } from "#/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
+import { Badge } from "@songverse/ui/components/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 
 export const isOpenSuggestion = (suggestion: Pick<Suggestion, "state">) => suggestion.state === "OPEN" || suggestion.state === "UNDER_REVIEW";

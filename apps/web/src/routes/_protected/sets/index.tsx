@@ -3,10 +3,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent } from "#/components/ui/card";
-import { DataTable } from "#/components/ui/data-table";
+import { Badge } from "@songverse/ui/components/badge";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent } from "@songverse/ui/components/card";
+import { DataTable } from "@songverse/ui/components/data-table";
 import { apiClient } from "#/lib/api-client";
 import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
 

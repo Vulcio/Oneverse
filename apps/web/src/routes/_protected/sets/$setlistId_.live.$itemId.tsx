@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { LiveView, type LiveControl, type LiveSong } from "#/components/live-view";
 import { setSongViewStore, useReadingView, type ReadingView } from "#/components/chart-or-pdf";
 import { renderPlayerChart } from "#/components/player-chart";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setMode } from "#/lib/mode";

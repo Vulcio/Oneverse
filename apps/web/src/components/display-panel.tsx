@@ -40,13 +40,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { ButtonGroup } from "#/components/ui/button-group";
-import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from "#/components/ui/drawer";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#/components/ui/select";
-import { useMediaQuery } from "#/hooks/use-media-query";
+import { Button } from "@songverse/ui/components/button";
+import { ButtonGroup } from "@songverse/ui/components/button-group";
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from "@songverse/ui/components/drawer";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@songverse/ui/components/select";
+import { useMediaQuery } from "@songverse/ui/hooks/use-media-query";
 import { changeDiagramPlayer, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 const SECTIONS = ["text", "chords", "instrument", "layout", "controls"] as const;
 type Section = (typeof SECTIONS)[number];

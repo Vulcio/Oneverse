@@ -8,17 +8,17 @@ import { DatePicker } from "#/components/date-picker";
 import { EntityAvatar } from "#/components/entity-avatar";
 import { usePartLabel } from "#/components/lineup";
 import { partBody, PartsEditor } from "#/components/team-calendar";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
-import { NativeSelect } from "#/components/ui/native-select";
-import { Textarea } from "#/components/ui/textarea";
+import { Badge } from "@songverse/ui/components/badge";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
+import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Textarea } from "@songverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/organizations/$organizationId_/events")({
   loader: async ({ params }) => {

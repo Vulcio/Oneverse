@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent } from "#/components/ui/card";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent } from "@songverse/ui/components/card";
 import { EntityAvatar } from "#/components/entity-avatar";
 
 export const Route = createFileRoute("/_protected/teams/")({

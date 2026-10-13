@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
-import { cn } from "#/lib/utils";
+import { cn } from "../lib/utils";
 
 /**
  * Buttons side by side as one control (shadcn's ButtonGroup). `chevron`

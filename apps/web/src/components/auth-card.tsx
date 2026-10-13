@@ -4,12 +4,12 @@ import { useTranslation } from "react-i18next";
 import { KeyRound } from "lucide-react";
 import { authClient } from "#/lib/auth-client";
 import { getApiUrl } from "#/lib/public-env";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
-import { Separator } from "#/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
+import { Separator } from "@songverse/ui/components/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 
 type View = "auth" | "forgot-password" | "forgot-password-sent" | "signup-check-email";
 

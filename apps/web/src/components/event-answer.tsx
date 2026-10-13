@@ -2,10 +2,10 @@ import type { AvailabilityAnswer, MyEventAnswer } from "@songverse/core";
 import { Check, CircleHelp, MessageSquareText, Plane, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
-import { Textarea } from "#/components/ui/textarea";
-import { cn } from "#/lib/utils";
+import { Button } from "@songverse/ui/components/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
+import { Textarea } from "@songverse/ui/components/textarea";
+import { cn } from "@songverse/ui/lib/utils";
 
 const CHOICES: { answer: AvailabilityAnswer; key: string; icon: typeof Check; on: string }[] = [
   { answer: "AVAILABLE", key: "teamCalendar.answerAvailable", icon: Check, on: "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600/90" },

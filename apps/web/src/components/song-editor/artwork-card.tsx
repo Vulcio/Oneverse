@@ -5,10 +5,10 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ImageCropDialog } from "#/components/image-crop-dialog";
 import { SongCover } from "#/components/library-home";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "#/components/ui/tooltip";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@songverse/ui/components/tooltip";
 import { apiClient } from "#/lib/api-client";
 
 /**

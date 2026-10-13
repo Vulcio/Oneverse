@@ -16,10 +16,10 @@ import {
 import { Circle, Hand, Headphones, Loader2, Mic, Play, RotateCcw, Square, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { Input } from "#/components/ui/input";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Button } from "@songverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { Input } from "@songverse/ui/components/input";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { InputLevel } from "#/components/input-level";
 import { PartPicker, usePartLabel, type PartChoice } from "#/components/part-picker";
 import { apiClient } from "#/lib/api-client";

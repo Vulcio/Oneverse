@@ -1,8 +1,8 @@
 import type { MusicBrainzRecordingMatch, MusicBrainzWorkMatch } from "@songverse/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
+import { Button } from "@songverse/ui/components/button";
+import { Input } from "@songverse/ui/components/input";
 
 type Match = MusicBrainzRecordingMatch | MusicBrainzWorkMatch;
 

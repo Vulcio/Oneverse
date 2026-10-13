@@ -2,7 +2,7 @@ import type { Editor } from "@tiptap/react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 import { moveBlock } from "./extensions";
 
 /**

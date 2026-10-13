@@ -3,9 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, MonitorOff, MonitorUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 import { publishPresenting, useSync } from "#/lib/sync-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** After a step back past a song's first slide: the previous song opens on its last. */
 let openOnLastSlide = false;

@@ -6,10 +6,10 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
 import { StemDockSlot } from "#/components/stem-dock";
-import { Button } from "#/components/ui/button";
+import { Button } from "@songverse/ui/components/button";
 import { setMode } from "#/lib/mode";
 import { chooseStemSpeed, useChosenSpeed } from "#/lib/stem-engine";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 import {
   dockYouTube,
   pauseYouTube,

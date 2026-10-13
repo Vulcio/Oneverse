@@ -2,14 +2,14 @@ import { coversPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart,
 import { AlertTriangle, ArrowLeftRight, Check, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Badge } from "@songverse/ui/components/badge";
+import { Button } from "@songverse/ui/components/button";
+import { Input } from "@songverse/ui/components/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { useInstrumentLabel } from "#/lib/instruments";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /** A part's name (issue #235, phase 7): its instrument or role in the reader's language, or the team's own name for it. */
 export function usePartLabel(customInstruments: readonly CustomInstrument[]): (part: EventPart) => string {

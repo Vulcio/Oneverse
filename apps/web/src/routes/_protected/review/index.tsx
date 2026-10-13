@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { stateVariant } from "#/components/song-editor/publish-card";
 import { suggestionVariant } from "#/components/song-editor/my-suggestions-card";
-import { Badge } from "#/components/ui/badge";
-import { Card, CardContent } from "#/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { Badge } from "@songverse/ui/components/badge";
+import { Card, CardContent } from "@songverse/ui/components/card";
+import { Tabs, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 import { apiClient } from "#/lib/api-client";
 
 type ReviewTab = "open" | "closed";

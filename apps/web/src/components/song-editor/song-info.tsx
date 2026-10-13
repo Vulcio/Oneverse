@@ -14,18 +14,18 @@ import { Check, ChevronDown, Copy, ExternalLink, Library, Sparkles } from "lucid
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSelect } from "#/components/language-select";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "#/components/ui/collapsible";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
-import { Textarea } from "#/components/ui/textarea";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@songverse/ui/components/collapsible";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
+import { Textarea } from "@songverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 import { ChipInput, type ChipSuggestion } from "./chip-input";
 import { CAPO_OPTIONS, TIME_SIGNATURE_OPTIONS, type CreditField, type FormError, type SongForm, type TextField } from "./song-form";
 import { KeySelect } from "#/components/key-select";
-import { NativeSelect } from "#/components/ui/native-select";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 
 
 export type FieldErrors = Partial<Record<TextField | "artists", FormError>>;

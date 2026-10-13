@@ -18,13 +18,13 @@ import { authClient } from "#/lib/auth-client";
 import { formatBytes } from "#/lib/format-bytes";
 import { ImageCropDialog } from "#/components/image-crop-dialog";
 import { sizedAvatarUrl } from "#/lib/avatar-url";
-import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#/components/ui/card";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
 import { initials } from "#/lib/initials";
-import { NativeSelect } from "#/components/ui/native-select";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 
 // Only guards what the browser has to decode for cropping; what's uploaded
 // is the cropped result, at most 512x512.

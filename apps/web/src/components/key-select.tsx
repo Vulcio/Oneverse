@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { KEY_OPTIONS } from "#/components/song-editor/song-form";
-import { NativeSelect } from "#/components/ui/native-select";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 
 /** A key, major or minor, as the song editor writes them; `noneLabel` names the empty choice. */
 export function KeySelect({

@@ -8,11 +8,11 @@ import { CalendarFeedCard } from "#/components/calendar-feed-card";
 import { EntityAvatar } from "#/components/entity-avatar";
 import { EventAnswer } from "#/components/event-answer";
 import { LineupLine, usePartLabel } from "#/components/lineup";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent } from "#/components/ui/card";
+import { Badge } from "@songverse/ui/components/badge";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/calendar")({
   component: MyCalendarPage,

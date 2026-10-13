@@ -2,7 +2,7 @@ import { lyricSlides, renderChart, songDocumentFromText, type ScreenMode, type S
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 const SAMPLE = `{key: G}
 {start_of_verse}

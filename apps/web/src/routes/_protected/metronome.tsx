@@ -4,14 +4,14 @@ import { Minus, Play, Plus, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BeatLights } from "#/components/metronome";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent } from "#/components/ui/card";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent } from "@songverse/ui/components/card";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { startMetronome, stopMetronome, updateMetronome, useMetronome, useMetronomeBeat } from "#/lib/metronome-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/metronome")({
   component: MetronomePage,

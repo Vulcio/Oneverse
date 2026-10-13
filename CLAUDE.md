@@ -105,6 +105,17 @@ and removed only through `OrganizationEventsService`, which passes
 parts. Everything a team event does (answers, line-up, sets, reminders)
 works for it unchanged.
 
+## Shared UI
+
+The UI primitives (button, dialog, sidebar…), `cn`, and the shared theme
+(colour tokens, `@theme`, base styles) live in `packages/ui`
+(`@songverse/ui`, issue #241), for Songverse's web app and Planiverse's.
+It's source only: the apps compile it (`@songverse/ui/components/button`,
+`@songverse/ui/lib/utils`), and an app's CSS imports
+`@songverse/ui/theme.css` after Tailwind, then sets its own looks by
+overriding the tokens (Songverse's modes in `apps/web/src/styles/app.css`).
+Add a new primitive there, not in an app.
+
 ## Song content
 
 `SongVersion.documentJson` is a SongDocument v2 (`docs/song-document-v2.md`):

@@ -19,13 +19,13 @@ import { ChevronLeft, ChevronRight, Pause, Play, TriangleAlert } from "lucide-re
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
-import { Button } from "#/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "#/components/ui/dialog";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
-import { NativeSelect } from "#/components/ui/native-select";
+import { Button } from "@songverse/ui/components/button";
+import { Dialog, DialogContent, DialogTitle } from "@songverse/ui/components/dialog";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 type Part = Exclude<keyof ScreenTheme, "$schema">;
 

@@ -1,6 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 /**
  * A song's capo, hard to miss (issue #219): a red pill with a warning sign -

@@ -4,13 +4,13 @@ import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-r
 import { Mic, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "#/components/ui/badge";
+import { Badge } from "@songverse/ui/components/badge";
 import { SyncControl } from "#/components/sync-control";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "#/components/ui/dialog";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { Input } from "@songverse/ui/components/input";
+import { Label } from "@songverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setMode, useMode } from "#/lib/mode";
@@ -19,7 +19,7 @@ import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
 import { AddSongs } from "./-add-songs";
 import { SetSongList } from "./-set-song-list";
 import { ShareCard } from "./-share-card";
-import { NativeSelect } from "#/components/ui/native-select";
+import { NativeSelect } from "@songverse/ui/components/native-select";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId")({

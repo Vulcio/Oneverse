@@ -3,7 +3,7 @@ import { Headphones, Mic, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { setMode, useMode, type AppMode } from "#/lib/mode";
-import { cn } from "#/lib/utils";
+import { cn } from "@songverse/ui/lib/utils";
 
 const SET_SONG = /^\/sets\/([^/]+)\/(songs|live)\/([^/]+)\/?$/;
 const LIBRARY_LIVE = /^\/library\/([^/]+)\/live\/?$/;

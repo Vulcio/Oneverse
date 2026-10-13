@@ -10,8 +10,8 @@ import { chartDisplayProps, useDiagramPlayer, useDisplaySettings } from "#/lib/d
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChartOrPdf, songViewStore } from "#/components/chart-or-pdf";
 import { StemDock } from "#/components/stem-dock";
-import { Button } from "#/components/ui/button";
-import { Card, CardContent } from "#/components/ui/card";
+import { Button } from "@songverse/ui/components/button";
+import { Card, CardContent } from "@songverse/ui/components/card";
 import { YouTubeDock } from "#/components/youtube-dock";
 import { apiClient } from "#/lib/api-client";
 import { artistNames } from "#/lib/artists";
