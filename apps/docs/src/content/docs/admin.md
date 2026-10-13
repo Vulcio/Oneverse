@@ -53,6 +53,8 @@ Whether the server has organisations - a church, a club - grouping teams to plan
 
 It shows where each setting comes from - saved here, the `ORGANIZATION_MODE` and `ORGANIZATIONS_OPEN` environment variables, or the default - with **Save configuration** and **Revert to environment variables**. **All organisations** lists them with their teams, members and admins; **Delete organisation** leaves their teams on their own.
 
+Below the page's title, it says where [Planiverse](/planiverse/) is, when it's deployed beside Songverse (an address set where it's deployed, `PLANIVERSE_URL`), or that it isn't.
+
 ### Roles
 
 The one place that says what people may do beyond their own and their teams' songs. A role can allow:

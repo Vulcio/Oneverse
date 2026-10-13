@@ -131,7 +131,7 @@ export class LineupService {
     }
     if (dto.userId && guest) await this.letSeeSet(teamId, eventId, date, dto.userId);
     if (dto.userId && !accepted) {
-      await this.notifications.notify([{ userId: dto.userId, kind: "SCHEDULED", data: { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, dto.part)) }, url: "/calendar" }]);
+      await this.notifications.notify([{ userId: dto.userId, kind: "SCHEDULED", data: { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, dto.part)) }, url: "/calendar", teamId }]);
     }
     return { id: row.id, userId: row.userId, displayName: row.user?.displayName ?? row.guestName ?? "", partKey: row.partKey, status: row.status, guest: row.userId ? (guest ? "account" : null) : "external" };
   }
@@ -148,7 +148,7 @@ export class LineupService {
     const setlistId = row.event.dates.find((one) => dateText(one.date) === date)?.setlist?.id;
     if (!member && !stillOn && setlistId) await this.prisma.client.setlistGuest.deleteMany({ where: { setlistId, userId: row.userId } });
     if (row.userId !== by && row.status !== "DECLINED" && date >= localDate(new Date(), row.event.timeZone)) {
-      await this.notifications.notify([{ userId: row.userId, kind: "UNSCHEDULED", data: { event: this.titleOn(row.event, date), date, team: row.event.team.name, ...(await this.partData(row.event, row.partKey)) }, url: "/calendar" }]);
+      await this.notifications.notify([{ userId: row.userId, kind: "UNSCHEDULED", data: { event: this.titleOn(row.event, date), date, team: row.event.team.name, ...(await this.partData(row.event, row.partKey)) }, url: "/calendar", teamId }]);
     }
   }
 
@@ -177,7 +177,7 @@ export class LineupService {
       ]);
       const data = { event: this.titleOn(event, date), date, team: event.team.name, by: me?.displayName ?? "", ...(await this.partData(event, row.partKey)) };
       await this.notifications.notify(
-        admins.map(({ userId: admin }) => ({ userId: admin, kind: "SCHEDULE_DECLINED" as const, data, url: `/teams/${teamId}` })),
+        admins.map(({ userId: admin }) => ({ userId: admin, kind: "SCHEDULE_DECLINED" as const, data, url: `/teams/${teamId}`, teamId })),
         userId,
       );
     }
@@ -216,7 +216,7 @@ export class LineupService {
     });
     const offered = swapCandidates(part, answered, lineup.map((one) => ({ ...one, userId: one.userId! })), userId);
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by: me?.displayName ?? "", ...(await this.partData(event, row.partKey)) };
-    const notified = await this.notifications.notify(offered.map((candidate) => ({ userId: candidate, kind: "SWAP_OFFERED" as const, data, url: "/calendar" })));
+    const notified = await this.notifications.notify(offered.map((candidate) => ({ userId: candidate, kind: "SWAP_OFFERED" as const, data, url: "/calendar", teamId })));
     return { id: row.id, swapRequestedAt: new Date().toISOString(), notified };
   }
 
@@ -260,7 +260,7 @@ export class LineupService {
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by: member.user.displayName, ...(await this.partData(event, row.partKey)) };
     const told = [...new Set([row.userId!, ...admins.map((admin) => admin.userId)])];
     await this.notifications.notify(
-      told.map((person) => ({ userId: person, kind: "SWAP_TAKEN" as const, data, url: person === row.userId ? "/calendar" : `/teams/${teamId}` })),
+      told.map((person) => ({ userId: person, kind: "SWAP_TAKEN" as const, data, url: person === row.userId ? "/calendar" : `/teams/${teamId}`, teamId })),
       userId,
     );
     return { id: created.id, userId, partKey: created.partKey, status: created.status };

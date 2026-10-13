@@ -77,7 +77,7 @@ export class RemindersService {
     const team = await this.teamName(teamId);
     const sent: NotificationInput[] = [...counts]
       .filter(([, count]) => count > 0)
-      .map(([userId, count]) => ({ userId, kind: "ANSWERS_REQUESTED", data: { team, by: row.createdBy?.displayName ?? "", deadline: dto.deadline, count }, url: "/calendar" }));
+      .map(([userId, count]) => ({ userId, kind: "ANSWERS_REQUESTED", data: { team, by: row.createdBy?.displayName ?? "", deadline: dto.deadline, count }, url: "/calendar", teamId }));
     const notified = await this.notifications.notify(sent, by);
     return { ...this.summary(row), notified };
   }
@@ -109,7 +109,7 @@ export class RemindersService {
     ]);
     const [shown] = eventDates(timingOf(event), date, date, changesOf(event));
     const notified = await this.notifications.notify(
-      people.map(({ userId }) => ({ userId, kind: "SET_READY", data: { event: shown?.title || event.title, date, team, by: admin?.displayName ?? "", count: row.setlist!._count.items }, url: `/sets/${row.setlist!.id}` })),
+      people.map(({ userId }) => ({ userId, kind: "SET_READY", data: { event: shown?.title || event.title, date, team, by: admin?.displayName ?? "", count: row.setlist!._count.items }, url: `/sets/${row.setlist!.id}`, teamId })),
       by,
     );
     return { setReadyAt: readyAt.toISOString(), notified };
@@ -151,6 +151,7 @@ export class RemindersService {
             kind: "EVENT_TOMORROW",
             data: { event: date.title || event.title, date: date.date, team: event.team.name, startTime: date.startTime, ...(event.place ? { place: event.place } : {}) },
             url: setlist ? `/sets/${setlist.id}` : "/calendar",
+            teamId: event.teamId,
           })),
         );
       }
@@ -168,7 +169,7 @@ export class RemindersService {
       const from = dateText(request.from);
       const counts = await this.unanswered(request.teamId, from > today ? from : today, dateText(request.to));
       deadlines += await this.notifications.notify(
-        [...counts].filter(([, missing]) => missing > 0).map(([userId, missing]) => ({ userId, kind: "ANSWER_DEADLINE", data: { team: request.team.name, deadline, count: missing }, url: "/calendar" })),
+        [...counts].filter(([, missing]) => missing > 0).map(([userId, missing]) => ({ userId, kind: "ANSWER_DEADLINE", data: { team: request.team.name, deadline, count: missing }, url: "/calendar", teamId: request.teamId })),
       );
     }
     if (dayBefore + deadlines > 0) this.logger.log(`Reminders: ${dayBefore} for tomorrow, ${deadlines} for answers due`);

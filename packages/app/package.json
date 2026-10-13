@@ -5,6 +5,7 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "exports": {
+    "./server": "./server/web-server.mjs",
     "./components/*": "./src/components/*.tsx",
     "./*": "./src/*.ts"
   },
@@ -16,6 +17,7 @@
     "@better-auth/passkey": "^1.7.5",
     "@songverse/core": "workspace:*",
     "@songverse/ui": "workspace:*",
+    "@whatwg-node/server": "^0.11.0",
     "better-auth": "^1.7.5",
     "lucide-react": "^1.46.0",
     "react-i18next": "^17.0.14"

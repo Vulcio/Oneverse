@@ -62,6 +62,16 @@ function AdminOrganizationsPage() {
       <div>
         <h1 className="text-2xl font-semibold">{t("organizations.adminTitle")}</h1>
         <p className="text-sm text-muted-foreground">{t("organizations.adminDescription")}</p>
+        {/* Where Planiverse is deployed (issue #241): an address set there, not here. */}
+        <p className="mt-1 text-xs text-muted-foreground" data-testid="planiverse-address">
+          {summary.planiverseUrl ? (
+            <a href={summary.planiverseUrl} className="hover:text-primary">
+              {t("organizations.planiverseAt", { url: summary.planiverseUrl })}
+            </a>
+          ) : (
+            t("organizations.planiverseOff")
+          )}
+        </p>
         <p className="mt-2 text-xs" data-testid="organization-settings-source">
           <span className="font-medium">{t("admin.authSource")}: </span>
           <span className="text-muted-foreground">

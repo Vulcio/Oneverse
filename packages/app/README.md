@@ -14,6 +14,10 @@ people in and reach the API, kept once:
   `components/auth-page`: signing in, signing up, passkeys, Google, a new
   password; the app passes its name and mark to `AuthPage`.
 
+- `server` (`server/web-server.mjs`): the production server both apps run,
+  `serveWebApp({ dir, name, … })` - caching, compression, the
+  Content-Security-Policy, the service worker and offline shell.
+
 Source only, no build: an app imports the files and compiles them, so
 TanStack Start turns the server functions into calls to its own server.
 

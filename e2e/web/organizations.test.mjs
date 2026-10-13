@@ -3,7 +3,7 @@
 // the team's page, and invites someone by link, who lands on its page; a
 // global admin sees it in Admin > Organisations and changes the mode there.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { PLANIVERSE, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -58,6 +58,8 @@ try {
     await signIn(page, admin);
     await page.goto(`${WEB}/admin/organizations`);
     await page.getByTestId("admin-organizations").getByText(name).waitFor();
+    // Where Planiverse is deployed (issue #241).
+    await page.getByTestId("planiverse-address").getByText(PLANIVERSE).waitFor();
     await page.getByTestId("organization-mode").selectOption("NONE");
     await page.getByTestId("organization-settings-save").click();
     await page.getByTestId("organization-settings-source").getByText("saved in the database").waitFor();

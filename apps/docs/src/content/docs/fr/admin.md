@@ -61,6 +61,8 @@ Si le serveur a des organisations - une église, un club - qui regroupent des é
 
 La page indique d'où vient chaque réglage - enregistré ici, les variables d'environnement `ORGANIZATION_MODE` et `ORGANIZATIONS_OPEN`, ou la valeur par défaut - avec **Enregistrer la configuration** et **Revenir aux variables d'environnement**. **Toutes les organisations** les liste avec leurs équipes, membres et administrateurs ; **Supprimer l'organisation** laisse leurs équipes à part entière.
 
+Sous le titre de la page, elle indique où se trouve [Planiverse](/fr/planiverse/), quand il est déployé à côté de Songverse (une adresse réglée là où il est déployé, `PLANIVERSE_URL`), ou qu'il ne l'est pas.
+
 ### Rôles
 
 Le seul endroit qui dit ce que chacun peut faire au-delà de ses chants et de ceux de ses équipes. Un rôle peut permettre de :

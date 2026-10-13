@@ -1,24 +1,26 @@
 /**
- * The parent domain both apps live under (api.songverse.one +
- * app.songverse.one -> songverse.one), for scoping the session cookie so the
- * web app's own server sees it too. BetterAuth's default when
- * crossSubDomainCookies has no explicit domain is AUTH_URL's full
- * hostname, which would hide the cookie from the web app entirely.
- * `undefined` when both share one host (e.g. localhost in dev), where a
- * plain host-only cookie already reaches both.
+ * The parent domain the API and the web apps live under (api.songverse.one
+ * + app.songverse.one, and Planiverse's address when it's deployed, issue
+ * #241 -> songverse.one), for scoping the session cookie so each web app's
+ * own server sees it too. BetterAuth's default when crossSubDomainCookies
+ * has no explicit domain is AUTH_URL's full hostname, which would hide the
+ * cookie from the web apps entirely. `undefined` when all share one host
+ * (e.g. localhost in dev), where a plain host-only cookie already reaches
+ * them all.
  */
-export function sharedCookieDomain(a: string, b: string): string | undefined {
-  if (a === b) return undefined;
-  const bLabels = b.split(".").reverse();
-  const shared: string[] = [];
-  for (const [i, label] of a.split(".").reverse().entries()) {
-    if (label !== bLabels[i]) break;
-    shared.push(label);
+export function sharedCookieDomain(authHostname: string, ...webHostnames: string[]): string | undefined {
+  if (webHostnames.every((hostname) => hostname === authHostname)) return undefined;
+  let shared = authHostname.split(".").reverse();
+  for (const hostname of webHostnames) {
+    const labels = hostname.split(".").reverse();
+    let same = 0;
+    while (same < shared.length && shared[same] === labels[same]) same++;
+    shared = shared.slice(0, same);
   }
   if (shared.length < 2) {
     throw new Error(
-      `AUTH_URL (${a}) and WEB_URL (${b}) must be subdomains of one parent domain (e.g. api.example.com and ` +
-        "example.com) - the session cookie set by the API has to be readable by the web app.",
+      `AUTH_URL (${authHostname}) and the web apps (${webHostnames.join(", ")}: WEB_URL, PLANIVERSE_URL) must be subdomains of one parent domain ` +
+        "(e.g. api.example.com and example.com) - the session cookie set by the API has to be readable by every web app.",
     );
   }
   return shared.reverse().join(".");
@@ -26,12 +28,12 @@ export function sharedCookieDomain(a: string, b: string): string | undefined {
 
 /**
  * The passkey relying-party ID: the same parent domain as the session
- * cookie, not the web app's own hostname. WebAuthn lets any subdomain use a
+ * cookie, not a web app's own hostname. WebAuthn lets any subdomain use a
  * parent domain as its ID, and a passkey only works for the ID it was
  * registered with - so pinning it to songverse.one keeps every passkey
  * working when the web app moves between songverse.one and
- * app.songverse.one (#42), or runs on a preview subdomain.
+ * app.songverse.one (#42), runs on a preview subdomain, or is Planiverse.
  */
-export function passkeyRpId(authHostname: string, webHostname: string): string {
-  return sharedCookieDomain(authHostname, webHostname) ?? webHostname;
+export function passkeyRpId(authHostname: string, ...webHostnames: string[]): string {
+  return sharedCookieDomain(authHostname, ...webHostnames) ?? webHostnames[0] ?? authHostname;
 }

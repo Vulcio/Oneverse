@@ -160,7 +160,7 @@ export class AvailabilityService {
       // They're told an admin answered for them (issue #236).
       const [admin, team] = await Promise.all([this.prisma.client.user.findUnique({ where: { id: by }, select: { displayName: true } }), this.prisma.client.team.findUnique({ where: { id: teamId }, select: { name: true } })]);
       const [shown] = eventDates(timingOf(event), date, date, changesOf(event));
-      await this.notifications.notify([{ userId, kind: "ANSWERED_FOR_YOU", data: { event: shown?.title || event.title, date, team: team?.name ?? "", answer: row.answer, by: admin?.displayName ?? "" }, url: "/calendar" }], by);
+      await this.notifications.notify([{ userId, kind: "ANSWERED_FOR_YOU", data: { event: shown?.title || event.title, date, team: team?.name ?? "", answer: row.answer, by: admin?.displayName ?? "" }, url: "/calendar", teamId }], by);
     }
     return { answer: row.answer, note: row.note, away: false, byAdmin: !!row.answeredByUserId };
   }

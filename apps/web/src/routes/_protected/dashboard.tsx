@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListMusic, Mic2, Music2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { RoleBadges } from "#/components/role-badges";
+import { RoleBadges } from "@songverse/planning/components/role-badges";
 import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
@@ -10,7 +10,7 @@ import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
 import { initials } from "@songverse/ui/lib/initials";
 import { artistNames } from "#/lib/artists";
 import { ChartDisplayCard, EmailCard, LanguageCard, PasskeysCard, ProfileCard, StorageCard } from "./-dashboard/account-cards";
-import { NotificationSettingsCard } from "#/components/notification-settings-card";
+import { NotificationSettingsCard } from "@songverse/planning/components/notification-settings-card";
 import { OwnershipRequestsCard } from "./-dashboard/ownership-requests-card";
 import { RolesCard } from "./-dashboard/roles-card";
 

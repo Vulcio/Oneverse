@@ -10,6 +10,10 @@ import { createContext, useContext, type ComponentProps, type ReactNode } from "
 export interface PlanningHost {
   api: ApiClient;
   links: {
+    /** Where one goes after leaving a team, */
+    home: string;
+    /** and after deleting one. */
+    teams: string;
     organizations: string;
     team: (teamId: string) => string;
     organization: (organizationId: string) => string;

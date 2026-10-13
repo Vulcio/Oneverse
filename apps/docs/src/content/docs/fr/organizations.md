@@ -3,7 +3,7 @@ title: Organisations
 description: Une église, un club ou un groupe dont les équipes planifient ensemble, sur un serveur qui a des organisations.
 ---
 
-Une organisation, c'est l'église, le club ou le groupe dont font partie vos équipes : l'équipe de louange, d'accueil, technique… C'est là qu'elles planifieront ensemble - qui accueille chaque événement, de quelles équipes chacun a besoin (en cours de construction, voir Planiverse). Songverse fonctionne sans : un serveur n'a d'organisations que si ses administrateurs les ont activées (voir [Administration](/fr/admin/#organisations)), et d'ici là vous ne les voyez pas.
+Une organisation, c'est l'église, le club ou le groupe dont font partie vos équipes : l'équipe de louange, d'accueil, technique… C'est là qu'elles planifient ensemble - qui accueille chaque événement, de quels groupes chacun a besoin - dans Songverse, ou dans [Planiverse](/fr/planiverse/), la planification à part, quand le serveur l'a. Songverse fonctionne sans : un serveur n'a d'organisations que si ses administrateurs les ont activées (voir [Administration](/fr/admin/#organisations)), et d'ici là vous ne les voyez pas.
 
 ## Où les trouver
 

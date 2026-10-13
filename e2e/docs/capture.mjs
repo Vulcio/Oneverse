@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { API, WEB, api, signIn, sql, user } from "../lib/harness.mjs";
+import { API, PLANIVERSE, WEB, api, signIn, sql, user } from "../lib/harness.mjs";
 
 const OUT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../apps/docs/src/assets/screenshots");
 const STEMS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../fixtures/stems");
@@ -461,6 +461,13 @@ try {
       ],
     });
     await shoot("organization-events", `/organizations/${organization.id}/events`, () => page.locator("[data-org-event-date]").first().waitFor(), { fullPage: true });
+    // Planiverse (issue #241): the same account, signed in on its own address too (one session cookie on localhost).
+    await page.goto(`${PLANIVERSE}/calendar`);
+    await page.waitForLoadState("networkidle");
+    await page.locator("[data-event-date]").first().waitFor();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(dir, "planiverse.jpg"), type: "jpeg", quality: 85 });
+    console.log("  planiverse");
     await shoot("share-song", `/library/${grace.id}`, async () => {
       await page.getByRole("button", { name: /^(Share|Partager)$/ }).click();
       await page.getByTestId("song-shares").waitFor();

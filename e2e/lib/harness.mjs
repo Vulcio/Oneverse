@@ -10,6 +10,8 @@ export const API = process.env.E2E_API_URL ?? "http://localhost:3001";
 export const WEB = process.env.E2E_WEB_URL ?? "http://localhost:3000";
 /** The web app's origin, which the API trusts for auth calls. */
 export const ORIGIN = WEB;
+/** Planiverse (issue #241): the planning on its own, signed in to with the same account. */
+export const PLANIVERSE = process.env.E2E_PLANIVERSE_URL ?? "http://localhost:3002";
 /** The API's console output: with no email provider configured, it prints the emails it would send (verification links etc.). */
 export const LOG = process.env.E2E_API_LOG ?? "/tmp/api-dev.log";
 export const DB = (process.env.E2E_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/songverse_dev").replace(/\?.*$/, "");

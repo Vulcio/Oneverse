@@ -4,17 +4,21 @@ import { isPushEndpoint, notificationPreferences, quietHoursOf, withNotification
 import type { Prisma } from "@songverse/db";
 import type { Queue } from "bullmq";
 import { NOTIFICATIONS_QUEUE } from "../jobs/jobs.constants.js";
+import { planiverseUrl, songverseUrl } from "../common/utils/web-apps.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { getEffectiveNotificationSettings, getPushConfig, pushTestOrigins } from "./notification-settings.js";
-
-/** The web app's address, for the links in emails: the API knows it, the Worker may not. */
-const webUrl = () => (process.env.WEB_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
 /** A batch of notifications to send by email (and later push): the ones made together. */
 export interface DeliverJob {
   ids: string[];
+  /** The web apps' addresses, for the links in emails: the API knows them, the Worker may not. */
   webUrl: string;
+  /** Planiverse's (issue #241), when it's deployed; jobs queued before it have none. */
+  planiverseUrl?: string | null;
 }
+
+/** The web app a notification is about (issue #241): Planiverse's, or null for Songverse. */
+export type NotificationApp = "planiverse" | null;
 
 /** A test push to someone's devices. */
 export interface TestPushJob {
@@ -31,6 +35,10 @@ export interface NotificationInput {
   kind: NotificationKind;
   data: NotificationData;
   url?: string | null;
+  /** The team it's about: a group that only plans makes it Planiverse's (issue #241). */
+  teamId?: string;
+  /** Planiverse's whatever its team (an organisation's event). */
+  app?: NotificationApp;
 }
 
 /**
@@ -54,12 +62,17 @@ export class NotificationsService {
   async notify(notifications: NotificationInput[], except: string | null = null): Promise<number> {
     const sent = notifications.filter((one) => one.userId !== except);
     if (sent.length === 0) return 0;
+    const teamIds = [...new Set(sent.flatMap((one) => (one.teamId && !one.app ? [one.teamId] : [])))];
+    const planning = new Set(
+      teamIds.length > 0 ? (await this.prisma.client.team.findMany({ where: { id: { in: teamIds }, usesSongverse: false }, select: { id: true } })).map((team) => team.id) : [],
+    );
+    const appOf = (one: NotificationInput): NotificationApp => one.app ?? (one.teamId && planning.has(one.teamId) ? "planiverse" : null);
     const rows = await this.prisma.client.notification.createManyAndReturn({
-      data: sent.map((one) => ({ userId: one.userId, kind: one.kind, data: one.data as Prisma.InputJsonValue, url: one.url ?? null })),
+      data: sent.map((one) => ({ userId: one.userId, kind: one.kind, data: one.data as Prisma.InputJsonValue, url: one.url ?? null, app: appOf(one) })),
       select: { id: true },
     });
     // Already in the bell; the email can wait for the queue, but a queue that's down mustn't fail the change.
-    await this.queue.add("deliver", { ids: rows.map((row) => row.id), webUrl: webUrl() } satisfies DeliverJob, { removeOnComplete: 100, removeOnFail: 100 }).catch((error: unknown) => {
+    await this.queue.add("deliver", { ids: rows.map((row) => row.id), webUrl: songverseUrl(), planiverseUrl: planiverseUrl() } satisfies DeliverJob, { removeOnComplete: 100, removeOnFail: 100 }).catch((error: unknown) => {
       this.logger.warn(`Notifications not queued for email: ${error instanceof Error ? error.message : String(error)}`);
     });
     return sent.length;
@@ -113,8 +126,13 @@ export class NotificationsService {
     return rows.map((row) => ({ id: row.id, endpoint: row.endpoint, label: row.label, createdAt: row.createdAt.toISOString(), lastPushedAt: row.lastPushedAt?.toISOString() ?? null, lastError: row.lastError, lastErrorAt: row.lastErrorAt?.toISOString() ?? null }));
   }
 
-  /** A device turned on: its browser's subscription, kept for this person (a browser someone else used before moves over). */
-  async addDevice(userId: string, dto: CreatePushSubscriptionRequest) {
+  /**
+   * A device turned on: its browser's subscription, kept for this person (a
+   * browser someone else used before moves over) - and the web app it was
+   * turned on in, by the page's origin (issue #241): Planiverse's pushes go
+   * to its devices first.
+   */
+  async addDevice(userId: string, dto: CreatePushSubscriptionRequest, origin?: string) {
     if (!(await getPushConfig())) throw new BadRequestException(["This server doesn't send notifications to devices"]);
     if (!isPushEndpoint(dto.endpoint, pushTestOrigins())) throw new BadRequestException(["endpoint must be a push service's address"]);
     const existing = await this.prisma.client.pushSubscription.findUnique({ where: { endpoint: dto.endpoint } });
@@ -122,7 +140,9 @@ export class NotificationsService {
       const count = await this.prisma.client.pushSubscription.count({ where: { userId } });
       if (count >= MAX_DEVICES) throw new BadRequestException([`You can turn on notifications for ${MAX_DEVICES} devices at most: remove one first`]);
     }
-    const data = { userId, p256dh: dto.keys.p256dh, auth: dto.keys.auth, label: dto.label || null };
+    const planiverse = planiverseUrl();
+    const app = planiverse && origin === new URL(planiverse).origin ? "planiverse" : null;
+    const data = { userId, p256dh: dto.keys.p256dh, auth: dto.keys.auth, label: dto.label || null, app };
     const row = await this.prisma.client.pushSubscription.upsert({ where: { endpoint: dto.endpoint }, create: { endpoint: dto.endpoint, ...data }, update: data });
     return { id: row.id, endpoint: row.endpoint, label: row.label, createdAt: row.createdAt.toISOString(), lastPushedAt: row.lastPushedAt?.toISOString() ?? null, lastError: row.lastError, lastErrorAt: row.lastErrorAt?.toISOString() ?? null };
   }
@@ -136,6 +156,6 @@ export class NotificationsService {
   async testPush(userId: string): Promise<void> {
     if (!(await getPushConfig())) throw new BadRequestException(["This server doesn't send notifications to devices"]);
     if ((await this.prisma.client.pushSubscription.count({ where: { userId } })) === 0) throw new BadRequestException(["Turn on notifications on a device first"]);
-    await this.queue.add("test", { userId, webUrl: webUrl() } satisfies TestPushJob, { removeOnComplete: 100, removeOnFail: 100 });
+    await this.queue.add("test", { userId, webUrl: songverseUrl() } satisfies TestPushJob, { removeOnComplete: 100, removeOnFail: 100 });
   }
 }

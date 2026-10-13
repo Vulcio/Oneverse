@@ -903,7 +903,7 @@ const fr: typeof en = {
     loadMore: "Voir les plus anciennes",
     email: {
       several: "{{count}} nouvelles de Songverse",
-      open: "Ouvrir dans Songverse",
+      open: "Ouvrir dans {{app}}",
       why: "Choisissez ce qu'on vous envoie par e-mail dans les réglages de notifications de votre compte :",
     },
     settingsTitle: "Notifications",
@@ -1225,6 +1225,8 @@ const fr: typeof en = {
     partOf: "Fait partie de {{name}}",
     adminTitle: "Organisations",
     adminDescription: "Si ce serveur a des organisations - une église, un club - qui regroupent des équipes pour planifier ensemble (Planiverse). Sans elles, Songverse fonctionne seul.",
+    planiverseAt: "Planiverse, la planification à part : {{url}}",
+    planiverseOff: "Planiverse n'est pas déployé (PLANIVERSE_URL) : on planifie dans Songverse.",
     mode: "Organisations sur ce serveur",
     modeNone: "Aucune : Songverse seul",
     modeSingle: "Une seule : toute personne qui se connecte en fait partie",

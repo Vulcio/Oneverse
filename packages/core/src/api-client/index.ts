@@ -843,6 +843,8 @@ export interface AdminOrganizations {
     mode: SecuritySetting<OrganizationMode>;
     anyoneCreates: SecuritySetting<boolean>;
   };
+  /** Planiverse's address (PLANIVERSE_URL, set where it's deployed), or null: not deployed. */
+  planiverseUrl: string | null;
   organizations: AdminOrganization[];
 }
 

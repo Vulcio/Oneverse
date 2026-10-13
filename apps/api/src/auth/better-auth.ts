@@ -6,6 +6,7 @@ import { customSession } from "better-auth/plugins/custom-session";
 import { passkey } from "@better-auth/passkey";
 import { prisma } from "@songverse/db";
 import { getEffectiveAuthSettings, type EffectiveAuthSettings } from "./auth-settings.js";
+import { webOrigins } from "../common/utils/web-apps.js";
 import { passkeyRpId, sharedCookieDomain } from "./auth-domains.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
 import { markInvitationAccepted, passFromCookies, signupAllowed } from "../invitations/signup-gate.js";
@@ -34,10 +35,13 @@ const bootstrapAdminEmails = new Set(
 // wherever the auth server happens to live, and because verification/
 // reset-password links redirect back into the web app, which - now that
 // it's a different origin from AUTH_URL - has to be explicitly trusted.
+// PLANIVERSE_URL, when set, is the second web app's (issue #241): trusted
+// the same way, and under the same parent domain (see web-apps.ts).
 const authUrl = new URL(process.env.AUTH_URL ?? "http://localhost:3001");
-const webUrl = new URL(process.env.WEB_URL ?? "http://localhost:3000");
+const webOriginList = webOrigins();
+const webHostnames = webOriginList.map((origin) => new URL(origin).hostname);
 
-const cookieDomain = sharedCookieDomain(authUrl.hostname, webUrl.hostname);
+const cookieDomain = sharedCookieDomain(authUrl.hostname, ...webHostnames);
 
 /**
  * BetterAuth issues sessions (cookie-based, shared with the web app via
@@ -60,7 +64,7 @@ function buildAuth(settings: EffectiveAuthSettings) {
   return betterAuth({
     baseURL: authUrl.origin,
     secret: process.env.BETTER_AUTH_SECRET,
-    trustedOrigins: [webUrl.origin],
+    trustedOrigins: webOriginList,
     database: prismaAdapter(prisma, { provider: "postgresql" }),
     advanced: {
       // See sharedCookieDomain above.
@@ -216,12 +220,13 @@ function buildAuth(settings: EffectiveAuthSettings) {
         };
       }),
       passkey({
-        // Tied to the web app's origin, not this API's - see the comment
-        // on webUrl above - under the parent domain, so passkeys survive
-        // the web app moving between subdomains (see passkeyRpId).
-        rpID: passkeyRpId(authUrl.hostname, webUrl.hostname),
+        // Tied to the web apps' origins, not this API's - see the comment
+        // on AUTH_URL above - under the parent domain, so passkeys survive
+        // a web app moving between subdomains and work in both apps (see
+        // passkeyRpId).
+        rpID: passkeyRpId(authUrl.hostname, ...webHostnames),
         rpName: "Songverse",
-        origin: webUrl.origin,
+        origin: webOriginList,
       }),
     ],
   });

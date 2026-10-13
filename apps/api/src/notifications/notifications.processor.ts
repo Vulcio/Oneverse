@@ -15,6 +15,11 @@ const MESSAGES: Record<string, Messages> = { en, fr };
 
 type Rows = Awaited<ReturnType<NotificationsProcessor["load"]>>;
 
+/** Where a notification's link goes (issue #241): Planiverse's address for its own, when it's deployed; Songverse's otherwise. */
+function appUrl(job: DeliverJob, app: string | null): string {
+  return app === "planiverse" && job.planiverseUrl ? job.planiverseUrl : job.webUrl;
+}
+
 /**
  * Notifications sent out (issue #236), each batch made together:
  * - by email, one per person - when this server sends them (Admin >
@@ -75,12 +80,13 @@ export class NotificationsProcessor extends WorkerHost {
       if (wanted.length > 0) {
         const messages = MESSAGES[user.locale] ?? en;
         const email = notificationEmail(wanted.map((row) => ({ kind: row.kind as NotificationKind, data: row.data as NotificationData })), messages, user.locale);
-        // One link: the first one's (they're about the same thing), else My calendar.
-        const path = wanted.find((row) => row.url)?.url ?? "/calendar";
+        // One link: the first one's (they're about the same thing), else My calendar - in its app (issue #241).
+        const first = wanted.find((row) => row.url) ?? wanted[0]!;
+        const path = first.url ?? "/calendar";
         await sendNotificationEmail(user.email, {
           ...email,
-          open: messages.notifications.email.open,
-          url: `${job.webUrl}${path}`,
+          open: messages.notifications.email.open.replace("{{app}}", first.app === "planiverse" && job.planiverseUrl ? "Planiverse" : "Songverse"),
+          url: `${appUrl(job, first.app)}${path}`,
           why: messages.notifications.email.why,
           settingsUrl: `${job.webUrl}/account`,
         });
@@ -100,19 +106,23 @@ export class NotificationsProcessor extends WorkerHost {
       const user = list[0]!.user;
       const choices = notificationPreferences(user.notificationSettings);
       const wanted = config || error ? list.filter((row) => choices[row.kind as NotificationKind]?.push) : [];
-      const devices = wanted.length > 0 ? await this.prisma.client.pushSubscription.findMany({ where: { userId: list[0]!.userId } }) : [];
+      const all = wanted.length > 0 ? await this.prisma.client.pushSubscription.findMany({ where: { userId: list[0]!.userId } }) : [];
+      // Its app's devices (issue #241: Planiverse's, Songverse's), or every one when they have none of that app's.
+      const first = wanted.find((row) => row.url) ?? wanted[0];
+      const theirs = all.filter((device) => (device.app ?? null) === (first?.app ?? null));
+      const devices = theirs.length > 0 ? theirs : all;
       // Set up, but this Worker can't use it: the job fails with why, these left to push once it can.
       if (devices.length > 0 && !config) throw new Error(error ?? "Push isn't set up");
       if (devices.length > 0) {
         const end = quietHoursEnd(quietHoursOf(user.notificationSettings), new Date());
         if (end) {
           // Quiet hours: held until they end, then looked at again (they may have changed).
-          await this.queue.add("push", { ids: list.map((row) => row.id), webUrl: job.webUrl } satisfies DeliverJob, { delay: Math.max(0, new Date(end).getTime() - Date.now()), removeOnComplete: 100, removeOnFail: 100 });
+          await this.queue.add("push", { ids: list.map((row) => row.id), webUrl: job.webUrl, planiverseUrl: job.planiverseUrl ?? null } satisfies DeliverJob, { delay: Math.max(0, new Date(end).getTime() - Date.now()), removeOnComplete: 100, removeOnFail: 100 });
           continue;
         }
         const messages = MESSAGES[user.locale] ?? en;
         const text = notificationPush(wanted.map((row) => ({ kind: row.kind as NotificationKind, data: row.data as NotificationData })), messages, user.locale);
-        const sent = await this.toDevices(devices, { ...text, url: wanted.find((row) => row.url)?.url ?? "/calendar", tag: wanted.length === 1 ? wanted[0]!.id : undefined }, config!, job.webUrl);
+        const sent = await this.toDevices(devices, { ...text, url: first?.url ?? "/calendar", tag: wanted.length === 1 ? wanted[0]!.id : undefined }, config!, job.webUrl);
         if (sent.sent > 0) pushed += 1;
       }
       await this.prisma.client.notification.updateMany({ where: { id: { in: list.map((row) => row.id) } }, data: { pushedAt: new Date() } });

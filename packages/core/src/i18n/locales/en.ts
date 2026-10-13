@@ -900,7 +900,7 @@ const en = {
     loadMore: "Show older",
     email: {
       several: "{{count}} updates from Songverse",
-      open: "Open in Songverse",
+      open: "Open in {{app}}",
       why: "Choose what you're emailed about in your account's notification settings:",
     },
     settingsTitle: "Notifications",
@@ -1222,6 +1222,8 @@ const en = {
     partOf: "Part of {{name}}",
     adminTitle: "Organisations",
     adminDescription: "Whether this server has organisations - a church, a club - grouping teams to plan together (Planiverse). Without any, Songverse works on its own.",
+    planiverseAt: "Planiverse, the planning on its own: {{url}}",
+    planiverseOff: "Planiverse isn't deployed (PLANIVERSE_URL): people plan in Songverse.",
     mode: "Organisations on this server",
     modeNone: "None: Songverse on its own",
     modeSingle: "One: everyone who signs in is in it",

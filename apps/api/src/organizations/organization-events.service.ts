@@ -93,7 +93,7 @@ export class OrganizationEventsService {
       this.prisma.client.user.findUnique({ where: { id: by }, select: { displayName: true } }),
     ]);
     await this.notifications.notify(
-      [{ userId: event.hostUserId, kind: "HOSTING", data: { event: event.title, date: dateText(event.date), team: organization.name, by: who?.displayName ?? "" }, url: `/organizations/${event.organizationId}/events` }],
+      [{ userId: event.hostUserId, kind: "HOSTING", data: { event: event.title, date: dateText(event.date), team: organization.name, by: who?.displayName ?? "" }, url: `/organizations/${event.organizationId}/events`, app: "planiverse" }],
       by,
     );
   }

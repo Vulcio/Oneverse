@@ -13,6 +13,8 @@ import { PlanningProvider, type PlanningHost } from "@songverse/planning/host";
 const host: PlanningHost = {
   api: apiClient, // the app's own (createAppApiClient)
   links: {
+    home: "/dashboard", // after leaving a team
+    teams: "/teams", // after deleting one
     organizations: "/organizations",
     team: (id) => `/teams/${id}`,
     organization: (id) => `/organizations/${id}`,
@@ -25,6 +27,7 @@ const host: PlanningHost = {
 ```
 
 The app keeps its routes: each loads with the page's loader
-(`loadOrganizationPage(api, id)`…) and renders the page
-(`@songverse/planning/pages/organization`), the parts in
-`@songverse/planning/components/*`.
+(`loadOrganizationPage(api, id)`, `loadTeamPage`…) and renders the page
+(`@songverse/planning/pages/organization`, `pages/team` with the app's own
+admin cards…), the parts in `@songverse/planning/components/*` - the
+notification settings and this device's push among them.

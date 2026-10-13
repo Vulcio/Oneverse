@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Post, Put, Query, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -63,9 +63,9 @@ export class PushSubscriptionsController {
 
   /** This device turned on: its browser's PushSubscription, as toJSON() gives it. */
   @Post()
-  add(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: CreatePushSubscriptionDto) {
+  add(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: CreatePushSubscriptionDto, @Headers("origin") origin?: string) {
     if (!user) throw new UnauthorizedException();
-    return this.notifications.addDevice(user.id, dto);
+    return this.notifications.addDevice(user.id, dto, origin);
   }
 
   /** A test notification to all one's devices. */

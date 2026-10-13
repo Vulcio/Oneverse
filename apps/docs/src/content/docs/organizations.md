@@ -3,7 +3,7 @@ title: Organisations
 description: A church, a club or a group whose teams plan together, on a server that has organisations.
 ---
 
-An organisation is the church, club or group your teams are part of: the music team, the welcome team, the tech team… It's where they'll plan together - who hosts each event, which teams each one needs (this is being built, see Planiverse). Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
+An organisation is the church, club or group your teams are part of: the music team, the welcome team, the tech team… It's where they plan together - who hosts each event, which groups each one needs - in Songverse, or in [Planiverse](/planiverse/), the planning on its own, where the server has it. Songverse works without any: a server has organisations only if its admins turned them on (see [Admin](/admin/#organisations)), and until then you won't see them.
 
 ## Where to find them
 

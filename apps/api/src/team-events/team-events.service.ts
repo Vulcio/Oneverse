@@ -101,7 +101,7 @@ export class TeamEventsService {
     for (const { date, userId } of signedUp) {
       if (!notices.has(date)) notices.set(date, this.dateNotice(before, after, date));
       const notice = notices.get(date);
-      if (notice) sent.push({ userId, kind: notice.kind, data: { ...notice.data, team }, url: "/calendar" });
+      if (notice) sent.push({ userId, kind: notice.kind, data: { ...notice.data, team }, url: "/calendar", teamId: before.teamId });
     }
     await this.notifications.notify(sent, by);
   }
@@ -272,7 +272,7 @@ export class TeamEventsService {
     const team = await this.teamName(teamId);
     const people = [...new Set(signedUp.map((one) => one.userId))];
     await this.notifications.notify(
-      people.map((userId) => ({ userId, kind: "EVENT_CANCELLED", data: { event: event.title, team }, url: "/calendar" })),
+      people.map((userId) => ({ userId, kind: "EVENT_CANCELLED", data: { event: event.title, team }, url: "/calendar", teamId })),
       by,
     );
   }

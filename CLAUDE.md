@@ -133,6 +133,18 @@ organisations, groups, positions, their events - live in `packages/planning`
 link to a Songverse page from there by its path: add it to the host.
 Generic parts (confirm button, date picker, avatars) are in `packages/ui`.
 
+Planiverse (`apps/planiverse`, issue #241) is the second web app: those
+screens on their own, same accounts and API, deployed where an admin wants it
+(`Dockerfile.planiverse`). The API trusts it when `PLANIVERSE_URL` is set
+(`common/utils/web-apps.ts`: CORS, BetterAuth's trusted origins, passkeys,
+one cookie domain for all). Its paths match Songverse's (`/calendar`,
+`/teams/$id`, `/organizations/…`) so a notification's `url` works in both; a
+notification is Planiverse's (`Notification.app`) when it's about a group that
+only plans or an organisation's event - pass `teamId` (or `app`) to
+`NotificationsService.notify()` - and its email links there, its push goes to
+the devices turned on there (`PushSubscription.app`, from the page's origin).
+Both web apps run on the shared server (`packages/app/server/web-server.mjs`).
+
 ## Song content
 
 `SongVersion.documentJson` is a SongDocument v2 (`docs/song-document-v2.md`):

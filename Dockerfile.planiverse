@@ -1,0 +1,42 @@
+# Planiverse (issue #241): Songverse's planning on its own - its calendar,
+# organisations, groups and their events - signed in to with the same
+# account, through the same API. Built and served like Songverse's web app
+# (see Dockerfile.web for why it's a small Node server, and why this file
+# sits at the repo root), by the web apps' shared server
+# (packages/app/server/web-server.mjs).
+#
+# At runtime: API_URL (the API's address, as for Songverse's web app) and
+# SONGVERSE_URL (Songverse's address, where a date's set opens; unset, sets
+# aren't shown). The API needs PLANIVERSE_URL set to this app's address.
+FROM node:22-slim AS base
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+WORKDIR /repo
+
+FROM base AS deps
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY packages/tsconfig/package.json packages/tsconfig/
+COPY packages/core/package.json packages/core/
+COPY packages/ui/package.json packages/ui/
+COPY packages/app/package.json packages/app/
+COPY packages/planning/package.json packages/planning/
+COPY apps/planiverse/package.json apps/planiverse/
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+COPY packages/tsconfig packages/tsconfig
+COPY packages/core packages/core
+COPY packages/ui packages/ui
+COPY packages/app packages/app
+COPY packages/planning packages/planning
+COPY apps/planiverse apps/planiverse
+RUN pnpm --filter @songverse/core build \
+ && pnpm --filter @songverse/planiverse build
+
+FROM base AS runtime
+ENV NODE_ENV=production
+COPY --from=build /repo/node_modules /repo/node_modules
+COPY --from=build /repo/packages /repo/packages
+COPY --from=build /repo/apps/planiverse /repo/apps/planiverse
+WORKDIR /repo/apps/planiverse
+EXPOSE 3000
+CMD ["node", "server.mjs"]

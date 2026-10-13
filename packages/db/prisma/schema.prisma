@@ -1272,6 +1272,10 @@ model Notification {
   kind      String
   data      Json
   url       String?
+  // Which web app it's about (issue #241): "planiverse" for a group that only
+  // plans, or an organisation's event; null for Songverse. Its email links
+  // there, and its push goes to that app's devices first.
+  app       String?
   readAt    DateTime?
   // When it went by email (issue #236): sent, or looked at and not sent (the person's choice, email off).
   emailedAt DateTime?
@@ -2310,6 +2314,8 @@ model PushSubscription {
   auth         String
   // Which device, as its browser named it: "Chrome on Android".
   label        String?
+  // Which web app turned it on (issue #241): "planiverse", or null for Songverse.
+  app          String?
   createdAt    DateTime  @default(now())
   lastPushedAt DateTime?
   // Why the last push to it failed (issue #237): the push service's answer, or that it couldn't be reached; cleared by a push that works.

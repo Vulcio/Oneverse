@@ -1,3 +1,6 @@
+# Songverse's web app. Planiverse's (issue #241) is Dockerfile.planiverse,
+# built the same way.
+#
 # TanStack Start's default build output is a Fetch-API handler meant for a
 # platform adapter (Vercel/Cloudflare), not a plain Node entrypoint — so for
 # a self-hosted/Docker deploy this image serves the production build with

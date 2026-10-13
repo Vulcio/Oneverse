@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    __PUBLIC_ENV__?: { apiUrl: string };
+    __PUBLIC_ENV__?: { apiUrl: string; [name: string]: string | undefined };
   }
 }
 
@@ -32,8 +32,19 @@ export function getApiUrl(): string {
  * a browser re-render (Vite's client bundle doesn't define process.env for
  * arbitrary keys the way it does for import.meta.env.VITE_*).
  */
-export function renderPublicEnvScript(): string {
-  const apiUrl = typeof process !== "undefined" ? (process.env.API_URL ?? DEFAULT_API_URL) : DEFAULT_API_URL;
+export function renderPublicEnvScript(names: readonly string[] = []): string {
+  const env = typeof process !== "undefined" ? process.env : {};
+  const values = { apiUrl: env.API_URL ?? DEFAULT_API_URL, ...Object.fromEntries(names.map((name) => [name, env[name]])) };
   // "<" escaped, so no value can close the <script> it's written into (issue #112).
-  return `window.__PUBLIC_ENV__=${JSON.stringify({ apiUrl }).replace(/</g, "\\u003c")};`;
+  return `window.__PUBLIC_ENV__=${JSON.stringify(values).replace(/</g, "\\u003c")};`;
+}
+
+/**
+ * Another of the server's environment variables, also in the browser when
+ * the app's root names it in renderPublicEnvScript (Planiverse's
+ * SONGVERSE_URL, issue #241). Never a secret: it's in every page.
+ */
+export function publicEnvValue(name: string): string | undefined {
+  if (typeof window !== "undefined") return window.__PUBLIC_ENV__?.[name] || undefined;
+  return (typeof process !== "undefined" ? process.env[name] : undefined) || undefined;
 }

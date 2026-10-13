@@ -11,10 +11,10 @@ import compression from "compression";
 import type { Express, NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module.js";
 import { getAuth } from "./auth/better-auth.js";
+import { webOrigins } from "./common/utils/web-apps.js";
 import { apiDocsAllowed } from "./security/security-settings.js";
 
 async function bootstrap() {
-  const webUrl = process.env.WEB_URL ?? "http://localhost:3000";
   // rawBody: a webhook's signature is checked against the bytes it came as (the Demucs API's, issue #63).
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
   // Above Express's 100kb default: a songbook catalogue file is imported as
@@ -35,8 +35,8 @@ async function bootstrap() {
   // apps/domains), and browsers only send/accept cookies on a cross-origin
   // request when Access-Control-Allow-Origin names the exact origin and
   // Access-Control-Allow-Credentials is true; a wildcard origin can't be
-  // combined with credentials at all.
-  app.enableCors({ origin: webUrl, credentials: true });
+  // combined with credentials at all. Both web apps' (issue #241), named.
+  app.enableCors({ origin: webOrigins(), credentials: true });
 
   // Mounted directly on the underlying Express app rather than as a Nest
   // controller: BetterAuth's handler wants to own the raw request/response

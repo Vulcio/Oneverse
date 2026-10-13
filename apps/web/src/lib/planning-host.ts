@@ -5,6 +5,8 @@ import { apiClient } from "#/lib/api-client";
 export const planningHost: PlanningHost = {
   api: apiClient,
   links: {
+    home: "/dashboard",
+    teams: "/teams",
     organizations: "/organizations",
     team: (teamId) => `/teams/${teamId}`,
     organization: (organizationId) => `/organizations/${organizationId}`,

@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
+import { planiverseUrl } from "../common/utils/web-apps.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { RateLimit } from "../security/rate-limit.decorator.js";
@@ -134,7 +135,8 @@ export class AdminOrganizationsController {
 
   @Get()
   async list() {
-    return { ...(await getOrganizationSettingsSummary()), organizations: await this.organizations.adminList() };
+    // Where Planiverse is (issue #241): set where it's deployed (PLANIVERSE_URL), read at boot for sign-in and CORS.
+    return { ...(await getOrganizationSettingsSummary()), planiverseUrl: planiverseUrl(), organizations: await this.organizations.adminList() };
   }
 
   @Put("settings")

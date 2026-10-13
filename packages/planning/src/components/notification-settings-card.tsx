@@ -5,9 +5,9 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
-import { apiClient } from "#/lib/api-client";
-import { currentSubscription, deviceLabel, pushSupported, subscribe } from "#/lib/push";
-import { formatSetDate } from "#/lib/setlists";
+import { usePlanning } from "../host";
+import { currentSubscription, deviceLabel, pushSupported, subscribe } from "../push";
+import { formatSetDate } from "@songverse/ui/lib/dates";
 
 /**
  * How notifications reach one besides the bell (issue #236): each kind by
@@ -16,6 +16,7 @@ import { formatSetDate } from "#/lib/setlists";
  * doesn't send (Admin > Notifications), it says.
  */
 export function NotificationSettingsCard() {
+  const { api } = usePlanning();
   const { t, i18n } = useTranslation();
   const [preferences, setPreferences] = useState<MyNotificationPreferences | null>(null);
   const [devices, setDevices] = useState<PushDevice[]>([]);
@@ -27,13 +28,13 @@ export function NotificationSettingsCard() {
   const [error, setError] = useState<string | null>(null);
 
   const loadDevices = useCallback(async () => {
-    setDevices(await apiClient.listMyPushDevices());
+    setDevices(await api.listMyPushDevices());
     const subscription = await currentSubscription().catch(() => null);
     setHere(subscription?.endpoint ?? null);
   }, []);
 
   useEffect(() => {
-    void apiClient.getMyNotificationPreferences().then(setPreferences);
+    void api.getMyNotificationPreferences().then(setPreferences);
     setPermission(pushSupported() ? Notification.permission : "unsupported");
     void loadDevices();
   }, [loadDevices]);
@@ -42,7 +43,7 @@ export function NotificationSettingsCard() {
     if (!preferences) return;
     // Shown at once; the answer is what was saved.
     setPreferences({ ...preferences, kinds: { ...preferences.kinds, [kind]: { ...preferences.kinds[kind], [channel]: on } } });
-    setPreferences(await apiClient.updateMyNotificationPreferences({ kinds: { [kind]: { [channel]: on } } }));
+    setPreferences(await api.updateMyNotificationPreferences({ kinds: { [kind]: { [channel]: on } } }));
   };
 
   const run = async (action: () => Promise<void>) => {
@@ -64,13 +65,13 @@ export function NotificationSettingsCard() {
       setPermission(Notification.permission);
       if (!subscription) return;
       const json = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
-      await apiClient.addMyPushDevice({ endpoint: json.endpoint, keys: json.keys, label: deviceLabel(navigator.userAgent) });
+      await api.addMyPushDevice({ endpoint: json.endpoint, keys: json.keys, label: deviceLabel(navigator.userAgent) });
       await loadDevices();
     });
 
   const remove = (device: PushDevice) =>
     run(async () => {
-      await apiClient.removeMyPushDevice(device.id);
+      await api.removeMyPushDevice(device.id);
       if (device.endpoint === here) await (await currentSubscription())?.unsubscribe();
       await loadDevices();
     });
@@ -81,7 +82,7 @@ export function NotificationSettingsCard() {
     const quietHours = next ? { ...next, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone } : null;
     // Shown at once; the answer is what was saved.
     setPreferences({ ...preferences, quiet: quietHours });
-    setPreferences(await apiClient.updateMyNotificationPreferences({ quiet: quietHours }));
+    setPreferences(await api.updateMyNotificationPreferences({ quiet: quietHours }));
   };
 
   const pushAvailable = !!preferences?.pushKey;
@@ -188,7 +189,7 @@ export function NotificationSettingsCard() {
                 disabled={busy}
                 onClick={() =>
                   void run(async () => {
-                    await apiClient.testMyPushDevices();
+                    await api.testMyPushDevices();
                     setTestSent(true);
                   })
                 }

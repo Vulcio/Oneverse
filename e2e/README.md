@@ -10,7 +10,7 @@ The database needs its migrations and seed applied (`pnpm --filter
 @songverse/db exec prisma migrate deploy`, then `pnpm --filter @songverse/db
 seed`) - some suites use the built-in global tags.
 
-1. Start Postgres and Redis, then the API, the Worker and the web app, with the API's output
+1. Start Postgres and Redis, then the API, the Worker and the web apps, with the API's output
    going to a file - with no email provider configured the API prints the
    emails it would send, and the suites read verification links from there.
    Point the API's song artwork and song info at the suites' stand-ins for
@@ -26,10 +26,13 @@ seed`) - some suites use the built-in global tags.
    # Push notifications go to a stand-in push service (lib/fake-push.mjs, port 3997) besides the real ones.
    # The Worker reads the notification emails' and pushes' outcomes; the email suites read its log, /tmp/worker.log.
    export PUSH_TEST_ORIGINS=http://localhost:3997
+   # Planiverse (issue #241) beside Songverse: the API trusts it, and it opens sets in Songverse.
+   export PLANIVERSE_URL=http://localhost:3002 SONGVERSE_URL=http://localhost:3000
    # As in production (#92): the API only adds background jobs, the Worker runs them.
    JOBS_IN_API=false pnpm --filter @songverse/api dev > /tmp/api-dev.log 2>&1 &
    pnpm --filter @songverse/api build && (cd apps/api && node dist/worker.js > /tmp/worker.log 2>&1 &)
    pnpm --filter @songverse/web dev &
+   pnpm --filter @songverse/planiverse dev &
    ```
 
 2. Run everything, or pick suites:
@@ -50,6 +53,7 @@ Screenshots of failed browser steps go to `e2e/.artifacts/`.
 | --- | --- |
 | `E2E_API_URL` | `http://localhost:3001` |
 | `E2E_WEB_URL` | `http://localhost:3000` |
+| `E2E_PLANIVERSE_URL` | `http://localhost:3002` |
 | `E2E_API_LOG` | `/tmp/api-dev.log` |
 | `E2E_DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/songverse_dev` |
 
