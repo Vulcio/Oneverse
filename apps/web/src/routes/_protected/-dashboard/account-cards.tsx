@@ -14,7 +14,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Trash2 } from "lucide-react";
 import { apiClient } from "#/lib/api-client";
-import { authClient } from "#/lib/auth-client";
+import { authClient } from "@songverse/app/auth-client";
 import { formatBytes } from "#/lib/format-bytes";
 import { ImageCropDialog } from "#/components/image-crop-dialog";
 import { sizedAvatarUrl } from "#/lib/avatar-url";

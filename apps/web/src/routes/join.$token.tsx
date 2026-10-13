@@ -1,13 +1,14 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Music2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "#/components/auth-card";
-import { LocaleProvider } from "#/components/locale-provider";
+import { AuthCard } from "@songverse/app/components/auth-card";
+import { AuthPage } from "@songverse/app/components/auth-page";
+import { SongverseBrand } from "#/components/brand";
+import { LocaleProvider } from "@songverse/app/components/locale-provider";
 import { apiClient } from "#/lib/api-client";
-import { getSession, getVisitorLocale } from "#/lib/server-auth";
+import { getSession, getVisitorLocale } from "@songverse/app/server-auth";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { loadLocale } from "#/lib/i18n";
+import { loadLocale } from "@songverse/app/i18n";
 
 export const Route = createFileRoute("/join/$token")({
   beforeLoad: async ({ params }) => {
@@ -50,11 +51,7 @@ function JoinTeamContent() {
   const { error, hasGoogleAuth, signupInviteOnly } = Route.useRouteContext();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-      <div className="flex items-center gap-2 text-lg font-semibold">
-        <Music2 className="size-6" />
-        Songverse
-      </div>
+    <AuthPage brand={<SongverseBrand />}>
       {error ? (
         <Card className="w-full max-w-sm">
           <CardHeader>
@@ -72,6 +69,6 @@ function JoinTeamContent() {
           <AuthCard redirectTo={`/join/${token}`} hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} invitePass={{ kind: "team", token }} />
         </>
       )}
-    </main>
+    </AuthPage>
   );
 }

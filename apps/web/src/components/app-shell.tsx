@@ -12,7 +12,7 @@ import { stopMetronome } from "#/lib/metronome-engine";
 import { useRecordingClickBridge } from "#/lib/recording-click";
 import { useSyncBridge } from "#/lib/sync-client";
 import { unloadStems } from "#/lib/stem-engine";
-import type { AppSession } from "#/lib/server-auth";
+import type { AppSession } from "@songverse/app/server-auth";
 import { nestedSidebarFor } from "#/lib/sidebar-kind";
 import { ItemPanel, NestedSidebar } from "#/components/nested-sidebar";
 import { SidebarInset, SidebarProvider, useSidebar } from "@songverse/ui/components/sidebar";

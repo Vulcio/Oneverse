@@ -1,6 +1,6 @@
 import { createAuthClient } from "better-auth/react";
 import { passkeyClient } from "@better-auth/passkey/client";
-import { getApiUrl } from "#/lib/public-env";
+import { getApiUrl } from "./public-env";
 // Forces TS to have a portable module specifier for zod's internal "v4/core"
 // types (pulled in transitively via the passkey client plugin), avoiding
 // TS2742 "inferred type of 'authClient' cannot be named" on the export

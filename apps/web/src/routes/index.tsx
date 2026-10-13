@@ -1,14 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Music2 } from "lucide-react";
 import { useEffect } from "react";
-import { AuthCard } from "#/components/auth-card";
-import { LocaleProvider } from "#/components/locale-provider";
+import { AuthCard } from "@songverse/app/components/auth-card";
+import { AuthPage } from "@songverse/app/components/auth-page";
+import { SongverseBrand } from "#/components/brand";
+import { LocaleProvider } from "@songverse/app/components/locale-provider";
 import { SourceCodeLink } from "#/components/source-code-link";
 import { apiClient } from "#/lib/api-client";
 import { loadAppData } from "#/lib/app-data";
 import { forgetOffline } from "#/lib/offline-db";
-import { getVisitorLocale } from "#/lib/server-auth";
-import { loadLocale } from "#/lib/i18n";
+import { getVisitorLocale } from "@songverse/app/server-auth";
+import { loadLocale } from "@songverse/app/i18n";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
@@ -29,14 +30,10 @@ function Home() {
   useEffect(() => void forgetOffline(), []);
   return (
     <LocaleProvider locale={locale}>
-      <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-        <div className="flex items-center gap-2 text-lg font-semibold">
-          <Music2 className="size-6" />
-          Songverse
-        </div>
+      <AuthPage brand={<SongverseBrand />}>
         <AuthCard hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} />
         <SourceCodeLink />
-      </main>
+      </AuthPage>
     </LocaleProvider>
   );
 }

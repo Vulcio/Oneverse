@@ -2,8 +2,8 @@ import type { SignupPassRequest } from "@songverse/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound } from "lucide-react";
-import { authClient } from "#/lib/auth-client";
-import { getApiUrl } from "#/lib/public-env";
+import { authClient } from "../auth-client";
+import { getApiUrl } from "../public-env";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/componen
 type View = "auth" | "forgot-password" | "forgot-password-sent" | "signup-check-email";
 
 interface AuthCardProps {
+  /** Where they go once signed in; "/" leads to the app's home. */
   redirectTo?: string;
   /** Whether Google sign-in is configured (Admin > Auth, or env vars) - resolved by the root route, see __root.tsx. */
   hasGoogleAuth: boolean;
@@ -55,7 +56,7 @@ export function useAuthErrorText() {
   };
 }
 
-export function AuthCard({ redirectTo = "/library", hasGoogleAuth, signupInviteOnly = false, invitePass, email: invitedEmail }: AuthCardProps) {
+export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = false, invitePass, email: invitedEmail }: AuthCardProps) {
   const { t } = useTranslation();
   const errorText = useAuthErrorText();
   const [view, setView] = useState<View>("auth");

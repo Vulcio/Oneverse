@@ -1,15 +1,16 @@
 import type { SetInvitePreview } from "@songverse/core";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Music2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "#/components/auth-card";
-import { LocaleProvider } from "#/components/locale-provider";
+import { AuthCard } from "@songverse/app/components/auth-card";
+import { AuthPage } from "@songverse/app/components/auth-page";
+import { SongverseBrand } from "#/components/brand";
+import { LocaleProvider } from "@songverse/app/components/locale-provider";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { loadLocale } from "#/lib/i18n";
-import { getSession, getVisitorLocale } from "#/lib/server-auth";
+import { loadLocale } from "@songverse/app/i18n";
+import { getSession, getVisitorLocale } from "@songverse/app/server-auth";
 import { setlistTitle } from "#/lib/setlists";
 
 /** Where a set's share link leads: sign in if needed, then join the set as a guest. */
@@ -45,11 +46,7 @@ function SetInviteContent() {
   const { signedIn, preview, error, hasGoogleAuth, signupInviteOnly } = Route.useRouteContext();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-      <div className="flex items-center gap-2 text-lg font-semibold">
-        <Music2 className="size-6" />
-        Songverse
-      </div>
+    <AuthPage brand={<SongverseBrand />}>
       {!preview ? (
         <Card className="w-full max-w-sm">
           <CardHeader>
@@ -74,7 +71,7 @@ function SetInviteContent() {
           ) : null}
         </>
       )}
-    </main>
+    </AuthPage>
   );
 }
 

@@ -1,6 +1,6 @@
 import { SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage } from "@songverse/core";
 import { useEffect, useRef, useState } from "react";
-import { getApiUrl } from "#/lib/public-env";
+import { getApiUrl } from "@songverse/app/public-env";
 
 /**
  * A screen's side of issue #186, in the browser of whatever drives the big

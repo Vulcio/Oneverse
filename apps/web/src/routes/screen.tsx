@@ -4,11 +4,11 @@ import { Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { renderSVG } from "uqr";
-import { LocaleProvider } from "#/components/locale-provider";
+import { LocaleProvider } from "@songverse/app/components/locale-provider";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
-import { loadLocale } from "#/lib/i18n";
+import { loadLocale } from "@songverse/app/i18n";
 import { useScreenDisplay } from "#/lib/screen-display";
-import { getVisitorLocale } from "#/lib/server-auth";
+import { getVisitorLocale } from "@songverse/app/server-auth";
 import { setlistTitle } from "#/lib/setlists";
 
 /**

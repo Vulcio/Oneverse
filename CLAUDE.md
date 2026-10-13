@@ -116,6 +116,15 @@ It's source only: the apps compile it (`@songverse/ui/components/button`,
 overriding the tokens (Songverse's modes in `apps/web/src/styles/app.css`).
 Add a new primitive there, not in an app.
 
+What every web app needs to sign people in and reach the API lives in
+`packages/app` (`@songverse/app`, also source only): the API's address
+(`public-env`), the session and API token forwarded to the API
+(`session`, with the server functions alone in `server-auth`), the API
+client (`createAppApiClient`, one per app), the languages (`i18n`,
+`LocaleProvider`), the auth client, and the signed-out pages' parts
+(`AuthCard`, `ResetPasswordCard`, `AuthPage` with the app's name passed
+in). An app keeps its routes; a change to signing in goes there, once.
+
 ## Song content
 
 `SongVersion.documentJson` is a SongDocument v2 (`docs/song-document-v2.md`):
@@ -273,7 +282,7 @@ second, unrelated auth surface.
 Consequences worth knowing before touching auth-adjacent code:
 - **The web app has zero direct Prisma/`@songverse/db` access.** It talks
   to the API over HTTP for everything, auth included -
-  `apps/web/src/lib/server-auth.ts` forwards the incoming request's
+  `packages/app/src/session.ts` forwards the incoming request's
   session cookie to `${API_URL}/api/auth/get-session` /
   `/api/auth/token`, rather than calling `auth.api.getSession()`
   in-process. If you find yourself wanting to import `@songverse/db` in
@@ -303,7 +312,7 @@ Consequences worth knowing before touching auth-adjacent code:
   behalf, so they'd all share that server's one per-IP bucket (100 per
   10s by default, production only - it's off in dev, so local testing
   won't show it), and a few quick page changes by anyone locked everyone
-  out with "Missing bearer token". Relatedly, `apps/web/src/lib/api-client.ts`
+  out with "Missing bearer token". Relatedly, `packages/app/src/api-client.ts`
   reuses one API token until shortly before it expires (browser) or per
   page render (server) - keep it that way rather than minting a token per
   API call.
@@ -329,7 +338,7 @@ Consequences worth knowing before touching auth-adjacent code:
   living alongside a `createServerFn` in the same file has, in practice,
   ended up bundled into the client JS (verified by inspecting
   `dist/client` output). This mattered most while auth lived in
-  `apps/web`; now that it doesn't, `apps/web`'s own server functions
-  (`server-auth.ts`) are thin HTTP-forwarding wrappers with no
+  `apps/web`; now that it doesn't, the server functions
+  (`packages/app/src/server-auth.ts`) are thin HTTP-forwarding wrappers with no
   Prisma/crypto dependencies to leak in the first place, but the
   discipline still applies to anything else added there later.

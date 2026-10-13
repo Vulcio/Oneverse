@@ -50,7 +50,7 @@ import { initials } from "#/lib/initials";
 import { useMode } from "#/lib/mode";
 import { clearSetProgress, useSetProgress } from "#/lib/set-progress";
 import { setStackSegues, useStackSegues } from "#/lib/live-stack";
-import type { AppSession } from "#/lib/server-auth";
+import type { AppSession } from "@songverse/app/server-auth";
 import { deviceStorage } from "#/lib/offline-data";
 import { setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
 import { useSmartLists } from "#/lib/smart-lists";

@@ -2,7 +2,7 @@ import { sessionOnlineOrSaved, type SavedSession, type SetlistSummary, type Song
 import { apiClient } from "#/lib/api-client";
 import { appDataVersion } from "#/lib/app-data-version";
 import { forgetOffline, getOffline, putOffline } from "#/lib/offline-db";
-import { getSession, type AppSession } from "#/lib/server-auth";
+import { getSession, type AppSession } from "@songverse/app/server-auth";
 
 export interface AppData {
   session: AppSession;

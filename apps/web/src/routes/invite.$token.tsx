@@ -1,14 +1,15 @@
 import type { SignupInvitationPreview } from "@songverse/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Music2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "#/components/auth-card";
-import { LocaleProvider } from "#/components/locale-provider";
+import { AuthCard } from "@songverse/app/components/auth-card";
+import { AuthPage } from "@songverse/app/components/auth-page";
+import { SongverseBrand } from "#/components/brand";
+import { LocaleProvider } from "@songverse/app/components/locale-provider";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { loadLocale } from "#/lib/i18n";
-import { getSession, getVisitorLocale } from "#/lib/server-auth";
+import { loadLocale } from "@songverse/app/i18n";
+import { getSession, getVisitorLocale } from "@songverse/app/server-auth";
 
 /** An invitation to create an account (issue #198): its email filled in, the sign-up tab open. */
 export const Route = createFileRoute("/invite/$token")({
@@ -43,11 +44,7 @@ function InviteContent() {
   const usable = invitation?.status === "pending" && !signedIn;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-      <div className="flex items-center gap-2 text-lg font-semibold">
-        <Music2 className="size-6" />
-        Songverse
-      </div>
+    <AuthPage brand={<SongverseBrand />}>
       {usable ? (
         <>
           <p className="max-w-sm text-center text-sm text-muted-foreground" data-testid="invite-prompt">
@@ -74,6 +71,6 @@ function InviteContent() {
           </CardContent>
         </Card>
       )}
-    </main>
+    </AuthPage>
   );
 }

@@ -1,7 +1,6 @@
-import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeFromAcceptLanguage, type LocaleValue } from "@songverse/core";
-import { getApiUrl } from "#/lib/public-env";
+import { getApiUrl } from "./public-env";
 
 export interface AppSession {
   userId: string;
@@ -47,13 +46,13 @@ function asLocale(value: string): LocaleValue {
  * keeps this to one HTTP round trip instead of a second call to
  * `/users/me` just to get them.
  */
-async function loadSession(): Promise<AppSession | null> {
+export async function loadSession(): Promise<AppSession | null> {
   const cookie = getRequest().headers.get("cookie");
   const response = await fetch(`${getApiUrl()}/api/auth/get-session`, {
     headers: cookie ? { cookie } : undefined,
   });
   // The auth server failing isn't the same as being signed out: signed out
-  // wipes the device's offline copy (lib/app-data.ts), a failure mustn't.
+  // wipes the device's offline copy (Songverse's lib/app-data.ts), a failure mustn't.
   if (response.status >= 500) throw new Error(`The auth server failed (HTTP ${response.status})`);
   if (!response.ok) return null;
 
@@ -74,13 +73,10 @@ async function loadSession(): Promise<AppSession | null> {
   };
 }
 
-/** Returns the current session, or null when signed out. Safe to call anywhere. */
-export const getSession = createServerFn({ method: "GET" }).handler(loadSession);
-
 /** A signed-out visitor's language, from their browser's Accept-Language. */
-export const getVisitorLocale = createServerFn({ method: "GET" }).handler(() =>
-  localeFromAcceptLanguage(getRequest().headers.get("accept-language")),
-);
+export function visitorLocale(): LocaleValue {
+  return localeFromAcceptLanguage(getRequest().headers.get("accept-language"));
+}
 
 async function mintApiToken(cookie: string): Promise<string | null> {
   const response = await fetch(`${getApiUrl()}/api/auth/token`, { headers: { cookie } });
@@ -98,11 +94,11 @@ async function mintApiToken(cookie: string): Promise<string | null> {
 // calls (layout data, then the page's own), and they can all share it.
 const tokensByRequest = new WeakMap<Request, Promise<string | null>>();
 
-/** Mints a short-lived JWT for the current session, for calling the NestJS API. */
-export const getApiToken = createServerFn({ method: "GET" }).handler(async () => {
+/** The current request's API token, one per incoming request. */
+export function requestApiToken(): Promise<string | null> {
   const request = getRequest();
   const cookie = request.headers.get("cookie");
-  if (!cookie) return null;
+  if (!cookie) return Promise.resolve(null);
 
   let token = tokensByRequest.get(request);
   if (!token) {
@@ -110,4 +106,4 @@ export const getApiToken = createServerFn({ method: "GET" }).handler(async () =>
     tokensByRequest.set(request, token);
   }
   return token;
-});
+}

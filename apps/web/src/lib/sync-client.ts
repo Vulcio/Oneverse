@@ -24,7 +24,7 @@ import {
   type FollowedTimeline,
   type MetronomeState,
 } from "#/lib/metronome-engine";
-import { getApiUrl } from "#/lib/public-env";
+import { getApiUrl } from "@songverse/app/public-env";
 import { fileLoader, songFiles } from "#/lib/song-files";
 import { followStems, getStemState, playableOf, realignStems, setStemsDirectOutput, setStemsSpeed, setStemsTranspose, unfollowStems, unlockStemsAudio, useStems, type StemSong, type StemState } from "#/lib/stem-engine";
 

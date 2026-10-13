@@ -40,8 +40,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { authClient } from "#/lib/auth-client";
-import type { AppSession } from "#/lib/server-auth";
+import { authClient } from "@songverse/app/auth-client";
+import type { AppSession } from "@songverse/app/server-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
 import { sizedAvatarUrl } from "#/lib/avatar-url";
 import { docsUrl, docsView } from "#/lib/docs";

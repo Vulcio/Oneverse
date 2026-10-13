@@ -4,7 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import { AppShell } from "#/components/app-shell";
 import { keepAppDataOffline, loadAppData } from "#/lib/app-data";
 import { useOfflineSync } from "#/lib/offline-data";
-import { createI18n, loadLocale } from "#/lib/i18n";
+import { createI18n, loadLocale } from "@songverse/app/i18n";
 import { WeekStartContext } from "@songverse/ui/lib/dates";
 
 /**

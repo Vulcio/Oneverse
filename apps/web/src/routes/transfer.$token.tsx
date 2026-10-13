@@ -1,16 +1,17 @@
 import type { TransferPreview } from "@songverse/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Music2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "#/components/auth-card";
-import { LocaleProvider } from "#/components/locale-provider";
+import { AuthCard } from "@songverse/app/components/auth-card";
+import { AuthPage } from "@songverse/app/components/auth-page";
+import { SongverseBrand } from "#/components/brand";
+import { LocaleProvider } from "@songverse/app/components/locale-provider";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
-import { getSession, getVisitorLocale } from "#/lib/server-auth";
-import { loadLocale } from "#/lib/i18n";
+import { getSession, getVisitorLocale } from "@songverse/app/server-auth";
+import { loadLocale } from "@songverse/app/i18n";
 
 export const Route = createFileRoute("/transfer/$token")({
   beforeLoad: async ({ params }) => {
@@ -45,11 +46,7 @@ function TransferContent() {
   const { email, preview, error, hasGoogleAuth } = Route.useRouteContext();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-      <div className="flex items-center gap-2 text-lg font-semibold">
-        <Music2 className="size-6" />
-        Songverse
-      </div>
+    <AuthPage brand={<SongverseBrand />}>
       {!email ? (
         <>
           <p className="max-w-sm text-center text-sm text-muted-foreground">{t("transfer.signInPrompt")}</p>
@@ -68,7 +65,7 @@ function TransferContent() {
           </CardContent>
         </Card>
       )}
-    </main>
+    </AuthPage>
   );
 }
 
