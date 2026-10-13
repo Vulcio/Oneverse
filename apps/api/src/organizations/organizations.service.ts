@@ -37,6 +37,8 @@ export function leaveTree(db: Db, teamIds: string[]) {
 async function leaveOrganization(db: Db, teamIds: string[]) {
   await leaveTree(db, teamIds);
   await db.team.updateMany({ where: { id: { in: teamIds } }, data: { organizationId: null, usesSongverse: true } });
+  // Their parts of the organisation's events stay on their calendars, as their own.
+  await db.teamEvent.updateMany({ where: { teamId: { in: teamIds }, organizationEventId: { not: null } }, data: { organizationEventId: null } });
 }
 
 /**
@@ -146,7 +148,15 @@ export class OrganizationsService {
         ...OrganizationsService.counts,
         teams: {
           orderBy: { name: "asc" },
-          select: { id: true, name: true, color: true, avatarUrl: true, usesSongverse: true, parentId: true, _count: { select: { memberships: true } }, memberships: { where: { userId: viewer.id }, select: { id: true } } },
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            avatarUrl: true,
+            usesSongverse: true,
+            parentId: true,
+            positions: { select: { id: true, name: true }, orderBy: { createdAt: "asc" } },
+            _count: { select: { memberships: true } }, memberships: { where: { userId: viewer.id }, select: { id: true } } },
         },
       },
     });
@@ -161,6 +171,7 @@ export class OrganizationsService {
         mine: team.memberships.length > 0,
         usesSongverse: team.usesSongverse,
         parentId: team.parentId,
+        positions: team.positions,
       })),
     };
   }

@@ -33,6 +33,8 @@ export const NOTIFICATION_KINDS = [
   "SWAP_OFFERED",
   // Someone took the place of the one who asked (to them, and the team's admins).
   "SWAP_TAKEN",
+  // One is made the host of an organisation's event (issue #241).
+  "HOSTING",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

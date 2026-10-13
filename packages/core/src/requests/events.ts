@@ -151,3 +151,61 @@ export const RequestSwapSchema = z.strictObject({
   note: clearableText(300),
 });
 export type RequestSwapRequest = z.input<typeof RequestSwapSchema>;
+
+/** What an organisation's event needs from one of its groups (issue #241): the group, and the parts it asks it for. */
+const NeedSchema = z.strictObject({
+  teamId: z.string().trim().min(1).max(64),
+  parts: optional(eventParts),
+});
+const needs = z
+  .array(NeedSchema)
+  .min(1)
+  .max(30)
+  .refine((list) => new Set(list.map((need) => need.teamId)).size === list.length, "needs must not list the same group twice")
+  .describe("The groups it needs, each with the parts it asks it for");
+
+/** POST /organizations/:id/events (its admins): an event of the organisation, its host, the groups it needs. */
+export const CreateOrganizationEventSchema = z.strictObject({
+  title: requiredText(120),
+  date: date("date").describe("Its first date, YYYY-MM-DD"),
+  startTime: time("startTime").describe("HH:MM, in the time zone"),
+  durationMinutes: optional(duration).describe("90 when left out"),
+  timeZone,
+  place: optional(z.string().trim().max(200)),
+  note: optional(z.string().trim().max(1000)),
+  repeat: optional(RepeatSchema).describe("Left out: a one-off"),
+  hostUserId: z.string().trim().min(1).max(64).describe("Who's in charge of it: one of the organisation's members"),
+  needs,
+});
+export type CreateOrganizationEventRequest = z.input<typeof CreateOrganizationEventSchema>;
+
+/** PATCH /organizations/:id/events/:eventId (its admins, or its host): omitted fields are left as they are; `needs` replaces them all. */
+export const UpdateOrganizationEventSchema = z.strictObject({
+  title: requiredText(120).optional(),
+  date: date("date").optional(),
+  startTime: time("startTime").optional(),
+  durationMinutes: duration.optional(),
+  timeZone: timeZone.optional(),
+  place: clearableText(200),
+  note: clearableText(1000),
+  repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
+  hostUserId: z.string().trim().min(1).max(64).optional(),
+  needs: needs.optional(),
+});
+export type UpdateOrganizationEventRequest = z.input<typeof UpdateOrganizationEventSchema>;
+
+/** A date of an organisation's event cancelled, or back, for every group it needs. */
+export const UpdateOrganizationEventDateSchema = z.strictObject({
+  cancelled: z.boolean(),
+});
+
+/** A preset (issue #241): what an organisation's event usually needs, and its usual timing. */
+export const OrganizationEventPresetSchema = z.strictObject({
+  name: requiredText(60),
+  title: requiredText(120),
+  startTime: time("startTime"),
+  durationMinutes: optional(duration),
+  place: optional(z.string().trim().max(200)),
+  needs,
+});
+export type OrganizationEventPresetRequest = z.input<typeof OrganizationEventPresetSchema>;

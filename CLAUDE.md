@@ -98,6 +98,12 @@ An organisation's groups are teams too: one that only plans
 and isn't in `GET /teams` unless asked (`?all=true`). Groups sit under one
 another (`Team.parentId`, same organisation) without sharing members, and
 have positions of their own (`TeamPosition`, `TeamMembership.positionIds`).
+An organisation's event (`OrganizationEvent`, its host and the groups it
+needs) is one `TeamEvent` per group (`organizationEventId`), made, changed
+and removed only through `OrganizationEventsService`, which passes
+`planned = true` to `TeamEventsService`; a group's admins change only its
+parts. Everything a team event does (answers, line-up, sets, reminders)
+works for it unchanged.
 
 ## Song content
 

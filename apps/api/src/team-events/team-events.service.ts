@@ -33,6 +33,9 @@ export function partsOf(event: { parts: Prisma.JsonValue }): EventPart[] {
   return Array.isArray(event.parts) ? (event.parts as unknown as EventPart[]) : [];
 }
 
+/** The organisation's event a group's event is part of (issue #241). */
+export type Planned = { organizationEventId: string; organizationId: string; organizationName: string; hostName: string | null };
+
 /** What a rehearsal date is for: its event, the date, and its title. */
 export type RehearsalOf = { eventId: string; date: string; title: string };
 
@@ -117,6 +120,7 @@ export class TeamEventsService {
       repeat: event.rehearsalForId ? null : (timingOf(event).repeat ?? null),
       parts: partsOf(event),
       rehearsalFor: event.rehearsalForId ? { eventId: event.rehearsalForId, daysBefore: event.daysBefore ?? 0 } : null,
+      organizationEventId: event.organizationEventId,
     };
   }
 
@@ -146,7 +150,24 @@ export class TeamEventsService {
 
   async list(teamId: string) {
     const events = await this.prisma.client.teamEvent.findMany({ where: { teamId }, include: withDates, orderBy: { date: "asc" } });
-    return events.map((event) => this.summary(event));
+    const planned = await this.plannedBy(events);
+    return events.map((event) => ({ ...this.summary(event), planned: planned.get(event.organizationEventId ?? "") ?? null }));
+  }
+
+  /** The organisations' events some of these are a group's part of (issue #241): which, and who hosts it. */
+  private async plannedBy(events: { organizationEventId: string | null }[]) {
+    const ids = [...new Set(events.map((event) => event.organizationEventId).filter((id): id is string => !!id))];
+    if (ids.length === 0) return new Map<string, Planned>();
+    const rows = await this.prisma.client.organizationEvent.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, organizationId: true, organization: { select: { name: true } }, host: { select: { displayName: true } } },
+    });
+    return new Map<string, Planned>(rows.map((row) => [row.id, { organizationEventId: row.id, organizationId: row.organizationId, organizationName: row.organization.name, hostName: row.host?.displayName ?? null }]));
+  }
+
+  /** Refused for a group's part of an organisation's event, whose timing is the organisation's (issue #241). */
+  private notPlanned(event: { organizationEventId: string | null }, planned: boolean) {
+    if (event.organizationEventId && !planned) throw new BadRequestException(["This event is planned by its organisation: change it there"]);
   }
 
   private async find(teamId: string, eventId: string): Promise<EventRow> {
@@ -156,10 +177,12 @@ export class TeamEventsService {
   }
 
   async get(teamId: string, eventId: string) {
-    return this.summary(await this.find(teamId, eventId));
+    const event = await this.find(teamId, eventId);
+    return { ...this.summary(event), planned: (await this.plannedBy([event])).get(event.organizationEventId ?? "") ?? null };
   }
 
-  async create(teamId: string, userId: string, dto: CreateTeamEventDto) {
+  /** `organizationEventId`: a group's part of an organisation's event (issue #241), made by it. */
+  async create(teamId: string, userId: string, dto: CreateTeamEventDto, organizationEventId: string | null = null) {
     if (dto.repeat?.until && dto.repeat.until < dto.date) throw new BadRequestException(["repeat.until must not be before date"]);
     // A rehearsal (issue #235, phase 7): its dates are its event's; no repeat, parts or set of its own.
     const parent = dto.rehearsalFor ? await this.rehearsalParent(teamId, dto.rehearsalFor.eventId) : null;
@@ -178,6 +201,7 @@ export class TeamEventsService {
         parts: parent ? undefined : await this.checkParts(dto.parts, teamId),
         rehearsalForId: parent?.id ?? null,
         daysBefore: parent ? dto.rehearsalFor!.daysBefore : null,
+        organizationEventId,
         createdByUserId: userId,
       },
       include: withDates,
@@ -186,8 +210,11 @@ export class TeamEventsService {
     return this.summary(await this.find(teamId, event.id));
   }
 
-  async update(teamId: string, eventId: string, dto: UpdateTeamEventDto, by: string | null = null) {
+  /** `planned`: the change comes from the organisation's event it's a group's part of (issue #241). */
+  async update(teamId: string, eventId: string, dto: UpdateTeamEventDto, by: string | null = null, planned = false) {
     const before = await this.find(teamId, eventId);
+    // The group's admins choose its parts; the rest is the organisation's.
+    if (Object.keys(dto).some((key) => key !== "parts" && dto[key as keyof UpdateTeamEventDto] !== undefined)) this.notPlanned(before, planned);
     const signedUp = await this.signedUp(eventId, localDate(new Date(), before.timeZone));
     const repeat = dto.repeat === undefined ? timingOf(before).repeat : dto.repeat;
     const date = dto.date ?? dateText(before.date);
@@ -234,8 +261,9 @@ export class TeamEventsService {
   }
 
   /** The event goes; its coming dates' empty sets with it, the rest stay as the team's sets. */
-  async remove(teamId: string, eventId: string, by: string | null = null): Promise<void> {
+  async remove(teamId: string, eventId: string, by: string | null = null, planned = false): Promise<void> {
     const event = await this.find(teamId, eventId);
+    this.notPlanned(event, planned);
     const today = localDate(new Date(), event.timeZone);
     const signedUp = await this.signedUp(eventId, today);
     const empty = event.dates.filter((row) => dateText(row.date) >= today && row.setlist && row.setlist._count.items === 0).map((row) => row.setlist!.id);
@@ -308,8 +336,9 @@ export class TeamEventsService {
   }
 
   /** One date changed by itself: cancelled (its empty set deleted), another time or title (its set renamed). */
-  async updateDate(teamId: string, eventId: string, date: string, dto: UpdateTeamEventDateDto, by: string | null = null) {
+  async updateDate(teamId: string, eventId: string, date: string, dto: UpdateTeamEventDateDto, by: string | null = null, planned = false) {
     const event = await this.find(teamId, eventId);
+    this.notPlanned(event, planned);
     if (event.rehearsalForId) throw new BadRequestException(["A rehearsal follows its event's dates: change that event's date"]);
     if (!eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const existing = event.dates.find((row) => dateText(row.date) === date);

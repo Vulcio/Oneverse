@@ -16,5 +16,7 @@ import { TeamEventsService } from "./team-events.service.js";
   imports: [BullModule.registerQueue({ name: TEAM_EVENTS_QUEUE }), NotificationsModule],
   controllers: [TeamEventsController, MyCalendarController, MyCalendarFeedController, CalendarFeedController],
   providers: [TeamEventsService, AvailabilityService, RemindersService, LineupService, CalendarFeedService, TeamEventsProcessor, TeamEventsScheduler],
+  // For an organisation's events (issue #241): each group's part is one of its team events.
+  exports: [TeamEventsService, AvailabilityService],
 })
 export class TeamEventsModule {}

@@ -1,5 +1,6 @@
 import type { OrganizationTeam, TeamRole } from "@songverse/core";
 import { createFileRoute, Link, redirect, useNavigate, useRouter } from "@tanstack/react-router";
+import { CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "#/components/confirm-button";
@@ -85,6 +86,11 @@ function OrganizationPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Its events (issue #241): who hosts each, which groups it needs. */}
+          <Button variant="outline" size="sm" render={<Link to="/organizations/$organizationId/events" params={{ organizationId: organization.id }} />} data-testid="organization-events">
+            <CalendarDays />
+            {t("organizations.events")}
+          </Button>
           {isAdmin ? (
             <ConfirmButton
               label={t("organizations.delete")}

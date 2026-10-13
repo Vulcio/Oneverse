@@ -65,6 +65,7 @@ import { Route as ProtectedTeamsTeamIdRouteImport } from './routes/_protected/te
 import { Route as ProtectedTeamsNewRouteImport } from './routes/_protected/teams/new'
 import { Route as ProtectedLibrarySongVersionIdLiveRouteImport } from './routes/_protected/library/$songVersionId_.live'
 import { Route as ProtectedLibraryArtistsNameRouteImport } from './routes/_protected/library/artists_.$name'
+import { Route as ProtectedOrganizationsOrganizationIdEventsRouteImport } from './routes/_protected/organizations/$organizationId_.events'
 import { Route as ProtectedReviewSuggestionsSuggestionIdRouteImport } from './routes/_protected/review/suggestions.$suggestionId'
 import { Route as ProtectedLibrarySongVersionIdArrangementsArrangementIdRouteImport } from './routes/_protected/library/$songVersionId_.arrangements.$arrangementId'
 import { Route as ProtectedSetsSetlistIdLiveItemIdRouteImport } from './routes/_protected/sets/$setlistId_.live.$itemId'
@@ -364,6 +365,12 @@ const ProtectedLibraryArtistsNameRoute =
     path: '/library/artists/$name',
     getParentRoute: () => ProtectedRoute,
   } as any)
+const ProtectedOrganizationsOrganizationIdEventsRoute =
+  ProtectedOrganizationsOrganizationIdEventsRouteImport.update({
+    id: '/organizations/$organizationId_/events',
+    path: '/organizations/$organizationId/events',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedReviewSuggestionsSuggestionIdRoute =
   ProtectedReviewSuggestionsSuggestionIdRouteImport.update({
     id: '/suggestions/$suggestionId',
@@ -445,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/teams/': typeof ProtectedTeamsIndexRoute
   '/library/$songVersionId/live': typeof ProtectedLibrarySongVersionIdLiveRoute
   '/library/artists/$name': typeof ProtectedLibraryArtistsNameRoute
+  '/organizations/$organizationId/events': typeof ProtectedOrganizationsOrganizationIdEventsRoute
   '/review/suggestions/$suggestionId': typeof ProtectedReviewSuggestionsSuggestionIdRoute
   '/library/$songVersionId/arrangements/$arrangementId': typeof ProtectedLibrarySongVersionIdArrangementsArrangementIdRoute
   '/sets/$setlistId/live/$itemId': typeof ProtectedSetsSetlistIdLiveItemIdRoute
@@ -504,6 +512,7 @@ export interface FileRoutesByTo {
   '/teams': typeof ProtectedTeamsIndexRoute
   '/library/$songVersionId/live': typeof ProtectedLibrarySongVersionIdLiveRoute
   '/library/artists/$name': typeof ProtectedLibraryArtistsNameRoute
+  '/organizations/$organizationId/events': typeof ProtectedOrganizationsOrganizationIdEventsRoute
   '/review/suggestions/$suggestionId': typeof ProtectedReviewSuggestionsSuggestionIdRoute
   '/library/$songVersionId/arrangements/$arrangementId': typeof ProtectedLibrarySongVersionIdArrangementsArrangementIdRoute
   '/sets/$setlistId/live/$itemId': typeof ProtectedSetsSetlistIdLiveItemIdRoute
@@ -567,6 +576,7 @@ export interface FileRoutesById {
   '/_protected/teams/': typeof ProtectedTeamsIndexRoute
   '/_protected/library/$songVersionId_/live': typeof ProtectedLibrarySongVersionIdLiveRoute
   '/_protected/library/artists_/$name': typeof ProtectedLibraryArtistsNameRoute
+  '/_protected/organizations/$organizationId_/events': typeof ProtectedOrganizationsOrganizationIdEventsRoute
   '/_protected/review/suggestions/$suggestionId': typeof ProtectedReviewSuggestionsSuggestionIdRoute
   '/_protected/library/$songVersionId_/arrangements/$arrangementId': typeof ProtectedLibrarySongVersionIdArrangementsArrangementIdRoute
   '/_protected/sets/$setlistId_/live/$itemId': typeof ProtectedSetsSetlistIdLiveItemIdRoute
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/teams/'
     | '/library/$songVersionId/live'
     | '/library/artists/$name'
+    | '/organizations/$organizationId/events'
     | '/review/suggestions/$suggestionId'
     | '/library/$songVersionId/arrangements/$arrangementId'
     | '/sets/$setlistId/live/$itemId'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/library/$songVersionId/live'
     | '/library/artists/$name'
+    | '/organizations/$organizationId/events'
     | '/review/suggestions/$suggestionId'
     | '/library/$songVersionId/arrangements/$arrangementId'
     | '/sets/$setlistId/live/$itemId'
@@ -751,6 +763,7 @@ export interface FileRouteTypes {
     | '/_protected/teams/'
     | '/_protected/library/$songVersionId_/live'
     | '/_protected/library/artists_/$name'
+    | '/_protected/organizations/$organizationId_/events'
     | '/_protected/review/suggestions/$suggestionId'
     | '/_protected/library/$songVersionId_/arrangements/$arrangementId'
     | '/_protected/sets/$setlistId_/live/$itemId'
@@ -1163,6 +1176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedLibraryArtistsNameRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/organizations/$organizationId_/events': {
+      id: '/_protected/organizations/$organizationId_/events'
+      path: '/organizations/$organizationId/events'
+      fullPath: '/organizations/$organizationId/events'
+      preLoaderRoute: typeof ProtectedOrganizationsOrganizationIdEventsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/review/suggestions/$suggestionId': {
       id: '/_protected/review/suggestions/$suggestionId'
       path: '/suggestions/$suggestionId'
@@ -1280,6 +1300,7 @@ interface ProtectedRouteChildren {
   ProtectedTeamsIndexRoute: typeof ProtectedTeamsIndexRoute
   ProtectedLibrarySongVersionIdLiveRoute: typeof ProtectedLibrarySongVersionIdLiveRoute
   ProtectedLibraryArtistsNameRoute: typeof ProtectedLibraryArtistsNameRoute
+  ProtectedOrganizationsOrganizationIdEventsRoute: typeof ProtectedOrganizationsOrganizationIdEventsRoute
   ProtectedLibrarySongVersionIdArrangementsArrangementIdRoute: typeof ProtectedLibrarySongVersionIdArrangementsArrangementIdRoute
   ProtectedSetsSetlistIdLiveItemIdRoute: typeof ProtectedSetsSetlistIdLiveItemIdRoute
   ProtectedSetsSetlistIdSongsItemIdRoute: typeof ProtectedSetsSetlistIdSongsItemIdRoute
@@ -1321,6 +1342,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedLibrarySongVersionIdLiveRoute:
     ProtectedLibrarySongVersionIdLiveRoute,
   ProtectedLibraryArtistsNameRoute: ProtectedLibraryArtistsNameRoute,
+  ProtectedOrganizationsOrganizationIdEventsRoute:
+    ProtectedOrganizationsOrganizationIdEventsRoute,
   ProtectedLibrarySongVersionIdArrangementsArrangementIdRoute:
     ProtectedLibrarySongVersionIdArrangementsArrangementIdRoute,
   ProtectedSetsSetlistIdLiveItemIdRoute: ProtectedSetsSetlistIdLiveItemIdRoute,

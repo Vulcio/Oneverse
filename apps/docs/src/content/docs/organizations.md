@@ -52,3 +52,17 @@ Besides the instruments and roles people list for themselves, each group has **P
 Beside each member's name, the group's positions show: tick the ones you cover by clicking them. The group's admins can tick them for anyone; others see only the ones each member covers.
 
 An event of the group asks for them under **Parts needed**: **Add a part** lists **This group's positions** first (see [Parts needed](/teams/#parts-needed)). A position is covered by the members who ticked it, and its name follows when it's renamed; a position an event still asks for can't be removed.
+
+## Events
+
+An organisation's events need several of its groups: a Sunday service needs the music team's drums and bass, two greeters from the welcome team, someone on the sound desk. On the organisation's page, **Events** lists the coming dates (**Show more** for later ones), each with its host and every group it needs.
+
+![An organisation's events, with each group's coverage](../../assets/screenshots/en/organization-events.jpg)
+
+Its admins make one with **New event**: its **Title**, first date, start time, length, time zone, **Repeats** and **Place (optional)** as for a team's event, its **Host** - one of the organisation's members, who's told - and under **Groups needed**, **Add a group** for each, with the parts it asks of it (its positions, instruments, roles or names; see [Parts needed](/teams/#parts-needed)). **Save event** puts the event on each group's calendar: the group's admins fill its line-up as for any of its events, a music team's date gets its set, and those signed up get their reminders.
+
+- On a group's calendar, the event is marked **Planned by** the organisation (and its host). Its date, time and place are set on the organisation's Events; the group's admins choose only what it needs from them, under **Parts needed**.
+- On the organisation's Events, its admins and the event's host see how each group's parts are covered (**Short: Drums**, or **All set**), change the event with **Edit event**, and **Cancel this date** - or restore it - for every group at once. Others see the groups and how many are on each.
+- Only the admins choose another host (who's told), and **Delete event**, for every group. A group removed from **Groups needed** loses its part; a group taken out of the organisation keeps it, as its own event.
+
+**Presets** keep what an event usually needs: in an event's dialog, **Save as preset** under a **Preset name**. **New event** then starts from one with **Preset**, which fills its title, time, place and groups. The admins remove presets under **Presets**.

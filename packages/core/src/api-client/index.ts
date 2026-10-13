@@ -37,7 +37,7 @@ import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, S
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { UpdateSetlistItemRequest } from "../requests/sets.js";
-import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest } from "../requests/events.js";
+import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
@@ -819,6 +819,8 @@ export interface OrganizationTeam {
   usesSongverse: boolean;
   /** The group it's under, if any. */
   parentId: string | null;
+  /** Its own positions, parts an event can ask it for. */
+  positions: TeamPosition[];
 }
 
 export interface OrganizationDetail extends OrganizationSummary {
@@ -884,6 +886,80 @@ export interface TeamEvent {
   parts: EventPart[];
   /** A rehearsal tied to another event: its dates are that event's, days before. */
   rehearsalFor: { eventId: string; daysBefore: number } | null;
+  /** A group's part of an organisation's event (issue #241): its timing is set there. */
+  organizationEventId?: string | null;
+  planned?: { organizationEventId: string; organizationId: string; organizationName: string; hostName: string | null } | null;
+}
+
+/** What an organisation's event needs from one of its groups (issue #241). */
+export interface OrganizationEventNeed {
+  teamId: string;
+  teamName: string;
+  color: string | null;
+  avatarUrl: string | null;
+  /** The group's part: one of its events. */
+  teamEventId: string;
+  parts: EventPart[];
+}
+
+/** An organisation's event (issue #241): its host, its timing, the groups it needs. */
+export interface OrganizationEvent {
+  id: string;
+  organizationId: string;
+  title: string;
+  date: string;
+  startTime: string;
+  durationMinutes: number;
+  timeZone: string;
+  place: string | null;
+  note: string | null;
+  repeat: EventRepeat | null;
+  host: { id: string; displayName: string } | null;
+  needs: OrganizationEventNeed[];
+  /** The viewer is one of its admins, or its host. */
+  canManage: boolean;
+}
+
+/** A date of an organisation's event, with each group's part. */
+export interface OrganizationEventDate {
+  eventId: string;
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  title: string;
+  place: string | null;
+  timeZone: string;
+  host: { id: string; displayName: string } | null;
+  canManage: boolean;
+  /** Cancelled for every group. */
+  cancelled: boolean;
+  groups: {
+    teamId: string;
+    teamName: string;
+    color: string | null;
+    avatarUrl: string | null;
+    teamEventId: string;
+    /** The viewer is in it. */
+    mine: boolean;
+    cancelled: boolean;
+    setlistId: string | null;
+    songCount: number;
+    parts: EventPart[];
+    /** For its admins and the event's host. */
+    coverage: PartCoverage[] | null;
+    lineup: { displayName: string; partKey: string; status: AssignmentStatus }[];
+  }[];
+}
+
+/** What an organisation's event usually needs, kept under a name (issue #241). */
+export interface OrganizationEventPreset {
+  id: string;
+  name: string;
+  title: string;
+  startTime: string;
+  durationMinutes: number;
+  place: string | null;
+  needs: { teamId: string; parts?: EventPart[] }[];
 }
 
 /** A date of a team's event, with its set. */
@@ -1973,6 +2049,21 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** The positions someone covers in a group: themselves, or its admins. */
     setTeamMemberPositions: (teamId: string, userId: string, positionIds: string[]) =>
       request<{ positionIds: string[] }>(`/teams/${teamId}/members/${userId}/positions`, { method: "PUT", body: JSON.stringify({ positionIds }) }),
+    // An organisation's events (issue #241).
+    listOrganizationEvents: (organizationId: string) => request<OrganizationEvent[]>(`/organizations/${organizationId}/events`),
+    listOrganizationEventDates: (organizationId: string, from: string, to: string) =>
+      request<OrganizationEventDate[]>(`/organizations/${organizationId}/event-dates?${new URLSearchParams({ from, to })}`),
+    createOrganizationEvent: (organizationId: string, data: CreateOrganizationEventRequest) =>
+      request<OrganizationEvent>(`/organizations/${organizationId}/events`, { method: "POST", body: JSON.stringify(data) }),
+    updateOrganizationEvent: (organizationId: string, eventId: string, data: UpdateOrganizationEventRequest) =>
+      request<OrganizationEvent>(`/organizations/${organizationId}/events/${eventId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteOrganizationEvent: (organizationId: string, eventId: string) => request<void>(`/organizations/${organizationId}/events/${eventId}`, { method: "DELETE" }),
+    setOrganizationEventDateCancelled: (organizationId: string, eventId: string, date: string, cancelled: boolean) =>
+      request<void>(`/organizations/${organizationId}/events/${eventId}/dates/${date}`, { method: "PATCH", body: JSON.stringify({ cancelled }) }),
+    listOrganizationEventPresets: (organizationId: string) => request<OrganizationEventPreset[]>(`/organizations/${organizationId}/event-presets`),
+    createOrganizationEventPreset: (organizationId: string, data: OrganizationEventPresetRequest) =>
+      request<OrganizationEventPreset>(`/organizations/${organizationId}/event-presets`, { method: "POST", body: JSON.stringify(data) }),
+    deleteOrganizationEventPreset: (organizationId: string, presetId: string) => request<void>(`/organizations/${organizationId}/event-presets/${presetId}`, { method: "DELETE" }),
     /** Takes a team out of the organisation (its admins). */
     removeOrganizationTeam: (organizationId: string, teamId: string) => request<void>(`/organizations/${organizationId}/teams/${teamId}`, { method: "DELETE" }),
 

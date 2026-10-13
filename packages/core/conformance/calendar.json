@@ -652,6 +652,10 @@
             "SWAP_TAKEN": {
               "email": true,
               "push": true
+            },
+            "HOSTING": {
+              "email": true,
+              "push": true
             }
           }
         },
@@ -723,6 +727,10 @@
               "push": true
             },
             "SWAP_TAKEN": {
+              "email": true,
+              "push": true
+            },
+            "HOSTING": {
               "email": true,
               "push": true
             }
@@ -804,6 +812,10 @@
                 "push": true
               },
               "SWAP_TAKEN": {
+                "email": true,
+                "push": true
+              },
+              "HOSTING": {
                 "email": true,
                 "push": true
               }

@@ -55,6 +55,9 @@ try {
     await dialog.waitFor({ state: "hidden" });
     // Alice ticked Greeter but hasn't answered yet: two short.
     await page.getByTestId("calendar-short").first().getByText("Greeter ×2").waitFor();
+    // Kept as the group's position, not a name.
+    const [event] = await api(alice, "GET", `/teams/${new URL(page.url()).pathname.split("/").pop()}/events`);
+    if (!event?.parts[0]?.position) throw new Error(`saved as ${JSON.stringify(event?.parts)}`);
   });
 
   await step("…and puts it under the music team", async () => {

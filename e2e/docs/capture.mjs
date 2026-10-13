@@ -445,6 +445,22 @@ try {
     await api(guest, "PUT", `/teams/${welcome.id}/members/${guest.id}/positions`, { positionIds: [greeter.id] });
     await shoot("organization", `/organizations/${organization.id}`, () => page.getByTestId("organization-teams").waitFor(), { fullPage: true });
     await shoot("group", `/teams/${welcome.id}`, () => page.getByTestId("team-positions").waitFor(), { fullPage: true });
+    // Its events (issue #241): a weekly service needing the team's drums and two greeters, the guest its host.
+    await api(me, "POST", `/organizations/${organization.id}/events`, {
+      title: text.service,
+      date: nextSunday(),
+      startTime: "10:00",
+      durationMinutes: 120,
+      timeZone: text.zone,
+      place: text.hall,
+      repeat: { everyWeeks: 1 },
+      hostUserId: guest.id,
+      needs: [
+        { teamId: team.id, parts: [{ part: "DRUMS", count: 1 }, { part: "BASS_GUITAR", count: 1 }] },
+        { teamId: welcome.id, parts: [{ position: greeter.id, count: 2 }] },
+      ],
+    });
+    await shoot("organization-events", `/organizations/${organization.id}/events`, () => page.locator("[data-org-event-date]").first().waitFor(), { fullPage: true });
     await shoot("share-song", `/library/${grace.id}`, async () => {
       await page.getByRole("button", { name: /^(Share|Partager)$/ }).click();
       await page.getByTestId("song-shares").waitFor();

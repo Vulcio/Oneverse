@@ -179,6 +179,12 @@ export function TeamCalendar({
                       <span className={cn("text-sm font-medium", date.cancelled && "line-through")}>{date.title}</span>
                       {date.repeats ? <Repeat className="size-3.5 text-muted-foreground" aria-label={t("teamCalendar.repeats")} /> : null}
                       {rehearsal ? <Badge variant="muted" data-testid="calendar-rehearsal">{t("teamCalendar.rehearsalBadge")}</Badge> : null}
+                      {/* Planned by the team's organisation (issue #241), with its host. */}
+                      {event?.planned ? (
+                        <Badge variant="outline" data-testid="calendar-planned">
+                          {event.planned.hostName ? t("teamCalendar.plannedByHost", { organization: event.planned.organizationName, host: event.planned.hostName }) : t("teamCalendar.plannedBy", { organization: event.planned.organizationName })}
+                        </Badge>
+                      ) : null}
                       {date.cancelled ? <Badge variant="outline">{t("teamCalendar.cancelled")}</Badge> : null}
                       {!date.cancelled && !rehearsal && date.setReadyAt ? (
                         <Badge variant="muted" data-testid="calendar-set-ready">
@@ -250,7 +256,7 @@ export function TeamCalendar({
                         <MoreHorizontal className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {rehearsal ? null : (
+                        {rehearsal || event?.planned ? null : (
                           <DropdownMenuItem onClick={() => void act(() => apiClient.updateTeamEventDate(teamId, date.eventId, date.date, { cancelled: !date.cancelled }))} data-testid="calendar-toggle-date">
                             {date.cancelled ? <RotateCcw /> : <Ban />}
                             {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
@@ -533,6 +539,7 @@ function EventDialog({
 }) {
   const { t } = useTranslation();
   const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
+  const planned = event?.planned ?? null;
   // A rehearsal tied to another event (issue #235, phase 7): which, and how many days before.
   const [rehearsalOf, setRehearsalOf] = useState(event?.rehearsalFor?.eventId ?? "");
   const [daysBefore, setDaysBefore] = useState(String(event?.rehearsalFor?.daysBefore ?? 3));
@@ -575,11 +582,12 @@ function EventDialog({
           place: place || null,
           note: note || null,
           repeat,
-          parts: parts.map((part) => (part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count })),
+          parts: parts.map(partBody),
           ...(event?.rehearsalFor ? { rehearsalFor: null } : {}),
         };
     try {
-      if (event) await apiClient.updateTeamEvent(teamId, event.id, body);
+      if (event && planned) await apiClient.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody) });
+      else if (event) await apiClient.updateTeamEvent(teamId, event.id, body);
       else await apiClient.createTeamEvent(teamId, body);
       await onSaved();
     } catch (err) {
@@ -602,6 +610,13 @@ function EventDialog({
             void save();
           }}
         >
+          {/* A group's part of an organisation's event (issue #241): its timing is set there; the group chooses its parts. */}
+          {planned ? (
+            <p className="col-span-2 text-sm text-muted-foreground" data-testid="event-planned">
+              {t("teamCalendar.plannedHint", { organization: planned.organizationName })}
+            </p>
+          ) : (
+          <>
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="event-title">{t("teamCalendar.eventTitle")}</Label>
             <Input id="event-title" value={title} maxLength={120} required placeholder={t("teamCalendar.titlePlaceholder")} onChange={(e) => setTitle(e.target.value)} />
@@ -676,11 +691,13 @@ function EventDialog({
             <Label htmlFor="event-note">{t("teamCalendar.note")}</Label>
             <Textarea id="event-note" value={note} maxLength={1000} rows={2} onChange={(e) => setNote(e.target.value)} />
           </div>
+          </>
+          )}
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} />}
         </form>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
-          {event ? (
+          {event && !planned ? (
             <ConfirmButton
               label={t("teamCalendar.deleteEvent")}
               confirmLabel={t("teamCalendar.confirmDelete")}
@@ -708,6 +725,11 @@ function EventDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** A part as the API takes it: a position (issue #241) by its ID, an instrument or role by its key, else its name. */
+export function partBody(part: EventPart): EventPart {
+  return part.position ? { position: part.position, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count };
 }
 
 /** Answers asked for (issue #235): the dates, from today to eight weeks on, by a deadline a week away. */
@@ -773,7 +795,7 @@ function AskDialog({ teamId, onClose, onAsked }: { teamId: string; onClose: () =
  * people list on their dashboard, the team's own names used before, or a
  * new name.
  */
-function PartsEditor({
+export function PartsEditor({
   parts,
   onChange,
   teamNames,

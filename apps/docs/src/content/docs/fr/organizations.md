@@ -52,3 +52,17 @@ En plus des instruments et rôles que chacun indique pour lui-même, chaque grou
 À côté du nom de chaque membre, les postes du groupe s'affichent : cochez ceux que vous assurez en cliquant dessus. Les administrateurs du groupe peuvent les cocher pour n'importe qui ; les autres ne voient que ceux que chacun assure.
 
 Un événement du groupe les demande sous **Postes nécessaires** : **Ajouter un poste** liste d'abord les **Postes de ce groupe** (voir [Postes nécessaires](/fr/teams/#postes-nécessaires)). Un poste est couvert par les membres qui l'ont coché, et son nom suit quand il est renommé ; un poste qu'un événement demande encore ne peut pas être retiré.
+
+## Événements
+
+Les événements d'une organisation ont besoin de plusieurs de ses groupes : un culte du dimanche demande la batterie et la basse de l'équipe de louange, deux personnes à l'accueil, quelqu'un à la régie son. Sur la page de l'organisation, **Événements** liste les prochaines dates (**Voir plus** pour les suivantes), chacune avec son responsable et chaque groupe nécessaire.
+
+![Les événements d'une organisation, avec la couverture de chaque groupe](../../../assets/screenshots/fr/organization-events.jpg)
+
+Ses administrateurs en créent un avec **Nouvel événement** : son **Titre**, sa première date, son heure de début, sa durée, son fuseau horaire, **Répétition** et **Lieu (facultatif)** comme pour l'événement d'une équipe, son **Responsable** - un membre de l'organisation, qui est prévenu - et sous **Groupes nécessaires**, **Ajouter un groupe** pour chacun, avec les postes qu'on lui demande (ses postes, instruments, rôles ou noms ; voir [Postes nécessaires](/fr/teams/#postes-nécessaires)). **Enregistrer l'événement** ajoute l'événement au calendrier de chaque groupe : ses administrateurs font son équipe du jour comme pour n'importe lequel de ses événements, la date d'une équipe de louange a sa liste, et les inscrits reçoivent leurs rappels.
+
+- Dans le calendrier d'un groupe, l'événement est marqué **Planifié par** l'organisation (et son responsable). Sa date, son heure et son lieu se règlent dans les Événements de l'organisation ; les administrateurs du groupe choisissent seulement ce dont il a besoin, sous **Postes nécessaires**.
+- Dans les Événements de l'organisation, ses administrateurs et le responsable de l'événement voient comment les postes de chaque groupe sont couverts (**Manque : Batterie**, ou **Au complet**), modifient l'événement avec **Modifier l'événement**, et **Annuler cette date** - ou la rétablir - pour tous les groupes à la fois. Les autres voient les groupes et combien sont prévus pour chacun.
+- Seuls les administrateurs choisissent un autre responsable (qui est prévenu) et **Supprimer l'événement**, pour tous les groupes. Un groupe retiré des **Groupes nécessaires** perd sa part ; un groupe retiré de l'organisation la garde, comme son propre événement.
+
+Les **Modèles** gardent ce dont un événement a habituellement besoin : dans la fenêtre d'un événement, **Enregistrer comme modèle** sous un **Nom du modèle**. **Nouvel événement** part alors de l'un d'eux avec **Modèle**, qui remplit son titre, son heure, son lieu et ses groupes. Les administrateurs retirent les modèles sous **Modèles**.

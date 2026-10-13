@@ -308,6 +308,8 @@ model User {
   // Relations
   teamMemberships     TeamMembership[]
   organizationMemberships OrganizationMembership[]
+  hostedOrganizationEvents  OrganizationEvent[] @relation("OrganizationEventHost")
+  createdOrganizationEvents OrganizationEvent[] @relation("OrganizationEventCreatedBy")
   ownedVersions       SongVersion[]          @relation("VersionOwnerUser")
   contributorCredits  VersionContributor[]
   ownedArrangements   Arrangement[]          @relation("ArrangementOwnerUser")
@@ -548,6 +550,8 @@ model Organization {
   memberships OrganizationMembership[]
   inviteLinks OrganizationInviteLink[]
   teams       Team[]
+  events      OrganizationEvent[]
+  eventPresets OrganizationEventPreset[]
 }
 
 model OrganizationMembership {
@@ -1149,6 +1153,9 @@ model TeamEvent {
   // it has no set of its own (it uses the date's), and goes with the event.
   rehearsalForId   String?
   daysBefore       Int?
+  // A group's part of an organisation's event (issue #241): its timing is
+  // that event's, set there; the group's admins only choose its parts.
+  organizationEventId String?
   createdByUserId  String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -1161,8 +1168,58 @@ model TeamEvent {
   lineup    TeamEventAssignment[]
   rehearsalFor TeamEvent?  @relation("Rehearsals", fields: [rehearsalForId], references: [id], onDelete: Cascade)
   rehearsals   TeamEvent[] @relation("Rehearsals")
+  organizationEvent OrganizationEvent? @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
 
+  @@unique([organizationEventId, teamId])
   @@index([teamId])
+}
+
+// An organisation's event (issue #241, Planiverse): its host, its timing,
+// and the groups it needs - each its own TeamEvent, with the parts it asks
+// that group for, filled by the group's admins.
+model OrganizationEvent {
+  id               String    @id @default(cuid())
+  organizationId   String
+  title            String
+  date             DateTime  @db.Date
+  startTime        String
+  durationMinutes  Int       @default(90)
+  timeZone         String
+  place            String?
+  note             String?
+  repeatEveryWeeks Int?
+  repeatUntil      DateTime? @db.Date
+  // Who's in charge of it.
+  hostUserId       String?
+  createdByUserId  String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  host         User?        @relation("OrganizationEventHost", fields: [hostUserId], references: [id], onDelete: SetNull)
+  createdBy    User?        @relation("OrganizationEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  teamEvents   TeamEvent[]
+
+  @@index([organizationId])
+}
+
+// A saved list of what an organisation's event needs (issue #241):
+// "Sunday service: Music (drums, bass), Welcome (Greeter x2)", with its usual timing.
+model OrganizationEventPreset {
+  id              String   @id @default(cuid())
+  organizationId  String
+  name            String
+  title           String
+  startTime       String
+  durationMinutes Int      @default(90)
+  place           String?
+  // [{ teamId, parts }]
+  needs           Json
+  createdAt       DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
 }
 
 enum AvailabilityAnswer {
