@@ -24,11 +24,25 @@ const summary = [];
 for (const suite of suites) {
   console.log(`\n=== ${suite} ===`);
   const started = Date.now();
+  const failures = [];
   const code = await new Promise((resolve) => {
-    const child = spawn(process.execPath, [path.join(root, `${suite}.test.mjs`)], { stdio: "inherit" });
+    const child = spawn(process.execPath, [path.join(root, `${suite}.test.mjs`)], { stdio: ["inherit", "pipe", "inherit"] });
+    // Shown as it comes, and its failed steps kept for the summary.
+    let pending = "";
+    child.stdout.on("data", (chunk) => {
+      process.stdout.write(chunk);
+      const lines = (pending + chunk).split("\n");
+      pending = lines.pop() ?? "";
+      failures.push(...lines.filter((line) => line.startsWith("FAIL")));
+    });
     child.on("exit", (exitCode) => resolve(exitCode ?? 1));
   });
   summary.push({ suite, ok: code === 0, seconds: Math.round((Date.now() - started) / 1000) });
+  // In CI, each failure is an annotation on the run: readable without the log.
+  if (code !== 0 && process.env.GITHUB_ACTIONS) {
+    const one = (text) => text.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").slice(0, 900);
+    console.log(`::error title=e2e ${suite}::${one(failures.join("\n") || `exited with ${code}`)}`);
+  }
 }
 
 console.log("\n=== Summary ===");
