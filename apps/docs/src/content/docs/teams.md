@@ -42,6 +42,10 @@ The line-up flags what clashes: someone **Away**, who **Said not available**, or
 
 **Who's signed up for a date**: once it has a line-up, the people on it - asked or accepted, not declining; until then, those who answered **Available**. That's who sees its set in their sidebar, finds it in their calendar link, and is reminded and told about it.
 
+### Rehearsals
+
+A rehearsal ahead of each date: in **New event**, **Rehearsal for** picks the event it prepares, and **Days before** how many days ahead (up to 14), with its own start time and length. It follows that event: a date moved or cancelled moves or cancels its rehearsal. It shows on the calendar marked **Rehearsal**, "for Sunday service, Sun 18 Oct", and **Open set** opens that date's set, so everyone rehearses the songs that will be played. A rehearsal takes no answers or line-up of its own: the people signed up for its date (see [Line-up](/teams/#line-up)) see it on **My calendar** and in their calendar link, and are reminded the day before. Deleting the event deletes its rehearsals.
+
 ### Your calendar link
 
 On **My calendar**, **Calendar link** puts the dates you signed up for (see [Line-up](/teams/#line-up)) in your own calendar: **Get my calendar link**, then **Add to Google Calendar**, **Add to Apple Calendar** or **Add to Outlook** - or **Copy link** and add it to any calendar app as a subscription ("From URL", "Subscribe to calendar"). Each date shows with its team, place and a link to its set, from three months back to a year ahead; cancelled dates leave it.

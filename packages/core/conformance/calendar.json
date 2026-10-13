@@ -1336,6 +1336,108 @@
         }
       ]
     },
+    "rehearsalDates": {
+      "about": "A rehearsal's dates: one per date of its event, that many days before, at its own time in the event's zone; cancelled with the date it's for.",
+      "params": [
+        "event",
+        "rehearsal",
+        "from",
+        "to",
+        "changes"
+      ],
+      "cases": [
+        {
+          "name": "Thursday evening before each Sunday, across the clocks going back",
+          "args": [
+            {
+              "date": "2026-10-18",
+              "startTime": "10:00",
+              "durationMinutes": 90,
+              "timeZone": "Europe/Paris",
+              "repeat": {
+                "everyWeeks": 1
+              }
+            },
+            {
+              "daysBefore": 3,
+              "startTime": "19:30",
+              "durationMinutes": 120
+            },
+            "2026-10-14",
+            "2026-10-30",
+            [
+              {
+                "date": "2026-10-25",
+                "cancelled": true
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "date": "2026-10-15",
+              "startTime": "19:30",
+              "startsAt": "2026-10-15T17:30:00.000Z",
+              "endsAt": "2026-10-15T19:30:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "forDate": "2026-10-18"
+            },
+            {
+              "date": "2026-10-22",
+              "startTime": "19:30",
+              "startsAt": "2026-10-22T17:30:00.000Z",
+              "endsAt": "2026-10-22T19:30:00.000Z",
+              "title": null,
+              "cancelled": true,
+              "changed": false,
+              "forDate": "2026-10-25"
+            },
+            {
+              "date": "2026-10-29",
+              "startTime": "19:30",
+              "startsAt": "2026-10-29T18:30:00.000Z",
+              "endsAt": "2026-10-29T20:30:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "forDate": "2026-11-01"
+            }
+          ]
+        },
+        {
+          "name": "the same day, before",
+          "args": [
+            {
+              "date": "2026-10-18",
+              "startTime": "10:00",
+              "durationMinutes": 90,
+              "timeZone": "UTC"
+            },
+            {
+              "daysBefore": 0,
+              "startTime": "08:30",
+              "durationMinutes": 60
+            },
+            "2026-10-01",
+            "2026-10-31",
+            []
+          ],
+          "expected": [
+            {
+              "date": "2026-10-18",
+              "startTime": "08:30",
+              "startsAt": "2026-10-18T08:30:00.000Z",
+              "endsAt": "2026-10-18T09:30:00.000Z",
+              "title": null,
+              "cancelled": false,
+              "changed": false,
+              "forDate": "2026-10-18"
+            }
+          ]
+        }
+      ]
+    },
     "dayBeforeReminderDue": {
       "about": "Whether a date's day-before reminder is due: the day before, from 18:00 to midnight in the event's zone; not on the day itself.",
       "params": [

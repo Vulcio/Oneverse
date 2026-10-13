@@ -1055,6 +1055,11 @@ model TeamEvent {
   // The parts it needs (issue #235, phase 7): [{ part, name, count }] - an
   // instrument or role key (or custom instrument ID), or a name of its own.
   parts            Json?
+  // A rehearsal tied to another of the team's events (issue #235, phase 7):
+  // its dates are that event's, daysBefore days earlier, at its own time;
+  // it has no set of its own (it uses the date's), and goes with the event.
+  rehearsalForId   String?
+  daysBefore       Int?
   createdByUserId  String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -1065,6 +1070,8 @@ model TeamEvent {
   answers   TeamEventAnswer[]
   reminders TeamEventReminder[]
   lineup    TeamEventAssignment[]
+  rehearsalFor TeamEvent?  @relation("Rehearsals", fields: [rehearsalForId], references: [id], onDelete: Cascade)
+  rehearsals   TeamEvent[] @relation("Rehearsals")
 
   @@index([teamId])
 }

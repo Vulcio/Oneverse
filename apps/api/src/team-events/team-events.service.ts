@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@songverse/core";
+import { addDays, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@songverse/core";
 import type { Prisma } from "@songverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -31,6 +31,14 @@ export function changesOf(event: EventRow) {
 /** The parts an event needs (issue #235, phase 7), as stored. */
 export function partsOf(event: { parts: Prisma.JsonValue }): EventPart[] {
   return Array.isArray(event.parts) ? (event.parts as unknown as EventPart[]) : [];
+}
+
+/** What a rehearsal date is for: its event, the date, and its title. */
+export type RehearsalOf = { eventId: string; date: string; title: string };
+
+/** A rehearsal's dates (issue #235, phase 7), from its event's: `parent` is the event it's for. */
+export function rehearsalDatesOf(rehearsal: EventRow, parent: EventRow, from: string, to: string) {
+  return rehearsalDates(timingOf(parent), { daysBefore: rehearsal.daysBefore ?? 0, startTime: rehearsal.startTime, durationMinutes: rehearsal.durationMinutes }, from, to, changesOf(parent));
 }
 
 export const withDates = { dates: { include: { setlist: { select: { id: true, _count: { select: { items: true } } } } } } } as const;
@@ -106,9 +114,17 @@ export class TeamEventsService {
       timeZone: event.timeZone,
       place: event.place,
       note: event.note,
-      repeat: timingOf(event).repeat ?? null,
+      repeat: event.rehearsalForId ? null : (timingOf(event).repeat ?? null),
       parts: partsOf(event),
+      rehearsalFor: event.rehearsalForId ? { eventId: event.rehearsalForId, daysBefore: event.daysBefore ?? 0 } : null,
     };
+  }
+
+  /** The event a rehearsal is for: one of the same team's, itself not a rehearsal, not the rehearsal itself. */
+  private async rehearsalParent(teamId: string, eventId: string, self: string | null = null) {
+    const parent = await this.prisma.client.teamEvent.findFirst({ where: { id: eventId, teamId } });
+    if (!parent || parent.rehearsalForId || parent.id === self) throw new BadRequestException(["rehearsalFor.eventId must be another of the team's events, not a rehearsal"]);
+    return parent;
   }
 
   /** Parts that name an instrument or role must be one: built in, or an admin's custom instrument. */
@@ -139,6 +155,8 @@ export class TeamEventsService {
 
   async create(teamId: string, userId: string, dto: CreateTeamEventDto) {
     if (dto.repeat?.until && dto.repeat.until < dto.date) throw new BadRequestException(["repeat.until must not be before date"]);
+    // A rehearsal (issue #235, phase 7): its dates are its event's; no repeat, parts or set of its own.
+    const parent = dto.rehearsalFor ? await this.rehearsalParent(teamId, dto.rehearsalFor.eventId) : null;
     const event = await this.prisma.client.teamEvent.create({
       data: {
         teamId,
@@ -149,9 +167,11 @@ export class TeamEventsService {
         timeZone: dto.timeZone,
         place: dto.place || null,
         note: dto.note || null,
-        repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
-        repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
-        parts: await this.checkParts(dto.parts),
+        repeatEveryWeeks: parent ? null : (dto.repeat?.everyWeeks ?? null),
+        repeatUntil: !parent && dto.repeat?.until ? day(dto.repeat.until) : null,
+        parts: parent ? undefined : await this.checkParts(dto.parts),
+        rehearsalForId: parent?.id ?? null,
+        daysBefore: parent ? dto.rehearsalFor!.daysBefore : null,
         createdByUserId: userId,
       },
       include: withDates,
@@ -179,6 +199,11 @@ export class TeamEventsService {
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
         parts: await this.checkParts(dto.parts),
+        ...(dto.rehearsalFor === undefined
+          ? {}
+          : dto.rehearsalFor === null
+            ? { rehearsalForId: null, daysBefore: null }
+            : { rehearsalForId: (await this.rehearsalParent(teamId, dto.rehearsalFor.eventId, eventId)).id, daysBefore: dto.rehearsalFor.daysBefore, repeatEveryWeeks: null, repeatUntil: null }),
       },
     });
     const after = await this.find(teamId, eventId);
@@ -241,8 +266,17 @@ export class TeamEventsService {
     const events = await this.prisma.client.teamEvent.findMany({ where: { teamId }, include: withDates });
     return events
       .flatMap((event) => {
+        const parent = event.rehearsalForId ? events.find((one) => one.id === event.rehearsalForId) : null;
+        if (parent) {
+          // A rehearsal: its event's dates, days before; the set it opens is that date's.
+          const rows = new Map(parent.dates.map((row) => [dateText(row.date), row]));
+          return rehearsalDatesOf(event, parent, from, to).map(({ forDate, ...date }) => ({
+            ...this.dateSummary(event, date, rows.get(forDate)),
+            rehearsalFor: { eventId: parent.id, date: forDate, title: rows.get(forDate)?.title || parent.title } as RehearsalOf | null,
+          }));
+        }
         const rows = new Map(event.dates.map((row) => [dateText(row.date), row]));
-        return eventDates(timingOf(event), from, to, changesOf(event)).map((date) => this.dateSummary(event, date, rows.get(date.date)));
+        return eventDates(timingOf(event), from, to, changesOf(event)).map((date) => ({ ...this.dateSummary(event, date, rows.get(date.date)), rehearsalFor: null as RehearsalOf | null }));
       })
       .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   }
@@ -270,6 +304,7 @@ export class TeamEventsService {
   /** One date changed by itself: cancelled (its empty set deleted), another time or title (its set renamed). */
   async updateDate(teamId: string, eventId: string, date: string, dto: UpdateTeamEventDateDto, by: string | null = null) {
     const event = await this.find(teamId, eventId);
+    if (event.rehearsalForId) throw new BadRequestException(["A rehearsal follows its event's dates: change that event's date"]);
     if (!eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const existing = event.dates.find((row) => dateText(row.date) === date);
     const data = {
@@ -298,6 +333,7 @@ export class TeamEventsService {
   /** A date's set now, however far ahead (someone opening it to plan). */
   async ensureDateSet(teamId: string, eventId: string, date: string) {
     const event = await this.find(teamId, eventId);
+    if (event.rehearsalForId) throw new BadRequestException(["A rehearsal uses its event's set"]);
     if (!eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const setlistId = await this.makeSet(event, date, true);
     if (!setlistId) throw new BadRequestException(["That date is cancelled"]);
@@ -328,7 +364,7 @@ export class TeamEventsService {
   /** The sets of an event's dates from today to its team's `setsAheadWeeks` ahead. Returns how many were made. */
   async makeSets(eventId: string): Promise<number> {
     const event = await this.prisma.client.teamEvent.findUnique({ where: { id: eventId }, include: { ...withDates, team: { select: { setsAheadWeeks: true } } } });
-    if (!event) return 0;
+    if (!event || event.rehearsalForId) return 0;
     const today = localDate(new Date(), event.timeZone);
     let made = 0;
     for (const date of eventDates(timingOf(event), today, addDays(today, event.team.setsAheadWeeks * 7), changesOf(event))) {
@@ -342,7 +378,7 @@ export class TeamEventsService {
 
   /** Every team's coming sets (the daily job). */
   async makeAllSets(): Promise<number> {
-    const events = await this.prisma.client.teamEvent.findMany({ select: { id: true } });
+    const events = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: null }, select: { id: true } });
     let made = 0;
     for (const { id } of events) made += await this.makeSets(id);
     return made;

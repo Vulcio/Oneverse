@@ -199,6 +199,45 @@ export function eventDates(event: EventTiming, from: string, to: string, changes
   });
 }
 
+/** A rehearsal tied to an event (issue #235, phase 7): that many days before each of its dates, at its own time. */
+export interface RehearsalTiming {
+  daysBefore: number;
+  startTime: string;
+  durationMinutes: number;
+}
+
+/** The most days a rehearsal comes before its event's date. */
+export const REHEARSAL_DAYS_BEFORE_MAX = 14;
+
+/** A rehearsal's date: when it is, and the event's date it's for. */
+export interface RehearsalDate extends EventDate {
+  /** The event's date it rehearses for. */
+  forDate: string;
+}
+
+/**
+ * A rehearsal's dates from `from` to `to`: one for each of its event's
+ * dates (with their own changes), `daysBefore` days before it, at the
+ * rehearsal's own time in the event's time zone. Cancelled with the date
+ * it's for.
+ */
+export function rehearsalDates(event: EventTiming, rehearsal: RehearsalTiming, from: string, to: string, changes: EventDateChange[] = []): RehearsalDate[] {
+  return eventDates(event, addDays(from, rehearsal.daysBefore), addDays(to, rehearsal.daysBefore), changes).map((date) => {
+    const day = addDays(date.date, -rehearsal.daysBefore);
+    const startsAt = zonedInstant(day, rehearsal.startTime, event.timeZone);
+    return {
+      date: day,
+      startTime: rehearsal.startTime,
+      startsAt,
+      endsAt: new Date(new Date(startsAt).getTime() + rehearsal.durationMinutes * 60_000).toISOString(),
+      title: null,
+      cancelled: date.cancelled,
+      changed: false,
+      forDate: date.date,
+    };
+  });
+}
+
 /** How many weeks ahead a team's event sets are made (issue #235): its setting, 1 to 52 (a year). */
 export const SETS_AHEAD_WEEKS = { min: 1, max: 52, default: 4 } as const;
 

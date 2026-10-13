@@ -31,7 +31,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import type { z } from "zod";
 
 /**
@@ -1370,6 +1370,24 @@ export const CONFORMANCE: ConformanceArea[] = [
               ],
             ],
           },
+        ],
+      },
+      rehearsalDates: {
+        about: "A rehearsal's dates: one per date of its event, that many days before, at its own time in the event's zone; cancelled with the date it's for.",
+        params: ["event", "rehearsal", "from", "to", "changes"],
+        run: rehearsalDates,
+        cases: [
+          {
+            name: "Thursday evening before each Sunday, across the clocks going back",
+            args: [
+              { date: "2026-10-18", startTime: "10:00", durationMinutes: 90, timeZone: "Europe/Paris", repeat: { everyWeeks: 1 } },
+              { daysBefore: 3, startTime: "19:30", durationMinutes: 120 },
+              "2026-10-14",
+              "2026-10-30",
+              [{ date: "2026-10-25", cancelled: true }],
+            ],
+          },
+          { name: "the same day, before", args: [{ date: "2026-10-18", startTime: "10:00", durationMinutes: 90, timeZone: "UTC" }, { daysBefore: 0, startTime: "08:30", durationMinutes: 60 }, "2026-10-01", "2026-10-31", []] },
         ],
       },
       dayBeforeReminderDue: {

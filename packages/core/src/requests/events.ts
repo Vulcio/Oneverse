@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { ASSIGNMENT_STATUSES, AVAILABILITY_ANSWERS, EVENT_PART_COUNT_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS } from "../calendar/index.js";
+import { ASSIGNMENT_STATUSES, AVAILABILITY_ANSWERS, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -30,6 +30,12 @@ const eventParts = z
   .refine((parts) => new Set(parts.map((part) => partKey(part))).size === parts.length, "parts must not list the same part twice")
   .describe("The parts it needs (issue #235): instruments, roles or names, with how many");
 
+/** A rehearsal for another of the team's events: that many days before each of its dates. */
+const RehearsalForSchema = z.strictObject({
+  eventId: z.string().trim().min(1).max(64),
+  daysBefore: z.number().int().min(0).max(REHEARSAL_DAYS_BEFORE_MAX),
+});
+
 export const CreateTeamEventSchema = z.strictObject({
   title: requiredText(120),
   date: date("date").describe("Its first date, YYYY-MM-DD"),
@@ -40,6 +46,7 @@ export const CreateTeamEventSchema = z.strictObject({
   note: optional(z.string().trim().max(1000)),
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
   parts: optional(eventParts),
+  rehearsalFor: optional(RehearsalForSchema).describe("A rehearsal tied to another event (issue #235): its dates follow that event's"),
 });
 export type CreateTeamEventRequest = z.input<typeof CreateTeamEventSchema>;
 
@@ -54,6 +61,7 @@ export const UpdateTeamEventSchema = z.strictObject({
   note: clearableText(1000),
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
   parts: eventParts.optional(),
+  rehearsalFor: RehearsalForSchema.nullable().optional().describe("null: an event of its own"),
 });
 export type UpdateTeamEventRequest = z.input<typeof UpdateTeamEventSchema>;
 

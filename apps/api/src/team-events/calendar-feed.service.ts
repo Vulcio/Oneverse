@@ -3,7 +3,7 @@ import { addDays, calendarFeed, eventDates, localDate, type CalendarFeedEntry } 
 import { createHash, randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
-import { changesOf, dateText, timingOf, withDates } from "./team-events.service.js";
+import { changesOf, dateText, rehearsalDatesOf, timingOf, withDates } from "./team-events.service.js";
 
 /** How far back and ahead a feed lists the dates signed up for. */
 const BACK_DAYS = 90;
@@ -84,6 +84,26 @@ export class CalendarFeedService {
         description: [event.team.name, event.note, setUrl].filter(Boolean).join("\n"),
         url: setUrl,
       });
+    }
+    // The rehearsals of the dates they signed up for (issue #235, phase 7).
+    const rehearsals = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: { in: events.map((event) => event.id) } }, include: { ...withDates, team: { select: { name: true } } } });
+    for (const rehearsal of rehearsals) {
+      const parent = events.find((one) => one.id === rehearsal.rehearsalForId)!;
+      const theirs = new Set(answers.filter((answer) => answer.eventId === parent.id).map((answer) => dateText(answer.date)));
+      for (const date of rehearsalDatesOf(rehearsal, parent, addDays(from, -14), to)) {
+        if (date.cancelled || !theirs.has(date.forDate)) continue;
+        const setlistId = parent.dates.find((row) => dateText(row.date) === date.forDate)?.setlist?.id;
+        const setUrl = setlistId ? `${webUrl()}/sets/${setlistId}` : null;
+        entries.push({
+          uid: `${rehearsal.id}-${date.date}@songverse`,
+          start: date.startsAt,
+          end: date.endsAt,
+          title: `${rehearsal.title} (${rehearsal.team.name})`,
+          location: rehearsal.place,
+          description: [rehearsal.team.name, rehearsal.note, setUrl].filter(Boolean).join("\n"),
+          url: setUrl,
+        });
+      }
     }
     entries.sort((a, b) => a.start.localeCompare(b.start));
     const body = calendarFeed(entries, { name: `Songverse - ${feed.user.displayName}`, now: new Date(`${localDate(new Date(), "UTC")}T00:00:00Z`).toISOString() });

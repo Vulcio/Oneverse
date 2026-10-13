@@ -975,6 +975,11 @@ const en = {
     },
   },
   teamCalendar: {
+    rehearsalFor: "Rehearsal for",
+    rehearsalNone: "— (an event of its own)",
+    daysBefore: "Days before",
+    rehearsalBadge: "Rehearsal",
+    rehearsalOf: "for {{title}}, {{date}}",
     lineupPeople: "Your People (guests)",
     lineupOutside: "Someone without an account…",
     lineupOutsideName: "Their name",

@@ -145,6 +145,8 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
           <ul className="flex flex-col divide-y" aria-label={t("teamCalendar.title")}>
             {dates.map((date) => {
               const event = events.find((one) => one.id === date.eventId);
+              // A rehearsal (issue #235, phase 7) follows its event's date: no answers or line-up of its own.
+              const rehearsal = date.rehearsalFor;
               return (
                 <li
                   key={`${date.eventId}-${date.date}`}
@@ -162,15 +164,16 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className={cn("text-sm font-medium", date.cancelled && "line-through")}>{date.title}</span>
                       {date.repeats ? <Repeat className="size-3.5 text-muted-foreground" aria-label={t("teamCalendar.repeats")} /> : null}
+                      {rehearsal ? <Badge variant="muted" data-testid="calendar-rehearsal">{t("teamCalendar.rehearsalBadge")}</Badge> : null}
                       {date.cancelled ? <Badge variant="outline">{t("teamCalendar.cancelled")}</Badge> : null}
-                      {!date.cancelled && date.setReadyAt ? (
+                      {!date.cancelled && !rehearsal && date.setReadyAt ? (
                         <Badge variant="muted" data-testid="calendar-set-ready">
                           <CircleCheck />
                           {t("teamCalendar.setReadyBadge")}
                         </Badge>
                       ) : null}
                       {/* For the admins: the parts no one available covers yet (issue #235, phase 7). */}
-                      {!date.cancelled && date.coverage?.some((part) => part.missing > 0) ? (
+                      {!date.cancelled && !rehearsal && date.coverage?.some((part) => part.missing > 0) ? (
                         <Badge variant="warning" data-testid="calendar-short">
                           <Users />
                           {t("teamCalendar.partShort", {
@@ -182,6 +185,11 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                         </Badge>
                       ) : null}
                     </div>
+                    {rehearsal ? (
+                      <span className="text-xs text-muted-foreground" data-testid="calendar-rehearsal-of">
+                        {t("teamCalendar.rehearsalOf", { title: rehearsal.title, date: dayFormat.format(new Date(`${rehearsal.date}T12:00:00Z`)) })}
+                      </span>
+                    ) : null}
                     {date.place ? (
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <MapPin className="size-3" aria-hidden />
@@ -189,7 +197,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                       </span>
                     ) : null}
                     {/* Whether you can play (issue #235); for the admins, how everyone answered. */}
-                    {!date.cancelled ? (
+                    {!date.cancelled && !rehearsal ? (
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <EventAnswer
                           value={date.myAnswer}
@@ -206,7 +214,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                         ) : null}
                       </div>
                     ) : null}
-                    {!date.cancelled ? (
+                    {!date.cancelled && !rehearsal ? (
                       <LineupLine teamId={teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} onChanged={() => act(async () => {})} />
                     ) : null}
                   </div>
@@ -215,7 +223,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                       {t("teamCalendar.openSet")}
                       <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
                     </Button>
-                  ) : !date.cancelled && isAdmin ? (
+                  ) : !date.cancelled && !rehearsal && isAdmin ? (
                     <Button variant="outline" size="sm" className="col-start-2 row-start-1" onClick={() => void planSet(date)} data-testid="calendar-plan-set">
                       {t("teamCalendar.planSet")}
                     </Button>
@@ -228,11 +236,13 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
                         <MoreHorizontal className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => void act(() => apiClient.updateTeamEventDate(teamId, date.eventId, date.date, { cancelled: !date.cancelled }))} data-testid="calendar-toggle-date">
-                          {date.cancelled ? <RotateCcw /> : <Ban />}
-                          {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
-                        </DropdownMenuItem>
-                        {!date.cancelled && date.setlistId ? (
+                        {rehearsal ? null : (
+                          <DropdownMenuItem onClick={() => void act(() => apiClient.updateTeamEventDate(teamId, date.eventId, date.date, { cancelled: !date.cancelled }))} data-testid="calendar-toggle-date">
+                            {date.cancelled ? <RotateCcw /> : <Ban />}
+                            {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
+                          </DropdownMenuItem>
+                        )}
+                        {!date.cancelled && !rehearsal && date.setlistId ? (
                           <DropdownMenuItem
                             onClick={() =>
                               void act(async () => {
@@ -339,6 +349,7 @@ export function TeamCalendar({ teamId, isAdmin, customInstruments = [] }: { team
         <EventDialog
           teamId={teamId}
           event={editing === "new" ? null : editing}
+          teamEvents={events}
           teamNames={[...new Set(events.flatMap((one) => one.parts.filter((part) => !part.part && part.name).map((part) => part.name!)))]}
           customInstruments={customInstruments}
           partLabel={partLabel}
@@ -486,6 +497,7 @@ function SetsAhead({ teamId, onSaved }: { teamId: string; onSaved: () => Promise
 function EventDialog({
   teamId,
   event,
+  teamEvents,
   teamNames,
   customInstruments,
   partLabel,
@@ -494,6 +506,8 @@ function EventDialog({
 }: {
   teamId: string;
   event: TeamEvent | null;
+  /** The team's events, a rehearsal's possible event. */
+  teamEvents: TeamEvent[];
   teamNames: string[];
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
@@ -502,6 +516,10 @@ function EventDialog({
 }) {
   const { t } = useTranslation();
   const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
+  // A rehearsal tied to another event (issue #235, phase 7): which, and how many days before.
+  const [rehearsalOf, setRehearsalOf] = useState(event?.rehearsalFor?.eventId ?? "");
+  const [daysBefore, setDaysBefore] = useState(String(event?.rehearsalFor?.daysBefore ?? 3));
+  const parentEvent = teamEvents.find((one) => one.id === rehearsalOf) ?? null;
   const [title, setTitle] = useState(event?.title ?? "");
   const [date, setDate] = useState(event?.date ?? localDate(new Date(), browserZone()));
   const [startTime, setStartTime] = useState(event?.startTime ?? "10:00");
@@ -520,7 +538,29 @@ function EventDialog({
     setBusy(true);
     setError(null);
     const repeat = everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null;
-    const body = { title, date, startTime, durationMinutes: Number(duration), timeZone, place: place || null, note: note || null, repeat, parts: parts.map((part) => (part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count })) };
+    const body = parentEvent
+      ? {
+          title,
+          date: parentEvent.date,
+          startTime,
+          durationMinutes: Number(duration),
+          timeZone: parentEvent.timeZone,
+          place: place || null,
+          note: note || null,
+          rehearsalFor: { eventId: parentEvent.id, daysBefore: Number(daysBefore) },
+        }
+      : {
+          title,
+          date,
+          startTime,
+          durationMinutes: Number(duration),
+          timeZone,
+          place: place || null,
+          note: note || null,
+          repeat,
+          parts: parts.map((part) => (part.part ? { part: part.part, count: part.count } : { name: part.name!, count: part.count })),
+          ...(event?.rehearsalFor ? { rehearsalFor: null } : {}),
+        };
     try {
       if (event) await apiClient.updateTeamEvent(teamId, event.id, body);
       else await apiClient.createTeamEvent(teamId, body);
@@ -549,10 +589,30 @@ function EventDialog({
             <Label htmlFor="event-title">{t("teamCalendar.eventTitle")}</Label>
             <Input id="event-title" value={title} maxLength={120} required placeholder={t("teamCalendar.titlePlaceholder")} onChange={(e) => setTitle(e.target.value)} />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="event-date">{t("teamCalendar.firstDate")}</Label>
-            <DatePicker id="event-date" value={date} onChange={setDate} testId="event-date" />
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <Label htmlFor="event-rehearsal">{t("teamCalendar.rehearsalFor")}</Label>
+            <NativeSelect id="event-rehearsal" value={rehearsalOf} onChange={(e) => setRehearsalOf(e.target.value)} data-testid="event-rehearsal-for">
+              <option value="">{t("teamCalendar.rehearsalNone")}</option>
+              {teamEvents
+                .filter((one) => !one.rehearsalFor && one.id !== event?.id)
+                .map((one) => (
+                  <option key={one.id} value={one.id}>
+                    {one.title}
+                  </option>
+                ))}
+            </NativeSelect>
           </div>
+          {parentEvent ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="event-days-before">{t("teamCalendar.daysBefore")}</Label>
+              <Input id="event-days-before" type="number" min={0} max={14} value={daysBefore} required onChange={(e) => setDaysBefore(e.target.value)} data-testid="event-days-before" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="event-date">{t("teamCalendar.firstDate")}</Label>
+              <DatePicker id="event-date" value={date} onChange={setDate} testId="event-date" />
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="event-time">{t("teamCalendar.startTime")}</Label>
             <Input id="event-time" type="time" value={startTime} required onChange={(e) => setStartTime(e.target.value)} />
@@ -561,6 +621,8 @@ function EventDialog({
             <Label htmlFor="event-duration">{t("teamCalendar.duration")}</Label>
             <Input id="event-duration" type="number" min={5} max={1440} value={duration} required onChange={(e) => setDuration(e.target.value)} />
           </div>
+          {!parentEvent ? (
+          <>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="event-zone">{t("teamCalendar.timeZone")}</Label>
             <NativeSelect id="event-zone" value={timeZone} onChange={(e) => setTimeZone(e.target.value)}>
@@ -587,6 +649,8 @@ function EventDialog({
             <Label htmlFor="event-until">{t("teamCalendar.until")}</Label>
             <DatePicker id="event-until" value={until} min={date} disabled={!everyWeeks} clearable onChange={setUntil} testId="event-until" />
           </div>
+          </>
+          ) : null}
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="event-place">{t("teamCalendar.place")}</Label>
             <Input id="event-place" value={place} maxLength={200} onChange={(e) => setPlace(e.target.value)} />
@@ -595,7 +659,7 @@ function EventDialog({
             <Label htmlFor="event-note">{t("teamCalendar.note")}</Label>
             <Textarea id="event-note" value={note} maxLength={1000} rows={2} onChange={(e) => setNote(e.target.value)} />
           </div>
-          <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} customInstruments={customInstruments} partLabel={partLabel} />
+          {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} customInstruments={customInstruments} partLabel={partLabel} />}
         </form>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">

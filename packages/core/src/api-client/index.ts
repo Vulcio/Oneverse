@@ -801,6 +801,8 @@ export interface TeamEvent {
   repeat: EventRepeat | null;
   /** The parts it needs (issue #235, phase 7). */
   parts: EventPart[];
+  /** A rehearsal tied to another event: its dates are that event's, days before. */
+  rehearsalFor: { eventId: string; daysBefore: number } | null;
 }
 
 /** A date of a team's event, with its set. */
@@ -826,6 +828,8 @@ export interface TeamEventDateSummary extends EventDate {
   parts: EventPart[];
   /** Who's on which part (issue #235, phase 7). */
   lineup: LineupPlace[];
+  /** A rehearsal's date: the event's date it's for. */
+  rehearsalFor: RehearsalFor | null;
 }
 
 /** Someone's answer for a date: their own, or Not available on a day they're away (`away`); null when not answered. */
@@ -889,6 +893,14 @@ export interface MyEventDate extends EventDate {
   lineup: LineupPlace[];
   /** On another team's line-up, as a guest. */
   guest: boolean;
+  rehearsalFor: RehearsalFor | null;
+}
+
+/** What a rehearsal's date is for (issue #235, phase 7): its event, that date, and its title. */
+export interface RehearsalFor {
+  eventId: string;
+  date: string;
+  title: string;
 }
 
 /** A team admin asking for answers for some dates, by a deadline (issue #235). */

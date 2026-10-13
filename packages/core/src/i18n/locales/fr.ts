@@ -978,6 +978,11 @@ const fr: typeof en = {
     },
   },
   teamCalendar: {
+    rehearsalFor: "Répétition pour",
+    rehearsalNone: "— (un événement à part entière)",
+    daysBefore: "Jours avant",
+    rehearsalBadge: "Répétition",
+    rehearsalOf: "pour {{title}}, {{date}}",
     lineupPeople: "Vos personnes (invités)",
     lineupOutside: "Quelqu'un sans compte…",
     lineupOutsideName: "Son nom",

@@ -4,7 +4,8 @@ import { NotificationsService } from "../notifications/notifications.service.js"
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
 import { placesElsewhere, type LineupConflict } from "./lineup.service.js";
-import { changesOf, dateText, day, partsOf, timingOf, withDates, type EventRow } from "./team-events.service.js";
+import { signedUpFor, signupKey } from "./signups.js";
+import { changesOf, dateText, day, partsOf, rehearsalDatesOf, timingOf, withDates, type EventRow, type RehearsalOf } from "./team-events.service.js";
 
 /** The longest range of dates asked for at once. */
 const MAX_RANGE_DAYS = 400;
@@ -41,7 +42,7 @@ export class AvailabilityService {
    * counts among its members and how its parts are covered (issue #235,
    * phase 7). Dates come from TeamEventsService.dates().
    */
-  async withAnswers<T extends { eventId: string; date: string; startsAt: string; endsAt: string; parts?: EventPart[] }>(teamId: string, viewerId: string, isAdmin: boolean, dates: T[]) {
+  async withAnswers<T extends { eventId: string; date: string; startsAt: string; endsAt: string; parts?: EventPart[]; rehearsalFor?: object | null }>(teamId: string, viewerId: string, isAdmin: boolean, dates: T[]) {
     if (dates.length === 0) return [];
     const from = dates.reduce((min, d) => (d.date < min ? d.date : min), dates[0]!.date);
     const to = dates.reduce((max, d) => (d.date > max ? d.date : max), dates[0]!.date);
@@ -87,7 +88,8 @@ export class AvailabilityService {
       let counts: AnswerCounts | null = null;
       let coverage: ReturnType<typeof partCoverage> | null = null;
       const shownOf = new Map<string, { answer: AvailabilityAnswer | null; away: boolean }>();
-      if (isAdmin) {
+      // A rehearsal takes no answers: nothing to count.
+      if (isAdmin && !date.rehearsalFor) {
         counts = { AVAILABLE: 0, IF_NEEDED: 0, UNAVAILABLE: 0, NONE: 0 };
         const answered = memberRows.map(({ userId, user }) => {
           const own = given.find((answer) => answer.userId === userId)?.answer ?? null;
@@ -132,6 +134,7 @@ export class AvailabilityService {
 
   private async eventOn(teamId: string, eventId: string, date: string): Promise<EventRow> {
     const event = await this.prisma.client.teamEvent.findFirst({ where: { id: eventId, teamId }, include: withDates });
+    if (event?.rehearsalForId) throw new BadRequestException(["A rehearsal follows its event's line-up: answer for that event"]);
     if (!event || !eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     if (date < localDate(new Date(), event.timeZone)) throw new BadRequestException(["That date is over"]);
     return event;
@@ -238,7 +241,7 @@ export class AvailabilityService {
     const guestOn = await this.prisma.client.teamEventAssignment.findMany({ where: { userId, date: { gte: day(from), lte: day(to) }, event: { teamId: { notIn: [...memberTeams] } } }, select: { eventId: true, date: true } });
     const guestDates = new Set(guestOn.map((row) => key(row.eventId, dateText(row.date))));
     const events = await this.prisma.client.teamEvent.findMany({
-      where: { OR: [{ teamId: { in: [...memberTeams] } }, { id: { in: guestOn.map((row) => row.eventId) } }] },
+      where: { OR: [{ teamId: { in: [...memberTeams] } }, { id: { in: guestOn.map((row) => row.eventId) } }, { rehearsalForId: { in: guestOn.map((row) => row.eventId) } }] },
       include: { ...withDates, team: { select: { name: true, color: true, avatarUrl: true } } },
     });
     const [answers, away, lineupRows] = await Promise.all([
@@ -251,8 +254,41 @@ export class AvailabilityService {
       }),
     ]);
     const answerOf = new Map(answers.map((answer) => [key(answer.eventId, dateText(answer.date)), answer]));
-    return events
-      .flatMap((event) => {
+    // Rehearsals (issue #235, phase 7): shown for the dates one signed up for.
+    const rehearsalsOf = events.flatMap((event) => {
+      const parent = event.rehearsalForId ? events.find((one) => one.id === event.rehearsalForId) : null;
+      return parent ? rehearsalDatesOf(event, parent, from, to).map((date) => ({ event, parent, date })) : [];
+    });
+    const signedUp = await signedUpFor(this.prisma.client, rehearsalsOf.map(({ parent, date }) => ({ eventId: parent.id, date: date.forDate })));
+    const rehearsalItems = rehearsalsOf
+      .filter(({ parent, date }) => signedUp.get(signupKey(parent.id, date.forDate))?.includes(userId))
+      .map(({ event, parent, date: { forDate, ...date } }) => {
+        const membership = memberships.find((m) => m.teamId === event.teamId);
+        const row = parent.dates.find((one) => dateText(one.date) === forDate);
+        return {
+          ...date,
+          eventId: event.id,
+          title: event.title,
+          place: event.place,
+          timeZone: event.timeZone,
+          repeats: !!parent.repeatEveryWeeks,
+          teamId: event.teamId,
+          teamName: event.team.name,
+          teamColor: event.team.color,
+          teamAvatarUrl: event.team.avatarUrl,
+          isAdmin: membership?.role === "ADMIN",
+          guest: !membership,
+          setlistId: row?.setlist?.id ?? null,
+          songCount: row?.setlist?._count.items ?? 0,
+          myAnswer: { answer: null, away: false, note: null, byAdmin: false },
+          parts: [],
+          lineup: [],
+          rehearsalFor: { eventId: parent.id, date: forDate, title: row?.title || parent.title } as RehearsalOf | null,
+        };
+      });
+    return [
+      ...rehearsalItems,
+      ...events.filter((event) => !event.rehearsalForId).flatMap((event) => {
         const membership = memberships.find((m) => m.teamId === event.teamId);
         const rows = new Map(event.dates.map((row) => [dateText(row.date), row]));
         // In another team's event as a guest: only the dates one's on the line-up.
@@ -276,6 +312,7 @@ export class AvailabilityService {
             songCount: row?.setlist?._count.items ?? 0,
             myAnswer: { ...effectiveAnswer(mine?.answer ?? null, away.get(userId) ?? [], date.date), note: mine?.note ?? null, byAdmin: !!mine?.answeredByUserId },
             parts: partsOf(event),
+            rehearsalFor: null as RehearsalOf | null,
             // Who's on which part; one's own place to accept or decline.
             lineup: lineupRows
               .filter((row) => row.eventId === event.id && dateText(row.date) === date.date)
@@ -299,7 +336,7 @@ export class AvailabilityService {
               }),
           };
         });
-      })
-      .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+      }),
+    ].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   }
 }

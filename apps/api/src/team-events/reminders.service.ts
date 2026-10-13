@@ -4,7 +4,7 @@ import { Prisma } from "@songverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
-import { changesOf, dateText, day, TeamEventsService, timingOf, withDates } from "./team-events.service.js";
+import { changesOf, dateText, day, rehearsalDatesOf, TeamEventsService, timingOf, withDates } from "./team-events.service.js";
 
 type RequestRow = Prisma.TeamAnswerRequestGetPayload<{ include: { createdBy: { select: { displayName: true } } } }>;
 
@@ -37,7 +37,7 @@ export class RemindersService {
     const counts = new Map(members.map((userId) => [userId, 0]));
     if (to < from || members.length === 0) return counts;
     const now = new Date();
-    const dates = (await this.events.dates(teamId, from, to)).filter((date) => !date.cancelled && date.date >= localDate(now, date.timeZone));
+    const dates = (await this.events.dates(teamId, from, to)).filter((date) => !date.cancelled && !date.rehearsalFor && date.date >= localDate(now, date.timeZone));
     if (dates.length === 0) return counts;
     const [answers, away] = await Promise.all([
       this.prisma.client.teamEventAnswer.findMany({ where: { event: { teamId }, date: { gte: day(from), lte: day(to) } }, select: { eventId: true, date: true, userId: true } }),
@@ -125,9 +125,15 @@ export class RemindersService {
     const utcToday = now.toISOString().slice(0, 10);
     const events = await this.prisma.client.teamEvent.findMany({ include: { ...withDates, team: { select: { name: true } } } });
     for (const event of events) {
+      // A rehearsal (issue #235, phase 7): its event's dates, days before; those signed up for that date, its set.
+      const parent = event.rehearsalForId ? events.find((one) => one.id === event.rehearsalForId) : null;
+      if (event.rehearsalForId && !parent) continue;
+      const rows = new Map((parent ?? event).dates.map((row) => [dateText(row.date), row]));
       // The day before covers today and tomorrow everywhere: from yesterday to two days ahead in UTC.
-      const rows = new Map(event.dates.map((row) => [dateText(row.date), row]));
-      for (const date of eventDates(timingOf(event), addDays(utcToday, -1), addDays(utcToday, 2), changesOf(event))) {
+      const from = addDays(utcToday, -1);
+      const to = addDays(utcToday, 2);
+      const dates = parent ? rehearsalDatesOf(event, parent, from, to) : eventDates(timingOf(event), from, to, changesOf(event)).map((date) => ({ ...date, forDate: date.date }));
+      for (const date of dates) {
         if (date.cancelled || !dayBeforeReminderDue(date.date, date.startsAt, event.timeZone, now)) continue;
         try {
           // Marked first: the API's instances and the Worker may run this at once; one sends.
@@ -136,8 +142,9 @@ export class RemindersService {
           if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") continue;
           throw error;
         }
-        const people = ((await signedUpFor(this.prisma.client, [{ eventId: event.id, date: date.date }])).get(signupKey(event.id, date.date)) ?? []).map((userId) => ({ userId }));
-        const setlist = rows.get(date.date)?.setlist;
+        const of = { eventId: parent?.id ?? event.id, date: date.forDate };
+        const people = ((await signedUpFor(this.prisma.client, [of])).get(signupKey(of.eventId, of.date)) ?? []).map((userId) => ({ userId }));
+        const setlist = rows.get(date.forDate)?.setlist;
         dayBefore += await this.notifications.notify(
           people.map(({ userId }) => ({
             userId,

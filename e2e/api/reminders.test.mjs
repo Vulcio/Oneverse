@@ -77,6 +77,12 @@ r = await call(admin, "POST", `${base}/${plus(tomorrow, 7)}/set-ready`);
 check("a date without a set: refused", r.status === 400, String(r.status));
 await call(admin, "PATCH", `${base}/${plus(tomorrow, 7)}`, { cancelled: false });
 
+// A rehearsal tomorrow, a week before the next date (phase 7): those signed up for that date are reminded of it.
+const keys = await user("rem keys");
+join(keys, 4);
+await call(keys, "PUT", `${base}/${plus(tomorrow, 7)}/answer`, { answer: "AVAILABLE" });
+const practice = (await call(admin, "POST", `/teams/${team.id}/events`, { title: "Band practice", date: tomorrow, startTime: "19:00", timeZone: zone, rehearsalFor: { eventId: weekly.id, daysBefore: 7 } })).body;
+
 // --- the hourly job, run now
 r = await call(singer, "POST", "/admin/jobs/run/event-reminders");
 check("only global admins run jobs", r.status === 403, String(r.status));
@@ -87,6 +93,8 @@ check("the reminders run now", r.status === 201 && r.body.queued === "event-remi
 check("the day before (18:00 or later where it happens): the people signed up reminded", await until(async () => (await notes(singer, "EVENT_TOMORROW")).length === 1), zone);
 const tomorrowNote = (await notes(singer, "EVENT_TOMORROW"))[0];
 check("…when, where, and the set", tomorrowNote?.data.startTime === "10:00" && tomorrowNote.data.place === "Main hall" && tomorrowNote.data.date === tomorrow && tomorrowNote.url?.startsWith("/sets/"), JSON.stringify(tomorrowNote));
+check("…a rehearsal tomorrow: those signed up for its date", await until(async () => (await notes(keys, "EVENT_TOMORROW")).some((note) => note.data.event === "Band practice" && note.data.startTime === "19:00" && note.url?.startsWith("/sets/"))), JSON.stringify(await notes(keys, "EVENT_TOMORROW")));
+check("…only them", (await notes(singer, "EVENT_TOMORROW")).every((note) => note.data.event !== "Band practice") && practice.rehearsalFor?.daysBefore === 7);
 check("the deadline today: those still missing answers reminded, with how many", await until(async () => (await notes(drummer, "ANSWER_DEADLINE")).length === 1 && (await notes(drummer, "ANSWER_DEADLINE"))[0].data.count === 3));
 check("…the singer too, not the one away", (await notes(singer, "ANSWER_DEADLINE"))[0]?.data.count === 2 && (await notes(bassist, "ANSWER_DEADLINE")).length === 0);
 check("…marked reminded", sql(`select "remindedAt" is not null from "TeamAnswerRequest" where id='${request.id}'`) === "t");

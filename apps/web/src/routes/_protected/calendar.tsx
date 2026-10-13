@@ -99,8 +99,14 @@ function MyCalendarPage() {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className={cn("text-sm font-medium", date.cancelled && "line-through")}>{date.title}</span>
                         {date.repeats ? <Repeat className="size-3.5 text-muted-foreground" aria-label={t("teamCalendar.repeats")} /> : null}
+                        {date.rehearsalFor ? <Badge variant="muted" data-testid="calendar-rehearsal">{t("teamCalendar.rehearsalBadge")}</Badge> : null}
                         {date.cancelled ? <Badge variant="outline">{t("teamCalendar.cancelled")}</Badge> : null}
                       </div>
+                      {date.rehearsalFor ? (
+                        <span className="text-xs text-muted-foreground" data-testid="calendar-rehearsal-of">
+                          {t("teamCalendar.rehearsalOf", { title: date.rehearsalFor.title, date: dayFormat.format(new Date(`${date.rehearsalFor.date}T12:00:00Z`)) })}
+                        </span>
+                      ) : null}
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         <Link to="/teams/$teamId" params={{ teamId: date.teamId }} className="flex items-center gap-1.5 hover:text-foreground">
                           <EntityAvatar name={date.teamName} color={date.teamColor} avatarUrl={date.teamAvatarUrl} size={16} />
@@ -113,8 +119,8 @@ function MyCalendarPage() {
                           </span>
                         ) : null}
                       </div>
-                      {/* A guest on another team's line-up answers for their place, not the date. */}
-                      {!date.cancelled && !date.guest ? (
+                      {/* A guest on another team's line-up answers for their place, not the date; a rehearsal follows its event's line-up. */}
+                      {!date.cancelled && !date.guest && !date.rehearsalFor ? (
                         <div className="mt-1">
                           <EventAnswer
                             value={date.myAnswer}
@@ -125,7 +131,7 @@ function MyCalendarPage() {
                           />
                         </div>
                       ) : null}
-                      {!date.cancelled ? (
+                      {!date.cancelled && !date.rehearsalFor ? (
                         <LineupLine teamId={date.teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} onChanged={() => act(async () => {})} />
                       ) : null}
                     </div>
