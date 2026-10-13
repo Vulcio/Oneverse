@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@song
 import { Input } from "@songverse/ui/components/input";
 import { Label } from "@songverse/ui/components/label";
 import { calendarLocale, fromDayKey, toDayKey } from "@songverse/ui/lib/dates";
-import { formatSetDate } from "#/lib/setlists";
+import { formatSetDate } from "@songverse/ui/lib/dates";
 
 type Range = { from: string; to: string; note: string | null };
 

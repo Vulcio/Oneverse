@@ -5,7 +5,7 @@ import { apiClient } from "#/lib/api-client";
 import type { AdminCommandResult, ArtistSettings, ArtworkSettings } from "@songverse/core";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { BackgroundJobsCard } from "./-background-jobs";
 import { MetadataProvidersCard, YouTubeCard } from "./-metadata-providers";
 

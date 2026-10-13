@@ -7,8 +7,8 @@ import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
-import { sizedAvatarUrl } from "#/lib/avatar-url";
-import { initials } from "#/lib/initials";
+import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
+import { initials } from "@songverse/ui/lib/initials";
 
 /** Share link and guest list, for the set's editors. */
 export function ShareCard({ setlistId }: { setlistId: string }) {

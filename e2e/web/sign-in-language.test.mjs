@@ -38,6 +38,9 @@ await step("a French browser gets the sign-in card in French", async () => {
   await page.waitForLoadState("networkidle");
   await page.getByText("Bienvenue").waitFor();
   await page.getByRole("tab", { name: "S'inscrire" }).waitFor();
+  // Styled by the shared packages' classes too (issue #241): the app's CSS scans packages/app.
+  const padding = await page.locator("main").evaluate((main) => getComputedStyle(main).paddingTop);
+  if (padding !== "32px") throw new Error(`the sign-in page's padding is ${padding}: packages/app's classes aren't in the CSS`);
   // Free software (AGPL-3.0): its source offered to whoever uses it, on the sign-in page too.
   const source = page.getByTestId("source-code").getByRole("link", { name: "Code source" });
   if ((await source.getAttribute("href")) !== "https://github.com/bricedupuy/Songverse") throw new Error(await source.getAttribute("href"));

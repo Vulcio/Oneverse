@@ -13,9 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@songverse/ui/components/dropdown-menu";
-import { sizedAvatarUrl } from "#/lib/avatar-url";
+import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
 import { formatBytes } from "#/lib/format-bytes";
-import { initials } from "#/lib/initials";
+import { initials } from "@songverse/ui/lib/initials";
 import { cn } from "@songverse/ui/lib/utils";
 
 export type UserAction = "roles" | "ban" | "unban" | "delete" | "newTransferLink" | "deleteNow";

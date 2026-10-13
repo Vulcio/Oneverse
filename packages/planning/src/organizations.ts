@@ -1,6 +1,6 @@
 import type { MyOrganizations } from "@songverse/core";
 import { useEffect, useState } from "react";
-import { apiClient } from "#/lib/api-client";
+import { usePlanning } from "./host";
 
 let mine: Promise<MyOrganizations | null> | null = null;
 
@@ -14,15 +14,16 @@ export function forgetMyOrganizations() {
  * per page load for the sidebar: null until known, or offline.
  */
 export function useMyOrganizations(): MyOrganizations | null {
+  const { api } = usePlanning();
   const [value, setValue] = useState<MyOrganizations | null>(null);
   useEffect(() => {
     let live = true;
-    mine ??= apiClient.listMyOrganizations().catch(() => null);
+    mine ??= api.listMyOrganizations().catch(() => null);
     void mine.then((result) => live && setValue(result));
     return () => {
       live = false;
     };
-  }, []);
+  }, [api]);
   return value;
 }
 

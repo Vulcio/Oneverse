@@ -22,7 +22,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Eye, EyeOff, MessageSquare, MoveHorizontal, Pencil, Plus, RotateCcw, Star, Trash2 } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { nameKeyChanges } from "#/components/song-editor/song-form";
 import { SongOrder } from "#/components/song-editor/structured/song-order";
 import { Badge } from "@songverse/ui/components/badge";

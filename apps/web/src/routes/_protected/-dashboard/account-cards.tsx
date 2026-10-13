@@ -17,13 +17,13 @@ import { apiClient } from "#/lib/api-client";
 import { authClient } from "@songverse/app/auth-client";
 import { formatBytes } from "#/lib/format-bytes";
 import { ImageCropDialog } from "#/components/image-crop-dialog";
-import { sizedAvatarUrl } from "#/lib/avatar-url";
+import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
 import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
 import { Label } from "@songverse/ui/components/label";
-import { initials } from "#/lib/initials";
+import { initials } from "@songverse/ui/lib/initials";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 
 // Only guards what the browser has to decode for cropping; what's uploaded

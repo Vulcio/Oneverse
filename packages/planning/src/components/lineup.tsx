@@ -7,8 +7,8 @@ import { Button } from "@songverse/ui/components/button";
 import { Input } from "@songverse/ui/components/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
 import { NativeSelect } from "@songverse/ui/components/native-select";
-import { apiClient } from "#/lib/api-client";
-import { useInstrumentLabel } from "#/lib/instruments";
+import { usePlanning } from "../host";
+import { useInstrumentLabel } from "../instruments";
 import { cn } from "@songverse/ui/lib/utils";
 
 /** A part's name (issue #235, phase 7): its instrument or role in the reader's language, or the team's own name for it. */
@@ -49,6 +49,7 @@ export function LineupLine({
   partLabel: (part: EventPart) => string;
   onChanged: () => Promise<void>;
 }) {
+  const { api } = usePlanning();
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   // The place one's asking a replacement for, with its note being written.
@@ -63,7 +64,7 @@ export function LineupLine({
       .then(onChanged)
       .finally(() => setBusy(false));
   };
-  const answer = (place: LineupPlace, status: "ACCEPTED" | "DECLINED") => run(() => apiClient.respondTeamEventPart(teamId, eventId, date, place.id, { status }));
+  const answer = (place: LineupPlace, status: "ACCEPTED" | "DECLINED") => run(() => api.respondTeamEventPart(teamId, eventId, date, place.id, { status }));
   return (
     <div className="flex flex-col gap-1.5" data-testid="lineup-line">
       {mine.map((place) => (
@@ -102,7 +103,7 @@ export function LineupLine({
                   <ArrowLeftRight />
                   {t("teamCalendar.swapAsked")}
                 </Badge>
-                <button type="button" className="text-xs text-muted-foreground underline-offset-2 hover:underline" disabled={busy} onClick={() => run(() => apiClient.cancelTeamEventSwap(teamId, eventId, date, place.id))} data-testid="lineup-swap-cancel">
+                <button type="button" className="text-xs text-muted-foreground underline-offset-2 hover:underline" disabled={busy} onClick={() => run(() => api.cancelTeamEventSwap(teamId, eventId, date, place.id))} data-testid="lineup-swap-cancel">
                   {t("teamCalendar.swapCancel")}
                 </button>
               </>
@@ -124,7 +125,7 @@ export function LineupLine({
                   onClick={() => {
                     const note = asking.note.trim();
                     setAsking(null);
-                    run(() => apiClient.requestTeamEventSwap(teamId, eventId, date, place.id, note ? { note } : {}));
+                    run(() => api.requestTeamEventSwap(teamId, eventId, date, place.id, note ? { note } : {}));
                   }}
                   data-testid="lineup-swap-send"
                 >
@@ -144,7 +145,7 @@ export function LineupLine({
       ))}
       {takeable.map((place) => (
         <div key={place.id} className="flex flex-wrap items-center gap-2 text-sm" data-swap-offered={place.id}>
-          <Button size="sm" variant="outline" className="h-7" disabled={busy} onClick={() => run(() => apiClient.takeTeamEventSwap(teamId, eventId, date, place.id))} data-testid="lineup-swap-take">
+          <Button size="sm" variant="outline" className="h-7" disabled={busy} onClick={() => run(() => api.takeTeamEventSwap(teamId, eventId, date, place.id))} data-testid="lineup-swap-take">
             <ArrowLeftRight />
             {t("teamCalendar.swapTake", { part: partLabel(partOf(parts, place.partKey)), name: place.displayName })}
           </Button>
@@ -195,6 +196,7 @@ export function LineupDialog({
   onChanged: () => Promise<void>;
   onClose: () => void;
 }) {
+  const { api } = usePlanning();
   const { t } = useTranslation();
   const [members, setMembers] = useState<MemberEventAnswer[]>([]);
   // The admin's People (#79), to schedule as guests (issue #235, phase 7).
@@ -203,8 +205,8 @@ export function LineupDialog({
   const [naming, setNaming] = useState<{ part: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    void apiClient.listTeamEventDateAnswers(teamId, eventId, date).then(setMembers);
-    void apiClient.getPeople().then((overview) => setPeople(overview.people), () => {});
+    void api.listTeamEventDateAnswers(teamId, eventId, date).then(setMembers);
+    void api.getPeople().then((overview) => setPeople(overview.people), () => {});
   }, [teamId, eventId, date]);
   const memberIds = new Set(members.map((member) => member.userId));
 
@@ -278,7 +280,7 @@ export function LineupDialog({
                         type="button"
                         className="ml-auto rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                         aria-label={t("teamCalendar.lineupRemove", { name: place.displayName, part: partLabel(part) })}
-                        onClick={() => void run(() => apiClient.unassignTeamEventPart(teamId, eventId, date, place.id))}
+                        onClick={() => void run(() => api.unassignTeamEventPart(teamId, eventId, date, place.id))}
                         data-testid="lineup-remove"
                       >
                         <X className="size-4" />
@@ -304,7 +306,7 @@ export function LineupDialog({
                       onClick={() => {
                         const guestName = naming.name.trim();
                         setNaming(null);
-                        void run(() => apiClient.assignTeamEventPart(teamId, eventId, date, { guestName, part: key }));
+                        void run(() => api.assignTeamEventPart(teamId, eventId, date, { guestName, part: key }));
                       }}
                       data-testid="lineup-outside-add"
                     >
@@ -319,7 +321,7 @@ export function LineupDialog({
                   onChange={(event) => {
                     const userId = event.target.value;
                     if (userId === "__outside") setNaming({ part: key, name: "" });
-                    else if (userId) void run(() => apiClient.assignTeamEventPart(teamId, eventId, date, { userId, part: key }));
+                    else if (userId) void run(() => api.assignTeamEventPart(teamId, eventId, date, { userId, part: key }));
                   }}
                   data-testid="lineup-add"
                 >

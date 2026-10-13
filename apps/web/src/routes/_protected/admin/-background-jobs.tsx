@@ -2,7 +2,7 @@ import type { JobSummary, JobsStatus } from "@songverse/core";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";

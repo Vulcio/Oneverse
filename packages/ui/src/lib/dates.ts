@@ -26,3 +26,18 @@ export const WeekStartContext = createContext<0 | 1 | 6 | null>(null);
 export function useWeekStart(): 0 | 1 | 6 | null {
   return useContext(WeekStartContext);
 }
+
+/** Dates are calendar days (YYYY-MM-DD), so they're formatted in UTC to avoid shifting by a day. */
+export function formatSetDate(date: string, locale: string, style: "long" | "short" = "short"): string {
+  const options: Intl.DateTimeFormatOptions =
+    style === "long"
+      ? { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }
+      : { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" };
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(locale, options);
+}
+
+/** A day and short month ("12 Oct", "12 oct."), with the year when it isn't this one. */
+export function formatSetDay(date: string, locale: string): string {
+  const thisYear = date.slice(0, 4) === String(new Date().getFullYear());
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(locale, { day: "numeric", month: "short", ...(thisYear ? {} : { year: "numeric" }), timeZone: "UTC" });
+}

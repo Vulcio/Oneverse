@@ -1,11 +1,11 @@
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
-import { apiClient } from "#/lib/api-client";
+import { usePlanning } from "../host";
 
 /** The same address as a subscription link (webcal:), which calendar apps open as "subscribe". */
 const webcal = (url: string) => url.replace(/^https?:/, "webcal:");
@@ -16,12 +16,13 @@ const webcal = (url: string) => url.replace(/^https?:/, "webcal:");
  * or Outlook in one click; reset (the old link stops) or turned off.
  */
 export function CalendarFeedCard() {
+  const { api } = usePlanning();
   const { t } = useTranslation();
   const [url, setUrl] = useState<string | null | undefined>(undefined);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    void apiClient.getMyCalendarFeed().then((feed) => setUrl(feed.url));
+    void api.getMyCalendarFeed().then((feed) => setUrl(feed.url));
   }, []);
   const run = async (work: () => Promise<void>) => {
     setBusy(true);
@@ -33,7 +34,7 @@ export function CalendarFeedCard() {
   };
   const make = () =>
     run(async () => {
-      setUrl((await apiClient.resetMyCalendarFeed()).url);
+      setUrl((await api.resetMyCalendarFeed()).url);
       setCopied(false);
     });
 
@@ -88,7 +89,7 @@ export function CalendarFeedCard() {
             <div className="flex flex-wrap items-center gap-2 border-t pt-3">
               <ConfirmButton label={t("teamCalendar.feedReset")} confirmLabel={t("teamCalendar.feedResetConfirm")} busyLabel={t("teamCalendar.feedReset")} cancelLabel={t("teamCalendar.cancel")} busy={busy} onConfirm={make} />
               <Button variant="ghost" size="sm" disabled={busy} onClick={() => void run(async () => {
-                await apiClient.turnOffMyCalendarFeed();
+                await api.turnOffMyCalendarFeed();
                 setUrl(null);
               })} data-testid="calendar-feed-off">
                 {t("teamCalendar.feedOff")}

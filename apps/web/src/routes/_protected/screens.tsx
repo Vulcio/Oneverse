@@ -3,7 +3,7 @@ import { createFileRoute, useRouteContext, useRouter } from "@tanstack/react-rou
 import { MonitorCheck, MonitorUp, Palette, Pencil, Users } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { ScreenThemeEditor, type ThemeDraft } from "#/components/screen-theme-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { Button } from "@songverse/ui/components/button";

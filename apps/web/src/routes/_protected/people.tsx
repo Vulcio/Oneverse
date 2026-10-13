@@ -2,15 +2,15 @@ import type { PeopleOverview, Person } from "@songverse/core";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
 import { Label } from "@songverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
-import { sizedAvatarUrl } from "#/lib/avatar-url";
-import { initials } from "#/lib/initials";
+import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
+import { initials } from "@songverse/ui/lib/initials";
 
 export const Route = createFileRoute("/_protected/people")({
   loader: () => apiClient.getPeople(),

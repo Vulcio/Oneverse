@@ -3,7 +3,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { EntityAvatar } from "#/components/entity-avatar";
+import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
 import { Badge } from "@songverse/ui/components/badge";
 import { Button } from "@songverse/ui/components/button";
 import { Card } from "@songverse/ui/components/card";

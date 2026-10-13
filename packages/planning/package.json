@@ -1,0 +1,40 @@
+{
+  "name": "@songverse/planning",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    "./host": "./src/host.tsx",
+    "./components/*": "./src/components/*.tsx",
+    "./pages/*": "./src/pages/*.tsx",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "lint": "vp lint src --deny-warnings",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@songverse/core": "workspace:*",
+    "@songverse/ui": "workspace:*",
+    "lucide-react": "^1.46.0",
+    "react-day-picker": "^9.14.0",
+    "react-i18next": "^17.0.14"
+  },
+  "peerDependencies": {
+    "@tanstack/react-router": "^1.170.36",
+    "i18next": "^26.4.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@songverse/tsconfig": "workspace:*",
+    "@tanstack/react-router": "^1.170.36",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "i18next": "^26.4.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.7.3"
+  }
+}

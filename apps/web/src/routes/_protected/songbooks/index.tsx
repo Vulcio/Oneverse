@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent } from "@songverse/ui/components/card";
-import { EntityAvatar } from "#/components/entity-avatar";
+import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
 
 export const Route = createFileRoute("/_protected/songbooks/")({
   loader: () => apiClient.listSongbooks(),

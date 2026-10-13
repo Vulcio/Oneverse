@@ -1,11 +1,11 @@
 import { addDays, coversPart, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamPosition } from "@songverse/core";
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, CalendarPlus, CircleCheck, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "#/components/confirm-button";
-import { DatePicker } from "#/components/date-picker";
-import { EventAnswer } from "#/components/event-answer";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
+import { DatePicker } from "@songverse/ui/components/date-picker";
+import { EventAnswer } from "./event-answer";
 import { Badge } from "@songverse/ui/components/badge";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
@@ -15,9 +15,9 @@ import { Input } from "@songverse/ui/components/input";
 import { Label } from "@songverse/ui/components/label";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 import { Textarea } from "@songverse/ui/components/textarea";
-import { LineupDialog, LineupLine, usePartLabel } from "#/components/lineup";
-import { apiClient } from "#/lib/api-client";
-import { formatSetDate } from "#/lib/setlists";
+import { LineupDialog, LineupLine, usePartLabel } from "./lineup";
+import { HostLink, usePlanning } from "../host";
+import { formatSetDate } from "@songverse/ui/lib/dates";
 import { cn } from "@songverse/ui/lib/utils";
 
 /** How far the calendar shows, then how much more each "Show more" adds. */
@@ -48,8 +48,12 @@ export function TeamCalendar({
   /** False for a group that only plans (issue #241): its dates have no set. */
   withSets?: boolean;
 }) {
+  const { api, sets } = usePlanning();
   const { t, i18n } = useTranslation();
   const partLabel = usePartLabel(customInstruments);
+  // A date's set, where the app has sets and the group uses them; made only where they're kept.
+  const setHref = sets && withSets ? sets.href : null;
+  const makesSets = Boolean(setHref && sets?.canMake);
   const navigate = useNavigate();
   const router = useRouter();
   const [weeks, setWeeks] = useState(SHOWN_WEEKS);
@@ -70,13 +74,13 @@ export function TeamCalendar({
   const load = useCallback(async () => {
     // From today where the browser is: the API keeps a date until its own day is over.
     const today = addDays(localDate(new Date(), browserZone()), -1);
-    const [found, all, asked] = await Promise.all([apiClient.listTeamEventDates(teamId, today, addDays(today, weeks * 7)), apiClient.listTeamEvents(teamId), apiClient.listTeamAnswerRequests(teamId)]);
+    const [found, all, asked] = await Promise.all([api.listTeamEventDates(teamId, today, addDays(today, weeks * 7)), api.listTeamEvents(teamId), api.listTeamAnswerRequests(teamId)]);
     setRequests(asked);
     const now = Date.now();
     setDates(found.filter((date) => Date.parse(date.endsAt) >= now - 12 * 3600_000));
     setEvents(all);
     if (pastWeeks > 0) {
-      const gone = await apiClient.listTeamEventDates(teamId, addDays(today, -pastWeeks * 7), addDays(today, 1));
+      const gone = await api.listTeamEventDates(teamId, addDays(today, -pastWeeks * 7), addDays(today, 1));
       setPast(gone.filter((date) => Date.parse(date.endsAt) < now - 12 * 3600_000 && !date.cancelled).reverse());
     } else setPast(null);
   }, [teamId, weeks, pastWeeks]);
@@ -99,8 +103,8 @@ export function TeamCalendar({
 
   const planSet = (date: TeamEventDateSummary) =>
     act(async () => {
-      const { setlistId } = await apiClient.ensureTeamEventDateSet(teamId, date.eventId, date.date);
-      await navigate({ to: "/sets/$setlistId", params: { setlistId } });
+      const { setlistId } = await api.ensureTeamEventDateSet(teamId, date.eventId, date.date);
+      if (setHref) await navigate({ to: setHref(setlistId) });
     });
 
   const dayFormat = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short" });
@@ -111,7 +115,7 @@ export function TeamCalendar({
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
         <div className="flex flex-col gap-1.5">
           <CardTitle className="text-sm">{t("teamCalendar.title")}</CardTitle>
-          <CardDescription>{withSets ? t("teamCalendar.description") : t("teamCalendar.descriptionPlanning")}</CardDescription>
+          <CardDescription>{setHref ? t("teamCalendar.description") : t("teamCalendar.descriptionPlanning")}</CardDescription>
         </div>
         {isAdmin ? (
           <div className="flex flex-wrap gap-2">
@@ -145,7 +149,7 @@ export function TeamCalendar({
                 className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label={t("teamCalendar.askRemove")}
                 title={t("teamCalendar.askRemove")}
-                onClick={() => void act(() => apiClient.removeTeamAnswerRequest(teamId, request.id))}
+                onClick={() => void act(() => api.removeTeamAnswerRequest(teamId, request.id))}
                 data-testid="calendar-request-remove"
               >
                 <X className="size-4" />
@@ -154,7 +158,7 @@ export function TeamCalendar({
           </div>
         ))}
         {dates === null ? null : dates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{isAdmin ? (withSets ? t("teamCalendar.noEventsAdmin") : t("teamCalendar.noEventsAdminPlanning")) : t("teamCalendar.noEvents")}</p>
+          <p className="text-sm text-muted-foreground">{isAdmin ? (makesSets ? t("teamCalendar.noEventsAdmin") : t("teamCalendar.noEventsAdminPlanning")) : t("teamCalendar.noEvents")}</p>
         ) : (
           <ul className="flex flex-col divide-y" aria-label={t("teamCalendar.title")}>
             {dates.map((date) => {
@@ -222,8 +226,8 @@ export function TeamCalendar({
                         <EventAnswer
                           value={date.myAnswer}
                           label={t("teamCalendar.yourAnswer")}
-                          onAnswer={(answer, note) => act(() => apiClient.answerTeamEventDate(teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }) }))}
-                          onClear={() => act(() => apiClient.clearTeamEventDateAnswer(teamId, date.eventId, date.date))}
+                          onAnswer={(answer, note) => act(() => api.answerTeamEventDate(teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }) }))}
+                          onClear={() => act(() => api.clearTeamEventDateAnswer(teamId, date.eventId, date.date))}
                         />
                         {date.counts ? <AnswerCounts counts={date.counts} onOpen={() => setAnswersOf(date)} /> : null}
                         {isAdmin && date.parts.length > 0 ? (
@@ -238,12 +242,12 @@ export function TeamCalendar({
                       <LineupLine teamId={teamId} eventId={date.eventId} date={date.date} parts={date.parts} lineup={date.lineup} partLabel={partLabel} onChanged={() => act(async () => {})} />
                     ) : null}
                   </div>
-                  {!date.cancelled && date.setlistId ? (
-                    <Button variant="outline" size="sm" className="col-start-2 row-start-1" render={<Link to="/sets/$setlistId" params={{ setlistId: date.setlistId }} />} data-testid="calendar-open-set">
+                  {!date.cancelled && date.setlistId && setHref ? (
+                    <Button variant="outline" size="sm" className="col-start-2 row-start-1" render={<HostLink href={setHref(date.setlistId)} />} data-testid="calendar-open-set">
                       {t("teamCalendar.openSet")}
                       <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
                     </Button>
-                  ) : !date.cancelled && !rehearsal && isAdmin && withSets ? (
+                  ) : !date.cancelled && !rehearsal && isAdmin && makesSets ? (
                     <Button variant="outline" size="sm" className="col-start-2 row-start-1" onClick={() => void planSet(date)} data-testid="calendar-plan-set">
                       {t("teamCalendar.planSet")}
                     </Button>
@@ -257,16 +261,16 @@ export function TeamCalendar({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         {rehearsal || event?.planned ? null : (
-                          <DropdownMenuItem onClick={() => void act(() => apiClient.updateTeamEventDate(teamId, date.eventId, date.date, { cancelled: !date.cancelled }))} data-testid="calendar-toggle-date">
+                          <DropdownMenuItem onClick={() => void act(() => api.updateTeamEventDate(teamId, date.eventId, date.date, { cancelled: !date.cancelled }))} data-testid="calendar-toggle-date">
                             {date.cancelled ? <RotateCcw /> : <Ban />}
                             {date.cancelled ? t("teamCalendar.restoreDate") : t("teamCalendar.cancelDate")}
                           </DropdownMenuItem>
                         )}
-                        {!date.cancelled && !rehearsal && date.setlistId ? (
+                        {!date.cancelled && !rehearsal && date.setlistId && makesSets ? (
                           <DropdownMenuItem
                             onClick={() =>
                               void act(async () => {
-                                const { notified } = await apiClient.setTeamEventDateReady(teamId, date.eventId, date.date);
+                                const { notified } = await api.setTeamEventDateReady(teamId, date.eventId, date.date);
                                 setNotice(t("teamCalendar.setReadySent", { count: notified }));
                               })
                             }
@@ -308,8 +312,8 @@ export function TeamCalendar({
                   <span className="w-28 shrink-0 text-sm tabular-nums">{dayFormat.format(new Date(`${date.date}T12:00:00Z`))}</span>
                   <span className="min-w-0 flex-1 text-sm">{date.title}</span>
                   {date.counts ? <span className="text-xs tabular-nums">✓ {date.counts.AVAILABLE}</span> : null}
-                  {date.setlistId ? (
-                    <Button variant="outline" size="sm" render={<Link to="/sets/$setlistId" params={{ setlistId: date.setlistId }} />} data-testid="calendar-past-set">
+                  {date.setlistId && setHref ? (
+                    <Button variant="outline" size="sm" render={<HostLink href={setHref(date.setlistId)} />} data-testid="calendar-past-set">
                       {t("teamCalendar.openSet")}
                       <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
                     </Button>
@@ -324,7 +328,7 @@ export function TeamCalendar({
             </Button>
           ) : null}
         </div>
-        {isAdmin && withSets ? <SetsAhead teamId={teamId} onSaved={load} /> : null}
+        {isAdmin && makesSets ? <SetsAhead teamId={teamId} onSaved={load} /> : null}
       </CardContent>
       {answersOf ? (
         <AnswersDialog
@@ -401,9 +405,10 @@ function AnswerCounts({ counts, onOpen }: { counts: NonNullable<TeamEventDateSum
 
 /** Every member's answer for a date, with their notes; an admin answers for someone (marked as answered by them). */
 function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: string; date: TeamEventDateSummary; title: string; partLabel: (part: EventPart) => string; onClose: () => void }) {
+  const { api } = usePlanning();
   const { t } = useTranslation();
   const [members, setMembers] = useState<MemberEventAnswer[] | null>(null);
-  const load = useCallback(() => apiClient.listTeamEventDateAnswers(teamId, date.eventId, date.date).then(setMembers), [teamId, date]);
+  const load = useCallback(() => api.listTeamEventDateAnswers(teamId, date.eventId, date.date).then(setMembers), [teamId, date]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -447,8 +452,8 @@ function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: st
               <EventAnswer
                 value={{ answer: member.answer, away: member.away, note: member.note, byAdmin: false }}
                 label={t("teamCalendar.answerFor", { name: member.displayName })}
-                onAnswer={(answer, note) => apiClient.answerTeamEventDateFor(teamId, date.eventId, date.date, member.userId, { answer, ...(note !== undefined && { note }) }).then(load)}
-                onClear={() => apiClient.clearTeamEventDateAnswerFor(teamId, date.eventId, date.date, member.userId).then(load)}
+                onAnswer={(answer, note) => api.answerTeamEventDateFor(teamId, date.eventId, date.date, member.userId, { answer, ...(note !== undefined && { note }) }).then(load)}
+                onClear={() => api.clearTeamEventDateAnswerFor(teamId, date.eventId, date.date, member.userId).then(load)}
               />
               {member.away && member.note ? <p className="text-xs text-muted-foreground">{member.note}</p> : null}
             </li>
@@ -466,12 +471,13 @@ function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: st
 
 /** The team's "Create sets ahead", in weeks (1 to 52). */
 function SetsAhead({ teamId, onSaved }: { teamId: string; onSaved: () => Promise<void> }) {
+  const { api } = usePlanning();
   const { t } = useTranslation();
   const [weeks, setWeeks] = useState("");
   const [saved, setSaved] = useState(false);
   useEffect(() => {
     // Not over what's been typed meanwhile.
-    void apiClient.getTeamCalendarSettings(teamId).then((settings) => setWeeks((typed) => typed || String(settings.setsAheadWeeks)));
+    void api.getTeamCalendarSettings(teamId).then((settings) => setWeeks((typed) => typed || String(settings.setsAheadWeeks)));
   }, [teamId]);
   const value = Number(weeks);
   const valid = Number.isInteger(value) && value >= 1 && value <= 52;
@@ -481,7 +487,7 @@ function SetsAhead({ teamId, onSaved }: { teamId: string; onSaved: () => Promise
       onSubmit={(event) => {
         event.preventDefault();
         if (!valid) return;
-        void apiClient.updateTeamCalendarSettings(teamId, { setsAheadWeeks: value }).then(async () => {
+        void api.updateTeamCalendarSettings(teamId, { setsAheadWeeks: value }).then(async () => {
           setSaved(true);
           await onSaved();
         });
@@ -537,6 +543,7 @@ function EventDialog({
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
+  const { api } = usePlanning();
   const { t } = useTranslation();
   const [parts, setParts] = useState<EventPart[]>(event?.parts ?? []);
   const planned = event?.planned ?? null;
@@ -586,9 +593,9 @@ function EventDialog({
           ...(event?.rehearsalFor ? { rehearsalFor: null } : {}),
         };
     try {
-      if (event && planned) await apiClient.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody) });
-      else if (event) await apiClient.updateTeamEvent(teamId, event.id, body);
-      else await apiClient.createTeamEvent(teamId, body);
+      if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody) });
+      else if (event) await api.updateTeamEvent(teamId, event.id, body);
+      else await api.createTeamEvent(teamId, body);
       await onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -706,7 +713,7 @@ function EventDialog({
               busy={deleting}
               onConfirm={async () => {
                 setDeleting(true);
-                await apiClient.deleteTeamEvent(teamId, event.id);
+                await api.deleteTeamEvent(teamId, event.id);
                 await onSaved();
               }}
             />
@@ -734,6 +741,7 @@ export function partBody(part: EventPart): EventPart {
 
 /** Answers asked for (issue #235): the dates, from today to eight weeks on, by a deadline a week away. */
 function AskDialog({ teamId, onClose, onAsked }: { teamId: string; onClose: () => void; onAsked: (notified: number) => Promise<void> }) {
+  const { api } = usePlanning();
   const { t } = useTranslation();
   const today = localDate(new Date(), browserZone());
   const [from, setFrom] = useState(today);
@@ -773,7 +781,7 @@ function AskDialog({ teamId, onClose, onAsked }: { teamId: string; onClose: () =
             onClick={() => {
               setBusy(true);
               setError(null);
-              void apiClient
+              void api
                 .askTeamForAnswers(teamId, { from, to, deadline, timeZone: browserZone() })
                 .then((asked) => onAsked(asked.notified))
                 .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { DatePicker } from "#/components/date-picker";
+import { DatePicker } from "@songverse/ui/components/date-picker";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";

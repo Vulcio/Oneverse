@@ -2,7 +2,7 @@ import { ENTITY_COLORS, entityColor, type EntityColor } from "@songverse/core";
 import { Check } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ENTITY_COLOR_CLASSES, EntityAvatar } from "#/components/entity-avatar";
+import { ENTITY_COLOR_CLASSES, EntityAvatar } from "@songverse/ui/components/entity-avatar";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";

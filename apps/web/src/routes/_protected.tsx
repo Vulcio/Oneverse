@@ -6,6 +6,8 @@ import { keepAppDataOffline, loadAppData } from "#/lib/app-data";
 import { useOfflineSync } from "#/lib/offline-data";
 import { createI18n, loadLocale } from "@songverse/app/i18n";
 import { WeekStartContext } from "@songverse/ui/lib/dates";
+import { PlanningProvider } from "@songverse/planning/host";
+import { planningHost } from "#/lib/planning-host";
 
 /**
  * Pathless layout route — gates every route nested under `_protected/` in
@@ -43,9 +45,11 @@ function RouteComponent() {
     <I18nextProvider i18n={i18n}>
       {/* Every calendar's first day of the week (issue #235). */}
       <WeekStartContext.Provider value={session.weekStartsOn}>
-        <AppShell session={session} teams={teams} songbooks={songbooks} setlists={setlists}>
-          <Outlet />
-        </AppShell>
+        <PlanningProvider host={planningHost}>
+          <AppShell session={session} teams={teams} songbooks={songbooks} setlists={setlists}>
+            <Outlet />
+          </AppShell>
+        </PlanningProvider>
       </WeekStartContext.Provider>
     </I18nextProvider>
   );

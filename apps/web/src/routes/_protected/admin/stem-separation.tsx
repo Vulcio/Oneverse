@@ -2,7 +2,7 @@ import type { SaveStemSeparationSettingsRequest, StemSeparationTest } from "@son
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";

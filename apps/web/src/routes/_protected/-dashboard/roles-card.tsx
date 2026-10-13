@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { useInstrumentLabel } from "#/lib/instruments";
+import { useInstrumentLabel } from "@songverse/planning/instruments";
 import { cn } from "@songverse/ui/lib/utils";
 
 function sameSet(a: readonly string[], b: readonly string[]): boolean {

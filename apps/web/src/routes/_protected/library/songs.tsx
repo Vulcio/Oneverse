@@ -11,7 +11,7 @@ import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent } from "@songverse/ui/components/card";
 import { DataTable } from "@songverse/ui/components/data-table";
 import { Input } from "@songverse/ui/components/input";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { LanguageSelect } from "#/components/language-select";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 import { refreshSmartLists, useSmartLists } from "#/lib/smart-lists";

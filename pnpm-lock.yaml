@@ -216,6 +216,9 @@ importers:
       '@songverse/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@songverse/planning':
+        specifier: workspace:*
+        version: link:../../packages/planning
       '@songverse/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -434,6 +437,49 @@ importers:
         specifier: 1.0.0
         version: 1.0.0(@types/node@22.20.2)(@vitest/ui@5.0.1(vitest@5.0.1))(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)(typescript@5.9.3)(yaml@2.9.1)
 
+  packages/planning:
+    dependencies:
+      '@songverse/core':
+        specifier: workspace:*
+        version: link:../core
+      '@songverse/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.46.0
+        version: 1.46.0(react@19.3.0)
+      react-day-picker:
+        specifier: ^9.14.0
+        version: 9.14.0(react@19.3.0)
+      react-i18next:
+        specifier: ^17.0.14
+        version: 17.0.14(i18next@26.4.2(typescript@5.9.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+    devDependencies:
+      '@songverse/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@tanstack/react-router':
+        specifier: ^1.170.36
+        version: 1.170.36(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.3.0(@types/react@19.3.0)
+      i18next:
+        specifier: ^26.4.2
+        version: 26.4.2(typescript@5.9.3)
+      react:
+        specifier: ^19.2.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.3.0(react@19.3.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/secret-crypto:
     devDependencies:
       '@songverse/tsconfig':
@@ -456,6 +502,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.8.0
         version: 1.8.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@songverse/core':
+        specifier: workspace:*
+        version: link:../core
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

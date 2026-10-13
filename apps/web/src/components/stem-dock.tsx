@@ -75,7 +75,7 @@ import {
   type StemSong,
   type StemTrack,
 } from "#/lib/stem-engine";
-import { sizedAvatarUrl } from "#/lib/avatar-url";
+import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
 import { cn } from "@songverse/ui/lib/utils";
 
 const NO_PARTS: Record<string, boolean> = {};

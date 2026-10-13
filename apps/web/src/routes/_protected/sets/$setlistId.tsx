@@ -1,5 +1,5 @@
 import { ApiError, keptSetDetail, onlineOrKept, type SetlistDetail, type SetlistItem, type TeamSummary } from "@songverse/core";
-import { DatePicker } from "#/components/date-picker";
+import { DatePicker } from "@songverse/ui/components/date-picker";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Mic, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";

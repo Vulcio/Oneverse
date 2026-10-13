@@ -1,11 +1,10 @@
 import { CalendarDays, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar } from "@songverse/ui/components/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { fromDayKey, toDayKey } from "@songverse/ui/lib/dates";
-import { formatSetDate } from "#/lib/setlists";
-import { cn } from "@songverse/ui/lib/utils";
+import { Calendar } from "./calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { formatSetDate, fromDayKey, toDayKey } from "../lib/dates";
+import { cn } from "../lib/utils";
 
 /**
  * A date ("YYYY-MM-DD", or "" for none) chosen on the calendar: a button

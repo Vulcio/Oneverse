@@ -125,6 +125,14 @@ client (`createAppApiClient`, one per app), the languages (`i18n`,
 (`AuthCard`, `ResetPasswordCard`, `AuthPage` with the app's name passed
 in). An app keeps its routes; a change to signing in goes there, once.
 
+The planning screens - a team's calendar, line-up, answers, My calendar,
+organisations, groups, positions, their events - live in `packages/planning`
+(`@songverse/planning`), for both apps. They reach the app through
+`PlanningProvider` (`host.tsx`): its API client, its pages' addresses
+(`links`), and its sets (`sets`: Songverse's, null in an app without). Never
+link to a Songverse page from there by its path: add it to the host.
+Generic parts (confirm button, date picker, avatars) are in `packages/ui`.
+
 ## Song content
 
 `SongVersion.documentJson` is a SongDocument v2 (`docs/song-document-v2.md`):

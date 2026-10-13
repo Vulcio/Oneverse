@@ -15,7 +15,7 @@ import { downloadBlob } from "#/lib/download";
 import { CatalogEntriesTable } from "./-catalog-entries-table";
 import { CatalogImportDialog } from "./-catalog-import-dialog";
 import { NativeSelect } from "@songverse/ui/components/native-select";
-import { ConfirmButton } from "#/components/confirm-button";
+import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { SectionsEditor } from "#/components/sections-editor";
 
 export const Route = createFileRoute("/_protected/songbook-catalogs/$catalogId")({
