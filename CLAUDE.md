@@ -123,7 +123,9 @@ What every web app needs to sign people in and reach the API lives in
 client (`createAppApiClient`, one per app), the languages (`i18n`,
 `LocaleProvider`), the auth client, and the signed-out pages' parts
 (`AuthCard`, `ResetPasswordCard`, `AuthPage` with the app's name passed
-in). An app keeps its routes; a change to signing in goes there, once.
+in, invite links' `JoinPage` with `openInviteLink`), and the account's own
+cards (`account-cards`: name and picture, email, passkeys, language). An app
+keeps its routes; a change to signing in or the account goes there, once.
 
 The planning screens - a team's calendar, line-up, answers, My calendar,
 organisations, groups, positions, their events - live in `packages/planning`

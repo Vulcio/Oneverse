@@ -4,7 +4,7 @@ import { ChevronLeft, ExternalLink, ImageUp, Pencil, RefreshCw, Trash2 } from "l
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArtistPicture } from "#/components/artist-picture";
-import { ImageCropDialog } from "#/components/image-crop-dialog";
+import { ImageCropDialog } from "@songverse/ui/components/image-crop-dialog";
 import { SongCover } from "#/components/library-home";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent } from "@songverse/ui/components/card";

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { Label } from "@songverse/ui/components/label";
+import { Button } from "./button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./dialog";
+import { Label } from "./label";
 
 
 function loadImage(url: string): Promise<HTMLImageElement> {

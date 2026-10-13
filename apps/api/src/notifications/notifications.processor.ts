@@ -88,7 +88,7 @@ export class NotificationsProcessor extends WorkerHost {
           open: messages.notifications.email.open.replace("{{app}}", first.app === "planiverse" && job.planiverseUrl ? "Planiverse" : "Songverse"),
           url: `${appUrl(job, first.app)}${path}`,
           why: messages.notifications.email.why,
-          settingsUrl: `${job.webUrl}/account`,
+          settingsUrl: `${appUrl(job, first.app)}/account`,
         });
         emailed += 1;
       }

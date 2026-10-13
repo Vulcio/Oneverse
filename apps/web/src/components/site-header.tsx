@@ -1,6 +1,6 @@
 import { CommandSearch } from "#/components/command-search";
 import { ModeSwitch } from "#/components/mode-switch";
-import { NotificationBell } from "#/components/notification-bell";
+import { NotificationBell } from "@songverse/planning/components/notification-bell";
 import { SidebarTrigger } from "@songverse/ui/components/sidebar";
 import { useMode } from "#/lib/mode";
 import { cn } from "@songverse/ui/lib/utils";

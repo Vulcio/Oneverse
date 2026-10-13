@@ -1,18 +1,17 @@
 import type { AppSession } from "@songverse/app/session";
 import { authClient } from "@songverse/app/auth-client";
 import { Link } from "@tanstack/react-router";
-import { Bell, LogOut, UserRound } from "lucide-react";
+import { HelpCircle, LogOut, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
+import { NotificationBell } from "@songverse/planning/components/notification-bell";
 import { PlaniverseBrand } from "#/components/brand";
-import { songverseUrl } from "#/lib/planning-host";
 
 /** Planiverse's header (issue #241): its name, its pages, and who's signed in. */
 export function AppHeader({ session }: { session: AppSession }) {
-  const { t } = useTranslation();
-  const songverse = songverseUrl();
+  const { t, i18n } = useTranslation();
   const tab = "rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground";
   return (
     <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
@@ -24,10 +23,15 @@ export function AppHeader({ session }: { session: AppSession }) {
           <Link to="/calendar" className={tab} activeProps={{ className: "bg-accent text-accent-foreground" }} data-testid="nav-calendar">
             {t("nav.calendar")}
           </Link>
+          <Link to="/teams" className={tab} activeProps={{ className: "bg-accent text-accent-foreground" }} data-testid="nav-teams">
+            {t("nav.teams")}
+          </Link>
           <Link to="/organizations" className={tab} activeProps={{ className: "bg-accent text-accent-foreground" }} data-testid="nav-organizations">
             {t("nav.organizations")}
           </Link>
         </nav>
+        {/* Its notifications (issue #242): the same as Songverse's bell. */}
+        <NotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label={session.displayName} data-testid="user-menu" />}>
             <EntityAvatar name={session.displayName} color={null} avatarUrl={session.avatarUrl} size={28} />
@@ -38,17 +42,16 @@ export function AppHeader({ session }: { session: AppSession }) {
               <span className="text-xs font-normal text-muted-foreground">{session.email}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link to="/notifications" />} data-testid="nav-notifications">
-              <Bell />
-              {t("notifications.settingsTitle")}
+            <DropdownMenuItem render={<Link to="/account" />} data-testid="nav-account">
+              <UserRound />
+              {t("nav.account")}
             </DropdownMenuItem>
-            {/* One account for both (issue #241): its other settings are Songverse's. */}
-            {songverse ? (
-              <DropdownMenuItem render={<a href={`${songverse}/dashboard#account`} />}>
-                <UserRound />
-                {t("nav.account")}
-              </DropdownMenuItem>
-            ) : null}
+            {/* Its page in the docs (issue #242), in the reader's language. */}
+            <DropdownMenuItem render={<a href={`https://docs.songverse.one${i18n.language.startsWith("fr") ? "/fr" : ""}/planiverse/`} target="_blank" rel="noopener" />}>
+              <HelpCircle />
+              {t("nav.help")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
                 void authClient.signOut().then(() => {

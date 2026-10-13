@@ -53,6 +53,7 @@ const fr: typeof en = {
     joinTeamPrompt: "Connectez-vous ou créez un compte pour accepter cette invitation d'équipe.",
     joinTeamFailed: "Impossible de rejoindre cette équipe",
     goToDashboard: "Aller au tableau de bord",
+    goToCalendar: "Aller à Mon calendrier",
     somethingWentWrong: "Une erreur s'est produite",
     errors: {
       INVALID_EMAIL_OR_PASSWORD: "E-mail ou mot de passe incorrect",

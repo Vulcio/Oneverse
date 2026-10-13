@@ -17,7 +17,7 @@ export function planningHost(): PlanningHost {
     api: apiClient,
     links: {
       home: "/calendar",
-      teams: "/organizations",
+      teams: "/teams",
       organizations: "/organizations",
       team: (teamId) => `/teams/${teamId}`,
       organization: (organizationId) => `/organizations/${organizationId}`,

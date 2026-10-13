@@ -52,6 +52,7 @@ const en = {
     joinTeamPrompt: "Sign in or create an account to accept this team invite.",
     joinTeamFailed: "Couldn't join this team",
     goToDashboard: "Go to dashboard",
+    goToCalendar: "Go to My calendar",
     somethingWentWrong: "Something went wrong",
     // BetterAuth's error codes; any other error shows the server's message.
     errors: {

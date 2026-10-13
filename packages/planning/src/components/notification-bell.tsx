@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { apiClient } from "#/lib/api-client";
+import { usePlanning } from "../host";
 import { cn } from "@songverse/ui/lib/utils";
 
 /** How often the badge asks for the unread count while the page is shown. */
@@ -28,6 +28,7 @@ function ago(iso: string, language: string): string {
  * shown again.
  */
 export function NotificationBell() {
+  const { api, sets } = usePlanning();
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const [unread, setUnread] = useState(0);
@@ -37,8 +38,8 @@ export function NotificationBell() {
 
   const refreshCount = useCallback(() => {
     if (document.visibilityState !== "visible") return;
-    apiClient.getMyUnreadNotifications().then(({ unread: count }) => setUnread(count), () => {});
-  }, []);
+    api.getMyUnreadNotifications().then(({ unread: count }) => setUnread(count), () => {});
+  }, [api]);
 
   useEffect(() => {
     refreshCount();
@@ -52,17 +53,27 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!open) return;
-    void apiClient.listMyNotifications().then((page) => {
+    void api.listMyNotifications().then((page) => {
       setItems(page.items);
       setMore(page.more);
       setUnread(page.unread);
     });
-  }, [open]);
+  }, [open, api]);
+
+  // A path stored with the notification: the same in both apps (issue #241), but a
+  // set's is Songverse's - opened there from Planiverse, My calendar without it.
+  const openLink = (url: string) => {
+    const setlistId = /^\/sets\/([^/?#]+)/.exec(url)?.[1];
+    if (setlistId && !sets) return router.history.push("/calendar");
+    const href = setlistId && sets ? sets.href(setlistId) : url;
+    if (/^https?:\/\//.test(href)) window.location.href = href;
+    else router.history.push(setlistId ? url : href);
+  };
 
   const messages = i18n.getResourceBundle(i18n.language, "translation") as Messages;
 
   const markRead = async (ids?: string[]) => {
-    const { unread: count } = await apiClient.markMyNotificationsRead(ids);
+    const { unread: count } = await api.markMyNotificationsRead(ids);
     setUnread(count);
     setItems((list) => list?.map((item) => (!ids || ids.includes(item.id) ? { ...item, read: true } : item)) ?? null);
   };
@@ -104,8 +115,7 @@ export function NotificationBell() {
                       onClick={() => {
                         if (!item.read) void markRead([item.id]);
                         setOpen(false);
-                        // A path in this app, stored with the notification.
-                        if (item.url) router.history.push(item.url);
+                        if (item.url) openLink(item.url);
                       }}
                     >
                       <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-primary")} />
@@ -126,7 +136,7 @@ export function NotificationBell() {
               size="sm"
               className="w-full rounded-none"
               onClick={() =>
-                void apiClient.listMyNotifications(items?.at(-1)?.id).then((page) => {
+                void api.listMyNotifications(items?.at(-1)?.id).then((page) => {
                   setItems((list) => [...(list ?? []), ...page.items]);
                   setMore(page.more);
                 })

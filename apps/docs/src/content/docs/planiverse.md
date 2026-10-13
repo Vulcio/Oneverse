@@ -9,11 +9,12 @@ Planiverse is Songverse's planning on its own: [My calendar](/teams/#calendar), 
 
 ## Signing in
 
-It's the same account as Songverse's: the same email and password, passkey or Google sign-in, signed in to on Planiverse's own address. Signing up there makes an account that works in both. Its **Account settings** (in the menu under your picture) open Songverse's, where your name, language and passkeys are.
+It's the same account as Songverse's: the same email and password, passkey or Google sign-in, signed in to on Planiverse's own address. Signing up there makes an account that works in both: the email's link brings you back to Planiverse. **Account settings**, in the menu under your picture, changes your name and picture, email, passkeys and language, as in [your account](/account/) in Songverse; **Help** opens this page.
 
 ## What's there
 
 - **My calendar**: the coming dates of all your teams and groups, answered there - Available, If needed, Not available - and your days away.
+- **Teams**: every team and group you're in, those in no organisation too.
 - **Organisations**: the ones you're in, their groups, members and events, as in Songverse (see [Organisations](/organizations/)).
 - A team's or group's page: its calendar, members and positions, and for its admins the same tools as in Songverse - events, answers asked for, the line-up, invite links.
 
@@ -23,4 +24,4 @@ An invite link to an organisation or a group, opened on Planiverse, joins you th
 
 ## Notifications
 
-**Notifications**, in the menu under your picture, chooses how each kind reaches you, and turns them on for the device you're on - as in [your account](/account/). Notifications about a group that only plans, or an event you host, are Planiverse's: their emails open Planiverse, and they go to the devices you turned on in Planiverse (to your others if there are none). The rest are Songverse's.
+The bell beside your picture lists your notifications, as in Songverse. **Account settings** also chooses how each kind reaches you, and turns them on for the device you're on. Notifications about a group that only plans, or an event you host, are Planiverse's: their emails open Planiverse, and they go to the devices you turned on in Planiverse (to your others if there are none). The rest are Songverse's.

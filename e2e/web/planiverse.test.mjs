@@ -4,7 +4,8 @@
 // only plans and a Songverse team, without Songverse's set tools; joining
 // an organisation by its link; signing out.
 import { chromium } from "playwright";
-import { PLANIVERSE, WEB, api, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { LOG, PLANIVERSE, WEB, api, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { readFileSync } from "node:fs";
 
 let page;
 const step = stepper(() => page);
@@ -22,6 +23,8 @@ const service = await api(alice, "POST", `/teams/${music.id}/events`, { title: "
 const { setlistId } = await api(alice, "POST", `/teams/${music.id}/events/${service.id}/dates/${tomorrow}/set`);
 await api(alice, "POST", `/teams/${welcome.id}/events`, { title: "Door welcome", date: tomorrow, startTime: "09:30", timeZone: "UTC" });
 const { token } = await api(alice, "POST", `/organizations/${org.id}/invite-links`, {});
+// Bob, in a group (and so its organisation's member later, by its link): his Teams page lists it.
+sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "updatedAt") values ('tmpv${stamp}', '${welcome.id}', '${bob.id}', 'MEMBER', now(), now())`);
 
 async function signInHere(who) {
   await page.goto(PLANIVERSE);
@@ -79,12 +82,36 @@ try {
     if (!mine.organizations.some((one) => one.id === org.id)) throw new Error("not in the organisation");
   });
 
+  await step("the menu: Teams, every one of theirs; Account settings, here", async () => {
+    await page.getByTestId("nav-teams").click();
+    await page.getByTestId("teams-list").getByText(`Welcome ${stamp}`).waitFor();
+    await page.getByTestId("user-menu").click();
+    await page.getByTestId("nav-account").click();
+    await page.waitForURL(`${PLANIVERSE}/account`);
+    await page.getByLabel("Display name").waitFor();
+    await page.getByTestId("notification-bell").waitFor();
+  });
+
   await step("signs out from the menu", async () => {
     await page.getByTestId("user-menu").click();
     await page.getByTestId("sign-out").click();
     await page.waitForURL(`${PLANIVERSE}/`);
     await page.goto(`${PLANIVERSE}/calendar`);
     await page.waitForURL(`${PLANIVERSE}/`);
+  });
+  await step("signing up here: the email's link comes back to Planiverse", async () => {
+    await page.context().clearCookies();
+    await page.goto(PLANIVERSE);
+    await page.getByRole("tab", { name: "Sign up" }).click();
+    const email = `e2e-planiverse-new-${stamp}@example.com`;
+    await page.fill("#signup-name", "New planner");
+    await page.fill("#signup-email", email);
+    await page.fill("#signup-password", "hunter2pass");
+    await page.getByRole("button", { name: "Create account" }).click();
+    const sent = async () => readFileSync(LOG, "utf8").split("To: ").find((mail) => mail.startsWith(email)) ?? "";
+    for (let i = 0; i < 40 && !(await sent()); i++) await new Promise((resolve) => setTimeout(resolve, 250));
+    const link = /http\S+verify-email\S+/.exec(await sent())?.[0] ?? "";
+    if (!decodeURIComponent(link).includes(`callbackURL=${PLANIVERSE}/calendar`)) throw new Error(`the link: ${link}`);
   });
 } finally {
   await browser.close();

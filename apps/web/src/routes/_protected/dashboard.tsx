@@ -9,7 +9,8 @@ import { apiClient } from "#/lib/api-client";
 import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
 import { initials } from "@songverse/ui/lib/initials";
 import { artistNames } from "#/lib/artists";
-import { ChartDisplayCard, EmailCard, LanguageCard, PasskeysCard, ProfileCard, StorageCard } from "./-dashboard/account-cards";
+import { EmailCard, LanguageCard, PasskeysCard, ProfileCard } from "@songverse/app/components/account-cards";
+import { ChartDisplayCard, StorageCard } from "./-dashboard/account-cards";
 import { NotificationSettingsCard } from "@songverse/planning/components/notification-settings-card";
 import { OwnershipRequestsCard } from "./-dashboard/ownership-requests-card";
 import { RolesCard } from "./-dashboard/roles-card";
@@ -169,12 +170,12 @@ function Dashboard() {
         </div>
         {/* Flowed down two columns, three with room (issue #177), in reading order: a card never split. */}
         <div className="gap-6 lg:columns-2 @7xl:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
-          <ProfileCard profile={profile} />
+          <ProfileCard api={apiClient} profile={profile} />
           <RolesCard profile={profile} customInstruments={customInstruments} />
           <EmailCard email={profile.email} />
           <PasskeysCard />
           <StorageCard storage={storage} />
-          <LanguageCard locale={profile.locale} weekStartsOn={profile.weekStartsOn} />
+          <LanguageCard api={apiClient} locale={profile.locale} weekStartsOn={profile.weekStartsOn} />
           <NotificationSettingsCard />
           <ChartDisplayCard profile={profile} />
         </div>

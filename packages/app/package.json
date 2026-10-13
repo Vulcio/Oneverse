@@ -23,6 +23,7 @@
     "react-i18next": "^17.0.14"
   },
   "peerDependencies": {
+    "@tanstack/react-router": "^1.170.36",
     "@tanstack/react-start": "^1.168.54",
     "i18next": "^26.4.2",
     "react": "^19.2.0",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@songverse/tsconfig": "workspace:*",
+    "@tanstack/react-router": "^1.170.36",
     "@tanstack/react-start": "^1.168.54",
     "@types/node": "^22.10.5",
     "@types/react": "^19.2.0",

@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { ImageIcon, Search, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ImageCropDialog } from "#/components/image-crop-dialog";
+import { ImageCropDialog } from "@songverse/ui/components/image-crop-dialog";
 import { SongCover } from "#/components/library-home";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
