@@ -954,6 +954,42 @@
             }
           ],
           "expected": true
+        },
+        {
+          "name": "a group's position they ticked (issue #241)",
+          "args": [
+            {
+              "instruments": [],
+              "techRoles": [],
+              "positionIds": [
+                "pos_greeter"
+              ]
+            },
+            {
+              "position": "pos_greeter",
+              "count": 2
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "a group's position they didn't",
+          "args": [
+            {
+              "instruments": [
+                "DRUMS"
+              ],
+              "techRoles": [],
+              "positionIds": [
+                "pos_coffee"
+              ]
+            },
+            {
+              "position": "pos_greeter",
+              "count": 1
+            }
+          ],
+          "expected": false
         }
       ]
     },
@@ -1228,6 +1264,7 @@
             {
               "key": "LEAD_VOCALS",
               "part": "LEAD_VOCALS",
+              "position": null,
               "name": null,
               "count": 1,
               "available": 1,
@@ -1238,6 +1275,7 @@
             {
               "key": "BACKING_VOCALS",
               "part": "BACKING_VOCALS",
+              "position": null,
               "name": null,
               "count": 2,
               "available": 1,
@@ -1248,6 +1286,7 @@
             {
               "key": "DRUMS",
               "part": "DRUMS",
+              "position": null,
               "name": null,
               "count": 1,
               "available": 0,
@@ -1258,6 +1297,7 @@
             {
               "key": "SOUND_ENGINEER",
               "part": "SOUND_ENGINEER",
+              "position": null,
               "name": null,
               "count": 1,
               "available": 0,
@@ -1268,6 +1308,7 @@
             {
               "key": "name:slides",
               "part": null,
+              "position": null,
               "name": "Slides",
               "count": 1,
               "available": 1,
@@ -1315,6 +1356,7 @@
             {
               "key": "DRUMS",
               "part": "DRUMS",
+              "position": null,
               "name": null,
               "count": 1,
               "available": 1,
@@ -1325,6 +1367,7 @@
             {
               "key": "BACKING_VOCALS",
               "part": "BACKING_VOCALS",
+              "position": null,
               "name": null,
               "count": 2,
               "available": 1,

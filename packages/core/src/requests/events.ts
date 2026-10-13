@@ -19,16 +19,17 @@ const RepeatSchema = z.strictObject({
 const EventPartSchema = z
   .strictObject({
     part: optional(z.string().trim().min(1).max(64)),
+    position: optional(z.string().trim().min(1).max(64)).describe("One of the group's own positions (issue #241), by its ID"),
     name: optional(z.string().trim().min(1).max(60)),
     count: z.number().int().min(1).max(EVENT_PART_COUNT_MAX),
   })
-  .refine((part) => !!part.part !== !!part.name, "Each part needs either part or name, not both");
+  .refine((part) => !(part.part && (part.position || part.name)) && !!(part.part || part.position || part.name), "Each part needs either part, position or name");
 
 const eventParts = z
   .array(EventPartSchema)
   .max(EVENT_PARTS_LIMIT)
   .refine((parts) => new Set(parts.map((part) => partKey(part))).size === parts.length, "parts must not list the same part twice")
-  .describe("The parts it needs (issue #235): instruments, roles or names, with how many");
+  .describe("The parts it needs (issue #235): instruments, roles, the group's positions or names, with how many");
 
 /** A rehearsal for another of the team's events: that many days before each of its dates. */
 const RehearsalForSchema = z.strictObject({
@@ -133,7 +134,7 @@ export const AssignPartSchema = z
   .strictObject({
     userId: optional(z.string().trim().min(1).max(64)),
     guestName: optional(z.string().trim().min(1).max(80)),
-    part: z.string().trim().min(1).max(80).describe("The part's key: its instrument or role, or name: and its name"),
+    part: z.string().trim().min(1).max(80).describe("The part's key: its instrument or role, position: and a position's ID, or name: and its name"),
   })
   .refine((place) => !!place.userId !== !!place.guestName, "Each place needs either userId or guestName, not both");
 export type AssignPartRequest = z.input<typeof AssignPartSchema>;

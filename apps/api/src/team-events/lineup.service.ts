@@ -83,6 +83,8 @@ export class LineupService {
   /** A part as a notification names it: its instrument or role key, else its own name (a team's, or a custom instrument's). */
   private async partData(event: EventRow, key: string): Promise<Pick<NotificationData, "part" | "partName">> {
     const part = partsOf(event).find((one) => partKey(one) === key);
+    // One of the group's positions (issue #241): by its name.
+    if (part?.position) return { partName: (await this.prisma.client.teamPosition.findUnique({ where: { id: part.position }, select: { name: true } }))?.name ?? "" };
     if (!part?.part) return { partName: part?.name ?? key.replace(/^name:/, "") };
     const custom = await this.prisma.client.customInstrument.findUnique({ where: { id: part.part }, select: { label: true } });
     return custom ? { partName: custom.label } : { part: part.part };
@@ -201,16 +203,16 @@ export class LineupService {
     if (!part) throw new BadRequestException(["That part isn't one this event needs any more"]);
     await this.prisma.client.teamEventAssignment.update({ where: { id: row.id }, data: { swapRequestedAt: new Date(), swapNote: dto.note || null } });
     const [members, answers, away, lineup, me] = await Promise.all([
-      this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }),
+      this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, positionIds: true, user: { select: { instruments: true, techRoles: true } } } }),
       this.prisma.client.teamEventAnswer.findMany({ where: { eventId, date: day(date) }, select: { userId: true, answer: true } }),
       this.prisma.client.userAway.findMany({ where: { user: { teamMemberships: { some: { teamId } } }, from: { lte: day(date) }, to: { gte: day(date) } }, select: { userId: true, from: true, to: true } }),
       this.prisma.client.teamEventAssignment.findMany({ where: { eventId, date: day(date), userId: { not: null } }, select: { userId: true, partKey: true, status: true } }),
       this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
     ]);
-    const answered = members.map(({ userId: member, user }) => {
+    const answered = members.map(({ userId: member, user, positionIds }) => {
       const own = answers.find((answer) => answer.userId === member)?.answer ?? null;
       const ranges = away.filter((range) => range.userId === member).map((range) => ({ from: dateText(range.from), to: dateText(range.to) }));
-      return { userId: member, ...user, answer: effectiveAnswer(own, ranges, date).answer };
+      return { userId: member, ...user, positionIds, answer: effectiveAnswer(own, ranges, date).answer };
     });
     const offered = swapCandidates(part, answered, lineup.map((one) => ({ ...one, userId: one.userId! })), userId);
     const data = { event: this.titleOn(event, date), date, team: event.team.name, by: me?.displayName ?? "", ...(await this.partData(event, row.partKey)) };
@@ -235,8 +237,8 @@ export class LineupService {
     if (!row || !row.swapRequestedAt || row.status === "DECLINED") throw new ConflictException("Someone already took it, or it's no longer offered");
     if (row.userId === userId) throw new BadRequestException(["It's your own place"]);
     const part = partsOf(event).find((one) => partKey(one) === row.partKey);
-    const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { user: { select: { instruments: true, techRoles: true, displayName: true } } } });
-    if (!member || !part || !coversPart(member.user, part)) throw new BadRequestException(["You don't play that part"]);
+    const member = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId } }, select: { positionIds: true, user: { select: { instruments: true, techRoles: true, displayName: true } } } });
+    if (!member || !part || !coversPart({ ...member.user, positionIds: member.positionIds }, part)) throw new BadRequestException(["You don't play that part"]);
     let created;
     try {
       created = await this.prisma.client.$transaction(async (tx) => {

@@ -26,7 +26,7 @@ Les administrateurs de l'équipe voient, à côté de chaque date, combien de me
 
 ### Postes nécessaires
 
-Dans la fenêtre d'un événement, **Postes nécessaires** liste ce dont il a besoin et combien : **Ajouter un poste** choisit un instrument ou un rôle que chacun indique sous **Rôles** sur son tableau de bord (Ingénieur du son, Opérateur média…), un instrument ajouté par un administrateur, un nom déjà utilisé par l'équipe, ou **Un autre nom…** (« Responsable de louange », « Projection »). Un membre couvre les instruments et rôles qu'il a indiqués ; tout le monde couvre un poste nommé par l'équipe.
+Dans la fenêtre d'un événement, **Postes nécessaires** liste ce dont il a besoin et combien : **Ajouter un poste** choisit un instrument ou un rôle que chacun indique sous **Rôles** sur son tableau de bord (Ingénieur du son, Opérateur média…), un instrument ajouté par un administrateur, un nom déjà utilisé par l'équipe, ou **Un autre nom…** (« Responsable de louange », « Projection »). Une équipe qui a ses propres postes liste d'abord les **Postes de ce groupe** (voir [Postes](/fr/organizations/#postes)). Un membre couvre les instruments et rôles qu'il a indiqués, et les postes qu'il a cochés ; tout le monde couvre un poste nommé par l'équipe.
 
 Les administrateurs de l'équipe voient alors, à côté de chaque date à venir, ce qui manque : **Manque : Batterie, Ingénieur du son** nomme les postes pour lesquels pas assez de membres qui les couvrent ont répondu **Disponible**. **Qui peut jouer** commence par les postes : qui couvre chacun et est disponible, qui jouerait si besoin, ou **Personne de disponible pour l'instant**.
 

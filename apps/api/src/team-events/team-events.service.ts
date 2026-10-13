@@ -128,14 +128,20 @@ export class TeamEventsService {
   }
 
   /** Parts that name an instrument or role must be one: built in, or an admin's custom instrument. */
-  private async checkParts(parts: EventPart[] | undefined): Promise<Prisma.InputJsonValue | undefined> {
+  private async checkParts(parts: EventPart[] | undefined, teamId: string): Promise<Prisma.InputJsonValue | undefined> {
     if (!parts) return undefined;
+    // The group's own positions (issue #241): its, not another group's.
+    const positionIds = parts.map((part) => part.position).filter((id): id is string => !!id);
+    const positions = new Map((await this.prisma.client.teamPosition.findMany({ where: { teamId, id: { in: positionIds } }, select: { id: true, name: true } })).map((row) => [row.id, row.name]));
+    const strangers = positionIds.filter((id) => !positions.has(id));
+    if (strangers.length > 0) throw new BadRequestException(strangers.map((id) => `parts: "${id}" isn't one of the team's positions`));
     const keys = parts.map((part) => part.part).filter((key): key is string => !!key);
     const known = new Set<string>([...INSTRUMENTS, ...TECH_ROLES]);
     const custom = new Set((await this.prisma.client.customInstrument.findMany({ where: { id: { in: keys.filter((key) => !known.has(key)) } }, select: { id: true } })).map((row) => row.id));
     const unknown = keys.filter((key) => !known.has(key) && !custom.has(key));
     if (unknown.length > 0) throw new BadRequestException(unknown.map((key) => `parts: "${key}" isn't an instrument or a role`));
-    return parts.map((part) => (part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }));
+    // A position keeps its name beside it, as it's shown (renaming it renames it there too).
+    return parts.map((part) => (part.position ? { position: part.position, name: positions.get(part.position)!, count: part.count } : part.part ? { part: part.part, count: part.count } : { name: part.name, count: part.count }));
   }
 
   async list(teamId: string) {
@@ -169,7 +175,7 @@ export class TeamEventsService {
         note: dto.note || null,
         repeatEveryWeeks: parent ? null : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: !parent && dto.repeat?.until ? day(dto.repeat.until) : null,
-        parts: parent ? undefined : await this.checkParts(dto.parts),
+        parts: parent ? undefined : await this.checkParts(dto.parts, teamId),
         rehearsalForId: parent?.id ?? null,
         daysBefore: parent ? dto.rehearsalFor!.daysBefore : null,
         createdByUserId: userId,
@@ -198,7 +204,7 @@ export class TeamEventsService {
         note: dto.note,
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
-        parts: await this.checkParts(dto.parts),
+        parts: await this.checkParts(dto.parts, teamId),
         ...(dto.rehearsalFor === undefined
           ? {}
           : dto.rehearsalFor === null

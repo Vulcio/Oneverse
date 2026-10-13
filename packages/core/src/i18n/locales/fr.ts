@@ -1020,6 +1020,7 @@ const fr: typeof en = {
     partInstruments: "Instruments",
     partRoles: "Rôles",
     partTeamNames: "De cette équipe",
+    partPositions: "Postes de ce groupe",
     partOther: "Un autre nom…",
     partNamePlaceholder: "Responsable de louange",
     partAdd: "Ajouter",

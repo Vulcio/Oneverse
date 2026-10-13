@@ -204,7 +204,7 @@ function TeamDetail() {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {/* Its services and rehearsals, each date with its set (issue #235). */}
-      <TeamCalendar teamId={team.id} isAdmin={isAdmin} customInstruments={customInstruments} withSets={team.usesSongverse !== false} />
+      <TeamCalendar teamId={team.id} isAdmin={isAdmin} customInstruments={customInstruments} withSets={team.usesSongverse !== false} positions={positions} />
 
       <div className="grid grid-cols-1 items-start gap-6 @6xl:grid-cols-2">
       <Card>

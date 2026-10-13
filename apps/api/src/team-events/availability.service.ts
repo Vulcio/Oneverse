@@ -46,11 +46,14 @@ export class AvailabilityService {
     if (dates.length === 0) return [];
     const from = dates.reduce((min, d) => (d.date < min ? d.date : min), dates[0]!.date);
     const to = dates.reduce((max, d) => (d.date > max ? d.date : max), dates[0]!.date);
-    const memberRows = isAdmin ? await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, user: { select: { instruments: true, techRoles: true } } } }) : [];
+    const memberRows = isAdmin ? await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true, positionIds: true, user: { select: { instruments: true, techRoles: true } } } }) : [];
     // The team's members: anyone else on a line-up is a guest.
     const memberIds = new Set((await this.prisma.client.teamMembership.findMany({ where: { teamId }, select: { userId: true } })).map((m) => m.userId));
     // What the viewer plays: places offered for a swap they could take.
-    const viewer = await this.prisma.client.user.findUnique({ where: { id: viewerId }, select: { instruments: true, techRoles: true } });
+    const viewerUser = await this.prisma.client.user.findUnique({ where: { id: viewerId }, select: { instruments: true, techRoles: true } });
+    // …and the group's positions they cover (issue #241).
+    const viewerMembership = await this.prisma.client.teamMembership.findUnique({ where: { teamId_userId: { teamId, userId: viewerId } }, select: { positionIds: true } });
+    const viewer = viewerUser ? { ...viewerUser, positionIds: viewerMembership?.positionIds ?? [] } : null;
     const members = isAdmin ? memberRows.map((m) => m.userId) : [viewerId];
     const userIds = members.includes(viewerId) ? members : [...members, viewerId];
     const [answers, away, lineupRows] = await Promise.all([
@@ -91,11 +94,11 @@ export class AvailabilityService {
       // A rehearsal takes no answers: nothing to count.
       if (isAdmin && !date.rehearsalFor) {
         counts = { AVAILABLE: 0, IF_NEEDED: 0, UNAVAILABLE: 0, NONE: 0 };
-        const answered = memberRows.map(({ userId, user }) => {
+        const answered = memberRows.map(({ userId, user, positionIds }) => {
           const own = given.find((answer) => answer.userId === userId)?.answer ?? null;
           const shown = effectiveAnswer(own, away.get(userId) ?? [], date.date);
           shownOf.set(userId, shown);
-          return { ...user, answer: shown.answer };
+          return { ...user, positionIds, answer: shown.answer };
         });
         for (const member of answered) counts[member.answer ?? "NONE"]++;
         if (date.parts?.length) coverage = partCoverage(date.parts, answered, placed);
@@ -174,7 +177,7 @@ export class AvailabilityService {
     if (!event || !eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const members = await this.prisma.client.teamMembership.findMany({
       where: { teamId },
-      select: { role: true, user: { select: { id: true, displayName: true, avatarUrl: true, instruments: true, techRoles: true } } },
+      select: { role: true, positionIds: true, user: { select: { id: true, displayName: true, avatarUrl: true, instruments: true, techRoles: true } } },
     });
     const userIds = members.map((m) => m.user.id);
     const [answers, away] = await Promise.all([
@@ -183,7 +186,7 @@ export class AvailabilityService {
     ]);
     const order: (AvailabilityAnswer | null)[] = [...AVAILABILITY_ANSWERS, null];
     return members
-      .map(({ user, role }) => {
+      .map(({ user, role, positionIds }) => {
         const own = answers.find((answer) => answer.userId === user.id);
         const ranges = away.get(user.id) ?? [];
         const shown = effectiveAnswer(own?.answer ?? null, ranges, date);
@@ -193,6 +196,7 @@ export class AvailabilityService {
           avatarUrl: user.avatarUrl,
           instruments: user.instruments,
           techRoles: user.techRoles,
+          positionIds,
           role,
           ...shown,
           note: own?.note ?? (shown.away ? (ranges[0]?.note ?? null) : null),
@@ -234,7 +238,9 @@ export class AvailabilityService {
   async myDates(userId: string, from: string, to: string) {
     if (to < from) throw new BadRequestException(["to must not be before from"]);
     if (daysBetween(from, to) > MAX_RANGE_DAYS) throw new BadRequestException([`to must be at most ${MAX_RANGE_DAYS} days after from`]);
-    const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, role: true, team: { select: { name: true, color: true, avatarUrl: true } } } });
+    const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, role: true, positionIds: true, team: { select: { name: true, color: true, avatarUrl: true } } } });
+    // The positions they cover, team by team (issue #241).
+    const positionsIn = new Map(memberships.map((m) => [m.teamId, m.positionIds]));
     const me = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { instruments: true, techRoles: true } });
     const memberTeams = new Set(memberships.map((m) => m.teamId));
     // A guest's dates too (issue #235, phase 7): the events of other teams they're on a line-up for.
@@ -331,7 +337,7 @@ export class AvailabilityService {
                   note: row.userId === userId ? row.note : null,
                   conflicts: [] as LineupConflict[],
                   swap: offered ? { requestedAt: row.swapRequestedAt!.toISOString(), note: row.swapNote } : null,
-                  canTake: offered && row.userId !== userId && !onIt && !!part && !!me && coversPart(me, part),
+                  canTake: offered && row.userId !== userId && !onIt && !!part && !!me && coversPart({ ...me, positionIds: positionsIn.get(event.teamId) ?? [] }, part),
                 };
               }),
           };

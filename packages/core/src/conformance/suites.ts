@@ -1281,6 +1281,8 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a role they have", args: [{ instruments: [], techRoles: ["SOUND_ENGINEER"] }, { part: "SOUND_ENGINEER", count: 1 }] },
           { name: "one they don't", args: [{ instruments: ["DRUMS"], techRoles: [] }, { part: "BASS_GUITAR", count: 1 }] },
           { name: "a named part: anyone", args: [{ instruments: [], techRoles: [] }, { name: "Worship leader", count: 1 }] },
+          { name: "a group's position they ticked (issue #241)", args: [{ instruments: [], techRoles: [], positionIds: ["pos_greeter"] }, { position: "pos_greeter", count: 2 }] },
+          { name: "a group's position they didn't", args: [{ instruments: ["DRUMS"], techRoles: [], positionIds: ["pos_coffee"] }, { position: "pos_greeter", count: 1 }] },
         ],
       },
       swapCandidates: {

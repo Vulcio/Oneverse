@@ -49,4 +49,6 @@ Faire partie d'un groupe ne vous met pas dans le groupe au-dessus : chaque group
 
 En plus des instruments et rôles que chacun indique pour lui-même, chaque groupe a ses propres **Postes** - « Accueil » et « Café » pour une équipe d'accueil, « Salle » et « Cuisine » pour un planning de ménage. Ses administrateurs les ajoutent sous **Postes** (**Nouveau poste**, puis **Ajouter**) et les retirent avec la croix.
 
-À côté du nom de chaque membre, les postes du groupe s'affichent : cochez ceux que vous assurez en cliquant dessus. Les administrateurs du groupe peuvent les cocher pour n'importe qui ; les autres ne voient que ceux que chacun assure. C'est ce que les événements demanderont.
+À côté du nom de chaque membre, les postes du groupe s'affichent : cochez ceux que vous assurez en cliquant dessus. Les administrateurs du groupe peuvent les cocher pour n'importe qui ; les autres ne voient que ceux que chacun assure.
+
+Un événement du groupe les demande sous **Postes nécessaires** : **Ajouter un poste** liste d'abord les **Postes de ce groupe** (voir [Postes nécessaires](/fr/teams/#postes-nécessaires)). Un poste est couvert par les membres qui l'ont coché, et son nom suit quand il est renommé ; un poste qu'un événement demande encore ne peut pas être retiré.

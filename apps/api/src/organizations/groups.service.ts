@@ -3,6 +3,7 @@ import { slugify } from "@songverse/core";
 import { Prisma } from "@songverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { partsOf } from "../team-events/team-events.service.js";
 import { TeamsService } from "../teams/teams.service.js";
 import type { CreateGroupDto } from "./dto/create-group.dto.js";
 import type { UpdateGroupDto } from "./dto/update-group.dto.js";
@@ -111,12 +112,25 @@ export class GroupsService {
 
   async renamePosition(teamId: string, positionId: string, name: string) {
     await this.position(teamId, positionId);
-    return this.named(() => this.prisma.client.teamPosition.update({ where: { id: positionId }, data: { name }, select: { id: true, name: true } }));
+    const renamed = await this.named(() => this.prisma.client.teamPosition.update({ where: { id: positionId }, data: { name }, select: { id: true, name: true } }));
+    // …and where events ask for it.
+    for (const event of await this.eventsNeeding(teamId, positionId)) {
+      await this.prisma.client.teamEvent.update({ where: { id: event.id }, data: { parts: event.parts.map((part) => (part.position === positionId ? { ...part, name } : part)) as unknown as Prisma.InputJsonValue } });
+    }
+    return renamed;
+  }
+
+  /** The team's events that ask for a position. */
+  private async eventsNeeding(teamId: string, positionId: string) {
+    const events = await this.prisma.client.teamEvent.findMany({ where: { teamId }, select: { id: true, title: true, parts: true } });
+    return events.map((event) => ({ ...event, parts: partsOf(event) })).filter((event) => event.parts.some((part) => part.position === positionId));
   }
 
   /** Gone, and from the members who covered it. */
   async deletePosition(teamId: string, positionId: string) {
     await this.position(teamId, positionId);
+    const needing = await this.eventsNeeding(teamId, positionId);
+    if (needing.length > 0) throw new ConflictException(`${needing.map((event) => event.title).join(", ")} still asks for it: take it out of the event first`);
     await this.prisma.client.$transaction([
       this.prisma.client.$executeRaw`update "TeamMembership" set "positionIds" = array_remove("positionIds", ${positionId}) where "teamId" = ${teamId}`,
       this.prisma.client.teamPosition.delete({ where: { id: positionId } }),

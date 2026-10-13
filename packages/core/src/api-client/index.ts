@@ -929,6 +929,8 @@ export interface MemberEventAnswer {
   avatarUrl: string | null;
   instruments: string[];
   techRoles: string[];
+  /** The group's own positions they cover (issue #241). */
+  positionIds?: string[];
   role: TeamRole;
   answer: AvailabilityAnswer | null;
   away: boolean;

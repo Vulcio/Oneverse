@@ -238,7 +238,7 @@ export function LineupDialog({
             const order = (member: MemberEventAnswer) => ANSWER_ORDER.indexOf(member.away ? "UNAVAILABLE" : member.answer);
             const candidates = members.filter((member) => !on.has(member.userId)).sort((a, b) => order(a) - order(b) || a.displayName.localeCompare(b.displayName));
             const covering = candidates.filter((member) => coversPart(member, part));
-            const others = part.part ? candidates.filter((member) => !coversPart(member, part)) : [];
+            const others = part.part || part.position ? candidates.filter((member) => !coversPart(member, part)) : [];
             const filled = placed.filter((place) => place.status !== "DECLINED").length;
             return (
               <li key={key} className="flex flex-col gap-1.5 py-2.5" data-lineup-part={key}>

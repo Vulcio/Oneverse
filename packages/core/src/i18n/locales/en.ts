@@ -1017,6 +1017,7 @@ const en = {
     partInstruments: "Instruments",
     partRoles: "Roles",
     partTeamNames: "This team's",
+    partPositions: "This group's positions",
     partOther: "Another name…",
     partNamePlaceholder: "Worship leader",
     partAdd: "Add",

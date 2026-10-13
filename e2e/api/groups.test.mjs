@@ -87,6 +87,24 @@ r = await call(alice, "DELETE", `/teams/${welcome.id}/positions/${greeter.id}`);
 const members = (await call(alice, "GET", `/teams/${welcome.id}/members`)).body;
 check("deleted: gone from who covered it", r.status === 204 && members.find((m) => m.userId === bob.id)?.positionIds.join() === coffee.id, JSON.stringify(members.map((m) => m.positionIds)));
 
+// --- a position as a part an event needs
+r = await call(alice, "PATCH", `/teams/${welcome.id}/events/${event.id}`, { parts: [{ position: musicPosition.id, count: 1 }] });
+check("another group's position as a part: refused", r.status === 400, JSON.stringify(r.body));
+r = await call(alice, "PATCH", `/teams/${welcome.id}/events/${event.id}`, { parts: [{ position: coffee.id, count: 2 }, { name: "Door", count: 1 }] });
+check("the group's position as a part: kept with its name", r.status === 200 && r.body.parts[0].position === coffee.id && r.body.parts[0].name === "Tea and coffee", JSON.stringify(r.body.parts));
+await call(bob, "PUT", `/teams/${welcome.id}/events/${event.id}/dates/${date}/answer`, { answer: "AVAILABLE" });
+await call(alice, "PUT", `/teams/${welcome.id}/events/${event.id}/dates/${date}/answer`, { answer: "AVAILABLE" });
+let coverage = (await call(alice, "GET", `/teams/${welcome.id}/event-dates?from=${date}&to=${date}`)).body[0].coverage;
+let covered = coverage.find((part) => part.key === `position:${coffee.id}`);
+check("covered by who ticked it, not everyone available", covered?.available === 1 && covered.missing === 1 && covered.name === "Tea and coffee", JSON.stringify(coverage));
+await call(alice, "PATCH", `/teams/${welcome.id}/positions/${coffee.id}`, { name: "Coffee" });
+covered = (await call(alice, "GET", `/teams/${welcome.id}/event-dates?from=${date}&to=${date}`)).body[0].coverage.find((part) => part.key === `position:${coffee.id}`);
+check("renamed: the event's part too", covered?.name === "Coffee", JSON.stringify(covered));
+r = await call(alice, "DELETE", `/teams/${welcome.id}/positions/${coffee.id}`);
+check("a position an event asks for isn't deleted", r.status === 409 && String(r.body.message).includes("Sunday welcome"), JSON.stringify(r.body));
+r = await call(alice, "POST", `/teams/${welcome.id}/events/${event.id}/dates/${date}/lineup`, { userId: bob.id, part: `position:${coffee.id}` });
+check("scheduled on it: told, by its name", r.status === 201 && (await call(bob, "GET", "/users/me/notifications?limit=20")).body.items.some((n) => n.kind === "SCHEDULED" && n.data.partName === "Coffee"), JSON.stringify(r.body));
+
 // --- out of the organisation
 await call(alice, "PATCH", `/teams/${choir.id}/group`, { parentId: music.id });
 r = await call(alice, "DELETE", `/organizations/${org.id}/teams/${music.id}`);

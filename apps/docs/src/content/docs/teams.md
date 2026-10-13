@@ -26,7 +26,7 @@ The team's admins see, beside each date, how many members are available, if need
 
 ### Parts needed
 
-In an event's dialog, **Parts needed** lists what it needs and how many: **Add a part** picks an instrument or a role people list under **Roles** on their dashboard (Sound engineer, Media operator…), one an admin added, a name the team used before, or **Another name…** ("Worship leader", "Slides"). A member covers the instruments and roles they listed; anyone covers a part with a name of the team's own.
+In an event's dialog, **Parts needed** lists what it needs and how many: **Add a part** picks an instrument or a role people list under **Roles** on their dashboard (Sound engineer, Media operator…), one an admin added, a name the team used before, or **Another name…** ("Worship leader", "Slides"). A team with positions of its own lists **This group's positions** first (see [Positions](/organizations/#positions)). A member covers the instruments and roles they listed, and the positions they ticked; anyone covers a part with a name of the team's own.
 
 The team's admins then see, beside each coming date, what's short: **Short: Drums, Sound engineer** names the parts that not enough members who cover them have answered **Available**. **Who can play** starts with the parts: who covers each and is available, who would play if needed, or **No one available yet**.
 

@@ -49,4 +49,6 @@ Being in a group doesn't put you in the group above it: each group has its own m
 
 Besides the instruments and roles people list for themselves, each group has **Positions** of its own - "Greeter" and "Coffee" for a welcome team, "Hall" and "Kitchen" for a cleaning rota. Its admins add them under **Positions** (**New position**, then **Add**) and remove them with the cross.
 
-Beside each member's name, the group's positions show: tick the ones you cover by clicking them. The group's admins can tick them for anyone; others see only the ones each member covers. They're what events will ask for.
+Beside each member's name, the group's positions show: tick the ones you cover by clicking them. The group's admins can tick them for anyone; others see only the ones each member covers.
+
+An event of the group asks for them under **Parts needed**: **Add a part** lists **This group's positions** first (see [Parts needed](/teams/#parts-needed)). A position is covered by the members who ticked it, and its name follows when it's renamed; a position an event still asks for can't be removed.

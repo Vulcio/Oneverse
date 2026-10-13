@@ -1,4 +1,4 @@
-import { addDays, coversPart, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary } from "@songverse/core";
+import { addDays, coversPart, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamPosition } from "@songverse/core";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, CalendarPlus, CircleCheck, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -38,10 +38,13 @@ export function TeamCalendar({
   isAdmin,
   customInstruments = [],
   withSets = true,
+  positions = [],
 }: {
   teamId: string;
   isAdmin: boolean;
   customInstruments?: readonly CustomInstrument[];
+  /** The group's own positions (issue #241), parts its events can ask for. */
+  positions?: readonly TeamPosition[];
   /** False for a group that only plans (issue #241): its dates have no set. */
   withSets?: boolean;
 }) {
@@ -361,7 +364,8 @@ export function TeamCalendar({
           teamId={teamId}
           event={editing === "new" ? null : editing}
           teamEvents={events}
-          teamNames={[...new Set(events.flatMap((one) => one.parts.filter((part) => !part.part && part.name).map((part) => part.name!)))]}
+          teamNames={[...new Set(events.flatMap((one) => one.parts.filter((part) => !part.part && !part.position && part.name).map((part) => part.name!)))]}
+          positions={positions}
           customInstruments={customInstruments}
           partLabel={partLabel}
           onClose={() => setEditing(null)}
@@ -510,6 +514,7 @@ function EventDialog({
   event,
   teamEvents,
   teamNames,
+  positions,
   customInstruments,
   partLabel,
   onClose,
@@ -520,6 +525,7 @@ function EventDialog({
   /** The team's events, a rehearsal's possible event. */
   teamEvents: TeamEvent[];
   teamNames: string[];
+  positions: readonly TeamPosition[];
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
   onClose: () => void;
@@ -670,7 +676,7 @@ function EventDialog({
             <Label htmlFor="event-note">{t("teamCalendar.note")}</Label>
             <Textarea id="event-note" value={note} maxLength={1000} rows={2} onChange={(e) => setNote(e.target.value)} />
           </div>
-          {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} customInstruments={customInstruments} partLabel={partLabel} />}
+          {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} />}
         </form>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
@@ -771,12 +777,14 @@ function PartsEditor({
   parts,
   onChange,
   teamNames,
+  positions,
   customInstruments,
   partLabel,
 }: {
   parts: EventPart[];
   onChange: (parts: EventPart[]) => void;
   teamNames: string[];
+  positions: readonly TeamPosition[];
   customInstruments: readonly CustomInstrument[];
   partLabel: (part: EventPart) => string;
 }) {
@@ -828,11 +836,24 @@ function PartsEditor({
             const value = e.target.value;
             if (value === "__other") setNaming("");
             else if (value.startsWith("name:")) add({ name: value.slice(5), count: 1 });
+            else if (value.startsWith("position:")) add({ position: value.slice(9), name: positions.find((one) => `position:${one.id}` === value)?.name, count: 1 });
             else if (value) add({ part: value, count: 1 });
           }}
           data-testid="event-part-add"
         >
           <option value="">{t("teamCalendar.addPart")}</option>
+          {/* The group's own positions first (issue #241): what it's mostly about. */}
+          {positions.some((one) => !taken.has(`position:${one.id}`)) ? (
+            <optgroup label={t("teamCalendar.partPositions")}>
+              {positions
+                .filter((one) => !taken.has(`position:${one.id}`))
+                .map((one) => (
+                  <option key={one.id} value={`position:${one.id}`}>
+                    {one.name}
+                  </option>
+                ))}
+            </optgroup>
+          ) : null}
           <optgroup label={t("teamCalendar.partInstruments")}>
             {instruments.map((choice) => (
               <option key={choice.key} value={choice.key}>

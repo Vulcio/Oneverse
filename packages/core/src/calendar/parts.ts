@@ -9,7 +9,9 @@ import type { AvailabilityAnswer } from "./index.js";
 export interface EventPart {
   /** An instrument or role key, or a custom instrument's ID; null for a named part. */
   part?: string | null;
-  /** A part's own name, when it isn't one of those. */
+  /** One of the group's own positions (issue #241: "Greeter"), by its ID. */
+  position?: string | null;
+  /** A part's own name, when it isn't one of those; a position's, as it's shown. */
   name?: string | null;
   count: number;
 }
@@ -22,16 +24,20 @@ export const EVENT_PART_COUNT_MAX = 20;
 export interface PartMember {
   instruments: string[];
   techRoles: string[];
+  /** The group's own positions they cover (issue #241). */
+  positionIds?: string[];
 }
 
-/** Whether a member covers a part: they listed its instrument or role. A named part, anyone. */
+/** Whether a member covers a part: they listed its instrument or role, or ticked the group's position. A named part, anyone. */
 export function coversPart(member: PartMember, part: EventPart): boolean {
+  if (part.position) return (member.positionIds ?? []).includes(part.position);
   if (!part.part) return true;
   return member.instruments.includes(part.part) || member.techRoles.includes(part.part);
 }
 
-/** A part's stable key: its instrument or role, else "name:" and its name in lower case. */
+/** A part's stable key: its instrument or role, "position:" and a position's ID, else "name:" and its name in lower case. */
 export function partKey(part: EventPart): string {
+  if (part.position) return `position:${part.position}`;
   return part.part ? part.part : `name:${(part.name ?? "").trim().toLowerCase()}`;
 }
 
@@ -70,6 +76,8 @@ export function swapCandidates(
 export interface PartCoverage {
   key: string;
   part: string | null;
+  /** One of the group's positions (issue #241). */
+  position: string | null;
   name: string | null;
   count: number;
   /** Members covering it who answered Available, If needed. */
@@ -97,6 +105,6 @@ export function partCoverage(parts: EventPart[], members: (PartMember & { answer
     const ifNeeded = covering.filter((member) => member.answer === "IF_NEEDED").length;
     const scheduled = live.filter((one) => one.partKey === key).length;
     const filled = live.length > 0 ? scheduled : available;
-    return { key, part: part.part ?? null, name: part.part ? null : (part.name ?? null), count: part.count, available, ifNeeded, scheduled, missing: Math.max(0, part.count - filled) };
+    return { key, part: part.part ?? null, position: part.position ?? null, name: part.part ? null : (part.name ?? null), count: part.count, available, ifNeeded, scheduled, missing: Math.max(0, part.count - filled) };
   });
 }

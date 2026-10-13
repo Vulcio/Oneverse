@@ -1,8 +1,8 @@
 // An organisation's groups in the browser (issue #241): its admin makes a
 // group that only plans from the organisation's page, gives it positions
-// and ticks the one they cover, puts it under the music team; the
-// organisation's page shows it under it, and Songverse's sidebar doesn't
-// list it among the teams.
+// and ticks the one they cover, has an event ask for one, puts it under the
+// music team; the organisation's page shows it under it, and Songverse's
+// sidebar doesn't list it among the teams.
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -42,6 +42,19 @@ try {
     const mine = page.locator(`[data-member-positions="${alice.id}"]`);
     await mine.getByRole("button", { name: "Greeter" }).click();
     await mine.locator('button[aria-pressed="true"]', { hasText: "Greeter" }).waitFor();
+  });
+
+  await step("…an event of the group asks for two greeters", async () => {
+    await page.getByTestId("calendar-new-event").click();
+    const dialog = page.getByTestId("event-dialog");
+    await dialog.getByLabel("Title").fill("Sunday welcome");
+    await dialog.getByTestId("event-part-add").selectOption({ label: "Greeter" });
+    const part = dialog.locator('[data-part^="position:"]');
+    await part.getByRole("spinbutton").fill("2");
+    await dialog.getByRole("button", { name: "Save event" }).click();
+    await dialog.waitFor({ state: "hidden" });
+    // Alice ticked Greeter but hasn't answered yet: two short.
+    await page.getByTestId("calendar-short").first().getByText("Greeter ×2").waitFor();
   });
 
   await step("…and puts it under the music team", async () => {
