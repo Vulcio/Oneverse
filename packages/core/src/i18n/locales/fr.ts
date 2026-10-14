@@ -2506,6 +2506,10 @@ const fr: typeof en = {
     moveToEnd: "À la fin de la ligne",
   },
   structuredEditor: {
+    replace: "Remplacer depuis un fichier ou un collage…",
+    replaceTitle: "Remplacer la grille",
+    replaceDescription: "Envoyez un fichier, ou collez les paroles et les accords. Ce qui ne change pas garde sa place : les copies liées, les versions et les sections des enregistrements le suivent.",
+    replaceConfirm: "Remplacer la grille",
     barHint: "Touchez un accord pour l'ajouter au curseur",
     barReplace: "Touchez un accord pour le mettre à la place de {{chord}}",
     addHere: "Ajouter une section ici",

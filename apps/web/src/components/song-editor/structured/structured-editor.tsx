@@ -19,7 +19,7 @@ import { UndoRedo } from "@tiptap/extensions";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { NodeSelection, type EditorState } from "@tiptap/pm/state";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
-import { ChevronLeft, ChevronRight, Minus, Plus, Redo2, StickyNote, Trash2, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileUp, Minus, Plus, Redo2, StickyNote, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
@@ -81,6 +81,7 @@ export function StructuredEditor({
   onSongKeyChange,
   facts,
   onFactChange,
+  onReplaceChart,
   readOnly,
 }: {
   sections: SectionV2[];
@@ -91,6 +92,8 @@ export function StructuredEditor({
   onSongKeyChange: (key: string) => void;
   facts: SongFacts;
   onFactChange: (field: keyof SongFacts, value: string) => void;
+  /** Opens "Replace from a file or paste…" (issue #254). */
+  onReplaceChart?: () => void;
   readOnly: boolean;
 }) {
   const { t } = useTranslation();
@@ -269,7 +272,7 @@ export function StructuredEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <Toolbar editor={editor} mode={mode} onModeChange={setMode} songKey={songKey} onSongKeyChange={onSongKeyChange} facts={facts} onFactChange={onFactChange} />
+      <Toolbar editor={editor} mode={mode} onModeChange={setMode} songKey={songKey} onSongKeyChange={onSongKeyChange} facts={facts} onFactChange={onFactChange} onReplaceChart={onReplaceChart} />
       {/* In every mode, so switching modes moves nothing (issue #248). */}
       {sections.length > 0 ? (
         <SongOrder sections={sections} flow={flow} onChange={onFlowChange} songKey={songKey} selected={selectedPass} onSelect={choosePass} onDuplicateUnique={duplicateUnique} />
@@ -369,6 +372,7 @@ function Toolbar({
   onSongKeyChange,
   facts,
   onFactChange,
+  onReplaceChart,
 }: {
   editor: Editor | null;
   mode: EditorMode;
@@ -377,6 +381,7 @@ function Toolbar({
   onSongKeyChange: (key: string) => void;
   facts: SongFacts;
   onFactChange: (field: keyof SongFacts, value: string) => void;
+  onReplaceChart?: () => void;
 }) {
   const { t } = useTranslation();
   const can = useEditorState({
@@ -430,6 +435,11 @@ function Toolbar({
         <ToolButton label={t("structuredEditor.noteLine")} disabled={!visual} onClick={() => editor && toggleNoteLine(editor.view)}>
           <StickyNote />
         </ToolButton>
+        {onReplaceChart ? (
+          <ToolButton label={t("structuredEditor.replace")} onClick={onReplaceChart} testId="editor-replace">
+            <FileUp />
+          </ToolButton>
+        ) : null}
       </div>
       <div className="flex shrink-0 flex-nowrap items-center gap-1.5 md:flex-wrap">
         <Fact label={t("structuredEditor.key")}>

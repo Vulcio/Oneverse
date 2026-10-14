@@ -2503,6 +2503,10 @@ const en = {
     moveToEnd: "At the end of the line",
   },
   structuredEditor: {
+    replace: "Replace from a file or paste…",
+    replaceTitle: "Replace the chart",
+    replaceDescription: "Upload a file, or paste the words and chords. What stays the same keeps its place: linked copies, versions and recordings' sections follow it.",
+    replaceConfirm: "Replace the chart",
     barHint: "Tap a chord to add it at the cursor",
     barReplace: "Tap a chord to put it in place of {{chord}}",
     addHere: "Add a section here",

@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/componen
 import { apiClient } from "#/lib/api-client";
 import { attachmentTypeFor, isPdf } from "./attachment-types";
 import { RepeatsCard } from "./repeats-card";
+import { ReplaceChartDialog } from "./replace-chart-dialog";
 import { SongContentCard, type SourceFile } from "./song-content";
 import {
   emptyForm,
@@ -124,6 +125,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [mbChoice, setMbChoice] = useState<MetadataMatch | null | undefined>(undefined);
   const [sourceFile, setSourceFile] = useState<SourceFile | null>(null);
+  const [replacing, setReplacing] = useState(false);
   const [basedOn, setBasedOn] = useState<BasedOn | null>(props.mode === "create" && props.linkTo ? { ...props.linkTo, copied: false } : null);
   const [matches, setMatches] = useState<SongMatch[]>([]);
   const [dismissedTitle, setDismissedTitle] = useState<string | null>(null);
@@ -450,7 +452,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       </fieldset>
       <div className="flex min-w-0 flex-col gap-6">
         {edit ? <ArtworkCard version={edit.version} canEdit={canEdit} /> : null}
-        {canChangeChart ? (
+        {/* For a new song; a song that exists has its chart replaced from the Editor (issue #254). */}
+        {canChangeChart && !edit ? (
           <fieldset disabled={saving} className="min-w-0">
             <Card>
               <CardHeader>
@@ -673,6 +676,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                 songKey={form.key}
                 onSongKeyChange={(key) => setField("key", key)}
                 facts={{ tempo: form.tempo, timeSignature: form.timeSignature, capo: form.capo }}
+                onReplaceChart={() => setReplacing(true)}
                 onFactChange={(field, value) => setField(field, value)}
                 readOnly={!canChangeChart}
               />
@@ -701,6 +705,15 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           </Button>
         </div>
       ) : null}
+
+      <ReplaceChartDialog
+        open={replacing}
+        onOpenChange={setReplacing}
+        onReplace={(content, format, file) => {
+          updateForm((current) => withContent(current, content, format));
+          if (file) setSourceFile(file);
+        }}
+      />
 
       <Dialog open={suggestOpen} onOpenChange={(open) => !saving && setSuggestOpen(open)}>
         <DialogContent>

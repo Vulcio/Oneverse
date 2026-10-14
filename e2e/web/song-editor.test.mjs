@@ -183,9 +183,25 @@ await step("the song opens in the same editor, filled in", async () => {
   if ((await page.inputValue("#song-title")) !== TITLE) throw new Error("title");
   await page.getByRole("button", { name: "Remove Louie Giglio" }).waitFor();
   await page.getByTestId("details-summary").getByText("Key D", { exact: true }).waitFor();
-  if (!(await page.inputValue("#song-content")).includes("Amazing love")) throw new Error("content");
+  // Its chart is in the Editor; Song info's Song content is for a new song (issue #254).
+  if (await page.locator("#song-content").count()) throw new Error("Song content shown for a song that exists");
   await page.getByRole("tab", { name: /Files/ }).getByText("1").waitFor();
   await page.screenshot({ path: `${SP}/editor-edit.png`, fullPage: true });
+  await page.getByRole("tab", { name: "Editor" }).click();
+  await page.getByTestId("structured-editor").getByText("Amazing love").waitFor();
+});
+
+await step("the chart replaced from the Editor, pasted in", async () => {
+  await page.getByTestId("editor-replace").click();
+  const dialog = page.getByTestId("replace-chart");
+  await dialog.locator("#song-content").fill("{start_of_chorus}\n[G]Bless the [C]Lord, O my soul\n{end_of_chorus}\n");
+  await dialog.getByText(/Detected: ChordPro/).waitFor();
+  await page.getByTestId("replace-chart-confirm").click();
+  // Its words, around the chords pinned in them.
+  await page.getByTestId("structured-editor").getByText(/Lord, O my soul/).waitFor();
+  await page.getByRole("button", { name: "Discard changes" }).click();
+  await page.getByTestId("structured-editor").getByText("Amazing love").waitFor();
+  await page.getByRole("tab", { name: "Song info" }).click();
 });
 
 await step("editing: remove an artist, save", async () => {

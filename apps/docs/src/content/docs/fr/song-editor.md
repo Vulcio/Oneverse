@@ -84,6 +84,10 @@ Un chant écrit avant garde ses sections en double. Au-dessus de l'éditeur, ses
 
 Collez une grille entière n'importe où - en ChordPro, ou avec les accords écrits au-dessus des paroles - et elle devient des sections avec les accords en place. Coller de simples paroles les tape, tout simplement. Un nom de section seul sur sa ligne (« Strophe 1 », « [Refrain] », « Pont », « Chorus », « Coro ») commence une section de ce type, en français, anglais, espagnol, allemand, italien ou portugais.
 
+## Remplacer la grille
+
+**Remplacer depuis un fichier ou un collage…**, dans la barre d'outils, lit une nouvelle grille pour tout le chant : envoyez un fichier (`.cho`, `.txt` ou `.pdf`) ou collez les paroles et les accords, puis **Remplacer la grille**. Ce qui ne change pas garde sa place - les copies liées, les [versions](/fr/versions/) et les sections des enregistrements le suivent - et **Annuler les modifications** remet l'ancienne grille tant que vous n'avez pas enregistré. (Un nouveau chant reçoit sa grille dans l'onglet **Infos**.)
+
 ## Enregistrer
 
 **Enregistrer le chant** enregistre la grille et les détails du chant ensemble. Si quelqu'un d'autre a enregistré le chant après que vous l'avez ouvert, Songverse vous le dit au lieu d'écraser ses modifications.

@@ -84,6 +84,10 @@ A song written before keeps its sections twice. Above the editor, its editors se
 
 Paste a whole chart anywhere - ChordPro, or chords written above the lyrics - and it's turned into sections with chords in place. Pasting plain words just types them. Section names on a line of their own ("Verse 1", "[Chorus]", "Refrain", "Pont", "Coro") start a section of that kind, in English, French, Spanish, German, Italian or Portuguese.
 
+## Replacing the chart
+
+The toolbar's **Replace from a file or paste…** reads a new chart in for the whole song: upload a file (`.cho`, `.txt` or `.pdf`) or paste the words and chords, then **Replace the chart**. What stays the same keeps its place - linked copies, [versions](/versions/) and recordings' sections follow it - and **Discard changes** puts the old chart back until you save. (A new song gets its chart on **Song info** instead.)
+
 ## Saving
 
 **Save song** saves the chart and the song's details together. If someone else saved the song after you opened it, Songverse tells you instead of overwriting their changes.
