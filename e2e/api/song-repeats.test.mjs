@@ -3,8 +3,9 @@
 // with a chord of its own, its end. Its editors see them and link them:
 // each becomes a pass of the chorus, its label kept; arrangements and
 // recordings' cue points follow; the song's history keeps the change.
-// A file imported now gets them linked straight away.
-import { API, stamp, check, user, call, api, finish } from "../lib/harness.mjs";
+// A file imported now gets them linked straight away. An admin links the
+// same and transposed ones across the library, from Background jobs.
+import { API, stamp, sql, check, user, call, api, finish } from "../lib/harness.mjs";
 
 const owner = await user("repeats owner");
 const other = await user("repeats other");
@@ -83,5 +84,28 @@ const imported = await api(owner, "POST", "/song-versions", {
 });
 const importedDoc = (await api(owner, "GET", `/song-versions/${imported.id}`)).documentJson;
 check("imported: the chorus a tone up is a pass of the first", importedDoc.sections.length === 1 && importedDoc.flow[1]?.transpose === 2, JSON.stringify(importedDoc.flow));
+
+// --- across the library: the same and transposed linked, the rest left to the song's editors
+const library = await api(owner, "POST", "/song-versions", { title: `Library ${stamp}`, language: "en", artists: ["Band"], key: "G" });
+const again = [chorus(`l1${stamp}`, ["G", "D", "Em", "C", "G", "D"]), chorus(`l2${stamp}`, ["G", "D", "Em", "C", "G", "D"]), chorus(`l3${stamp}`, ["G", "D", "Em", "Am", "G", "D"])];
+await api(owner, "PATCH", `/song-versions/${library.id}`, { sections: again, flow: again.map((s, i) => ({ id: `lf${i}${stamp}`, sectionId: s.id })) });
+r = await call(owner, "POST", "/admin/repeats/backfill", { apply: true });
+check("only global admins run it", r.status === 403, String(r.status));
+sql(`update "User" set "isGlobalAdmin"=true where id='${owner.id}'`);
+r = await call(owner, "POST", "/admin/repeats/backfill", {});
+check("counted first, without changing anything", r.status === 201 && r.body.queued, JSON.stringify(r.body));
+const until = async (test) => {
+  for (let i = 0; i < 100; i++) {
+    if (await test()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  return false;
+};
+const counted = await until(async () => (await api(owner, "GET", "/admin/jobs")).recent.some((job) => job.name === "repeats-backfill" && job.result?.songs >= 1));
+check("…its count among the jobs done", counted && (await api(owner, "GET", `/song-versions/${library.id}`)).documentJson.sections.length === 3);
+await until(async () => (await call(owner, "POST", "/admin/repeats/backfill", { apply: true })).body.queued);
+const linkedAll = await until(async () => (await api(owner, "GET", `/song-versions/${library.id}`)).documentJson.sections.length === 2);
+const left = (await api(owner, "GET", `/song-versions/${library.id}/repeats`)).repeats;
+check("linked: the same one; the one with a chord of its own left for its editors", linkedAll && left.length === 1 && left[0].kind === "chords", JSON.stringify(left));
 
 finish();

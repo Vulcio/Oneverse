@@ -55,7 +55,7 @@ import type {
   UpdateUserByAdminSchema,
 } from "../requests/index.js";
 import type { CreateSongbookRequest, UpdateSongbookRequest } from "../requests/songbooks.js";
-import type { CreateSongVersionRequest, LinkRepeatsRequest, SongSort, UpdateSongVersionRequest } from "../requests/songs.js";
+import type { CreateSongVersionRequest, LinkRepeatsRequest, RepeatsBackfillRequest, SongSort, UpdateSongVersionRequest } from "../requests/songs.js";
 import type { SongChange, SongSnapshot } from "../song-history/index.js";
 
 export interface ApiClientOptions {
@@ -2266,6 +2266,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     },
     /** Starts finding artwork for songs without one, as a background job (issue #92); false when one is already waiting or running. */
     backfillArtwork: () => request<{ queued: boolean; jobId: string | null }>("/admin/artwork/backfill", { method: "POST" }),
+    backfillRepeats: (data: RepeatsBackfillRequest) => request<{ queued: boolean; jobId: string | null }>("/admin/repeats/backfill", { method: "POST", body: JSON.stringify(data) }),
     /** Who runs background jobs, each queue's counts and the last jobs (issue #92). */
     getJobsStatus: () => request<JobsStatus>("/admin/jobs"),
     /** Clears the failed jobs, once their errors have been read (issue #93). */

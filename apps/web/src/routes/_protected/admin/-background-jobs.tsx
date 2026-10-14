@@ -53,6 +53,8 @@ export function BackgroundJobsCard() {
         return t("artwork.backfilled", result ?? { tried: 0, found: 0 }) + notLookedUp;
       case "artist-backfill":
         return t("artistSettings.backfilled", result ?? { tried: 0, found: 0 }) + notLookedUp;
+      case "repeats-backfill":
+        return t("jobs.repeatsDone", { songs: 0, same: 0, transposed: 0, chords: 0, lines: 0, linked: 0, ...result });
       case "artwork": {
         // Issue #93's outcome; before it, a found flag.
         const said = (result?.outcome as string | undefined) ?? (result?.found ? "found" : "nomatch");
@@ -194,6 +196,45 @@ export function BackgroundJobsCard() {
                   </li>
                 ))}
               </ul>
+            </div>
+            {/* The library's repeated sections (issue #231): counted, or the same and transposed ones linked. */}
+            <div className="flex flex-col gap-2" data-testid="jobs-repeats">
+              <p className="text-sm font-medium">{t("jobs.job_repeats-backfill")}</p>
+              <p className="text-xs text-muted-foreground">{t("jobs.repeatsHint")}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    void apiClient.backfillRepeats({}).then(
+                      () => {
+                        setCleared(t("jobs.runQueued", { name: t("jobs.job_repeats-backfill") }));
+                        load();
+                      },
+                      (err: unknown) => setError(err instanceof Error ? err.message : String(err)),
+                    )
+                  }
+                  data-testid="repeats-count"
+                >
+                  {t("jobs.repeatsCount")}
+                </Button>
+                <ConfirmButton
+                  label={t("jobs.repeatsLink")}
+                  confirmLabel={t("jobs.repeatsLinkConfirm")}
+                  busyLabel={t("jobs.repeatsLink")}
+                  cancelLabel={t("admin.cancel")}
+                  busy={false}
+                  onConfirm={() =>
+                    apiClient.backfillRepeats({ apply: true }).then(
+                      () => {
+                        setCleared(t("jobs.runQueued", { name: t("jobs.job_repeats-backfill") }));
+                        load();
+                      },
+                      (err: unknown) => setError(err instanceof Error ? err.message : String(err)),
+                    )
+                  }
+                />
+              </div>
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium">{t("jobs.recent")}</p>

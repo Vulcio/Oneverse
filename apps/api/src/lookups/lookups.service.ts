@@ -47,10 +47,10 @@ export class LookupsService implements OnApplicationBootstrap {
   }
 
   /** A backfill, unless one is already waiting or running: that one's ID then. */
-  async backfill(name: "artwork-backfill" | "artist-backfill" | "lyrics-backfill"): Promise<{ queued: boolean; jobId: string | null }> {
+  async backfill(name: "artwork-backfill" | "artist-backfill" | "lyrics-backfill" | "repeats-backfill", data: object = {}): Promise<{ queued: boolean; jobId: string | null }> {
     const pending = (await this.backfills.getJobs(["waiting", "active", "delayed", "prioritized"])).find((job) => job?.name === name);
     if (pending) return { queued: false, jobId: pending.id ?? null };
-    const job = await this.backfills.add(name, {}, KEEP);
+    const job = await this.backfills.add(name, data, KEEP);
     return { queued: true, jobId: job.id ?? null };
   }
 }

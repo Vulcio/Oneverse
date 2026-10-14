@@ -155,3 +155,9 @@ export const LinkRepeatsSchema = z.strictObject({
   sectionIds: optional(z.array(z.string().trim().min(1).max(64)).min(1).max(SONG_DOCUMENT_LIMITS.sections)).describe("The repeats to link; left out, all of them"),
 });
 export type LinkRepeatsRequest = z.input<typeof LinkRepeatsSchema>;
+
+/** POST /admin/repeats/backfill (issue #231): the library's repeats counted, or with `apply`, the same and transposed ones linked. */
+export const RepeatsBackfillSchema = z.strictObject({
+  apply: optional(z.boolean()).describe("Link the repeats that are the same or transposed; left out, only count them"),
+});
+export type RepeatsBackfillRequest = z.input<typeof RepeatsBackfillSchema>;

@@ -5,6 +5,7 @@ import { ArtistsService } from "../artists/artists.service.js";
 import { ArtworkService } from "../artwork/artwork.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { backfillLyrics } from "../song-versions/lyrics-backfill.js";
+import { backfillRepeats } from "../song-versions/repeats-backfill.js";
 import { BACKFILLS_QUEUE, JOB_WORKER_OPTIONS, LOOKUPS_QUEUE } from "../jobs/jobs.constants.js";
 
 export type LookupJob =
@@ -12,7 +13,8 @@ export type LookupJob =
   | { name: "artist"; data: { name: string } }
   | { name: "artwork-backfill"; data: Record<string, never> }
   | { name: "artist-backfill"; data: Record<string, never> }
-  | { name: "lyrics-backfill"; data: Record<string, never> };
+  | { name: "lyrics-backfill"; data: Record<string, never> }
+  | { name: "repeats-backfill"; data: { apply?: boolean } };
 
 /**
  * The lookups queue (issue #92): a new song's artwork, a new artist's
@@ -64,6 +66,8 @@ export class BackfillsProcessor extends WorkerHost {
     switch (job.name) {
       case "lyrics-backfill":
         return backfillLyrics(this.prisma);
+      case "repeats-backfill":
+        return backfillRepeats(this.prisma, !!(job.data as { apply?: boolean }).apply);
       case "artwork-backfill":
         return this.artwork.backfill();
       case "artist-backfill":

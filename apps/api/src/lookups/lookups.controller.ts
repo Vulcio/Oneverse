@@ -1,9 +1,14 @@
-import { Controller, NotFoundException, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, NotFoundException, Post, UseGuards } from "@nestjs/common";
+import { RepeatsBackfillSchema } from "@songverse/core";
+import { zodDto } from "../common/zod-validation.js";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ArtistsService } from "../artists/artists.service.js";
 import { ArtworkService } from "../artwork/artwork.service.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import { LookupsService } from "./lookups.service.js";
+
+/** A look at the library's repeated sections (issue #231), or with `apply`, the same and transposed ones linked. */
+class RepeatsBackfillDto extends zodDto(RepeatsBackfillSchema) {}
 
 /** The admin's backfills (issues #85, #86), started as background jobs (issue #92): their results show under Background jobs. */
 @ApiTags("admin")
@@ -35,5 +40,11 @@ export class LookupsController {
   @Post("lyrics/backfill")
   lyricsBackfill() {
     return this.lookups.backfill("lyrics-backfill");
+  }
+
+  /** The library's repeated sections (issue #231): counted, or with `apply`, the same and transposed ones linked. */
+  @Post("repeats/backfill")
+  repeatsBackfill(@Body() dto: RepeatsBackfillDto) {
+    return this.lookups.backfill("repeats-backfill", { apply: dto.apply ?? false });
   }
 }
