@@ -237,7 +237,15 @@ await step("a song's order just for this set: repeat the chorus there only", asy
   await page.waitForURL(`**/sets/${set.id}`);
   await page.waitForLoadState("networkidle");
   const row = page.getByTestId("set-song-row");
-  if ((await row.getByLabel("Version").evaluate((el) => el.selectedOptions[0].textContent)) !== "Just for this set") throw new Error("the set doesn't play it");
+  // Waited for: the row may show the set as it was a moment before.
+  await row.getByLabel("Version").evaluate(
+    (select) =>
+      new Promise((resolve, reject) => {
+        const end = Date.now() + 10000;
+        const look = () => (select.selectedOptions[0]?.textContent === "Just for this set" ? resolve(true) : Date.now() > end ? reject(new Error("the set doesn't play it")) : setTimeout(look, 100));
+        look();
+      }),
+  );
   await row.getByRole("link", { name: `Change Arranged Grace ${tag} for this set` }).waitFor();
   await page.screenshot({ path: `${SP}/set-only-arrangement.png` });
   await page.goto(`${WEB}/sets/${set.id}/songs/${itemId}`);
