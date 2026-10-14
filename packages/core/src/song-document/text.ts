@@ -1,3 +1,4 @@
+import { bestRepeat, repeatPass, type RepeatMatch } from "./repeats.js";
 import type { SupportedImportFormat } from "../constants/index.js";
 import { passChanged, passLines } from "./pass.js";
 import { parseSongText } from "../import-detection/detect-format.js";
@@ -92,8 +93,10 @@ const sameContent = (a: SectionV2, b: SectionV2) =>
  * numbering its first line is dropped. Comments before the first section
  * give the song's copyright ("© …") or are its address on a site, left out;
  * one saying the key changes, right after a "{key}", is left out too.
- * `mergeRepeats` (importing a file): a section written out again as it was
- * is sung as that section again rather than kept twice.
+ * `mergeRepeats` (importing a file): a section written out again is sung
+ * as that section again rather than kept twice - as it was, moved up or
+ * down, with a few chords of its own, or only its end (issue #231, see
+ * matchRepeat).
  */
 export function songFromText(text: string, format: SupportedImportFormat, options: { mergeRepeats?: boolean } = {}): SongChart {
   if (!text.trim()) return { sections: [], flow: [], key: null, copyright: null };
@@ -209,10 +212,25 @@ export function songFromText(text: string, format: SupportedImportFormat, option
         line.chords = line.chords.map((chord) => ({ ...chord, raw: transposeChord(chord.raw, -shift, songKey) }));
       }
     }
-    // Sung again as written (a chorus each time, or anything after a key change): the same section again.
-    const earlier = options.mergeRepeats || shift % 12 !== 0 ? sections.find((other) => sameContent(other, section)) : undefined;
+    // Sung again (issue #231): as written, moved up or down, with a few chords of its own, or the end of it -
+    // a pass of the earlier section; after a key change, only as written.
+    const earlier = options.mergeRepeats
+      ? bestRepeat(sections, section, songKey)
+      : shift % 12 !== 0
+        ? (() => {
+            const same = sections.find((other) => sameContent(other, section));
+            return same ? { of: same, match: { kind: "same" } as RepeatMatch } : null;
+          })()
+        : null;
     if (earlier) {
-      flow.push(pass({ id: generateId(ID_PREFIXES.flowItem), sectionId: earlier.id, ...(section.label && section.label !== earlier.label && { label: section.label }) }));
+      flow.push(
+        pass({
+          id: generateId(ID_PREFIXES.flowItem),
+          sectionId: earlier.of.id,
+          ...(section.label && section.label !== earlier.of.label && { label: section.label }),
+          ...repeatPass(earlier.match),
+        }),
+      );
       continue;
     }
     sections.push(section);

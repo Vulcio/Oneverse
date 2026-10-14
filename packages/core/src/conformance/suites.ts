@@ -15,6 +15,7 @@ import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
 import { flowToChordPro, lineToInlineText, readSongDocument, sectionsFromText, songDocumentFromSections, songDocumentFromText, songFromText, songToChordPro } from "../song-document/text.js";
+import { findRepeats, linkRepeats } from "../song-document/repeats.js";
 import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { clockOffset, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
@@ -165,6 +166,73 @@ const SONG_WITH_PASSES = {
     { id: "fi_verse_end", sectionId: "sec_verse", hiddenLines: ["line_v1", "line_v2"] },
     { id: "fi_chorus_up", sectionId: "sec_chorus", transpose: 2 },
     { id: "fi_missing", sectionId: "sec_verse", hiddenLines: ["line_gone"], lyrics: [{ lineId: "line_gone2", text: "x" }], chords: [{ chordId: "chd_gone", raw: "E" }] },
+  ],
+};
+
+/** A song whose chorus is written out again: the same, a tone up, with one chord different, and its end. */
+const REPEATS = {
+  $schema: "song-document/v2",
+  revision: 1,
+  defaults: { key: "G" },
+  sections: [
+    { id: "sec_v", type: "verse", label: null, lines: [{ id: "l_v1", kind: "lyric", text: "Morning has broken", chords: [{ id: "c_v1", at: 0, raw: "G" }] }] },
+    {
+      id: "sec_c1",
+      type: "chorus",
+      label: null,
+      lines: [
+        { id: "l_c1a", kind: "lyric", text: "Holy, holy", chords: [{ id: "c_c1a", at: 0, raw: "G" }, { id: "c_c1b", at: 7, raw: "D" }] },
+        { id: "l_c1b", kind: "lyric", text: "Lord God almighty", chords: [{ id: "c_c1c", at: 0, raw: "Em" }, { id: "c_c1d", at: 9, raw: "C" }] },
+        { id: "l_c1c", kind: "lyric", text: "Early in the morning", chords: [{ id: "c_c1e", at: 0, raw: "G" }, { id: "c_c1f", at: 13, raw: "D" }] },
+      ],
+    },
+    {
+      id: "sec_c2",
+      type: "chorus",
+      label: "Chorus 2",
+      lines: [
+        { id: "l_c2a", kind: "lyric", text: "Holy, holy", chords: [{ id: "c_c2a", at: 0, raw: "G" }, { id: "c_c2b", at: 7, raw: "D" }] },
+        { id: "l_c2b", kind: "lyric", text: "Lord God almighty", chords: [{ id: "c_c2c", at: 0, raw: "Em" }, { id: "c_c2d", at: 9, raw: "Am" }] },
+        { id: "l_c2c", kind: "lyric", text: "Early in the morning", chords: [{ id: "c_c2e", at: 0, raw: "G" }, { id: "c_c2f", at: 13, raw: "D" }] },
+      ],
+    },
+    {
+      id: "sec_c3",
+      type: "chorus",
+      label: "Last chorus",
+      lines: [
+        { id: "l_c3a", kind: "lyric", text: "Holy, holy", chords: [{ id: "c_c3a", at: 0, raw: "A" }, { id: "c_c3b", at: 7, raw: "E" }] },
+        { id: "l_c3b", kind: "lyric", text: "Lord God almighty", chords: [{ id: "c_c3c", at: 0, raw: "F#m" }, { id: "c_c3d", at: 9, raw: "D" }] },
+        { id: "l_c3c", kind: "lyric", text: "Early in the morning", chords: [{ id: "c_c3e", at: 0, raw: "A" }, { id: "c_c3f", at: 13, raw: "E" }] },
+      ],
+    },
+    {
+      id: "sec_tag",
+      type: "tag",
+      label: null,
+      lines: [
+        { id: "l_t1", kind: "lyric", text: "Lord God almighty", chords: [{ id: "c_t1", at: 0, raw: "Em" }, { id: "c_t2", at: 9, raw: "C" }] },
+        { id: "l_t2", kind: "lyric", text: "Early in the morning", chords: [{ id: "c_t3", at: 0, raw: "G" }, { id: "c_t4", at: 13, raw: "D" }] },
+      ],
+    },
+    {
+      id: "sec_c4",
+      type: "chorus",
+      label: null,
+      lines: [
+        { id: "l_c4a", kind: "lyric", text: "Holy, holy", chords: [{ id: "c_c4a", at: 0, raw: "G" }, { id: "c_c4b", at: 7, raw: "D" }] },
+        { id: "l_c4b", kind: "lyric", text: "Lord God almighty", chords: [{ id: "c_c4c", at: 0, raw: "Em" }, { id: "c_c4d", at: 9, raw: "C" }] },
+        { id: "l_c4c", kind: "lyric", text: "Early in the morning", chords: [{ id: "c_c4e", at: 0, raw: "G" }, { id: "c_c4f", at: 13, raw: "D" }] },
+      ],
+    },
+  ],
+  flow: [
+    { id: "f1", sectionId: "sec_v" },
+    { id: "f2", sectionId: "sec_c1" },
+    { id: "f3", sectionId: "sec_c2", note: "softer" },
+    { id: "f4", sectionId: "sec_c3" },
+    { id: "f5", sectionId: "sec_tag" },
+    { id: "f6", sectionId: "sec_c4" },
   ],
 };
 
@@ -625,7 +693,40 @@ export const CONFORMANCE: ConformanceArea[] = [
           },
           { name: "a note before a section stays its note", args: ["{c: Softly}\n{start_of_verse}\n[G]One\n{end_of_verse}\n", "CHORDPRO", {}] },
           { name: "without mergeRepeats, a section written twice stays twice", args: ["{soc}\n[C]La\n{eoc}\n{soc}\n[C]La\n{eoc}\n", "CHORDPRO", {}] },
+          {
+            name: "a chorus again, two semitones up: a pass transposed",
+            args: ["{soc}\n[G]Holy, [D]holy\n[Em]Lord God [C]almighty\n{eoc}\n{soc}\n[A]Holy, [E]holy\n[F#m]Lord God [D]almighty\n{eoc}\n", "CHORDPRO", { mergeRepeats: true }],
+          },
+          {
+            name: "a chorus again with one chord different: a pass with that chord",
+            args: ["{soc}\n[G]Holy, [D]holy\n[Em]Lord God [C]almighty\n{eoc}\n{soc}\n[G]Holy, [D]holy\n[Em]Lord God [Am]almighty\n{eoc}\n", "CHORDPRO", { mergeRepeats: true }],
+          },
+          {
+            name: "half its chords different: a section of its own",
+            args: ["{soc}\n[G]Holy, [D]holy\n{eoc}\n{soc}\n[C]Holy, [D]holy\n{eoc}\n", "CHORDPRO", { mergeRepeats: true }],
+          },
+          {
+            name: "the end of the chorus written out: a pass of its last lines",
+            args: ["{soc}\n[G]Holy, [D]holy\n[Em]Lord God [C]almighty\n[G]Early in the [D]morning\n{eoc}\n{soc}\n[Em]Lord God [C]almighty\n[G]Early in the [D]morning\n{eoc}\n", "CHORDPRO", { mergeRepeats: true }],
+          },
         ],
+      },
+      findRepeats: {
+        about:
+          "A song's sections that repeat an earlier one (issue #231), each with the earlier one and how: the same, every chord moved alike (transposed), at most a third of its chords different (its own, written in the song's key), or a run of its lines. With which of the earlier's lines and chords each of its own is.",
+        params: ["song"],
+        run: (song: unknown) =>
+          findRepeats(read(song)).map(({ ids, ...repeat }) => ({ ...repeat, ids: { sections: Object.fromEntries(ids.sections), lines: Object.fromEntries(ids.lines), chords: Object.fromEntries(ids.chords) } })),
+        cases: [{ name: "a chorus sung four ways", args: [REPEATS] }],
+      },
+      linkRepeats: {
+        about: "The song with its repeats linked (issue #231): each repeat gone, its passes now passes of the section it repeats - transposed, with its own chords, or its other lines left out.",
+        params: ["song"],
+        run: (song: unknown) => {
+          const doc = read(song);
+          return linkRepeats(doc, findRepeats(doc));
+        },
+        cases: [{ name: "a chorus sung four ways", args: [REPEATS] }],
       },
       sectionHeading: {
         about: "Whether a line only names a section, in the languages songs come in: its type and its number or letter.",

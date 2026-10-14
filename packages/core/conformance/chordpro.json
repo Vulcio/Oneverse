@@ -639,6 +639,1246 @@
             "key": null,
             "copyright": null
           }
+        },
+        {
+          "name": "a chorus again, two semitones up: a pass transposed",
+          "args": [
+            "{soc}\n[G]Holy, [D]holy\n[Em]Lord God [C]almighty\n{eoc}\n{soc}\n[A]Holy, [E]holy\n[F#m]Lord God [D]almighty\n{eoc}\n",
+            "CHORDPRO",
+            {
+              "mergeRepeats": true
+            }
+          ],
+          "expected": {
+            "sections": [
+              {
+                "id": "sec_@1",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@2",
+                    "kind": "lyric",
+                    "text": "Holy, holy",
+                    "chords": [
+                      {
+                        "id": "chd_@3",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "chd_@4",
+                        "at": 6,
+                        "raw": "D"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@5",
+                    "kind": "lyric",
+                    "text": "Lord God almighty",
+                    "chords": [
+                      {
+                        "id": "chd_@6",
+                        "at": 0,
+                        "raw": "Em"
+                      },
+                      {
+                        "id": "chd_@7",
+                        "at": 9,
+                        "raw": "C"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              }
+            ],
+            "flow": [
+              {
+                "id": "fi_@1",
+                "sectionId": "sec_@1"
+              },
+              {
+                "id": "fi_@8",
+                "sectionId": "sec_@1",
+                "transpose": 2
+              }
+            ],
+            "key": null,
+            "copyright": null
+          }
+        },
+        {
+          "name": "a chorus again with one chord different: a pass with that chord",
+          "args": [
+            "{soc}\n[G]Holy, [D]holy\n[Em]Lord God [C]almighty\n{eoc}\n{soc}\n[G]Holy, [D]holy\n[Em]Lord God [Am]almighty\n{eoc}\n",
+            "CHORDPRO",
+            {
+              "mergeRepeats": true
+            }
+          ],
+          "expected": {
+            "sections": [
+              {
+                "id": "sec_@1",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@2",
+                    "kind": "lyric",
+                    "text": "Holy, holy",
+                    "chords": [
+                      {
+                        "id": "chd_@3",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "chd_@4",
+                        "at": 6,
+                        "raw": "D"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@5",
+                    "kind": "lyric",
+                    "text": "Lord God almighty",
+                    "chords": [
+                      {
+                        "id": "chd_@6",
+                        "at": 0,
+                        "raw": "Em"
+                      },
+                      {
+                        "id": "chd_@7",
+                        "at": 9,
+                        "raw": "C"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              }
+            ],
+            "flow": [
+              {
+                "id": "fi_@1",
+                "sectionId": "sec_@1"
+              },
+              {
+                "id": "fi_@8",
+                "sectionId": "sec_@1",
+                "chords": [
+                  {
+                    "chordId": "chd_@7",
+                    "raw": "Am"
+                  }
+                ]
+              }
+            ],
+            "key": null,
+            "copyright": null
+          }
+        },
+        {
+          "name": "half its chords different: a section of its own",
+          "args": [
+            "{soc}\n[G]Holy, [D]holy\n{eoc}\n{soc}\n[C]Holy, [D]holy\n{eoc}\n",
+            "CHORDPRO",
+            {
+              "mergeRepeats": true
+            }
+          ],
+          "expected": {
+            "sections": [
+              {
+                "id": "sec_@1",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@2",
+                    "kind": "lyric",
+                    "text": "Holy, holy",
+                    "chords": [
+                      {
+                        "id": "chd_@3",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "chd_@4",
+                        "at": 6,
+                        "raw": "D"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              },
+              {
+                "id": "sec_@5",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@6",
+                    "kind": "lyric",
+                    "text": "Holy, holy",
+                    "chords": [
+                      {
+                        "id": "chd_@7",
+                        "at": 0,
+                        "raw": "C"
+                      },
+                      {
+                        "id": "chd_@8",
+                        "at": 6,
+                        "raw": "D"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              }
+            ],
+            "flow": [
+              {
+                "id": "fi_@1",
+                "sectionId": "sec_@1"
+              },
+              {
+                "id": "fi_@5",
+                "sectionId": "sec_@5"
+              }
+            ],
+            "key": null,
+            "copyright": null
+          }
+        },
+        {
+          "name": "the end of the chorus written out: a pass of its last lines",
+          "args": [
+            "{soc}\n[G]Holy, [D]holy\n[Em]Lord God [C]almighty\n[G]Early in the [D]morning\n{eoc}\n{soc}\n[Em]Lord God [C]almighty\n[G]Early in the [D]morning\n{eoc}\n",
+            "CHORDPRO",
+            {
+              "mergeRepeats": true
+            }
+          ],
+          "expected": {
+            "sections": [
+              {
+                "id": "sec_@1",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@2",
+                    "kind": "lyric",
+                    "text": "Holy, holy",
+                    "chords": [
+                      {
+                        "id": "chd_@3",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "chd_@4",
+                        "at": 6,
+                        "raw": "D"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@5",
+                    "kind": "lyric",
+                    "text": "Lord God almighty",
+                    "chords": [
+                      {
+                        "id": "chd_@6",
+                        "at": 0,
+                        "raw": "Em"
+                      },
+                      {
+                        "id": "chd_@7",
+                        "at": 9,
+                        "raw": "C"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@8",
+                    "kind": "lyric",
+                    "text": "Early in the morning",
+                    "chords": [
+                      {
+                        "id": "chd_@9",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "chd_@10",
+                        "at": 13,
+                        "raw": "D"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              }
+            ],
+            "flow": [
+              {
+                "id": "fi_@1",
+                "sectionId": "sec_@1"
+              },
+              {
+                "id": "fi_@11",
+                "sectionId": "sec_@1",
+                "hiddenLines": [
+                  "line_@2"
+                ]
+              }
+            ],
+            "key": null,
+            "copyright": null
+          }
+        }
+      ]
+    },
+    "findRepeats": {
+      "about": "A song's sections that repeat an earlier one (issue #231), each with the earlier one and how: the same, every chord moved alike (transposed), at most a third of its chords different (its own, written in the song's key), or a run of its lines. With which of the earlier's lines and chords each of its own is.",
+      "params": [
+        "song"
+      ],
+      "cases": [
+        {
+          "name": "a chorus sung four ways",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 1,
+              "defaults": {
+                "key": "G"
+              },
+              "sections": [
+                {
+                  "id": "sec_v",
+                  "type": "verse",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_v1",
+                      "kind": "lyric",
+                      "text": "Morning has broken",
+                      "chords": [
+                        {
+                          "id": "c_v1",
+                          "at": 0,
+                          "raw": "G"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c1",
+                  "type": "chorus",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_c1a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c1a",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c1b",
+                          "at": 7,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c1b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c1c",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_c1d",
+                          "at": 9,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c1c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c1e",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c1f",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c2",
+                  "type": "chorus",
+                  "label": "Chorus 2",
+                  "lines": [
+                    {
+                      "id": "l_c2a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c2a",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c2b",
+                          "at": 7,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c2b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c2c",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_c2d",
+                          "at": 9,
+                          "raw": "Am"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c2c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c2e",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c2f",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c3",
+                  "type": "chorus",
+                  "label": "Last chorus",
+                  "lines": [
+                    {
+                      "id": "l_c3a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c3a",
+                          "at": 0,
+                          "raw": "A"
+                        },
+                        {
+                          "id": "c_c3b",
+                          "at": 7,
+                          "raw": "E"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c3b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c3c",
+                          "at": 0,
+                          "raw": "F#m"
+                        },
+                        {
+                          "id": "c_c3d",
+                          "at": 9,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c3c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c3e",
+                          "at": 0,
+                          "raw": "A"
+                        },
+                        {
+                          "id": "c_c3f",
+                          "at": 13,
+                          "raw": "E"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_tag",
+                  "type": "tag",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_t1",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_t1",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_t2",
+                          "at": 9,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_t2",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_t3",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_t4",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c4",
+                  "type": "chorus",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_c4a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c4a",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c4b",
+                          "at": 7,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c4b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c4c",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_c4d",
+                          "at": 9,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c4c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c4e",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c4f",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "f1",
+                  "sectionId": "sec_v"
+                },
+                {
+                  "id": "f2",
+                  "sectionId": "sec_c1"
+                },
+                {
+                  "id": "f3",
+                  "sectionId": "sec_c2",
+                  "note": "softer"
+                },
+                {
+                  "id": "f4",
+                  "sectionId": "sec_c3"
+                },
+                {
+                  "id": "f5",
+                  "sectionId": "sec_tag"
+                },
+                {
+                  "id": "f6",
+                  "sectionId": "sec_c4"
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "sectionId": "sec_c2",
+              "ofSectionId": "sec_c1",
+              "match": {
+                "kind": "chords",
+                "steps": 0,
+                "chords": [
+                  {
+                    "chordId": "c_c1d",
+                    "raw": "Am"
+                  }
+                ]
+              },
+              "label": "Chorus 2",
+              "ids": {
+                "sections": {
+                  "sec_c2": "sec_c1"
+                },
+                "lines": {
+                  "l_c2a": "l_c1a",
+                  "l_c2b": "l_c1b",
+                  "l_c2c": "l_c1c"
+                },
+                "chords": {
+                  "c_c2a": "c_c1a",
+                  "c_c2b": "c_c1b",
+                  "c_c2c": "c_c1c",
+                  "c_c2d": "c_c1d",
+                  "c_c2e": "c_c1e",
+                  "c_c2f": "c_c1f"
+                }
+              }
+            },
+            {
+              "sectionId": "sec_c3",
+              "ofSectionId": "sec_c1",
+              "match": {
+                "kind": "transposed",
+                "steps": 2
+              },
+              "label": "Last chorus",
+              "ids": {
+                "sections": {
+                  "sec_c3": "sec_c1"
+                },
+                "lines": {
+                  "l_c3a": "l_c1a",
+                  "l_c3b": "l_c1b",
+                  "l_c3c": "l_c1c"
+                },
+                "chords": {
+                  "c_c3a": "c_c1a",
+                  "c_c3b": "c_c1b",
+                  "c_c3c": "c_c1c",
+                  "c_c3d": "c_c1d",
+                  "c_c3e": "c_c1e",
+                  "c_c3f": "c_c1f"
+                }
+              }
+            },
+            {
+              "sectionId": "sec_tag",
+              "ofSectionId": "sec_c1",
+              "match": {
+                "kind": "lines",
+                "hiddenLines": [
+                  "l_c1a"
+                ]
+              },
+              "label": null,
+              "ids": {
+                "sections": {
+                  "sec_tag": "sec_c1"
+                },
+                "lines": {
+                  "l_t1": "l_c1b",
+                  "l_t2": "l_c1c"
+                },
+                "chords": {
+                  "c_t1": "c_c1c",
+                  "c_t2": "c_c1d",
+                  "c_t3": "c_c1e",
+                  "c_t4": "c_c1f"
+                }
+              }
+            },
+            {
+              "sectionId": "sec_c4",
+              "ofSectionId": "sec_c1",
+              "match": {
+                "kind": "same"
+              },
+              "label": null,
+              "ids": {
+                "sections": {
+                  "sec_c4": "sec_c1"
+                },
+                "lines": {
+                  "l_c4a": "l_c1a",
+                  "l_c4b": "l_c1b",
+                  "l_c4c": "l_c1c"
+                },
+                "chords": {
+                  "c_c4a": "c_c1a",
+                  "c_c4b": "c_c1b",
+                  "c_c4c": "c_c1c",
+                  "c_c4d": "c_c1d",
+                  "c_c4e": "c_c1e",
+                  "c_c4f": "c_c1f"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "linkRepeats": {
+      "about": "The song with its repeats linked (issue #231): each repeat gone, its passes now passes of the section it repeats - transposed, with its own chords, or its other lines left out.",
+      "params": [
+        "song"
+      ],
+      "cases": [
+        {
+          "name": "a chorus sung four ways",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 1,
+              "defaults": {
+                "key": "G"
+              },
+              "sections": [
+                {
+                  "id": "sec_v",
+                  "type": "verse",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_v1",
+                      "kind": "lyric",
+                      "text": "Morning has broken",
+                      "chords": [
+                        {
+                          "id": "c_v1",
+                          "at": 0,
+                          "raw": "G"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c1",
+                  "type": "chorus",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_c1a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c1a",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c1b",
+                          "at": 7,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c1b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c1c",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_c1d",
+                          "at": 9,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c1c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c1e",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c1f",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c2",
+                  "type": "chorus",
+                  "label": "Chorus 2",
+                  "lines": [
+                    {
+                      "id": "l_c2a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c2a",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c2b",
+                          "at": 7,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c2b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c2c",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_c2d",
+                          "at": 9,
+                          "raw": "Am"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c2c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c2e",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c2f",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c3",
+                  "type": "chorus",
+                  "label": "Last chorus",
+                  "lines": [
+                    {
+                      "id": "l_c3a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c3a",
+                          "at": 0,
+                          "raw": "A"
+                        },
+                        {
+                          "id": "c_c3b",
+                          "at": 7,
+                          "raw": "E"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c3b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c3c",
+                          "at": 0,
+                          "raw": "F#m"
+                        },
+                        {
+                          "id": "c_c3d",
+                          "at": 9,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c3c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c3e",
+                          "at": 0,
+                          "raw": "A"
+                        },
+                        {
+                          "id": "c_c3f",
+                          "at": 13,
+                          "raw": "E"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_tag",
+                  "type": "tag",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_t1",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_t1",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_t2",
+                          "at": 9,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_t2",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_t3",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_t4",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_c4",
+                  "type": "chorus",
+                  "label": null,
+                  "lines": [
+                    {
+                      "id": "l_c4a",
+                      "kind": "lyric",
+                      "text": "Holy, holy",
+                      "chords": [
+                        {
+                          "id": "c_c4a",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c4b",
+                          "at": 7,
+                          "raw": "D"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c4b",
+                      "kind": "lyric",
+                      "text": "Lord God almighty",
+                      "chords": [
+                        {
+                          "id": "c_c4c",
+                          "at": 0,
+                          "raw": "Em"
+                        },
+                        {
+                          "id": "c_c4d",
+                          "at": 9,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "l_c4c",
+                      "kind": "lyric",
+                      "text": "Early in the morning",
+                      "chords": [
+                        {
+                          "id": "c_c4e",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "c_c4f",
+                          "at": 13,
+                          "raw": "D"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "f1",
+                  "sectionId": "sec_v"
+                },
+                {
+                  "id": "f2",
+                  "sectionId": "sec_c1"
+                },
+                {
+                  "id": "f3",
+                  "sectionId": "sec_c2",
+                  "note": "softer"
+                },
+                {
+                  "id": "f4",
+                  "sectionId": "sec_c3"
+                },
+                {
+                  "id": "f5",
+                  "sectionId": "sec_tag"
+                },
+                {
+                  "id": "f6",
+                  "sectionId": "sec_c4"
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "$schema": "song-document/v2",
+            "revision": 2,
+            "defaults": {
+              "key": "G"
+            },
+            "sections": [
+              {
+                "id": "sec_v",
+                "type": "verse",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "l_v1",
+                    "kind": "lyric",
+                    "text": "Morning has broken",
+                    "chords": [
+                      {
+                        "id": "c_v1",
+                        "at": 0,
+                        "raw": "G"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "sec_c1",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "l_c1a",
+                    "kind": "lyric",
+                    "text": "Holy, holy",
+                    "chords": [
+                      {
+                        "id": "c_c1a",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "c_c1b",
+                        "at": 7,
+                        "raw": "D"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "l_c1b",
+                    "kind": "lyric",
+                    "text": "Lord God almighty",
+                    "chords": [
+                      {
+                        "id": "c_c1c",
+                        "at": 0,
+                        "raw": "Em"
+                      },
+                      {
+                        "id": "c_c1d",
+                        "at": 9,
+                        "raw": "C"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "l_c1c",
+                    "kind": "lyric",
+                    "text": "Early in the morning",
+                    "chords": [
+                      {
+                        "id": "c_c1e",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "c_c1f",
+                        "at": 13,
+                        "raw": "D"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "flow": [
+              {
+                "id": "f1",
+                "sectionId": "sec_v"
+              },
+              {
+                "id": "f2",
+                "sectionId": "sec_c1"
+              },
+              {
+                "id": "f3",
+                "sectionId": "sec_c1",
+                "note": "softer",
+                "label": "Chorus 2",
+                "chords": [
+                  {
+                    "chordId": "c_c1d",
+                    "raw": "Am"
+                  }
+                ]
+              },
+              {
+                "id": "f4",
+                "sectionId": "sec_c1",
+                "label": "Last chorus",
+                "transpose": 2
+              },
+              {
+                "id": "f5",
+                "sectionId": "sec_c1",
+                "hiddenLines": [
+                  "l_c1a"
+                ]
+              },
+              {
+                "id": "f6",
+                "sectionId": "sec_c1"
+              }
+            ]
+          }
         }
       ]
     },
