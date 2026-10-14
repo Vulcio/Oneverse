@@ -14,6 +14,7 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
 import { Route as ProtectedCalendarRouteImport } from './routes/_protected/calendar'
+import { Route as ProtectedNotificationsRouteImport } from './routes/_protected/notifications'
 import { Route as JoinOrganizationTokenRouteImport } from './routes/join-organization.$token'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as ProtectedOrganizationsIndexRouteImport } from './routes/_protected/organizations/index'
@@ -44,6 +45,11 @@ const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
 const ProtectedCalendarRoute = ProtectedCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedNotificationsRoute = ProtectedNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const JoinOrganizationTokenRoute = JoinOrganizationTokenRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/account': typeof ProtectedAccountRoute
   '/calendar': typeof ProtectedCalendarRoute
+  '/notifications': typeof ProtectedNotificationsRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/account': typeof ProtectedAccountRoute
   '/calendar': typeof ProtectedCalendarRoute
+  '/notifications': typeof ProtectedNotificationsRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_protected/account': typeof ProtectedAccountRoute
   '/_protected/calendar': typeof ProtectedCalendarRoute
+  '/_protected/notifications': typeof ProtectedNotificationsRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/_protected/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/account'
     | '/calendar'
+    | '/notifications'
     | '/join-organization/$token'
     | '/join/$token'
     | '/organizations/$organizationId'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/account'
     | '/calendar'
+    | '/notifications'
     | '/join-organization/$token'
     | '/join/$token'
     | '/organizations/$organizationId'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_protected/account'
     | '/_protected/calendar'
+    | '/_protected/notifications'
     | '/join-organization/$token'
     | '/join/$token'
     | '/_protected/organizations/$organizationId'
@@ -212,6 +224,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof ProtectedCalendarRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/notifications': {
+      id: '/_protected/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof ProtectedNotificationsRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/join-organization/$token': {
@@ -269,6 +288,7 @@ declare module '@tanstack/react-router' {
 interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
   ProtectedCalendarRoute: typeof ProtectedCalendarRoute
+  ProtectedNotificationsRoute: typeof ProtectedNotificationsRoute
   ProtectedOrganizationsOrganizationIdRoute: typeof ProtectedOrganizationsOrganizationIdRoute
   ProtectedTeamsTeamIdRoute: typeof ProtectedTeamsTeamIdRoute
   ProtectedOrganizationsIndexRoute: typeof ProtectedOrganizationsIndexRoute
@@ -279,6 +299,7 @@ interface ProtectedRouteChildren {
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountRoute: ProtectedAccountRoute,
   ProtectedCalendarRoute: ProtectedCalendarRoute,
+  ProtectedNotificationsRoute: ProtectedNotificationsRoute,
   ProtectedOrganizationsOrganizationIdRoute:
     ProtectedOrganizationsOrganizationIdRoute,
   ProtectedTeamsTeamIdRoute: ProtectedTeamsTeamIdRoute,

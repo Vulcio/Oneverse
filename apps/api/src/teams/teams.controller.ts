@@ -100,8 +100,9 @@ export class TeamsController {
     @Param("teamId") teamId: string,
     @Param("memberUserId") memberUserId: string,
     @Body() dto: UpdateMemberRoleDto,
+    @CurrentUser() user: AuthenticatedUser | undefined,
   ): ReturnType<TeamsService["updateMemberRole"]> {
-    return this.teamsService.updateMemberRole(teamId, memberUserId, dto.role);
+    return this.teamsService.updateMemberRole(teamId, memberUserId, dto.role, user?.id ?? null);
   }
 
   @Delete(":teamId/members/:memberUserId")

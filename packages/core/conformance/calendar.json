@@ -656,6 +656,54 @@
             "HOSTING": {
               "email": true,
               "push": true
+            },
+            "CONNECTION_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "CONNECTION_ACCEPTED": {
+              "email": true,
+              "push": true
+            },
+            "SONG_SHARED": {
+              "email": true,
+              "push": true
+            },
+            "SONGBOOK_SHARED": {
+              "email": true,
+              "push": true
+            },
+            "SET_JOINED": {
+              "email": true,
+              "push": true
+            },
+            "TEAM_JOINED": {
+              "email": true,
+              "push": true
+            },
+            "TEAM_ROLE_CHANGED": {
+              "email": true,
+              "push": true
+            },
+            "SUGGESTION_ACCEPTED": {
+              "email": true,
+              "push": true
+            },
+            "SUGGESTION_DECLINED": {
+              "email": true,
+              "push": true
+            },
+            "SUBMISSION_PUBLISHED": {
+              "email": true,
+              "push": true
+            },
+            "SUBMISSION_RETURNED": {
+              "email": true,
+              "push": true
+            },
+            "PART_RECORDED": {
+              "email": true,
+              "push": true
             }
           }
         },
@@ -731,6 +779,54 @@
               "push": true
             },
             "HOSTING": {
+              "email": true,
+              "push": true
+            },
+            "CONNECTION_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "CONNECTION_ACCEPTED": {
+              "email": true,
+              "push": true
+            },
+            "SONG_SHARED": {
+              "email": true,
+              "push": true
+            },
+            "SONGBOOK_SHARED": {
+              "email": true,
+              "push": true
+            },
+            "SET_JOINED": {
+              "email": true,
+              "push": true
+            },
+            "TEAM_JOINED": {
+              "email": true,
+              "push": true
+            },
+            "TEAM_ROLE_CHANGED": {
+              "email": true,
+              "push": true
+            },
+            "SUGGESTION_ACCEPTED": {
+              "email": true,
+              "push": true
+            },
+            "SUGGESTION_DECLINED": {
+              "email": true,
+              "push": true
+            },
+            "SUBMISSION_PUBLISHED": {
+              "email": true,
+              "push": true
+            },
+            "SUBMISSION_RETURNED": {
+              "email": true,
+              "push": true
+            },
+            "PART_RECORDED": {
               "email": true,
               "push": true
             }
@@ -816,6 +912,54 @@
                 "push": true
               },
               "HOSTING": {
+                "email": true,
+                "push": true
+              },
+              "CONNECTION_REQUESTED": {
+                "email": true,
+                "push": true
+              },
+              "CONNECTION_ACCEPTED": {
+                "email": true,
+                "push": true
+              },
+              "SONG_SHARED": {
+                "email": true,
+                "push": true
+              },
+              "SONGBOOK_SHARED": {
+                "email": true,
+                "push": true
+              },
+              "SET_JOINED": {
+                "email": true,
+                "push": true
+              },
+              "TEAM_JOINED": {
+                "email": true,
+                "push": true
+              },
+              "TEAM_ROLE_CHANGED": {
+                "email": true,
+                "push": true
+              },
+              "SUGGESTION_ACCEPTED": {
+                "email": true,
+                "push": true
+              },
+              "SUGGESTION_DECLINED": {
+                "email": true,
+                "push": true
+              },
+              "SUBMISSION_PUBLISHED": {
+                "email": true,
+                "push": true
+              },
+              "SUBMISSION_RETURNED": {
+                "email": true,
+                "push": true
+              },
+              "PART_RECORDED": {
                 "email": true,
                 "push": true
               }

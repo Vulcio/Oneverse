@@ -1,6 +1,6 @@
 import { InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
-import { Logger } from "@nestjs/common";
-import { notificationEmail, notificationPreferences, notificationPush, quietHoursEnd, quietHoursOf, type Messages, type NotificationData, type NotificationKind } from "@songverse/core";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { NOTIFICATIONS_KEPT_DAYS, notificationEmail, notificationPreferences, notificationPush, quietHoursEnd, quietHoursOf, type Messages, type NotificationData, type NotificationKind } from "@songverse/core";
 import en from "@songverse/core/i18n/locales/en";
 import fr from "@songverse/core/i18n/locales/fr";
 import type { Job, Queue } from "bullmq";
@@ -12,6 +12,9 @@ import type { DeliverJob, TestPushJob } from "./notifications.service.js";
 import { pushSubject, sendPush, type PushPayload } from "./push-sender.js";
 
 const MESSAGES: Record<string, Messages> = { en, fr };
+
+/** Old notifications deleted once a day (issue #149). */
+export const CLEAN_UP_SCHEDULER_ID = "clean-up-notifications";
 
 type Rows = Awaited<ReturnType<NotificationsProcessor["load"]>>;
 
@@ -45,13 +48,24 @@ export class NotificationsProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<DeliverJob | TestPushJob>): Promise<{ emailed: number; pushed: number }> {
+  async process(job: Job<DeliverJob | TestPushJob>): Promise<{ emailed: number; pushed: number } | { deleted: number }> {
+    if (job.name === CLEAN_UP_SCHEDULER_ID) return { deleted: await this.cleanUp() };
     if (job.name === "test") return { emailed: 0, pushed: await this.test(job.data as TestPushJob) };
     const data = job.data as DeliverJob;
     const emailed = job.name === "deliver" ? await this.email(data) : 0;
     const pushed = await this.push(data);
     if (emailed + pushed > 0) this.logger.log(`Notifications: emailed ${emailed}, pushed to ${pushed} person(s)`);
     return { emailed, pushed };
+  }
+
+  /** Old notifications deleted (issue #149): read ones after 90 days, unread ones after a year. */
+  private async cleanUp(now = new Date()): Promise<number> {
+    const ago = (days: number) => new Date(now.getTime() - days * 86_400_000);
+    const { count } = await this.prisma.client.notification.deleteMany({
+      where: { OR: [{ readAt: { not: null }, createdAt: { lt: ago(NOTIFICATIONS_KEPT_DAYS.read) } }, { createdAt: { lt: ago(NOTIFICATIONS_KEPT_DAYS.unread) } }] },
+    });
+    if (count > 0) this.logger.log(`Deleted ${count} old notification(s)`);
+    return count;
   }
 
   private load(ids: string[], where: { emailedAt: null } | { pushedAt: null }) {
@@ -165,5 +179,15 @@ export class NotificationsProcessor extends WorkerHost {
     // Reaching no device is a failure Admin > Background jobs shows, with why.
     if (sent === 0 && errors.length > 0) throw new Error(`The test push reached no device: ${errors.join("; ")}`);
     return sent;
+  }
+}
+
+/** Registers the daily clean-up; upsertJobScheduler is idempotent, so every process registering it leaves one. */
+@Injectable()
+export class NotificationsScheduler implements OnModuleInit {
+  constructor(@InjectQueue(NOTIFICATIONS_QUEUE) private readonly queue: Queue) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.queue.upsertJobScheduler(CLEAN_UP_SCHEDULER_ID, { every: 24 * 60 * 60 * 1000 }, { name: CLEAN_UP_SCHEDULER_ID, opts: { removeOnComplete: 20, removeOnFail: 20 } });
   }
 }

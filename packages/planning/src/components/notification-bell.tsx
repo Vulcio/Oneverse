@@ -1,25 +1,14 @@
-import { notificationText, type AppNotification, type Messages } from "@songverse/core";
-import { useRouter } from "@tanstack/react-router";
+import type { AppNotification } from "@songverse/core";
 import { Bell, CheckCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { usePlanning } from "../host";
-import { cn } from "@songverse/ui/lib/utils";
+import { HostLink, usePlanning } from "../host";
+import { NotificationList } from "./notification-list";
 
 /** How often the badge asks for the unread count while the page is shown. */
 const POLL_MS = 60_000;
-
-/** "5 min ago", "yesterday": how long ago, in the reader's language. */
-function ago(iso: string, language: string): string {
-  const seconds = (new Date(iso).getTime() - Date.now()) / 1000;
-  const format = new Intl.RelativeTimeFormat(language, { numeric: "auto" });
-  for (const [unit, size] of [["day", 86_400], ["hour", 3600], ["minute", 60]] as const) {
-    if (Math.abs(seconds) >= size) return format.format(Math.round(seconds / size), unit);
-  }
-  return format.format(0, "minute");
-}
 
 /**
  * The bell in the top bar (issue #236): how many notifications are unread,
@@ -28,9 +17,8 @@ function ago(iso: string, language: string): string {
  * shown again.
  */
 export function NotificationBell() {
-  const { api, sets } = usePlanning();
-  const { t, i18n } = useTranslation();
-  const router = useRouter();
+  const { api, links } = usePlanning();
+  const { t } = useTranslation();
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[] | null>(null);
@@ -59,18 +47,6 @@ export function NotificationBell() {
       setUnread(page.unread);
     });
   }, [open, api]);
-
-  // A path stored with the notification: the same in both apps (issue #241), but a
-  // set's is Songverse's - opened there from Planiverse, My calendar without it.
-  const openLink = (url: string) => {
-    const setlistId = /^\/sets\/([^/?#]+)/.exec(url)?.[1];
-    if (setlistId && !sets) return router.history.push("/calendar");
-    const href = setlistId && sets ? sets.href(setlistId) : url;
-    if (/^https?:\/\//.test(href)) window.location.href = href;
-    else router.history.push(setlistId ? url : href);
-  };
-
-  const messages = i18n.getResourceBundle(i18n.language, "translation") as Messages;
 
   const markRead = async (ids?: string[]) => {
     const { unread: count } = await api.markMyNotificationsRead(ids);
@@ -102,33 +78,7 @@ export function NotificationBell() {
           {items === null ? null : items.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t("notifications.empty")}</p>
           ) : (
-            <ul className="divide-y">
-              {items.map((item) => {
-                const text = notificationText(item.kind, item.data, messages, i18n.language);
-                return (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      className={cn("flex w-full gap-2 px-3 py-2 text-left hover:bg-muted", !item.read && "bg-primary/5")}
-                      data-notification={item.kind}
-                      data-read={item.read}
-                      onClick={() => {
-                        if (!item.read) void markRead([item.id]);
-                        setOpen(false);
-                        if (item.url) openLink(item.url);
-                      }}
-                    >
-                      <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-primary")} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm">{text.title}</span>
-                        {text.body ? <span className="block text-xs text-muted-foreground">{text.body}</span> : null}
-                        <span className="block text-xs text-muted-foreground">{ago(item.createdAt, i18n.language)}</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            <NotificationList items={items} onRead={(ids) => void markRead(ids)} onOpened={() => setOpen(false)} />
           )}
           {more ? (
             <Button
@@ -145,6 +95,12 @@ export function NotificationBell() {
               {t("notifications.loadMore")}
             </Button>
           ) : null}
+        </div>
+        {/* Everything, in pages (issue #149). */}
+        <div className="border-t px-3 py-2 text-center">
+          <HostLink href={links.notifications} className="text-sm text-primary underline-offset-2 hover:underline" onClick={() => setOpen(false)} data-testid="notification-see-all">
+            {t("notifications.seeAll")}
+          </HostLink>
         </div>
       </PopoverContent>
     </Popover>

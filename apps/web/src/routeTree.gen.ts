@@ -18,6 +18,7 @@ import { Route as ProtectedAdminRouteImport } from './routes/_protected/admin'
 import { Route as ProtectedCalendarRouteImport } from './routes/_protected/calendar'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedMetronomeRouteImport } from './routes/_protected/metronome'
+import { Route as ProtectedNotificationsRouteImport } from './routes/_protected/notifications'
 import { Route as ProtectedOfflineRouteImport } from './routes/_protected/offline'
 import { Route as ProtectedPeopleRouteImport } from './routes/_protected/people'
 import { Route as ProtectedReviewRouteImport } from './routes/_protected/review'
@@ -113,6 +114,11 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
 const ProtectedMetronomeRoute = ProtectedMetronomeRouteImport.update({
   id: '/metronome',
   path: '/metronome',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedNotificationsRoute = ProtectedNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedOfflineRoute = ProtectedOfflineRouteImport.update({
@@ -405,6 +411,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof ProtectedCalendarRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/metronome': typeof ProtectedMetronomeRoute
+  '/notifications': typeof ProtectedNotificationsRoute
   '/offline': typeof ProtectedOfflineRoute
   '/people': typeof ProtectedPeopleRoute
   '/review': typeof ProtectedReviewRouteWithChildren
@@ -466,6 +473,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof ProtectedCalendarRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/metronome': typeof ProtectedMetronomeRoute
+  '/notifications': typeof ProtectedNotificationsRoute
   '/offline': typeof ProtectedOfflineRoute
   '/people': typeof ProtectedPeopleRoute
   '/screens': typeof ProtectedScreensRoute
@@ -529,6 +537,7 @@ export interface FileRoutesById {
   '/_protected/calendar': typeof ProtectedCalendarRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/metronome': typeof ProtectedMetronomeRoute
+  '/_protected/notifications': typeof ProtectedNotificationsRoute
   '/_protected/offline': typeof ProtectedOfflineRoute
   '/_protected/people': typeof ProtectedPeopleRoute
   '/_protected/review': typeof ProtectedReviewRouteWithChildren
@@ -593,6 +602,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/dashboard'
     | '/metronome'
+    | '/notifications'
     | '/offline'
     | '/people'
     | '/review'
@@ -654,6 +664,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/dashboard'
     | '/metronome'
+    | '/notifications'
     | '/offline'
     | '/people'
     | '/screens'
@@ -716,6 +727,7 @@ export interface FileRouteTypes {
     | '/_protected/calendar'
     | '/_protected/dashboard'
     | '/_protected/metronome'
+    | '/_protected/notifications'
     | '/_protected/offline'
     | '/_protected/people'
     | '/_protected/review'
@@ -845,6 +857,13 @@ declare module '@tanstack/react-router' {
       path: '/metronome'
       fullPath: '/metronome'
       preLoaderRoute: typeof ProtectedMetronomeRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/notifications': {
+      id: '/_protected/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof ProtectedNotificationsRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/offline': {
@@ -1273,6 +1292,7 @@ interface ProtectedRouteChildren {
   ProtectedCalendarRoute: typeof ProtectedCalendarRoute
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedMetronomeRoute: typeof ProtectedMetronomeRoute
+  ProtectedNotificationsRoute: typeof ProtectedNotificationsRoute
   ProtectedOfflineRoute: typeof ProtectedOfflineRoute
   ProtectedPeopleRoute: typeof ProtectedPeopleRoute
   ProtectedReviewRoute: typeof ProtectedReviewRouteWithChildren
@@ -1312,6 +1332,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedCalendarRoute: ProtectedCalendarRoute,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedMetronomeRoute: ProtectedMetronomeRoute,
+  ProtectedNotificationsRoute: ProtectedNotificationsRoute,
   ProtectedOfflineRoute: ProtectedOfflineRoute,
   ProtectedPeopleRoute: ProtectedPeopleRoute,
   ProtectedReviewRoute: ProtectedReviewRouteWithChildren,

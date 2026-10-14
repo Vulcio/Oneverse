@@ -1,7 +1,8 @@
 // Notifications in the browser (issue #236): the bell in the top bar shows
 // how many are unread; its list puts each into words in the reader's
 // language; pressing one opens what it's about and marks it read; Mark all
-// as read clears the count.
+// as read clears the count. A request to connect is answered right in the
+// list, and See all opens the Notifications page (issue #149).
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -47,6 +48,28 @@ try {
     await page.getByTestId("notification-read-all").click();
     await page.getByTestId("notification-count").waitFor({ state: "detached" });
     if ((await page.locator('[data-read="false"]').count()) !== 0) throw new Error("all should be read");
+  });
+
+  await step("a request to connect, accepted from the bell; See all opens the Notifications page", async () => {
+    const stranger = await user("Bell stranger");
+    await api(stranger, "POST", "/people/requests", { email: member.email });
+    await page.reload();
+    await page.getByTestId("notification-count").filter({ hasText: "1" }).waitFor();
+    await page.getByTestId("notification-bell").click();
+    const request = page.getByTestId("notification-list").locator('[data-notification="CONNECTION_REQUESTED"]');
+    await request.getByText("Bell stranger asks to connect with you").waitFor();
+    await request.getByTestId("connection-accept").click();
+    await request.getByText("Accepted: you're connected").waitFor();
+    await page.getByTestId("notification-count").waitFor({ state: "detached" });
+    if (!(await api(member, "GET", "/people")).people.some((person) => person.id === stranger.id)) throw new Error("not connected");
+    await page.getByTestId("notification-see-all").click();
+    await page.waitForURL(/\/notifications$/);
+    const all = page.getByTestId("notifications-page");
+    await all.getByRole("heading", { name: "Notifications" }).waitFor();
+    await all.locator('[data-notification="EVENT_DATE_CHANGED"]').waitFor();
+    // Answered already: the page says so rather than answering again.
+    await all.locator('[data-notification="CONNECTION_REQUESTED"]').getByTestId("connection-decline").click();
+    await all.getByText("Already answered").waitFor();
   });
 
   await step("Account: each kind by email, off on this server until an admin turns it on", async () => {

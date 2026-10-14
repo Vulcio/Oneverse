@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { SetlistAccessService } from "./setlist-access.service.js";
 import { summarize } from "./setlists.service.js";
@@ -17,6 +18,7 @@ export class SetlistSharingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sets: SetlistAccessService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async sharing(user: AuthenticatedUser, setlistId: string) {
@@ -94,18 +96,31 @@ export class SetlistSharingService {
   async join(user: AuthenticatedUser, token: string): Promise<{ setlistId: string }> {
     const link = await this.prisma.client.setlistShareLink.findUnique({
       where: { token },
-      select: { setlist: { select: { id: true, ownerUserId: true, ownerTeamId: true } } },
+      select: { setlist: { select: { id: true, name: true, ownerUserId: true, ownerTeamId: true } } },
     });
     if (!link) throw new NotFoundException("This link doesn't work any more. Ask for a new one.");
     const { setlist } = link;
     const access = await this.sets.access(user, setlist);
     if (!access.canView) {
+      const already = await this.prisma.client.setlistGuest.count({ where: { setlistId: setlist.id, userId: user.id } });
       await this.prisma.client.setlistGuest.upsert({
         where: { setlistId_userId: { setlistId: setlist.id, userId: user.id } },
         create: { setlistId: setlist.id, userId: user.id },
         update: {},
       });
+      if (!already) await this.tellJoined(setlist, user.id);
     }
     return { setlistId: setlist.id };
+  }
+
+  /** Its owner - a team set's admins - told who joined it (issue #149). */
+  private async tellJoined(setlist: { id: string; name: string | null; ownerUserId: string | null; ownerTeamId: string | null }, guestId: string) {
+    const owners = setlist.ownerTeamId
+      ? (await this.prisma.client.teamMembership.findMany({ where: { teamId: setlist.ownerTeamId, role: "ADMIN" }, select: { userId: true } })).map((row) => row.userId)
+      : setlist.ownerUserId
+        ? [setlist.ownerUserId]
+        : [];
+    const guest = await this.prisma.client.user.findUnique({ where: { id: guestId }, select: { displayName: true } });
+    await this.notifications.notify(owners.map((userId) => ({ userId, kind: "SET_JOINED" as const, data: { by: guest?.displayName ?? "", set: setlist.name ?? "" }, url: `/sets/${setlist.id}` })), guestId);
   }
 }

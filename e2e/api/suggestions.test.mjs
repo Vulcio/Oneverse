@@ -82,6 +82,8 @@ r = await call(reviewer, "POST", `/suggestions/${titleChange.id}/decline`, {});
 check("declining needs a note", r.status === 400, String(r.status));
 r = await call(reviewer, "POST", `/suggestions/${titleChange.id}/decline`, { notes: "The title changed since" });
 check("declined", r.status === 200 && r.body.state === "REJECTED");
+const told = async (kind) => (await api(bob, "GET", "/users/me/notifications?limit=100")).items.filter((item) => item.kind === kind);
+check("who suggested it is told it was taken, and declined, with the notes (issue #149)", (await told("SUGGESTION_ACCEPTED")).some((item) => item.data.note === "Thanks" && item.data.by === "Sugg reviewer") && (await told("SUGGESTION_DECLINED"))[0]?.data.note === "The title changed since");
 
 // --- withdrawing, reviewing your own
 r = await call(reviewer, "POST", `/song-versions/${song.id}/suggestions`, { notes: "Slow" });

@@ -3,6 +3,7 @@ import { foldForSearch } from "@songverse/core";
 import type { Prisma } from "@songverse/db";
 import { AccessPolicyService, OPEN_SUBMISSION_STATES } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { SongFoldService } from "./song-fold.service.js";
 
@@ -86,7 +87,30 @@ export class PublishingService {
     private readonly prisma: PrismaService,
     private readonly access: AccessPolicyService,
     private readonly folds: SongFoldService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  /** Who submitted it told how it went (issue #149): published, or sent back with the reviewer's notes. */
+  private async tellSubmitter(user: AuthenticatedUser, submissionId: string) {
+    const row = await this.prisma.client.submission.findUnique({
+      where: { id: submissionId },
+      select: { state: true, submitterId: true, reviewNotes: true, songVersionId: true, publishedVersionId: true, songVersion: { select: { title: true } }, publishedVersion: { select: { title: true } }, reviewer: { select: { displayName: true } } },
+    });
+    if (!row) return;
+    const published = row.state === "APPROVED";
+    const songId = published ? (row.publishedVersionId ?? row.songVersionId) : row.songVersionId;
+    await this.notifications.notify(
+      [
+        {
+          userId: row.submitterId,
+          kind: published ? "SUBMISSION_PUBLISHED" : "SUBMISSION_RETURNED",
+          data: { by: row.reviewer?.displayName ?? "", song: row.publishedVersion?.title ?? row.songVersion?.title ?? "", ...(row.reviewNotes ? { note: row.reviewNotes } : {}) },
+          url: `/library/${songId}`,
+        },
+      ],
+      user.id,
+    );
+  }
 
   /** What the song page shows: the latest submission, the global song it's linked to, and look-alikes. */
   async status(user: AuthenticatedUser, songVersionId: string) {
@@ -233,6 +257,7 @@ export class PublishingService {
     await this.prisma.client.$transaction((tx) =>
       this.approveIn(tx, user, submissionId, submission.songVersionId, { notes: input.notes, trustLabel: input.trustLabel }),
     );
+    await this.tellSubmitter(user, submissionId);
     return this.findOneRow(submissionId);
   }
 
@@ -271,6 +296,7 @@ export class PublishingService {
       },
       { timeout: 60_000 },
     );
+    await this.tellSubmitter(user, submissionId);
     return this.findOneRow(submissionId);
   }
 
@@ -293,6 +319,7 @@ export class PublishingService {
       await tx.songVersion.update({ where: { id: submission.songVersionId }, data: { publicationState: state } });
       await audit(tx, state === "REJECTED" ? "REJECTED" : "UPDATED", submissionId, user.id, submission.songVersionId, { state });
     });
+    await this.tellSubmitter(user, submissionId);
     return this.findOneRow(submissionId);
   }
 

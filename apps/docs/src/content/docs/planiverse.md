@@ -24,4 +24,4 @@ An invite link to an organisation or a group, opened on Planiverse, joins you th
 
 ## Notifications
 
-The bell beside your picture lists your notifications, as in Songverse. **Account settings** also chooses how each kind reaches you, and turns them on for the device you're on. Notifications about a group that only plans, or an event you host, are Planiverse's: their emails open Planiverse, and they go to the devices you turned on in Planiverse (to your others if there are none). The rest are Songverse's.
+The bell beside your picture lists your notifications, as in Songverse. **Account settings** also chooses how each kind reaches you, and turns them on for the device you're on. Notifications about a group that only plans, or an event you host, are Planiverse's: their emails open Planiverse, and they go to the devices you turned on in Planiverse (to your others if there are none). The rest are Songverse's: pressing one about a song, a set or your people opens it in Songverse. **See all** opens the **Notifications** page.

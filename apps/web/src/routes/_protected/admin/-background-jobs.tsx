@@ -172,7 +172,7 @@ export function BackgroundJobsCard() {
               <p className="text-sm font-medium">{t("jobs.scheduled")}</p>
               <p className="text-xs text-muted-foreground">{t("jobs.scheduledHint")}</p>
               <ul className="flex flex-col gap-1.5 text-sm">
-                {(["make-event-sets", "event-reminders"] as const).map((name) => (
+                {(["make-event-sets", "event-reminders", "clean-up-notifications"] as const).map((name) => (
                   <li key={name} className="flex flex-wrap items-center justify-between gap-2">
                     <span>{t(`jobs.job_${name}`)}</span>
                     <Button

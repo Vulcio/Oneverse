@@ -76,6 +76,10 @@ La cloche en haut de chaque page montre combien de notifications vous n'avez pas
 - quand une date pour laquelle vous êtes inscrit (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) est annulée, ou que son heure ou son titre change - aussi quand tout l'événement change ou est supprimé ;
 - quand un administrateur de l'équipe répond pour vous, avec sa réponse.
 
+En dehors des calendriers de vos équipes, vous êtes prévenu quand quelqu'un demande à se connecter avec vous (voir [Personnes](/fr/people/)) - **Accepter** ou **Refuser** sur place - ou accepte votre demande ; quand une de vos personnes partage un chant ou un recueil avec vous (et quand vous pouvez désormais le modifier) ; quand quelqu'un rejoint une de vos listes par son lien, ou une équipe que vous administrez par son lien d'invitation ; quand vous devenez administrateur d'une équipe, ou de nouveau membre ; quand une suggestion que vous avez faite est retenue ou refusée, ou qu'un chant que vous avez proposé au catalogue est publié ou renvoyé, avec les notes du relecteur ; et quand quelqu'un enregistre une partie dans un multipiste de votre chant (une fois par heure au plus).
+
+**Tout voir**, en bas de la liste, ouvre la page **Notifications** : tout, page par page. Les notifications lues sont supprimées après 90 jours, les non lues après un an.
+
 Celui qui fait le changement n'en est pas prévenu. Elles peuvent aussi arriver par e-mail, comme vous le choisissez dans les [réglages de votre compte](/fr/account/#notifications), quand le serveur les envoie.
 
 ## Membres et rôles

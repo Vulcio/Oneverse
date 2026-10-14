@@ -76,6 +76,10 @@ The bell at the top of every page shows how many notifications you haven't read;
 - when a date you signed up for (see [Line-up](/teams/#line-up)) is cancelled, or its time or title changes - also when the whole event changes or is deleted;
 - when a team admin answers for you, with their answer.
 
+Besides your teams' calendars, you're told when someone asks to connect with you (see [People](/people/)) - **Accept** or **Decline** right there - or accepts your request; when one of your people shares a song or a songbook with you (and when you may edit it now); when someone joins one of your sets through its link, or a team you run through its invite link; when you're made an admin of a team, or a member again; when a suggestion you made is taken or declined, or a song you submitted to the catalogue is published or sent back, with the reviewer's notes; and when someone records a part in a multitrack of your song (once an hour at most).
+
+**See all**, at the bottom of the list, opens the **Notifications** page: everything, a page at a time. Read notifications are deleted after 90 days, unread ones after a year.
+
 Whoever made the change isn't told about it. They can also come by email, as you choose in your [account settings](/account/#notifications), when the server sends them.
 
 ## Members and roles

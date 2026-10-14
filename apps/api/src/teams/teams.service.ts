@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { customInstrumentIds } from "../instruments/instruments.service.js";
 import { orderInstruments, orderTechRoles, slugify, type TeamRoleValue } from "@songverse/core";
 import { Prisma } from "@songverse/db";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { joinTeamOrganization } from "../organizations/organizations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
@@ -17,6 +18,7 @@ export class TeamsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** One's Songverse teams; with `all`, an organisation's groups that only plan too (issue #241). */
@@ -124,7 +126,8 @@ export class TeamsService {
     }));
   }
 
-  async updateMemberRole(teamId: string, memberUserId: string, role: TeamRoleValue) {
+  /** `by`: who changed it; the member is told (issue #149), unless it's themselves. */
+  async updateMemberRole(teamId: string, memberUserId: string, role: TeamRoleValue, by: string | null = null) {
     const membership = await this.prisma.client.teamMembership.findUnique({
       where: { teamId_userId: { teamId, userId: memberUserId } },
     });
@@ -138,6 +141,13 @@ export class TeamsService {
       data: { role },
       include: { user: { select: { id: true, displayName: true, email: true } } },
     });
+    if (membership.role !== role) {
+      const [team, changer] = await Promise.all([
+        this.prisma.client.team.findUnique({ where: { id: teamId }, select: { name: true } }),
+        by ? this.prisma.client.user.findUnique({ where: { id: by }, select: { displayName: true } }) : null,
+      ]);
+      await this.notifications.notify([{ userId: memberUserId, kind: "TEAM_ROLE_CHANGED", data: { team: team?.name ?? "", role, by: changer?.displayName ?? "" }, url: `/teams/${teamId}`, teamId }], by);
+    }
     return {
       userId: updated.user.id,
       displayName: updated.user.displayName,
@@ -262,6 +272,15 @@ export class TeamsService {
       // A team's members are its organisation's too (issue #241).
       await joinTeamOrganization(tx, link.teamId, [userId]);
     });
+    // Its admins told who joined (issue #149).
+    const [admins, joiner] = await Promise.all([
+      this.prisma.client.teamMembership.findMany({ where: { teamId: link.teamId, role: "ADMIN" }, select: { userId: true } }),
+      this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
+    ]);
+    await this.notifications.notify(
+      admins.map((admin) => ({ userId: admin.userId, kind: "TEAM_JOINED" as const, data: { team: link.team.name, by: joiner?.displayName ?? "", role: link.role }, url: `/teams/${link.teamId}`, teamId: link.teamId })),
+      userId,
+    );
 
     return {
       id: link.team.id,

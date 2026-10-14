@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 /**
@@ -15,6 +16,7 @@ export class SongbookSharesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: AccessPolicyService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Throws unless `user` may share the songbook: who can change it as its owner. */
@@ -43,11 +45,20 @@ export class SongbookSharesService {
       where: { status: "ACCEPTED", OR: [{ requesterId: user.id, addresseeId: otherId }, { requesterId: otherId, addresseeId: user.id }] },
     });
     if (connected === 0) throw new ForbiddenException("Share with one of your people");
+    const before = await this.prisma.client.songbookShare.findUnique({ where: { songbookId_userId: { songbookId, userId: otherId } }, select: { canEdit: true } });
     await this.prisma.client.songbookShare.upsert({
       where: { songbookId_userId: { songbookId, userId: otherId } },
       create: { songbookId, userId: otherId, canEdit, sharedById: user.id },
       update: { canEdit },
     });
+    // Told when it's shared, and when it can be edited now (issue #149).
+    if (!before || (canEdit && !before.canEdit)) {
+      const [book, by] = await Promise.all([
+        this.prisma.client.songbook.findUnique({ where: { id: songbookId }, select: { name: true } }),
+        this.prisma.client.user.findUnique({ where: { id: user.id }, select: { displayName: true } }),
+      ]);
+      await this.notifications.notify([{ userId: otherId, kind: "SONGBOOK_SHARED", data: { by: by?.displayName ?? "", songbook: book?.name ?? "", canEdit }, url: `/songbooks/${songbookId}` }]);
+    }
     return this.list(songbookId);
   }
 

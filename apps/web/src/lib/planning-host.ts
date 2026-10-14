@@ -11,6 +11,8 @@ export const planningHost: PlanningHost = {
     team: (teamId) => `/teams/${teamId}`,
     organization: (organizationId) => `/organizations/${organizationId}`,
     organizationEvents: (organizationId) => `/organizations/${organizationId}/events`,
+    notifications: "/notifications",
+    notification: (url) => url,
   },
   sets: { href: (setlistId) => `/sets/${setlistId}`, canMake: true },
 };

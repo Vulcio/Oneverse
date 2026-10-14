@@ -6,6 +6,7 @@ import { Prisma } from "@songverse/db";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import type { AttachmentVisibilityValue, UpdateAttachmentDto } from "./dto/upload-attachment.dto.js";
 import { ImageService, type ProcessedImage } from "../images/image.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
@@ -24,7 +25,34 @@ export class AttachmentsService {
     private readonly images: ImageService,
     private readonly access: AccessPolicyService,
     @InjectQueue(RECORDINGS_QUEUE) private readonly recordings: Queue<ProcessTakeJob | ShrinkUploadJob>,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  /**
+   * A part recorded into a multitrack of someone's song (issue #149): its
+   * owner - a team song's admins - told; once an hour at most for the same
+   * person and song, while the last one is unread.
+   */
+  private async tellRecorded(viewer: Viewer, songVersionId: string, part: string | null) {
+    const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { title: true, ownerUserId: true, ownerTeamId: true } });
+    if (!song) return;
+    const owners = song.ownerTeamId
+      ? (await this.prisma.client.teamMembership.findMany({ where: { teamId: song.ownerTeamId, role: "ADMIN" }, select: { userId: true } })).map((row) => row.userId)
+      : song.ownerUserId
+        ? [song.ownerUserId]
+        : [];
+    const me = await this.prisma.client.user.findUnique({ where: { id: viewer.id }, select: { displayName: true } });
+    const url = `/library/${songVersionId}`;
+    const recent = await this.prisma.client.notification.findMany({
+      where: { userId: { in: owners }, kind: "PART_RECORDED", url, readAt: null, createdAt: { gte: new Date(Date.now() - 3_600_000) }, data: { path: ["by"], equals: me?.displayName ?? "" } },
+      select: { userId: true },
+    });
+    const told = new Set(recent.map((row) => row.userId));
+    await this.notifications.notify(
+      owners.filter((userId) => !told.has(userId)).map((userId) => ({ userId, kind: "PART_RECORDED" as const, data: { by: me?.displayName ?? "", song: song.title, ...(part ? { partName: part } : {}) }, url })),
+      viewer.id,
+    );
+  }
 
   /**
    * The files `viewer` sees (issue #72): their own, the song's (SONG),
@@ -136,6 +164,7 @@ export class AttachmentsService {
       },
       include: ATTACHMENT_INCLUDE,
     });
+    if (take.process && details.multitrackId) await this.tellRecorded(viewer, songVersionId, take.partName || null);
     if (take.process) {
       await this.recordings.add(
         "process-take",

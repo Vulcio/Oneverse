@@ -18,6 +18,13 @@ export interface PlanningHost {
     team: (teamId: string) => string;
     organization: (organizationId: string) => string;
     organizationEvents: (organizationId: string) => string;
+    /** The Notifications page (issue #149). */
+    notifications: string;
+    /**
+     * Where a notification's path goes from here (issue #241): the same in
+     * both apps, but a song's, a set's or People are Songverse's.
+     */
+    notification: (url: string) => string;
   };
   /** A date's set: where it opens, and whether one can be made here. Null in an app without sets. */
   sets: { href: (setlistId: string) => string; canMake: boolean } | null;

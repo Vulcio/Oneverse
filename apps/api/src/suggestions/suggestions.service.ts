@@ -3,6 +3,7 @@ import { mergeSnapshots, snapshotChanges, type SongSnapshot } from "@songverse/c
 import type { Prisma } from "@songverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { SongHistoryService } from "../song-versions/song-history.service.js";
 import { SongVersionsService } from "../song-versions/song-versions.service.js";
@@ -62,6 +63,7 @@ export class SuggestionsService {
     private readonly access: AccessPolicyService,
     private readonly songs: SongVersionsService,
     private readonly history: SongHistoryService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(user: AuthenticatedUser, songVersionId: string, dto: CreateSuggestionDto) {
@@ -160,6 +162,18 @@ export class SuggestionsService {
       data: { state, reviewerId: user.id, reviewedAt: new Date(), reviewNotes: notes?.trim() || null },
       select: SELECT,
     });
+    // Who suggested it told (issue #149).
+    await this.notifications.notify(
+      [
+        {
+          userId: updated.proposer.id,
+          kind: state === "ACCEPTED" ? "SUGGESTION_ACCEPTED" : "SUGGESTION_DECLINED",
+          data: { by: updated.reviewer?.displayName ?? "", song: updated.songVersion.title, ...(updated.reviewNotes ? { note: updated.reviewNotes } : {}) },
+          url: `/library/${updated.songVersion.id}`,
+        },
+      ],
+      user.id,
+    );
     return summary(updated);
   }
 

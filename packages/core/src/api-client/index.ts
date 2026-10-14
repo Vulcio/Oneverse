@@ -2257,7 +2257,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getJobsStatus: () => request<JobsStatus>("/admin/jobs"),
     /** Clears the failed jobs, once their errors have been read (issue #93). */
     clearFailedJobs: () => request<{ cleared: number }>("/admin/jobs/failed", { method: "DELETE" }),
-    runScheduledJob: (name: "make-event-sets" | "event-reminders") => request<{ queued: string }>(`/admin/jobs/run/${name}`, { method: "POST" }),
+    runScheduledJob: (name: "make-event-sets" | "event-reminders" | "clean-up-notifications") => request<{ queued: string }>(`/admin/jobs/run/${name}`, { method: "POST" }),
     /** The songs before and after one in a list of the library, searched and filtered as `query` says (issue #84). */
     getSongNeighbors: (songVersionId: string, query: ListSongVersionsQuery = {}) => {
       const params = new URLSearchParams(

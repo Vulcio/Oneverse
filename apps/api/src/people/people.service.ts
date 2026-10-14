@@ -3,6 +3,7 @@ import type { Prisma } from "@songverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { sendConnectionRequestEmail } from "../auth/email.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 /** New requests one person may send in a day, each an email (#79). */
@@ -24,7 +25,17 @@ export class PeopleService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: AccessPolicyService,
+    private readonly notifications: NotificationsService,
   ) {}
+
+  private async nameOf(userId: string): Promise<string> {
+    return (await this.prisma.client.user.findUnique({ where: { id: userId }, select: { displayName: true } }))?.displayName ?? "";
+  }
+
+  /** The one who asked told they're connected now (issue #149). */
+  private async tellAccepted(requesterId: string, by: string) {
+    await this.notifications.notify([{ userId: requesterId, kind: "CONNECTION_ACCEPTED", data: { by: await this.nameOf(by) }, url: "/people" }]);
+  }
 
   private async emailOf(userId: string): Promise<string> {
     const user = await this.prisma.client.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
@@ -97,7 +108,8 @@ export class PeopleService {
       select: { id: true },
     });
     if (theirs) {
-      await this.prisma.client.connection.update({ where: { id: theirs.id }, data: { status: "ACCEPTED", addresseeId: user.id, respondedAt: new Date() } });
+      const accepted = await this.prisma.client.connection.update({ where: { id: theirs.id }, data: { status: "ACCEPTED", addresseeId: user.id, respondedAt: new Date() } });
+      await this.tellAccepted(accepted.requesterId, user.id);
       return { connected: true };
     }
     // Already connected, or already asked (a declined request stays as it is): no second email.
@@ -108,11 +120,15 @@ export class PeopleService {
     if (asked) return { connected: false };
     const today = await this.prisma.client.connection.count({ where: { requesterId: user.id, createdAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } } });
     if (today >= DAILY_REQUESTS) throw new HttpException(`You can ask up to ${DAILY_REQUESTS} people a day. Try again tomorrow.`, HttpStatus.TOO_MANY_REQUESTS);
+    let created;
     try {
-      await this.prisma.client.connection.create({ data: { requesterId: user.id, addresseeEmail: email } });
+      created = await this.prisma.client.connection.create({ data: { requesterId: user.id, addresseeEmail: email } });
     } catch {
       return { connected: false }; // asked twice at once: the first one emails
     }
+    // Someone with an account at that address sees it in their notifications too, to answer there (issue #149).
+    const addressee = await this.prisma.client.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } }, select: { id: true } });
+    if (addressee) await this.notifications.notify([{ userId: addressee.id, kind: "CONNECTION_REQUESTED", data: { by: await this.nameOf(user.id), connectionId: created.id }, url: "/people" }]);
     await this.notify(user.id, email);
     return { connected: false };
   }
@@ -132,13 +148,15 @@ export class PeopleService {
     const email = await this.emailOf(user.id);
     const request = await this.prisma.client.connection.findFirst({
       where: { id, status: "PENDING", requesterId: { not: user.id }, ...this.toMe(user.id, email) },
-      select: { id: true },
+      select: { id: true, requesterId: true },
     });
     if (!request) throw new NotFoundException("No such request");
     await this.prisma.client.connection.update({
       where: { id },
       data: { status: accept ? "ACCEPTED" : "DECLINED", addresseeId: user.id, respondedAt: new Date() },
     });
+    // A yes is told; a no never is (the requester never learns they were declined).
+    if (accept) await this.tellAccepted(request.requesterId, user.id);
   }
 
   /** Takes back a request the user sent. */
@@ -200,11 +218,17 @@ export class PeopleService {
     if (song.ownerScope === "GLOBAL") throw new BadRequestException("Everyone sees a catalogue song already");
     if (otherId === user.id || otherId === song.ownerUserId) throw new BadRequestException("It's already theirs");
     if (!(await this.isConnected(user.id, otherId))) throw new ForbiddenException("Share with one of your people");
+    const before = await this.prisma.client.accessGrant.findUnique({ where: { songVersionId_grantedToUserId: { songVersionId, grantedToUserId: otherId } }, select: { canEdit: true } });
     await this.prisma.client.accessGrant.upsert({
       where: { songVersionId_grantedToUserId: { songVersionId, grantedToUserId: otherId } },
       create: { songVersionId, grantedToUserId: otherId, grantedByUserId: user.id, canEdit },
       update: { canEdit },
     });
+    // Told when it's shared, and when it can be edited now (issue #149).
+    if (!before || (canEdit && !before.canEdit)) {
+      const title = (await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { title: true } }))?.title ?? "";
+      await this.notifications.notify([{ userId: otherId, kind: "SONG_SHARED", data: { by: await this.nameOf(user.id), song: title, canEdit }, url: `/library/${songVersionId}` }]);
+    }
     return this.shares(songVersionId);
   }
 

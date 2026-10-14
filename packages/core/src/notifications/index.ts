@@ -35,6 +35,28 @@ export const NOTIFICATION_KINDS = [
   "SWAP_TAKEN",
   // One is made the host of an organisation's event (issue #241).
   "HOSTING",
+  // Someone asks to connect (issue #149, #77): accept or decline right there.
+  "CONNECTION_REQUESTED",
+  // Someone one asked to connect said yes.
+  "CONNECTION_ACCEPTED",
+  // One of one's people shares a song with one, to view or to edit.
+  "SONG_SHARED",
+  // One of one's people shares a songbook with one.
+  "SONGBOOK_SHARED",
+  // Someone joins a set of one's through its link (to its owner, or its team's admins).
+  "SET_JOINED",
+  // Someone joins a team one runs through its invite link (to its admins).
+  "TEAM_JOINED",
+  // One is made an admin of a team, or a member again.
+  "TEAM_ROLE_CHANGED",
+  // A suggestion one made to someone's song is taken, or declined.
+  "SUGGESTION_ACCEPTED",
+  "SUGGESTION_DECLINED",
+  // A song one submitted to the global catalogue is published, or sent back with changes asked for.
+  "SUBMISSION_PUBLISHED",
+  "SUBMISSION_RETURNED",
+  // Someone records a part in a multitrack of one's song.
+  "PART_RECORDED",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -60,7 +82,22 @@ export interface NotificationData {
   part?: string;
   /** A part's own name (a team's, or an admin's custom instrument), when its key has none. */
   partName?: string;
+  /** A song's title, a songbook's or a set's name (issue #149). */
+  song?: string;
+  songbook?: string;
+  set?: string;
+  /** A team role: ADMIN or MEMBER, put into words in the reader's language. */
+  role?: "ADMIN" | "MEMBER";
+  /** Shared to edit, not only to view. */
+  canEdit?: boolean;
+  /** What the reviewer wrote. */
+  note?: string;
+  /** The request to connect it's about: accepted or declined from the notification. */
+  connectionId?: string;
 }
+
+/** How long notifications are kept (issue #149): read ones 90 days, unread ones a year. */
+export const NOTIFICATIONS_KEPT_DAYS = { read: 90, unread: 365 } as const;
 
 const fill = (template: string, values: Record<string, string>) => template.replace(/\{\{(\w+)\}\}/g, (_, name: string) => values[name] ?? "");
 
@@ -97,6 +134,13 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
     call: data.callTime ? ` · ${fill(messages.notifications.callTime, { time: data.callTime })}` : "",
     count: data.count === undefined ? "" : String(data.count),
     part: partWords(data, messages),
+    song: data.song ?? "",
+    songbook: data.songbook ?? "",
+    set: data.set ?? "",
+    role: data.role ? messages.notifications.roles[data.role] : "",
+    // "to edit" or "to view", after what's shared.
+    access: data.canEdit === undefined ? "" : data.canEdit ? messages.notifications.toEdit : messages.notifications.toView,
+    note: data.note ?? "",
   };
   return { title: fill(words.title, values), body: fill(words.body, values) };
 }

@@ -82,6 +82,8 @@ r = await call(reviewer, "POST", `/submissions/${sub1}/request-changes`, { notes
 check("send back for changes", r.status === 201 && r.body.state === "NEEDS_CHANGES" && r.body.reviewNotes === "Please add the bridge");
 r = await call(alice, "GET", `/song-versions/${song.id}/publication`);
 check("the submitter sees the notes", r.body.submission?.state === "NEEDS_CHANGES" && r.body.submission.reviewNotes === "Please add the bridge" && r.body.canSubmit === false);
+const told = async (kind) => (await api(alice, "GET", "/users/me/notifications?limit=100")).items.filter((item) => item.kind === kind);
+check("…and is told, with them (issue #149)", (await told("SUBMISSION_RETURNED"))[0]?.data.note === "Please add the bridge" && (await told("SUBMISSION_RETURNED"))[0].data.by === "Pub reviewer");
 r = await call(alice, "POST", `/submissions/${sub1}/resubmit`, { message: "Bridge added" });
 check("resubmit", r.status === 201 && r.body.state === "SUBMITTED" && r.body.submitterMessage === "Bridge added", JSON.stringify(r.body).slice(0, 200));
 check("it's mine", (await api(alice, "GET", "/submissions/mine")).some((s) => s.id === sub1));
@@ -89,6 +91,7 @@ check("it's mine", (await api(alice, "GET", "/submissions/mine")).some((s) => s.
 // --- approving: the song itself moves to the catalogue
 r = await call(reviewer, "POST", `/submissions/${sub1}/approve`, { trustLabel: "Checked by the team" });
 check("approve", r.status === 201 && r.body.state === "APPROVED" && r.body.publishedVersionId === song.id, JSON.stringify(r.body).slice(0, 200));
+check("…the submitter told it's in the catalogue", (await told("SUBMISSION_PUBLISHED"))[0]?.url === `/library/${song.id}`);
 const globalId = song.id;
 const published = await api(bob, "GET", `/song-versions/${globalId}`);
 check(
