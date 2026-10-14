@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@songverse/ui/components/card";
 import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
+import { groupTree } from "@songverse/planning/organizations";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/teams/")({
@@ -10,7 +11,10 @@ export const Route = createFileRoute("/_protected/teams/")({
   component: TeamsPage,
 });
 
-/** One's teams and groups, those in no organisation too (issue #242): each opens its page. */
+/**
+ * One's teams and groups, those in no organisation too (issue #242): each
+ * opens its page, a sub-group under its group when one's in both (issue #246).
+ */
 function TeamsPage() {
   const { t } = useTranslation();
   const teams = Route.useLoaderData();
@@ -23,8 +27,8 @@ function TeamsPage() {
             <p className="text-sm text-muted-foreground">{t("teams.noTeamsYet")}</p>
           ) : (
             <ul className="flex flex-col divide-y" data-testid="teams-list">
-              {teams.map((team) => (
-                <li key={team.id}>
+              {groupTree(teams.map((one) => ({ ...one, parentId: one.parentId ?? null }))).map(({ group: team, depth }) => (
+                <li key={team.id} data-depth={depth} style={{ paddingLeft: `${depth * 1.5}rem` }}>
                   <Link to="/teams/$teamId" params={{ teamId: team.id }} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0 hover:text-primary">
                     <div className="flex min-w-0 items-center gap-3">
                       <EntityAvatar name={team.name} color={team.color} avatarUrl={team.avatarUrl} size={36} />

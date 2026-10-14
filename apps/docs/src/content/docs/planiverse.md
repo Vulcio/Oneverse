@@ -14,7 +14,7 @@ It's the same account as Songverse's: the same email and password, passkey or Go
 ## What's there
 
 - **My calendar**: the coming dates of all your teams and groups, answered there - Available, If needed, Not available - and your days away.
-- **Teams**: every team and group you're in, those in no organisation too.
+- **Teams**: every team and group you're in, those in no organisation too - a sub-group under its group, when you're in both.
 - **Organisations**: the ones you're in, their groups, members and events, as in Songverse (see [Organisations](/organizations/)).
 - A team's or group's page: its calendar, members and positions, and for its admins the same tools as in Songverse - events, answers asked for, the line-up, invite links.
 

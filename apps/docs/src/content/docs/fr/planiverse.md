@@ -14,7 +14,7 @@ C'est le même compte que celui de Songverse : la même adresse e-mail et le mê
 ## Ce qu'on y trouve
 
 - **Mon calendrier** : les prochaines dates de toutes vos équipes et de tous vos groupes, avec vos réponses - Disponible, Si besoin, Pas disponible - et vos jours d'absence.
-- **Équipes** : toutes vos équipes et tous vos groupes, y compris ceux hors de toute organisation.
+- **Équipes** : toutes vos équipes et tous vos groupes, y compris ceux hors de toute organisation - un sous-groupe sous son groupe, quand vous êtes dans les deux.
 - **Organisations** : celles dont vous faites partie, leurs groupes, membres et événements, comme dans Songverse (voir [Organisations](/fr/organizations/)).
 - La page d'une équipe ou d'un groupe : son calendrier, ses membres et leurs postes, et pour ses administrateurs les mêmes outils que dans Songverse - événements, réponses demandées, équipe du jour, liens d'invitation.
 

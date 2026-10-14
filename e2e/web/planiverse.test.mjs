@@ -25,6 +25,9 @@ await api(alice, "POST", `/teams/${welcome.id}/events`, { title: "Door welcome",
 const { token } = await api(alice, "POST", `/organizations/${org.id}/invite-links`, {});
 // Bob, in a group (and so its organisation's member later, by its link): his Teams page lists it.
 sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "updatedAt") values ('tmpv${stamp}', '${welcome.id}', '${bob.id}', 'MEMBER', now(), now())`);
+// …and in a group under it: listed under it (issue #246).
+const parking = await api(alice, "POST", `/organizations/${org.id}/groups`, { name: `Parking ${stamp}`, parentId: welcome.id });
+sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "updatedAt") values ('tmpvp${stamp}', '${parking.id}', '${bob.id}', 'MEMBER', now(), now())`);
 
 async function signInHere(who) {
   await page.goto(PLANIVERSE);
@@ -82,9 +85,10 @@ try {
     if (!mine.organizations.some((one) => one.id === org.id)) throw new Error("not in the organisation");
   });
 
-  await step("the menu: Teams, every one of theirs; Account settings, here", async () => {
+  await step("the menu: Teams, every one of theirs, sub-groups under their group; Account settings, here", async () => {
     await page.getByTestId("nav-teams").click();
     await page.getByTestId("teams-list").getByText(`Welcome ${stamp}`).waitFor();
+    await page.getByTestId("teams-list").locator('[data-depth="1"]', { hasText: `Parking ${stamp}` }).waitFor();
     await page.getByTestId("user-menu").click();
     await page.getByTestId("nav-account").click();
     await page.waitForURL(`${PLANIVERSE}/account`);
