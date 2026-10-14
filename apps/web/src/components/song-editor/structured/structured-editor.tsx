@@ -40,6 +40,7 @@ import {
   insertChord,
   nudgeChord,
   REPLACE_META,
+  remeasureChords,
   replaceDocument,
   setDocumentKey,
   duplicateLinked,
@@ -201,6 +202,12 @@ export function StructuredEditor({
     editor?.setEditable(!readOnly);
   }, [editor, readOnly]);
 
+  // The chart's own lettering, as Edit's Display settings have it (issue #249): the chords' room measured again with it.
+  const display = useDisplaySettings("EDIT");
+  useEffect(() => {
+    if (editor) remeasureChords(editor.view);
+  }, [editor, display.font]);
+
   if (readOnly) {
     return <EditPreview chart={chartOfSections(sections, flow, songKey || null)} />;
   }
@@ -218,7 +225,7 @@ export function StructuredEditor({
         )}
       >
         {mode === "visual" && editor ? <Palette editor={editor} songKey={songKey} sections={sections} /> : null}
-        <div className={cn("relative min-w-0", mode !== "visual" && "hidden")} data-editor-container="">
+        <div className={cn("relative min-w-0", mode !== "visual" && "hidden")} data-editor-container="" data-font={display.font}>
           <SongOrderActionsContext.Provider value={orderActions}>
             <EditorContent editor={editor} className="sv-editor" />
           </SongOrderActionsContext.Provider>

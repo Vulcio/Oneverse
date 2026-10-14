@@ -15,6 +15,8 @@ Les trois modes :
 - **Texte** - la même grille en texte ChordPro, pour des modifications rapides en bloc. Les accords et les lignes que vous ne changez pas restent tels quels.
 - **Aperçu** - la grille telle que les musiciens la verront. Sur un écran large, elle s'affiche aussi à côté de **Visuel** et **Texte**, mise à jour au fil de la saisie.
 
+**Visuel** utilise la même police que l'aperçu : **Police** dans son panneau **Affichage**, **Chasse fixe** ou **Proportionnelle**. Dans les deux cas, chaque accord reste au-dessus de sa lettre. Là où deux accords sont plus proches que la largeur du premier, un peu d'espace est laissé entre leurs mots.
+
 ## Les accords
 
 - **Tapez un accord** entre crochets à l'endroit où il se joue : `[G]Amazing grace`.

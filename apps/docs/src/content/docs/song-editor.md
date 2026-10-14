@@ -15,6 +15,8 @@ The three modes:
 - **Text** - the same chart as ChordPro text, for quick bulk edits. Chords and lines you don't change stay as they were.
 - **Preview** - the chart as players will see it. On a wide screen it's also shown beside **Visual** and **Text**, updated as you type.
 
+**Visual** uses the same lettering as the preview: **Font** in its **Display** panel, **Monospace** or **Proportional**. Either way each chord stays over its own letter. Where two chords are closer together than the first one is wide, a little room is left between their words.
+
 ## Chords
 
 - **Type a chord** in square brackets where it's played: `[G]Amazing grace`.

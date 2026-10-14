@@ -404,13 +404,43 @@ function uniqueIds() {
   });
 }
 
+/** A text's width in the editor's lettering (its chords bold), in pixels. */
+export type TextMeasure = (text: string, bold: boolean) => number;
+
+/** Measures text as the editor draws it (issue #249): whatever its font, proportional or not. */
+function textMeasure(dom: HTMLElement): TextMeasure | null {
+  const context = document.createElement("canvas").getContext("2d");
+  if (!context) return null;
+  const style = getComputedStyle(dom);
+  const fonts = { regular: `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`, bold: `${style.fontStyle} 700 ${style.fontSize} ${style.fontFamily}` };
+  const cache = new Map<string, number>();
+  return (text, bold) => {
+    const key = `${bold ? 1 : 0}${text}`;
+    let width = cache.get(key);
+    if (width === undefined) {
+      context.font = bold ? fonts.bold : fonts.regular;
+      width = context.measureText(text).width;
+      cache.set(key, width);
+    }
+    return width;
+  };
+}
+
+const RELAYOUT_META = "songverse:relayout";
+const remeasurers = new WeakMap<EditorView, () => void>();
+/** Measures the chords' room again: the editor's lettering changed (the Display panel's font, say). */
+export function remeasureChords(view: EditorView) {
+  remeasurers.get(view)?.();
+}
+
 /**
  * Room for chords close together, as the chart draws them: when a chord is
  * wider than the text before the next one, a gap is added before that next
  * chord (with a hyphen when it splits a word), so each stays over its own
- * character. See layoutChordLine in @songverse/core.
+ * character. See layoutChordLine in @songverse/core. Widths are measured in
+ * the editor's own lettering (issue #249); before it can measure, in `ch`.
  */
-function spacingDecorations(doc: PMNode): DecorationSet {
+function spacingDecorations(doc: PMNode, measure: TextMeasure | null): DecorationSet {
   const decorations: Decoration[] = [];
   doc.descendants((line, linePos) => {
     if (line.type.name !== "line") return line.type.name === "section";
@@ -424,8 +454,11 @@ function spacingDecorations(doc: PMNode): DecorationSet {
       for (; j < items.length && !items[j]!.chord; j++) between += items[j]!.text;
       const next = items[j];
       if (!next) continue;
-      const missing = (chord.attrs.raw as string).length + 1 - between.length;
+      const raw = chord.attrs.raw as string;
+      // A space's room after the chord, as the chart leaves.
+      const missing = measure ? Math.ceil(measure(`${raw} `, true) - measure(between, false)) : raw.length + 1 - between.length;
       if (missing <= 0) continue;
+      const width = measure ? `${missing}px` : `${missing}ch`;
       const after = items[j + 1]?.text?.[0];
       const hyphen = /\S$/.test(between) && !!after && /\S/.test(after);
       decorations.push(
@@ -434,11 +467,11 @@ function spacingDecorations(doc: PMNode): DecorationSet {
           () => {
             const gap = document.createElement("span");
             gap.className = "sv-chord-gap";
-            gap.style.width = `${missing}ch`;
+            gap.style.width = width;
             if (hyphen) gap.textContent = "-";
             return gap;
           },
-          { side: -1, key: `gap:${missing}:${hyphen}`, ignoreSelection: true },
+          { side: -1, key: `gap:${width}:${hyphen}`, ignoreSelection: true },
         ),
       );
     }
@@ -449,13 +482,32 @@ function spacingDecorations(doc: PMNode): DecorationSet {
 
 const spacingKey = new PluginKey<DecorationSet>("songverseChordSpacing");
 function chordSpacing() {
+  let measure: TextMeasure | null = null;
   return new Plugin<DecorationSet>({
     key: spacingKey,
     state: {
-      init: (_, state) => spacingDecorations(state.doc),
-      apply: (tr, previous) => (tr.docChanged ? spacingDecorations(tr.doc) : previous),
+      init: (_, state) => spacingDecorations(state.doc, measure),
+      apply: (tr, previous) => (tr.docChanged || tr.getMeta(RELAYOUT_META) ? spacingDecorations(tr.doc, measure) : previous),
     },
     props: { decorations: (state) => spacingKey.getState(state) },
+    view(view) {
+      let live = true;
+      // Measured once the editor is in the page, and again once its fonts have loaded.
+      const remeasure = () => {
+        if (!live || !view.dom.isConnected) return;
+        measure = textMeasure(view.dom);
+        view.dispatch(view.state.tr.setMeta(RELAYOUT_META, true).setMeta("addToHistory", false));
+      };
+      remeasurers.set(view, remeasure);
+      requestAnimationFrame(remeasure);
+      void document.fonts?.ready.then(remeasure);
+      return {
+        destroy() {
+          live = false;
+          remeasurers.delete(view);
+        },
+      };
+    },
   });
 }
 

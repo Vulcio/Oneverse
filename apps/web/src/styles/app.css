@@ -109,6 +109,11 @@
   font-family: var(--font-mono);
   font-size: 0.875rem;
 }
+/* In the chart's own lettering when Edit's Display settings say so (issue #249). */
+[data-font="sans"] > .sv-editor .ProseMirror {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+}
 .sv-section {
   border-left: 2px solid var(--color-border);
   padding-left: 0.75rem;
