@@ -79,8 +79,12 @@ await step("Live in a set: swiping left goes to the next song, right to the prev
       [from, to],
     );
   // Scrolled down the first song…
-  await page.getByTestId("live-scroll").evaluate((el) => el.scrollTo({ top: 600 }));
-  await page.waitForFunction(() => document.querySelector('[data-testid="live-scroll"]').scrollTop > 500);
+  // Scrolled again until it holds: the page may still be settling (a chart laid out, the last position restored).
+  await page.waitForFunction(() => {
+    const scroller = document.querySelector('[data-testid="live-scroll"]');
+    if (scroller.scrollTop <= 500) scroller.scrollTo({ top: 600 });
+    return scroller.scrollTop > 500;
+  });
   await swipe(900, 300);
   await page.waitForURL(`**/sets/${set.id}/live/${items[1].id}`);
   // …the next one starts at its top.
