@@ -103,7 +103,7 @@ Les administrateurs d'une équipe lui donnent une **Couleur** et une image sur s
 
 ## Quitter ou supprimer une équipe
 
-**Quitter l'équipe** vous en retire. Si vous en êtes le seul administrateur, nommez d'abord un autre membre administrateur. Un administrateur peut **Supprimer l'équipe**.
+**Quitter l'équipe** vous en retire. Si vous en êtes le seul administrateur, nommez d'abord un autre membre administrateur. Un administrateur peut la **Renommer** - le crayon à côté de son nom ; un groupe d'organisation aussi - ou **Supprimer l'équipe**.
 
 ## Ce qui appartient à une équipe
 

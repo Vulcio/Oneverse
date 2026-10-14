@@ -103,7 +103,7 @@ A team's admins give it a **Colour** and a picture on its page, in **Colour and 
 
 ## Leaving or deleting a team
 
-**Leave team** takes you out of it. If you're its only admin, promote another member first. An admin can **Delete team**.
+**Leave team** takes you out of it. If you're its only admin, promote another member first. An admin can **Rename** it - the pencil beside its name; an organisation's group too - or **Delete team**.
 
 ## What belongs to a team
 

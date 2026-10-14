@@ -2,7 +2,7 @@
 // group that only plans from the organisation's page, gives it positions
 // and ticks the one they cover, has an event ask for one, puts it under the
 // music team; the organisation's page shows it under it, and Songverse's
-// sidebar doesn't list it among the teams.
+// sidebar doesn't list it among the teams. Its admin renames it (issue #244).
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -16,6 +16,7 @@ const org = await api(alice, "POST", "/organizations", { name: `Groups web ${sta
 const music = await api(alice, "POST", "/teams", { name: `Music ${stamp}` });
 await api(alice, "PUT", `/teams/${music.id}/organization`, { organizationId: org.id });
 const welcome = `Welcome ${stamp}`;
+let groupUrl;
 
 const browser = await chromium.launch();
 try {
@@ -30,6 +31,7 @@ try {
     await form.getByTestId("group-create").click();
     await page.waitForURL(/\/teams\/[^/]+$/);
     await page.getByRole("heading", { name: welcome }).waitFor();
+    groupUrl = page.url();
   });
 
   await step("…gives it positions, and ticks the one they cover", async () => {
@@ -73,6 +75,16 @@ try {
     await page.goto(`${WEB}/teams`);
     await page.getByRole("link", { name: `Music ${stamp}` }).first().waitFor();
     if (await page.getByRole("link", { name: welcome }).count()) throw new Error("the group that only plans is among Songverse's teams");
+  });
+
+  await step("its admin renames it: the new name everywhere", async () => {
+    await page.goto(groupUrl);
+    await page.getByTestId("team-rename").click();
+    await page.getByTestId("team-name-input").fill(`Welcome team ${stamp}`);
+    await page.getByTestId("team-name-save").click();
+    await page.getByRole("heading", { name: `Welcome team ${stamp}` }).waitFor();
+    await page.goto(`${WEB}/organizations/${org.id}`);
+    await page.locator('[data-depth="1"]', { hasText: `Welcome team ${stamp}` }).waitFor();
   });
 } finally {
   await browser.close();

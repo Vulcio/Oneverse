@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/componen
 import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
+import { Input } from "@songverse/ui/components/input";
+import { Pencil } from "lucide-react";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from "../components/team-cards";
@@ -57,6 +59,24 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
   const [promoteTargetUserId, setPromoteTargetUserId] = useState("");
 
   const [deleting, setDeleting] = useState(false);
+  // Renaming it (issue #244): a team, or an organisation's group.
+  const [newName, setNewName] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+
+  async function rename() {
+    if (!newName?.trim()) return;
+    setRenaming(true);
+    setError(null);
+    try {
+      await api.updateTeam(team.id, { name: newName.trim() });
+      setNewName(null);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setRenaming(false);
+    }
+  }
 
   async function refresh() {
     await router.invalidate();
@@ -131,7 +151,32 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
         <div className="flex min-w-0 items-center gap-3">
           <EntityAvatar name={team.name} color={team.color} avatarUrl={team.avatarUrl} size={48} />
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold break-words">{team.name}</h1>
+            {newName !== null ? (
+              <form
+                className="flex flex-wrap items-center gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void rename();
+                }}
+              >
+                <Input value={newName} minLength={2} maxLength={100} autoFocus aria-label={t("teams.newName")} className="w-64" onChange={(e) => setNewName(e.target.value)} data-testid="team-name-input" />
+                <Button type="submit" size="sm" disabled={renaming || newName.trim().length < 2} data-testid="team-name-save">
+                  {t("teams.saveName")}
+                </Button>
+                <Button type="button" variant="ghost" size="sm" disabled={renaming} onClick={() => setNewName(null)}>
+                  {t("teams.cancel")}
+                </Button>
+              </form>
+            ) : (
+              <div className="flex items-center gap-1">
+                <h1 className="text-2xl font-semibold break-words">{team.name}</h1>
+                {isAdmin ? (
+                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={t("teams.rename")} title={t("teams.rename")} onClick={() => setNewName(team.name)} data-testid="team-rename">
+                    <Pencil />
+                  </Button>
+                ) : null}
+              </div>
+            )}
             {team.description ? <p className="text-sm text-muted-foreground">{team.description}</p> : null}
             {team.organization && organizations && organizations.mode !== "NONE" ? (
               <HostLink href={links.organization(team.organization.id)} className="text-xs text-muted-foreground hover:text-primary" data-testid="team-organization">

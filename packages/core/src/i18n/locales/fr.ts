@@ -1304,6 +1304,9 @@ const fr: typeof en = {
     promoteAndLeave: "Promouvoir et quitter",
     promoteBeforeLeaveDescription:
       "Vous êtes le seul administrateur de cette équipe. Choisissez un autre membre à promouvoir administrateur avant de pouvoir partir.",
+    rename: "Renommer",
+    newName: "Nouveau nom",
+    saveName: "Enregistrer",
     deleteTeam: "Supprimer l'équipe",
     confirmDeleteTeam: "Confirmer la suppression",
     deletingTeam: "Suppression…",

@@ -1301,6 +1301,9 @@ const en = {
     promoteAndLeave: "Promote & leave",
     promoteBeforeLeaveDescription:
       "You're the only admin on this team. Choose another member to promote to admin before you can leave.",
+    rename: "Rename",
+    newName: "New name",
+    saveName: "Save",
     deleteTeam: "Delete team",
     confirmDeleteTeam: "Confirm delete",
     deletingTeam: "Deleting…",
