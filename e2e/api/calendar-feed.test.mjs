@@ -53,4 +53,21 @@ check("an address that isn't a feed", (await fetch(`${API}/calendar/nope.ics`)).
 r = await call(singer, "DELETE", "/users/me/calendar-feed");
 check("turned off", r.status === 204 && (await call(singer, "GET", "/users/me/calendar-feed")).body.url === null);
 
+// --- the team's link (issue #240): all its dates, nobody's answers
+r = await call(singer, "POST", `/teams/${team.id}/calendar-feed`);
+check("only the team's admins make the team's link", r.status === 403, String(r.status));
+check("no team link until asked for", (await call(admin, "GET", `/teams/${team.id}/calendar-feed`)).body.url === null);
+r = await call(admin, "POST", `/teams/${team.id}/calendar-feed`);
+const teamUrl = r.body.url;
+check("a team link made", r.status === 201 && /\/calendar\/[A-Za-z0-9_-]{40,}\.ics$/.test(teamUrl), teamUrl);
+const teamFeed = (await (await fetch(teamUrl)).text()).replace(/\r\n /g, "");
+const teamStarts = [...teamFeed.matchAll(/^DTSTART:(\S+)$/gm)].map((m) => m[1]);
+check("every coming date, signed up for or not - not the cancelled one", teamStarts.some((d) => d.startsWith(ical(plus(10)))) && !teamStarts.some((d) => d.startsWith(ical(plus(24)))) && teamStarts.length > 40, teamStarts.slice(0, 5).join(" "));
+check("…named after the team, each with its call time and place", teamFeed.includes(`X-WR-CALNAME:Songverse - Feed ${stamp}`) && teamFeed.includes("SUMMARY:Morning service\r\n") && teamFeed.includes("DESCRIPTION:Call 09:15") && teamFeed.includes("LOCATION:Main hall"), teamFeed.split("\r\n").filter((l) => /^(X-WR-CALNAME|SUMMARY|DESCRIPTION)/.test(l)).slice(0, 4).join(" | "));
+check("…the singer's own link is theirs: off still", (await call(singer, "GET", "/users/me/calendar-feed")).body.url === null);
+r = await call(admin, "POST", `/teams/${team.id}/calendar-feed`);
+check("reset: the old team link stops", r.body.url !== teamUrl && (await fetch(teamUrl)).status === 404 && (await fetch(r.body.url)).status === 200);
+r = await call(admin, "DELETE", `/teams/${team.id}/calendar-feed`);
+check("turned off", r.status === 204 && (await call(admin, "GET", `/teams/${team.id}/calendar-feed`)).body.url === null);
+
 finish();

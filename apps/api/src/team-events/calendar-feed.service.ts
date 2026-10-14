@@ -35,6 +35,24 @@ export class CalendarFeedService {
     return { url: `${apiUrl()}/calendar/${token}.ics` };
   }
 
+  /** A team's link (issue #240), for its admins: null when it's off. */
+  async team(teamId: string) {
+    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { teamId } });
+    return feed ? this.address(feed.token) : { url: null };
+  }
+
+  /** A new team link, in the words of the admin making it; the old one stops working. */
+  async resetTeam(teamId: string, userId: string) {
+    const locale = (await this.prisma.client.user.findUnique({ where: { id: userId }, select: { locale: true } }))?.locale ?? "en";
+    const token = randomBytes(32).toString("base64url");
+    await this.prisma.client.calendarFeed.upsert({ where: { teamId }, create: { teamId, token, locale }, update: { token, locale, createdAt: new Date() } });
+    return this.address(token);
+  }
+
+  async turnOffTeam(teamId: string): Promise<void> {
+    await this.prisma.client.calendarFeed.deleteMany({ where: { teamId } });
+  }
+
   /** The link, or null when it's off. */
   async mine(userId: string) {
     const feed = await this.prisma.client.calendarFeed.findUnique({ where: { userId } });
@@ -54,12 +72,50 @@ export class CalendarFeedService {
 
   /** The feed for a token, and its ETag; NotFound for a token that isn't one (any more). */
   async feed(token: string): Promise<{ body: string; etag: string }> {
-    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { token }, include: { user: { select: { id: true, displayName: true, locale: true } } } });
-    if (!feed) throw new NotFoundException("This calendar link doesn't work any more.");
-    const userId = feed.user.id;
+    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { token }, include: { user: { select: { id: true, displayName: true, locale: true } }, team: { select: { id: true, name: true } } } });
+    if (!feed || !(feed.user || feed.team)) throw new NotFoundException("This calendar link doesn't work any more.");
     const today = new Date().toISOString().slice(0, 10);
     const from = addDays(today, -BACK_DAYS);
     const to = addDays(today, AHEAD_DAYS);
+    const entries = feed.team ? await this.teamEntries(feed.team.id, from, to, feed.locale ?? "en") : await this.personalEntries(feed.user!.id, from, to, feed.user!.locale);
+    entries.sort((a, b) => a.start.localeCompare(b.start));
+    const name = feed.team ? `Songverse - ${feed.team.name}` : `Songverse - ${feed.user!.displayName}`;
+    const body = calendarFeed(entries, { name, now: new Date(`${localDate(new Date(), "UTC")}T00:00:00Z`).toISOString() });
+    return { body, etag: `"${createHash("sha256").update(body).digest("base64url").slice(0, 27)}"` };
+  }
+
+  /**
+   * A team's dates (issue #240): every event's and rehearsal's, cancelled
+   * ones left out, each with its call time, place, note and set - nobody's
+   * answers or line-up.
+   */
+  private async teamEntries(teamId: string, from: string, to: string, locale: string): Promise<CalendarFeedEntry[]> {
+    const events = await this.prisma.client.teamEvent.findMany({ where: { teamId }, include: { ...withDates, team: { select: { name: true } } } });
+    const entries: CalendarFeedEntry[] = [];
+    for (const event of events) {
+      const parent = event.rehearsalForId ? events.find((one) => one.id === event.rehearsalForId) : null;
+      if (event.rehearsalForId && !parent) continue;
+      const dates = parent ? rehearsalDatesOf(event, parent, from, to) : eventDates(timingOf(event), from, to, changesOf(event)).map((date) => ({ ...date, forDate: date.date }));
+      for (const date of dates) {
+        if (date.cancelled) continue;
+        const setlistId = (parent ?? event).dates.find((row) => dateText(row.date) === date.forDate)?.setlist?.id;
+        const setUrl = setlistId ? `${webUrl()}/sets/${setlistId}` : null;
+        entries.push({
+          uid: `${event.id}-${date.date}@songverse`,
+          start: date.startsAt,
+          end: date.endsAt,
+          title: date.title || event.title,
+          location: event.place,
+          description: [callLine(date.startsAt, event.callMinutes, event.timeZone, locale), event.note, setUrl].filter(Boolean).join("\n"),
+          url: setUrl,
+        });
+      }
+    }
+    return entries;
+  }
+
+  /** The dates someone signed up for, and their rehearsals. */
+  private async personalEntries(userId: string, from: string, to: string, locale: string): Promise<CalendarFeedEntry[]> {
     // The dates they might have signed up for - answered Available, or scheduled on - then the rule (signedUpFor).
     const range = { userId, date: { gte: new Date(`${from}T00:00:00Z`), lte: new Date(`${to}T00:00:00Z`) } };
     const [available, scheduled] = await Promise.all([
@@ -89,7 +145,7 @@ export class CalendarFeedService {
         end: date.endsAt,
         title: `${date.title || event.title} (${event.team.name})`,
         location: event.place,
-        description: [callLine(date.startsAt, event.callMinutes, event.timeZone, feed.user.locale), event.team.name, event.note, setUrl].filter(Boolean).join("\n"),
+        description: [callLine(date.startsAt, event.callMinutes, event.timeZone, locale), event.team.name, event.note, setUrl].filter(Boolean).join("\n"),
         url: setUrl,
       });
     }
@@ -108,13 +164,11 @@ export class CalendarFeedService {
           end: date.endsAt,
           title: `${rehearsal.title} (${rehearsal.team.name})`,
           location: rehearsal.place,
-          description: [callLine(date.startsAt, rehearsal.callMinutes, rehearsal.timeZone, feed.user.locale), rehearsal.team.name, rehearsal.note, setUrl].filter(Boolean).join("\n"),
+          description: [callLine(date.startsAt, rehearsal.callMinutes, rehearsal.timeZone, locale), rehearsal.team.name, rehearsal.note, setUrl].filter(Boolean).join("\n"),
           url: setUrl,
         });
       }
     }
-    entries.sort((a, b) => a.start.localeCompare(b.start));
-    const body = calendarFeed(entries, { name: `Songverse - ${feed.user.displayName}`, now: new Date(`${localDate(new Date(), "UTC")}T00:00:00Z`).toISOString() });
-    return { body, etag: `"${createHash("sha256").update(body).digest("base64url").slice(0, 27)}"` };
+    return entries;
   }
 }

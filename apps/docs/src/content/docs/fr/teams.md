@@ -53,6 +53,10 @@ Dans **Mon calendrier**, **Lien de calendrier** met les dates où vous êtes ins
 
 Le calendrier se met à jour tout seul, mais les applications de calendrier vérifient les changements à leur rythme - toutes les quelques heures (Google peut mettre jusqu'à un jour). Toute personne ayant le lien voit ces dates : gardez-le pour vous. **Réinitialiser le lien** en crée un nouveau et arrête l'ancien ; **Désactiver** le supprime.
 
+### Le lien de calendrier de l'équipe
+
+Les administrateurs d'une équipe en ont un de plus sur sa page : **Lien de calendrier de l'équipe**, avec **Obtenir le lien de calendrier de l'équipe**. Il contient toutes les dates de l'équipe - événements et répétitions, avec leur heure d'arrivée, leur lieu, leur note et leur liste - sans les réponses de chacun, pour un agenda partagé, le site de l'église ou quiconque a besoin du planning. Il fonctionne comme votre propre lien : **Copier le lien**, les boutons **Ajouter à…**, **Réinitialiser le lien** s'il circule trop, **Désactiver**.
+
 ### Les listes que vous voyez
 
 La liste d'une date s'affiche dans votre barre latérale quand vous y êtes inscrit (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) : répondre **Disponible** l'y met, ou être placé dans son équipe du jour, et le retirer l'enlève. Les autres dates à venir de l'équipe restent sur la page **Listes de chants** et dans le calendrier de l'équipe. Une fois la date passée, sa liste quitte la barre latérale et la liste : celles auxquelles vous avez participé sont sur la page **Listes de chants** sous **Archives**, et toutes les dates passées sont sur la page de l'équipe sous **Dates passées**. Les listes que vous créez vous-même s'affichent comme avant. Les listes gardées hors ligne suivent la même règle.

@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/componen
 import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
+import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from "../components/team-cards";
 import { TeamCalendar } from "../components/team-calendar";
@@ -271,6 +272,9 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
 
       {/* The app's own, for its admins (Songverse's: its colour and picture, issue #161). */}
       {isAdmin ? adminCards : null}
+
+      {/* Its calendar link (issue #240): all its dates, for a shared calendar or a website. */}
+      {isAdmin ? <CalendarFeedCard teamId={team.id} /> : null}
 
       {isAdmin || positions.length > 0 ? <PositionsCard teamId={team.id} positions={positions} isAdmin={isAdmin} onChanged={refresh} onError={setError} /> : null}
 

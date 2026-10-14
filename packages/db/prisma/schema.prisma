@@ -501,6 +501,7 @@ model Team {
   screenThemes        ScreenTheme[]
   // Its calendar (issue #235), and how many weeks ahead each date's set is made (1-52).
   events              TeamEvent[]
+  calendarFeed        CalendarFeed?
   answerRequests      TeamAnswerRequest[]
   setsAheadWeeks      Int                    @default(4)
   // The organisation it's part of (issue #241), or none: a team of its own,
@@ -1257,11 +1258,16 @@ model TeamEventAnswer {
 // deletes the row.
 model CalendarFeed {
   id        String   @id @default(cuid())
-  userId    String   @unique
+  // Someone's own link, or a team's (issue #240): all its dates, no answers.
+  userId    String?  @unique
+  teamId    String?  @unique
   token     String   @unique
+  // A team's link: the language of the admin who made it.
+  locale    String?
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
 }
 
 // Something Songverse tells someone (issue #236): its kind and details,

@@ -57,6 +57,16 @@ try {
     await card().getByTestId("calendar-feed-make").waitFor();
     if ((await fetch(url)).status !== 404) throw new Error("still on");
   });
+
+  await step("a team's admins get the team's link on its page (issue #240)", async () => {
+    await page.goto(`${WEB}/teams/${team.id}`);
+    const teamCard = page.getByTestId("team-calendar-feed");
+    await teamCard.getByRole("button", { name: "Get the team's calendar link" }).click();
+    const teamUrl = await teamCard.getByTestId("calendar-feed-url").inputValue();
+    if (!(await (await fetch(teamUrl)).text()).includes("SUMMARY:Rehearsal\r\n")) throw new Error("not the team's dates");
+    await teamCard.getByTestId("calendar-feed-off").click();
+    await teamCard.getByTestId("calendar-feed-make").waitFor();
+  });
 } finally {
   await browser.close();
 }

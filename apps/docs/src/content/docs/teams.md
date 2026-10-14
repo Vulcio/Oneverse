@@ -53,6 +53,10 @@ On **My calendar**, **Calendar link** puts the dates you signed up for (see [Lin
 
 The calendar keeps itself up to date, but calendar apps look for changes on their own schedule - every few hours (Google can take up to a day). Anyone with the link can see those dates, so keep it to yourself: **Reset link** makes a new one and stops the old one; **Turn off** removes it.
 
+### The team's calendar link
+
+A team's admins have one more on the team's page: **Team calendar link**, with **Get the team's calendar link**. It holds all the team's dates - events and rehearsals, with their call time, place, note and set - and nobody's answers, for a shared calendar, the church's website or anyone who needs the schedule. It works like your own link: **Copy link**, the **Add to…** buttons, **Reset link** if it gets around, **Turn off**.
+
 ### Which sets you see
 
 A date's set shows in your sidebar when you're signed up for it (see [Line-up](/teams/#line-up)): answering **Available** puts it there, or being put on its line-up, and taking that back removes it. The team's other coming dates are still on the **Sets** page and the team's calendar. Once a date is over, its set leaves the sidebar and the list: the ones you took part in are on the **Sets** page under **Archive**, and every past date is on the team's page under **Past dates**. Sets you make yourself are listed as before. Sets kept for offline use follow the same rule.

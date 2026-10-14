@@ -9,6 +9,7 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AvailabilityService } from "./availability.service.js";
+import { CalendarFeedService } from "./calendar-feed.service.js";
 import { LineupService } from "./lineup.service.js";
 import { RemindersService } from "./reminders.service.js";
 import { TeamEventsService } from "./team-events.service.js";
@@ -33,7 +34,29 @@ export class TeamEventsController {
     private readonly reminders: RemindersService,
     private readonly lineup: LineupService,
     private readonly access: AccessPolicyService,
+    private readonly feeds: CalendarFeedService,
   ) {}
+
+  /** The team's calendar link (issue #240): all its dates, no answers. Its admins make, reset or turn it off. */
+  @Get("calendar-feed")
+  @UseGuards(TeamAdminGuard)
+  feed(@Param("teamId") teamId: string) {
+    return this.feeds.team(teamId);
+  }
+
+  @Post("calendar-feed")
+  @UseGuards(TeamAdminGuard)
+  resetFeed(@Param("teamId") teamId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
+    if (!user) throw new UnauthorizedException();
+    return this.feeds.resetTeam(teamId, user.id);
+  }
+
+  @Delete("calendar-feed")
+  @UseGuards(TeamAdminGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  turnOffFeed(@Param("teamId") teamId: string) {
+    return this.feeds.turnOffTeam(teamId);
+  }
 
   @Get("events")
   @UseGuards(TeamMemberGuard)
