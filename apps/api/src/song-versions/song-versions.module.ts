@@ -8,13 +8,14 @@ import { MetadataModule } from "../metadata/metadata.module.js";
 import { MusicBrainzModule } from "../musicbrainz/musicbrainz.module.js";
 import { StorageModule } from "../storage/storage.module.js";
 import { SongVersionsController } from "./song-versions.controller.js";
+import { SongRepeatsService } from "./song-repeats.service.js";
 import { SongHistoryService } from "./song-history.service.js";
 import { SongVersionsService } from "./song-versions.service.js";
 
 @Module({
   imports: [MusicBrainzModule, StorageModule, ArtworkModule, MetadataModule, ArtistsModule, LookupsModule],
   controllers: [SongVersionsController, ChordShapesController, ProgressionsController],
-  providers: [SongVersionsService, SongHistoryService],
-  exports: [SongVersionsService, SongHistoryService],
+  providers: [SongVersionsService, SongHistoryService, SongRepeatsService],
+  exports: [SongVersionsService, SongHistoryService, SongRepeatsService],
 })
 export class SongVersionsModule {}

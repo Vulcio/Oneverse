@@ -61,6 +61,12 @@ L'éditeur montre le chant dans l'ordre où il est chanté. La première apparit
 
 Si une ligne ou un accord qu'une copie modifie est supprimé de la section, la grille le signale au lieu de l'ignorer. Exportée en ChordPro, une copie modifiée est écrite en entier.
 
+### Sections reprises
+
+Un fichier lu (un nouveau chant, une grille collée ou envoyée) lie ce qu'il écrit à nouveau : un refrain écrit une deuxième fois est une copie liée du premier - aussi quand il est quelques demi-tons plus haut ou plus bas (une copie transposée), quand un tiers de ses accords au plus diffère (une copie avec ces accords à elle), ou quand ce n'est que la fin du refrain.
+
+Un chant écrit avant garde ses sections en double. Au-dessus de l'éditeur, ses éditeurs voient ce qui se répète - « Refrain 2 est Refrain avec 1 accord à elle », « Dernier refrain est Refrain, 2 demi-ton(s) plus haut » - et **Lier** chacune, ou **Tout lier** : la reprise devient une copie liée de la section, en gardant son nom. Les arrangements et les repères des enregistrements suivent, et l'**Historique** du chant permet d'annuler. Enregistrez d'abord vos modifications.
+
 ## Coller une grille
 
 Collez une grille entière n'importe où - en ChordPro, ou avec les accords écrits au-dessus des paroles - et elle devient des sections avec les accords en place. Coller de simples paroles les tape, tout simplement. Un nom de section seul sur sa ligne (« Strophe 1 », « [Refrain] », « Pont », « Chorus », « Coro ») commence une section de ce type, en français, anglais, espagnol, allemand, italien ou portugais.

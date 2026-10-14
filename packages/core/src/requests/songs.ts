@@ -148,3 +148,10 @@ export const ProgressionSearchQuerySchema = z.strictObject({
   q: z.string().trim().min(1).max(120),
 });
 export type ProgressionSearchQuery = z.input<typeof ProgressionSearchQuerySchema>;
+
+/** POST /song-versions/:id/repeats (issue #231): these repeats linked, or all of them, on the song as it was at `revision`. */
+export const LinkRepeatsSchema = z.strictObject({
+  revision: z.number().int().nonnegative().describe("The song's revision the repeats were found in: refused if it was saved since"),
+  sectionIds: optional(z.array(z.string().trim().min(1).max(64)).min(1).max(SONG_DOCUMENT_LIMITS.sections)).describe("The repeats to link; left out, all of them"),
+});
+export type LinkRepeatsRequest = z.input<typeof LinkRepeatsSchema>;

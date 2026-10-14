@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 import { apiClient } from "#/lib/api-client";
 import { attachmentTypeFor, isPdf } from "./attachment-types";
+import { RepeatsCard } from "./repeats-card";
 import { SongContentCard, type SourceFile } from "./song-content";
 import {
   emptyForm,
@@ -635,6 +636,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         <TabsContent value="info">{songInfo}</TabsContent>
         <TabsContent value="editor">
           <fieldset disabled={saving} className="min-w-0">
+            {/* Sections written out again (issue #231): linked as passes of the one they repeat. */}
+            {edit && canChangeChart && !suggesting ? <RepeatsCard songVersionId={edit.version.id} revision={edit.version.documentJson.revision} sections={form.sections} dirty={dirty} /> : null}
             <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">{t("songEditor.loadingEditor")}</p>}>
               <StructuredEditor
                 sections={form.sections}

@@ -27,8 +27,9 @@ import { CreateSongVersionDto } from "./dto/create-song-version.dto.js";
 import { ListSongVersionsQueryDto } from "./dto/list-song-versions-query.dto.js";
 import { SetStreamingLinkDto } from "./dto/set-streaming-link.dto.js";
 import { SongVersionResponseDto, SongVersionSongbookMembershipDto } from "./dto/song-version-response.dto.js";
-import { UpdateSongVersionDto } from "./dto/update-song-version.dto.js";
+import { LinkRepeatsDto, UpdateSongVersionDto } from "./dto/update-song-version.dto.js";
 import { SongHistoryService } from "./song-history.service.js";
+import { SongRepeatsService } from "./song-repeats.service.js";
 import { SongVersionsService } from "./song-versions.service.js";
 import { RateLimit } from "../security/rate-limit.decorator.js";
 
@@ -49,6 +50,7 @@ export class SongVersionsController {
     private readonly songVersionsService: SongVersionsService,
     private readonly access: AccessPolicyService,
     private readonly history: SongHistoryService,
+    private readonly repeats: SongRepeatsService,
     private readonly lookups: LookupsService,
   ) {}
 
@@ -154,6 +156,21 @@ export class SongVersionsController {
     const updated = await this.songVersionsService.update(user, songVersionId, dto);
     if (dto.artists?.length) await this.lookups.artists(dto.artists);
     return updated;
+  }
+
+  /** Its sections that repeat an earlier one (issue #231), for its editors to link. */
+  @Get(":songVersionId/repeats")
+  @UseGuards(SongVersionEditorGuard)
+  listRepeats(@Param("songVersionId") songVersionId: string): ReturnType<SongRepeatsService["list"]> {
+    return this.repeats.list(songVersionId);
+  }
+
+  /** Repeats linked: passes of the sections they repeat; kept in its history. */
+  @Post(":songVersionId/repeats")
+  @UseGuards(SongVersionEditorGuard)
+  linkRepeats(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string, @Body() dto: LinkRepeatsDto): ReturnType<SongRepeatsService["link"]> {
+    if (!user) throw new UnauthorizedException();
+    return this.repeats.link(songVersionId, user.id, { revision: dto.revision, sectionIds: dto.sectionIds });
   }
 
   @Delete(":songVersionId")

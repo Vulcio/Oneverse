@@ -61,6 +61,12 @@ The editor shows the song in the order it's sung. A section's first appearance i
 
 If a line or chord a copy changes is deleted from the section, the chart says so rather than dropping it. Exported to ChordPro, a changed copy is written out in full.
 
+### Repeated sections
+
+A file read in (a new song, a pasted or uploaded chart) links what it writes out again: a chorus written a second time is a linked copy of the first - also when it's a few semitones up or down (a transposed copy), when a third of its chords at most are different (a copy with those chords of its own), or when it's only the chorus's last lines.
+
+A song written before keeps its sections twice. Above the editor, its editors see what repeats - "Chorus 2 is Chorus with 1 chord of its own", "Last chorus is Chorus, 2 semitone(s) up" - and **Link** each, or **Link all**: the repeat becomes a linked copy of the section, keeping its name. Arrangements and recordings' cue points follow, and the song's **History** can undo it. Save your changes first.
+
 ## Pasting a chart
 
 Paste a whole chart anywhere - ChordPro, or chords written above the lyrics - and it's turned into sections with chords in place. Pasting plain words just types them. Section names on a line of their own ("Verse 1", "[Chorus]", "Refrain", "Pont", "Coro") start a section of that kind, in English, French, Spanish, German, Italian or Portuguese.

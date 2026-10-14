@@ -55,7 +55,7 @@ import type {
   UpdateUserByAdminSchema,
 } from "../requests/index.js";
 import type { CreateSongbookRequest, UpdateSongbookRequest } from "../requests/songbooks.js";
-import type { CreateSongVersionRequest, SongSort, UpdateSongVersionRequest } from "../requests/songs.js";
+import type { CreateSongVersionRequest, LinkRepeatsRequest, SongSort, UpdateSongVersionRequest } from "../requests/songs.js";
 import type { SongChange, SongSnapshot } from "../song-history/index.js";
 
 export interface ApiClientOptions {
@@ -1095,6 +1095,19 @@ export interface AwayDays {
 }
 
 /** A notification (issue #236): its kind and details, put into words by `notificationText`. */
+/** A section that repeats an earlier one (issue #231): how, to link it as a pass of that one. */
+export interface SongRepeat {
+  sectionId: string;
+  ofSectionId: string;
+  kind: "same" | "transposed" | "chords" | "lines";
+  /** Semitones it's moved. */
+  steps: number;
+  /** Chords of its own. */
+  chords: number;
+  /** Lines of the earlier section it leaves out. */
+  hiddenLines: number;
+}
+
 export interface AppNotification {
   id: string;
   kind: NotificationKind;
@@ -2517,6 +2530,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** Takes a song shared with you out of your library. */
     leaveSharedSong: (songVersionId: string) => request<void>(`/song-versions/${songVersionId}/shares/me`, { method: "DELETE" }),
     getSongHistory: (songVersionId: string) => request<SongRevisionEntry[]>(`/song-versions/${songVersionId}/history`),
+    /** Its sections that repeat an earlier one (issue #231), for its editors. */
+    getSongRepeats: (songVersionId: string) => request<{ revision: number; repeats: SongRepeat[] }>(`/song-versions/${songVersionId}/repeats`),
+    linkSongRepeats: (songVersionId: string, data: LinkRepeatsRequest) =>
+      request<{ linked: number; revision: number }>(`/song-versions/${songVersionId}/repeats`, { method: "POST", body: JSON.stringify(data) }),
     getSongRevision: (songVersionId: string, revisionId: string) =>
       request<SongRevisionDetail>(`/song-versions/${songVersionId}/history/${revisionId}`),
     restoreSongRevision: (songVersionId: string, revisionId: string) =>
