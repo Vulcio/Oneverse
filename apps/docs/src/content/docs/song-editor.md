@@ -22,7 +22,9 @@ The three modes:
 - **Type a chord** in square brackets where it's played: `[G]Amazing grace`.
 - **Move a chord** by dragging it onto another letter, or select it and use the ← → arrow keys.
 - **Click a chord** to change it (with suggestions from the song's key and variations like `G7` or `Gsus4`) or delete it.
-- The palette on the left lists the **chords in the song's key** (with their degree: I, IV, V…) and the chords **In this song**. Click one to add it at the cursor, or drag it onto a word. **Another chord** adds any other.
+- The **chords panel**, at the right of the chart and in view as you scroll, lists the **chords in the song's key** (with their degree: I, IV, V…) and the chords **In this song**. Click one to add it at the cursor, or drag it onto a word. **Another chord** adds any other.
+- On a phone or a tablet, the chords are in a bar along the bottom of the screen, above the keyboard. Tap one to add it at the cursor; no need to type `[G]`. With a chord selected, tap another to put it in its place. The bar then starts with that chord's tools - move it a letter left or right, or delete it - and adds its variations (G7, Gsus4…).
+- On a touch screen, **press and hold a chord** on the chart to drag it: it lifts, and the letter it will land on is highlighted. A quick swipe scrolls the page instead.
 
 Editing the words keeps the chords with them: typing before a chord carries it along, and deleting words that carry chords leaves the chords where the words were, so you can place them again. Enter splits a line and its chords go with their words.
 

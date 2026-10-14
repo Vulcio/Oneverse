@@ -2503,6 +2503,8 @@ const en = {
     moveToEnd: "At the end of the line",
   },
   structuredEditor: {
+    barHint: "Tap a chord to add it at the cursor",
+    barReplace: "Tap a chord to put it in place of {{chord}}",
     addHere: "Add a section here",
     addSectionAtEnd: "Add a section",
     newSection: "New section",

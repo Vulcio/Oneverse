@@ -199,7 +199,8 @@
   white-space: nowrap;
   color: var(--color-primary);
   cursor: grab;
-  touch-action: none;
+  /* A finger can still scroll the page from a chord; holding it lifts it to drag (issue #253). */
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -257,6 +258,12 @@
   background: var(--color-primary);
   color: var(--color-primary-foreground);
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.2);
+}
+/* Lifted by a finger: larger, so it shows past the fingertip. */
+.sv-drag-ghost-lifted {
+  margin-top: -2.5rem;
+  font-size: 1.125rem;
+  padding: 0.125rem 0.5rem;
 }
 body.sv-dragging {
   cursor: grabbing;

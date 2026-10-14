@@ -32,6 +32,7 @@ import { cn } from "@songverse/ui/lib/utils";
 import { CAPO_OPTIONS, KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from "../song-form";
 import { editorToSections, editorToSong, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { startChordDrag } from "./drag";
+import { ChordBar } from "./chord-bar";
 import { SectionInserter } from "./section-inserter";
 import { SongOrder } from "./song-order";
 import { SongOrderActionsContext, type SongOrderActions } from "./song-order-context";
@@ -277,12 +278,13 @@ export function StructuredEditor({
       <div
         className={cn(
           "grid grid-cols-1 gap-4",
-          mode === "visual" && "lg:grid-cols-[13rem_minmax(0,1fr)] @7xl:grid-cols-[13rem_minmax(0,1fr)_minmax(0,1fr)]",
+          // The chords at the right of the chart with a mouse (issue #253); on a touch screen, in the bar along the bottom instead.
+          mode === "visual" && "@7xl:grid-cols-2 lg:pointer-fine:grid-cols-[minmax(0,1fr)_14rem] @7xl:pointer-fine:grid-cols-[minmax(0,1fr)_14rem_minmax(0,1fr)]",
           mode === "text" && "@7xl:grid-cols-2",
         )}
       >
-        {mode === "visual" && editor ? <Palette editor={editor} songKey={songKey} sections={sections} /> : null}
-        <div className={cn("relative min-w-0", mode !== "visual" && "hidden")} data-editor-container="" data-font={display.font}>
+        {/* Room under the chart for the chord bar, where there is one. */}
+        <div className={cn("relative min-w-0 pb-28 lg:pointer-fine:pb-0", mode !== "visual" && "hidden")} data-editor-container="" data-font={display.font}>
           <SongOrderActionsContext.Provider value={orderActions}>
             <EditorContent editor={editor} className="sv-editor" />
           </SongOrderActionsContext.Provider>
@@ -291,6 +293,8 @@ export function StructuredEditor({
           {editor ? <ChordPopover editor={editor} songKey={songKey} editTick={editTick} /> : null}
           <p className="mt-4 text-xs text-muted-foreground">{t("structuredEditor.hints")}</p>
         </div>
+        {mode === "visual" && editor ? <Palette editor={editor} songKey={songKey} sections={sections} /> : null}
+        {mode === "visual" && editor ? <ChordBar editor={editor} songKey={songKey} used={chordsUsed(sections)} /> : null}
         {mode === "text" ? <TextMode sections={sections} onChange={(next) => onChangeRef.current(next)} /> : null}
         {mode === "preview" ? <EditPreview chart={chartOfSections(sections, flow, songKey || null)} withPanel /> : null}
         {mode !== "preview" ? (
@@ -396,9 +400,10 @@ function Toolbar({
       aria-label={t("structuredEditor.tools")}
       data-testid="editor-toolbar"
       // Under the song's header, which is sticky from md up (its height in --song-header-h).
-      className="bleed-x sticky top-14 z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:top-[calc(3.5rem+var(--song-header-h,0px))]"
+      // One row that scrolls sideways on a phone, so the chart keeps the screen; it wraps with room.
+      className="bleed-x sticky top-14 z-20 flex flex-nowrap items-center gap-x-3 gap-y-2 overflow-x-auto border-b md:flex-wrap md:overflow-visible bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:top-[calc(3.5rem+var(--song-header-h,0px))]"
     >
-      <div role="radiogroup" aria-label={t("structuredEditor.mode")} className="inline-flex rounded-md bg-muted p-0.5">
+      <div role="radiogroup" aria-label={t("structuredEditor.mode")} className="inline-flex shrink-0 rounded-md bg-muted p-0.5">
         {MODES.map((option) => (
           <button
             key={option}
@@ -415,7 +420,7 @@ function Toolbar({
           </button>
         ))}
       </div>
-      <div className="flex items-center">
+      <div className="flex shrink-0 items-center">
         <ToolButton label={t("structuredEditor.undo")} disabled={!visual || !can.undo} onClick={() => editor?.chain().focus().undo().run()} testId="editor-undo">
           <Undo2 />
         </ToolButton>
@@ -426,7 +431,7 @@ function Toolbar({
           <StickyNote />
         </ToolButton>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex shrink-0 flex-nowrap items-center gap-1.5 md:flex-wrap">
         <Fact label={t("structuredEditor.key")}>
           <NativeSelect compact aria-label={t("structuredEditor.key")} value={songKey} onChange={(event) => onSongKeyChange(event.target.value)} className={factControl("w-[4.5rem]")} data-testid="editor-key">
             <option value="">–</option>
@@ -532,11 +537,16 @@ function PaletteChord({ editor, raw, degree }: { editor: Editor; raw: string; de
   );
 }
 
+/** The chords the song uses, each once, in the order they first come. */
+function chordsUsed(sections: SectionV2[]): string[] {
+  return [...new Set(sections.flatMap((section) => section.lines.flatMap((line) => line.chords.map((chord) => chord.raw))))];
+}
+
 function Palette({ editor, songKey, sections }: { editor: Editor; songKey: string; sections: SectionV2[] }) {
   const { t } = useTranslation();
   const [other, setOther] = useState("");
   const inKey = diatonicChords(songKey);
-  const used = [...new Set(sections.flatMap((section) => section.lines.flatMap((line) => line.chords.map((chord) => chord.raw))))];
+  const used = chordsUsed(sections);
 
   function addOther() {
     if (!other.trim()) return;
@@ -547,9 +557,14 @@ function Palette({ editor, songKey, sections }: { editor: Editor; songKey: strin
   }
 
   const heading = "text-xs font-semibold tracking-wide text-muted-foreground uppercase";
-  const row = "flex gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible";
+  const row = "flex flex-wrap gap-1.5";
   return (
-    <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-36 lg:self-start" aria-label={t("structuredEditor.palette")}>
+    // Kept in view at the right while the chart scrolls, under the header and the toolbar (issue #253).
+    <aside
+      className="hidden min-w-0 flex-col gap-4 rounded-lg border p-3 lg:sticky lg:top-[calc(7.5rem+var(--song-header-h,0px))] lg:self-start lg:pointer-fine:flex"
+      aria-label={t("structuredEditor.palette")}
+      data-testid="chord-panel"
+    >
       <div className="flex flex-col gap-1.5">
         <h3 className={heading}>{songKey && inKey.length > 0 ? t("structuredEditor.inKey", { key: songKey }) : t("structuredEditor.chords")}</h3>
         {inKey.length > 0 ? (
@@ -666,7 +681,8 @@ function ChordPopover({ editor, songKey, editTick }: { editor: Editor; songKey: 
       role="dialog"
       aria-label={t("structuredEditor.chordDetails", { chord: chord.raw })}
       data-testid="chord-popover"
-      className="absolute z-20 flex w-72 max-w-full flex-col gap-2.5 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg"
+      // On a touch screen the chord bar has these tools instead: nothing covers the chart (issue #253).
+      className="absolute z-20 flex w-72 max-w-full flex-col gap-2.5 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg pointer-coarse:hidden"
       style={place ? { top: place.top, left: place.left } : { visibility: "hidden" }}
       onMouseDown={(event) => {
         if (!(event.target instanceof HTMLInputElement)) event.preventDefault();

@@ -2506,6 +2506,8 @@ const fr: typeof en = {
     moveToEnd: "À la fin de la ligne",
   },
   structuredEditor: {
+    barHint: "Touchez un accord pour l'ajouter au curseur",
+    barReplace: "Touchez un accord pour le mettre à la place de {{chord}}",
     addHere: "Ajouter une section ici",
     addSectionAtEnd: "Ajouter une section",
     newSection: "Nouvelle section",

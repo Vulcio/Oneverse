@@ -139,13 +139,20 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   // The header's height, for the editor's toolbar sticking under it (issue #248).
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  // The phone's save bar's height, for the chord bar over it (issue #253): 0 where it's hidden.
+  const saveBarRef = useRef<HTMLDivElement>(null);
+  const [saveBarHeight, setSaveBarHeight] = useState(0);
   useEffect(() => {
     const header = headerRef.current;
-    if (!header) return;
-    const observer = new ResizeObserver(() => setHeaderHeight(header.offsetHeight));
-    observer.observe(header);
+    const saveBar = saveBarRef.current;
+    const observer = new ResizeObserver(() => {
+      if (header) setHeaderHeight(header.offsetHeight);
+      setSaveBarHeight(saveBar?.offsetHeight ?? 0);
+    });
+    if (header) observer.observe(header);
+    if (saveBar) observer.observe(saveBar);
     return () => observer.disconnect();
-  }, []);
+  }, [canChangeChart]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const leaving = useRef(false);
@@ -500,7 +507,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
     <form
       // Room for the phone's save bar, there whenever the song can be changed (issue #248).
       className={`flex flex-col gap-6 ${canChangeChart ? "pb-16 md:pb-0" : ""}`}
-      style={{ "--song-header-h": `${headerHeight}px` } as CSSProperties}
+      style={{ "--song-header-h": `${headerHeight}px`, "--save-bar-h": `${saveBarHeight}px` } as CSSProperties}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -687,7 +694,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
 
       {/* Always there on a phone, Save disabled with nothing to save: it never appears under a finger (issue #248). */}
       {canChangeChart ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t bg-background px-4 py-3 md:hidden" data-testid="mobile-save-bar" data-dirty={dirty || undefined}>
+        <div ref={saveBarRef} className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t bg-background px-4 py-3 md:hidden" data-testid="mobile-save-bar" data-dirty={dirty || undefined}>
           <span className="text-sm text-muted-foreground">{dirty ? t("songEditor.unsaved") : t("songEditor.allSaved")}</span>
           <Button type="submit" className="pointer-coarse:h-11" disabled={saving || (!!edit && !dirty)}>
             {suggesting ? t("suggestions.send") : saving ? t("songEditor.saving") : t("songEditor.save")}

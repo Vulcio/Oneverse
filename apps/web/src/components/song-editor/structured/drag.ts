@@ -7,12 +7,17 @@ export type DragSource = { kind: "move"; pos: number; raw: string } | { kind: "n
 
 const THRESHOLD = 5;
 const EDGE = 48;
+/** How long a finger rests on a chord before it lifts to be dragged (issues #32, #253); a quicker swipe scrolls. */
+const HOLD_MS = 350;
+/** How far a finger may wander while holding. */
+const HOLD_SLOP = 8;
 
 /**
  * Drags a chord from a pointer press on `handle` (its chip, or a palette
  * chord): a ghost chip follows the pointer, the character it would sit over
  * is highlighted, and letting go pins it there. A press without a drag is a
- * click (`onClick`). Works the same with a mouse, a pen or a finger.
+ * click (`onClick`). With a mouse or a pen it starts as it moves; a finger
+ * holds it a moment first - the chip lifts - so a swipe still scrolls.
  */
 export function startChordDrag(view: EditorView, event: PointerEvent, source: DragSource, onClick: () => void, pressed?: HTMLElement) {
   if (event.button !== 0 || !view.editable) return;
@@ -28,6 +33,22 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
   let ghost: HTMLElement | null = null;
   let target: number | null = null;
   let frame = 0;
+  // A finger: not dragging until it has held still a moment.
+  const touch = event.pointerType === "touch";
+  let holding = touch;
+  let last = { x: event.clientX, y: event.clientY };
+  const hold = touch
+    ? window.setTimeout(() => {
+        holding = false;
+        navigator.vibrate?.(10);
+        lift(last.x, last.y);
+      }, HOLD_MS)
+    : 0;
+  // Once lifted, the finger no longer scrolls the page.
+  const noScroll = (e: TouchEvent) => {
+    if (ghost) e.preventDefault();
+  };
+  if (touch) window.addEventListener("touchmove", noScroll, { passive: false });
   const fontSize = parseFloat(getComputedStyle(view.dom).fontSize) || 16;
 
   function targetAt(x: number, y: number): number | null {
@@ -47,23 +68,43 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
     }
   }
 
+  /** The chip lifted under the pointer: the ghost that follows it. */
+  function lift(x: number, y: number) {
+    if (ghost) return;
+    ghost = document.createElement("div");
+    ghost.className = touch ? "sv-drag-ghost sv-drag-ghost-lifted" : "sv-drag-ghost";
+    ghost.textContent = source.raw;
+    document.body.append(ghost);
+    document.body.classList.add("sv-dragging");
+    if (source.kind === "move") view.dom.querySelector(`[data-id="${CSS.escape(String(view.state.doc.nodeAt(source.pos)?.attrs.id))}"]`)?.classList.add("sv-chord-moving");
+    follow(x, y);
+  }
+
+  function follow(x: number, y: number) {
+    if (!ghost) return;
+    ghost.style.transform = `translate(${x - grab.x}px, ${y - grab.y}px)`;
+    target = targetAt(x, y);
+    setDropTarget(view, target);
+    autoScroll(y);
+  }
+
   function move(e: PointerEvent) {
+    last = { x: e.clientX, y: e.clientY };
+    if (holding) {
+      // Moved before the hold: a swipe, not a drag (nor a tap).
+      if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > HOLD_SLOP) finish(e, true);
+      return;
+    }
     if (!ghost) {
       if (Math.hypot(e.clientX - start.x, e.clientY - start.y) < THRESHOLD) return;
-      ghost = document.createElement("div");
-      ghost.className = "sv-drag-ghost";
-      ghost.textContent = source.raw;
-      document.body.append(ghost);
-      document.body.classList.add("sv-dragging");
-      if (source.kind === "move") view.dom.querySelector(`[data-id="${CSS.escape(String(view.state.doc.nodeAt(source.pos)?.attrs.id))}"]`)?.classList.add("sv-chord-moving");
+      lift(e.clientX, e.clientY);
     }
-    ghost.style.transform = `translate(${e.clientX - grab.x}px, ${e.clientY - grab.y}px)`;
-    target = targetAt(e.clientX, e.clientY);
-    setDropTarget(view, target);
-    autoScroll(e.clientY);
+    follow(e.clientX, e.clientY);
   }
 
   function finish(e: PointerEvent, cancelled: boolean) {
+    window.clearTimeout(hold);
+    window.removeEventListener("touchmove", noScroll);
     handle.removeEventListener("pointermove", move);
     handle.removeEventListener("pointerup", up);
     handle.removeEventListener("pointercancel", cancel);
