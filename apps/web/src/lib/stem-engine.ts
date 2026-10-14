@@ -627,6 +627,10 @@ function startAt(from: number, at?: number, anchor?: { epoch: number; position: 
   stopTimer();
   // A moment ahead, so every part is scheduled before the first one starts.
   const when = Math.max(at ?? 0, context.currentTime + 0.05 + latency);
+  // Asked to start at `at` and pushed later (the clock moved on by a block
+  // since `at` was worked out): from where the same timeline is by then,
+  // or a restart (a transposition's) puts it a few ms behind its own.
+  if (at !== undefined && when > at) from = Math.min(state.duration, from + (when - at) * state.speed);
   sources = startSources(from, when);
   startedAt = when - from / state.speed;
   const heard = { epoch: clock ? clock.epochOf(when) : Number.NaN, position: from };
@@ -1024,7 +1028,10 @@ function replay() {
     const when = context.currentTime + ahead;
     return startAt((when - zero) * state.speed, when, state.anchor);
   }
-  startAt(now() + ahead * state.speed, context.currentTime + ahead);
+  // Where and when from one reading of the clock: read twice, it can move on a block in between.
+  now();
+  const when = context.currentTime + ahead;
+  startAt(Math.min(state.duration, Math.max(0, (when - startedAt) * state.speed)), when);
 }
 
 /**
