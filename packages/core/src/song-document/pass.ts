@@ -98,7 +98,15 @@ export interface PassLine extends LineV2 {
 
 /** Whether a pass differs from its section: transposed, lines removed, its own words or chords. */
 export function passChanged(pass: SectionInstance): boolean {
-  return !!pass.transpose || (pass.chords?.length ?? 0) > 0 || (pass.hiddenLines?.length ?? 0) > 0 || (pass.lyrics?.length ?? 0) > 0;
+  return !!pass.transpose || passEdited(pass);
+}
+
+/**
+ * The pass has words, lines or chords of its own (issue #252) - marked * -
+ * as opposed to only being moved up or down, which shows as its own badge.
+ */
+export function passEdited(pass: SectionInstance): boolean {
+  return (pass.chords?.length ?? 0) > 0 || (pass.hiddenLines?.length ?? 0) > 0 || (pass.lyrics?.length ?? 0) > 0;
 }
 
 /**

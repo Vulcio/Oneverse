@@ -1,5 +1,5 @@
 import { chordFamily, formatChord, parseChord, simplifyChord, transposeChord, type ChordFamily, type ChordNotation } from "../chords/chord.js";
-import { passChanged, passLines } from "./pass.js";
+import { passEdited, passLines } from "./pass.js";
 import type { ChordNotationValue } from "../constants/index.js";
 import { transposeKey } from "../music-keys/transpose.js";
 import {
@@ -77,7 +77,7 @@ export interface RenderedPass {
   lines: RenderedLine[];
   /** The arrangement changes something on this pass: the band should know it's not as usual. */
   differs: boolean;
-  /** The song's own pass differs from its section (issue #205): its own chords, transposed, or only some lines - marked *. */
+  /** The song's own pass differs from its section (issue #205): its own chords, words or only some lines - marked *. Only transposed isn't (issue #252): see `transpose`. */
   changed: boolean;
   /** Some of the section's lines are left out. */
   partial: boolean;
@@ -247,7 +247,7 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
           .map((chord) => ({ id: chord.id, at: chord.at, ...show(chord.raw, passSteps, key), replaced: chord.replaced })),
       })),
       differs: overrides.length > 0,
-      changed: passChanged(item),
+      changed: passEdited(item),
       partial: (item.hiddenLines?.length ?? 0) > 0,
       transpose: item.transpose ?? 0,
       problems,

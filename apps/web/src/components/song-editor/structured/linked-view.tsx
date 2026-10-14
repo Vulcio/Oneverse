@@ -1,7 +1,7 @@
 import {
   followChords,
   layoutChordLine,
-  passChanged,
+  passEdited,
   prettyChord,
   transposeChord,
   transposeKey,
@@ -12,7 +12,7 @@ import {
   type SectionV2,
 } from "@songverse/core";
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from "@tiptap/react";
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Link2, Lock, LockOpen, Minus, MoreHorizontal, Plus, RotateCcw, Trash2, Unlink2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Copy, Eye, EyeOff, Link2, Lock, LockOpen, Minus, MoreHorizontal, Plus, RotateCcw, Trash2, Unlink2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
@@ -59,7 +59,16 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
   const update = (change: Partial<SectionInstance>) => actions?.updatePass(passId, change);
   const name = section ? section.label || t(`chart.sections.${section.type as SectionType}`) : "";
   const steps = pass.transpose ?? 0;
-  const changed = passChanged(pass);
+  // Its own words, lines or chords: marked *. Only moved up or down shows as its own badge (issue #252).
+  const changed = passEdited(pass);
+  const open = editing || (actions?.copyOpen(passId) ?? false);
+  const songKey = actions?.songKey ?? "";
+  const summary = [
+    steps ? t(steps > 0 ? "linkedCopy.up_n" : "linkedCopy.down_n", { count: Math.abs(steps) }) + (songKey && transposeKey(songKey, steps) ? ` · ${t("linkedCopy.inKey", { key: prettyChord(transposeKey(songKey, steps)!) })}` : "") : null,
+    pass.chords?.length ? t("linkedCopy.ownChords", { count: pass.chords.length }) : null,
+    pass.hiddenLines?.length ? t("linkedCopy.linesOut", { count: pass.hiddenLines.length }) : null,
+    pass.lyrics?.length ? t("linkedCopy.ownWords") : null,
+  ].filter(Boolean);
 
   if (!section) {
     return (
@@ -89,6 +98,10 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
         <Link2 className="size-3.5 text-[var(--section-ink)]" aria-hidden />
         <span className="text-xs font-semibold tracking-wide uppercase">{pass.label || name}</span>
         <span className="text-xs text-muted-foreground">{t("linkedCopy.linkedTo", { section: name })}</span>
+        {/* What this copy does, in a word: it stands for the copy when it's folded. */}
+        <span className="text-xs text-[var(--section-ink)]" data-testid="linked-summary">
+          {summary.length ? summary.join(" · ") : t("linkedCopy.asSung")}
+        </span>
         {changed ? (
           <span className="font-semibold text-amber-600 dark:text-amber-400" title={t("songOrder.changed")} aria-label={t("songOrder.changed")} data-pass-changed="">
             *
@@ -105,15 +118,17 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
           }
           leading={
             <>
+              {open ? (
+                <>
               {/* The whole copy up or down, by itself. */}
               <span className="mr-1 flex items-center rounded-md border bg-background" role="group" aria-label={t("linkedCopy.transpose")}>
-                <button type="button" className="flex size-7 items-center justify-center hover:bg-muted [&_svg]:size-3.5" onClick={() => update({ transpose: steps - 1 || null })} disabled={steps <= -11} aria-label={t("linkedCopy.down")} title={t("linkedCopy.down")} data-testid="linked-transpose-down">
+                <button type="button" className="flex size-7 items-center justify-center hover:bg-muted pointer-coarse:size-11 [&_svg]:size-3.5" onClick={() => update({ transpose: steps - 1 || null })} disabled={steps <= -11} aria-label={t("linkedCopy.down")} title={t("linkedCopy.down")} data-testid="linked-transpose-down">
                   <Minus />
                 </button>
                 <span className="min-w-8 text-center text-xs tabular-nums" data-testid="linked-transpose">
                   {steps > 0 ? `+${steps}` : steps < 0 ? `−${-steps}` : "±0"}
                 </span>
-                <button type="button" className="flex size-7 items-center justify-center hover:bg-muted [&_svg]:size-3.5" onClick={() => update({ transpose: steps + 1 || null })} disabled={steps >= 11} aria-label={t("linkedCopy.up")} title={t("linkedCopy.up")} data-testid="linked-transpose-up">
+                <button type="button" className="flex size-7 items-center justify-center hover:bg-muted pointer-coarse:size-11 [&_svg]:size-3.5" onClick={() => update({ transpose: steps + 1 || null })} disabled={steps >= 11} aria-label={t("linkedCopy.up")} title={t("linkedCopy.up")} data-testid="linked-transpose-up">
                   <Plus />
                 </button>
               </span>
@@ -121,17 +136,32 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
                 type="button"
                 onClick={() => setEditing(!editing)}
                 aria-pressed={editing}
-                className={cn("mr-1 flex h-7 items-center gap-1 rounded-md border px-2 text-xs [&_svg]:size-3.5", editing ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted")}
+                className={cn("mr-1 flex h-7 items-center gap-1 rounded-md border px-2 text-xs pointer-coarse:h-11 [&_svg]:size-3.5", editing ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted")}
                 data-testid="linked-edit"
               >
                 {editing ? <LockOpen /> : <Lock />}
                 {editing ? t("linkedCopy.done") : t("linkedCopy.edit")}
               </button>
+                </>
+              ) : null}
+              {/* Last before its tools: it keeps its place whether the copy is open or not. */}
+              {editing ? null : (
+                <button
+                  type="button"
+                  onClick={() => actions?.setCopyOpen(passId, !open)}
+                  aria-expanded={open}
+                  className="mr-1 flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground pointer-coarse:h-11 [&_svg]:size-3.5"
+                  data-testid="linked-toggle"
+                >
+                  {open ? t("linkedCopy.hide") : t("linkedCopy.show")}
+                  {open ? <ChevronUp /> : <ChevronDown />}
+                </button>
+              )}
             </>
           }
         >
           <DropdownMenu>
-            <DropdownMenuTrigger render={<button type="button" className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("linkedCopy.menu", { section: name })} />}>
+            <DropdownMenuTrigger render={<button type="button" className="flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground pointer-coarse:size-11" aria-label={t("linkedCopy.menu", { section: name })} />}>
               <MoreHorizontal className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -166,11 +196,13 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
           </DropdownMenu>
         </BlockTools>
       </div>
-      <div className={cn("flex flex-col gap-1", !editing && "pointer-events-none text-foreground/70")} contentEditable={false}>
-        {section.lines.map((line) => (
-          <CopyLine key={line.id} line={line} pass={pass} steps={steps} songKey={actions?.songKey ?? ""} editing={editing} onChange={update} />
-        ))}
-      </div>
+      {open ? (
+        <div className={cn("flex flex-col gap-1", !editing && "pointer-events-none text-foreground/70")} contentEditable={false}>
+          {section.lines.map((line) => (
+            <CopyLine key={line.id} line={line} pass={pass} steps={steps} songKey={actions?.songKey ?? ""} editing={editing} onChange={update} />
+          ))}
+        </div>
+      ) : null}
       {editing ? <p className="mt-1.5 text-xs text-muted-foreground">{t("linkedCopy.hint")}</p> : null}
       <SectionInserter editor={editor} at={() => at() + node.nodeSize} edge="bottom" testId="section-insert" />
     </NodeViewWrapper>

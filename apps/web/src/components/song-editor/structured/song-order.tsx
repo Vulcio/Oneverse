@@ -1,4 +1,4 @@
-import { generateId, ID_PREFIXES, passChanged, transposeKey, type SectionInstance, type SectionV2 } from "@songverse/core";
+import { generateId, ID_PREFIXES, passChanged, passEdited, transposeKey, type SectionInstance, type SectionV2 } from "@songverse/core";
 import { ArrowLeft, ArrowRight, Copy, GripVertical, KeyRound, Link2, ListMinus, ListRestart, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -113,8 +113,10 @@ export function SongOrder({
                   <span>{item.label || nameOf(section)}</span>
                   {item.keyChange ? <span className="rounded bg-background/60 px-1 font-mono text-[10px]">→{item.keyChange.key}</span> : null}
                   {item.note ? <MessageSquare className="size-3" aria-label={t("songOrder.hasNote")} /> : null}
+                  {/* Moved up or down by itself (issue #252). */}
+                  {item.transpose ? <span className="rounded bg-background/60 px-1 text-[10px] font-semibold tabular-nums">{item.transpose > 0 ? `+${item.transpose}` : `−${-item.transpose}`}</span> : null}
                   {/* Its own chords, lines or words (issue #205). */}
-                  {passChanged(item) ? (
+                  {passEdited(item) ? (
                     <span className="font-semibold text-amber-600 dark:text-amber-400" title={t("songOrder.changed")} aria-label={t("songOrder.changed")} data-pass-changed="">
                       *
                     </span>

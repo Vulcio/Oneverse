@@ -179,6 +179,16 @@ export function StructuredEditor({
     replaceDocument(editor.view, editor.schema.nodeFromJSON(songToEditorJSON(sections, flow)), mode === "text");
   }, [editor, sections, flow]);
 
+  // The linked copies unfolded (issue #252).
+  const [openCopies, setOpenCopies] = useState<ReadonlySet<string>>(new Set());
+  const setCopyOpen = (passId: string, open: boolean) =>
+    setOpenCopies((current) => {
+      const next = new Set(current);
+      if (open) next.add(passId);
+      else next.delete(passId);
+      return next;
+    });
+
   // What the linked copies read and change (issue #205).
   const orderActions = useMemo<SongOrderActions>(
     () => ({
@@ -201,10 +211,13 @@ export function StructuredEditor({
         const newId = duplicateLinked(editor.view, pos);
         if (!newId) return;
         setFlow(flowRef.current.map((item) => (item.id === newId ? { ...pass, id: newId } : item)));
+        setCopyOpen(newId, true);
       },
       songKey,
+      copyOpen: (passId) => openCopies.has(passId),
+      setCopyOpen,
     }),
-    [flow, editor, songKey],
+    [flow, editor, songKey, openCopies],
   );
 
   useEffect(() => {

@@ -61,11 +61,13 @@ Key changes and notes show on the chart at that pass.
 
 The editor shows the song in the order it's sung. A section's first appearance is the block you edit; wherever it's sung again, it's a **linked copy** - marked with a link, "Linked to Chorus", locked - that follows the section: change the section and every copy shows it.
 
+A copy is folded to one line that says what it does - "sung again, as written", "2 semitones up · in A", "1 chord of its own", "1 line left out". **Show** opens it, with its own transposition and **Edit this copy**; **Hide** folds it again. It stays as you left it while you edit.
+
 - **Duplicate (linked)** in a section's menu adds a copy of it right after; **Duplicate (unique copy)** adds an independent section instead. In a copy's menu, **Duplicate (linked)** adds another copy with the same changes, still linked to the section, not to the copy. Moving blocks up and down (their menu) changes the order they're sung in, as does the **Song order** above.
 - When the editor has room, the arrows to move a block up and down and its duplicates are also at the right of its heading, beside its menu: on a section, **Duplicate (linked)** (the link) and **Duplicate (unique copy)** (the copy icon); on a linked copy, **Duplicate (linked)** (the copy icon).
 - **− / +** in a copy's heading transposes that copy alone (a key change, in Song order, carries on to the end of the song).
 - **Edit this copy** opens its changes, which stay differences from the section, so it keeps following it: **Leave the line out**, change its words (removed words show greyed out and struck through, new ones highlighted, and the chords follow their words), or type another chord over one (written in the song's key) or leave it out with the eye button. **Done** locks it again.
-- A changed copy shows **\*** in its heading, in the song order and on the chart. **As the section is written** (its menu) takes the changes away; **Make unique** turns it into a section of its own, its changes written in - it no longer follows the original.
+- A copy with its own words, lines or chords shows **\*** in its heading, in the song order and on the chart. A copy only moved up or down isn't marked: it shows how far (**+2**) instead. **As the section is written** (its menu) takes the changes away; **Make unique** turns it into a section of its own, its changes written in - it no longer follows the original.
 - **Take out of the song order** (a section's menu) moves a section to the end, under **Not in the song order**, with its copies; **Put back in the song order** brings it back.
 
 If a line or chord a copy changes is deleted from the section, the chart says so rather than dropping it. Exported to ChordPro, a changed copy is written out in full.

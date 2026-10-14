@@ -63,17 +63,24 @@ try {
     // In the editor's order: verse, chorus, its copy.
     const blocks = await order_();
     if (JSON.stringify(blocks) !== JSON.stringify(["verse", "chorus", "copy", "bridge"])) throw new Error(JSON.stringify(blocks));
+    // Folded to one line (issue #252): what it does, in a word; its lines when shown.
+    await copy().getByTestId("linked-summary").getByText("sung again, as written").waitFor();
+    if (await copy().locator("[data-copy-line]").count()) throw new Error("not folded");
     // Locked: no text to type into.
     if (await copy().locator("input").count()) throw new Error("editable while locked");
     await order().getByRole("listitem").nth(2).getByLabel("Linked copy").waitFor();
   });
 
-  await step("transposed by itself, a tone up", async () => {
+  await step("transposed by itself, a tone up: a badge, not marked as changed", async () => {
+    await copy().getByTestId("linked-toggle").click();
     await copy().getByTestId("linked-transpose-up").click();
     await copy().getByTestId("linked-transpose-up").click();
     await copy().getByTestId("linked-transpose").getByText("+2").waitFor();
     // D sounds as E on the copy.
     await copy().locator(`[data-copy-line="${second.id}"]`).getByText("E", { exact: true }).waitFor();
+    await copy().getByTestId("linked-summary").getByText(/2 semitones up/).waitFor();
+    if (await copy().locator("[data-pass-changed]").count()) throw new Error("only transposed, yet marked *");
+    await order().getByRole("listitem").nth(2).getByText("+2").waitFor();
   });
 
   await step("Edit this copy: a line left out, a word replaced, words removed greyed out, chords changed and left out - marked *", async () => {
@@ -170,6 +177,7 @@ try {
     await bridge.hover();
     await bridge.getByRole("button", { name: "Bridge actions" }).click();
     await page.getByTestId("section-duplicate-linked").click();
+    await editor().locator("[data-linked-to]").last().getByTestId("linked-toggle").click();
     const line = editor().locator('[data-linked-to] [data-copy-line]').last();
     await line.waitFor();
     const boxes = await line.locator("[data-copy-cell] > span:first-child").evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { text: el.textContent.trim(), left: r.left, right: r.right, top: Math.round(r.top) }; }).filter((box) => box.text));

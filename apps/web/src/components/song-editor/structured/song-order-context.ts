@@ -17,6 +17,9 @@ export interface SongOrderActions {
   duplicatePass: (passId: string, pos: number) => void;
   /** The key the song's sections are written in. */
   songKey: string;
+  /** Whether a linked copy is unfolded (issue #252): kept by the editor, so a reload of the chart keeps it. */
+  copyOpen: (passId: string) => boolean;
+  setCopyOpen: (passId: string, open: boolean) => void;
 }
 
 export const SongOrderActionsContext = createContext<SongOrderActions | null>(null);
