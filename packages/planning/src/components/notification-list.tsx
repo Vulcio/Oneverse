@@ -38,7 +38,7 @@ export function useOpenNotification() {
  * (issue #149). For the bell and the Notifications page.
  */
 export function NotificationList({ items, onRead, onOpened }: { items: AppNotification[]; onRead: (ids: string[]) => void; onOpened?: () => void }) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const open = useOpenNotification();
   const messages = i18n.getResourceBundle(i18n.language, "translation") as Messages;
   return (
