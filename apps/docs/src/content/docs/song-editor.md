@@ -30,8 +30,11 @@ Editing the words keeps the chords with them: typing before a chord carries it a
 
 Each block is a section: intro, verse, pre-chorus, chorus, post-chorus, bridge, vamp (a phrase repeated as long as needed), breakdown, instrumental, interlude, outro or tag.
 
-- **Add a section** from the palette's **Sections** list: a click adds it after the section you're in; on a computer, drag it instead to drop it between any two sections (a line shows where it will go).
-- Change a section's **type** or **label** ("Verse 2") at its top. The eye button, with the section's tools at the right of its heading, hides its label ("Chorus") on the chart in Practice and Live.
+Each type has its own light colour - verses blue, choruses amber, bridges violet… - on its tag and as a faint wash behind its lines, so the parts of a song stand out at a glance.
+
+- **Add a section** with the **+** between two sections (it shows where the pointer is, and always on a touch screen), above the first one, or with **Add a section** at the end. Its menu has every type of section, and **Sing again**: a linked copy of a section already in the song, sung there.
+- A section's heading is its name ("Verse 2"): click it to rename it. The small coloured tag beside it is its **type**: choose it to change the type.
+- The section's tools - the eye, its duplicates, up and down, and its **⋯** menu - show on the section you're editing, or under the pointer. Their place is kept, so nothing moves when they appear. The eye hides its name ("Chorus") on the chart in Practice and Live.
 - The **⋯** menu moves, duplicates (linked or as a unique copy, see [Linked copies](/song-editor/#linked-copies)), takes out of the song order or deletes it.
 - A line can be a **note for the band** ("×2, build") rather than lyrics.
 

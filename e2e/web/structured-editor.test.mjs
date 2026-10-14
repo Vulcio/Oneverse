@@ -232,12 +232,14 @@ await step("pasting a chart adds its sections; pasting words just types them", a
 await step("a section can be retyped, relabelled, duplicated and deleted", async () => {
   const bridge = editor().locator('[data-section-type="bridge"]');
   await bridge.getByLabel("Section label").fill("Bridge A");
+  await bridge.hover();
   await bridge.getByRole("button", { name: /actions$/ }).click();
   await page.getByRole("menuitem", { name: "Duplicate (unique copy)" }).click();
   if ((await editor().locator('[data-section-type="bridge"]').count()) !== 2) throw new Error("not duplicated");
   const copy = editor().locator('[data-section-type="bridge"]').nth(1);
   await copy.getByLabel("Section type").selectOption("outro");
   await editor().locator('[data-section-type="outro"]').waitFor();
+  await editor().locator('[data-section-type="tag"]').hover();
   await editor().locator('[data-section-type="tag"]').getByRole("button", { name: /actions$/ }).click();
   await page.getByRole("menuitem", { name: "Delete section" }).click();
   await save();
@@ -348,25 +350,44 @@ await step("a palette chord dragged onto a lyric lands on it", async () => {
   await page.getByRole("button", { name: "Discard changes" }).click();
 });
 
-await step("a section dragged from the palette goes between the two sections it's dropped between", async () => {
+await step("a section added from the + between two sections goes there; the + above the first, before it", async () => {
   await openEditor();
   const types = () => editor().locator("[data-section-type]").evaluateAll((els) => els.map((el) => el.dataset.sectionType));
   const before = await types();
-  // Just above the second section.
-  const second = await editor().locator("[data-section-type]").nth(1).boundingBox();
-  await dragTo(page.locator('[data-palette-section="bridge"]'), second.x + 40, second.y + 4);
-  await page.locator(".sv-section-drop").waitFor();
-  await page.mouse.up();
+  // The "+" over the gap below the first section.
+  await editor().locator("[data-section-type]").first().getByTestId("section-insert").click();
+  await page.getByTestId("section-inserter-menu").locator('[data-insert-type="bridge"]').click();
   await page.waitForTimeout(200);
   const after = await types();
   const expected = [before[0], "bridge", ...before.slice(1)];
   if (JSON.stringify(after) !== JSON.stringify(expected)) throw new Error(`${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
-  if (await page.locator(".sv-section-drop").count()) throw new Error("the drop line stayed");
-  // A click still adds one after the section you're in. (Empty, they aren't changes to save.)
-  await select(0, 0);
-  await page.locator('[data-palette-section="tag"]').click();
-  const clicked = await types();
-  if (clicked[1] !== "tag") throw new Error(JSON.stringify(clicked));
+  await page.getByTestId("section-insert-top").click();
+  await page.getByTestId("section-inserter-menu").locator('[data-insert-type="intro"]').click();
+  await page.waitForTimeout(200);
+  if ((await types())[0] !== "intro") throw new Error(JSON.stringify(await types()));
+});
+
+await step("from the + at the end: a section of the song sung again there, as a linked copy", async () => {
+  const copies = await editor().getByTestId("linked-copy").count();
+  await page.getByTestId("section-insert-end").click();
+  const menu = page.getByTestId("section-inserter-menu");
+  // The new, empty sections aren't offered: there's nothing in them to sing again.
+  await menu.getByRole("menuitem", { name: "Chorus", exact: true }).last().click();
+  await editor().getByTestId("linked-copy").nth(copies).waitFor();
+  await page.getByRole("button", { name: "Discard changes" }).click();
+});
+
+await step("a section's tools show on the section being edited, in room kept for them", async () => {
+  await openEditor();
+  const first = editor().locator("[data-section-type]").first();
+  const name = await first.getByTestId("section-name").boundingBox();
+  await select(0, 2);
+  await first.locator("[data-section-tools]").getByRole("button", { name: /actions$/ }).waitFor({ state: "visible" });
+  const after = await first.getByTestId("section-name").boundingBox();
+  if (Math.round(name.y) !== Math.round(after.y) || Math.round(name.x) !== Math.round(after.x)) throw new Error(`the heading moved: ${JSON.stringify({ name, after })}`);
+  // Its colour: a tag and a wash in its type's colour.
+  const tag = await first.getByTestId("section-type").evaluate((el) => getComputedStyle(el).backgroundColor);
+  if (!tag || tag === "rgba(0, 0, 0, 0)") throw new Error(`no colour: ${tag}`);
 });
 
 await step("on a phone: the palette scrolls sideways, a tapped chord opens its details", async () => {

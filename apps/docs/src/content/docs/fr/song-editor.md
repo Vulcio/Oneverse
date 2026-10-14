@@ -30,8 +30,11 @@ Modifier les paroles garde les accords avec elles : taper avant un accord l'emm�
 
 Chaque bloc est une section : intro, couplet, pré-refrain, refrain, post-refrain, pont, vamp (une phrase répétée autant qu'il faut), break, instrumental, interlude, outro ou tag.
 
-- **Ajoutez une section** depuis la liste **Sections** de la palette : un clic l'ajoute après la section où vous êtes ; sur un ordinateur, faites-la plutôt glisser pour la déposer entre deux sections (une ligne montre où elle ira).
-- Changez le **type** ou le **libellé** d'une section (« Couplet 2 ») en haut de celle-ci. Le bouton en forme d'œil, avec les outils de la section à droite de son titre, masque son libellé (« Refrain ») sur la grille en Session et en Live.
+Chaque type a sa couleur, légère - couplets en bleu, refrains en ambre, ponts en violet… - sur son étiquette et en un léger fond derrière ses lignes : on distingue d'un coup d'œil les parties du chant.
+
+- **Ajoutez une section** avec le **+** entre deux sections (il apparaît sous le pointeur, et toujours sur un écran tactile), au-dessus de la première, ou avec **Ajouter une section** à la fin. Son menu a tous les types de section, et **Chanter à nouveau** : une copie liée d'une section déjà dans le chant, chantée là.
+- Le titre d'une section est son nom (« Couplet 2 ») : cliquez dessus pour le changer. La petite étiquette colorée à côté est son **type** : choisissez-la pour en changer.
+- Les outils de la section - l'œil, ses duplications, monter et descendre, et son menu **⋯** - apparaissent sur la section que vous modifiez, ou sous le pointeur. Leur place est gardée : rien ne bouge quand ils apparaissent. L'œil masque son nom (« Refrain ») sur la grille en Session et en Live.
 - Le menu **⋯** la déplace, la duplique (liée ou en copie indépendante, voir [Copies liées](/fr/song-editor/#copies-liées)), la retire de l'ordre du chant ou la supprime.
 - Une ligne peut être une **note pour le groupe** (« ×2, montée ») plutôt que des paroles.
 

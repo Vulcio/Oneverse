@@ -53,7 +53,7 @@ export function ToolButton({
   return (
     <button
       type="button"
-      className={cn("items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30 [&_svg]:size-3.5", className)}
+      className={cn("size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30 pointer-coarse:size-11 [&_svg]:size-3.5", className)}
       aria-label={label}
       aria-pressed={pressed}
       title={label}

@@ -20,6 +20,7 @@ import { cn } from "@songverse/ui/lib/utils";
 import { editorToSections } from "./document";
 import { BlockTools, ToolButton } from "./block-tools";
 import { deleteLinked, moveBlock } from "./extensions";
+import { SectionInserter } from "./section-inserter";
 import { useSongOrderActions } from "./song-order-context";
 
 /**
@@ -73,14 +74,19 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
 
   return (
     <NodeViewWrapper
-      className={cn("sv-linked group/linked rounded-lg border border-dashed px-3 py-2 font-sans", editing ? "border-primary/60 bg-primary/5" : "bg-muted/30")}
+      // In its section's colour (issue #250): a dashed edge, the same faint wash.
+      className={cn(
+        "sv-linked group/linked relative rounded-[0.625rem] border border-dashed px-3 py-2 font-sans",
+        editing ? "border-primary/60 bg-primary/5" : "border-[var(--section-line)] bg-[var(--section-tint)]",
+      )}
+      data-section-color={section.type}
       data-linked-pass={passId}
       data-linked-to={sectionId}
       data-editing={editing ? "" : undefined}
       data-testid="linked-copy"
     >
       <div className="@container/block mb-1.5 flex flex-wrap items-center gap-1.5 select-none" contentEditable={false}>
-        <Link2 className="size-3.5 text-primary" aria-hidden />
+        <Link2 className="size-3.5 text-[var(--section-ink)]" aria-hidden />
         <span className="text-xs font-semibold tracking-wide uppercase">{pass.label || name}</span>
         <span className="text-xs text-muted-foreground">{t("linkedCopy.linkedTo", { section: name })}</span>
         {changed ? (
@@ -166,6 +172,7 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
         ))}
       </div>
       {editing ? <p className="mt-1.5 text-xs text-muted-foreground">{t("linkedCopy.hint")}</p> : null}
+      <SectionInserter editor={editor} at={() => at() + node.nodeSize} edge="bottom" testId="section-insert" />
     </NodeViewWrapper>
   );
 }

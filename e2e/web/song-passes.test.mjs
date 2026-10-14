@@ -54,6 +54,8 @@ try {
   await step("Duplicate (linked): a locked copy right after the chorus, linked to it", async () => {
     await page.goto(`${WEB}/library/${song.id}?tab=editor`);
     await page.waitForLoadState("networkidle");
+    // A section's tools show under the pointer, or on the section being edited (issue #250).
+    await editor().locator('[data-section-type="chorus"]').hover();
     await editor().locator('[data-section-type="chorus"]').getByRole("button", { name: "Chorus actions" }).click();
     await page.getByTestId("section-duplicate-linked").click();
     await copy().waitFor();
@@ -140,6 +142,7 @@ try {
 
   await step("with room, the arrows at the right of the heading, sections' and copies' on the same edge", async () => {
     const chorusTools = editor().locator('[data-section-type="chorus"]').first();
+    await chorusTools.hover();
     await chorusTools.getByTestId("block-move-up").waitFor();
     await copy().getByTestId("block-move-down").waitFor();
     // A section: both duplicates; a copy: one, another copy. The eye with them: the name shown on the chart or not.
@@ -150,6 +153,7 @@ try {
     await eye.click();
     await chorusTools.getByRole("button", { name: "Show the label on the chart" }).waitFor();
     if ((await eye.getAttribute("aria-pressed")) !== "true") throw new Error("the name not hidden");
+    await chorusTools.hover();
     await eye.click();
     const right = async (block) => block.getByRole("button", { name: /actions$/ }).evaluate((el) => Math.round(el.getBoundingClientRect().right));
     const [a, b] = [await right(chorusTools), await right(copy())];
@@ -163,6 +167,7 @@ try {
 
   await step("chords several on a letter and after the last one: on the chords' row, apart", async () => {
     const bridge = editor().locator('[data-section-type="bridge"]');
+    await bridge.hover();
     await bridge.getByRole("button", { name: "Bridge actions" }).click();
     await page.getByTestId("section-duplicate-linked").click();
     const line = editor().locator('[data-linked-to] [data-copy-line]').last();
@@ -190,6 +195,7 @@ try {
   });
 
   await step("taken out of the song order: at the end, under its heading", async () => {
+    await editor().locator('[data-section-type="verse"]').hover();
     await editor().locator('[data-section-type="verse"]').getByRole("button", { name: "Verse actions" }).click();
     await page.getByTestId("section-toggle-sung").click();
     await editor().getByTestId("unsung-heading").waitFor();

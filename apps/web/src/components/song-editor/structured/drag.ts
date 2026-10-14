@@ -1,7 +1,6 @@
 import { NodeSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
-import type { SectionType } from "@songverse/core";
-import { insertChord, insertSection, moveChord, sectionDropAt, setDropTarget } from "./extensions";
+import { insertChord, moveChord, setDropTarget } from "./extensions";
 
 /** What's being dragged: a chord already in the song, or a new one from the palette. */
 export type DragSource = { kind: "move"; pos: number; raw: string } | { kind: "new"; raw: string };
@@ -87,81 +86,6 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
       insertChord(view, source.raw, target);
     }
     view.focus();
-  }
-  const up = (e: PointerEvent) => finish(e, false);
-  const cancel = (e: PointerEvent) => finish(e, true);
-
-  handle.addEventListener("pointermove", move);
-  handle.addEventListener("pointerup", up);
-  handle.addEventListener("pointercancel", cancel);
-}
-
-/**
- * Drags a new section from the palette (`pressed`, its button) into the
- * song: a line shows where it would go - between two sections, the nearest
- * to the pointer - and letting go over the editor adds it there. A press
- * without a drag is a click (`onClick`: after the current section).
- */
-export function startSectionDrag(view: EditorView, event: PointerEvent, type: SectionType, label: string, onClick: () => void, pressed: HTMLElement) {
-  if (event.button !== 0 || !view.editable) return;
-  const handle = pressed;
-  const start = { x: event.clientX, y: event.clientY };
-  handle.setPointerCapture(event.pointerId);
-  let ghost: HTMLElement | null = null;
-  let line: HTMLElement | null = null;
-  let target: number | null = null;
-  let frame = 0;
-
-  function autoScroll(y: number) {
-    cancelAnimationFrame(frame);
-    const speed = y < EDGE ? -(EDGE - y) / 3 : y > window.innerHeight - EDGE ? (y - (window.innerHeight - EDGE)) / 3 : 0;
-    if (speed) {
-      window.scrollBy(0, speed);
-      frame = requestAnimationFrame(() => autoScroll(y));
-    }
-  }
-
-  function move(e: PointerEvent) {
-    if (!ghost) {
-      if (Math.hypot(e.clientX - start.x, e.clientY - start.y) < THRESHOLD) return;
-      ghost = document.createElement("div");
-      ghost.className = "sv-drag-ghost sv-drag-ghost-section";
-      ghost.textContent = label;
-      line = document.createElement("div");
-      line.className = "sv-section-drop";
-      document.body.append(ghost, line);
-      document.body.classList.add("sv-dragging");
-    }
-    ghost.style.transform = `translate(${e.clientX + 8}px, ${e.clientY - 10}px)`;
-    // Over the editor (or just beside it): between which sections.
-    const editor = view.dom.getBoundingClientRect();
-    const over = e.clientX >= editor.left - 48 && e.clientX <= editor.right + 48 && e.clientY >= editor.top - 48 && e.clientY <= editor.bottom + 48;
-    if (over) {
-      const drop = sectionDropAt(view, e.clientY);
-      target = drop.pos;
-      line!.style.display = "block";
-      line!.style.transform = `translate(${editor.left}px, ${drop.top - 6}px)`;
-      line!.style.width = `${editor.width}px`;
-    } else {
-      target = null;
-      line!.style.display = "none";
-    }
-    autoScroll(e.clientY);
-  }
-
-  function finish(e: PointerEvent, cancelled: boolean) {
-    handle.removeEventListener("pointermove", move);
-    handle.removeEventListener("pointerup", up);
-    handle.removeEventListener("pointercancel", cancel);
-    cancelAnimationFrame(frame);
-    if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
-    const dragged = !!ghost;
-    ghost?.remove();
-    line?.remove();
-    document.body.classList.remove("sv-dragging");
-    if (cancelled) return;
-    if (!dragged) onClick();
-    else if (target !== null) insertSection(view, type, target);
   }
   const up = (e: PointerEvent) => finish(e, false);
   const cancel = (e: PointerEvent) => finish(e, true);

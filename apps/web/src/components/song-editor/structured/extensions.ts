@@ -656,12 +656,6 @@ export function currentSection(state: EditorState): { pos: number; node: PMNode 
   return node?.type.name === "section" ? { pos: state.selection.from, node } : null;
 }
 
-/** A new, empty section after the current one (or at the end), with the cursor in it. */
-export function addSection(view: EditorView, type: SectionType) {
-  const current = currentSection(view.state);
-  insertSection(view, type, current ? current.pos + current.node.nodeSize : view.state.doc.content.size);
-}
-
 /** A new, empty section at `at` (between two sections), with the cursor in it. */
 export function insertSection(view: EditorView, type: SectionType, at: number) {
   const { state } = view;
@@ -672,25 +666,6 @@ export function insertSection(view: EditorView, type: SectionType, at: number) {
   tr.setSelection(TextSelection.create(tr.doc, at + 2)).scrollIntoView();
   view.dispatch(tr);
   view.focus();
-}
-
-/** Where a section dropped at height `y` (on screen) goes: before the first section whose middle is below it, or at the end; and the height to show that at. */
-export function sectionDropAt(view: EditorView, y: number): { pos: number; top: number } {
-  let pos = 0;
-  let top: number | null = null;
-  let end = view.dom.getBoundingClientRect().bottom;
-  view.state.doc.forEach((node, offset) => {
-    if (top !== null) return;
-    const dom = view.nodeDOM(offset) as HTMLElement | null;
-    if (!dom?.getBoundingClientRect) return;
-    const rect = dom.getBoundingClientRect();
-    if (y < rect.top + rect.height / 2) top = rect.top;
-    else {
-      pos = offset + node.nodeSize;
-      end = rect.bottom;
-    }
-  });
-  return { pos, top: top ?? end };
 }
 
 export function deleteSection(view: EditorView, pos: number) {
@@ -910,6 +885,13 @@ export function duplicateLinked(view: EditorView, pos: number): string | null {
   const copy = view.state.schema.nodes.linked!.create({ passId, sectionId: node.type.name === "linked" ? node.attrs.sectionId : node.attrs.id });
   view.dispatch(view.state.tr.insert(pos + node.nodeSize, copy).scrollIntoView());
   return passId;
+}
+
+/** A linked copy of the section `sectionId` at `at` (between two blocks): the section sung again there (issue #250). */
+export function insertLinked(view: EditorView, sectionId: string, at: number) {
+  const copy = view.state.schema.nodes.linked!.create({ passId: generateId(ID_PREFIXES.flowItem), sectionId });
+  view.dispatch(view.state.tr.insert(at, copy).scrollIntoView());
+  view.focus();
 }
 
 /** The linked copy at `pos` replaced by `section` (its changes written in), keeping its pass: made unique. */

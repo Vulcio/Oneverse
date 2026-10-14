@@ -5,14 +5,12 @@ import {
   parseChord,
   reconcileSections,
   sameChord,
-  SECTION_TYPES,
   sectionsFromText,
   sectionsToChordPro,
   simplifyChord,
   transposeChord,
   transposeKey,
   type SectionInstance,
-  type SectionType,
   type SectionV2,
 } from "@songverse/core";
 import { Placeholder } from "@tiptap/extensions";
@@ -31,11 +29,11 @@ import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
 import { CAPO_OPTIONS, KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from "../song-form";
 import { editorToSections, editorToSong, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
-import { startChordDrag, startSectionDrag } from "./drag";
+import { startChordDrag } from "./drag";
+import { SectionInserter } from "./section-inserter";
 import { SongOrder } from "./song-order";
 import { SongOrderActionsContext, type SongOrderActions } from "./song-order-context";
 import {
-  addSection,
   deleteChord,
   insertChord,
   nudgeChord,
@@ -229,6 +227,8 @@ export function StructuredEditor({
           <SongOrderActionsContext.Provider value={orderActions}>
             <EditorContent editor={editor} className="sv-editor" />
           </SongOrderActionsContext.Provider>
+          {/* A section at the end; between two, the "+" in the gap (issue #250). */}
+          {editor ? <SectionInserter editor={editor} at={() => endOfOrder(editor)} testId="section-insert-end" /> : null}
           {editor ? <ChordPopover editor={editor} songKey={songKey} editTick={editTick} /> : null}
           <p className="mt-4 text-xs text-muted-foreground">{t("structuredEditor.hints")}</p>
         </div>
@@ -243,6 +243,19 @@ export function StructuredEditor({
       </div>
     </div>
   );
+}
+
+/** Where a section added at the end goes: after the song's order, before the sections taken out of it. */
+function endOfOrder(editor: Editor): number {
+  let at = editor.state.doc.content.size;
+  let found = false;
+  editor.state.doc.forEach((node, offset) => {
+    if (!found && node.type.name === "section" && node.attrs.sung === false) {
+      at = offset;
+      found = true;
+    }
+  });
+  return at;
 }
 
 /**
@@ -470,29 +483,6 @@ function Palette({ editor, songKey, sections }: { editor: Editor; songKey: strin
   const row = "flex gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible";
   return (
     <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-36 lg:self-start" aria-label={t("structuredEditor.palette")}>
-      <div className="flex flex-col gap-1.5">
-        <h3 className={heading}>{t("structuredEditor.sections")}</h3>
-        <div className={row}>
-          {SECTION_TYPES.map((type: SectionType) => (
-            <button
-              key={type}
-              type="button"
-              className="flex shrink-0 touch-pan-x items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-muted"
-              data-palette-section={type}
-              onMouseDown={(event) => event.preventDefault()}
-              // A click adds it after the current section; a drag, where it's dropped.
-              onPointerDown={(event) => startSectionDrag(editor.view, event.nativeEvent, type, t(`chart.sections.${type}`), () => addSection(editor.view, type), event.currentTarget)}
-              // Keyboard activation (a pointer press is handled above).
-              onClick={(event) => event.detail === 0 && addSection(editor.view, type)}
-              aria-label={t("structuredEditor.addSection", { type: t(`chart.sections.${type}`) })}
-            >
-              <Plus className="size-3" aria-hidden />
-              {t(`chart.sections.${type}`)}
-            </button>
-          ))}
-        </div>
-        <p className="hidden text-xs text-muted-foreground lg:block">{t("structuredEditor.sectionHint")}</p>
-      </div>
       <div className="flex flex-col gap-1.5">
         <h3 className={heading}>{songKey && inKey.length > 0 ? t("structuredEditor.inKey", { key: songKey }) : t("structuredEditor.chords")}</h3>
         {inKey.length > 0 ? (
