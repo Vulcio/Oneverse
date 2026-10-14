@@ -880,6 +880,8 @@ export interface TeamEvent {
   date: string;
   startTime: string;
   durationMinutes: number;
+  /** Its call time (issue #240): minutes before the start to be there. */
+  callMinutes: number | null;
   timeZone: string;
   place: string | null;
   note: string | null;
@@ -902,6 +904,8 @@ export interface OrganizationEventNeed {
   /** The group's part: one of its events. */
   teamEventId: string;
   parts: EventPart[];
+  /** When the group is to be there (issue #240): minutes before the start. */
+  callMinutes: number | null;
 }
 
 /** An organisation's event (issue #241): its host, its timing, the groups it needs. */
@@ -944,6 +948,8 @@ export interface OrganizationEventDate {
     /** The viewer is in it. */
     mine: boolean;
     cancelled: boolean;
+    /** When the group is to be there (issue #240). */
+    callAt: string | null;
     setlistId: string | null;
     songCount: number;
     parts: EventPart[];
@@ -961,7 +967,7 @@ export interface OrganizationEventPreset {
   startTime: string;
   durationMinutes: number;
   place: string | null;
-  needs: { teamId: string; parts?: EventPart[] }[];
+  needs: { teamId: string; parts?: EventPart[]; callMinutes?: number }[];
 }
 
 /** A date of a team's event, with its set. */
@@ -973,6 +979,8 @@ export interface TeamEventDateSummary extends EventDate {
   eventTitle: string;
   place: string | null;
   timeZone: string;
+  /** When to be there (issue #240), ISO 8601; null without a call time. */
+  callAt: string | null;
   repeats: boolean;
   setlistId: string | null;
   songCount: number;
@@ -1041,6 +1049,8 @@ export interface MyEventDate extends EventDate {
   title: string;
   place: string | null;
   timeZone: string;
+  /** When to be there (issue #240), ISO 8601; null without a call time. */
+  callAt: string | null;
   repeats: boolean;
   teamId: string;
   teamName: string;

@@ -46,6 +46,8 @@ export interface NotificationData {
   team?: string;
   /** HH:MM. */
   startTime?: string;
+  /** HH:MM: when to be there (issue #240), before startTime. */
+  callTime?: string;
   answer?: AvailabilityAnswer;
   /** Who did it. */
   by?: string;
@@ -91,6 +93,8 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
     deadline: data.deadline ? notificationDate(data.deadline, locale) : "",
     // After the team, when there's one: "Worship team · Main hall".
     place: data.place ? ` · ${data.place}` : "",
+    // After the place: "· call time 9:15".
+    call: data.callTime ? ` · ${fill(messages.notifications.callTime, { time: data.callTime })}` : "",
     count: data.count === undefined ? "" : String(data.count),
     part: partWords(data, messages),
   };

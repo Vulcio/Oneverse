@@ -1139,6 +1139,8 @@ model TeamEvent {
   date             DateTime  @db.Date
   startTime        String
   durationMinutes  Int       @default(90)
+  // Its call time (issue #240): minutes before the start to be there.
+  callMinutes      Int?
   timeZone         String
   place            String?
   note             String?

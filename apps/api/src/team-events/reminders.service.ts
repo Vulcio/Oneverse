@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { addDays, dayBeforeReminderDue, deadlineReminderDue, eventDates, localDate, type CreateAnswerRequestRequest } from "@songverse/core";
+import { addDays, callAt, dayBeforeReminderDue, deadlineReminderDue, eventDates, localDate, localTime, type CreateAnswerRequestRequest } from "@songverse/core";
 import { Prisma } from "@songverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -145,11 +145,12 @@ export class RemindersService {
         const of = { eventId: parent?.id ?? event.id, date: date.forDate };
         const people = ((await signedUpFor(this.prisma.client, [of])).get(signupKey(of.eventId, of.date)) ?? []).map((userId) => ({ userId }));
         const setlist = rows.get(date.forDate)?.setlist;
+        const call = callAt(date.startsAt, event.callMinutes);
         dayBefore += await this.notifications.notify(
           people.map(({ userId }) => ({
             userId,
             kind: "EVENT_TOMORROW",
-            data: { event: date.title || event.title, date: date.date, team: event.team.name, startTime: date.startTime, ...(event.place ? { place: event.place } : {}) },
+            data: { event: date.title || event.title, date: date.date, team: event.team.name, startTime: date.startTime, ...(event.place ? { place: event.place } : {}), ...(call ? { callTime: localTime(call, event.timeZone) } : {}) },
             url: setlist ? `/sets/${setlist.id}` : "/calendar",
             teamId: event.teamId,
           })),

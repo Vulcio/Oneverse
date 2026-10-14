@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, calendarFeed, eventDates, localDate, type CalendarFeedEntry } from "@songverse/core";
+import { addDays, calendarFeed, callAt, eventDates, localDate, localTime, type CalendarFeedEntry } from "@songverse/core";
+import en from "@songverse/core/i18n/locales/en";
+import fr from "@songverse/core/i18n/locales/fr";
 import { createHash, randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
@@ -11,6 +13,12 @@ const AHEAD_DAYS = 366;
 
 const apiUrl = () => (process.env.AUTH_URL ?? "http://localhost:3001").replace(/\/+$/, "");
 const webUrl = () => (process.env.WEB_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+
+/** A date's call time (issue #240), in the reader's words: "Call 09:15"; null without one. */
+function callLine(startsAt: string, minutes: number | null, timeZone: string, locale: string): string | null {
+  const at = callAt(startsAt, minutes);
+  return at ? (locale === "fr" ? fr : en).teamCalendar.callAt.replace("{{time}}", localTime(at, timeZone)) : null;
+}
 
 /**
  * Someone's calendar link (issue #235): an iCalendar feed, opened without
@@ -46,7 +54,7 @@ export class CalendarFeedService {
 
   /** The feed for a token, and its ETag; NotFound for a token that isn't one (any more). */
   async feed(token: string): Promise<{ body: string; etag: string }> {
-    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { token }, include: { user: { select: { id: true, displayName: true } } } });
+    const feed = await this.prisma.client.calendarFeed.findUnique({ where: { token }, include: { user: { select: { id: true, displayName: true, locale: true } } } });
     if (!feed) throw new NotFoundException("This calendar link doesn't work any more.");
     const userId = feed.user.id;
     const today = new Date().toISOString().slice(0, 10);
@@ -81,7 +89,7 @@ export class CalendarFeedService {
         end: date.endsAt,
         title: `${date.title || event.title} (${event.team.name})`,
         location: event.place,
-        description: [event.team.name, event.note, setUrl].filter(Boolean).join("\n"),
+        description: [callLine(date.startsAt, event.callMinutes, event.timeZone, feed.user.locale), event.team.name, event.note, setUrl].filter(Boolean).join("\n"),
         url: setUrl,
       });
     }
@@ -100,7 +108,7 @@ export class CalendarFeedService {
           end: date.endsAt,
           title: `${rehearsal.title} (${rehearsal.team.name})`,
           location: rehearsal.place,
-          description: [rehearsal.team.name, rehearsal.note, setUrl].filter(Boolean).join("\n"),
+          description: [callLine(date.startsAt, rehearsal.callMinutes, rehearsal.timeZone, feed.user.locale), rehearsal.team.name, rehearsal.note, setUrl].filter(Boolean).join("\n"),
           url: setUrl,
         });
       }

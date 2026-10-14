@@ -12,6 +12,7 @@ A **team** is a band or a group that shares songs, versions, sets and songbooks.
 The team's page starts with its **Calendar**: its services, rehearsals and other events, the coming eight weeks (**Show more** for later ones). Every member sees it; its admins manage it.
 
 - **New event**: its **Title**, its **Date** and **Start time**, how long it lasts, its **Time zone** (yours by default) and, if you like, a place and a note. **Repeats**: **Every week**, every 2 weeks and so on, on the weekday of its date, **Until** a date or for ever; or **Doesn't repeat**. Times stay the same when the clocks change.
+- **Call time (minutes before)**: when to be there, that many minutes before it starts - for a sound check or a prayer time. Each date then shows "Call 9:15" under its time, on the calendar and on **My calendar**; it's in your calendar link and in the reminder the day before. Leave it blank for none.
 - **Each date gets its own set**, named after the event and its date in your language ("Morning service - Oct 12"): **Open set** plans it like any set. Sets are made ahead of time - **Create sets ahead**, under the calendar, says how many weeks, from 1 to 52 (4 by default; 13 is about three months). A date further out has **Plan the set**, which makes its set straight away.
 - A date's **…** menu: **Cancel this date** (its set is deleted if it has no songs yet) or **Restore this date**, and **Edit event**.
 - Changing an event (its title, its date, how often it repeats) updates its coming sets. Dates it no longer falls on lose their sets if they're still empty; a set with songs stays, as a set of the team's. **Delete event** works the same way. A set deleted by hand isn't made again; **Plan the set** brings it back.
@@ -59,7 +60,7 @@ A date's set shows in your sidebar when you're signed up for it (see [Line-up](/
 ### Reminders
 
 - **Ask for answers** (admins): choose the dates (**From**, **To**) and **Answer by**, then **Ask**. Members with some of those dates still unanswered are told straight away - not those away for them - and, if they still haven't answered, reminded the day before the deadline. The request shows at the top of the calendar for everyone until the deadline is over; **Stop asking** (×) removes it.
-- **The day before**: everyone signed up for a date (see [Line-up](/teams/#line-up)) is reminded the day before, from 18:00 in the event's time zone, with its time, place and set.
+- **The day before**: everyone signed up for a date (see [Line-up](/teams/#line-up)) is reminded the day before, from 18:00 in the event's time zone, with its time, call time, place and set.
 - **Tell them the set is ready** (admins, in a date's **…** menu, once it has a set): the people signed up are told, and the date shows **Set ready**. **Tell them again** after more changes.
 
 Like every notification, they show under the bell, and by email or on your devices as you choose (see [Notifications](/account/#notifications)).

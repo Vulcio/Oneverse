@@ -33,6 +33,8 @@ try {
     await dialog.getByLabel("Start time").fill("10:00");
     await dialog.getByLabel("Repeats").selectOption("1");
     await dialog.getByLabel("Place (optional)").fill("Main hall");
+    // A call time (issue #240): 45 minutes before.
+    await dialog.getByLabel("Call time (minutes before)").fill("45");
     if ((await dialog.getByLabel("Time zone").inputValue()) !== "Europe/Paris") throw new Error("not the browser's time zone");
     await dialog.getByRole("button", { name: "Save event" }).click();
     await dialog.waitFor({ state: "detached" });
@@ -40,6 +42,7 @@ try {
     if ((await rows().first().getAttribute("data-event-date")) !== tomorrow) throw new Error("not from tomorrow");
     await rows().first().getByText("10:00").waitFor();
     await rows().first().getByText("Main hall").waitFor();
+    await rows().first().getByTestId("calendar-call").getByText("Call 09:15").waitFor();
     // 4 weeks of sets: the first dates open theirs, later ones are planned on demand.
     if ((await calendar().getByTestId("calendar-open-set").count()) < 4) throw new Error("no sets");
     await rows().nth(6).getByTestId("calendar-plan-set").waitFor();

@@ -38,7 +38,7 @@ const join = (who, n) => sql(`insert into "TeamMembership" (id, "teamId", "userI
 join(singer, 1);
 join(drummer, 2);
 join(bassist, 3);
-const weekly = (await call(admin, "POST", `/teams/${team.id}/events`, { title: "Evening service", date: tomorrow, startTime: "10:00", timeZone: zone, place: "Main hall", repeat: { everyWeeks: 1, until: plus(tomorrow, 14) } })).body;
+const weekly = (await call(admin, "POST", `/teams/${team.id}/events`, { title: "Evening service", date: tomorrow, startTime: "10:00", callMinutes: 30, timeZone: zone, place: "Main hall", repeat: { everyWeeks: 1, until: plus(tomorrow, 14) } })).body;
 const base = `/teams/${team.id}/events/${weekly.id}/dates`;
 await call(singer, "PUT", `${base}/${tomorrow}/answer`, { answer: "AVAILABLE" });
 await call(bassist, "POST", "/users/me/away", { from: utcToday, to: plus(utcToday, 30), note: "Tour" });
@@ -92,7 +92,7 @@ r = await call(admin, "POST", "/admin/jobs/run/event-reminders");
 check("the reminders run now", r.status === 201 && r.body.queued === "event-reminders", JSON.stringify(r.body));
 check("the day before (18:00 or later where it happens): the people signed up reminded", await until(async () => (await notes(singer, "EVENT_TOMORROW")).length === 1), zone);
 const tomorrowNote = (await notes(singer, "EVENT_TOMORROW"))[0];
-check("…when, where, and the set", tomorrowNote?.data.startTime === "10:00" && tomorrowNote.data.place === "Main hall" && tomorrowNote.data.date === tomorrow && tomorrowNote.url?.startsWith("/sets/"), JSON.stringify(tomorrowNote));
+check("…when, when to be there (issue #240), where, and the set", tomorrowNote?.data.startTime === "10:00" && tomorrowNote.data.callTime === "09:30" && tomorrowNote.data.place === "Main hall" && tomorrowNote.data.date === tomorrow && tomorrowNote.url?.startsWith("/sets/"), JSON.stringify(tomorrowNote));
 check("…a rehearsal tomorrow: those signed up for its date", await until(async () => (await notes(keys, "EVENT_TOMORROW")).some((note) => note.data.event === "Band practice" && note.data.startTime === "19:00" && note.url?.startsWith("/sets/"))), JSON.stringify(await notes(keys, "EVENT_TOMORROW")));
 check("…only them", (await notes(singer, "EVENT_TOMORROW")).every((note) => note.data.event !== "Band practice") && practice.rehearsalFor?.daysBefore === 7);
 check("the deadline today: those still missing answers reminded, with how many", await until(async () => (await notes(drummer, "ANSWER_DEADLINE")).length === 1 && (await notes(drummer, "ANSWER_DEADLINE"))[0].data.count === 3));

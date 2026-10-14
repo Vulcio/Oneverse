@@ -42,7 +42,7 @@ const event = {
   repeat: { everyWeeks: 1 },
   hostUserId: host.id,
   needs: [
-    { teamId: music.id, parts: [{ part: "DRUMS", count: 1 }] },
+    { teamId: music.id, parts: [{ part: "DRUMS", count: 1 }], callMinutes: 60 },
     { teamId: welcome.id, parts: [{ position: greeterPosition.id, count: 2 }] },
   ],
 };
@@ -74,6 +74,11 @@ r = await call(alice, "PATCH", teamBase, { startTime: "09:00" });
 check("its timing: the organisation's", r.status === 400, JSON.stringify(r.body));
 r = await call(alice, "PATCH", teamBase, { parts: [{ part: "DRUMS", count: 1 }, { part: "BASS_GUITAR", count: 1 }] });
 check("its parts: the group's", r.status === 200 && r.body.parts.length === 2, JSON.stringify(r.body));
+check("each group its own call time (issue #240): the music team an hour early", musicPart.callMinutes === 60 && welcomePart.callMinutes === null && musicDate.callAt === new Date(Date.parse(musicDate.startsAt) - 3600000).toISOString(), `${musicPart.callMinutes} ${welcomePart.callMinutes} ${musicDate.callAt}`);
+r = await call(alice, "PATCH", teamBase, { callMinutes: 75 });
+check("…which the group's admins can change", r.status === 200 && r.body.callMinutes === 75, JSON.stringify(r.body));
+const groupCall = (await call(alice, "GET", `${base}/event-dates?from=${first}&to=${first}`)).body[0]?.groups.find((g) => g.teamId === music.id);
+check("…shown on the organisation's events", groupCall?.callAt === new Date(Date.parse(musicDate.startsAt) - 75 * 60000).toISOString(), JSON.stringify(groupCall));
 r = await call(alice, "DELETE", teamBase);
 check("not deleted from the group", r.status === 400, String(r.status));
 r = await call(alice, "PATCH", `${teamBase}/dates/${first}`, { cancelled: true });

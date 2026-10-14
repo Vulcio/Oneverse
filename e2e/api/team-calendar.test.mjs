@@ -39,6 +39,18 @@ check("a date's set is the team's, named and dated after it, marked as the event
 r = await call(member, "GET", "/setlists");
 check("…in the list of sets too; a set made by hand isn't", r.body.find((set) => set.id === firstSet.id)?.fromEvent === true && r.body.filter((set) => !set.fromEvent).every((set) => set.fromEvent === false));
 
+// --- a call time (issue #240): when to be there, before it starts
+r = await call(admin, "PATCH", `${base}/events/${weekly.id}`, { callMinutes: 600 });
+check("a call time over 8 hours: refused", r.status === 400, JSON.stringify(r.body));
+r = await call(admin, "PATCH", `${base}/events/${weekly.id}`, { callMinutes: 45 });
+check("a call time set", r.status === 200 && r.body.callMinutes === 45, JSON.stringify(r.body));
+const called = (await call(member, "GET", `${base}/event-dates?from=${plus(1)}&to=${plus(1)}`)).body[0];
+check("…each date says when to be there", called.callAt === new Date(Date.parse(called.startsAt) - 45 * 60000).toISOString(), JSON.stringify(called));
+const mine = (await call(member, "GET", `/users/me/event-dates?from=${plus(1)}&to=${plus(1)}`)).body.find((d) => d.eventId === weekly.id);
+check("…on My calendar too", mine?.callAt === called.callAt, JSON.stringify(mine));
+r = await call(admin, "PATCH", `${base}/events/${weekly.id}`, { callMinutes: null });
+check("…and cleared", r.body.callMinutes === null && (await call(member, "GET", `${base}/event-dates?from=${plus(1)}&to=${plus(1)}`)).body[0].callAt === null);
+
 // --- further ahead, up to a year
 r = await call(admin, "PUT", `${base}/calendar-settings`, { setsAheadWeeks: 60 });
 check("more than a year ahead is refused", r.status === 400, String(r.status));

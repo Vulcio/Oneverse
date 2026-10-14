@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import { eventDates, eventFallsOn, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { callAt, eventDates, eventFallsOn, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import en from "../i18n/locales/en.js";
+import { notificationText } from "../notifications/index.js";
 import { CreateTeamEventSchema } from "../requests/events.js";
 
 describe("zonedInstant", () => {
@@ -52,5 +54,24 @@ describe("CreateTeamEventSchema", () => {
     const result = CreateTeamEventSchema.safeParse({ title: "x", date: "2026-02-30", startTime: "25:00", timeZone: "Mars/Olympus" });
     expect(result.success).toBe(false);
     expect(result.error!.issues.map((issue) => issue.message)).toEqual(["date must be a date, YYYY-MM-DD", "startTime must be a time, HH:MM", "timeZone must be a time zone, like Europe/Paris"]);
+  });
+});
+
+describe("call time (issue #240)", () => {
+  it("is that many minutes before the start, or none", () => {
+    expect(callAt("2026-03-01T09:00:00.000Z", 45)).toBe("2026-03-01T08:15:00.000Z");
+    expect(callAt("2026-03-01T09:00:00.000Z", null)).toBeNull();
+  });
+
+  it("is in the day-before reminder", () => {
+    const data = { event: "Service", date: "2026-03-01", team: "Band", startTime: "10:00", callTime: "09:15" };
+    expect(notificationText("EVENT_TOMORROW", data, en, "en").body).toBe("Band · call time 09:15");
+    expect(notificationText("EVENT_TOMORROW", { ...data, callTime: undefined }, en, "en").body).toBe("Band");
+  });
+
+  it("is minutes, up to eight hours", () => {
+    const base = { title: "Service", date: "2026-03-01", startTime: "10:00", timeZone: "Europe/Paris" };
+    expect(CreateTeamEventSchema.safeParse({ ...base, callMinutes: 45 }).success).toBe(true);
+    expect(CreateTeamEventSchema.safeParse({ ...base, callMinutes: 481 }).success).toBe(false);
   });
 });

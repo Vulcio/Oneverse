@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { ASSIGNMENT_STATUSES, AVAILABILITY_ANSWERS, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS } from "../calendar/index.js";
+import { ASSIGNMENT_STATUSES, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -9,6 +9,8 @@ const date = (name: string) => z.string().refine(isCalendarDate, `${name} must b
 const time = (name: string) => z.string().refine(isTimeOfDay, `${name} must be a time, HH:MM`);
 const timeZone = z.string().refine(isTimeZone, "timeZone must be a time zone, like Europe/Paris");
 const duration = z.number().int().min(5).max(24 * 60);
+/** A call time (issue #240): how long before the start to be there. */
+const callMinutes = z.number().int().min(1).max(CALL_MINUTES_MAX).describe("Call time: minutes before the start to be there");
 
 const RepeatSchema = z.strictObject({
   everyWeeks: z.number().int().min(1).max(52).describe("Every n weeks, on the weekday of the event's first date"),
@@ -42,6 +44,7 @@ export const CreateTeamEventSchema = z.strictObject({
   date: date("date").describe("Its first date, YYYY-MM-DD"),
   startTime: time("startTime").describe("HH:MM, in the time zone"),
   durationMinutes: optional(duration).describe("90 when left out"),
+  callMinutes: optional(callMinutes),
   timeZone: timeZone.describe("An IANA time zone (Europe/Paris): times stay the same across daylight saving"),
   place: optional(z.string().trim().max(200)),
   note: optional(z.string().trim().max(1000)),
@@ -57,6 +60,7 @@ export const UpdateTeamEventSchema = z.strictObject({
   date: date("date").optional(),
   startTime: time("startTime").optional(),
   durationMinutes: duration.optional(),
+  callMinutes: callMinutes.nullable().optional().describe("null: no call time"),
   timeZone: timeZone.optional(),
   place: clearableText(200),
   note: clearableText(1000),
@@ -156,6 +160,7 @@ export type RequestSwapRequest = z.input<typeof RequestSwapSchema>;
 const NeedSchema = z.strictObject({
   teamId: z.string().trim().min(1).max(64),
   parts: optional(eventParts),
+  callMinutes: optional(callMinutes).describe("When the group is to be there: minutes before it starts"),
 });
 const needs = z
   .array(NeedSchema)

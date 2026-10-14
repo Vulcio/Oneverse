@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { AVAILABILITY_ANSWERS, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@songverse/core";
+import { AVAILABILITY_ANSWERS, callAt, coversPart, partCoverage, partKey, type EventPart, daysBetween, effectiveAnswer, eventDates, eventFallsOn, localDate, type AvailabilityAnswer, type AwayRange } from "@songverse/core";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AnswerEventDateDto, CreateAwayDto } from "./dto/team-events.dto.js";
@@ -277,6 +277,7 @@ export class AvailabilityService {
           title: event.title,
           place: event.place,
           timeZone: event.timeZone,
+          callAt: callAt(date.startsAt, event.callMinutes),
           repeats: !!parent.repeatEveryWeeks,
           teamId: event.teamId,
           teamName: event.team.name,
@@ -307,6 +308,7 @@ export class AvailabilityService {
             title: date.title || event.title,
             place: event.place,
             timeZone: event.timeZone,
+            callAt: callAt(date.startsAt, event.callMinutes),
             repeats: !!event.repeatEveryWeeks,
             teamId: event.teamId,
             teamName: event.team.name,

@@ -91,6 +91,11 @@ export function MyCalendarPage() {
                     <div className="w-28 shrink-0 text-sm tabular-nums">
                       <div className="font-medium">{dayFormat.format(new Date(`${date.date}T12:00:00Z`))}</div>
                       <div className="text-xs text-muted-foreground">{timeFormat(date.timeZone).format(new Date(date.startsAt))}</div>
+                      {date.callAt ? (
+                        <div className="text-xs text-muted-foreground" data-testid="calendar-call">
+                          {t("teamCalendar.callAt", { time: timeFormat(date.timeZone).format(new Date(date.callAt)) })}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="col-span-2 flex min-w-0 flex-1 flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-1.5">

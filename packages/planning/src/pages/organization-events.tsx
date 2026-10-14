@@ -170,6 +170,11 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
                                 {t("organizations.allSet")}
                               </Badge>
                             ) : null}
+                            {group.callAt && !group.cancelled ? (
+                              <span className="text-xs text-muted-foreground" data-testid="org-group-call">
+                                {t("teamCalendar.callAt", { time: timeFormat(date.timeZone).format(new Date(group.callAt)) })}
+                              </span>
+                            ) : null}
                             {on > 0 ? <span className="text-xs text-muted-foreground">{t("organizations.onIt", { count: on })}</span> : null}
                             {group.mine && group.setlistId && !group.cancelled && sets ? (
                               <HostLink href={sets.href(group.setlistId)} className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
@@ -277,7 +282,8 @@ function OrganizationEventDialog({
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
   const [hostUserId, setHostUserId] = useState(event?.host?.id ?? "");
-  const [needs, setNeeds] = useState<{ teamId: string; parts: EventPart[] }[]>(event?.needs.map((need) => ({ teamId: need.teamId, parts: need.parts })) ?? []);
+  // Each group's parts, and when it's to be there (issue #240: minutes before; blank, none).
+  const [needs, setNeeds] = useState<{ teamId: string; parts: EventPart[]; call: string }[]>(event?.needs.map((need) => ({ teamId: need.teamId, parts: need.parts, call: need.callMinutes ? String(need.callMinutes) : "" })) ?? []);
   const [presetName, setPresetName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -290,9 +296,9 @@ function OrganizationEventDialog({
     setStartTime(preset.startTime);
     setDuration(String(preset.durationMinutes));
     setPlace(preset.place ?? "");
-    setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [] })));
+    setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [], call: need.callMinutes ? String(need.callMinutes) : "" })));
   };
-  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody) }));
+  const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}) }));
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
@@ -438,6 +444,22 @@ function OrganizationEventDialog({
                     customInstruments={customInstruments}
                     partLabel={partLabel}
                   />
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`need-call-${need.teamId}`} className="text-xs font-normal text-muted-foreground">
+                      {t("teamCalendar.callMinutes")}
+                    </Label>
+                    <Input
+                      id={`need-call-${need.teamId}`}
+                      type="number"
+                      min={1}
+                      max={480}
+                      className="h-8 w-20"
+                      value={need.call}
+                      placeholder="—"
+                      onChange={(e) => setNeeds(needs.map((one, at) => (at === index ? { ...one, call: e.target.value } : one)))}
+                      data-testid="need-call"
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -446,7 +468,7 @@ function OrganizationEventDialog({
                 value=""
                 aria-label={t("organizations.addGroup")}
                 onChange={(e) => {
-                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [] }]);
+                  if (e.target.value) setNeeds([...needs, { teamId: e.target.value, parts: [], call: "" }]);
                 }}
                 data-testid="org-event-add-group"
               >

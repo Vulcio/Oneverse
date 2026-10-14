@@ -177,6 +177,11 @@ export function TeamCalendar({
                   <div className="w-28 shrink-0 text-sm tabular-nums">
                     <div className="font-medium">{dayFormat.format(new Date(`${date.date}T12:00:00Z`))}</div>
                     <div className="text-xs text-muted-foreground">{timeFormat(date.timeZone).format(new Date(date.startsAt))}</div>
+                    {date.callAt ? (
+                      <div className="text-xs text-muted-foreground" data-testid="calendar-call">
+                        {t("teamCalendar.callAt", { time: timeFormat(date.timeZone).format(new Date(date.callAt)) })}
+                      </div>
+                    ) : null}
                   </div>
                   <div className="col-span-3 flex min-w-0 flex-1 flex-col gap-0.5">
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -555,6 +560,8 @@ function EventDialog({
   const [date, setDate] = useState(event?.date ?? firstDateAt(DEFAULT_START));
   const [startTime, setStartTime] = useState(event?.startTime ?? DEFAULT_START);
   const [duration, setDuration] = useState(String(event?.durationMinutes ?? 90));
+  // Its call time (issue #240): minutes before the start; blank, none.
+  const [call, setCall] = useState(event?.callMinutes ? String(event.callMinutes) : "");
   const [timeZone, setTimeZone] = useState(event?.timeZone ?? browserZone());
   const [place, setPlace] = useState(event?.place ?? "");
   const [note, setNote] = useState(event?.note ?? "");
@@ -575,6 +582,7 @@ function EventDialog({
           date: parentEvent.date,
           startTime,
           durationMinutes: Number(duration),
+          callMinutes: call ? Number(call) : null,
           timeZone: parentEvent.timeZone,
           place: place || null,
           note: note || null,
@@ -585,6 +593,7 @@ function EventDialog({
           date,
           startTime,
           durationMinutes: Number(duration),
+          callMinutes: call ? Number(call) : null,
           timeZone,
           place: place || null,
           note: note || null,
@@ -593,7 +602,7 @@ function EventDialog({
           ...(event?.rehearsalFor ? { rehearsalFor: null } : {}),
         };
     try {
-      if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody) });
+      if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody), callMinutes: call ? Number(call) : null });
       else if (event) await api.updateTeamEvent(teamId, event.id, body);
       else await api.createTeamEvent(teamId, body);
       await onSaved();
@@ -700,6 +709,11 @@ function EventDialog({
           </div>
           </>
           )}
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <Label htmlFor="event-call">{t("teamCalendar.callMinutes")}</Label>
+            <Input id="event-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} data-testid="event-call" />
+            <p className="text-xs text-muted-foreground">{t("teamCalendar.callMinutesHint")}</p>
+          </div>
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} />}
         </form>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

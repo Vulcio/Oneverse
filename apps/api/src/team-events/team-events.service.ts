@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@songverse/core";
+import { addDays, callAt, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@songverse/core";
 import type { Prisma } from "@songverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -114,6 +114,7 @@ export class TeamEventsService {
       date: dateText(event.date),
       startTime: event.startTime,
       durationMinutes: event.durationMinutes,
+      callMinutes: event.callMinutes,
       timeZone: event.timeZone,
       place: event.place,
       note: event.note,
@@ -193,6 +194,7 @@ export class TeamEventsService {
         date: day(dto.date),
         startTime: dto.startTime,
         durationMinutes: dto.durationMinutes ?? 90,
+        callMinutes: dto.callMinutes ?? null,
         timeZone: dto.timeZone,
         place: dto.place || null,
         note: dto.note || null,
@@ -213,8 +215,8 @@ export class TeamEventsService {
   /** `planned`: the change comes from the organisation's event it's a group's part of (issue #241). */
   async update(teamId: string, eventId: string, dto: UpdateTeamEventDto, by: string | null = null, planned = false) {
     const before = await this.find(teamId, eventId);
-    // The group's admins choose its parts; the rest is the organisation's.
-    if (Object.keys(dto).some((key) => key !== "parts" && dto[key as keyof UpdateTeamEventDto] !== undefined)) this.notPlanned(before, planned);
+    // The group's admins choose its parts and its call time; the rest is the organisation's.
+    if (Object.keys(dto).some((key) => key !== "parts" && key !== "callMinutes" && dto[key as keyof UpdateTeamEventDto] !== undefined)) this.notPlanned(before, planned);
     const signedUp = await this.signedUp(eventId, localDate(new Date(), before.timeZone));
     const repeat = dto.repeat === undefined ? timingOf(before).repeat : dto.repeat;
     const date = dto.date ?? dateText(before.date);
@@ -226,6 +228,7 @@ export class TeamEventsService {
         date: dto.date ? day(dto.date) : undefined,
         startTime: dto.startTime,
         durationMinutes: dto.durationMinutes,
+        callMinutes: dto.callMinutes,
         timeZone: dto.timeZone,
         place: dto.place,
         note: dto.note,
@@ -325,6 +328,7 @@ export class TeamEventsService {
       eventTitle: event.title,
       place: event.place,
       timeZone: event.timeZone,
+      callAt: callAt(date.startsAt, event.callMinutes),
       repeats: !!event.repeatEveryWeeks,
       setlistId: row?.setlist?.id ?? null,
       songCount: row?.setlist?._count.items ?? 0,

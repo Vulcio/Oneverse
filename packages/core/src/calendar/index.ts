@@ -157,6 +157,14 @@ export function isPastDate(date: string, now: string | Date, timeZone: string): 
   return date < localDate(now, timeZone);
 }
 
+/** The longest call time (issue #240), in minutes before the start. */
+export const CALL_MINUTES_MAX = 480;
+
+/** When to be there for a date (issue #240): its call time, `minutes` before it starts; null without one. */
+export function callAt(startsAt: string, minutes: number | null | undefined): string | null {
+  return minutes ? new Date(new Date(startsAt).getTime() - minutes * 60_000).toISOString() : null;
+}
+
 /** Whether an event falls on a date (before any date's own changes). */
 export function eventFallsOn(event: Pick<EventTiming, "date" | "repeat">, date: string): boolean {
   if (date === event.date) return true;
