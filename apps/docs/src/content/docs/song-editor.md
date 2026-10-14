@@ -46,13 +46,13 @@ On a phone, the bar at the bottom of the screen always has **Save song**: greyed
 
 ## The song order
 
-The **Song order** above the chart is the order the song is sung in, each time through a section being a *pass*.
+The **Song order** above the chart is the order the song is sung in, each time through a section being a *pass*. Each pass is shown in its section's colour.
 
 ![The song order](../../assets/screenshots/en/song-order.jpg)
 
 - **+ Sing…** adds a pass: the chorus again, say.
-- **Choose a pass** to label it ("Final chorus"), change key for it, add a note for the band, move it earlier or later, sing it again right after, or remove it.
-- **Drag passes** to reorder them.
+- **Choose a pass** - or click into its section in the chart - and its actions show in the bar under the order: **Earlier**, **Later**, **Sing again right after**, **Duplicate (unique copy)** (a section of its own after it), **Rename** ("Final chorus"), **Key change** and **Note for the band**. The last button is **Remove this pass**; on a section's only pass, it's **Take out of the song order**. The bar keeps its place and height whether a pass is chosen or not, so you can press **Earlier** again and again without looking. Choosing a pass brings its section into view.
+- **Drag passes** to reorder them. On a touch screen, press and hold a pass first; a quick swipe scrolls the page.
 - **Follow the sections** goes back to singing each section once, in order.
 
 Key changes and notes show on the chart at that pass.

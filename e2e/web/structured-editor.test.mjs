@@ -283,9 +283,16 @@ await step("the song order: sing the chorus again, in a new key, with a note for
   const chorusId = (await stored()).sections[1].id;
   await order.getByLabel("Add a pass").selectOption(chorusId);
   const pass = page.getByTestId("song-order-pass");
-  await pass.getByLabel("Label for this pass").fill("Last chorus");
-  await pass.getByLabel("Key change").selectOption("2");
-  await pass.getByLabel("Note for the band").fill("All in");
+  // The pass's name, key change and note: each from the pass bar, in a small form over the page (issue #251).
+  await pass.getByTestId("pass-rename").click();
+  await page.getByRole("textbox", { name: "Label for this pass" }).fill("Last chorus");
+  await page.keyboard.press("Escape");
+  await pass.getByTestId("pass-key-change").click();
+  await page.getByRole("combobox", { name: "Key change" }).selectOption("2");
+  await page.keyboard.press("Escape");
+  await pass.getByTestId("pass-note").click();
+  await page.getByRole("textbox", { name: "Note for the band" }).fill("All in");
+  await page.keyboard.press("Escape");
   await order.getByRole("button", { name: /Last chorus/ }).getByText("→A").waitFor();
   // Moved up one, then back to the end.
   await pass.getByRole("button", { name: "Earlier" }).click();

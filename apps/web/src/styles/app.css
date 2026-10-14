@@ -157,6 +157,11 @@
   outline: 1px solid transparent;
   outline-offset: 0;
 }
+/* Brought into view from the song order: clear of the sticky header and toolbar. */
+.sv-section,
+.sv-linked {
+  scroll-margin-top: 14rem;
+}
 .sv-section[data-active] {
   outline-color: var(--section-line);
 }

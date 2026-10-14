@@ -1,4 +1,5 @@
 import {
+  flowItemId,
   uniquePass,
   detectImportFormat,
   diatonicChords,
@@ -15,7 +16,8 @@ import {
 } from "@songverse/core";
 import { Placeholder } from "@tiptap/extensions";
 import { UndoRedo } from "@tiptap/extensions";
-import { NodeSelection } from "@tiptap/pm/state";
+import type { Node as PMNode } from "@tiptap/pm/model";
+import { NodeSelection, type EditorState } from "@tiptap/pm/state";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, Minus, Plus, Redo2, StickyNote, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -38,7 +40,9 @@ import {
   insertChord,
   nudgeChord,
   REPLACE_META,
+  duplicateSection,
   remeasureChords,
+  withFreshIds,
   replaceDocument,
   setDocumentKey,
   duplicateLinked,
@@ -103,6 +107,8 @@ export function StructuredEditor({
   };
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  // The pass the user moved the cursor into (not a reload's), chosen in the song order (issue #251).
+  const onCursorPass = useRef<(passId: string) => void>(() => {});
   const onSongKeyChangeRef = useRef(onSongKeyChange);
   onSongKeyChangeRef.current = onSongKeyChange;
   // The key as the song has it, for the document (changed from the picker or Song info).
@@ -132,6 +138,11 @@ export function StructuredEditor({
     immediatelyRender: false,
     shouldRerenderOnTransaction: false,
     editorProps: { attributes: { "aria-label": t("structuredEditor.label"), spellcheck: "false", "data-testid": "structured-editor" } },
+    onSelectionUpdate: ({ editor: current, transaction }) => {
+      if (transaction.getMeta(REPLACE_META)) return;
+      const passId = passAt(current.state);
+      if (passId) onCursorPass.current(passId);
+    },
     onUpdate: ({ editor: current, transaction }) => {
       if (transaction.getMeta(REPLACE_META)) return;
       // A transposition (or its undo) moves the key with the chords.
@@ -200,6 +211,38 @@ export function StructuredEditor({
     editor?.setEditable(!readOnly);
   }, [editor, readOnly]);
 
+  // The pass being edited in the chart is the one chosen in the song order, and the other way round (issue #251).
+  const [selectedPass, setSelectedPass] = useState<string | null>(null);
+  onCursorPass.current = (passId) => setSelectedPass(passId);
+  const blockOf = (passId: string): { pos: number; node: PMNode } | null => {
+    let found: { pos: number; node: PMNode } | null = null;
+    editor?.state.doc.forEach((node, pos) => {
+      if (!found && (node.attrs.passId ?? (node.attrs.id ? flowItemId(node.attrs.id as string) : null)) === passId) found = { pos, node };
+    });
+    return found;
+  };
+  function choosePass(passId: string | null) {
+    setSelectedPass(passId);
+    const block = passId ? blockOf(passId) : null;
+    // Brought into view, the cursor left where it is.
+    if (editor && block) (editor.view.nodeDOM(block.pos) as HTMLElement | null)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  /** A pass's section duplicated as a section of its own, right after the pass: a linked copy's changes written in. */
+  function duplicateUnique(passId: string) {
+    const block = blockOf(passId);
+    if (!editor || !block) return;
+    if (block.node.type.name === "section") {
+      duplicateSection(editor.view, block.pos);
+      return;
+    }
+    const pass = flowRef.current.find((item) => item.id === passId);
+    const section = editorToSections(editor.state.doc).find((one) => one.id === block.node.attrs.sectionId);
+    if (!pass || !section) return;
+    const json = sectionsToEditorJSON([uniquePass(section, pass, songKey || null)]).content![0]!;
+    const node = withFreshIds(editor.schema.nodeFromJSON({ ...json, attrs: { ...json.attrs, passId: null } }));
+    editor.view.dispatch(editor.state.tr.insert(block.pos + block.node.nodeSize, node).scrollIntoView());
+  }
+
   // The chart's own lettering, as Edit's Display settings have it (issue #249): the chords' room measured again with it.
   const display = useDisplaySettings("EDIT");
   useEffect(() => {
@@ -213,7 +256,10 @@ export function StructuredEditor({
   return (
     <div className="flex flex-col gap-3">
       <Toolbar editor={editor} mode={mode} onModeChange={setMode} songKey={songKey} onSongKeyChange={onSongKeyChange} facts={facts} onFactChange={onFactChange} />
-      {sections.length > 0 && mode !== "text" ? <SongOrder sections={sections} flow={flow} onChange={onFlowChange} songKey={songKey} /> : null}
+      {/* In every mode, so switching modes moves nothing (issue #248). */}
+      {sections.length > 0 ? (
+        <SongOrder sections={sections} flow={flow} onChange={onFlowChange} songKey={songKey} selected={selectedPass} onSelect={choosePass} onDuplicateUnique={duplicateUnique} />
+      ) : null}
       {/* With room (issue #177), the chart as it will read beside the editor. */}
       <div
         className={cn(
@@ -243,6 +289,14 @@ export function StructuredEditor({
       </div>
     </div>
   );
+}
+
+/** The pass of the block the cursor is in. A section added since the song was loaded has its pass named after it (as editorToSong names it). */
+function passAt(state: EditorState): string | null {
+  const { $from } = state.selection;
+  const block = $from.depth > 0 ? $from.node(1) : state.doc.nodeAt(state.selection.from);
+  if (!block) return null;
+  return (block.attrs.passId as string | null) ?? (block.type.name === "section" && block.attrs.id ? flowItemId(block.attrs.id as string) : null);
 }
 
 /** Where a section added at the end goes: after the song's order, before the sections taken out of it. */

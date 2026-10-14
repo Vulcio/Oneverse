@@ -46,13 +46,13 @@ Sur un téléphone, la barre en bas de l'écran a toujours **Enregistrer le chan
 
 ## L'ordre du chant
 
-L'**Ordre du chant**, au-dessus de la grille, est l'ordre dans lequel on le chante ; chaque fois qu'on chante une section est un *passage*.
+L'**Ordre du chant**, au-dessus de la grille, est l'ordre dans lequel on le chante ; chaque fois qu'on chante une section est un *passage*. Chaque passage a la couleur de sa section.
 
 ![L'ordre du chant](../../../assets/screenshots/fr/song-order.jpg)
 
 - **+ Chanter…** ajoute un passage : le refrain une nouvelle fois, par exemple.
-- **Choisissez un passage** pour le nommer (« Dernier refrain »), y changer de tonalité, ajouter une note pour le groupe, le déplacer, le rechanter juste après ou le retirer.
-- **Faites glisser les passages** pour les réordonner.
+- **Choisissez un passage** - ou cliquez dans sa section sur la grille - et ses actions s'affichent dans la barre sous l'ordre : **Plus tôt**, **Plus tard**, **Rechanter juste après**, **Dupliquer (copie indépendante)** (une section à part, après lui), **Renommer** (« Dernier refrain »), **Changement de tonalité** et **Note pour les musiciens**. Le dernier bouton est **Retirer ce passage** ; sur le seul passage d'une section, c'est **Retirer de l'ordre du chant**. La barre garde sa place et sa hauteur, qu'un passage soit choisi ou non : vous pouvez appuyer sur **Plus tôt** encore et encore sans regarder. Choisir un passage fait défiler jusqu'à sa section.
+- **Faites glisser les passages** pour les réordonner. Sur un écran tactile, appuyez d'abord longuement sur un passage ; un balayage rapide fait défiler la page.
 - **Suivre les sections** revient à chanter chaque section une fois, dans l'ordre.
 
 Les changements de tonalité et les notes s'affichent sur la grille à ce passage.

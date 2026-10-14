@@ -1824,6 +1824,7 @@ const en = {
     leaveOutLine: "Leave the line out",
   },
   songOrder: {
+    rename: "Rename",
     changed: "Changed on this pass",
     chordOnPass: "{{chord}} on this pass",
     hideChord: "Leave {{chord}} out on this pass",

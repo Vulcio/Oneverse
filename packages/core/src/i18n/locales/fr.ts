@@ -1827,6 +1827,7 @@ const fr: typeof en = {
     leaveOutLine: "Retirer la ligne",
   },
   songOrder: {
+    rename: "Renommer",
     changed: "Modifié pour ce passage",
     chordOnPass: "{{chord}} sur ce passage",
     hideChord: "Ne pas jouer {{chord}} sur ce passage",
