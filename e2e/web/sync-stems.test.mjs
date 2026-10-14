@@ -161,8 +161,10 @@ await step("the leader transposes (issue #129): the follower's stems transposed 
   await leader.waitForTimeout(1500);
   const [mine, theirs] = await Promise.all([zero(follower, since), zero(leader, since)]);
   // Each restart takes the clock pairing as it is then, which moves a few ms on its own; a
-  // follower within 8 ms of the leader is left playing (REPLACE_BEYOND in stem-engine.ts).
-  check("transposed, the same instant (ms apart)", Math.abs(mine - theirs) < 8, `${Math.abs(mine - theirs).toFixed(2)} ms`);
+  // follower within 8 ms of where its clock says is left playing (REPLACE_BEYOND in
+  // stem-engine.ts). Measured against the leader, the two pages' pairings with the server
+  // add their own millisecond or two on top: up to 8 ms plus that is the engine working.
+  check("transposed, the same instant (ms apart)", Math.abs(mine - theirs) < 10, `${Math.abs(mine - theirs).toFixed(2)} ms`);
 });
 
 await step("the leader slows to 80% (issue #139): the follower's at 80% too, still together; the click at the slowed beat", async () => {

@@ -188,9 +188,10 @@ await step("phone: library table shows title and artist without scrolling", asyn
 });
 
 await step("phone: long chord run on the song page wraps", async () => {
-  await page.goto(`${WEB}/library/${song.id}`);
+  // The chart is in the Editor (Song info's Song content is for a new song, issue #254).
+  await page.goto(`${WEB}/library/${song.id}?tab=editor`);
   await page.waitForLoadState("networkidle");
-  await page.getByText("Antidisestablishmentarianism").first().waitFor();
+  await page.getByTestId("structured-editor").getByText(/Antidisestablishmentarianism/).first().waitFor();
   if ((await overflow()) > 0) throw new Error("overflows");
   await page.screenshot({ path: `${SP}/mobile-song.png`, fullPage: true });
 });
