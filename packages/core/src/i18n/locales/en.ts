@@ -1212,6 +1212,8 @@ const en = {
     onIt_other: "{{count}} on it",
     openGroup: "Open",
     groups: "Groups",
+    newSubGroup: "New sub-group",
+    subGroupOf: "Under {{name}}",
     newGroup: "New group",
     createGroup: "Create group",
     usesSongverse: "Uses Songverse",

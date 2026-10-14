@@ -19,6 +19,7 @@ import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from "../components/team-cards";
 import { TeamCalendar } from "../components/team-calendar";
+import { NewGroupForm } from "./organization";
 
 /** What a team's (a group's) page needs, or null when there's no such team or it isn't theirs. */
 export async function loadTeamPage(api: ApiClient, teamId: string) {
@@ -325,6 +326,8 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
 
       {/* Where it sits in its organisation, and whether it uses Songverse (issue #241). */}
       {isAdmin && organization ? <GroupCard team={team} organization={organization} onChanged={refresh} onError={setError} /> : null}
+      {/* A group under it, made by its admins (issue #245). */}
+      {isAdmin && organization ? <NewGroupForm organizationId={organization.id} groups={organization.teams} under={{ id: team.id, name: team.name }} onError={setError} /> : null}
 
       {/* The organisation it's part of (issue #241): its admins choose among those they run. */}
       {isAdmin && organizations && organizations.mode !== "NONE" ? <TeamOrganizationCard teamId={team.id} current={team.organization ?? null} organizations={organizations.organizations} onChanged={refresh} onError={setError} /> : null}

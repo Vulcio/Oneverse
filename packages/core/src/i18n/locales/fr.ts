@@ -1215,6 +1215,8 @@ const fr: typeof en = {
     onIt_other: "{{count}} prévus",
     openGroup: "Ouvrir",
     groups: "Groupes",
+    newSubGroup: "Nouveau sous-groupe",
+    subGroupOf: "Sous {{name}}",
     newGroup: "Nouveau groupe",
     createGroup: "Créer le groupe",
     usesSongverse: "Utilise Songverse",

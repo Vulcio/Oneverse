@@ -41,6 +41,8 @@ An organisation's groups are its teams: the music team, but also a welcome team 
 
 On a group's page, its admins change both under **Group**, then **Save**. A team with songs, songbooks or sets keeps using Songverse until they're moved or deleted. A group taken out of the organisation becomes a team of its own again, using Songverse.
 
+A group's admins make groups under it too: **New sub-group** on its page, with a **Name** and whether it **Uses Songverse**, then **Create group** - you're its admin.
+
 Being in a group doesn't put you in the group above it: each group has its own members.
 
 ## Positions

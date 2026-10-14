@@ -44,12 +44,18 @@ export class GroupsService {
     }
   }
 
-  /** By the organisation's admins: a group of it, run by whoever makes it. */
+  /**
+   * A group of the organisation, run by whoever makes it: by its admins,
+   * anywhere; by a group's admins, under their group (issue #245).
+   */
   async create(viewer: Viewer, organizationId: string, dto: CreateGroupDto) {
     await this.organizations.mode();
     const role = await this.organizations.roleOf(viewer, organizationId);
     if (!role) throw new NotFoundException("Organisation not found");
-    if (role !== "ADMIN") throw new ForbiddenException("Only the organisation's admins create its groups");
+    const runsParent =
+      !!dto.parentId &&
+      (await this.prisma.client.teamMembership.count({ where: { teamId: dto.parentId, userId: viewer.id, role: "ADMIN", team: { organizationId } } })) > 0;
+    if (role !== "ADMIN" && !runsParent) throw new ForbiddenException("Only the organisation's admins, or a group's admins under their group, create its groups");
     if (dto.parentId) await this.checkParent(organizationId, dto.parentId, null);
     const team = await this.prisma.client.$transaction(async (tx) => {
       const created = await tx.team.create({

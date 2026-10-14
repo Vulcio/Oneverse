@@ -41,6 +41,8 @@ Les groupes d'une organisation sont ses équipes : l'équipe de louange, mais au
 
 Sur la page d'un groupe, ses administrateurs changent les deux sous **Groupe**, puis **Enregistrer**. Une équipe qui a des chants, des recueils ou des listes continue d'utiliser Songverse tant qu'ils ne sont pas déplacés ou supprimés. Un groupe retiré de l'organisation redevient une équipe à part entière, qui utilise Songverse.
 
+Les administrateurs d'un groupe créent aussi des groupes en dessous : **Nouveau sous-groupe** sur sa page, avec un **Nom** et s'il **Utilise Songverse**, puis **Créer le groupe** - vous en êtes l'administrateur.
+
 Faire partie d'un groupe ne vous met pas dans le groupe au-dessus : chaque groupe a ses propres membres.
 
 ## Postes

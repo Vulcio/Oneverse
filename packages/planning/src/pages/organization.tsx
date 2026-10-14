@@ -261,21 +261,25 @@ export function OrganizationPage({ userId, data }: { userId: string; data: NonNu
   );
 }
 
-/** For the organisation's admins: a group of it, that only plans or uses Songverse, under another or at the top. */
-function NewGroupForm({ organizationId, groups, onError }: { organizationId: string; groups: OrganizationTeam[]; onError: (message: string) => void }) {
+/**
+ * A group of the organisation, that only plans or uses Songverse: for its
+ * admins, under another or at the top; for a group's admins, under theirs
+ * (`under`, issue #245).
+ */
+export function NewGroupForm({ organizationId, groups, under, onError }: { organizationId: string; groups: OrganizationTeam[]; under?: { id: string; name: string }; onError: (message: string) => void }) {
   const { api, links } = usePlanning();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [usesSongverse, setUsesSongverse] = useState(false);
-  const [parentId, setParentId] = useState("");
+  const [parentId, setParentId] = useState(under?.id ?? "");
   const [creating, setCreating] = useState(false);
 
   if (!open) {
     return (
       <Button variant="outline" size="sm" className="self-start" onClick={() => setOpen(true)} data-testid="organization-new-group">
-        {t("organizations.newGroup")}
+        {under ? t("organizations.newSubGroup") : t("organizations.newGroup")}
       </Button>
     );
   }
@@ -297,6 +301,9 @@ function NewGroupForm({ organizationId, groups, onError }: { organizationId: str
         <Label htmlFor="group-name">{t("organizations.name")}</Label>
         <Input id="group-name" value={name} maxLength={100} onChange={(e) => setName(e.target.value)} />
       </div>
+      {under ? (
+        <p className="text-sm text-muted-foreground">{t("organizations.subGroupOf", { name: under.name })}</p>
+      ) : (
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="group-parent">{t("organizations.under")}</Label>
         <NativeSelect id="group-parent" value={parentId} onChange={(e) => setParentId(e.target.value)}>
@@ -308,6 +315,7 @@ function NewGroupForm({ organizationId, groups, onError }: { organizationId: str
           ))}
         </NativeSelect>
       </div>
+      )}
       <label className="flex items-start gap-3">
         <input type="checkbox" className="mt-1 size-4" checked={usesSongverse} onChange={(e) => setUsesSongverse(e.target.checked)} data-testid="group-uses-songverse" />
         <span className="flex flex-col gap-0.5">

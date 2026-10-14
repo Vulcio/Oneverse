@@ -2,7 +2,8 @@
 // group that only plans from the organisation's page, gives it positions
 // and ticks the one they cover, has an event ask for one, puts it under the
 // music team; the organisation's page shows it under it, and Songverse's
-// sidebar doesn't list it among the teams. Its admin renames it (issue #244).
+// sidebar doesn't list it among the teams. Its admin renames it (issue #244) and makes a sub-group
+// under it (issue #245).
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -85,6 +86,18 @@ try {
     await page.getByRole("heading", { name: `Welcome team ${stamp}` }).waitFor();
     await page.goto(`${WEB}/organizations/${org.id}`);
     await page.locator('[data-depth="1"]', { hasText: `Welcome team ${stamp}` }).waitFor();
+  });
+
+  await step("…and makes a sub-group under it, from its page", async () => {
+    await page.goto(groupUrl);
+    await page.getByTestId("organization-new-group").filter({ hasText: "New sub-group" }).click();
+    const form = page.getByTestId("organization-group-form");
+    await form.getByText(`Under Welcome team ${stamp}`).waitFor();
+    await form.getByLabel("Name").fill(`Parking ${stamp}`);
+    await form.getByTestId("group-create").click();
+    await page.getByRole("heading", { name: `Parking ${stamp}` }).waitFor();
+    await page.goto(`${WEB}/organizations/${org.id}`);
+    await page.locator('[data-depth="2"]', { hasText: `Parking ${stamp}` }).waitFor();
   });
 } finally {
   await browser.close();

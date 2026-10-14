@@ -2,7 +2,8 @@
 // plan (a welcome team) or use Songverse, under one another; a group that
 // only plans owns no songs, songbooks or sets and isn't among Songverse's
 // teams; each group has positions of its own that its members say they
-// cover; a team leaving the organisation is a Songverse team again.
+// cover; a group's admins make sub-groups under it (issue #245); a team
+// leaving the organisation is a Songverse team again.
 import { stamp, sql, check, user, call, finish } from "../lib/harness.mjs";
 
 const admin = await user("groups global admin");
@@ -104,6 +105,17 @@ r = await call(alice, "DELETE", `/teams/${welcome.id}/positions/${coffee.id}`);
 check("a position an event asks for isn't deleted", r.status === 409 && String(r.body.message).includes("Sunday welcome"), JSON.stringify(r.body));
 r = await call(alice, "POST", `/teams/${welcome.id}/events/${event.id}/dates/${date}/lineup`, { userId: bob.id, part: `position:${coffee.id}` });
 check("scheduled on it: told, by its name", r.status === 201 && (await call(bob, "GET", "/users/me/notifications?limit=20")).body.items.some((n) => n.kind === "SCHEDULED" && n.data.partName === "Coffee"), JSON.stringify(r.body));
+
+// --- a group's admins make sub-groups under it (issue #245)
+r = await call(bob, "POST", `/organizations/${org.id}/groups`, { name: `Parking ${stamp}`, parentId: welcome.id });
+check("a group's member: no sub-group", r.status === 403, String(r.status));
+await call(alice, "PATCH", `/teams/${welcome.id}/members/${bob.id}`, { role: "ADMIN" });
+r = await call(bob, "POST", `/organizations/${org.id}/groups`, { name: `Parking ${stamp}`, parentId: welcome.id });
+check("its admin: a sub-group under it, run by them", r.status === 201 && r.body.parentId === welcome.id && r.body.currentUserRole === "ADMIN" && r.body.organization?.id === org.id, JSON.stringify(r.body));
+r = await call(bob, "POST", `/organizations/${org.id}/groups`, { name: "Top" });
+check("…not at the top", r.status === 403, String(r.status));
+r = await call(bob, "POST", `/organizations/${org.id}/groups`, { name: "Choir 2", parentId: music.id });
+check("…nor under a group they don't run", r.status === 403, String(r.status));
 
 // --- out of the organisation
 await call(alice, "PATCH", `/teams/${choir.id}/group`, { parentId: music.id });
