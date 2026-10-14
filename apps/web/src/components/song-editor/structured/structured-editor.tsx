@@ -52,6 +52,7 @@ import {
   setChordSymbol,
   songEditorExtensions,
   toggleNoteLine,
+  touchScreen,
   transposeChords,
   type ChordViewEvents,
 } from "./extensions";
@@ -165,7 +166,9 @@ export function StructuredEditor({
       const raw = (editor.state.doc.nodeAt(pos)?.attrs.raw as string | undefined) ?? "";
       startChordDrag(editor.view, event, { kind: "move", pos, raw }, () => {
         editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, pos)));
-        editor.view.focus();
+        // With a finger: chosen, its tools in the chord bar, and the keyboard put away so it covers nothing.
+        if (event.pointerType === "touch") (editor.view.dom as HTMLElement).blur();
+        else editor.view.focus();
       });
     },
     onEditChord: () => setEditTick((tick) => tick + 1),
@@ -426,10 +429,10 @@ function Toolbar({
         ))}
       </div>
       <div className="flex shrink-0 items-center">
-        <ToolButton label={t("structuredEditor.undo")} disabled={!visual || !can.undo} onClick={() => editor?.chain().focus().undo().run()} testId="editor-undo">
+        <ToolButton label={t("structuredEditor.undo")} disabled={!visual || !can.undo} onClick={() => (touchScreen() ? editor?.commands.undo() : editor?.chain().focus().undo().run())} testId="editor-undo">
           <Undo2 />
         </ToolButton>
-        <ToolButton label={t("structuredEditor.redo")} disabled={!visual || !can.redo} onClick={() => editor?.chain().focus().redo().run()} testId="editor-redo">
+        <ToolButton label={t("structuredEditor.redo")} disabled={!visual || !can.redo} onClick={() => (touchScreen() ? editor?.commands.redo() : editor?.chain().focus().redo().run())} testId="editor-redo">
           <Redo2 />
         </ToolButton>
         <ToolButton label={t("structuredEditor.noteLine")} disabled={!visual} onClick={() => editor && toggleNoteLine(editor.view)}>

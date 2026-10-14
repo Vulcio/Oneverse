@@ -126,7 +126,7 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
     } else {
       insertChord(view, source.raw, target);
     }
-    view.focus();
+    if (!touch) view.focus();
   }
   const up = (e: PointerEvent) => finish(e, false);
   const cancel = (e: PointerEvent) => finish(e, true);

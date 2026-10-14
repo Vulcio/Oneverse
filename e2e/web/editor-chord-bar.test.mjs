@@ -86,8 +86,13 @@ await step("on a tablet: the bar along the bottom, a tap adds a chord at the cur
 
 await step("a chord selected: the bar's chord takes its place", async () => {
   await centre(editor().locator('[data-sv-chord="Em"]'));
+  // Typing in the chart (its keyboard up), then a tap on a chord: chosen, and the keyboard put away so it covers nothing.
+  await editor().locator("p[data-sv-line]").first().tap();
+  const focused = () => page.evaluate(() => !!document.activeElement?.closest("[data-testid=structured-editor]"));
+  if (!(await focused())) throw new Error("the chart isn't focused after a tap on its words");
   await editor().locator('[data-sv-chord="Em"] .sv-chord-chip').tap();
   await page.getByTestId("chord-bar").getByText("in place of Em").waitFor();
+  if (await focused()) throw new Error("a tap on a chord left the chart focused: the keyboard would stay up");
   await page.getByTestId("chord-bar").locator('[data-bar-chord="Am"]').tap();
   await page.waitForTimeout(100);
   if (JSON.stringify(await chords()) !== JSON.stringify(["G", "C", "Am"])) throw new Error(JSON.stringify(await chords()));
@@ -125,6 +130,9 @@ await step("a quick swipe from a chord doesn't drag it", async () => {
   if (await page.locator(".sv-drag-ghost").count()) throw new Error("a ghost stayed");
   const after = await editor().locator('[data-sv-chord="C"]').evaluate((el) => el.getBoundingClientRect().left);
   if (Math.abs(after - before) > 1) throw new Error(`moved: ${before} → ${after}`);
+  // Undo doesn't bring the keyboard up either.
+  await page.getByTestId("editor-undo").tap();
+  if (await page.evaluate(() => !!document.activeElement?.closest("[data-testid=structured-editor]"))) throw new Error("Undo focused the chart");
   await page.close();
 });
 

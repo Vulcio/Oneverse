@@ -31,6 +31,14 @@ export const REMOVE_CHORDS_META = "songverse:removeChords";
 /** The drop target shown while a chord is dragged: a position, or null. */
 export const DROP_TARGET_META = "songverse:dropTarget";
 
+/** A screen used with a finger (issue #253): there, nothing focuses the chart by itself - that would bring the keyboard up over the page. */
+export const touchScreen = () => typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
+/** Focuses the chart after a change, except on a touch screen (where its keyboard would cover the page). */
+export function focusUnlessTouch(view: EditorView) {
+  if (!touchScreen()) view.focus();
+}
+
 export interface ChordViewEvents {
   /** A pointer went down on a chord's chip: the drag (or click) starts there. */
   onChordPointerDown: (event: PointerEvent, pos: number) => void;
@@ -171,6 +179,8 @@ class ChordView implements NodeView {
       const pos = getPos();
       if (pos !== undefined) events.onChordPointerDown(event, pos);
     });
+    // A tap on a chord selects it, without iOS focusing the chart (and bringing the keyboard up) as the tap ends.
+    this.chip.addEventListener("touchend", (event) => event.preventDefault(), { passive: false });
   }
 
   private render() {
@@ -611,7 +621,7 @@ export function deleteChord(view: EditorView, pos: number) {
   const tr = view.state.tr.delete(pos, pos + 1).setMeta(REMOVE_CHORDS_META, [node!.attrs.id]);
   tr.setSelection(TextSelection.create(tr.doc, pos));
   view.dispatch(tr);
-  view.focus();
+  focusUnlessTouch(view);
 }
 
 export function setChordSymbol(view: EditorView, pos: number, raw: string) {
@@ -633,7 +643,7 @@ export function insertChord(view: EditorView, raw: string, at?: number): boolean
   const tr = state.tr.insert(pos, node);
   tr.setSelection(NodeSelection.create(tr.doc, pos)).scrollIntoView();
   view.dispatch(tr);
-  view.focus();
+  focusUnlessTouch(view);
   return true;
 }
 
@@ -891,7 +901,7 @@ export function duplicateLinked(view: EditorView, pos: number): string | null {
 export function insertLinked(view: EditorView, sectionId: string, at: number) {
   const copy = view.state.schema.nodes.linked!.create({ passId: generateId(ID_PREFIXES.flowItem), sectionId });
   view.dispatch(view.state.tr.insert(at, copy).scrollIntoView());
-  view.focus();
+  focusUnlessTouch(view);
 }
 
 /** The linked copy at `pos` replaced by `section` (its changes written in), keeping its pass: made unique. */
