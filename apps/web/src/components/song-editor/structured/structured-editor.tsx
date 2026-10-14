@@ -29,7 +29,7 @@ import { Button } from "@songverse/ui/components/button";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
-import { KEY_OPTIONS } from "../song-form";
+import { CAPO_OPTIONS, KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from "../song-form";
 import { editorToSections, editorToSong, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { startChordDrag, startSectionDrag } from "./drag";
 import { SongOrder } from "./song-order";
@@ -41,6 +41,7 @@ import {
   nudgeChord,
   REPLACE_META,
   replaceDocument,
+  setDocumentKey,
   duplicateLinked,
   replaceLinked,
   selectedChord,
@@ -53,6 +54,13 @@ import {
 
 export type EditorMode = "visual" | "text" | "preview";
 const MODES: EditorMode[] = ["visual", "text", "preview"];
+
+/** What the toolbar edits beside the key (issue #248), as Song info's form holds them. */
+export interface SongFacts {
+  tempo: string;
+  timeSignature: string;
+  capo: string;
+}
 
 /**
  * The song editor's Editor tab: the chart edited as it looks - chords above
@@ -67,6 +75,8 @@ export function StructuredEditor({
   onFlowChange,
   songKey,
   onSongKeyChange,
+  facts,
+  onFactChange,
   readOnly,
 }: {
   sections: SectionV2[];
@@ -75,6 +85,8 @@ export function StructuredEditor({
   onFlowChange: (flow: SectionInstance[]) => void;
   songKey: string;
   onSongKeyChange: (key: string) => void;
+  facts: SongFacts;
+  onFactChange: (field: keyof SongFacts, value: string) => void;
   readOnly: boolean;
 }) {
   const { t } = useTranslation();
@@ -92,6 +104,11 @@ export function StructuredEditor({
   };
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onSongKeyChangeRef = useRef(onSongKeyChange);
+  onSongKeyChangeRef.current = onSongKeyChange;
+  // The key as the song has it, for the document (changed from the picker or Song info).
+  const keyRef = useRef(songKey);
+  keyRef.current = songKey;
   // The sections and order the editor last reported: anything else arriving is an outside change to load.
   const emitted = useRef(sections);
   const emittedFlow = useRef(flow);
@@ -111,13 +128,16 @@ export function StructuredEditor({
   const editor = useEditor({
     extensions,
     // In the order it's sung, linked copies and all (issue #205).
-    content: songToEditorJSON(sections, flow),
+    content: { ...songToEditorJSON(sections, flow), attrs: { key: songKey || null } },
     editable: !readOnly,
     immediatelyRender: false,
     shouldRerenderOnTransaction: false,
     editorProps: { attributes: { "aria-label": t("structuredEditor.label"), spellcheck: "false", "data-testid": "structured-editor" } },
     onUpdate: ({ editor: current, transaction }) => {
       if (transaction.getMeta(REPLACE_META)) return;
+      // A transposition (or its undo) moves the key with the chords.
+      const key = (current.state.doc.attrs.key as string | null) ?? "";
+      if (key !== keyRef.current) onSongKeyChangeRef.current(key);
       const next = editorToSong(current.state.doc, flowRef.current);
       emitted.current = next.sections;
       onChangeRef.current(next.sections);
@@ -136,6 +156,10 @@ export function StructuredEditor({
     },
     onEditChord: () => setEditTick((tick) => tick + 1),
   };
+
+  useEffect(() => {
+    if (editor) setDocumentKey(editor.view, songKey || null);
+  }, [editor, songKey]);
 
   // Load the song when it changes from outside (Song Info's text, Discard, a save, text mode, the song order bar).
   useEffect(() => {
@@ -183,7 +207,7 @@ export function StructuredEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <Toolbar editor={editor} mode={mode} onModeChange={setMode} songKey={songKey} onSongKeyChange={onSongKeyChange} />
+      <Toolbar editor={editor} mode={mode} onModeChange={setMode} songKey={songKey} onSongKeyChange={onSongKeyChange} facts={facts} onFactChange={onFactChange} />
       {sections.length > 0 && mode !== "text" ? <SongOrder sections={sections} flow={flow} onChange={onFlowChange} songKey={songKey} /> : null}
       {/* With room (issue #177), the chart as it will read beside the editor. */}
       <div
@@ -239,18 +263,29 @@ function EditPreview({ chart, withPanel = false }: { chart: ReturnType<typeof ch
   );
 }
 
+/**
+ * The editor's one toolbar (issue #248), kept in view under the song's
+ * header. Nothing in it moves or changes size as it's used - the key, the
+ * numbers and every button keep their place - so a button pressed again
+ * and again stays under the finger: tools that don't apply to a mode are
+ * disabled there, not taken away.
+ */
 function Toolbar({
   editor,
   mode,
   onModeChange,
   songKey,
   onSongKeyChange,
+  facts,
+  onFactChange,
 }: {
   editor: Editor | null;
   mode: EditorMode;
   onModeChange: (mode: EditorMode) => void;
   songKey: string;
   onSongKeyChange: (key: string) => void;
+  facts: SongFacts;
+  onFactChange: (field: keyof SongFacts, value: string) => void;
 }) {
   const { t } = useTranslation();
   const can = useEditorState({
@@ -261,14 +296,22 @@ function Toolbar({
   function transpose(steps: number) {
     if (!editor) return;
     const key = songKey ? (transposeKey(songKey, steps) ?? songKey) : null;
-    transposeChords(editor.view, (raw) => transposeChord(raw, steps, key));
-    if (key) onSongKeyChange(key);
+    // The key goes with the chords, in one step: undo puts both back.
+    transposeChords(editor.view, (raw) => transposeChord(raw, steps, key), key);
   }
 
   const visual = mode === "visual";
+  const tempo = facts.tempo.trim();
+  const tempoInvalid = !!tempo && (!/^\d+$/.test(tempo) || Number(tempo) < 20 || Number(tempo) > 400);
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div role="radiogroup" aria-label={t("structuredEditor.mode")} className="inline-flex rounded-md border p-0.5">
+    <div
+      role="toolbar"
+      aria-label={t("structuredEditor.tools")}
+      data-testid="editor-toolbar"
+      // Under the song's header, which is sticky from md up (its height in --song-header-h).
+      className="bleed-x sticky top-14 z-20 flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:top-[calc(3.5rem+var(--song-header-h,0px))]"
+    >
+      <div role="radiogroup" aria-label={t("structuredEditor.mode")} className="inline-flex rounded-md bg-muted p-0.5">
         {MODES.map((option) => (
           <button
             key={option}
@@ -277,58 +320,103 @@ function Toolbar({
             aria-checked={mode === option}
             onClick={() => onModeChange(option)}
             className={cn(
-              "rounded-sm px-2.5 py-1 text-xs font-medium",
-              mode === option ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+              "h-7 rounded-sm px-3 text-xs font-medium pointer-coarse:h-10 pointer-coarse:px-4 pointer-coarse:text-sm",
+              mode === option ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {t(`structuredEditor.modes.${option}`)}
           </button>
         ))}
       </div>
-      {visual ? (
-        <>
-          <div className="flex items-center">
-            <ToolButton label={t("structuredEditor.undo")} disabled={!can.undo} onClick={() => editor?.chain().focus().undo().run()}>
-              <Undo2 />
-            </ToolButton>
-            <ToolButton label={t("structuredEditor.redo")} disabled={!can.redo} onClick={() => editor?.chain().focus().redo().run()}>
-              <Redo2 />
-            </ToolButton>
-          </div>
-          <ToolButton label={t("structuredEditor.noteLine")} onClick={() => editor && toggleNoteLine(editor.view)}>
-            <StickyNote />
-          </ToolButton>
-        </>
-      ) : null}
-      <label className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-        {t("structuredEditor.key")}
-        <NativeSelect compact aria-label={t("structuredEditor.key")} value={songKey} onChange={(event) => onSongKeyChange(event.target.value)} className="w-20">
-          <option value="">–</option>
-          {[...KEY_OPTIONS.major, ...KEY_OPTIONS.minor].map((key) => (
-            <option key={key} value={key}>
-              {key}
-            </option>
-          ))}
-        </NativeSelect>
-      </label>
-      {visual ? (
-        <div className="flex items-center gap-0.5" role="group" aria-label={t("structuredEditor.transpose")}>
-          <ToolButton label={t("structuredEditor.transposeDown")} onClick={() => transpose(-1)}>
+      <div className="flex items-center">
+        <ToolButton label={t("structuredEditor.undo")} disabled={!visual || !can.undo} onClick={() => editor?.chain().focus().undo().run()} testId="editor-undo">
+          <Undo2 />
+        </ToolButton>
+        <ToolButton label={t("structuredEditor.redo")} disabled={!visual || !can.redo} onClick={() => editor?.chain().focus().redo().run()} testId="editor-redo">
+          <Redo2 />
+        </ToolButton>
+        <ToolButton label={t("structuredEditor.noteLine")} disabled={!visual} onClick={() => editor && toggleNoteLine(editor.view)}>
+          <StickyNote />
+        </ToolButton>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Fact label={t("structuredEditor.key")}>
+          <NativeSelect compact aria-label={t("structuredEditor.key")} value={songKey} onChange={(event) => onSongKeyChange(event.target.value)} className={factControl("w-[4.5rem]")} data-testid="editor-key">
+            <option value="">–</option>
+            {[...KEY_OPTIONS.major, ...KEY_OPTIONS.minor].map((key) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
+          </NativeSelect>
+        </Fact>
+        <div className="flex items-center rounded-md border shadow-xs" role="group" aria-label={t("structuredEditor.transpose")}>
+          <ToolButton label={t("structuredEditor.transposeDown")} disabled={!visual} onClick={() => transpose(-1)} testId="editor-transpose-down">
             <Minus />
           </ToolButton>
-          <span className="text-xs text-muted-foreground">{t("structuredEditor.transpose")}</span>
-          <ToolButton label={t("structuredEditor.transposeUp")} onClick={() => transpose(1)}>
+          <span className="w-[4.75rem] text-center text-xs text-muted-foreground select-none">{t("structuredEditor.transpose")}</span>
+          <ToolButton label={t("structuredEditor.transposeUp")} disabled={!visual} onClick={() => transpose(1)} testId="editor-transpose-up">
             <Plus />
           </ToolButton>
         </div>
-      ) : null}
+        <Fact label={t("structuredEditor.tempo")}>
+          <input
+            inputMode="numeric"
+            aria-label={t("structuredEditor.tempoLabel")}
+            aria-invalid={tempoInvalid || undefined}
+            value={facts.tempo}
+            placeholder="–"
+            maxLength={3}
+            onChange={(event) => onFactChange("tempo", event.target.value)}
+            className={factControl("w-[3.25rem] px-2 text-center tabular-nums aria-invalid:border-destructive")}
+            data-testid="editor-tempo"
+          />
+        </Fact>
+        <Fact label={t("structuredEditor.time")}>
+          <NativeSelect compact aria-label={t("structuredEditor.timeLabel")} value={facts.timeSignature} onChange={(event) => onFactChange("timeSignature", event.target.value)} className={factControl("w-[4.5rem]")} data-testid="editor-time">
+            <option value="">–</option>
+            {facts.timeSignature && !TIME_SIGNATURE_OPTIONS.includes(facts.timeSignature) ? <option value={facts.timeSignature}>{facts.timeSignature}</option> : null}
+            {TIME_SIGNATURE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </NativeSelect>
+        </Fact>
+        <Fact label={t("structuredEditor.capo")}>
+          <NativeSelect compact aria-label={t("structuredEditor.capoLabel")} value={facts.capo} onChange={(event) => onFactChange("capo", event.target.value)} className={factControl("w-[4rem]")} data-testid="editor-capo">
+            <option value="">–</option>
+            {CAPO_OPTIONS.map((fret) => (
+              <option key={fret} value={fret}>
+                {fret}
+              </option>
+            ))}
+          </NativeSelect>
+        </Fact>
+      </div>
     </div>
   );
 }
 
-function ToolButton({ label, onClick, disabled, children }: { label: string; onClick: () => void; disabled?: boolean; children: ReactNode }) {
+/** A control's width and height in the toolbar: fixed, so its value never changes its size; larger for touch. */
+const factControl = (width: string) =>
+  cn("h-8 rounded-md border border-input bg-transparent text-xs shadow-xs outline-none focus-visible:border-ring pointer-coarse:h-11 pointer-coarse:text-sm", width);
+
+/** One of the song's facts in the toolbar: its name, then its control. */
+function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Button type="button" variant="ghost" size="icon" className="size-8" aria-label={label} title={label} disabled={disabled} onClick={onClick}>
+    <span className="flex items-center gap-1.5">
+      <span className="text-xs text-muted-foreground select-none" aria-hidden>
+        {label}
+      </span>
+      {children}
+    </span>
+  );
+}
+
+function ToolButton({ label, onClick, disabled, testId, children }: { label: string; onClick: () => void; disabled?: boolean; testId?: string; children: ReactNode }) {
+  return (
+    <Button type="button" variant="ghost" size="icon" className="size-8 pointer-coarse:size-11" aria-label={label} title={label} disabled={disabled} onClick={onClick} data-testid={testId}>
       {children}
     </Button>
   );

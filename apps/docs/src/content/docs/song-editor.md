@@ -7,7 +7,9 @@ Open a song and choose the **Editor** tab.
 
 ![The song editor](../../assets/screenshots/en/song-editor.jpg)
 
-The editor has three modes, at the top left:
+The editor's toolbar stays at the top of the screen as you scroll. It has the editor's three modes on the left, then **Undo**, **Redo** and the note line, then the song's **Key**, **Transpose**, **Tempo**, **Time** and **Capo**. Its buttons never move as you use them: press **Transpose** + again and again, or **Undo**, without looking. A tool that doesn't apply in a mode is greyed out there rather than taken away.
+
+The three modes:
 
 - **Visual** - the chart with chords sitting over the words. This is where you'll spend most of your time.
 - **Text** - the same chart as ChordPro text, for quick bulk edits. Chords and lines you don't change stay as they were.
@@ -33,7 +35,9 @@ Each block is a section: intro, verse, pre-chorus, chorus, post-chorus, bridge, 
 
 ## Key and transposing
 
-Set the song's **Key** at the top right. **Transpose** − and + move every chord and the key by a semitone.
+Set the song's **Key** in the toolbar. **Transpose** − and + move every chord and the key by a semitone; **Undo** puts both back. **Tempo**, **Time** and **Capo** are the song's, the same as in the **Song info** tab, and are saved with it.
+
+On a phone, the bar at the bottom of the screen always has **Save song**: greyed out until there's something to save.
 
 ## The song order
 

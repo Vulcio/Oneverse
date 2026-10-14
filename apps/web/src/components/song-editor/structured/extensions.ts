@@ -41,7 +41,15 @@ export interface ChordViewEvents {
 // --- nodes
 
 // The song in the order it's sung (issue #205): sections, and linked copies of them where they're sung again.
-const SongDoc = Node.create({ name: "doc", topNode: true, content: "section (section | linked)*" });
+// Its key is the document's too, so undoing a transposition brings the key back with the chords (issue #248).
+const SongDoc = Node.create({
+  name: "doc",
+  topNode: true,
+  content: "section (section | linked)*",
+  addAttributes() {
+    return { key: { default: null, rendered: false } };
+  },
+});
 
 const Text = Node.create({ name: "text", group: "inline" });
 
@@ -678,13 +686,21 @@ export function moveSection(view: EditorView, pos: number, direction: -1 | 1) {
 }
 
 /** Every chord rewritten by `change` (transposing the song) - one undoable step. */
-export function transposeChords(view: EditorView, change: (raw: string) => string) {
+/** Every chord changed by `change`, and the song's key set to `key` with them (one step to undo). */
+export function transposeChords(view: EditorView, change: (raw: string) => string, key?: string | null) {
   const tr = view.state.tr;
   for (const chord of chordsIn(view.state.doc)) {
     const raw = change(chord.node.attrs.raw as string);
     if (raw !== chord.node.attrs.raw) tr.setNodeMarkup(chord.pos, undefined, { ...chord.node.attrs, raw });
   }
+  if (key !== undefined && key !== view.state.doc.attrs.key) tr.setDocAttribute("key", key);
   if (tr.docChanged) view.dispatch(tr);
+}
+
+/** The song's key as the document has it, set from outside (the key picker, Song info): not a step to undo. */
+export function setDocumentKey(view: EditorView, key: string | null) {
+  if (view.state.doc.attrs.key === key) return;
+  view.dispatch(view.state.tr.setDocAttribute("key", key).setMeta("addToHistory", false).setMeta(REPLACE_META, true));
 }
 
 /** Toggles the lines in the selection between lyrics and a note for the band (a line with chords stays lyrics). */

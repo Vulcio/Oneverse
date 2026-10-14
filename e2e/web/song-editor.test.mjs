@@ -325,9 +325,11 @@ await step("mobile: the song page and its tabs fit", async () => {
   await page.waitForURL(new RegExp(songId));
   await page.waitForLoadState("networkidle");
   await noOverflow();
-  if (await page.getByTestId("mobile-save-bar").count()) throw new Error("save bar without changes");
+  // Always there (issue #248), Save disabled until there's something to save.
+  await page.getByTestId("mobile-save-bar").getByText("All changes saved").waitFor();
+  if (!(await page.getByTestId("mobile-save-bar").getByRole("button").isDisabled())) throw new Error("save enabled without changes");
   await page.fill("#song-title", "Changed");
-  await page.getByTestId("mobile-save-bar").waitFor();
+  await page.locator("[data-testid=mobile-save-bar][data-dirty]").waitFor();
   await page.getByRole("button", { name: "Discard changes" }).click();
   await page.screenshot({ path: `${SP}/editor-mobile-edit.png`, fullPage: true });
   await page.getByRole("tab", { name: "Editor" }).click();

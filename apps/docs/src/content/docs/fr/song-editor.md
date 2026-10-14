@@ -7,7 +7,9 @@ Ouvrez un chant et choisissez l'onglet **Éditeur**.
 
 ![L'éditeur de chants](../../../assets/screenshots/fr/song-editor.jpg)
 
-L'éditeur a trois modes, en haut à gauche :
+La barre d'outils de l'éditeur reste en haut de l'écran quand vous faites défiler. Elle a les trois modes de l'éditeur à gauche, puis **Annuler**, **Rétablir** et la ligne de note, puis la **Tonalité** du chant, **Transposer**, **Tempo**, **Mesure** et **Capo**. Ses boutons ne bougent jamais quand vous vous en servez : appuyez sur **Transposer** + encore et encore, ou sur **Annuler**, sans regarder. Un outil qui ne sert pas dans un mode y est grisé plutôt que retiré.
+
+Les trois modes :
 
 - **Visuel** - la grille avec les accords au-dessus des mots. C'est là que vous passerez le plus de temps.
 - **Texte** - la même grille en texte ChordPro, pour des modifications rapides en bloc. Les accords et les lignes que vous ne changez pas restent tels quels.
@@ -33,7 +35,9 @@ Chaque bloc est une section : intro, couplet, pré-refrain, refrain, post-refrai
 
 ## Tonalité et transposition
 
-Choisissez la **Tonalité** du chant en haut à droite. **Transposer** − et + déplacent tous les accords et la tonalité d'un demi-ton.
+Choisissez la **Tonalité** du chant dans la barre d'outils. **Transposer** − et + déplacent tous les accords et la tonalité d'un demi-ton ; **Annuler** remet les deux. **Tempo**, **Mesure** et **Capo** sont ceux du chant, les mêmes que dans l'onglet **Infos**, et sont enregistrés avec lui.
+
+Sur un téléphone, la barre en bas de l'écran a toujours **Enregistrer le chant** : grisé tant qu'il n'y a rien à enregistrer.
 
 ## L'ordre du chant
 

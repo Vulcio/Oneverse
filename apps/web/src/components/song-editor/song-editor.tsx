@@ -13,7 +13,7 @@ import {
 } from "@songverse/core";
 import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
 import { FileText, History, Info, Layers, Link2, MoreHorizontal, Music, PenLine, Share2, Star } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 import { Button } from "@songverse/ui/components/button";
@@ -130,6 +130,22 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  // A message over the page goes by itself once read; an error stays until the next try.
+  useEffect(() => {
+    if (message?.kind !== "ok") return;
+    const timer = setTimeout(() => setMessage(null), 4000);
+    return () => clearTimeout(timer);
+  }, [message]);
+  // The header's height, for the editor's toolbar sticking under it (issue #248).
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const observer = new ResizeObserver(() => setHeaderHeight(header.offsetHeight));
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const leaving = useRef(false);
@@ -482,7 +498,9 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
 
   return (
     <form
-      className={`flex flex-col gap-6 ${canChangeChart && dirty ? "pb-16 md:pb-0" : ""}`}
+      // Room for the phone's save bar, there whenever the song can be changed (issue #248).
+      className={`flex flex-col gap-6 ${canChangeChart ? "pb-16 md:pb-0" : ""}`}
+      style={{ "--song-header-h": `${headerHeight}px` } as CSSProperties}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -491,7 +509,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       }}
     >
       {/* Sticky on wider screens; a phone gets the save bar at the bottom instead. */}
-      <div className="bleed-x z-30 -mt-4 flex flex-wrap md:sticky md:top-14 items-center justify-between gap-3 border-b bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div ref={headerRef} className="bleed-x relative z-30 -mt-4 flex flex-wrap md:sticky md:top-14 items-center justify-between gap-3 border-b bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="flex min-w-0 items-center gap-3">
           {/* Its album art (issue #146), small: the header stays in view. */}
           {edit?.version.imageUrl ? <img src={`${edit.version.imageUrl}&w=128`} alt="" className="size-14 shrink-0 rounded-md object-cover shadow-sm sm:size-16" data-testid="song-art" /> : null}
@@ -502,15 +520,15 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
               <span className="rounded-full border px-2.5 py-0.5 text-sm font-medium text-muted-foreground">{edit.version.versionName}</span>
             ) : null}
           </h1>
-          <p className="text-sm text-muted-foreground">{subheading}</p>
-          {edit ? (
-            <div className="mt-2">
-              <OfflinePinButton kind="SONG" targetId={edit.version.id} />
-            </div>
-          ) : null}
+          {/* Beside the subtitle, not on a row of its own: the header stays short (issue #248). */}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-sm text-muted-foreground">{subheading}</p>
+            {edit ? <OfflinePinButton kind="SONG" targetId={edit.version.id} /> : null}
+          </div>
         </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* One row of actions that wraps as a whole, never leaving a button alone on a line. */}
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           {canSuggest && !suggesting ? (
             <Button type="button" variant="outline" onClick={() => setSuggesting(true)}>
               <PenLine />
@@ -547,8 +565,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           {edit && canManage && edit.version.ownerScope !== "GLOBAL" ? (
             <Button type="button" variant="outline" onClick={() => setSharing(true)} aria-label={t("sharing.share")}>
               <Share2 />
-              {/* Just the icon on a phone, where the header's buttons would overflow. */}
-              <span className="hidden sm:inline">{t("sharing.share")}</span>
+              {/* Just the icon until there is room, so the header's actions stay on one row. */}
+              <span className="hidden xl:inline">{t("sharing.share")}</span>
             </Button>
           ) : null}
           {edit ? (
@@ -576,9 +594,10 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
             </DropdownMenu>
           ) : null}
         </div>
+        {/* Over the page, under the header: a message never pushes the page down (issue #248). */}
         {message ? (
           <p
-            className={`basis-full text-sm ${message.kind === "error" ? "text-destructive" : "text-muted-foreground"}`}
+            className={`absolute top-full right-4 mt-2 max-w-[min(32rem,calc(100%-2rem))] rounded-md border bg-background px-3 py-2 text-sm shadow-md ${message.kind === "error" ? "text-destructive" : "text-muted-foreground"}`}
             role={message.kind === "error" ? "alert" : "status"}
           >
             {message.text}
@@ -646,6 +665,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                 onFlowChange={(flow) => updateForm((current) => ({ ...current, flow: nameKeyChanges(flow, current.key) }))}
                 songKey={form.key}
                 onSongKeyChange={(key) => setField("key", key)}
+                facts={{ tempo: form.tempo, timeSignature: form.timeSignature, capo: form.capo }}
+                onFactChange={(field, value) => setField(field, value)}
                 readOnly={!canChangeChart}
               />
             </Suspense>
@@ -664,10 +685,11 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         </TabsContent>
       </Tabs>
 
-      {canChangeChart && dirty ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t bg-background px-4 py-3 md:hidden" data-testid="mobile-save-bar">
-          <span className="text-sm text-muted-foreground">{t("songEditor.unsaved")}</span>
-          <Button type="submit" disabled={saving}>
+      {/* Always there on a phone, Save disabled with nothing to save: it never appears under a finger (issue #248). */}
+      {canChangeChart ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t bg-background px-4 py-3 md:hidden" data-testid="mobile-save-bar" data-dirty={dirty || undefined}>
+          <span className="text-sm text-muted-foreground">{dirty ? t("songEditor.unsaved") : t("songEditor.allSaved")}</span>
+          <Button type="submit" className="pointer-coarse:h-11" disabled={saving || (!!edit && !dirty)}>
             {suggesting ? t("suggestions.send") : saving ? t("songEditor.saving") : t("songEditor.save")}
           </Button>
         </div>
