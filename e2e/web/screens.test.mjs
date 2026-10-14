@@ -11,6 +11,8 @@ let page;
 const step = stepper(() => page);
 const leader = await user("Presenter");
 const set = await api(leader, "POST", "/setlists", { name: `Sunday ${stamp}` });
+// The leader runs a team: a screen can be the team's (issue #222).
+const band = await api(leader, "POST", "/teams", { name: `Screen team ${stamp}` });
 const first = await api(leader, "POST", "/song-versions", {
   title: `Grace ${stamp}`,
   language: "en",
@@ -52,9 +54,14 @@ try {
     await tablet.getByLabel("Code on the screen").waitFor();
     if ((await tablet.getByLabel("Code on the screen").inputValue()) !== `${code.slice(0, 3)}-${code.slice(3)}`) throw new Error("code not filled in");
     await tablet.getByLabel("Name").first().fill("Front TV");
+    await tablet.getByTestId("screen-owner").selectOption({ label: `Team: Screen team ${stamp}` });
     await tablet.getByTestId("screen-pair-form").getByRole("button", { name: "Pair screen" }).click();
     await tablet.getByTestId("screen-paired").getByText(`Front TV is paired: it shows Sunday ${stamp}`).waitFor();
     await tablet.getByTestId("screens-list").getByTestId("screen-Front TV").waitFor();
+    // Screens, under Tools: it's among the team's.
+    await tablet.getByTestId("nav-screens").click();
+    await tablet.waitForURL(`${WEB}/screens`);
+    await tablet.getByTestId(`screens-group-team-${band.id}`).getByTestId("screen-Front TV").waitFor();
     page = tv;
     // The screen claims its token and waits on the set.
     await tv.locator('[data-testid="screen-display"][data-state="showing"]').waitFor({ timeout: 15000 });

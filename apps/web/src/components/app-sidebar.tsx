@@ -37,6 +37,7 @@ import {
   Waypoints,
   Music,
   Building2,
+  Monitor,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -465,6 +466,13 @@ function MainNav({
             <SidebarMenuButton isActive={pathname === "/tuner"} tooltip={t("nav.tuner")} render={<Link to="/tuner" />}>
               <Gauge />
               <span>{t("nav.tuner")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          {/* Screens (issue #222): one's own, one's teams' and organisations'. */}
+          <SidebarMenuItem>
+            <SidebarMenuButton isActive={pathname === "/screens"} tooltip={t("nav.screens")} render={<Link to="/screens" />} data-testid="nav-screens">
+              <Monitor />
+              <span>{t("nav.screens")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

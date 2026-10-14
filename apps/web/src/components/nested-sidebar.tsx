@@ -31,6 +31,7 @@ import {
   UsersRound,
   CalendarDays,
   Building2,
+  Monitor,
 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -165,6 +166,13 @@ export function NestedSidebar({
             <Gauge />
           </TooltipTrigger>
           <TooltipContent side="right">{t("nav.tuner")}</TooltipContent>
+        </Tooltip>
+        {/* Screens (issue #222). */}
+        <Tooltip>
+          <TooltipTrigger render={<Link to="/screens" aria-label={t("nav.screens")} className="flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4" />}>
+            <Monitor />
+          </TooltipTrigger>
+          <TooltipContent side="right">{t("nav.screens")}</TooltipContent>
         </Tooltip>
         <div className="mt-auto flex flex-col items-center gap-1">
           {/* The documentation, for everyone, above Review and Admin (issue #147). */}

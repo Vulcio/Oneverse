@@ -11,7 +11,7 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
 
    ![A screen showing its code](../../assets/screenshots/en/screen-code.jpg)
 
-2. On your phone or tablet, scan the QR code, or open **Screens** from the Sync menu in Live (**Screens…**) and type the code.
+2. On your phone or tablet, scan the QR code, or open **Screens** - under **Tools** in the sidebar, or from the Sync menu in Live (**Screens…**) - and type the code.
 3. Give the screen a **Name** ("Church TV"), pick the **Set** it shows and what it **Shows**: **Lyrics, for the audience** or **The chart, for the band**. Then **Pair screen**.
 
    ![Pairing a screen](../../assets/screenshots/en/screens-pair.jpg)
@@ -19,6 +19,14 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
 The screen remembers it's paired: next time, open the same page and it reconnects by itself. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
 On **Screens**, each screen of the set can be renamed, moved to another set or switched between lyrics and chart; the screen changes at once. **Disconnect** stops it: it goes back to showing a new code.
+
+### Whose screen it is
+
+A screen is yours, a team's or an organisation's. When you pair it, **For** chooses: **Just me**, or a team or [organisation](/organizations/) you're an admin of - the church's projector and stage monitor belong to the church, and stay when whoever paired them leaves. **Screens** lists yours, then each of your teams' and organisations'.
+
+- A team's screen is managed by the team's admins, an organisation's by its admins: they rename it, change what it shows and its theme, give it to someone else with **Belongs to**, or disconnect it.
+- The team's or organisation's members see it and put one of their sets on it - a set they can edit. The screen shows it as they see it.
+- Your own screens go with your account; a team's or an organisation's go when it's deleted.
 
 ## Presenting from Live
 

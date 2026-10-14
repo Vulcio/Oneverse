@@ -11,7 +11,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 
    ![Un écran affichant son code](../../../assets/screenshots/fr/screen-code.jpg)
 
-2. Sur votre téléphone ou votre tablette, scannez le code QR, ou ouvrez **Écrans** depuis le menu Synchro de Live (**Écrans…**) et saisissez le code.
+2. Sur votre téléphone ou votre tablette, scannez le code QR, ou ouvrez **Écrans** - sous **Outils** dans la barre latérale, ou depuis le menu Synchro de Live (**Écrans…**) - et saisissez le code.
 3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche et ce qu'il **Affiche** : **Les paroles, pour l'assemblée** ou **La grille, pour le groupe**. Puis **Associer l'écran**.
 
    ![Associer un écran](../../../assets/screenshots/fr/screens-pair.jpg)
@@ -19,6 +19,14 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
 Dans **Écrans**, chaque écran de la liste peut être renommé, passé à une autre liste ou basculé entre paroles et grille ; l'écran change aussitôt. **Déconnecter** l'arrête : il revient à un nouveau code.
+
+### À qui est l'écran
+
+Un écran est à vous, à une équipe ou à une organisation. En l'associant, **Pour** le choisit : **Moi seulement**, ou une équipe ou une [organisation](/fr/organizations/) dont vous êtes administrateur - le projecteur et l'écran de retour de l'église appartiennent à l'église, et restent quand la personne qui les a associés s'en va. **Écrans** liste les vôtres, puis ceux de chacune de vos équipes et organisations.
+
+- L'écran d'une équipe est géré par ses administrateurs, celui d'une organisation par les siens : ils le renomment, changent ce qu'il affiche et son thème, le donnent à quelqu'un d'autre avec **Appartient à**, ou le déconnectent.
+- Les membres de l'équipe ou de l'organisation le voient et y mettent une de leurs listes - une liste qu'ils peuvent modifier. L'écran l'affiche comme eux la voient.
+- Vos écrans partent avec votre compte ; ceux d'une équipe ou d'une organisation, quand elle est supprimée.
 
 ## Présenter depuis Live
 

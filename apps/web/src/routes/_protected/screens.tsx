@@ -1,4 +1,4 @@
-import { formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, type ScreenMode, type ScreenSummary, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
+import { formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
 import { createFileRoute, useRouteContext, useRouter } from "@tanstack/react-router";
 import { MonitorCheck, MonitorUp, Palette, Pencil, Users } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -21,6 +21,14 @@ export interface ScreensSearch {
   setlistId?: string;
 }
 
+/** Whose a screen can be: the user's own, or a team's or organisation's they run. */
+type ScreenOwnerChoice = { kind: "user" } | { kind: "team" | "organization"; id: string; name: string };
+const ownerValue = (owner: { kind: string; id?: string }) => (owner.kind === "user" ? "user" : `${owner.kind}:${owner.id}`);
+const ownerFrom = (value: string): ScreenOwnerRequest => {
+  const [kind, id] = value.split(":") as ["user" | "team" | "organization", string | undefined];
+  return kind === "user" ? { kind } : { kind, id };
+};
+
 export const Route = createFileRoute("/_protected/screens")({
   validateSearch: (search: Record<string, unknown>): ScreensSearch => ({
     ...(typeof search.code === "string" ? { code: search.code } : {}),
@@ -28,13 +36,23 @@ export const Route = createFileRoute("/_protected/screens")({
   }),
   loaderDeps: ({ search }) => ({ setlistId: search.setlistId }),
   loader: async ({ deps }) => {
-    const [sets, screens, themes] = await Promise.all([
+    const [sets, screens, themes, teams, organizations] = await Promise.all([
       apiClient.listSetlists(),
       apiClient.listScreens(deps.setlistId).catch(() => apiClient.listScreens()),
       apiClient.listScreenThemes(),
+      apiClient.listTeams().catch(() => []),
+      apiClient.listMyOrganizations().catch(() => null),
     ]);
+    // Whose a new screen can be (issue #222): theirs, a team's they run, an organisation's they run.
+    const owners: ScreenOwnerChoice[] = [
+      { kind: "user" },
+      ...teams.filter((team) => team.currentUserRole === "ADMIN").map((team) => ({ kind: "team" as const, id: team.id, name: team.name })),
+      ...(organizations?.mode === "NONE" ? [] : (organizations?.organizations ?? []))
+        .filter((organization) => organization.currentUserRole === "ADMIN")
+        .map((organization) => ({ kind: "organization" as const, id: organization.id, name: organization.name })),
+    ];
     // Only a set they lead can be shown: its sync session is theirs to lead.
-    return { sets: sets.filter((set) => set.canEdit), screens, themes };
+    return { sets: sets.filter((set) => set.canEdit), screens, themes, owners };
   },
   component: ScreensPage,
 });
@@ -49,7 +67,7 @@ function ScreensPage() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const search = Route.useSearch();
-  const { sets, screens, themes } = Route.useLoaderData();
+  const { sets, screens, themes, owners } = Route.useLoaderData();
   const [paired, setPaired] = useState<ScreenSummary | null>(null);
   const setName = (id: string | null) => {
     const set = sets.find((one) => one.id === id);
@@ -75,6 +93,7 @@ function ScreensPage() {
         </Card>
       ) : (
         <PairForm
+          owners={owners}
           sets={sets}
           code={search.code ?? ""}
           setlistId={search.setlistId}
@@ -85,22 +104,53 @@ function ScreensPage() {
         />
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{search.setlistId ? t("screens.ofSet", { set: setName(search.setlistId) }) : t("screens.yours")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {screens.length === 0 ? <p className="text-sm text-muted-foreground">{t("screens.none")}</p> : null}
-          <ul className="flex flex-col divide-y" data-testid="screens-list">
-            {screens.map((screen) => (
-              <ScreenRow key={screen.id} screen={screen} sets={sets} themes={themes} onChanged={() => router.invalidate()} />
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      {/* Grouped by whose they are (issue #222): one's own, then each team's and organisation's. */}
+      {(search.setlistId ? [{ key: "set", title: t("screens.ofSet", { set: setName(search.setlistId) }), screens }] : screenGroups(screens, t)).map((group) => (
+        <Card key={group.key} data-testid={`screens-group-${group.key}`}>
+          <CardHeader>
+            <CardTitle className="text-sm">{group.title}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {group.screens.length === 0 ? <p className="text-sm text-muted-foreground">{t("screens.none")}</p> : null}
+            <ul className="flex flex-col divide-y" data-testid="screens-list">
+              {group.screens.map((screen) => (
+                <ScreenRow key={screen.id} screen={screen} sets={sets} themes={themes} owners={owners} onChanged={() => router.invalidate()} />
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ))}
 
       <ThemesCard themes={themes} onChanged={() => router.invalidate()} />
     </div>
+  );
+}
+
+/** The screens by whose they are: one's own first (always shown), then each team's and organisation's. */
+function screenGroups(screens: ScreenSummary[], t: (key: string, values?: Record<string, unknown>) => string) {
+  const groups = new Map<string, { key: string; title: string; screens: ScreenSummary[] }>([["user", { key: "user", title: t("screens.yours"), screens: [] }]]);
+  for (const screen of screens) {
+    const key = screen.owner.kind === "user" ? "user" : `${screen.owner.kind}-${screen.owner.id}`;
+    if (!groups.has(key)) groups.set(key, { key, title: t(screen.owner.kind === "team" ? "screens.teamScreens" : "screens.organizationScreens", { name: screen.owner.name }), screens: [] });
+    groups.get(key)!.screens.push(screen);
+  }
+  return [...groups.values()];
+}
+
+/** Whose a screen is, as a select: the user's own, the teams and organisations they run. */
+function OwnerSelect({ id, owners, value, onChange, current }: { id: string; owners: ScreenOwnerChoice[]; value: string; onChange: (value: string) => void; current?: ScreenSummary["owner"] }) {
+  const { t } = useTranslation();
+  const choices = [...owners];
+  // Its owner now, even if not one the user runs (a global admin's view).
+  if (current && current.kind !== "user" && !choices.some((one) => ownerValue(one) === ownerValue(current))) choices.push({ kind: current.kind, id: current.id, name: current.name });
+  return (
+    <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)} data-testid={id}>
+      {choices.map((owner) => (
+        <option key={ownerValue(owner)} value={ownerValue(owner)}>
+          {owner.kind === "user" ? t("screens.forMe") : t(owner.kind === "team" ? "screens.forTeam" : "screens.forOrganization", { name: owner.name })}
+        </option>
+      ))}
+    </NativeSelect>
   );
 }
 
@@ -261,8 +311,9 @@ function SetSelect({ id, sets, value, onChange, allowNone = false }: { id: strin
 }
 
 /** The code the screen shows, the set it's to show and how: confirmed, the screen shows it at once. */
-function PairForm({ sets, code: initialCode, setlistId, onPaired }: { sets: SetlistSummary[]; code: string; setlistId?: string; onPaired: (screen: ScreenSummary) => Promise<void> }) {
+function PairForm({ owners, sets, code: initialCode, setlistId, onPaired }: { owners: ScreenOwnerChoice[]; sets: SetlistSummary[]; code: string; setlistId?: string; onPaired: (screen: ScreenSummary) => Promise<void> }) {
   const { t } = useTranslation();
+  const [owner, setOwner] = useState("user");
   const [code, setCode] = useState(initialCode ? formatScreenCode(normalizeScreenCode(initialCode) ?? initialCode) : "");
   const [set, setSet] = useState(setlistId && sets.some((one) => one.id === setlistId) ? setlistId : (sets[0]?.id ?? ""));
   const [mode, setMode] = useState<ScreenMode>("LYRICS");
@@ -277,7 +328,7 @@ function PairForm({ sets, code: initialCode, setlistId, onPaired }: { sets: Setl
     setPending(true);
     setError(null);
     try {
-      await onPaired(await apiClient.confirmScreenPairing(normalized, { name: name.trim() || t("screens.defaultName"), mode, setlistId: set }));
+      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), mode, setlistId: set }));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -316,6 +367,12 @@ function PairForm({ sets, code: initialCode, setlistId, onPaired }: { sets: Setl
               <Label htmlFor="screen-name">{t("screens.name")}</Label>
               <Input id="screen-name" value={name} maxLength={60} onChange={(event) => setName(event.target.value)} />
             </div>
+            {owners.length > 1 ? (
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <Label htmlFor="screen-owner">{t("screens.for")}</Label>
+                <OwnerSelect id="screen-owner" owners={owners} value={owner} onChange={setOwner} />
+              </div>
+            ) : null}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="screen-set">{t("screens.set")}</Label>
               <SetSelect id="screen-set" sets={sets} value={set} onChange={setSet} />
@@ -342,7 +399,7 @@ function PairForm({ sets, code: initialCode, setlistId, onPaired }: { sets: Setl
 }
 
 /** A screen: its name, the set it shows and how, changed as they're picked; or disconnected. */
-function ScreenRow({ screen, sets, themes, onChanged }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; onChanged: () => Promise<void> }) {
+function ScreenRow({ screen, sets, themes, owners, onChanged }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; owners: ScreenOwnerChoice[]; onChanged: () => Promise<void> }) {
   const { t, i18n } = useTranslation();
   const [name, setName] = useState(screen.name);
   const [busy, setBusy] = useState(false);
@@ -367,6 +424,7 @@ function ScreenRow({ screen, sets, themes, onChanged }: { screen: ScreenSummary;
           <Input
             id={`screen-name-${screen.id}`}
             value={name}
+            disabled={!screen.canManage}
             maxLength={60}
             onChange={(event) => setName(event.target.value)}
             onBlur={() => name.trim() && name.trim() !== screen.name && void change({ name: name.trim() })}
@@ -382,10 +440,13 @@ function ScreenRow({ screen, sets, themes, onChanged }: { screen: ScreenSummary;
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`screen-mode-${screen.id}`}>{t("screens.mode")}</Label>
-          <ModeSelect id={`screen-mode-${screen.id}`} value={screen.mode} onChange={(mode) => void change({ mode })} />
+          <fieldset disabled={!screen.canManage} className="contents">
+            <ModeSelect id={`screen-mode-${screen.id}`} value={screen.mode} onChange={(mode) => void change({ mode })} />
+          </fieldset>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`screen-theme-${screen.id}`}>{t("screens.theme")}</Label>
+          <fieldset disabled={!screen.canManage} className="contents">
           <ThemeSelect
             id={`screen-theme-${screen.id}`}
             value={themeValue(screen)}
@@ -394,7 +455,9 @@ function ScreenRow({ screen, sets, themes, onChanged }: { screen: ScreenSummary;
               void change(value.startsWith("s:") ? { themeId: value.slice(2) } : value.startsWith("t:") ? { themeTemplate: value.slice(2) } : { themeId: null, themeTemplate: null })
             }
           />
+          </fieldset>
         </div>
+        {screen.canManage ? (
         <ConfirmButton
           label={t("screens.disconnect")}
           confirmLabel={t("screens.confirmDisconnect")}
@@ -413,7 +476,15 @@ function ScreenRow({ screen, sets, themes, onChanged }: { screen: ScreenSummary;
             }
           }}
         />
+        ) : null}
       </div>
+      {screen.canManage && owners.length > 1 ? (
+        <div className="flex max-w-sm flex-col gap-1.5">
+          <Label htmlFor={`screen-owner-${screen.id}`}>{t("screens.owner")}</Label>
+          <OwnerSelect id={`screen-owner-${screen.id}`} owners={owners} current={screen.owner} value={ownerValue(screen.owner)} onChange={(value) => void change({ owner: ownerFrom(value) })} />
+        </div>
+      ) : null}
+      {!screen.canManage ? <p className="text-xs text-muted-foreground">{t("screens.notYours")}</p> : null}
       {screen.lastSeenAt ? <p className="text-xs text-muted-foreground">{t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) })}</p> : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">

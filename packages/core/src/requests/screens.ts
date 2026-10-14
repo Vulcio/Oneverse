@@ -14,8 +14,21 @@ const screenFields = {
   themeTemplate: z.enum(SCREEN_THEME_TEMPLATES.map((one) => one.id) as [string, ...string[]]).nullable(),
 };
 
+/**
+ * Whose a screen is (issue #222): the person's own ("user"), one of the
+ * teams they run, or an organisation they run - by its id.
+ */
+export const ScreenOwnerSchema = z
+  .strictObject({
+    kind: z.enum(["user", "team", "organization"]),
+    id: optional(z.string().min(1).max(40)).describe("The team's or the organisation's; left out for the person's own"),
+  })
+  .refine((owner) => owner.kind === "user" || !!owner.id, "owner.id must name the team or the organisation");
+export type ScreenOwnerRequest = z.input<typeof ScreenOwnerSchema>;
+
 /** POST /screens/pairings/:code/confirm */
 export const ConfirmScreenPairingSchema = z.strictObject({
+  owner: optional(ScreenOwnerSchema).describe("Left out: the person's own"),
   name: screenFields.name,
   mode: screenFields.mode,
   setlistId: screenFields.setlistId,
@@ -31,6 +44,7 @@ export const ClaimScreenPairingSchema = z.strictObject({
 
 /** PATCH /screens/:id: a field left out keeps its value; setlistId null leaves it without a set. */
 export const UpdateScreenSchema = z.strictObject({
+  owner: optional(ScreenOwnerSchema).describe("Given to another owner: its managers, to themselves or what they run"),
   name: optional(screenFields.name),
   mode: optional(screenFields.mode),
   setlistId: screenFields.setlistId.nullable().optional(),

@@ -600,6 +600,10 @@ export interface AdminCustomInstrument extends CustomInstrument {
 /** A screen showing a set (issue #186). */
 export interface ScreenSummary {
   id: string;
+  /** Whose it is (issue #222): a person's, a team's or an organisation's. */
+  owner: { kind: "user" | "team" | "organization"; id: string; name: string };
+  /** The viewer renames it, changes its look and owner, or disconnects it. */
+  canManage: boolean;
   name: string;
   mode: ScreenMode;
   setlistId: string | null;

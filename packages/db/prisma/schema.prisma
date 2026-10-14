@@ -327,8 +327,9 @@ model User {
   ownedTags           Tag[]
   stemSeparations     StemSeparation[]
   roleAssignments     RoleAssignment[]
-  // The screens they paired (issue #186).
+  // Their own screens (issue #186), and those they put a set on (issue #222).
   screens             Screen[]
+  screensSet          Screen[] @relation("ScreenSetBy")
   // Their own screen themes (issue #194).
   screenThemes        ScreenTheme[]
   // The people they invited to sign up (issue #198).
@@ -499,6 +500,8 @@ model Team {
   roleAssignments     RoleAssignment[]
   // Its screens' looks (issue #194), for every member to pick.
   screenThemes        ScreenTheme[]
+  // Its screens (issue #222), which outlive whoever paired them.
+  screens             Screen[]
   // Its calendar (issue #235), and how many weeks ahead each date's set is made (1-52).
   events              TeamEvent[]
   calendarFeed        CalendarFeed?
@@ -553,6 +556,8 @@ model Organization {
   teams       Team[]
   events      OrganizationEvent[]
   eventPresets OrganizationEventPreset[]
+  // Its screens (issue #222): the church's projector, its stage monitor.
+  screens     Screen[]
 }
 
 model OrganizationMembership {
@@ -2717,9 +2722,14 @@ model Screen {
   name        String
   mode        ScreenMode @default(LYRICS)
   tokenHash   String     @unique
-  // Who paired it: it reads the set as they would, and only they change it.
-  ownerUserId String
+  // Whose it is (issue #222): a person's, a team's or an organisation's -
+  // exactly one. Its managers rename it, change its look or disconnect it.
+  ownerUserId         String?
+  ownerTeamId         String?
+  ownerOrganizationId String?
   setlistId   String?
+  // Who put its set on it: it reads the set as they would.
+  setByUserId String?
   // Its look (issue #194): a saved theme, or a built-in one by its id ("concert"); neither, the default.
   themeId       String?
   themeTemplate String?
@@ -2727,11 +2737,16 @@ model Screen {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  owner   User         @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  owner             User?         @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  ownerTeam         Team?         @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
+  ownerOrganization Organization? @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
+  setBy             User?         @relation("ScreenSetBy", fields: [setByUserId], references: [id], onDelete: SetNull)
   setlist Setlist?     @relation(fields: [setlistId], references: [id], onDelete: SetNull)
   theme   ScreenTheme? @relation(fields: [themeId], references: [id], onDelete: SetNull)
 
   @@index([ownerUserId])
+  @@index([ownerTeamId])
+  @@index([ownerOrganizationId])
   @@index([setlistId])
   @@index([themeId])
 }
