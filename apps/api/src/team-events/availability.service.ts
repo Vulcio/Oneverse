@@ -128,7 +128,8 @@ export class AvailabilityService {
           conflicts,
           // A replacement looked for (issue #235, phase 7), and whether the viewer could take it.
           swap: row.swapRequestedAt && row.status !== "DECLINED" ? { requestedAt: row.swapRequestedAt.toISOString(), note: row.swapNote } : null,
-          canTake: !!row.swapRequestedAt && row.status !== "DECLINED" && !mine && !onIt && !!part && !!viewer && coversPart(viewer, part),
+          // Those who answered If needed first, until it's offered to everyone (issue #240).
+          canTake: !!row.swapRequestedAt && row.status !== "DECLINED" && !mine && !onIt && !!part && !!viewer && coversPart(viewer, part) && (!!row.swapWidenedAt || myAnswer.answer === "IF_NEEDED"),
         };
       });
       return { ...date, myAnswer, counts, coverage, lineup };
@@ -339,7 +340,14 @@ export class AvailabilityService {
                   note: row.userId === userId ? row.note : null,
                   conflicts: [] as LineupConflict[],
                   swap: offered ? { requestedAt: row.swapRequestedAt!.toISOString(), note: row.swapNote } : null,
-                  canTake: offered && row.userId !== userId && !onIt && !!part && !!me && coversPart({ ...me, positionIds: positionsIn.get(event.teamId) ?? [] }, part),
+                  canTake:
+                    offered &&
+                    row.userId !== userId &&
+                    !onIt &&
+                    !!part &&
+                    !!me &&
+                    coversPart({ ...me, positionIds: positionsIn.get(event.teamId) ?? [] }, part) &&
+                    (!!row.swapWidenedAt || effectiveAnswer(answerOf.get(key(event.id, date.date))?.answer ?? null, away.get(userId) ?? [], date.date).answer === "IF_NEEDED"),
                 };
               }),
           };

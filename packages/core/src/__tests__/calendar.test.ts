@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { callAt, eventDates, eventFallsOn, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { callAt, eventDates, swapWidensAt, eventFallsOn, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import en from "../i18n/locales/en.js";
 import { notificationText } from "../notifications/index.js";
 import { CreateTeamEventSchema } from "../requests/events.js";
@@ -73,5 +73,12 @@ describe("call time (issue #240)", () => {
     const base = { title: "Service", date: "2026-03-01", startTime: "10:00", timeZone: "Europe/Paris" };
     expect(CreateTeamEventSchema.safeParse({ ...base, callMinutes: 45 }).success).toBe(true);
     expect(CreateTeamEventSchema.safeParse({ ...base, callMinutes: 481 }).success).toBe(false);
+  });
+});
+
+describe("swaps: If needed first (issue #240)", () => {
+  it("for a day, or two hours when the date is less than two days away", () => {
+    expect(swapWidensAt("2026-03-01T10:00:00.000Z", "2026-03-08T10:00:00.000Z")).toBe("2026-03-02T10:00:00.000Z");
+    expect(swapWidensAt("2026-03-01T10:00:00.000Z", "2026-03-02T10:00:00.000Z")).toBe("2026-03-01T12:00:00.000Z");
   });
 });

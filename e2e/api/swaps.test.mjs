@@ -2,7 +2,9 @@
 // (with a note); the members who play the part - not on it already, not
 // unavailable or away that date - are offered it; the first to take it
 // gets the place (accepted, available that date), the one replaced and the
-// team's admins are told. Cancelled, it's no longer offered.
+// team's admins are told. Cancelled, it's no longer offered. Those who
+// answered If needed are asked first (issue #240): the others once a day
+// goes by with no one taking it (the hourly reminders job).
 import { stamp, sql, check, user, call, finish } from "../lib/harness.mjs";
 
 const plus = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
@@ -65,5 +67,34 @@ check("…and the team's admins", (await notes(admin, "SWAP_TAKEN")).length === 
 check("taking it says they're available", (await call(winner.who, "GET", `/teams/${team.id}/event-dates?from=${date}&to=${date}`)).body[0].myAnswer.answer === "AVAILABLE");
 const sets = async (who) => (await call(who, "GET", "/setlists")).body.find((set) => set.fromEvent && set.name === "Sunday");
 check("signed up: the one who took it, not the one replaced", (await sets(winner.who))?.signedUp === true && (await sets(alex))?.signedUp === false);
+
+// --- If needed first (issue #240)
+const later = plus(6);
+const evening = (await call(admin, "POST", `/teams/${team.id}/events`, { title: "Evening", date: later, startTime: "19:00", timeZone: "UTC", parts: [{ part: "DRUMS", count: 1 }] })).body;
+const eveningBase = `/teams/${team.id}/events/${evening.id}/dates/${later}`;
+await call(bea, "PUT", `${eveningBase}/answer`, { answer: "IF_NEEDED" });
+const spot = (await call(admin, "POST", `${eveningBase}/lineup`, { userId: alex.id, part: "DRUMS" })).body;
+const eveningAs = async (who) => (await call(who, "GET", `/teams/${team.id}/event-dates?from=${later}&to=${later}`)).body.find((d) => d.eventId === evening.id).lineup[0];
+const offers = async (who) => (await notes(who, "SWAP_OFFERED")).filter((note) => note.data.event === "Evening");
+r = await call(alex, "POST", `${eveningBase}/lineup/${spot.id}/swap`, {});
+check("one answered If needed: only they're asked at first", r.status === 201 && r.body.notified === 1 && (await offers(bea)).length === 1 && (await offers(eve)).length === 0, JSON.stringify(r.body));
+check("…they can take it, the others can't yet", (await eveningAs(bea)).canTake === true && (await eveningAs(eve)).canTake === false);
+r = await call(eve, "POST", `${eveningBase}/lineup/${spot.id}/take`);
+check("…and are refused, by name", r.status === 400 && r.body.message.some((m) => m.includes("If needed")), JSON.stringify(r.body));
+const myDate = (await call(eve, "GET", `/users/me/event-dates?from=${later}&to=${later}`)).body.find((d) => d.eventId === evening.id);
+check("…on My calendar too", myDate?.lineup[0]?.canTake === false, JSON.stringify(myDate?.lineup));
+sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
+await call(admin, "POST", "/admin/jobs/run/event-reminders");
+await new Promise((resolve) => setTimeout(resolve, 1500));
+check("the hourly job: not yet a day, no one else asked", (await offers(eve)).length === 0);
+sql(`update "TeamEventAssignment" set "swapRequestedAt" = now() - interval '25 hours' where id='${spot.id}'`);
+await call(admin, "POST", "/admin/jobs/run/event-reminders");
+let widened = false;
+for (let i = 0; i < 60 && !widened; i++) {
+  widened = (await offers(eve)).length === 1;
+  if (!widened) await new Promise((resolve) => setTimeout(resolve, 300));
+}
+check("a day on with no one taking it: the others who play it asked, not the If needed ones again", widened && (await offers(cyd)).length === 1 && (await offers(bea)).length === 1 && (await offers(dan)).length === 0);
+check("…and can take it", (await eveningAs(eve)).canTake === true && (await call(eve, "POST", `${eveningBase}/lineup/${spot.id}/take`)).status === 201);
 
 finish();

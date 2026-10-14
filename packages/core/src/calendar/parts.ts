@@ -72,6 +72,18 @@ export function swapCandidates(
   return members.filter((member) => member.userId !== requesterId && !onIt.has(member.userId) && member.answer !== "UNAVAILABLE" && coversPart(member, part)).map((member) => member.userId);
 }
 
+/**
+ * When a replacement asked for goes to everyone who could take it (issue
+ * #240): until then only those who answered If needed are asked - for a
+ * day, or two hours when the date is less than two days away.
+ */
+export function swapWidensAt(requestedAt: string | Date, startsAt: string): string {
+  const hour = 3_600_000;
+  const asked = new Date(requestedAt).getTime();
+  const soon = new Date(startsAt).getTime() - asked < 48 * hour;
+  return new Date(asked + (soon ? 2 : 24) * hour).toISOString();
+}
+
 /** One part on a date: who covers it, by answer, and how many short of what it needs. */
 export interface PartCoverage {
   key: string;
