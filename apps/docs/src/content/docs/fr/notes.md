@@ -65,6 +65,10 @@ Les admins globaux peuvent modifier, résoudre et supprimer toutes les notes et 
 
 </div>
 
+## Déplacer une note
+
+Quand vous modifiez une note que vous avez écrite (**Modifier**), **Enregistrer dans** indique où elle est enregistrée et les autres endroits possibles, comme pour une nouvelle note. Choisissez un autre endroit puis **Enregistrer** : la note garde son texte, l'endroit où elle est attachée et ses réponses, et s'affiche désormais pour les personnes de son nouvel endroit. Ceux qui la voyaient sans faire partie du nouvel endroit ne la voient plus. Seul l'auteur de la note peut la déplacer ; les autres personnes qui peuvent la modifier ne le peuvent pas.
+
 ## En direct
 
 Les notes sont en direct. Quand quelqu'un ajoute une note, répond, la modifie, la résout ou la supprime, elle apparaît chez tous ceux qui ont le chant ouvert : pas besoin de recharger.

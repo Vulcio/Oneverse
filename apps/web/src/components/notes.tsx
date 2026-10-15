@@ -11,7 +11,7 @@ import {
   type SongNote,
 } from "@songverse/core";
 import { CheckCheck, CloudOff, MessageSquare, MessageSquarePlus, MoveUp, Pencil, RotateCcw, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
 import type { ChartNotesLayer } from "#/components/song-chart";
-import { noteBody, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
+import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
 import { usePresence, useSongPresence } from "#/lib/live-notes";
 import { PresenceChip } from "#/components/presence";
 import { PersonAvatar } from "#/components/person-avatar";
@@ -205,7 +205,7 @@ export function useChartNotes({
   const thread = threadId ? (state.notes.find((note) => note.id === threadId) ?? null) : null;
   const dialogs = (
     <>
-      {thread ? <ThreadDialog note={thread} state={state} label={labelOf(thread.anchor)} onClose={() => setThreadId(null)} /> : null}
+      {thread ? <ThreadDialog note={thread} state={state} context={context} label={labelOf(thread.anchor)} onClose={() => setThreadId(null)} /> : null}
       {adding ? <AddNoteDialog anchor={adding} chart={chart} state={state} context={context} label={labelOf(adding)} onClose={() => setAdding(null)} /> : null}
       <NotesSheet
         open={listOpen}
@@ -347,9 +347,17 @@ function placeLabel(note: Pick<SongNote, "place" | "placeName" | "placeId">, t: 
 }
 
 /** A note and its replies: read, reply, and - its author or a moderator - edit, resolve, delete. */
-function ThreadDialog({ note, state, label, onClose }: { note: Note; state: SongNotesState; label: string; onClose: () => void }) {
+function ThreadDialog({ note, state, context, label, onClose }: { note: Note; state: SongNotesState; context: NotesContext; label: string; onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const [editing, setEditing] = useState<{ id: string | null; text: string } | null>(null);
+  // Its author may move it somewhere else as they edit it (issue #262): who sees it changes with it.
+  const moves = note.author.id === state.me && !note.pending;
+  const places = useMemo(() => currentPlace(note, placeOptions(state.places, context.setlistId), context.setlistId), [note, state.places, context.setlistId]);
+  const [placeKey, setPlaceKey] = useState(places.key);
+  const saveEdit = (text: string) => {
+    const moved = moves && placeKey !== places.key ? places.options.find((option) => option.key === placeKey) : undefined;
+    return state.update(note.id, { content: text, ...(moved && notePlace(context, moved.choice, moved.onlyInSet)) });
+  };
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -395,9 +403,11 @@ function ThreadDialog({ note, state, label, onClose }: { note: Note; state: Song
             text={editing.text}
             onChange={(text) => setEditing({ id: note.id, text })}
             onCancel={() => setEditing(null)}
-            onSave={() => void act(() => state.update(note.id, { content: editing.text }), () => setEditing(null))}
+            onSave={() => void act(() => saveEdit(editing.text), () => setEditing(null))}
             busy={busy}
-          />
+          >
+            {moves ? <PlacePicker options={places.options} value={placeKey} onChange={setPlaceKey} testId="note-edit-places" /> : null}
+          </EditBox>
         ) : (
           <p className={cn("text-sm whitespace-pre-wrap", note.resolved && "text-muted-foreground")} data-testid="note-content">
             {note.content}
@@ -405,7 +415,15 @@ function ThreadDialog({ note, state, label, onClose }: { note: Note; state: Song
         )}
         {note.canEdit && !offline && editing?.id !== note.id ? (
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => setEditing({ id: note.id, text: note.content })}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setPlaceKey(places.key);
+                setEditing({ id: note.id, text: note.content });
+              }}
+              data-testid="note-edit"
+            >
               <Pencil />
               {t("songNotes.edit")}
             </Button>
@@ -498,11 +516,12 @@ function ThreadDialog({ note, state, label, onClose }: { note: Note; state: Song
   );
 }
 
-function EditBox({ text, onChange, onCancel, onSave, busy }: { text: string; onChange: (text: string) => void; onCancel: () => void; onSave: () => void; busy: boolean }) {
+function EditBox({ text, onChange, onCancel, onSave, busy, children }: { text: string; onChange: (text: string) => void; onCancel: () => void; onSave: () => void; busy: boolean; children?: ReactNode }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
       <Textarea value={text} onChange={(event) => onChange(event.target.value)} rows={3} autoFocus data-testid="note-edit-input" />
+      {children}
       <div className="flex justify-end gap-2">
         <Button size="sm" variant="ghost" onClick={onCancel}>
           {t("songNotes.cancel")}
@@ -522,6 +541,59 @@ interface PlaceOption {
   onlyInSet: boolean;
 }
 
+/** Where a note may be saved, as the dialogs offer it: the API's choices, and "just me, in this set" when the song is opened in one. */
+function placeOptions(places: NotePlaceChoice[], setlistId: string | null | undefined): PlaceOption[] {
+  const list: PlaceOption[] = [];
+  for (const choice of places) {
+    list.push({ key: `${choice.place}:${choice.id ?? ""}`, choice, onlyInSet: false });
+    if (choice.place === "ME" && setlistId) list.push({ key: "ME:set", choice, onlyInSet: true });
+  }
+  return list;
+}
+
+/** "Save in": where a note goes, each choice with who will see it. */
+function PlacePicker({ options, value, onChange, testId }: { options: PlaceOption[]; value: string; onChange: (key: string) => void; testId: string }) {
+  const { t } = useTranslation();
+  const optionName = (option: PlaceOption) =>
+    option.onlyInSet ? t("songNotes.places.ME_SET") : option.choice.place === "ME" ? t("songNotes.places.ME") : option.choice.place === "SONG" ? t("songNotes.places.SONG") : (option.choice.name ?? "");
+  const optionWho = (option: PlaceOption) => t(`songNotes.who.${option.onlyInSet ? "ME_SET" : option.choice.place}`);
+  return (
+    <fieldset className="flex flex-col gap-1.5">
+      <legend className="mb-1 text-xs font-semibold text-muted-foreground">{t("songNotes.saveIn")}</legend>
+      <div role="radiogroup" aria-label={t("songNotes.saveIn")} className="flex flex-col overflow-hidden rounded-lg border" data-testid={testId}>
+        {options.map((option, i) => {
+          const on = option.key === value;
+          return (
+            <button
+              key={option.key}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => onChange(option.key)}
+              className={cn("flex min-h-12 items-center gap-3 px-3 py-1.5 text-left", i > 0 && "border-t", on ? "bg-muted" : "hover:bg-muted/50")}
+              data-place={option.key}
+            >
+              <span className={cn("size-4 shrink-0 rounded-full border-2", on ? "border-[5px] border-primary" : "border-muted-foreground/50")} aria-hidden />
+              <span className="flex min-w-0 flex-col">
+                <span className="text-sm font-medium">{optionName(option)}</span>
+                <span className="text-xs text-muted-foreground">{optionWho(option)}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+/** The choice a note is saved in now, among `options`; added to them when it isn't one (a team one has left, say: kept as it is). */
+function currentPlace(note: SongNote, options: PlaceOption[], setlistId: string | null | undefined): { key: string; options: PlaceOption[] } {
+  const key = note.place === "ME" ? (note.placeId ? (note.placeId === setlistId ? "ME:set" : `ME:in:${note.placeId}`) : "ME:") : `${note.place}:${note.placeId ?? ""}`;
+  if (options.some((option) => option.key === key)) return { key, options };
+  const own: PlaceOption = { key, choice: { place: note.place, id: note.place === "ME" ? null : note.placeId, name: note.placeName }, onlyInSet: note.place === "ME" && !!note.placeId };
+  return { key, options: [own, ...options] };
+}
+
 /** Writing a note: what it says, where it's saved (who sees it), and - inside a section sung more than once - on this pass or every one. */
 function AddNoteDialog({
   anchor,
@@ -539,14 +611,7 @@ function AddNoteDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const options = useMemo<PlaceOption[]>(() => {
-    const list: PlaceOption[] = [];
-    for (const choice of state.places) {
-      list.push({ key: `${choice.place}:${choice.id ?? ""}`, choice, onlyInSet: false });
-      if (choice.place === "ME" && context.setlistId) list.push({ key: "ME:set", choice, onlyInSet: true });
-    }
-    return list;
-  }, [state.places, context.setlistId]);
+  const options = useMemo(() => placeOptions(state.places, context.setlistId), [state.places, context.setlistId]);
   const [placeKey, setPlaceKey] = useState(options[0]?.key ?? "ME:");
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
@@ -571,9 +636,6 @@ function AddNoteDialog({
     }
   };
 
-  const optionName = (option: PlaceOption) =>
-    option.onlyInSet ? t("songNotes.places.ME_SET") : option.choice.place === "ME" ? t("songNotes.places.ME") : option.choice.place === "SONG" ? t("songNotes.places.SONG") : (option.choice.name ?? "");
-  const optionWho = (option: PlaceOption) => t(`songNotes.who.${option.onlyInSet ? "ME_SET" : option.choice.place}`);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -604,31 +666,7 @@ function AddNoteDialog({
             </div>
           </fieldset>
         ) : null}
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="mb-1 text-xs font-semibold text-muted-foreground">{t("songNotes.saveIn")}</legend>
-          <div role="radiogroup" aria-label={t("songNotes.saveIn")} className="flex flex-col overflow-hidden rounded-lg border" data-testid="add-note-places">
-            {options.map((option, i) => {
-              const on = option.key === place?.key;
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => setPlaceKey(option.key)}
-                  className={cn("flex min-h-12 items-center gap-3 px-3 py-1.5 text-left", i > 0 && "border-t", on ? "bg-muted" : "hover:bg-muted/50")}
-                  data-place={option.key}
-                >
-                  <span className={cn("size-4 shrink-0 rounded-full border-2", on ? "border-[5px] border-primary" : "border-muted-foreground/50")} aria-hidden />
-                  <span className="flex min-w-0 flex-col">
-                    <span className="text-sm font-medium">{optionName(option)}</span>
-                    <span className="text-xs text-muted-foreground">{optionWho(option)}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
+        <PlacePicker options={options} value={place?.key ?? ""} onChange={setPlaceKey} testId="add-note-places" />
         {error ? (
           <p className="text-sm text-destructive" role="alert">
             {error}

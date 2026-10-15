@@ -65,6 +65,10 @@ Global admins can edit, resolve and delete any note and reply.
 
 </div>
 
+## Moving a note
+
+When you edit a note you wrote (**Edit**), **Save in** shows where it's saved now and the other places you could save it, as for a new note. Choose another place and **Save**: the note keeps its words, where it's pinned and its replies, and now shows for the people of its new place. Someone who could see it before but isn't in the new place no longer sees it. Only the note's author can move it; the others who can edit it can't.
+
 ## As they happen
 
 Notes are live. When someone adds a note, replies, edits, resolves or deletes one, it shows up for everyone who has the song open: there's no need to reload.

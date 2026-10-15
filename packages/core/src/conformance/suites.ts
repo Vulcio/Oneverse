@@ -34,7 +34,7 @@ import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
 import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import { notePasses, resolveNoteAnchor, shownNotes } from "../notes/index.js";
-import { CreateNoteSchema } from "../requests/notes.js";
+import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
 
 /**
@@ -1744,6 +1744,19 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "in a set, with a team too", args: [{ songVersionId: "song_1", content: "Softer", place: "SET", setlistId: "set_1", teamId: "team_1" }] },
           { name: "empty", args: [{ songVersionId: "song_1", content: "  ", place: "SONG" }] },
           { name: "an anchor that isn't one", args: [{ songVersionId: "song_1", content: "x", place: "ME", anchor: { kind: "bar", bar: 3 } }] },
+        ],
+      },
+      UpdateNoteSchema: {
+        about: "PATCH /notes/:id (issue #262): moved somewhere else with its team, songbook or set; those only with a place",
+        params: ["body"],
+        run: checked(UpdateNoteSchema),
+        cases: [
+          { name: "new words", args: [{ content: "Softer here" }] },
+          { name: "moved to a team", args: [{ place: "TEAM", teamId: "team_1" }] },
+          { name: "moved to just me, only in a set", args: [{ place: "ME", setlistId: "set_1" }] },
+          { name: "moved to a songbook, without it", args: [{ place: "SONGBOOK" }] },
+          { name: "a team without a place", args: [{ teamId: "team_1" }] },
+          { name: "moved into the song, with a set", args: [{ place: "SONG", setlistId: "set_1" }] },
         ],
       },
       UpdateUserSchema: {

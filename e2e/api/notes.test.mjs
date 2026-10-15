@@ -127,6 +127,23 @@ check("a set's leader resolves a set note", r.status === 200 && r.body.resolved 
 r = await call(reader, "DELETE", `/notes/${bookNote.id}`);
 check("a reader can't delete someone's songbook note", r.status === 403, String(r.status));
 
+// --- moved somewhere else as it's edited (issue #262): who sees it changes; its author only, under a new note's rules
+r = await call(member, "PATCH", `/notes/${mine.id}`, { content: "Capo 2, everyone", place: "TEAM", teamId: team.id });
+check("its author moves a note of their own to the team, words and all", r.status === 200 && r.body.place === "TEAM" && r.body.placeName === `Notes Team ${stamp}` && r.body.content === "Capo 2, everyone" && r.body.anchor.kind === "song", JSON.stringify(r.body));
+check("…the team sees it now", ids(await notes(leader, tune.id)).includes(mine.id));
+r = await call(leader, "PATCH", `/notes/${mine.id}`, { place: "ME" });
+check("a team admin may edit it, not move it", r.status === 403, String(r.status));
+r = await call(member, "PATCH", `/notes/${mine.id}`, { place: "SONG" });
+check("not into the song itself for someone who isn't its editor", r.status === 403, String(r.status));
+r = await call(member, "PATCH", `/notes/${mine.id}`, { place: "SET", setlistId: set.id, teamId: team.id });
+check("a place with what doesn't go with it is refused, by name", r.status === 400 && r.body.message.includes("teamId doesn't go with a note saved in a set"), JSON.stringify(r.body));
+r = await call(member, "PATCH", `/notes/${mine.id}`, { teamId: team.id });
+check("a team without a place is refused", r.status === 400 && r.body.message.includes("teamId needs place, where the note is moved to"), JSON.stringify(r.body));
+r = await call(member, "PATCH", `/notes/${mine.id}`, { place: "SET", setlistId: set.id });
+check("moved into a set: seen only there", r.status === 200 && r.body.placeId === set.id && !ids(await notes(member, tune.id)).includes(mine.id) && ids(await notes(guest, tune.id, `?setlistId=${set.id}`)).includes(mine.id), JSON.stringify(r.body));
+r = await call(member, "PATCH", `/notes/${mine.id}`, { content: "Capo 2 for me", place: "ME" });
+check("…and back to just them: nobody else sees it", r.status === 200 && r.body.place === "ME" && r.body.placeId === null && !ids(await notes(leader, tune.id)).includes(mine.id), JSON.stringify(r.body));
+
 // --- anchors through edits
 await call(owner, "PATCH", `/song-versions/${tune.id}`, { contentFormat: "CHORDPRO", content: "{start_of_verse}\n[G]Amazing [G7]grace how [C]sweet the sound\nThat saved a wretch\n{end_of_verse}\n{start_of_chorus}\n[D]I once was lost\n{end_of_chorus}\n{chorus}\n" });
 r = await notes(member, tune.id);

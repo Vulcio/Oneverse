@@ -542,9 +542,10 @@ function LiveChartWithNotes({ song, notes: source, chart, display }: { song: Liv
     <>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">{notes.top}</div>
-        <div className="flex items-center gap-2">
-          {notes.incoming}
+        <div className="relative flex items-center gap-2">
           {notes.button}
+          {/* Over the chart, under the Notes button: its coming takes no room, so nothing moves under the reader. */}
+          {notes.incoming ? <div className="absolute top-full right-0 z-10 mt-1.5 whitespace-nowrap shadow-sm">{notes.incoming}</div> : null}
         </div>
       </div>
       <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={song.player} songVersionId={song.songVersionId} notes={notes.layer} />

@@ -490,6 +490,103 @@
         }
       ]
     },
+    "UpdateNoteSchema": {
+      "about": "PATCH /notes/:id (issue #262): moved somewhere else with its team, songbook or set; those only with a place",
+      "params": [
+        "body"
+      ],
+      "cases": [
+        {
+          "name": "new words",
+          "args": [
+            {
+              "content": "Softer here"
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "value": {
+              "content": "Softer here"
+            }
+          }
+        },
+        {
+          "name": "moved to a team",
+          "args": [
+            {
+              "place": "TEAM",
+              "teamId": "team_1"
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "value": {
+              "place": "TEAM",
+              "teamId": "team_1"
+            }
+          }
+        },
+        {
+          "name": "moved to just me, only in a set",
+          "args": [
+            {
+              "place": "ME",
+              "setlistId": "set_1"
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "value": {
+              "place": "ME",
+              "setlistId": "set_1"
+            }
+          }
+        },
+        {
+          "name": "moved to a songbook, without it",
+          "args": [
+            {
+              "place": "SONGBOOK"
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "songbookId is needed for a note saved in a songbook"
+            ]
+          }
+        },
+        {
+          "name": "a team without a place",
+          "args": [
+            {
+              "teamId": "team_1"
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "teamId needs place, where the note is moved to"
+            ]
+          }
+        },
+        {
+          "name": "moved into the song, with a set",
+          "args": [
+            {
+              "place": "SONG",
+              "setlistId": "set_1"
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "setlistId doesn't go with a note saved in a song"
+            ]
+          }
+        }
+      ]
+    },
     "UpdateUserSchema": {
       "about": "PATCH /users/me",
       "params": [

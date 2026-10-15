@@ -102,6 +102,38 @@ await step("its author is told, and resolves it: off the chart, still in the lis
   await page.keyboard.press("Escape");
 });
 
+await step("its author moves a note as they edit it: just them, then the team (issue #262)", async () => {
+  // Owner's page from the step before.
+  await chart().locator("[data-note-id]", { hasText: "Hold it" }).click();
+  const thread = page.getByTestId("note-thread");
+  await thread.waitFor();
+  await page.getByTestId("note-edit").click();
+  const places = page.getByTestId("note-edit-places");
+  if ((await places.locator('[aria-checked="true"]').getAttribute("data-place")) !== "ME:") throw new Error("not starting from where it's saved");
+  await page.getByTestId("note-edit-input").fill("Hold it, everyone");
+  await places.locator(`[data-place="TEAM:${team.id}"]`).click();
+  await page.getByTestId("note-edit-save").click();
+  await page.getByTestId("note-edit-input").waitFor({ state: "detached" });
+  await thread.getByTestId("note-content").getByText("Hold it, everyone").waitFor();
+  if (!(await thread.getByRole("paragraph").or(thread.locator("[id]")).allTextContents()).join(" ").includes(`Band ${tag}`)) throw new Error("not said to be in the team");
+  await page.keyboard.press("Escape");
+  const moved = (await songNotes(member)).find((note) => note.content === "Hold it, everyone");
+  if (moved?.place !== "TEAM") throw new Error(`not moved: ${JSON.stringify(moved ?? null)}`);
+});
+
+await step("someone else's note: a moderator edits it, without moving it", async () => {
+  // The owner runs the team: they may edit a member's team note, not choose who sees it.
+  await api(member, "POST", "/notes", { songVersionId: song.id, content: "Milo's cue", place: "TEAM", teamId: team.id });
+  // The song's own address: the one before opened a note's thread (a notification's link).
+  await page.goto(`${WEB}/library/${song.id}`);
+  // On the whole song: above the chart.
+  await page.locator("[data-note-id]", { hasText: "Milo's cue" }).first().click();
+  await page.getByTestId("note-edit").click();
+  await page.getByTestId("note-edit-input").waitFor();
+  if ((await page.getByTestId("note-edit-places").count()) > 0) throw new Error("a moderator is offered to move it");
+  await page.keyboard.press("Escape");
+});
+
 await step("Display: Practice shows only my notes; Live still shows all", async () => {
   await api(owner, "PATCH", `/notes/${(await songNotes(owner)).find((note) => note.content === "Let ring").id}`, { resolved: false });
   await open(member);

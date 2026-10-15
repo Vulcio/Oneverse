@@ -4,6 +4,7 @@ import {
   readSongDocument,
   resolveNoteAnchor,
   type NoteAnchor,
+  type NotePlace,
   type NotePlaceChoice,
   type SongDocumentV2,
   type SongNote,
@@ -29,6 +30,8 @@ const NOTE_INCLUDE = {
 } satisfies Prisma.NoteInclude;
 
 type NoteRow = Prisma.NoteGetPayload<{ include: typeof NOTE_INCLUDE }>;
+/** Where a note is saved, as its row has it. */
+type NotePlacement = { place: NotePlace; teamId: string | null; songbookId: string | null; setlistId: string | null };
 
 type SongForNotes = {
   id: string;
@@ -88,9 +91,52 @@ export class NotesService {
   }
 
   async create(user: AuthenticatedUser, dto: CreateNoteDto): Promise<SongNote> {
+    const { song, at } = await this.placeFor(user, dto.songVersionId, dto);
+    const row = await this.prisma.client.note.create({
+      data: {
+        ...at,
+        content: dto.content,
+        anchor: this.pinned(song, dto.anchor ?? { kind: "song" }),
+        songVersionId: song.id,
+        authorUserId: user.id,
+      },
+      include: NOTE_INCLUDE,
+    });
+    await announceNotes(song.id);
+    return this.view(row, readSongDocument(song.documentJson), true, user.id);
+  }
+
+  async update(user: AuthenticatedUser, noteId: string, dto: UpdateNoteDto): Promise<SongNote> {
+    const { row, song } = await this.editable(user, noteId);
+    // Moved somewhere else (issue #262): who sees it is the author's to choose, not a moderator's; checked as a new note's place is.
+    let at: NotePlacement | null = null;
+    if (dto.place !== undefined) {
+      if (row.authorUserId !== user.id) throw new ForbiddenException("Only the note's author can move it somewhere else");
+      at = (await this.placeFor(user, row.songVersionId, { place: dto.place, teamId: dto.teamId, songbookId: dto.songbookId, setlistId: dto.setlistId })).at;
+    }
+    const updated = await this.prisma.client.note.update({
+      where: { id: row.id },
+      data: {
+        ...at,
+        ...(dto.content !== undefined && { content: dto.content }),
+        ...(dto.anchor !== undefined && { anchor: this.pinned(song, dto.anchor) }),
+        ...(dto.resolved !== undefined && { resolvedAt: dto.resolved ? (row.resolvedAt ?? new Date()) : null }),
+      },
+      include: NOTE_INCLUDE,
+    });
+    await announceNotes(song.id);
+    return this.view(updated, readSongDocument(song.documentJson), true, user.id, await this.moderator(user, song, { author: false })(updated));
+  }
+
+  /**
+   * Where a note may be saved by `user` on a song, as its row has it: a team
+   * they're in, a songbook or set the song is in (and they see), the song
+   * itself for its editors; just them, everywhere or in one of its sets.
+   */
+  private async placeFor(user: AuthenticatedUser, songVersionId: string, dto: { place: NotePlace; teamId?: string | null; songbookId?: string | null; setlistId?: string | null }): Promise<{ song: SongForNotes; at: NotePlacement }> {
     const place = dto.place;
     const setlistId = place === "SET" || place === "ME" ? (dto.setlistId ?? undefined) : undefined;
-    const { song, set } = await this.reach(user, dto.songVersionId, setlistId, place === "SET" || place === "ME");
+    const { song, set } = await this.reach(user, songVersionId, setlistId, place === "SET" || place === "ME");
     if (setlistId && !set?.itemId) throw new BadRequestException(["setlistId must be a set the song is in"]);
     if (place === "TEAM") {
       await this.policy.assertSongverseTeam(dto.teamId!);
@@ -105,37 +151,15 @@ export class NotesService {
       if (songbook.entries.length === 0) throw new BadRequestException(["songbookId must be a songbook the song is in"]);
     }
     if (place === "SONG" && !(await this.policy.canEditContent(user, song))) throw new ForbiddenException("Only the song's editors can save notes in the song itself");
-
-    const row = await this.prisma.client.note.create({
-      data: {
+    return {
+      song,
+      at: {
         place,
-        content: dto.content,
-        anchor: this.pinned(song, dto.anchor ?? { kind: "song" }),
-        songVersionId: song.id,
-        authorUserId: user.id,
         teamId: place === "TEAM" ? dto.teamId! : null,
         songbookId: place === "SONGBOOK" ? dto.songbookId! : null,
         setlistId: setlistId ?? null,
       },
-      include: NOTE_INCLUDE,
-    });
-    await announceNotes(song.id);
-    return this.view(row, readSongDocument(song.documentJson), true, user.id);
-  }
-
-  async update(user: AuthenticatedUser, noteId: string, dto: UpdateNoteDto): Promise<SongNote> {
-    const { row, song } = await this.editable(user, noteId);
-    const updated = await this.prisma.client.note.update({
-      where: { id: row.id },
-      data: {
-        ...(dto.content !== undefined && { content: dto.content }),
-        ...(dto.anchor !== undefined && { anchor: this.pinned(song, dto.anchor) }),
-        ...(dto.resolved !== undefined && { resolvedAt: dto.resolved ? (row.resolvedAt ?? new Date()) : null }),
-      },
-      include: NOTE_INCLUDE,
-    });
-    await announceNotes(song.id);
-    return this.view(updated, readSongDocument(song.documentJson), true, user.id, await this.moderator(user, song, { author: false })(updated));
+    };
   }
 
   async remove(user: AuthenticatedUser, noteId: string): Promise<void> {

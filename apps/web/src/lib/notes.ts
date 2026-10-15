@@ -105,11 +105,13 @@ function pendingNote(queued: QueuedNote, me: Me, places: NotePlaceChoice[]): Son
 
 /** The body that saves a note in `place`, from where the song was opened. */
 export function noteBody(context: NotesContext, place: NotePlaceChoice, content: string, anchor: NoteAnchor, onlyInSet = false): CreateNoteRequest {
+  return { songVersionId: context.songVersionId, content, anchor, ...notePlace(context, place, onlyInSet) };
+}
+
+/** Where a note is saved, as a request says it: the place, and its team, songbook or set (issue #262: moving one too). */
+export function notePlace(context: NotesContext, place: NotePlaceChoice, onlyInSet = false): Pick<CreateNoteRequest, "place" | "teamId" | "songbookId" | "setlistId"> {
   return {
-    songVersionId: context.songVersionId,
-    content,
     place: place.place,
-    anchor,
     ...(place.place === "TEAM" && { teamId: place.id! }),
     ...(place.place === "SONGBOOK" && { songbookId: place.id! }),
     ...(place.place === "SET" && { setlistId: place.id! }),
