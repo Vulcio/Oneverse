@@ -106,6 +106,36 @@ await step("a note's thread says who's replying", async () => {
   await chip.waitFor({ state: "detached", timeout: 5000 });
 });
 
+await step("the bell counts a notification as it comes, and goes back when it's read in another tab", async () => {
+  const count = () => practice.getByTestId("notification-count");
+  // Nothing unread to start with.
+  await api(member, "POST", "/users/me/notifications/read", {}).catch(() => undefined);
+  await practice.reload();
+  await practice.getByTestId("notification-bell").waitFor();
+  await practice.waitForTimeout(1000);
+  const before = (await count().count()) ? Number(await count().textContent()) : 0;
+  const mine = await api(member, "POST", "/notes", { songVersionId: song.id, content: "Who counts in?", place: "TEAM", teamId: team.id });
+  await api(owner, "POST", `/notes/${mine.id}/replies`, { content: "I do" });
+  await practice.waitForFunction((n) => Number(document.querySelector('[data-testid="notification-count"]')?.textContent ?? 0) === n + 1, before, { timeout: 5000 });
+  const other = await open(member, "practice");
+  await other.getByTestId("notification-bell").click();
+  await other.getByTestId("notification-read-all").click();
+  await count().waitFor({ state: "detached", timeout: 5000 });
+});
+
+await step("notes new since one last opened the song are marked", async () => {
+  // Opened once (above): what comes after is new; one's own notes aren't.
+  await practice.goto(`${WEB}/library`);
+  await api(owner, "POST", "/notes", { songVersionId: song.id, content: "Brand new", place: "TEAM", teamId: team.id });
+  await api(member, "POST", "/notes", { songVersionId: song.id, content: "My own", place: "ME" });
+  await practice.goto(`${WEB}/library/${song.id}`);
+  await practice.locator("[data-note-id][data-note-new]", { hasText: "Brand new" }).waitFor({ timeout: 5000 });
+  if ((await practice.locator("[data-note-id][data-note-new]", { hasText: "My own" }).count()) > 0) throw new Error("one's own note marked new");
+  await practice.reload();
+  await practice.locator("[data-note-id]", { hasText: "Brand new" }).first().waitFor();
+  if ((await practice.locator("[data-note-id][data-note-new]").count()) > 0) throw new Error("still new once seen");
+});
+
 await step("no page errors", async () => {
   if (errors.length) throw new Error(errors.join(" | "));
 });

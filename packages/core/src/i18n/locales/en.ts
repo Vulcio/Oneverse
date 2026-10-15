@@ -2928,6 +2928,7 @@ const en = {
   },
   songNotes: {
     title: "Notes",
+    new: "New",
     changed: "Notes changed",
     show: "Show",
     button_one: "{{count}} note",

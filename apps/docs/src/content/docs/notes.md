@@ -71,6 +71,8 @@ Notes are live. When someone adds a note, replies, edits, resolves or deletes on
 
 In Live, nothing moves while you're reading. A new or changed note waits behind **Notes changed**; tap **Show** to see it. An open thread and the notes list update at once, and a thread says who's replying (**Sam is replying…**).
 
+A dot marks a note that's new since you last opened the song on this device: written, or replied to, by someone else. The bell at the top counts a reply to your note as it comes, without reloading.
+
 ## Every note on a song
 
 **Notes** (with how many there are) lists every note you can see on the song, resolved ones too. It ignores your Display settings. In Edit it's in the header beside **Share** (on a narrower screen, under **More actions** as **All notes**), to read notes, reply to them, or add one to the whole song while you edit.

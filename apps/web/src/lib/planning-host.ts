@@ -1,5 +1,6 @@
 import type { PlanningHost } from "@songverse/planning/host";
 import { apiClient } from "#/lib/api-client";
+import { watchNotifications } from "#/lib/live-notes";
 
 /** Where the planning screens (issue #241) find Songverse's pages and its sets. */
 export const planningHost: PlanningHost = {
@@ -15,4 +16,6 @@ export const planningHost: PlanningHost = {
     notification: (url) => url,
   },
   sets: { href: (setlistId) => `/sets/${setlistId}`, canMake: true },
+  // The bell, live (issue #27).
+  watchNotifications,
 };

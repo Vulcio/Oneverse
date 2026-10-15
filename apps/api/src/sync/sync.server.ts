@@ -14,6 +14,7 @@ import { SCREEN_CHANNEL, ScreensService } from "../screens/screens.service.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { NOTES_CHANNEL, NotesService } from "../notes/notes.service.js";
 import { SONG_CHANNEL, type SongSaved } from "../song-versions/song-announce.js";
+import { NOTIFICATIONS_CHANNEL } from "../notifications/notifications.service.js";
 
 /** A session outlasts its leader's last change by this long, then goes. */
 const SESSION_TTL_S = 12 * 60 * 60;
@@ -107,12 +108,13 @@ export class SyncServer implements OnModuleDestroy {
       this.wss!.handleUpgrade(request, socket, head, (ws) => this.connected(ws));
     });
     this.subscriber = redis().duplicate();
-    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
+    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL, NOTIFICATIONS_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
     this.subscriber.on("message", (channel, id: string) => {
       if (channel === SCREEN_CHANNEL) void this.screenChanged(id);
       else if (channel === NOTES_CHANNEL) this.notesChanged(id);
       else if (channel === SONG_CHANNEL) this.songSaved(id);
       else if (channel === PRESENCE_CHANNEL) void this.presenceChanged(id);
+      else if (channel === NOTIFICATIONS_CHANNEL) this.notificationsChanged(id);
       else void this.broadcastLocal(id);
     });
     this.presenceTimer = setInterval(() => void this.refreshPresence(), PRESENCE_MS);
@@ -270,6 +272,18 @@ export class SyncServer implements OnModuleDestroy {
     if (local.length === 0) return;
     const people = await this.peopleIn(songVersionId);
     for (const connection of local) this.send(connection, { type: "presence", songVersionId, people });
+  }
+
+  /** Some people's notifications changed: their connections here are told (any signed-in connection). */
+  private notificationsChanged(raw: string) {
+    let userIds: string[];
+    try {
+      userIds = JSON.parse(raw) as string[];
+    } catch {
+      return;
+    }
+    const told = new Set(userIds);
+    for (const connection of this.connections.values()) if (connection.user && told.has(connection.user.id)) this.send(connection, { type: "notifications" });
   }
 
   /** A song was saved: this instance's connections watching it are told by whom, and its revision now. */

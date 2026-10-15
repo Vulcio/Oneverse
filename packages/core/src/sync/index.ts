@@ -138,6 +138,8 @@ export type SyncServerMessage =
   | { type: "presence"; songVersionId: string; people: SongPresence[] }
   /** A watched song was saved (issue #27): by whom, now at `revision`. */
   | { type: "song"; songVersionId: string; revision: number; byId: string | null; by: string | null }
+  /** One's notifications changed (one came, or was read elsewhere): the bell reads its count again (issue #27). */
+  | { type: "notifications" }
   /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */
   | { type: "notes"; songVersionId: string }
   | { type: "error"; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected"; message: string };

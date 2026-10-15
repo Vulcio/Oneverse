@@ -28,6 +28,8 @@ export interface PlanningHost {
   };
   /** A date's set: where it opens, and whether one can be made here. Null in an app without sets. */
   sets: { href: (setlistId: string) => string; canMake: boolean } | null;
+  /** Told when one's notifications change (issue #27): the bell reads its count again at once. Without it, the bell asks every minute. */
+  watchNotifications?: (onChange: () => void) => () => void;
 }
 
 const HostContext = createContext<PlanningHost | null>(null);

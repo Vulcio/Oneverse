@@ -28,6 +28,9 @@ interface Watch {
 }
 
 const watches = new Set<Watch>();
+/** The bell (issue #27): told when one's notifications change, the connection kept while it's there. */
+const notificationListeners = new Set<() => void>();
+const wanted = () => watches.size > 0 || notificationListeners.size > 0;
 let socket: WebSocket | null = null;
 let retry: ReturnType<typeof setTimeout> | null = null;
 let closing: ReturnType<typeof setTimeout> | null = null;
@@ -81,6 +84,7 @@ function receive(message: SyncServerMessage) {
     if (retries > 0) notesChanged(null);
     retries = 0;
   } else if (message.type === "notes") notesChanged(message.songVersionId);
+  else if (message.type === "notifications") for (const listener of [...notificationListeners]) listener();
   else if (message.type === "song") {
     const saved = { revision: message.revision, byId: message.byId, by: message.by };
     for (const watch of [...watches]) if (watch.songVersionId === message.songVersionId) watch.onSaved?.(saved);
@@ -91,7 +95,7 @@ function receive(message: SyncServerMessage) {
 }
 
 function connect() {
-  if (typeof window === "undefined" || socket || watches.size === 0 || deviceOffline()) return;
+  if (typeof window === "undefined" || socket || !wanted() || deviceOffline()) return;
   const ws = new WebSocket(`${getApiUrl().replace(/^http/, "ws").replace(/\/$/, "")}${SYNC_PATH}`);
   socket = ws;
   signedIn = false;
@@ -114,7 +118,7 @@ function connect() {
     signedIn = false;
     presence.clear();
     for (const watch of [...watches]) watch.onPresence?.([]);
-    if (watches.size === 0) return;
+    if (!wanted()) return;
     // Again, a little later each time (at most every 30 s); at once when the network is back.
     retries++;
     retry = setTimeout(() => {
@@ -145,18 +149,33 @@ export function watchSong(song: { songVersionId: string; setlistId?: string | nu
   return () => {
     watches.delete(watch);
     sendWatches();
-    // Nothing left to watch: closed a moment later (the next page usually watches again at once).
-    if (watches.size === 0 && !closing) {
-      closing = setTimeout(() => {
-        closing = null;
-        if (watches.size > 0) return;
-        if (retry) clearTimeout(retry);
-        retry = null;
-        const ws = socket;
-        socket = null;
-        ws?.close();
-      }, 5000);
-    }
+    closeWhenUnwanted();
+  };
+}
+
+/** Nothing left to hear: closed a moment later (the next page usually watches again at once). */
+function closeWhenUnwanted() {
+  if (wanted() || closing) return;
+  closing = setTimeout(() => {
+    closing = null;
+    if (wanted()) return;
+    if (retry) clearTimeout(retry);
+    retry = null;
+    const ws = socket;
+    socket = null;
+    ws?.close();
+  }, 5000);
+}
+
+/** Calls `onChange` whenever one's notifications change (one came, or was read in another tab), until the returned function is called. */
+export function watchNotifications(onChange: () => void): () => void {
+  notificationListeners.add(onChange);
+  if (closing) clearTimeout(closing);
+  closing = null;
+  connect();
+  return () => {
+    notificationListeners.delete(onChange);
+    closeWhenUnwanted();
   };
 }
 

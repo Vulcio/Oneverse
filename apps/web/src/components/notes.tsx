@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
 import type { ChartNotesLayer } from "#/components/song-chart";
-import { noteBody, type NotesContext, type SongNotesState } from "#/lib/notes";
+import { noteBody, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
 import { usePresence, useSongPresence } from "#/lib/live-notes";
 import { PresenceChip } from "#/components/presence";
 import { PersonAvatar } from "#/components/person-avatar";
@@ -80,7 +80,7 @@ function short(text: string, max = 32): string {
 }
 
 /** A note on the chart: who wrote it, what it says, its replies; a tap opens it. */
-export function NoteChip({ note, label, onOpen }: { note: Note; label?: string; onOpen: (noteId: string) => void }) {
+export function NoteChip({ note, label, onOpen, isNew = false }: { note: Note; label?: string; onOpen: (noteId: string) => void; /** Written or replied to since one last opened the song (issue #27). */ isNew?: boolean }) {
   const { t } = useTranslation();
   return (
     <button
@@ -95,8 +95,10 @@ export function NoteChip({ note, label, onOpen }: { note: Note; label?: string; 
       aria-label={t("songNotes.open", { name: note.author.displayName, content: note.content })}
       data-note-id={note.id}
       data-note-place={note.place}
+      data-note-new={isNew ? "" : undefined}
     >
       <PersonAvatar name={note.author.displayName} avatarUrl={note.author.avatarUrl} size={16} className="mt-px" />
+      {isNew ? <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" role="img" aria-label={t("songNotes.new")} title={t("songNotes.new")} /> : null}
       {label ? <span className="shrink-0 font-semibold">{label}</span> : null}
       <span className="line-clamp-2 min-w-0 break-words whitespace-pre-wrap">{note.content}</span>
       {note.moved ? <MoveUp className="mt-px size-3 shrink-0 opacity-70" aria-label={t("songNotes.moved")} /> : null}
@@ -111,12 +113,12 @@ export function NoteChip({ note, label, onOpen }: { note: Note; label?: string; 
   );
 }
 
-function Chips({ notes, labelOf, onOpen }: { notes: Note[]; labelOf?: (note: Note) => string | undefined; onOpen: (noteId: string) => void }) {
+function Chips({ notes, labelOf, onOpen, isNew }: { notes: Note[]; labelOf?: (note: Note) => string | undefined; onOpen: (noteId: string) => void; isNew?: (note: Note) => boolean }) {
   if (notes.length === 0) return null;
   return (
     <div className="my-1 flex flex-wrap gap-1" data-notes="">
       {notes.map((note) => (
-        <NoteChip key={note.id} note={note} label={labelOf?.(note)} onOpen={onOpen} />
+        <NoteChip key={note.id} note={note} label={labelOf?.(note)} onOpen={onOpen} isNew={isNew?.(note)} />
       ))}
     </div>
   );
@@ -147,6 +149,7 @@ export function useChartNotes({
   const [adding, setAdding] = useState<NoteAnchor | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const labelOf = useAnchorLabel(chart, document);
+  const isNew = useNewNotes(context.songVersionId, state.me);
 
   const placed = useMemo(() => {
     const visible = shownNotes(
@@ -178,9 +181,9 @@ export function useChartNotes({
 
   const chipLabel = (note: Note) => (note.anchor.kind === "chord" || note.anchor.kind === "word" ? labelOf(note.anchor).replace(/^\S+\s/, "") : undefined);
   const layer: ChartNotesLayer = {
-    section: (pass) => <Chips notes={placed.section.get(pass.id) ?? []} onOpen={setThreadId} />,
-    afterPass: (pass) => <Chips notes={placed.after.get(pass.id) ?? []} onOpen={setThreadId} />,
-    line: (pass, lineId) => <Chips notes={placed.lines.get(`${pass.id}|${lineId}`) ?? []} labelOf={chipLabel} onOpen={setThreadId} />,
+    section: (pass) => <Chips notes={placed.section.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} />,
+    afterPass: (pass) => <Chips notes={placed.after.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} />,
+    line: (pass, lineId) => <Chips notes={placed.lines.get(`${pass.id}|${lineId}`) ?? []} labelOf={chipLabel} onOpen={setThreadId} isNew={isNew} />,
     markedChords: (pass) => placed.chords.get(pass.id) ?? EMPTY,
     // A word: where it starts, so the note reads "On “grace”".
     onAdd: state.loaded
@@ -232,7 +235,7 @@ export function useChartNotes({
     top:
       placed.top.length > 0 ? (
         <div data-testid="song-notes-top">
-          <Chips notes={placed.top} labelOf={(note) => (note.anchor.kind === "song" ? undefined : labelOf(note.anchor))} onOpen={setThreadId} />
+          <Chips notes={placed.top} labelOf={(note) => (note.anchor.kind === "song" ? undefined : labelOf(note.anchor))} onOpen={setThreadId} isNew={isNew} />
         </div>
       ) : null,
     dialogs,

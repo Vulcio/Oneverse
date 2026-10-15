@@ -248,3 +248,66 @@ export function useSongNotes(context: NotesContext, { hold = false }: { hold?: b
     removeReply: (noteId: string, replyId: string) => run(() => apiClient.deleteNoteReply(noteId, replyId)),
   };
 }
+
+const SEEN_KEY = "songverse.notes.seen";
+const SEEN_KEPT = 500;
+
+function readSeen(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}") as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+/** A visit to a song being left: written as seen a moment later, unless it's mounted again meanwhile. */
+const leaving = new Map<string, { visit: { previous: string | null; opened: string }; timer: ReturnType<typeof setTimeout> }>();
+
+function markSeen(songVersionId: string, at: string) {
+  const next = { ...readSeen(), [songVersionId]: at };
+  // Only the latest few hundred songs are remembered.
+  const kept = Object.entries(next)
+    .sort((a, b) => b[1].localeCompare(a[1]))
+    .slice(0, SEEN_KEPT);
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(Object.fromEntries(kept)));
+  } catch {
+    // Storage blocked: nothing marked new.
+  }
+}
+
+/** When a note last moved (written, or replied to), and by whom. */
+function lastActivity(note: SongNote): { at: string; by: string } {
+  const reply = note.replies.at(-1);
+  return reply && reply.createdAt > note.createdAt ? { at: reply.createdAt, by: reply.author.id } : { at: note.createdAt, by: note.author.id };
+}
+
+/**
+ * Notes new since one last opened the song on this device (issue #27): written
+ * or replied to by someone else since then. Opened for the first time,
+ * none are; once one leaves it, it counts as seen from when it was opened,
+ * so a note arriving live while it's open is new next time too.
+ */
+export function useNewNotes(songVersionId: string, me: string): (note: SongNote) => boolean {
+  const [seenAt, setSeenAt] = useState<{ song: string; at: string | null } | null>(null);
+  useEffect(() => {
+    // Mounted again at once (the page settling): the same visit, from when it began.
+    const back = leaving.get(songVersionId);
+    if (back) clearTimeout(back.timer);
+    leaving.delete(songVersionId);
+    const visit = back?.visit ?? { previous: readSeen()[songVersionId] ?? null, opened: new Date().toISOString() };
+    setSeenAt({ song: songVersionId, at: visit.previous });
+    const seen = () => markSeen(songVersionId, visit.opened);
+    window.addEventListener("pagehide", seen);
+    return () => {
+      window.removeEventListener("pagehide", seen);
+      // Seen once one leaves it for good - not when it's only mounted again.
+      leaving.set(songVersionId, { visit, timer: setTimeout(() => (leaving.delete(songVersionId), seen()), 1000) });
+    };
+  }, [songVersionId]);
+  return (note) => {
+    if (!seenAt || seenAt.song !== songVersionId || !seenAt.at) return false;
+    const last = lastActivity(note);
+    return last.by !== me && last.at > seenAt.at;
+  };
+}

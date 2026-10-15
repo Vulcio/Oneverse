@@ -5,6 +5,7 @@ import type { Prisma } from "@songverse/db";
 import type { Queue } from "bullmq";
 import { NOTIFICATIONS_QUEUE } from "../jobs/jobs.constants.js";
 import { planiverseUrl, songverseUrl } from "../common/utils/web-apps.js";
+import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { getEffectiveNotificationSettings, getPushConfig, pushTestOrigins } from "./notification-settings.js";
 
@@ -71,6 +72,8 @@ export class NotificationsService {
       data: sent.map((one) => ({ userId: one.userId, kind: one.kind, data: one.data as Prisma.InputJsonValue, url: one.url ?? null, app: appOf(one) })),
       select: { id: true },
     });
+    // Their bells, live (issue #27).
+    await announceNotifications([...new Set(sent.map((one) => one.userId))]);
     // Already in the bell; the email can wait for the queue, but a queue that's down mustn't fail the change.
     await this.queue.add("deliver", { ids: rows.map((row) => row.id), webUrl: songverseUrl(), planiverseUrl: planiverseUrl() } satisfies DeliverJob, { removeOnComplete: 100, removeOnFail: 100 }).catch((error: unknown) => {
       this.logger.warn(`Notifications not queued for email: ${error instanceof Error ? error.message : String(error)}`);
@@ -100,6 +103,8 @@ export class NotificationsService {
   /** These notifications, or all of them, marked read. */
   async markRead(userId: string, ids?: string[]): Promise<{ unread: number }> {
     await this.prisma.client.notification.updateMany({ where: { userId, readAt: null, ...(ids ? { id: { in: ids } } : {}) }, data: { readAt: new Date() } });
+    // Their other tabs' bells.
+    await announceNotifications([userId]);
     return { unread: await this.unread(userId) };
   }
 
@@ -158,4 +163,15 @@ export class NotificationsService {
     if ((await this.prisma.client.pushSubscription.count({ where: { userId } })) === 0) throw new BadRequestException(["Turn on notifications on a device first"]);
     await this.queue.add("test", { userId, webUrl: songverseUrl() } satisfies TestPushJob, { removeOnComplete: 100, removeOnFail: 100 });
   }
+}
+
+/** Where someone's notifications changing is announced (issue #27): SyncServer tells their connections, whose bells read the count again. */
+export const NOTIFICATIONS_CHANNEL = "songverse:notifications:changed";
+
+/** A Redis that's down mustn't fail what changed them. */
+async function announceNotifications(userIds: string[]): Promise<void> {
+  if (userIds.length === 0) return;
+  await redis()
+    .publish(NOTIFICATIONS_CHANNEL, JSON.stringify(userIds))
+    .catch(() => undefined);
 }

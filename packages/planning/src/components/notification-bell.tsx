@@ -14,10 +14,10 @@ const POLL_MS = 60_000;
  * The bell in the top bar (issue #236): how many notifications are unread,
  * and the list of them, newest first, each opening what it's about. The
  * count is asked for every minute while the page is shown, and when it's
- * shown again.
+ * shown again - and at once where the app hears it live (issue #27).
  */
 export function NotificationBell() {
-  const { api, links } = usePlanning();
+  const { api, links, watchNotifications } = usePlanning();
   const { t } = useTranslation();
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -33,11 +33,14 @@ export function NotificationBell() {
     refreshCount();
     const timer = setInterval(refreshCount, POLL_MS);
     document.addEventListener("visibilitychange", refreshCount);
+    // Live where the app can (issue #27): a notification coming, or read in another tab.
+    const unwatch = watchNotifications?.(refreshCount);
     return () => {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshCount);
+      unwatch?.();
     };
-  }, [refreshCount]);
+  }, [refreshCount, watchNotifications]);
 
   useEffect(() => {
     if (!open) return;

@@ -71,6 +71,8 @@ Les notes sont en direct. Quand quelqu'un ajoute une note, répond, la modifie, 
 
 En Live, rien ne bouge pendant que vous lisez. Une note nouvelle ou modifiée attend derrière **Notes modifiées** ; touchez **Afficher** pour la voir. Un fil ouvert et la liste des notes se mettent à jour aussitôt, et un fil indique qui répond (**Sam répond…**).
 
+Un point marque une note nouvelle depuis la dernière fois que vous avez ouvert le chant sur cet appareil : écrite, ou à laquelle quelqu'un d'autre a répondu. La cloche en haut compte une réponse à votre note dès qu'elle arrive, sans recharger.
+
 ## Toutes les notes d'un chant
 
 **Notes** (avec leur nombre) liste toutes les notes que vous pouvez voir sur le chant, résolues comprises. Elle ignore vos réglages d'affichage. En Édition, le bouton est dans l'en-tête à côté de **Partager** (sur un écran plus étroit, sous **Plus d'actions**, **Toutes les notes**) : pour lire les notes, y répondre, ou en ajouter une sur tout le chant pendant que vous modifiez.
