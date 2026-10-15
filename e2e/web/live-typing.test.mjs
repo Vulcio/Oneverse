@@ -62,6 +62,8 @@ try {
   await step("Admin > Collaboration turns live co-editing on", async () => {
     const box = adminPage.getByTestId("collaboration-liveCoEditing");
     await box.waitFor();
+    // In Admin's menu, beside the other settings.
+    await adminPage.getByRole("link", { name: "Collaboration", exact: true }).first().waitFor();
     if (await box.isChecked()) throw new Error("on before it was turned on");
     await box.check();
     await adminPage.getByTestId("collaboration-save").click();
