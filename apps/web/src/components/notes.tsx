@@ -13,7 +13,6 @@ import {
 import { CheckCheck, CloudOff, MessageSquare, MessageSquarePlus, MoveUp, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
 import { Button } from "@songverse/ui/components/button";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
@@ -22,6 +21,9 @@ import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
 import type { ChartNotesLayer } from "#/components/song-chart";
 import { noteBody, type NotesContext, type SongNotesState } from "#/lib/notes";
+import { usePresence, useSongPresence } from "#/lib/live-notes";
+import { PresenceChip } from "#/components/presence";
+import { PersonAvatar } from "#/components/person-avatar";
 
 /**
  * Notes on the chart (issue #256): placed where they're pinned - the song
@@ -34,24 +36,6 @@ type Note = SongNote & { pending?: true };
 
 // Section types with a name of their own (as the chart says them).
 const NAMED_SECTIONS = new Set(["intro", "verse", "pre-chorus", "chorus", "post-chorus", "bridge", "vamp", "breakdown", "instrumental", "interlude", "outro", "tag"]);
-
-/** Someone's small round picture, or their initials. */
-export function PersonAvatar({ name, avatarUrl, size = 20, className }: { name: string; avatarUrl: string | null; size?: number; className?: string }) {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]!.toUpperCase())
-    .join("");
-  return (
-    <Avatar className={cn("shrink-0", className)} style={{ width: size, height: size }}>
-      {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
-      <AvatarFallback className="bg-amber-200 font-sans font-semibold text-amber-950 dark:bg-amber-300" style={{ fontSize: Math.max(8, Math.round(size * 0.42)) }}>
-        {initials || "?"}
-      </AvatarFallback>
-    </Avatar>
-  );
-}
 
 /** What a note is pinned to, in words ("On G7", "On “grace”", "After Chorus"). */
 function useAnchorLabel(chart: RenderedChart, document: SongDocumentV2 | null) {
@@ -381,6 +365,9 @@ function ThreadDialog({ note, state, label, onClose }: { note: Note; state: Song
     }
   };
   const offline = state.kept || note.pending;
+  // Live (issue #27): "Ana is replying…" here, and the others told while one types a reply.
+  usePresence(note.songVersionId, "replying", reply.trim() !== "" && !offline, note.id);
+  const replying = useSongPresence(note.songVersionId, state.me).filter((person) => person.noteId === note.id);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -482,6 +469,7 @@ function ThreadDialog({ note, state, label, onClose }: { note: Note; state: Song
           </ul>
         ) : null}
 
+        <PresenceChip people={replying} doing="replying" />
         {note.canReply && !offline ? (
           <form
             className="flex flex-col gap-2 border-t pt-3"

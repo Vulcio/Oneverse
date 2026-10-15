@@ -96,7 +96,23 @@ export type SyncClientMessage =
    * The songs whose notes this device shows (issue #27): told when they
    * change, each opened in a set or not. Replaces what it watched; [] stops.
    */
-  | { type: "watch"; songs: { songVersionId: string; setlistId?: string }[] };
+  | { type: "watch"; songs: { songVersionId: string; setlistId?: string }[] }
+  /**
+   * What this device is doing in a song it watches (issue #27): editing it,
+   * or replying to one of its notes; null song: nothing. Its watchers see it.
+   */
+  | { type: "presence"; songVersionId: string | null; doing?: SongActivity; noteId?: string };
+
+/** What someone is doing in a song, for the others in it. */
+export type SongActivity = "editing" | "replying";
+
+/** Someone in a song (issue #27): who, doing what - replying to which note. */
+export interface SongPresence {
+  userId: string;
+  name: string;
+  doing: SongActivity;
+  noteId?: string;
+}
 
 /** How many songs one connection may watch at once. */
 export const SYNC_WATCH_MAX = 30;
@@ -118,6 +134,10 @@ export type SyncServerMessage =
     }
   /** The songs it now watches: those it may see (issue #27). */
   | { type: "watching"; songVersionIds: string[] }
+  /** Who's doing something in a watched song now (issue #27), oneself included: whenever it changes. */
+  | { type: "presence"; songVersionId: string; people: SongPresence[] }
+  /** A watched song was saved (issue #27): by whom, now at `revision`. */
+  | { type: "song"; songVersionId: string; revision: number; byId: string | null; by: string | null }
   /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */
   | { type: "notes"; songVersionId: string }
   | { type: "error"; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected"; message: string };

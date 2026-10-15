@@ -69,7 +69,7 @@ Les admins globaux peuvent modifier, résoudre et supprimer toutes les notes et 
 
 Les notes sont en direct. Quand quelqu'un ajoute une note, répond, la modifie, la résout ou la supprime, elle apparaît chez tous ceux qui ont le chant ouvert : pas besoin de recharger.
 
-En Live, rien ne bouge pendant que vous lisez. Une note nouvelle ou modifiée attend derrière **Notes modifiées** ; touchez **Afficher** pour la voir. Un fil ouvert et la liste des notes se mettent à jour aussitôt.
+En Live, rien ne bouge pendant que vous lisez. Une note nouvelle ou modifiée attend derrière **Notes modifiées** ; touchez **Afficher** pour la voir. Un fil ouvert et la liste des notes se mettent à jour aussitôt, et un fil indique qui répond (**Sam répond…**).
 
 ## Toutes les notes d'un chant
 

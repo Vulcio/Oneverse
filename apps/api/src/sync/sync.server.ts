@@ -1,5 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
-import { STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_PATH, SYNC_WATCH_MAX, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStems } from "@songverse/core";
+import { STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStems } from "@songverse/core";
 import type { Redis } from "ioredis";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, Server } from "node:http";
@@ -13,6 +13,7 @@ import { capabilitiesOf } from "../roles/capabilities.js";
 import { SCREEN_CHANNEL, ScreensService } from "../screens/screens.service.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { NOTES_CHANNEL, NotesService } from "../notes/notes.service.js";
+import { SONG_CHANNEL, type SongSaved } from "../song-versions/song-announce.js";
 
 /** A session outlasts its leader's last change by this long, then goes. */
 const SESSION_TTL_S = 12 * 60 * 60;
@@ -21,6 +22,9 @@ const PRESENCE_MS = 20_000;
 const CHANNEL = "songverse:sync:changed";
 const sessionKey = (setId: string) => `songverse:sync:session:${setId}`;
 const membersKey = (setId: string) => `songverse:sync:members:${setId}`;
+/** Who's doing what in a song (issue #27), by connection; announced on PRESENCE_CHANNEL. */
+const presenceKey = (songVersionId: string) => `songverse:presence:${songVersionId}`;
+const PRESENCE_CHANNEL = "songverse:presence:changed";
 
 interface StoredSession extends Omit<SyncSession, "leader"> {
   leader: { id: string; name: string; conn: string };
@@ -61,6 +65,8 @@ interface Connection {
   queue: Promise<void>;
   /** The songs whose notes it's told about (issue #27), each one it may see. */
   watching: Set<string>;
+  /** What it's doing in one of those songs, for the others in it (issue #27). */
+  presence: { songVersionId: string; doing: SongActivity; noteId?: string } | null;
 }
 
 /**
@@ -101,10 +107,12 @@ export class SyncServer implements OnModuleDestroy {
       this.wss!.handleUpgrade(request, socket, head, (ws) => this.connected(ws));
     });
     this.subscriber = redis().duplicate();
-    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
+    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
     this.subscriber.on("message", (channel, id: string) => {
       if (channel === SCREEN_CHANNEL) void this.screenChanged(id);
       else if (channel === NOTES_CHANNEL) this.notesChanged(id);
+      else if (channel === SONG_CHANNEL) this.songSaved(id);
+      else if (channel === PRESENCE_CHANNEL) void this.presenceChanged(id);
       else void this.broadcastLocal(id);
     });
     this.presenceTimer = setInterval(() => void this.refreshPresence(), PRESENCE_MS);
@@ -118,7 +126,7 @@ export class SyncServer implements OnModuleDestroy {
   }
 
   private connected(socket: WebSocket) {
-    const connection: Connection = { id: randomUUID(), allowance: MESSAGE_BURST, lastMessageAt: Date.now(), socket, user: null, screen: null, setId: null, canLead: false, accessCheckedAt: 0, queue: Promise.resolve(), watching: new Set() };
+    const connection: Connection = { id: randomUUID(), allowance: MESSAGE_BURST, lastMessageAt: Date.now(), socket, user: null, screen: null, setId: null, canLead: false, accessCheckedAt: 0, queue: Promise.resolve(), watching: new Set(), presence: null };
     this.connections.set(connection.id, connection);
     // A device that doesn't sign in soon is dropped.
     const signIn = setTimeout(() => {
@@ -147,6 +155,7 @@ export class SyncServer implements OnModuleDestroy {
       clearTimeout(signIn);
       this.connections.delete(connection.id);
       if (connection.setId) void this.leaveSet(connection);
+      if (connection.presence) void this.setPresence(connection, null);
     });
     socket.on("error", () => undefined);
   }
@@ -181,6 +190,8 @@ export class SyncServer implements OnModuleDestroy {
         return this.end(connection);
       case "watch":
         return this.watch(connection, message.songs);
+      case "presence":
+        return this.presence(connection, message);
       default:
         return this.send(connection, { type: "error", code: "bad-request", message: "Unknown message" });
     }
@@ -201,6 +212,77 @@ export class SyncServer implements OnModuleDestroy {
     }
     connection.watching = watching;
     this.send(connection, { type: "watching", songVersionIds: [...watching] });
+    // In a song it no longer watches: not there any more.
+    if (connection.presence && !watching.has(connection.presence.songVersionId)) await this.setPresence(connection, null);
+    // Who's in the songs it now watches.
+    for (const songVersionId of watching) await this.sendPresence(connection, songVersionId);
+  }
+
+  /** Someone's activity in a song they watch: editing it, replying to one of its notes, or nothing. */
+  private async presence(connection: Connection, message: Extract<SyncClientMessage, { type: "presence" }>) {
+    const songVersionId = typeof message.songVersionId === "string" ? message.songVersionId : null;
+    if (!songVersionId) return this.setPresence(connection, null);
+    if (!connection.watching.has(songVersionId)) return this.send(connection, { type: "error", code: "forbidden", message: "Watch the song first" });
+    if (message.doing !== "editing" && message.doing !== "replying") return this.send(connection, { type: "error", code: "bad-request", message: "doing must be editing or replying" });
+    const noteId = message.doing === "replying" && typeof message.noteId === "string" ? message.noteId.slice(0, 64) : undefined;
+    await this.setPresence(connection, { songVersionId, doing: message.doing, ...(noteId && { noteId }) });
+  }
+
+  private async setPresence(connection: Connection, next: Connection["presence"]) {
+    const before = connection.presence;
+    connection.presence = next;
+    const field = `${this.instance}:${connection.id}`;
+    if (before && before.songVersionId !== next?.songVersionId) {
+      await redis().hdel(presenceKey(before.songVersionId), field).catch(() => undefined);
+      await redis().publish(PRESENCE_CHANNEL, before.songVersionId).catch(() => undefined);
+    }
+    if (next) {
+      await this.storePresence(connection);
+      await redis().publish(PRESENCE_CHANNEL, next.songVersionId).catch(() => undefined);
+    }
+  }
+
+  private async storePresence(connection: Connection) {
+    const presence = connection.presence;
+    if (!presence || !connection.user) return;
+    const person: SongPresence & { at: number } = { userId: connection.user.id, name: connection.user.name, doing: presence.doing, ...(presence.noteId && { noteId: presence.noteId }), at: Date.now() };
+    await redis().hset(presenceKey(presence.songVersionId), `${this.instance}:${connection.id}`, JSON.stringify(person));
+    await redis().expire(presenceKey(presence.songVersionId), SESSION_TTL_S);
+  }
+
+  /** Who's doing something in a song now: devices whose presence was refreshed lately (an instance that stopped is forgotten). */
+  private async peopleIn(songVersionId: string): Promise<SongPresence[]> {
+    const raw = await redis().hgetall(presenceKey(songVersionId));
+    const now = Date.now();
+    return Object.values(raw)
+      .map((value) => JSON.parse(value) as SongPresence & { at: number })
+      .filter((person) => now - person.at < PRESENCE_MS * 2)
+      .map(({ at: _, ...person }) => person);
+  }
+
+  private async sendPresence(connection: Connection, songVersionId: string) {
+    this.send(connection, { type: "presence", songVersionId, people: await this.peopleIn(songVersionId) });
+  }
+
+  /** Someone came, went, or does something else in a song: this instance's connections watching it are told. */
+  private async presenceChanged(songVersionId: string) {
+    const local = [...this.connections.values()].filter((connection) => connection.watching.has(songVersionId));
+    if (local.length === 0) return;
+    const people = await this.peopleIn(songVersionId);
+    for (const connection of local) this.send(connection, { type: "presence", songVersionId, people });
+  }
+
+  /** A song was saved: this instance's connections watching it are told by whom, and its revision now. */
+  private songSaved(raw: string) {
+    let saved: SongSaved;
+    try {
+      saved = JSON.parse(raw) as SongSaved;
+    } catch {
+      return;
+    }
+    for (const connection of this.connections.values()) {
+      if (connection.watching.has(saved.songVersionId)) this.send(connection, { type: "song", ...saved });
+    }
   }
 
   /** A song's notes changed: this instance's connections watching it are told. */
@@ -396,7 +478,10 @@ export class SyncServer implements OnModuleDestroy {
   }
 
   private async refreshPresence() {
-    for (const connection of this.connections.values()) await this.present(connection).catch(() => undefined);
+    for (const connection of this.connections.values()) {
+      await this.present(connection).catch(() => undefined);
+      await this.storePresence(connection).catch(() => undefined);
+    }
   }
 
   /** The session and who's there, to this instance's connections in the set. */

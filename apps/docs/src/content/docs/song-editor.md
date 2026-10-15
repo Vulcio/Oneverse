@@ -92,6 +92,19 @@ The toolbar's **Replace from a file or paste…** reads a new chart in for the w
 
 **Save song** saves the chart and the song's details together. If someone else saved the song after you opened it, Songverse tells you instead of overwriting their changes.
 
+## Editing together
+
+When someone else has the song open in the Editor, the header says so (**Sam is editing this song**). It shows in Practice too, under the song's name.
+
+When they save, you're told at once, over the page, so nothing moves while you work:
+
+- With nothing changed on your side, **Load it** brings in their version.
+- With changes of your own not saved yet, loading theirs drops yours: **Drop mine and load theirs**, or **Keep editing** to look first. Saving yours will then be refused, with the same choice, rather than overwriting what they saved.
+
+In Practice, a save shows as **Song changed · Load it**; the chart changes only when you tap it.
+
+Two people can't yet type in the same song at the same time and see each other's changes as they type: that comes later.
+
 ## History
 
 The **History** tab lists every save of the song, newest first: who saved it, when, and what changed - the **chart**, the **details** (title, key, rights…) or the **credits**. Saves by the same person a few minutes apart count as one step.

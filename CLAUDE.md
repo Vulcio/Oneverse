@@ -216,8 +216,11 @@ client cuts a song into the same slides with `lyricSlides()` from core.
 Live notes (issue #27) use the same socket: a device `watch`es the songs it
 shows (only ones it can open), `NotesService` announces a change on
 `NOTES_CHANNEL` after each write, and the device reads the notes again with
-its own rights - the signal never carries content. A new thing to make live
-works the same way.
+its own rights - the signal never carries content. A song's save is heard the
+same way (`announceSongSaved`, from `SongHistoryService.record`: every change
+to a song goes through it), and who's editing it or replying to one of its
+notes is presence (`presence` messages, kept in Redis by connection). A new
+thing to make live works the same way.
 
 ## Tests
 

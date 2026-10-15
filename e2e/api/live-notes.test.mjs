@@ -54,7 +54,7 @@ async function device(who) {
     return answer;
   };
   const heard = (ms) => next((m) => m.type === "notes" && m.songVersionId === song.id, ms);
-  return { watch, heard, next, close: () => ws.close() };
+  return { watch, heard, next, send, close: () => ws.close() };
 }
 
 const memberDevice = await device(member);
@@ -90,6 +90,42 @@ check("deleting is heard", (await memberDevice.heard()) !== null);
 await memberDevice.watch([]);
 await call(owner, "POST", "/notes", { songVersionId: song.id, content: "Again", place: "SONG" });
 check("watching nothing more: not told", (await memberDevice.heard(800)) === null);
+
+// --- presence (phase 2): who's editing or replying, to who watches the song
+await memberDevice.watch([{ songVersionId: song.id }]);
+const memberPresence = (match) => memberDevice.next((m) => m.type === "presence" && m.songVersionId === song.id && match(m.people));
+const guestPresence = (match) => guestDevice.next((m) => m.type === "presence" && m.songVersionId === song.id && match(m.people));
+const ownerDevice = await device(owner);
+await ownerDevice.watch([{ songVersionId: song.id }]);
+const sendOwner = (message) => ownerDevice.send(message);
+sendOwner({ type: "presence", songVersionId: song.id, doing: "editing" });
+r = await memberPresence((people) => people.some((p) => p.userId === owner.id && p.doing === "editing"));
+check("someone editing is seen by who watches the song", r !== null && r.people.find((p) => p.userId === owner.id)?.name === "Notes owner", JSON.stringify(r));
+r = await guestPresence((people) => people.some((p) => p.userId === owner.id));
+check("…a guest in the set too", r !== null);
+const late = await device(member);
+r = await late.watch([{ songVersionId: song.id }]);
+r = await late.next((m) => m.type === "presence" && m.people.some((p) => p.userId === owner.id));
+check("a device that starts watching hears who's there at once", r !== null);
+late.close();
+sendOwner({ type: "presence", songVersionId: song.id, doing: "replying", noteId: "note_1" });
+r = await memberPresence((people) => people.some((p) => p.userId === owner.id && p.doing === "replying" && p.noteId === "note_1"));
+check("replying to a note: which note", r !== null, JSON.stringify(r));
+const strangerTries = await device(stranger);
+strangerTries.send({ type: "presence", songVersionId: song.id, doing: "editing" });
+r = await strangerTries.next((m) => m.type === "error");
+check("presence in a song not watched (can't be) is refused", r?.code === "forbidden", JSON.stringify(r));
+strangerTries.close();
+ownerDevice.close();
+r = await memberPresence((people) => !people.some((p) => p.userId === owner.id));
+check("gone when the device goes", r !== null);
+
+// --- a song saved, heard by who watches it: by whom, and its revision now
+await call(owner, "PATCH", `/song-versions/${song.id}`, { contentFormat: "CHORDPRO", content: "[G]Saved live\n" });
+const revision = JSON.parse(sql(`select "documentJson" from "SongVersion" where id='${song.id}'`)).revision;
+r = await memberDevice.next((m) => m.type === "song" && m.songVersionId === song.id);
+check("a save is heard: by whom, at which revision", r?.revision === revision && r.by === "Notes owner" && r.byId === owner.id, JSON.stringify(r));
+check("…not by a stranger", (await strangerDevice.next((m) => m.type === "song", 800)) === null);
 
 for (const one of [memberDevice, guestDevice, strangerDevice]) one.close();
 finish();

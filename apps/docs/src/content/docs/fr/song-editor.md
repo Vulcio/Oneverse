@@ -92,6 +92,19 @@ Collez une grille entière n'importe où - en ChordPro, ou avec les accords écr
 
 **Enregistrer le chant** enregistre la grille et les détails du chant ensemble. Si quelqu'un d'autre a enregistré le chant après que vous l'avez ouvert, Songverse vous le dit au lieu d'écraser ses modifications.
 
+## Modifier à plusieurs
+
+Quand quelqu'un d'autre a le chant ouvert dans l'éditeur, l'en-tête l'indique (**Sam modifie ce chant**). C'est aussi indiqué en Session, sous le nom du chant.
+
+Quand cette personne enregistre, vous êtes prévenu aussitôt, par-dessus la page, sans que rien ne bouge pendant que vous travaillez :
+
+- Sans modification de votre côté, **Charger** fait venir sa version.
+- Avec des modifications pas encore enregistrées, charger la sienne abandonne les vôtres : **Abandonner les miennes et charger**, ou **Continuer** pour regarder d'abord. Enregistrer les vôtres sera alors refusé, avec le même choix, plutôt que d'écraser ce qu'elle a enregistré.
+
+En Session, un enregistrement s'affiche comme **Chant modifié · Charger** ; la grille ne change que quand vous le touchez.
+
+Deux personnes ne peuvent pas encore taper dans le même chant en même temps en voyant les modifications de l'autre au fil de la frappe : cela viendra plus tard.
+
 ## Historique
 
 L'onglet **Historique** liste chaque enregistrement du chant, du plus récent au plus ancien : qui l'a enregistré, quand, et ce qui a changé - la **grille**, les **détails** (titre, tonalité, droits…) ou les **crédits**. Les enregistrements d'une même personne à quelques minutes d'intervalle comptent pour une étape.

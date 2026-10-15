@@ -69,7 +69,7 @@ Global admins can edit, resolve and delete any note and reply.
 
 Notes are live. When someone adds a note, replies, edits, resolves or deletes one, it shows up for everyone who has the song open: there's no need to reload.
 
-In Live, nothing moves while you're reading. A new or changed note waits behind **Notes changed**; tap **Show** to see it. An open thread and the notes list update at once.
+In Live, nothing moves while you're reading. A new or changed note waits behind **Notes changed**; tap **Show** to see it. An open thread and the notes list update at once, and a thread says who's replying (**Sam is replying…**).
 
 ## Every note on a song
 

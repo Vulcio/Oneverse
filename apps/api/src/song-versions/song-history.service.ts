@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { snapshotChanges, songSnapshot, readSongDocument, type SongChange, type SongSnapshot } from "@songverse/core";
 import type { Prisma, SongRevisionKind } from "@songverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { announceSongSaved } from "./song-announce.js";
 
 /** Saves by the same person this close together are one history entry. */
 export const MERGE_WINDOW_MS = 10 * 60 * 1000;
@@ -92,6 +93,21 @@ export class SongHistoryService {
     songVersionId: string,
     change: { kind: SongRevisionKind; authorUserId: string | null; before?: SongBefore | null; restoredFromId?: string },
   ): Promise<void> {
+    if (!(await this.recordEntry(tx, songVersionId, change))) return;
+    // Who's in the song hears it was saved (issue #27): its revision now, and by whom.
+    const [song, author] = await Promise.all([
+      tx.songVersion.findUniqueOrThrow({ where: { id: songVersionId }, select: { documentJson: true } }),
+      change.authorUserId ? tx.user.findUnique({ where: { id: change.authorUserId }, select: { displayName: true } }) : null,
+    ]);
+    announceSongSaved({ songVersionId, revision: readSongDocument(song.documentJson).revision, byId: change.authorUserId, by: author?.displayName ?? null });
+  }
+
+  /** The history entry for a change; false when it changed nothing. */
+  private async recordEntry(
+    tx: Prisma.TransactionClient,
+    songVersionId: string,
+    change: { kind: SongRevisionKind; authorUserId: string | null; before?: SongBefore | null; restoredFromId?: string },
+  ): Promise<boolean> {
     const row = await tx.songVersion.findUniqueOrThrow({ where: { id: songVersionId }, select: SNAPSHOT_SELECT });
     const after = snapshotOfRow(row);
     const [latest, second] = await tx.songVersionRevision.findMany({
@@ -116,7 +132,7 @@ export class SongHistoryService {
     }
     const previous = latest ? readSnapshot(latest.snapshot) : (change.before?.snapshot ?? null);
     const changes = previous ? snapshotChanges(previous, after) : [];
-    if (change.kind === "EDITED" && previous && changes.length === 0) return;
+    if (change.kind === "EDITED" && previous && changes.length === 0) return false;
 
     const merges =
       change.kind === "EDITED" &&
@@ -133,7 +149,7 @@ export class SongHistoryService {
         where: { id: latest.id },
         data: { snapshot: after as object, changes: sessionChanges },
       });
-      return;
+      return true;
     }
     await tx.songVersionRevision.create({
       data: {
@@ -145,6 +161,7 @@ export class SongHistoryService {
         restoredFromId: change.restoredFromId ?? null,
       },
     });
+    return true;
   }
 
   /** Newest first. */

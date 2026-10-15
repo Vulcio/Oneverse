@@ -1,4 +1,5 @@
 import {
+  ApiError,
   ISO_639_1_CODES,
   getLanguageDisplayName,
   renderChart,
@@ -12,7 +13,9 @@ import {
   type SongVersionSongbookMembership,
   type Tag,
 } from "@songverse/core";
-import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
+import { useBlocker, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
+import { PresenceChip, SavedElsewhere } from "#/components/presence";
+import { usePresence, useSongPresence, watchSong } from "#/lib/live-notes";
 import { useChartNotes } from "#/components/notes";
 import { useDisplaySettings } from "#/lib/display-settings";
 import { useSongNotes } from "#/lib/notes";
@@ -172,6 +175,38 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   const errors = showErrors ? validate(form) : {};
   const dirty = isDirty(form, initial) || mbChoice !== undefined || sourceFile !== null || basedOn !== null;
 
+  // Live (issue #27): who else is editing the song, and saves made elsewhere - said at once, not found out on saving.
+  const { session } = useRouteContext({ from: "/_protected" });
+  usePresence(edit?.version.id, "editing", canEdit && !suggesting);
+  const others = useSongPresence(edit?.version.id, session.userId);
+  const [savedElsewhere, setSavedElsewhere] = useState<{ by: string | null; revision: number } | null>(null);
+  const revision = edit?.version.documentJson.revision ?? 0;
+  const revisionRef = useRef(revision);
+  revisionRef.current = revision;
+  // This tab saving: its own save, heard back, isn't someone else's.
+  const savingRef = useRef(false);
+  useEffect(() => {
+    if (!edit) return;
+    return watchSong(
+      { songVersionId: edit.version.id },
+      {
+        onSaved: (saved) => {
+          if (saved.revision <= revisionRef.current || (savingRef.current && saved.byId === session.userId)) return;
+          setSavedElsewhere({ by: saved.by, revision: saved.revision });
+        },
+      },
+    );
+  }, [edit?.version.id, session.userId]);
+  // Loaded since: nothing to say any more.
+  useEffect(() => {
+    if (savedElsewhere && revision >= savedElsewhere.revision) setSavedElsewhere(null);
+  }, [revision, savedElsewhere]);
+  function loadTheirs() {
+    if (dirty) discard();
+    setSavedElsewhere(null);
+    void router.invalidate();
+  }
+
   const blocker = useBlocker({
     shouldBlockFn: ({ current, next }) => dirty && !leaving.current && current.pathname !== next.pathname,
     enableBeforeUnload: () => dirty && !leaving.current,
@@ -312,6 +347,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       return;
     }
     setSaving(true);
+    savingRef.current = true;
     setMessage(null);
     try {
       if (!edit) {
@@ -343,9 +379,12 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       await router.invalidate();
       setMessage({ kind: "ok", text: t("songEditor.saved") });
     } catch (err) {
-      setMessage({ kind: "error", text: err instanceof Error && err.message ? err.message : t("songEditor.saveFailed") });
+      // Saved somewhere else since it was opened (issue #27): load theirs, or keep editing.
+      if (err instanceof ApiError && err.status === 409) setSavedElsewhere({ by: null, revision: revisionRef.current + 1 });
+      else setMessage({ kind: "error", text: err instanceof Error && err.message ? err.message : t("songEditor.saveFailed") });
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   }
 
@@ -544,6 +583,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="text-sm text-muted-foreground">{subheading}</p>
             {edit ? <OfflinePinButton kind="SONG" targetId={edit.version.id} /> : null}
+            <PresenceChip people={others} doing="editing" />
           </div>
         </div>
         </div>
@@ -754,6 +794,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       </Dialog>
 
       {edit ? <ShareDialog songVersionId={edit.version.id} open={sharing} onOpenChange={setSharing} /> : null}
+      {savedElsewhere ? <SavedElsewhere by={savedElsewhere.by} dirty={dirty} onLoad={loadTheirs} onDismiss={() => setSavedElsewhere(null)} /> : null}
 
       <Dialog open={confirmingDelete} onOpenChange={(open) => !deleting && setConfirmingDelete(open)}>
         <DialogContent>

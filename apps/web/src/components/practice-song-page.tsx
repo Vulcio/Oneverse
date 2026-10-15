@@ -1,8 +1,10 @@
 import { chartNotation, cueSectionsOf, getLanguageDisplayName, renderChart, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type LiveViewValue, type SavedDisplaySettings, type SongVersionDetail } from "@songverse/core";
 import { CapoBadge } from "#/components/capo-badge";
-import { Link, useRouter } from "@tanstack/react-router";
-import { Mic, Pencil } from "lucide-react";
-import { useMemo } from "react";
+import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
+import { PresenceChip } from "#/components/presence";
+import { useSongPresence, watchSong } from "#/lib/live-notes";
+import { Mic, Pencil, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MetronomeSongButton } from "#/components/metronome";
 import { DisplayPanel } from "#/components/display-panel";
@@ -77,6 +79,15 @@ export function PracticeSongPage({
   // Notes on the chart (issue #256).
   const notesContext = { songVersionId: version.id, songbookId };
   const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: version.documentJson, show: display.notes, context: notesContext, openNoteId });
+  // Live (issue #27): who's editing it, and a save made meanwhile - loaded on a tap, the chart never moving by itself.
+  const { session } = useRouteContext({ from: "/_protected" });
+  const editors = useSongPresence(version.id, session.userId);
+  const [changed, setChanged] = useState(false);
+  const revision = version.documentJson.revision;
+  useEffect(() => {
+    setChanged(false);
+    return watchSong({ songVersionId: version.id }, { onSaved: (saved) => setChanged(saved.revision > revision) });
+  }, [version.id, revision]);
   const playable = stemFilesOf(attachments, useChosenMultitrack(version.id));
   const cueSections = useMemo(() => cueSectionsOf(version.documentJson), [version]);
   const youtubeId = version.identifiers.find((identifier) => identifier.type === "YOUTUBE")?.value ?? null;
@@ -104,11 +115,18 @@ export function PracticeSongPage({
             {[artistNames(version.artists), getLanguageDisplayName(version.language, i18n.language)].filter(Boolean).join(" · ")}
           </p>
           {details.length > 0 ? <p className="text-sm font-medium text-muted-foreground">{details.join(" · ")}</p> : null}
+          <PresenceChip people={editors} doing="editing" />
           {/* The capo, hard to miss (issue #219). */}
           {chart.capo ? <CapoBadge capo={chart.capo} shapes={chart.capoShapes} /> : null}
         </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {changed ? (
+            <Button variant="outline" onClick={() => void router.invalidate()} data-testid="song-changed">
+              <RefreshCw />
+              {t("presence.songChanged")} · {t("presence.load")}
+            </Button>
+          ) : null}
           <DisplayPanel mode="PRACTICE" settings={display} player={player} className="h-9" />
           {notes.button}
           <MetronomeSongButton songId={version.id} tempo={chart.tempo} timeSignature={chart.timeSignature} variant="button" />
