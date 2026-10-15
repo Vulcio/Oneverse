@@ -126,6 +126,10 @@ export function remapNoteAnchor(anchor: NoteAnchor, map: ChartIdMap, flow: Map<s
 export const NOTE_SHOWS = ["ALL", "MINE", "NONE"] as const;
 export type NoteShow = (typeof NOTE_SHOWS)[number];
 
+/** Someone else's new or changed notes (issue #263): shown at once, or held until a tap (Live's default: nothing moves under the reader). */
+export const NEW_NOTES = ["SHOW", "HOLD"] as const;
+export type NewNotes = (typeof NEW_NOTES)[number];
+
 /** The notes a viewer sees, as their Display setting says: all of them, only theirs, or none. Resolved notes stay off the chart. */
 export function shownNotes<T extends { authorId: string; resolved: boolean }>(notes: T[], show: NoteShow, viewerId: string): T[] {
   if (show === "NONE") return [];

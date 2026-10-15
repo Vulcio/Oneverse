@@ -44,7 +44,7 @@ Chaque note s'affiche là où elle est attachée :
 - celles d'une ligne, d'un accord ou d'un mot sous la ligne, avec l'accord ou le mot concerné ;
 - celles entre deux parties après la première.
 
-Un accord qui porte une note est surligné. Chaque note montre la photo ou les initiales de son auteur, et son nombre de réponses. Si ce à quoi une note était attachée est supprimé, la note remonte : d'un accord à sa ligne, d'une ligne à sa partie, d'une partie à tout le chant. Une petite flèche indique qu'elle a été déplacée. Une modification ne fait jamais perdre une note.
+Ce que porte une note est aussi marqué sur la grille : un accord est surligné, un mot souligné, une ligne a une barre dans la marge, une partie son nom surligné. **Repères** dans le panneau [Affichage](/fr/display/) retire ces repères, en gardant les notes. Chaque note montre la photo ou les initiales de son auteur, et son nombre de réponses. Si ce à quoi une note était attachée est supprimé, la note remonte : d'un accord à sa ligne, d'une ligne à sa partie, d'une partie à tout le chant. Une petite flèche indique qu'elle a été déplacée. Une modification ne fait jamais perdre une note.
 
 ## Réponses
 
@@ -73,7 +73,7 @@ Quand vous modifiez une note que vous avez écrite (**Modifier**), **Enregistrer
 
 Les notes sont en direct. Quand quelqu'un ajoute une note, répond, la modifie, la résout ou la supprime, elle apparaît chez tous ceux qui ont le chant ouvert : pas besoin de recharger.
 
-En Live, rien ne bouge pendant que vous lisez. Une note nouvelle ou modifiée attend derrière **Notes modifiées** ; touchez **Afficher** pour la voir. Un fil ouvert et la liste des notes se mettent à jour aussitôt, et un fil indique qui répond (**Sam répond…**).
+En Live, rien ne bouge pendant que vous lisez. Une note nouvelle ou modifiée attend derrière **Notes modifiées** ; touchez **Afficher** pour la voir. Pour qu'elles arrivent aussitôt en Live aussi, réglez **Nouvelles notes** sur **Aussitôt** dans le panneau [Affichage](/fr/display/) de Live. Un fil ouvert et la liste des notes se mettent à jour aussitôt, et un fil indique qui répond (**Sam répond…**).
 
 Un point marque une note nouvelle depuis la dernière fois que vous avez ouvert le chant sur cet appareil : écrite, ou à laquelle quelqu'un d'autre a répondu. La cloche en haut compte une réponse à votre note dès qu'elle arrive, sans recharger.
 

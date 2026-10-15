@@ -3691,6 +3691,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3740,6 +3742,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "SHOW",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3784,6 +3788,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3830,6 +3836,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {
               "source": "FINGERED",
               "position": "beside"
@@ -3890,6 +3898,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "SHOW",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3937,6 +3947,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {
               "names": "ROMAN",
               "position": "right",
@@ -3997,6 +4009,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {
               "names": "ROMAN",
               "position": "above"
@@ -4041,6 +4055,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4050,6 +4066,52 @@
                 "font": "same",
                 "weight": "bold",
                 "color": "family"
+              },
+              "second": null
+            }
+          }
+        },
+        {
+          "name": "Live shows new notes at once, nothing marked (issue #263)",
+          "args": [
+            null,
+            {
+              "LIVE": {
+                "newNotes": "SHOW",
+                "noteMarks": false
+              }
+            },
+            "LIVE"
+          ],
+          "expected": {
+            "textSize": 1.5,
+            "chordSize": 1.5,
+            "sizesLinked": true,
+            "font": "mono",
+            "spacing": "normal",
+            "columns": "auto",
+            "chordNotation": "LETTERS",
+            "chordColors": false,
+            "capoDisplayMode": "SOUNDING",
+            "chordDiagrams": "OFF",
+            "diagramsPosition": "top",
+            "hideChords": false,
+            "controls": "footer",
+            "controlsPosition": "bottom-right",
+            "hiddenControls": [],
+            "controlsOpacity": 0.7,
+            "notes": "ALL",
+            "noteMarks": false,
+            "newNotes": "SHOW",
+            "secondRowKept": {},
+            "chordRows": {
+              "main": {
+                "names": "LETTERS",
+                "source": "SOUNDING",
+                "size": 1,
+                "font": "same",
+                "weight": "bold",
+                "color": "theme"
               },
               "second": null
             }
@@ -4086,6 +4148,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4138,6 +4202,8 @@
             ],
             "controlsOpacity": 0.4,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "HOLD",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4177,6 +4243,8 @@
             "hiddenControls": [],
             "controlsOpacity": 0.7,
             "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "SHOW",
             "secondRowKept": {},
             "chordRows": {
               "main": {

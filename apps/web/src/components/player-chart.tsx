@@ -71,7 +71,7 @@ export function PlayerChart({ view, openNoteId }: { view: SetlistSongView; /** A
 
   // Notes seen in this set (issue #256): new ones saved in it by default.
   const notesContext = { songVersionId: song.id, setlistId: view.set.id };
-  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: song.document, show: display.notes, context: notesContext, openNoteId });
+  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: song.document, show: display.notes, marks: display.noteMarks, context: notesContext, openNoteId });
 
   const hiddenCount = preferences.hiddenChordIds.length;
   const capoIsSuggestion = !view.arrangement?.document.defaults.capo && !!song.suggestedCapo;

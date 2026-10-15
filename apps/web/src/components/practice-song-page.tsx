@@ -78,7 +78,7 @@ export function PracticeSongPage({
   );
   // Notes on the chart (issue #256).
   const notesContext = { songVersionId: version.id, songbookId };
-  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: version.documentJson, show: display.notes, context: notesContext, openNoteId });
+  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: version.documentJson, show: display.notes, marks: display.noteMarks, context: notesContext, openNoteId });
   // Live (issue #27): who's editing it, and a save made meanwhile - loaded on a tap, the chart never moving by itself.
   const { session } = useRouteContext({ from: "/_protected" });
   const editors = useSongPresence(version.id, session.userId);

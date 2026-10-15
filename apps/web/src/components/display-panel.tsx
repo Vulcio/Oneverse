@@ -39,6 +39,8 @@ import {
   type LucideIcon,
   MessageSquare,
   MessageSquareOff,
+  Highlighter,
+  Zap,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -156,7 +158,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -289,6 +291,32 @@ export function DisplayPanel({
                   ]}
                 />
               </Row>
+              {/* What each note is on, marked on the chart (issue #263). */}
+              <Row label={t("display.noteMarks")}>
+                <Choices
+                  value={settings.noteMarks ? "on" : "off"}
+                  onChange={(value) => change({ noteMarks: value === "on" })}
+                  name="noteMarks"
+                  options={[
+                    { value: "on", label: t("display.noteMarksOn"), content: <Highlighter /> },
+                    { value: "off", label: t("display.noteMarksOff"), content: <EyeOff /> },
+                  ]}
+                />
+              </Row>
+              {/* Someone else's new notes in Live: held until a tap, or at once (issue #263). */}
+              {mode === "LIVE" ? (
+                <Row label={t("display.newNotes")}>
+                  <Choices
+                    value={settings.newNotes}
+                    onChange={(newNotes) => change({ newNotes })}
+                    name="newNotes"
+                    options={[
+                      { value: "HOLD", label: t("display.newNotesHold"), content: <Hand /> },
+                      { value: "SHOW", label: t("display.newNotesShow"), content: <Zap /> },
+                    ]}
+                  />
+                </Row>
+              ) : null}
             </SectionBlock>
           ) : null}
           {sections.includes("controls") && shown("controls") ? (

@@ -26,7 +26,7 @@ import type { MusicBrainzWorkMatch } from "../schemas/musicbrainz.js";
 import type { SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song-document-v2.js";
 import type { SongbookSection } from "../songbook-sections/index.js";
 import type { StemPart } from "../stems/index.js";
-import type { NoteAnchor, NotePlace, NoteShow } from "../notes/index.js";
+import type { NewNotes, NoteAnchor, NotePlace, NoteShow } from "../notes/index.js";
 import type { NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
 import type { LyricsMatch } from "../search-text/lyrics.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
@@ -490,6 +490,10 @@ export interface DisplaySettings {
   controlsOpacity?: number;
   /** Notes on the chart (issue #256). */
   notes?: NoteShow;
+  /** What a note is on, marked on the chart (issue #263). */
+  noteMarks?: boolean;
+  /** Someone else's new notes: at once, or on a tap (issue #263). */
+  newNotes?: NewNotes;
 }
 
 /** Someone who wrote a note or a reply (issue #256). */

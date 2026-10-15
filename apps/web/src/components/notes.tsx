@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@songverse/ui/components/sheet";
 import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
-import type { ChartNotesLayer } from "#/components/song-chart";
+import type { ChartNotesLayer, PassMarks } from "#/components/song-chart";
 import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
 import { usePresence, useSongPresence } from "#/lib/live-notes";
 import { PresenceChip } from "#/components/presence";
@@ -135,12 +135,15 @@ export function useChartNotes({
   show,
   context,
   openNoteId,
+  marks = true,
 }: {
   state: SongNotesState;
   chart: RenderedChart;
   document: SongDocumentV2 | null;
   /** The mode's Display setting: all notes, one's own, or none. */
   show: NoteShow;
+  /** The mode's Display setting (issue #263): what each note is on, marked on the chart. */
+  marks?: boolean;
   context: NotesContext;
   /** A note's thread to open first (a notification's link). */
   openNoteId?: string;
@@ -162,21 +165,36 @@ export function useChartNotes({
     const after = new Map<string, Note[]>();
     const lines = new Map<string, Note[]>();
     const chords = new Map<string, Set<string>>();
+    // What each note is on, marked on the chart (issue #263): a word's characters, a line, a section.
+    const words = new Map<string, [number, number][]>();
+    const markedLines = new Set<string>();
+    const sections = new Set<string>();
     const push = (map: Map<string, Note[]>, key: string, note: Note) => map.set(key, [...(map.get(key) ?? []), note]);
     for (const note of visible) {
       const passes = notePasses(chart, note.anchor);
       if (passes.length === 0) top.push(note);
       for (const passId of passes) {
         const anchor = note.anchor;
-        if (anchor.kind === "section") push(section, passId, note);
+        if (anchor.kind === "section") {
+          push(section, passId, note);
+          sections.add(passId);
+        }
         else if (anchor.kind === "afterPass") push(after, passId, note);
         else if (anchor.kind !== "song") {
           push(lines, `${passId}|${anchor.lineId}`, note);
           if (anchor.kind === "chord") chords.set(passId, (chords.get(passId) ?? new Set()).add(anchor.chordId));
+          if (anchor.kind === "line") markedLines.add(`${passId}|${anchor.lineId}`);
+          if (anchor.kind === "word") {
+            const text = chart.passes.find((pass) => pass.id === passId)?.lines.find((line) => line.id === anchor.lineId)?.text ?? "";
+            const start = wordStart(text, anchor.at);
+            const rest = text.slice(start).search(/\s/);
+            const key = `${passId}|${anchor.lineId}`;
+            words.set(key, [...(words.get(key) ?? []), [start, rest < 0 ? text.length : start + rest]]);
+          }
         }
       }
     }
-    return { top, section, after, lines, chords };
+    return { top, section, after, lines, chords, words, markedLines, sections };
   }, [state.notes, state.me, show, chart]);
 
   const chipLabel = (note: Note) => (note.anchor.kind === "chord" || note.anchor.kind === "word" ? labelOf(note.anchor).replace(/^\S+\s/, "") : undefined);
@@ -184,7 +202,14 @@ export function useChartNotes({
     section: (pass) => <Chips notes={placed.section.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} />,
     afterPass: (pass) => <Chips notes={placed.after.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} />,
     line: (pass, lineId) => <Chips notes={placed.lines.get(`${pass.id}|${lineId}`) ?? []} labelOf={chipLabel} onOpen={setThreadId} isNew={isNew} />,
-    markedChords: (pass) => placed.chords.get(pass.id) ?? EMPTY,
+    ...(marks && {
+      marks: (pass: RenderedPass): PassMarks => ({
+        chords: placed.chords.get(pass.id) ?? EMPTY,
+        section: placed.sections.has(pass.id),
+        line: (lineId) => placed.markedLines.has(`${pass.id}|${lineId}`),
+        words: (lineId) => placed.words.get(`${pass.id}|${lineId}`) ?? NO_RANGES,
+      }),
+    }),
     // A word: where it starts, so the note reads "On “grace”".
     onAdd: state.loaded
       ? (anchor) => {
@@ -249,6 +274,7 @@ export function useChartNotes({
 }
 
 const EMPTY: ReadonlySet<string> = new Set();
+const NO_RANGES: readonly (readonly [number, number])[] = [];
 
 function IncomingNotes({ onShow }: { onShow: () => void }) {
   const { t } = useTranslation();

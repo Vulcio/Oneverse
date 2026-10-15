@@ -798,6 +798,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a second row side by side, with a wider gap", args: [null, { LIVE: { secondRow: { names: "ROMAN", position: "right", gap: 0.5 } } }, "LIVE"] },
           { name: "a second row turned off keeps its settings", args: [null, { LIVE: { secondRow: { on: false, names: "ROMAN", position: "above" } } }, "LIVE"] },
           { name: "colours by chord type from the account", args: [{ chordColors: true }, null, "LIVE"] },
+          { name: "Live shows new notes at once, nothing marked (issue #263)", args: [null, { LIVE: { newNotes: "SHOW", noteMarks: false } }, "LIVE"] },
           { name: "diagrams docked at the bottom", args: [{ chordDiagrams: "GUITAR" }, { LIVE: { diagramsPosition: "bottom" } }, "LIVE"] },
           { name: "Live's controls floating, some hidden", args: [null, { LIVE: { controls: "floating", controlsPosition: "right", hiddenControls: ["metronome", "transpose"], controlsOpacity: 0.4 } }, "LIVE"] },
           { name: "no account settings", args: [null, null, "EDIT"] },

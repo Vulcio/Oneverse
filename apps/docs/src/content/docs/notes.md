@@ -44,7 +44,7 @@ Each note shows where it's pinned:
 - a line's, a chord's or a word's under the line, with the chord or the word it's about;
 - notes between two sections after the first.
 
-A chord with a note is highlighted. Each note shows its writer's picture or initials and how many replies it has. If what a note was pinned to is deleted, the note moves up: from a chord to its line, from a line to its section, from a section to the whole song. A small arrow says it moved. A note is never lost to an edit.
+What a note is on is marked on the chart too: a chord is highlighted, a word underlined, a line gets a bar in the margin, a section its name highlighted. **Marks** in the [Display](/display/) panel turns the marks off, keeping the notes. Each note shows its writer's picture or initials and how many replies it has. If what a note was pinned to is deleted, the note moves up: from a chord to its line, from a line to its section, from a section to the whole song. A small arrow says it moved. A note is never lost to an edit.
 
 ## Replies
 
@@ -73,7 +73,7 @@ When you edit a note you wrote (**Edit**), **Save in** shows where it's saved no
 
 Notes are live. When someone adds a note, replies, edits, resolves or deletes one, it shows up for everyone who has the song open: there's no need to reload.
 
-In Live, nothing moves while you're reading. A new or changed note waits behind **Notes changed**; tap **Show** to see it. An open thread and the notes list update at once, and a thread says who's replying (**Sam is replying…**).
+In Live, nothing moves while you're reading. A new or changed note waits behind **Notes changed**; tap **Show** to see it. To have them come in at once in Live too, set **New notes** to **At once** in Live's [Display](/display/) panel. An open thread and the notes list update at once, and a thread says who's replying (**Sam is replying…**).
 
 A dot marks a note that's new since you last opened the song on this device: written, or replied to, by someone else. The bell at the top counts a reply to your note as it comes, without reloading.
 

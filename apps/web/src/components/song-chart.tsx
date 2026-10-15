@@ -121,6 +121,7 @@ export function SongChart({
       {chart.passes.map((pass) => {
         const heading = pass.section.showLabel === false ? null : labelFor(pass);
         const aside = passAside?.(pass) ?? null;
+        const marks = notes?.marks?.(pass);
         return (
           <div
             key={pass.id}
@@ -133,7 +134,11 @@ export function SongChart({
             {heading || pass.keyChange || pass.differs || pass.changed || pass.transpose || aside ? (
               <div className="mb-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1" data-pass-heading="">
               <p className="flex flex-wrap items-baseline gap-x-2 font-sans text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                {heading ? <span>{heading}</span> : null}
+                {heading ? (
+                  <span className={cn(marks?.section && "-mx-1 rounded bg-amber-200/70 px-1 text-amber-950 dark:bg-amber-400/25 dark:text-amber-100")} data-note-mark={marks?.section ? "section" : undefined}>
+                    {heading}
+                  </span>
+                ) : null}
                 {/* Its own chords, lines or transposition (issue #205). */}
                 {pass.changed ? (
                   <span className="text-amber-600 dark:text-amber-400" title={t("chart.changed")} aria-label={t("chart.changed")} data-pass-changed="">
@@ -174,7 +179,9 @@ export function SongChart({
                     colors={colors}
                     rows={shownRows}
                     capo={chart.capo}
-                    noted={notes?.markedChords?.(pass)}
+                    noted={marks?.chords}
+                    lineMarked={marks?.line(line.id)}
+                    wordMarks={marks?.words(line.id)}
                   />
                   {notes?.line?.(pass, line.id)}
                 </Fragment>
@@ -206,6 +213,8 @@ function ChartLine({
   rows,
   capo,
   noted,
+  lineMarked,
+  wordMarks,
 }: {
   line: RenderedLine;
   onChordClick?: (chordId: string, element: HTMLElement, chord: RenderedChord) => void;
@@ -215,14 +224,18 @@ function ChartLine({
   capo: number | null;
   /** Its chords with a note on them (issue #256), marked. */
   noted?: ReadonlySet<string>;
+  /** A note on the whole line (issue #263): a bar in the margin. */
+  lineMarked?: boolean;
+  /** Words with a note on them (issue #263), as characters from-to: underlined. */
+  wordMarks?: readonly (readonly [number, number])[];
 }) {
   const { t } = useTranslation();
   const note = line.note ? <span className="ml-2 font-sans text-xs text-amber-700 italic dark:text-amber-400">{line.note}</span> : null;
   if (line.kind === "note") return <p className="font-sans text-xs text-muted-foreground italic">{line.text}</p>;
   if (line.chords.length === 0) {
     return (
-      <p className={cn("whitespace-pre-wrap", line.inserted && "text-amber-800 dark:text-amber-300")} data-line="" data-line-id={line.id}>
-        <span data-at={0}>{line.text || " "}</span>
+      <p className={cn("whitespace-pre-wrap", line.inserted && "text-amber-800 dark:text-amber-300", lineMarked && LINE_MARK)} data-line="" data-line-id={line.id} data-note-mark={lineMarked ? "line" : undefined}>
+        {line.text ? <MarkedText text={line.text} start={0} marks={wordMarks} /> : <span data-at={0}> </span>}
         {note}
       </p>
     );
@@ -300,7 +313,7 @@ function ChartLine({
   }
 
   return (
-    <p data-line="" data-line-id={line.id} className={cn(line.inserted && "text-amber-800 dark:text-amber-300")}>
+    <p data-line="" data-line-id={line.id} className={cn(line.inserted && "text-amber-800 dark:text-amber-300", lineMarked && LINE_MARK)} data-note-mark={lineMarked ? "line" : undefined}>
       {words.map((word, w) => (
         <Fragment key={w}>
           {/* A place the line may wrap, between words (never inside one). */}
@@ -350,7 +363,7 @@ function ChartLine({
                   {second?.position === "below" ? (secondEl ?? <span> </span>) : null}
                   <span className="flex">
                     {/* Chords after the last letter: a blank under them, so they stay on the chords' row (not on a line of chords alone). */}
-                    <span data-at={cell.text ? at : undefined}>{cell.text || (lineHasText ? " " : null)}</span>
+                    {cell.text ? <MarkedText text={cell.text} start={at} marks={wordMarks} /> : <span>{lineHasText ? " " : null}</span>}
                     {stretched ? (
                       <span aria-hidden className="flex-1 text-center text-muted-foreground">
                         -
@@ -365,6 +378,42 @@ function ChartLine({
       ))}
       {note}
     </p>
+  );
+}
+
+/** A line with a note on it (issue #263): a bar in the margin, the text where it was. */
+const LINE_MARK = "-ml-2 border-l-2 border-amber-500/70 pl-1.5";
+
+/**
+ * Some of a line's text, from character `start`, with the words that have a
+ * note underlined (issue #263). Each piece says where it starts (`data-at`):
+ * a press on it finds the character pressed.
+ */
+function MarkedText({ text, start, marks }: { text: string; start: number; marks?: readonly (readonly [number, number])[] }) {
+  const end = start + text.length;
+  const cuts = (marks ?? []).filter(([from, to]) => from < end && to > start).map(([from, to]) => [Math.max(from, start) - start, Math.min(to, end) - start] as const);
+  if (cuts.length === 0) return <span data-at={start}>{text}</span>;
+  const pieces: { from: number; to: number; marked: boolean }[] = [];
+  let at = 0;
+  for (const [from, to] of [...cuts].sort((a, b) => a[0] - b[0])) {
+    if (from > at) pieces.push({ from: at, to: from, marked: false });
+    if (to > Math.max(from, at)) pieces.push({ from: Math.max(from, at), to, marked: true });
+    at = Math.max(at, to);
+  }
+  if (at < text.length) pieces.push({ from: at, to: text.length, marked: false });
+  return (
+    <>
+      {pieces.map((piece) => (
+        <span
+          key={piece.from}
+          data-at={start + piece.from}
+          className={cn(piece.marked && "underline decoration-amber-500 decoration-2 underline-offset-4")}
+          data-note-mark={piece.marked ? "word" : undefined}
+        >
+          {text.slice(piece.from, piece.to)}
+        </span>
+      ))}
+    </>
   );
 }
 
@@ -387,6 +436,14 @@ export interface ChordRowsView {
   second: SecondChordRow | null;
 }
 
+/** What a pass's notes are on (issue #263): its chords, its section, a line, a word's characters. */
+export interface PassMarks {
+  chords: ReadonlySet<string>;
+  section: boolean;
+  line: (lineId: string) => boolean;
+  words: (lineId: string) => readonly (readonly [number, number])[];
+}
+
 /** Notes on a chart (issue #256), placed by the page: what's drawn where, and how one is added. */
 export interface ChartNotesLayer {
   /** Under a pass's heading: the notes on its section. */
@@ -395,8 +452,8 @@ export interface ChartNotesLayer {
   afterPass?: (pass: RenderedPass) => ReactNode;
   /** Under a line: the notes on it, its chords and words, and between it and the next. */
   line?: (pass: RenderedPass, lineId: string) => ReactNode;
-  /** The pass's chords with a note, marked. */
-  markedChords?: (pass: RenderedPass) => ReadonlySet<string>;
+  /** What the pass's notes are on, marked (issue #263); none when the Display setting turns marks off. */
+  marks?: (pass: RenderedPass) => PassMarks;
   /** A press and hold (or right-click) on the chart: a note on what's there. A word's `at` is the character pressed. */
   onAdd?: (anchor: NoteAnchor) => void;
 }

@@ -1,7 +1,7 @@
 // Browser test for notes on songs (issue #256): adding one on a chord, a word or a pass (right-click, or press and hold on a touch screen),
 // saved somewhere that decides who sees it; its thread with replies; resolving; the Display setting per mode; written offline, sent later.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, sql, stamp, stepper, tag, user } from "../lib/harness.mjs";
+import { SP, WEB, api, displaySetting, finish, signIn, sql, stamp, stepper, tag, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -68,6 +68,17 @@ await step("…the second chorus only (this time, not every time)", async () => 
   await second.locator("[data-note-id]", { hasText: "Big ending" }).waitFor();
   await page.screenshot({ path: `${SP}/notes-practice.png` });
   if ((await chart().locator('[data-section="chorus"]').first().locator("[data-note-id]").count()) !== 0) throw new Error("on the first chorus too");
+});
+
+await step("what each note is on is marked on the chart: the word, the section (issue #263)", async () => {
+  await chart().locator('[data-note-mark="word"]', { hasText: "grace" }).waitFor();
+  await chart().locator('[data-note-mark="section"]').first().waitFor();
+  // Display > Marks: off takes the marks away, not the notes.
+  await displaySetting(page, "layout", "display-noteMarks-off");
+  await chart().locator("[data-note-mark]").first().waitFor({ state: "detached" });
+  if ((await chart().locator("[data-note-id]").count()) === 0) throw new Error("the notes went with the marks");
+  await displaySetting(page, "layout", "display-noteMarks-on");
+  await chart().locator('[data-note-mark="word"]').first().waitFor();
 });
 
 await step("a team member sees the team's note, not someone's own; replies in its thread", async () => {
@@ -201,6 +212,14 @@ await step("live in Live: held behind Notes changed, shown on a tap - nothing mo
   await page.getByTestId("notes-incoming").click();
   await live.getByText("Held for later").waitFor();
   await page.getByTestId("notes-incoming").waitFor({ state: "detached" });
+});
+
+await step("Live's Display: new notes at once, no button to tap (issue #263)", async () => {
+  await displaySetting(page, "layout", "display-newNotes-SHOW");
+  const live = page.getByTestId("live-song");
+  await api(owner, "POST", "/notes", { songVersionId: song.id, content: "Straight in", place: "SONG" });
+  await live.getByText("Straight in").waitFor({ timeout: 5000 });
+  if ((await page.getByTestId("notes-incoming").count()) > 0) throw new Error("held anyway");
 });
 
 await step("no page errors", async () => {

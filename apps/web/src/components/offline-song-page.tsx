@@ -75,7 +75,7 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
 
   // The notes kept with it (issue #256); new ones wait for the network.
   const notesContext = { songVersionId: song.songVersionId };
-  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: song.document, show: display.notes, context: notesContext });
+  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: song.document, show: display.notes, marks: display.noteMarks, context: notesContext });
 
   useEffect(() => {
     void keysOffline("files").then((keys) => setKeptFiles(new Set(keys)));

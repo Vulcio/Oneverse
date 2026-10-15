@@ -536,8 +536,8 @@ export function LiveView({
 /** A Live song's chart with its notes (issue #256): the song's own above it, the rest where they're pinned, as Live's Display setting shows them. */
 function LiveChartWithNotes({ song, notes: source, chart, display }: { song: LiveSong; notes: NonNullable<LiveSong["notes"]>; chart: RenderedChart; display: EffectiveDisplaySettings }) {
   const { t } = useTranslation();
-  // Someone else's changes held behind a button (issue #27): nothing moves under the reader.
-  const notes = useChartNotes({ state: useSongNotes(source.context, { hold: true }), chart, document: source.document, show: display.notes, context: source.context });
+  // Someone else's new notes: held behind a button, unless Live's Display says at once (issue #263).
+  const notes = useChartNotes({ state: useSongNotes(source.context, { hold: display.newNotes === "HOLD" }), chart, document: source.document, show: display.notes, marks: display.noteMarks, context: source.context });
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-2">
