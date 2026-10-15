@@ -67,7 +67,7 @@ Global admins can edit, resolve and delete any note and reply.
 
 ## Every note on a song
 
-**Notes** (with how many there are) lists every note you can see on the song, resolved ones too. It ignores your Display settings. In Edit it's in the header beside **Share**, to read notes, reply to them, or add one to the whole song while you edit.
+**Notes** (with how many there are) lists every note you can see on the song, resolved ones too. It ignores your Display settings. In Edit it's in the header beside **Share** (on a narrower screen, under **More actions** as **All notes**), to read notes, reply to them, or add one to the whole song while you edit.
 
 ## Showing notes, mode by mode
 

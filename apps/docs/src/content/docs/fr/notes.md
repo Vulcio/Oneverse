@@ -67,7 +67,7 @@ Les admins globaux peuvent modifier, résoudre et supprimer toutes les notes et 
 
 ## Toutes les notes d'un chant
 
-**Notes** (avec leur nombre) liste toutes les notes que vous pouvez voir sur le chant, résolues comprises. Elle ignore vos réglages d'affichage. En Édition, le bouton est dans l'en-tête à côté de **Partager** : pour lire les notes, y répondre, ou en ajouter une sur tout le chant pendant que vous modifiez.
+**Notes** (avec leur nombre) liste toutes les notes que vous pouvez voir sur le chant, résolues comprises. Elle ignore vos réglages d'affichage. En Édition, le bouton est dans l'en-tête à côté de **Partager** (sur un écran plus étroit, sous **Plus d'actions**, **Toutes les notes**) : pour lire les notes, y répondre, ou en ajouter une sur tout le chant pendant que vous modifiez.
 
 ## Afficher les notes, mode par mode
 

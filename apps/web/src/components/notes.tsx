@@ -248,6 +248,8 @@ export function useChartNotes({
     dialogs,
     /** The notes button for the page's header: every note, and adding one to the song. */
     button: <NotesButton count={state.notes.length} onClick={() => setListOpen(true)} />,
+    /** Opens the list of every note (from a menu). */
+    openList: () => setListOpen(true),
   };
 }
 

@@ -164,6 +164,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
     return () => observer.disconnect();
   }, [canChangeChart]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // The More menu asking for the notes (issue #256), on a screen too narrow for their button.
+  const [notesAsked, setNotesAsked] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const leaving = useRef(false);
 
@@ -547,7 +549,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         </div>
         {/* One row of actions that wraps as a whole, never leaving a button alone on a line. */}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-          {edit ? <EditorNotes version={edit.version} songbookId={edit.songbookId} openNoteId={edit.openNoteId} /> : null}
+          {edit ? <EditorNotes version={edit.version} songbookId={edit.songbookId} openNoteId={edit.openNoteId} openSignal={notesAsked} /> : null}
           {canSuggest && !suggesting ? (
             <Button type="button" variant="outline" onClick={() => setSuggesting(true)}>
               <PenLine />
@@ -595,6 +597,12 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                 </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportChordPro}>{t("songEditor.exportChordPro")}</DropdownMenuItem>
+                {/* Notes (issue #256): a button of its own on a wide screen, here on a narrower one. */}
+                {edit ? (
+                  <DropdownMenuItem className="xl:hidden" onClick={() => setNotesAsked((n) => n + 1)} data-testid="menu-notes">
+                    {t("songNotes.all")}
+                  </DropdownMenuItem>
+                ) : null}
                 {edit.version.sharedBy ? (
                   <>
                     <DropdownMenuSeparator />
@@ -814,14 +822,20 @@ function FavoriteButton({ songVersionId, initial }: { songVersionId: string; ini
 }
 
 /** The song's notes in Edit (issue #256): every note one sees, to read, reply to and add to the song or a part of it from the list. */
-function EditorNotes({ version, songbookId, openNoteId }: { version: SongVersionDetail; songbookId?: string; openNoteId?: string }) {
+function EditorNotes({ version, songbookId, openNoteId, openSignal }: { version: SongVersionDetail; songbookId?: string; openNoteId?: string; /** Goes up when the More menu asks for the notes. */ openSignal: number }) {
   const display = useDisplaySettings("EDIT");
   const chart = useMemo(() => renderChart(version.documentJson), [version.documentJson]);
   const context = { songVersionId: version.id, songbookId };
   const notes = useChartNotes({ state: useSongNotes(context), chart, document: version.documentJson, show: display.notes, context, openNoteId });
+  const { openList } = notes;
+  useEffect(() => {
+    if (openSignal > 0) openList();
+    // Only when asked again.
+  }, [openSignal]);
   return (
     <>
-      {notes.button}
+      {/* On a narrower screen the header has no room: More actions has it. */}
+      <span className="hidden xl:contents">{notes.button}</span>
       {notes.dialogs}
     </>
   );
