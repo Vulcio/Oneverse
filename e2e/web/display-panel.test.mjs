@@ -192,5 +192,24 @@ await step("a large screen: a column down the right, every section at once, the 
   await page.waitForFunction(() => !document.documentElement.hasAttribute("data-side-panel"));
 });
 
+await step("a large screen: each section folds away and opens again, remembered (issue #265)", async () => {
+  await page.getByTestId("display-open").click();
+  const chords = panel().getByTestId("display-block-chords");
+  await chords.getByTestId("display-notation-LETTERS").waitFor();
+  await panel().getByTestId("display-fold-chords").click();
+  await chords.getByTestId("display-notation-LETTERS").waitFor({ state: "detached" });
+  if ((await panel().getByTestId("display-fold-chords").getAttribute("aria-expanded")) !== "false") throw new Error("not said to be folded");
+  // The others stay open.
+  await panel().getByTestId("display-block-text").getByTestId("display-font-mono").waitFor();
+  await page.reload();
+  await chart().waitFor();
+  await page.getByTestId("display-open").click();
+  await panel().getByTestId("display-block-chords").waitFor();
+  if ((await panel().getByTestId("display-block-chords").getAttribute("data-folded")) === null) throw new Error("not remembered");
+  await panel().getByTestId("display-fold-chords").click();
+  await panel().getByTestId("display-block-chords").getByTestId("display-notation-LETTERS").waitFor();
+  await panel().getByTestId("display-close").click();
+});
+
 await browser.close();
 finish();

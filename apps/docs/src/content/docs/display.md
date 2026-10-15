@@ -15,7 +15,7 @@ Anything a mode hasn't changed comes from your account's [Chart display](/accoun
 
 ## What it changes
 
-On a phone, the list at the top of the panel picks a section; a large screen shows them all, one under the other:
+On a phone, the list at the top of the panel picks a section. A large screen shows them all, one under the other; a section's heading folds it away, and opens it again. The sections you fold stay folded on that device:
 
 - **Text** - **Lyrics** and **Chords**, each a size (**−** and **+**, from 75% to 300%; Live starts at 150%). The chords follow the lyrics' size until you change theirs; the link button beside them (**Chords follow the lyrics' size**) ties them together again. Headings and notes follow the lyrics, and the chords stay over their letters at any size; Live's own **Smaller text** and **Bigger text** buttons change the lyrics, and the chords with them while they're linked. **Font** (monospace, where chords line up with each letter, or proportional) and **Spacing** between lines (**Compact**, **Normal**, **Relaxed**).
 - **Chords** - **Names** in letters, solfège, Nashville numbers or Roman numerals (see [Nashville numbers and chord colours](/versions/#nashville-numbers-and-chord-colours)); chords **With a capo** as they sound or as the shapes to play; their **Colour** (**Accent**, **Muted**, **By chord type** or **A colour of your own**), **Font** (**As the lyrics**, proportional or monospace) and **Weight** (**Bold** or **Regular**); and **Chords** shown or hidden (**Lyrics only**, which hides both rows). Sharps and flats show as ♯ and ♭.

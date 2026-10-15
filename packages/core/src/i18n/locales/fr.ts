@@ -1940,6 +1940,8 @@ const fr: typeof en = {
     notesAll: "Toutes les notes",
     notesMine: "Mes notes",
     notesNone: "Aucune note",
+    fold: "Replier {{section}}",
+    unfold: "Ouvrir {{section}}",
     notesShow: "Afficher",
     notesPreset: "Préréglage",
     notePresets: { standard: "Standard", clean: "Épuré", margin: "Marge", stage: "Scène", custom: "Personnalisé" },

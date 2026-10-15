@@ -15,7 +15,7 @@ Ce qu'un mode n'a pas changé vient de l'[Affichage des grilles](/fr/account/#af
 
 ## Ce qu'il règle
 
-Sur un téléphone, la liste en haut du panneau choisit une partie ; un grand écran les montre toutes, l'une sous l'autre :
+Sur un téléphone, la liste en haut du panneau choisit une partie. Un grand écran les montre toutes, l'une sous l'autre ; le titre d'une partie la replie, puis la rouvre. Les parties repliées le restent sur cet appareil :
 
 - **Texte** - **Paroles** et **Accords**, chacun une taille (**−** et **+**, de 75 % à 300 % ; le Live commence à 150 %). Les accords suivent la taille des paroles tant que vous ne changez pas la leur ; le bouton de lien à côté (**Les accords suivent la taille des paroles**) les relie à nouveau. Les titres et les notes suivent les paroles, et les accords restent au-dessus de leurs lettres à toute taille ; les boutons **Texte plus petit** et **Texte plus grand** du Live changent les paroles, et les accords avec tant qu'ils sont liés. **Police** (à chasse fixe, où les accords s'alignent sur chaque lettre, ou proportionnelle) et **Interligne** (**Serré**, **Normal**, **Aéré**).
 - **Accords** - **Noms** en lettres, en solfège, en chiffres Nashville ou en chiffres romains (voir [Chiffres Nashville et couleurs des accords](/fr/versions/#chiffres-nashville-et-couleurs-des-accords)) ; accords **Avec un capodastre** tels qu'ils sonnent ou en formes à jouer ; leur **Couleur** (**Accent**, **Atténuée**, **Par type d'accord** ou **Une couleur à vous**), leur **Police** (**Comme les paroles**, proportionnelle ou à chasse fixe) et leur **Graisse** (**Gras** ou **Normal**) ; et **Accords** affichés ou masqués (**Paroles seules**, qui masque les deux lignes). Les dièses et bémols s'affichent ♯ et ♭.

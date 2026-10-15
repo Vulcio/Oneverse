@@ -1937,6 +1937,8 @@ const en = {
     notesAll: "All notes",
     notesMine: "My notes",
     notesNone: "No notes",
+    fold: "Fold {{section}}",
+    unfold: "Open {{section}}",
     notesShow: "Show",
     notesPreset: "Preset",
     notePresets: { standard: "Standard", clean: "Clean", margin: "Margin", stage: "Stage", custom: "Custom" },

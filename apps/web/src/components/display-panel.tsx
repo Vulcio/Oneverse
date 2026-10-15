@@ -39,6 +39,7 @@ import {
   type LucideIcon,
   MessageSquare,
   MessageSquareOff,
+  ChevronDown,
   Highlighter,
   Zap,
   UserRound,
@@ -623,15 +624,50 @@ function PositionIcon({ position }: { position: ControlsPositionValue }) {
 }
 
 /** A section of the panel: under its heading when they're all shown at once. */
+/** The sections folded away on a large screen (issue #265), remembered on the device. */
+const FOLDED_KEY = "songverse.display.folded";
+function foldedSections(): Section[] {
+  try {
+    const kept = JSON.parse(localStorage.getItem(FOLDED_KEY) ?? "[]") as unknown;
+    return Array.isArray(kept) ? kept.filter((one): one is Section => (SECTIONS as readonly string[]).includes(one)) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** A section of the panel; on a large screen, under a heading that folds it away and opens it again. */
 function SectionBlock({ section, heading, children }: { section: Section; heading: boolean; children: ReactNode }) {
+  const { t } = useTranslation();
+  const [folded, setFolded] = useState(() => heading && foldedSections().includes(section));
+  const toggle = () => {
+    const next = !folded;
+    setFolded(next);
+    try {
+      const others = foldedSections().filter((one) => one !== section);
+      localStorage.setItem(FOLDED_KEY, JSON.stringify(next ? [...others, section] : others));
+    } catch {
+      // Not kept: it's only for this device anyway.
+    }
+  };
+  const shut = heading && folded;
   return (
-    <section className="flex flex-col gap-2" data-testid={`display-block-${section}`}>
+    <section className="flex flex-col gap-2" data-testid={`display-block-${section}`} data-folded={shut ? "" : undefined}>
       {heading ? (
         <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-          <SectionLabel section={section} />
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={!shut}
+            aria-label={t(shut ? "display.unfold" : "display.fold", { section: t(`display.${section}`) })}
+            className="-mx-1 flex w-[calc(100%+0.5rem)] items-center justify-between rounded px-1 py-0.5 uppercase hover:bg-muted hover:text-foreground"
+            data-testid={`display-fold-${section}`}
+          >
+            <SectionLabel section={section} />
+            <ChevronDown className={cn("size-4 transition-transform", shut && "-rotate-90")} aria-hidden />
+          </button>
         </h3>
       ) : null}
-      {children}
+      {shut ? null : children}
     </section>
   );
 }

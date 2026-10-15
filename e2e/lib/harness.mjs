@@ -187,6 +187,9 @@ export async function displaySetting(p, section, choice) {
     await panel.getByTestId("display-section").click();
     await p.getByTestId(`display-section-${section}`).click();
   }
+  // A large screen's section folded away (issue #265): opened first.
+  const block = panel.getByTestId(`display-block-${section}`);
+  if ((await block.count()) > 0 && (await block.getAttribute("data-folded")) !== null) await panel.getByTestId(`display-fold-${section}`).click();
   await panel.getByTestId(choice).click();
   await panel.getByTestId("display-close").click();
   await panel.waitFor({ state: "detached" });

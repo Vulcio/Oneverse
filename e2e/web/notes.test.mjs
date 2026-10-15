@@ -87,13 +87,13 @@ await step("Display > Notes: beside what they're on, in the margin with numbered
     throw new Error(`${label}: ${error.message.split("\n")[0]}`);
   });
   // Margin: on the right, each with a line and a number on what it's on.
-  await displaySetting(page, "notes", "display-notesPreset-margin");
+  await sure("display-notesPreset-margin", displaySetting(page, "notes", "display-notesPreset-margin"));
   await sure("chart().locator('[data-notes-overlay='margin'] [data-note-placed]').fi", chart().locator('[data-notes-overlay="margin"] [data-note-placed]').first().waitFor());
   await sure("chart().locator('[data-note-connector]').first().waitFor()", chart().locator("[data-note-connector]").first().waitFor({ state: "attached" }));
   await sure("chart().getByTestId('note-number-1').waitFor()", chart().getByTestId("note-number-1").waitFor());
   await sure("chart().getByTestId('note-number-target-1').waitFor()", chart().getByTestId("note-number-target-1").waitFor());
   // Beside: under the word or chord, no lines; the line under it has room for them.
-  await displaySetting(page, "notes", "display-notesPreset-stage");
+  await sure("display-notesPreset-stage", displaySetting(page, "notes", "display-notesPreset-stage"));
   await sure("chart().locator('[data-notes-overlay='beside'] [data-note-placed]', { ", chart().locator('[data-notes-overlay="beside"] [data-note-placed]', { hasText: "Hold it" }).waitFor());
   if ((await chart().locator("[data-note-connector]").count()) > 0) throw new Error("lines beside");
   const placed = await chart().locator("[data-note-placed]", { hasText: "Hold it" }).boundingBox();
@@ -101,11 +101,12 @@ await step("Display > Notes: beside what they're on, in the margin with numbered
   if (!placed || !word || placed.y < word.y + word.height - 2 || Math.abs(placed.x - word.x) > 4) throw new Error(`not under its word: ${JSON.stringify({ placed, word })}`);
   if ((await chart().locator('[data-note-look="plain"]').count()) === 0) throw new Error("not plain");
   // A look changed: no preset any more, and back to the standard one.
-  await displaySetting(page, "notes", "display-notesColor-blue");
-  await page.getByTestId("display-open").first().click();
+  await sure("display-notesColor-blue", displaySetting(page, "notes", "display-notesColor-blue"));
+  await sure("page.getByTestId('display-open').first().click()", page.getByTestId("display-open").first().click());
   await sure("page.getByTestId('display-panel').getByTestId('display-notesPreset-cus", page.getByTestId("display-panel").getByTestId("display-notesPreset-custom").waitFor());
-  await page.keyboard.press("Escape");
-  await displaySetting(page, "notes", "display-notesPreset-standard");
+  await sure("closing the panel", page.getByTestId("display-panel").getByTestId("display-close").click());
+  await sure("the panel closed", page.getByTestId("display-panel").waitFor({ state: "detached" }));
+  await sure("display-notesPreset-standard", displaySetting(page, "notes", "display-notesPreset-standard"));
   await sure("chart().locator('[data-notes] [data-note-look='card']').first().waitFo", chart().locator('[data-notes] [data-note-look="card"]').first().waitFor());
 });
 
