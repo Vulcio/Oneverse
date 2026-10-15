@@ -1946,6 +1946,7 @@ const en = {
     notesBelow: "Below",
     notesBeside: "Beside",
     notesMargin: "Margin",
+    notesMarginCrowded: "No room for the margin beside the song right now, so notes are beside what they're on. Close this panel, or widen the window, to see them in the margin.",
     notesLook: "Look",
     notesCard: "Card",
     notesMinimal: "Minimal",

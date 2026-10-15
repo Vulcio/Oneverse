@@ -1,12 +1,14 @@
 import type { NoteAnchor, NotePlacement } from "@songverse/core";
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 /**
  * Notes beside what they're on, or in the margin (issue #264): drawn over the
  * chart, each one placed by measuring where its word, chord, line or section
  * is. Beside: under the word or chord (lines move apart for them), at the end
  * of a line, beside a section's name. Margin: in the room kept on the chart's
- * right, level with what it's on, a thin line leading to it.
+ * right, level with what it's on, a thin line leading to it - narrower when
+ * room is short, and beside what they're on when there's none (the Display
+ * panel says so).
  */
 
 export interface OverlayNote {
@@ -27,17 +29,40 @@ interface Placed {
   number?: number;
 }
 
-/** Room under each line for the notes beside its words (px, by `${passId}|${lineId}`), and whether the margin fits. */
+/** Room under each line for the notes beside its words (px, by `${passId}|${lineId}`), and the margin's width (0: it doesn't fit). */
 export interface OverlayLayout {
   room: Record<string, number>;
-  marginFits: boolean;
+  margin: number;
 }
 
-/** The margin's width, and the room kept beside the chart for it. */
-export const MARGIN_WIDTH = 256;
-const MARGIN_GAP = 40;
-/** Under this width, notes meant for the margin go under what they're on. */
-const MARGIN_MIN_CHART = 520;
+/** The margin's width when there's room, and the narrowest it gets. */
+const MARGIN_WIDTH = 256;
+const MARGIN_MIN = 180;
+/** Between the chart and the margin. */
+export const MARGIN_GAP = 40;
+/** The chart keeps at least this much beside the margin; with less, notes meant for it go beside what they're on. */
+const MARGIN_MIN_CHART = 340;
+
+/** The charts whose margin doesn't fit right now, for the Display panel to say so. */
+const crowded = new Set<symbol>();
+const crowdedListeners = new Set<() => void>();
+function setCrowded(id: symbol, on: boolean) {
+  if (crowded.has(id) === on) return;
+  if (on) crowded.add(id);
+  else crowded.delete(id);
+  for (const listener of crowdedListeners) listener();
+}
+/** Whether a chart on the page has no room for its notes' margin (they're beside what they're on instead). */
+export function useMarginCrowded(): boolean {
+  return useSyncExternalStore(
+    (listener) => {
+      crowdedListeners.add(listener);
+      return () => crowdedListeners.delete(listener);
+    },
+    () => crowded.size > 0,
+    () => false,
+  );
+}
 /** Between two notes side by side under a line: enough that two plain ones don't read as one. */
 const GAP = 12;
 /** A margin note's number, on it and on what it's on. */
@@ -65,6 +90,9 @@ export function NotesOverlay({
   const last = useRef("");
   // The room each line has now (measured lines include it).
   const lastRoom = useRef<Record<string, number>>({});
+  const [margin, setMargin] = useState(0);
+  const [crowdedId] = useState(() => Symbol("chart"));
+  useLayoutEffect(() => () => setCrowded(crowdedId, false), [crowdedId]);
 
   // Measured again as the chart changes size (a window resized, fonts loaded, lines moved apart).
   useLayoutEffect(() => {
@@ -89,7 +117,10 @@ export function NotesOverlay({
       height: rect.height / scale,
     });
     const width = root.offsetWidth;
-    const marginFits = placement === "margin" && width - MARGIN_WIDTH - MARGIN_GAP >= MARGIN_MIN_CHART;
+    // As wide as it can be up to MARGIN_WIDTH, leaving the chart its room; too narrow, and the notes go beside what they're on.
+    const marginWidth = Math.min(MARGIN_WIDTH, width - MARGIN_GAP - MARGIN_MIN_CHART);
+    const marginFits = placement === "margin" && marginWidth >= MARGIN_MIN;
+    setCrowded(crowdedId, placement === "margin" && !marginFits);
     const next: Record<string, Placed> = {};
     const room: Record<string, number> = {};
     // Beside: under each line, rows of notes that don't overlap.
@@ -159,22 +190,24 @@ export function NotesOverlay({
         const height = noteRefs.current.get(item.id)?.offsetHeight ?? 0;
         const y = Math.max(item.y, bottom + 6, 0);
         bottom = y + height;
-        next[item.id] = { x: width - MARGIN_WIDTH + BADGE + 6, y, from: item.from, target: item.target, number: ++number };
+        next[item.id] = { x: width - marginWidth + BADGE + 6, y, from: item.from, target: item.target, number: ++number };
       }
     }
 
     setPlaced(next);
-    const layout = JSON.stringify({ room, marginFits });
+    const margin = marginFits ? marginWidth : 0;
+    setMargin(margin);
+    const layout = JSON.stringify({ room, margin });
     if (layout !== last.current) {
       last.current = layout;
       lastRoom.current = room;
-      onLayoutRef.current({ room, marginFits });
+      onLayoutRef.current({ room, margin });
     }
-  }, [notes, placement, tick]);
+  }, [notes, placement, tick, crowdedId]);
 
   const hoveredPlace = hovered ? placed[hovered] : undefined;
   return (
-    <div ref={ref} className="pointer-events-none absolute inset-0" data-notes-overlay={placement} aria-hidden={false}>
+    <div ref={ref} className="pointer-events-none absolute inset-0" data-notes-overlay={margin ? "margin" : "beside"} aria-hidden={false}>
       <svg className="absolute inset-0 size-full overflow-visible" aria-hidden>
         {Object.entries(placed).map(([id, place]) =>
           place.from ? (
@@ -218,7 +251,7 @@ export function NotesOverlay({
               left: place?.x ?? 0,
               top: place?.y ?? 0,
               visibility: place ? "visible" : "hidden",
-              maxWidth: placement === "margin" ? MARGIN_WIDTH - BADGE - 6 : 256,
+              maxWidth: margin ? margin - BADGE - 6 : 256,
             }}
             onPointerEnter={() => setHovered(note.id)}
             onPointerLeave={() => setHovered((current) => (current === note.id ? null : current))}

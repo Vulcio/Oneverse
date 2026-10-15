@@ -9,7 +9,6 @@ import {
   type NoteLook,
   type NoteShow,
   type NoteSize,
-  type NotePlacement,
   type NoteStyle,
   type RenderedChart,
   type RenderedPass,
@@ -26,7 +25,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
 import type { ChartNotesLayer, PassMarks } from "#/components/song-chart";
-import { MARGIN_WIDTH, NotesOverlay, type OverlayLayout, type OverlayNote } from "#/components/notes-overlay";
+import { MARGIN_GAP, NotesOverlay, type OverlayLayout, type OverlayNote } from "#/components/notes-overlay";
 import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
 import { usePresence, useSongPresence } from "#/lib/live-notes";
 import { PresenceChip } from "#/components/presence";
@@ -239,9 +238,8 @@ export function useChartNotes({
   style?: NoteStyle;
 }) {
   const [threadId, setThreadId] = useState<string | null>(openNoteId ?? null);
-  // Beside or in the margin (issue #264): what the overlay measured - the room under lines, and whether the margin fits.
-  const [layout, setLayout] = useState<OverlayLayout>({ room: {}, marginFits: true });
-  const placement: NotePlacement = style.placement === "margin" && !layout.marginFits ? "below" : style.placement;
+  // Beside or in the margin (issue #264): what the overlay measured - the room under lines, and the margin's width (none: beside instead).
+  const [layout, setLayout] = useState<OverlayLayout>({ room: {}, margin: 0 });
   const [adding, setAdding] = useState<NoteAnchor | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const labelOf = useAnchorLabel(chart, document);
@@ -295,8 +293,8 @@ export function useChartNotes({
   }, [state.notes, state.me, show, chart, style.placement]);
 
   const chipLabel = (note: Note) => (note.anchor.kind === "chord" || note.anchor.kind === "word" ? labelOf(note.anchor).replace(/^\S+\s/, "") : undefined);
-  // Beside or in the margin, those notes are the overlay's; below (or the margin not fitting), under what they're on.
-  const floating = placement !== "below";
+  // Beside or in the margin, those notes are the overlay's; below, under what they're on.
+  const floating = style.placement !== "below";
   const notFloating = (notes: Note[]) => (floating ? notes.filter((note) => !(note.anchor.kind === "chord" || note.anchor.kind === "word" || note.anchor.kind === "line" || note.anchor.kind === "section")) : notes);
   const overlayNotes = useMemo<OverlayNote[]>(
     () =>
@@ -318,14 +316,14 @@ export function useChartNotes({
     ...(style.placement !== "below" && {
       overlay: (
         <NotesOverlay
-          notes={placement === "below" ? [] : overlayNotes}
+          notes={overlayNotes}
           placement={style.placement}
           color={noteColorValue(style.color)}
           onLayout={setLayout}
         />
       ),
-      lineRoom: (pass: RenderedPass, lineId: string) => (placement === "beside" ? (layout.room[`${pass.id}|${lineId}`] ?? 0) : 0),
-      reserveRight: placement === "margin" ? MARGIN_WIDTH + 40 : 0,
+      lineRoom: (pass: RenderedPass, lineId: string) => layout.room[`${pass.id}|${lineId}`] ?? 0,
+      reserveRight: layout.margin ? layout.margin + MARGIN_GAP : 0,
     }),
     ...(marks && {
       marks: (pass: RenderedPass): PassMarks => ({

@@ -32,7 +32,7 @@ On a phone, the list at the top of the panel picks a section. A large screen sho
   - **Show**: **All notes**, **My notes** or **No notes**.
   - **Marks**: **Marked** (what each note is on is marked on the chart) or **None**.
   - In Live, **New notes**: **On a tap** (someone else's new note waits behind **Notes changed**, so nothing moves while you play) or **At once**.
-  - **Where**: **Below** (under the line or section a note is on), **Beside** (under its word or chord, the lines moving apart to make room; at the end of its line; beside its section's name) or **Margin** (in the free space on the right, level with what it's on, numbered, with a line leading to it; on a narrower screen they go below).
+  - **Where**: **Below** (under the line or section a note is on), **Beside** (under its word or chord, the lines moving apart to make room; at the end of its line; beside its section's name) or **Margin** (in the free space on the right, level with what it's on, numbered, with a line leading to it). The margin narrows when room is short; with no room for it at all (a narrow window, or this panel open beside the song), notes go beside what they're on, and the panel says so.
   - **Look**: **Card** (border, background and the writer's picture), **Minimal** (a light tint) or **Plain** (just the text).
   - **Size**: **Small**, **Medium** or **Large**.
   - **Colour**: amber, blue, green, pink, violet or grey, also used for the marks.

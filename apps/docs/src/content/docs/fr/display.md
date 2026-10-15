@@ -32,7 +32,7 @@ Sur un téléphone, la liste en haut du panneau choisit une partie. Un grand éc
   - **Afficher** : **Toutes les notes**, **Mes notes** ou **Aucune note**.
   - **Repères** : **Marqués** (ce que porte chaque note est marqué sur la grille) ou **Aucun**.
   - En Live, **Nouvelles notes** : **Au toucher** (la note de quelqu'un d'autre attend derrière **Notes modifiées**, pour que rien ne bouge pendant que vous jouez) ou **Aussitôt**.
-  - **Où** : **Dessous** (sous la ligne ou la partie qui porte la note), **À côté** (sous son mot ou son accord, les lignes s'écartant pour lui faire place ; au bout de sa ligne ; à côté du nom de sa partie) ou **Marge** (dans l'espace libre à droite, au niveau de ce qu'elle porte, numérotée, avec un trait qui y mène ; sur un écran plus étroit, elles passent dessous).
+  - **Où** : **Dessous** (sous la ligne ou la partie qui porte la note), **À côté** (sous son mot ou son accord, les lignes s'écartant pour lui faire place ; au bout de sa ligne ; à côté du nom de sa partie) ou **Marge** (dans l'espace libre à droite, au niveau de ce qu'elle porte, numérotée, avec un trait qui y mène). La marge rétrécit quand la place manque ; sans place du tout (une fenêtre étroite, ou ce panneau ouvert à côté du chant), les notes passent à côté de ce qu'elles portent, et le panneau le signale.
   - **Style** : **Carte** (bordure, fond et photo de l'auteur), **Minimal** (une teinte légère) ou **Texte** (le texte seul).
   - **Taille** : **Petite**, **Moyenne** ou **Grande**.
   - **Couleur** : ambre, bleu, vert, rose, violet ou gris, aussi pour les repères.

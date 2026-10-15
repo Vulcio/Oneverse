@@ -53,6 +53,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMediaQuery } from "@songverse/ui/hooks/use-media-query";
 import { changeDiagramPlayer, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
 import { noteColorValue } from "#/components/notes";
+import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@songverse/ui/lib/utils";
 
 const SECTIONS = ["text", "chords", "instrument", "layout", "notes", "controls"] as const;
@@ -338,6 +339,7 @@ export function DisplayPanel({
                   ]}
                 />
               </Row>
+              {settings.noteStyle.placement === "margin" ? <MarginRoom /> : null}
               <Row label={t("display.notesLook")}>
                 <Choices
                   value={settings.noteStyle.look}
@@ -669,6 +671,17 @@ function SectionBlock({ section, heading, children }: { section: Section; headin
       ) : null}
       {shut ? null : children}
     </section>
+  );
+}
+
+/** Margin chosen, but no room for it beside the chart right now (issue #266). */
+function MarginRoom() {
+  const { t } = useTranslation();
+  if (!useMarginCrowded()) return null;
+  return (
+    <p className="text-xs text-muted-foreground" data-testid="display-notes-margin-crowded">
+      {t("display.notesMarginCrowded")}
+    </p>
   );
 }
 

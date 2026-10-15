@@ -1949,6 +1949,7 @@ const fr: typeof en = {
     notesBelow: "Dessous",
     notesBeside: "À côté",
     notesMargin: "Marge",
+    notesMarginCrowded: "Pas de place pour la marge à côté du chant pour l'instant : les notes sont à côté de ce qu'elles visent. Fermez ce panneau, ou élargissez la fenêtre, pour les voir dans la marge.",
     notesLook: "Style",
     notesCard: "Carte",
     notesMinimal: "Minimal",
