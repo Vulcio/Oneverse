@@ -351,9 +351,11 @@ export function GridOverlay({ grid, margin, selected, onSelect, onGrid }: { grid
   };
 
   return (
+    // The container its sizes are measured against, as the screen's stage is: its own cq units would read the window.
+    <div className="absolute inset-0 z-10 [container-type:size]">
     <div
       ref={ref}
-      className="absolute inset-0 z-10 grid [container-type:size]"
+      className="grid size-full"
       style={{
         padding: `${margin}cqh ${margin}cqw`,
         gridTemplateColumns: `repeat(${grid.columns}, minmax(0, 1fr))`,
@@ -400,6 +402,7 @@ export function GridOverlay({ grid, margin, selected, onSelect, onGrid }: { grid
           </div>
         );
       })}
+    </div>
     </div>
   );
 }

@@ -43,6 +43,20 @@ try {
     await tablet.getByTestId("builtin-theme-stage-display").getByTestId("customize-theme").click();
     const overlay = editor.getByTestId("theme-grid-overlay");
     await overlay.waitFor();
+    // Each box over the preview is where its widget is drawn, whatever the window's size.
+    const aligned = async () => {
+      for (const [id, kind] of [["clock", "clock"], ["countdown", "countdown"], ["current", "current-slide"], ["message", "message"]]) {
+        const box = await overlay.getByTestId(`grid-widget-${kind}`).boundingBox();
+        const cell = await editor.getByTestId("theme-preview").getByTestId(`widget-cell-${id}`).boundingBox();
+        if (!box || !cell || ["x", "y", "width", "height"].some((key) => Math.abs(box[key] - cell[key]) > 2)) throw new Error(`${id}: box ${JSON.stringify(box)}, drawn ${JSON.stringify(cell)}`);
+      }
+    };
+    await aligned();
+    await tablet.setViewportSize({ width: 1920, height: 1000 });
+    await tablet.waitForTimeout(300);
+    await aligned();
+    await tablet.setViewportSize({ width: 1440, height: 1000 });
+    await tablet.waitForTimeout(300);
     // The clock, one cell to the left: dragged.
     const clock = overlay.getByTestId("grid-widget-clock");
     if ((await clock.getAttribute("data-place")) !== "8,0,4,2") throw new Error(await clock.getAttribute("data-place"));
