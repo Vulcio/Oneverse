@@ -59,7 +59,7 @@ interface Connection {
   allowance: number;
   lastMessageAt: number;
   socket: WebSocket;
-  user: (AuthenticatedUser & { name: string }) | null;
+  user: (AuthenticatedUser & { name: string; avatarUrl: string | null }) | null;
   /** A screen (issue #186), signed in by its own token: it follows its set, never leads. */
   screen: SyncScreenInfo | null;
   setId: string | null;
@@ -272,7 +272,7 @@ export class SyncServer implements OnModuleDestroy {
   private async storePresence(connection: Connection) {
     const presence = connection.presence;
     if (!presence || !connection.user) return;
-    const person: SongPresence & { at: number } = { userId: connection.user.id, name: connection.user.name, doing: presence.doing, ...(presence.noteId && { noteId: presence.noteId }), at: Date.now() };
+    const person: SongPresence & { at: number } = { userId: connection.user.id, name: connection.user.name, avatarUrl: connection.user.avatarUrl, doing: presence.doing, ...(presence.noteId && { noteId: presence.noteId }), at: Date.now() };
     await redis().hset(presenceKey(presence.songVersionId), `${this.instance}:${connection.id}`, JSON.stringify(person));
     await redis().expire(presenceKey(presence.songVersionId), SESSION_TTL_S);
   }
@@ -452,12 +452,12 @@ export class SyncServer implements OnModuleDestroy {
       const user = payload.sub
         ? await this.prisma.client.user.findUnique({
             where: { id: payload.sub },
-            select: { id: true, email: true, isGlobalAdmin: true, displayName: true, bannedAt: true, deletedAt: true },
+            select: { id: true, email: true, isGlobalAdmin: true, displayName: true, avatarUrl: true, bannedAt: true, deletedAt: true },
           })
         : null;
       if (!user || user.deletedAt || user.bannedAt) throw new Error("No such user");
       const { canReview } = await capabilitiesOf(this.prisma.client, user.id);
-      connection.user = { id: user.id, email: user.email, isGlobalAdmin: user.isGlobalAdmin, isReviewer: canReview, name: user.displayName };
+      connection.user = { id: user.id, email: user.email, isGlobalAdmin: user.isGlobalAdmin, isReviewer: canReview, name: user.displayName, avatarUrl: user.avatarUrl };
       this.send(connection, { type: "ready", userId: user.id, coEditing: await liveCoEditingEnabled() });
     } catch {
       this.send(connection, { type: "error", code: "unauthorized", message: "Invalid or expired token" });

@@ -23,7 +23,7 @@ export function PresenceChip({ people, doing, className }: { people: SongPresenc
     <span className={cn("inline-flex items-center gap-1.5 text-xs text-muted-foreground", className)} data-testid={`presence-${doing}`} role="status">
       <span className="flex -space-x-1">
         {unique.slice(0, 3).map((person) => (
-          <PersonAvatar key={person.userId} name={person.name} avatarUrl={null} size={18} className="ring-2 ring-background" />
+          <PersonAvatar key={person.userId} name={person.name} avatarUrl={person.avatarUrl ?? null} size={18} className="ring-2 ring-background" />
         ))}
       </span>
       {t(`presence.${doing}`, { count: unique.length, names: namesOf(unique, i18n.language) })}

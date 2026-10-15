@@ -71,6 +71,7 @@ const sendOwner = (message) => ownerDevice.send(message);
 sendOwner({ type: "presence", songVersionId: song.id, doing: "editing" });
 r = await memberPresence((people) => people.some((p) => p.userId === owner.id && p.doing === "editing"));
 check("someone editing is seen by who watches the song", r !== null && r.people.find((p) => p.userId === owner.id)?.name === "Notes owner", JSON.stringify(r));
+check("…with their picture (none yet: null)", r !== null && "avatarUrl" in r.people.find((p) => p.userId === owner.id), JSON.stringify(r));
 r = await guestPresence((people) => people.some((p) => p.userId === owner.id));
 check("…a guest in the set too", r !== null);
 const late = await device(member);

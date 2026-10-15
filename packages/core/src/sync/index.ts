@@ -126,6 +126,8 @@ export type SongActivity = "editing" | "replying";
 export interface SongPresence {
   userId: string;
   name: string;
+  /** Their picture, as their account has it. */
+  avatarUrl?: string | null;
   doing: SongActivity;
   noteId?: string;
 }
