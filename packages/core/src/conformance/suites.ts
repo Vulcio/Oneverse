@@ -18,9 +18,9 @@ import { flowToChordPro, lineToInlineText, readSongDocument, sectionsFromText, s
 import { findRepeats, linkRepeats } from "../song-document/repeats.js";
 import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
-import { clockOffset, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
+import { applyStageCommand, clockOffset, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { lyricSlides, normalizeScreenCode, resolveScreenTheme, SCREEN_THEME_TEMPLATES, screenThemeContrast, sectionEnergy } from "../screens/index.js";
+import { formatTimer, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenThemeContrast, sectionEnergy } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
@@ -973,6 +973,23 @@ export const CONFORMANCE: ConformanceArea[] = [
     about:
       "The metronome and sync play's timeline (issue #13): only \"beat N at server time T\" crosses the network, and each device plays it on its own clock. Positions are in beats from the start, count-in included; times in ms.",
     functions: {
+      applyStageCommand: {
+        about:
+          "The media operator's timer and message for a set's screens (issue #269): a new timer stopped at its start, reset, started or paused, a minute more or less, then the message. Null: a command that can't be read, refused.",
+        params: ["stage", "command", "now"],
+        run: applyStageCommand,
+        cases: [
+          { name: "a new 5-minute countdown, started", args: [null, { timer: { kind: "countdown", duration: 300 }, run: true }, 10_000] },
+          { name: "paused: the time it ran is kept", args: [{ rev: 1, timer: { kind: "countdown", duration: 300, startedAt: 10_000, elapsed: 0 }, message: null }, { run: false }, 70_000] },
+          { name: "started again after a pause", args: [{ rev: 2, timer: { kind: "countdown", duration: 300, startedAt: null, elapsed: 60_000 }, message: null }, { run: true }, 100_000] },
+          { name: "a minute more on a countdown", args: [{ rev: 2, timer: { kind: "countdown", duration: 300, startedAt: null, elapsed: 60_000 }, message: null }, { add: 60 }, 100_000] },
+          { name: "reset while running: from its start, now", args: [{ rev: 3, timer: { kind: "count-up", duration: 0, startedAt: 10_000, elapsed: 5_000 }, message: null }, { reset: true }, 50_000] },
+          { name: "a message, then cleared", args: [{ rev: 1, timer: null, message: { text: "Wrap up", at: 1 } }, { message: "  " }, 9_000] },
+          { name: "a message sent, the timer kept", args: [{ rev: 1, timer: { kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, message: null }, { message: " Next: announcements " }, 9_000] },
+          { name: "a duration out of range: refused", args: [null, { timer: { kind: "countdown", duration: 100_000 } }, 0] },
+          { name: "a message too long: refused", args: [null, { message: "x".repeat(201) }, 0] },
+        ],
+      },
       clockOffset: {
         about: "The server's clock less the device's, from the ping with the shortest round trip; null with none usable.",
         params: ["samples"],
@@ -1095,6 +1112,55 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a bad colour: that part's defaults, the rest kept", args: [{ text: { color: "red", font: "serif" }, background: { kind: "aurora", colors: ["#000000", "#6d28d9"] } }] },
           { name: "a field from a later version: ignored", args: [{ background: { kind: "waves", shimmer: true }, future: { x: 1 } }] },
           { name: "not a theme", args: ["concert"] },
+          {
+            name: "a grid (issue #268): a widget of a kind from a later version, or that can't be read, leaves its cells empty",
+            args: [{ grid: { columns: 6, rows: 4, widgets: [{ id: "a", kind: "clock", x: 4, y: 0, w: 2, h: 1, options: { seconds: true } }, { id: "b", kind: "weather", x: 0, y: 0, w: 2, h: 2 }, { id: "c", kind: "text", x: 0, y: 3, w: 9, h: 1, style: { color: "blue" } }] } }],
+          },
+          { name: "a grid that can't be read: none, the words fill the screen", args: [{ grid: { columns: 99 }, text: { font: "serif" } }] },
+        ],
+      },
+      placeScreenWidget: {
+        about: "Where a client draws a widget (issue #268): its cells kept inside the grid, whatever the template says.",
+        params: ["widget", "grid"],
+        run: placeScreenWidget,
+        cases: [
+          { name: "inside: as it is", args: [{ x: 2, y: 1, w: 3, h: 2 }, { columns: 12, rows: 12 }] },
+          { name: "past the right and bottom edges: cut to fit", args: [{ x: 10, y: 11, w: 5, h: 4 }, { columns: 12, rows: 12 }] },
+          { name: "starting outside a smaller grid: its last cell", args: [{ x: 20, y: 20, w: 2, h: 2 }, { columns: 6, rows: 4 }] },
+        ],
+      },
+      screenLayoutPresets: {
+        about: "The ready-made grids a template's layout starts from (issue #268), by id.",
+        params: ["id"],
+        run: (id: string) => SCREEN_LAYOUT_PRESETS.find((one) => one.id === id)?.grid ?? null,
+        cases: SCREEN_LAYOUT_PRESETS.map((one) => ({ name: one.id, args: [one.id] })),
+      },
+      readScreenTimer: {
+        about:
+          "What a countdown or count up widget shows (issue #268): its seconds, past zero or not, near the end or not, running or not - from the operator's timer, a length from when the set item came on, a time of day, or the song on screen. Null when there's nothing to count.",
+        params: ["widget", "context"],
+        run: (widget: unknown, context: Parameters<typeof readScreenTimer>[1]) => readScreenTimer(ScreenWidgetSchema.parse(widget), context),
+        cases: [
+          { name: "the operator's countdown, running", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { now: 100_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "countdown", duration: 300, startedAt: 40_000, elapsed: 10_000 } }] },
+          { name: "the operator's countdown, paused near the end: warned", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { now: 100_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "countdown", duration: 300, startedAt: null, elapsed: 250_500 } }] },
+          { name: "the operator's countdown, past zero: counting on", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { now: 400_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "countdown", duration: 300, startedAt: 0, elapsed: 0 } }] },
+          { name: "past zero, holding at 0:00", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { overtime: "stop" } }, { now: 400_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "countdown", duration: 300, startedAt: 0, elapsed: 0 } }] },
+          { name: "no operator timer: nothing to show", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { now: 1000, itemStartedAt: null, localMidnight: 0, operator: null }] },
+          { name: "a length from when the item came on", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { source: "duration", duration: 120 } }, { now: 90_000, itemStartedAt: 30_000, localMidnight: 0, operator: null }] },
+          { name: "until a time of day", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { source: "until", until: "10:30" } }, { now: 1_000_000 + 10 * 3_600_000, itemStartedAt: null, localMidnight: 1_000_000, operator: null }] },
+          { name: "a count up since the song came on", args: [{ id: "t", kind: "count-up", x: 0, y: 0, w: 1, h: 1, options: { source: "song" } }, { now: 200_000, itemStartedAt: 75_000, localMidnight: 0, operator: null }] },
+          { name: "the operator's count up", args: [{ id: "t", kind: "count-up", x: 0, y: 0, w: 1, h: 1 }, { now: 200_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "count-up", duration: 0, startedAt: 100_000, elapsed: 5_000 } }] },
+        ],
+      },
+      formatTimer: {
+        about: "Seconds as a timer shows them: m:ss, h:mm:ss past an hour, a + in front past zero.",
+        params: ["seconds", "overtime"],
+        run: formatTimer,
+        cases: [
+          { name: "under a minute", args: [42, false] },
+          { name: "minutes", args: [245, false] },
+          { name: "past an hour", args: [3723, false] },
+          { name: "past zero", args: [65, true] },
         ],
       },
       screenThemeTemplates: {

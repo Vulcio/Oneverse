@@ -3,6 +3,235 @@
   "area": "timeline",
   "about": "The metronome and sync play's timeline (issue #13): only \"beat N at server time T\" crosses the network, and each device plays it on its own clock. Positions are in beats from the start, count-in included; times in ms.",
   "functions": {
+    "applyStageCommand": {
+      "about": "The media operator's timer and message for a set's screens (issue #269): a new timer stopped at its start, reset, started or paused, a minute more or less, then the message. Null: a command that can't be read, refused.",
+      "params": [
+        "stage",
+        "command",
+        "now"
+      ],
+      "cases": [
+        {
+          "name": "a new 5-minute countdown, started",
+          "args": [
+            null,
+            {
+              "timer": {
+                "kind": "countdown",
+                "duration": 300
+              },
+              "run": true
+            },
+            10000
+          ],
+          "expected": {
+            "rev": 1,
+            "timer": {
+              "kind": "countdown",
+              "duration": 300,
+              "startedAt": 10000,
+              "elapsed": 0
+            },
+            "message": null
+          }
+        },
+        {
+          "name": "paused: the time it ran is kept",
+          "args": [
+            {
+              "rev": 1,
+              "timer": {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": 10000,
+                "elapsed": 0
+              },
+              "message": null
+            },
+            {
+              "run": false
+            },
+            70000
+          ],
+          "expected": {
+            "rev": 2,
+            "timer": {
+              "kind": "countdown",
+              "duration": 300,
+              "startedAt": null,
+              "elapsed": 60000
+            },
+            "message": null
+          }
+        },
+        {
+          "name": "started again after a pause",
+          "args": [
+            {
+              "rev": 2,
+              "timer": {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": null,
+                "elapsed": 60000
+              },
+              "message": null
+            },
+            {
+              "run": true
+            },
+            100000
+          ],
+          "expected": {
+            "rev": 3,
+            "timer": {
+              "kind": "countdown",
+              "duration": 300,
+              "startedAt": 100000,
+              "elapsed": 60000
+            },
+            "message": null
+          }
+        },
+        {
+          "name": "a minute more on a countdown",
+          "args": [
+            {
+              "rev": 2,
+              "timer": {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": null,
+                "elapsed": 60000
+              },
+              "message": null
+            },
+            {
+              "add": 60
+            },
+            100000
+          ],
+          "expected": {
+            "rev": 3,
+            "timer": {
+              "kind": "countdown",
+              "duration": 360,
+              "startedAt": null,
+              "elapsed": 60000
+            },
+            "message": null
+          }
+        },
+        {
+          "name": "reset while running: from its start, now",
+          "args": [
+            {
+              "rev": 3,
+              "timer": {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 10000,
+                "elapsed": 5000
+              },
+              "message": null
+            },
+            {
+              "reset": true
+            },
+            50000
+          ],
+          "expected": {
+            "rev": 4,
+            "timer": {
+              "kind": "count-up",
+              "duration": 0,
+              "startedAt": 50000,
+              "elapsed": 0
+            },
+            "message": null
+          }
+        },
+        {
+          "name": "a message, then cleared",
+          "args": [
+            {
+              "rev": 1,
+              "timer": null,
+              "message": {
+                "text": "Wrap up",
+                "at": 1
+              }
+            },
+            {
+              "message": "  "
+            },
+            9000
+          ],
+          "expected": {
+            "rev": 2,
+            "timer": null,
+            "message": null
+          }
+        },
+        {
+          "name": "a message sent, the timer kept",
+          "args": [
+            {
+              "rev": 1,
+              "timer": {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 5,
+                "elapsed": 0
+              },
+              "message": null
+            },
+            {
+              "message": " Next: announcements "
+            },
+            9000
+          ],
+          "expected": {
+            "rev": 2,
+            "timer": {
+              "kind": "count-up",
+              "duration": 0,
+              "startedAt": 5,
+              "elapsed": 0
+            },
+            "message": {
+              "text": "Next: announcements",
+              "at": 9000
+            }
+          }
+        },
+        {
+          "name": "a duration out of range: refused",
+          "args": [
+            null,
+            {
+              "timer": {
+                "kind": "countdown",
+                "duration": 100000
+              }
+            },
+            0
+          ],
+          "expected": null
+        },
+        {
+          "name": "a message too long: refused",
+          "args": [
+            null,
+            {
+              "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            0
+          ],
+          "expected": null
+        }
+      ]
+    },
     "clockOffset": {
       "about": "The server's clock less the device's, from the ping with the shortest round trip; null with none usable.",
       "params": [

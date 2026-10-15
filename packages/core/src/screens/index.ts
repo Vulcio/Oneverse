@@ -71,10 +71,4 @@ export function formatScreenCode(code: string): string {
 }
 export * from "./theme.js";
 
-/**
- * What a screen can show besides the words (issue #267), placed on a
- * template's grid (issue #268). Their names and descriptions are in the
- * locale files (`screens.widgetKinds.<kind>`).
- */
-export const SCREEN_WIDGET_KINDS = ["stage", "current-slide", "next-slide", "clock", "countdown", "count-up", "message", "song", "next-song", "text"] as const;
-export type ScreenWidgetKind = (typeof SCREEN_WIDGET_KINDS)[number];
+export * from "./timers.js";

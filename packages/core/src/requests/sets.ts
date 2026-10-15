@@ -33,6 +33,19 @@ export const AddSetlistItemSchema = z.strictObject({
   afterItemId: optional(z.string().min(1).max(40)).describe("Played right after this song of the set (issue #199); at the end when left out"),
 });
 
+/** A set item's own timer (issue #269): started on the screens' stage when Live comes to it. */
+export const SetlistItemTimerSchema = z.strictObject({
+  kind: z.enum(["countdown", "count-up"]),
+  duration: z.number().int().min(0).max(86_400).describe("A countdown's length, in seconds; 0 for a count up"),
+});
+export type SetlistItemTimer = z.output<typeof SetlistItemTimerSchema>;
+
+/** A stored item timer as it's read: null when there's none, or it can't be. */
+export function readItemTimer(value: unknown): SetlistItemTimer | null {
+  const timer = SetlistItemTimerSchema.safeParse(value);
+  return timer.success ? timer.data : null;
+}
+
 export const UpdateSetlistItemSchema = z.strictObject({
   songVersionId: optional(z.string()).describe("Another version of the same song"),
   transposeSteps: optional(transposeSteps),
@@ -45,6 +58,7 @@ export const UpdateSetlistItemSchema = z.strictObject({
     .max(8)
     .optional()
     .describe('For a transition (issue #10): the chords played into the next song, as degrees of its key ("2m7", "57"); [] for none'),
+  timer: SetlistItemTimerSchema.nullable().optional().describe("Its own timer (issue #269), started on the screens when Live comes to it; null: none"),
 });
 export type UpdateSetlistItemRequest = z.input<typeof UpdateSetlistItemSchema>;
 

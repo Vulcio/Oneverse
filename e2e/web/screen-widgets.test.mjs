@@ -1,0 +1,147 @@
+// Screen widgets on a template's grid (issue #268): the API takes a grid and refuses a bad one; the editor
+// starts from the Stage display layout, moves and resizes a widget, adds one and saves; a screen using the
+// template draws each widget in its cells - the slide now and the next one, the clock, a countdown until a
+// time, the song and the next song, words of one's own - and Black hides only the words when it says so.
+import { chromium } from "playwright";
+import { WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+
+let page;
+const step = stepper(() => page);
+const leader = await user("Widget maker");
+const set = await api(leader, "POST", "/setlists", { name: `Widgets ${stamp}` });
+const content = (first) => `{key: G}\n{start_of_verse}\n${first} line here\nsecond line here\nthird line here\nfourth line here\n{end_of_verse}\n`;
+const first = await api(leader, "POST", "/song-versions", { title: `First song ${stamp}`, language: "en", artists: ["Someone"], content: content("First"), contentFormat: "CHORDPRO" });
+const second = await api(leader, "POST", "/song-versions", { title: `Second song ${stamp}`, language: "en", artists: ["Someone"], content: content("Other"), contentFormat: "CHORDPRO" });
+await api(leader, "POST", `/setlists/${set.id}/items`, { songVersionId: first.id });
+await api(leader, "POST", `/setlists/${set.id}/items`, { songVersionId: second.id });
+
+// --- the API
+let r = await call(leader, "POST", "/screen-themes", { name: "Bad", theme: { grid: { widgets: [{ id: "a", kind: "clock", x: 0, y: 0, w: 2, h: 1, sparkle: 1 }] } } });
+check("a widget's unknown field is refused, by name", r.status === 400 && JSON.stringify(r.body).includes("sparkle"), JSON.stringify(r.body));
+r = await call(leader, "POST", "/screen-themes", { name: "Bad", theme: { grid: { widgets: [{ id: "a", kind: "weather", x: 0, y: 0, w: 2, h: 1 }] } } });
+check("an unknown kind of widget is refused", r.status === 400, JSON.stringify(r.body));
+r = await call(leader, "POST", "/screen-themes", { name: "Bad", theme: { grid: { widgets: [{ id: "a", kind: "countdown", x: 0, y: 0, w: 2, h: 1, options: { source: "until", until: "25:00" } }] } } });
+check("a time of day is HH:MM", r.status === 400 && JSON.stringify(r.body).includes("until"), JSON.stringify(r.body));
+r = await call(leader, "POST", "/screen-themes", { name: `Grid ${stamp}`, theme: { grid: { columns: 6, rows: 4, widgets: [{ id: "c", kind: "clock", x: 4, y: 0, w: 2, h: 1 }] } } });
+check("a grid saved with its widgets' defaults", r.status === 201 && r.body.theme.grid.widgets[0].options.format === "24h" && r.body.theme.grid.black === "all", JSON.stringify(r.body));
+await api(leader, "DELETE", `/screen-themes/${r.body.id}`);
+
+const browser = await chromium.launch();
+try {
+  const tv = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+  const tablet = await (await browser.newContext({ viewport: { width: 1440, height: 1000 } })).newPage();
+  const errors = [];
+  tv.on("pageerror", (error) => errors.push(error.message));
+  tablet.on("pageerror", (error) => errors.push(error.message));
+  const editor = tablet.getByTestId("theme-editor");
+  let theme;
+
+  await step("the editor: Stage display on its grid; a widget dragged, resized, one added, saved", async () => {
+    page = tablet;
+    await signIn(tablet, leader);
+    await tablet.goto(`${WEB}/screens?tab=templates`);
+    await tablet.getByTestId("builtin-theme-stage-display").getByTestId("customize-theme").click();
+    const overlay = editor.getByTestId("theme-grid-overlay");
+    await overlay.waitFor();
+    // The clock, one cell to the left: dragged.
+    const clock = overlay.getByTestId("grid-widget-clock");
+    if ((await clock.getAttribute("data-place")) !== "8,0,4,2") throw new Error(await clock.getAttribute("data-place"));
+    const box = await clock.boundingBox();
+    const cell = (await overlay.boundingBox()).width / 12;
+    await tablet.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await tablet.mouse.down();
+    await tablet.mouse.move(box.x + box.width / 2 - cell * 0.6, box.y + box.height / 2, { steps: 5 });
+    await tablet.mouse.move(box.x + box.width / 2 - cell, box.y + box.height / 2, { steps: 5 });
+    await tablet.mouse.up();
+    await tablet.waitForFunction(() => document.querySelector('[data-testid="grid-widget-clock"]')?.getAttribute("data-place") === "7,0,4,2");
+    // Picked, its options: the seconds off. Then one row taller, from the keyboard.
+    await editor.locator('[data-testid="theme-widget-settings"][data-kind="clock"]').waitFor();
+    await editor.getByTestId("theme-widget-seconds").uncheck();
+    await clock.focus();
+    await tablet.keyboard.press("Shift+ArrowDown");
+    await tablet.waitForFunction(() => document.querySelector('[data-testid="grid-widget-clock"]')?.getAttribute("data-place") === "7,0,4,3");
+    // A countdown until a time of day, instead of the operator's.
+    await overlay.getByTestId("grid-widget-countdown").click();
+    await editor.getByTestId("theme-widget-source").selectOption("until");
+    await editor.getByTestId("theme-widget-until").fill("23:59");
+    // Words of one's own, added.
+    await editor.getByTestId("theme-widget-add").selectOption("text");
+    await editor.getByTestId("theme-widget-text").fill(`Wi-Fi ${stamp}`);
+    await editor.getByTestId("theme-preview").getByTestId("widget-text").getByText(`Wi-Fi ${stamp}`).waitFor();
+    await editor.getByTestId("theme-grid-black").selectOption("words");
+    await editor.getByLabel("Name").fill(`Stage ${stamp}`);
+    await editor.getByTestId("theme-save").click();
+    await tablet.getByTestId(`saved-theme-Stage ${stamp}`).waitFor();
+    theme = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Stage ${stamp}`);
+    const widgets = Object.fromEntries(theme.theme.grid.widgets.map((one) => [one.kind, one]));
+    if (widgets.clock.x !== 7 || widgets.clock.h !== 3 || widgets.clock.options.seconds !== false) throw new Error(JSON.stringify(widgets.clock));
+    if (widgets.countdown.options.source !== "until" || widgets.countdown.options.until !== "23:59") throw new Error(JSON.stringify(widgets.countdown));
+    if (widgets.text.options.text !== `Wi-Fi ${stamp}` || theme.theme.grid.black !== "words") throw new Error(JSON.stringify(theme.theme.grid));
+  });
+
+  await step("a screen using it: each widget in its cells, the clock and the countdown ticking", async () => {
+    page = tv;
+    await tv.goto(`${WEB}/screen`);
+    const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
+    await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Stage ${stamp}`, mode: "LYRICS", setlistId: set.id, themeId: theme.id });
+    await tv.getByTestId("screen-grid").waitFor({ timeout: 15000 });
+    await tv.getByTestId("widget-text").getByText(`Wi-Fi ${stamp}`).waitFor();
+    const clock = await tv.getByTestId("widget-clock").innerText();
+    if (!/^\d{2}:\d{2}$/.test(clock.trim())) throw new Error(`clock: ${clock}`);
+    const countdown = tv.getByTestId("widget-countdown");
+    const before = await countdown.innerText();
+    if (!/^(\d+:)?\d{1,2}:\d{2}$/.test(before.trim())) throw new Error(`countdown: ${before}`);
+    await tv.waitForFunction((was) => document.querySelector('[data-testid="widget-countdown"]')?.textContent !== was, before, { timeout: 5000 });
+    // Nothing presented: no slides, no song.
+    if ((await tv.getByTestId("widget-current-slide").count()) + (await tv.getByTestId("widget-song").count()) > 0) throw new Error("a slide before anything's presented");
+  });
+
+  await step("presented: the slide now and the next, the song and what's next", async () => {
+    page = tablet;
+    await tablet.evaluate(() => localStorage.setItem("songverse.mode", "live"));
+    const [item] = (await api(leader, "GET", `/setlists/${set.id}`)).items;
+    await tablet.goto(`${WEB}/sets/${set.id}/live/${item.id}`);
+    const control = tablet.getByTestId("sync-control").first();
+    await control.click();
+    await tablet.getByTestId("sync-menu").getByRole("menuitem", { name: "Turn sync on" }).click();
+    await tablet.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
+    await control.click();
+    await tablet.getByTestId("sync-menu").getByRole("menuitem", { name: "Lead the set" }).click();
+    await tablet.locator('[data-testid="sync-control"][data-state-sync="leading"]').first().waitFor();
+    await control.click();
+    await tablet.getByTestId("sync-present").click();
+    page = tv;
+    await tv.getByTestId("widget-current-slide").getByText("First line here").waitFor({ timeout: 10000 });
+    await tv.getByTestId("widget-next-slide").getByText("third line here").waitFor();
+    await tv.getByTestId("widget-song").getByText(`First song ${stamp}`).waitFor();
+    await tv.getByTestId("widget-song").getByText("G", { exact: true }).waitFor();
+    await tv.getByTestId("widget-next-song").getByText(`Second song ${stamp}`, { exact: false }).waitFor();
+    // The song's last slide: the next slide is the next song's first.
+    page = tablet;
+    await tablet.getByTestId("present-next").click();
+    page = tv;
+    await tv.getByTestId("widget-next-slide").getByText("Other line here").waitFor();
+  });
+
+  await step("Black hides only the words: the clock and the text stay", async () => {
+    page = tablet;
+    await tablet.getByTestId("present-black").click();
+    page = tv;
+    await tv.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
+    await tv.getByTestId("widget-clock").waitFor();
+    await tv.getByTestId("widget-text").getByText(`Wi-Fi ${stamp}`).waitFor();
+    if ((await tv.getByTestId("screen-black").getAttribute("data-on")) !== null) throw new Error("the whole screen went black");
+    page = tablet;
+    await tablet.getByTestId("present-black").click();
+    page = tv;
+    await tv.getByTestId("widget-current-slide").waitFor();
+  });
+
+  await step("no page errors", async () => {
+    if (errors.length) throw new Error(errors.join(" | "));
+  });
+} finally {
+  await browser.close();
+  for (const screen of await api(leader, "GET", "/screens")) await api(leader, "DELETE", `/screens/${screen.id}`);
+}
+finish();

@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { MonitorUp, Presentation, RadioTower, Volume2 } from "lucide-react";
+import { MonitorUp, Presentation, RadioTower, Timer, Volume2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import {
@@ -103,6 +103,13 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
               <DropdownMenuItem onClick={() => void navigate({ to: "/screens", search: { setlistId: setId } })} data-testid="sync-screens">
                 <MonitorUp />
                 {t("screens.addScreen")}
+              </DropdownMenuItem>
+            ) : null}
+            {/* The media operator's view (issue #269), in its own tab: Live carries on here. */}
+            {sync.canLead ? (
+              <DropdownMenuItem onClick={() => window.open(`/sets/${setId}/operate`, "_blank")} data-testid="sync-operator">
+                <Timer />
+                {t("screens.operator.open")}
               </DropdownMenuItem>
             ) : null}
             {sync.canLead && session ? (

@@ -1,11 +1,12 @@
-import { formatScreenCode, lyricSlides, renderChart, screenThemeTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting } from "@songverse/core";
+import { formatScreenCode, lyricSlides, renderChart, screenThemeTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@songverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Music2, WifiOff } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { renderSVG } from "uqr";
 import { LocaleProvider } from "@songverse/app/components/locale-provider";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
+import type { StageLive } from "#/components/screen-widgets";
 import { loadLocale } from "@songverse/app/i18n";
 import { useScreenDisplay } from "#/lib/screen-display";
 import { getVisitorLocale } from "@songverse/app/server-auth";
@@ -47,7 +48,7 @@ function ScreenDisplay() {
     <div className="fixed inset-0 cursor-none overflow-hidden bg-black text-white select-none" data-testid="screen-display" data-state={state.kind}>
       {state.kind === "pairing" ? <Pairing code={state.code} /> : null}
       {state.kind === "showing" ? (
-        <Showing current={state.current} presenting={state.presenting} online={state.online} theme={screenThemeTemplate(pinned)?.theme ?? state.current.theme} />
+        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} theme={screenThemeTemplate(pinned)?.theme ?? state.current.theme} />
       ) : null}
     </div>
   );
@@ -79,7 +80,7 @@ function Pairing({ code }: { code: string }) {
   );
 }
 
-function Showing({ current, presenting, online, theme }: { current: ScreenCurrent; presenting: SyncPresenting | null; online: boolean; theme: ScreenTheme }) {
+function Showing({ current, presenting, online, stage, offset, theme }: { current: ScreenCurrent; presenting: SyncPresenting | null; online: boolean; stage: SyncStage | null; offset: number; theme: ScreenTheme }) {
   const { t, i18n } = useTranslation();
   const set = current.set;
   const view = presenting && set ? set.songs.find((song) => song.item.id === presenting.itemId) : undefined;
@@ -90,6 +91,25 @@ function Showing({ current, presenting, online, theme }: { current: ScreenCurren
     const chart = renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps, suggestedCapo: view.song.suggestedCapo });
     return { key: view.item.id, title: view.song.title, slides: lyricSlides(chart), credits: set?.credits[view.song.id], chart };
   }, [view, set]);
+
+  // What the template's widgets read (issue #268): the song's details, the next song, when this item came on.
+  const [itemStartedAt, setItemStartedAt] = useState<number | null>(null);
+  useEffect(() => setItemStartedAt(presenting?.itemId ? Date.now() : null), [presenting?.itemId]);
+  const live = useMemo<StageLive>(() => {
+    const songs = set?.songs ?? [];
+    const at = view ? songs.indexOf(view) : -1;
+    const next = at >= 0 ? songs.slice(at + 1).find((one) => one.song) : undefined;
+    const nextChart = next?.song ? renderChart(next.song.document, next.arrangement?.document ?? null, { transposeSteps: next.item.transposeSteps }) : null;
+    return {
+      details: view?.song && song ? { title: view.song.title, key: song.chart?.key ?? view.song.key, tempo: view.song.tempo } : null,
+      nextSong: next?.song && nextChart ? { title: next.song.title, slides: lyricSlides(nextChart) } : null,
+      itemStartedAt,
+      // The media operator's (issue #269).
+      operator: stage?.timer ?? null,
+      message: stage?.message?.text ?? null,
+      offset,
+    };
+  }, [set, view, song, itemStartedAt, stage, offset]);
 
   const idle = !set ? (
     <Idle title={current.screen.name} subtitle={t("screens.displayNoSet")} />
@@ -116,6 +136,7 @@ function Showing({ current, presenting, online, theme }: { current: ScreenCurren
         black={!!presenting?.black}
         idle={idle}
         assets={current.assets}
+        live={live}
       />
       {/* Lost the connection: said quietly, in a corner; it comes back by itself. */}
       {!online ? <WifiOff className="absolute right-[2vmin] bottom-[2vmin] z-10 size-[3vmin] text-neutral-600" aria-label={t("screens.displayOffline")} /> : null}

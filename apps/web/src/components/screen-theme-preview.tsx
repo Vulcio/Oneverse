@@ -1,7 +1,8 @@
 import { lyricSlides, renderChart, songDocumentFromText, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
+import type { StageLive } from "#/components/screen-widgets";
 import { cn } from "@songverse/ui/lib/utils";
 
 const SAMPLE = `{key: G}
@@ -34,6 +35,7 @@ export function ScreenThemePreview({
   slide: fixed,
   assets,
   className,
+  children,
 }: {
   theme: ScreenTheme;
   mode?: ScreenMode;
@@ -44,10 +46,13 @@ export function ScreenThemePreview({
   /** The theme's own pictures, videos and fonts. */
   assets?: ScreenThemeAsset[];
   className?: string;
+  /** Drawn over it: the template editor's grid (issue #268). */
+  children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const song = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
   const [slide, setSlide] = useState(0);
+  const live = useSampleLive(song);
   const box = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   // Only what's on screen moves: a page of previews stays light.
@@ -66,7 +71,8 @@ export function ScreenThemePreview({
 
   return (
     <div ref={box} className={cn("relative overflow-hidden rounded-lg bg-black shadow-sm ring-1 ring-border", className)} style={{ aspectRatio: aspect }} data-testid="theme-preview">
-      <ScreenStage className={cn("absolute inset-0", !visible && "[&_*]:[animation-play-state:paused]")} theme={theme} mode={mode} song={song} slide={fixed ?? slide} assets={assets} />
+      <ScreenStage className={cn("absolute inset-0", !visible && "[&_*]:[animation-play-state:paused]")} theme={theme} mode={mode} song={song} slide={fixed ?? slide} assets={assets} live={live} />
+      {children}
     </div>
   );
 }
@@ -77,4 +83,21 @@ export function useSampleSong(title: string, writers: string): StageSong {
     const chart = renderChart(songDocumentFromText(null, { content: SAMPLE, format: "CHORDPRO" }));
     return { key: "sample", title, slides: lyricSlides(chart), credits: { writers: [writers], copyright: null, ccli: "22025" }, chart };
   }, [title, writers]);
+}
+
+/** What a template's widgets show in a preview (issue #268): a next song, a running countdown, a message. */
+export function useSampleLive(song: StageSong): StageLive {
+  const { t } = useTranslation();
+  const [started] = useState(() => Date.now());
+  return useMemo(
+    () => ({
+      preview: true,
+      nextSong: { title: t("screens.widgetSample.nextTitle"), slides: [{ passIndex: 0, passId: "next", label: null, lines: [t("screens.widgetSample.nextLine1"), t("screens.widgetSample.nextLine2")], part: 0 }] },
+      details: { title: song.title, key: "G", tempo: 72 },
+      itemStartedAt: started,
+      operator: { kind: "countdown", duration: 300, startedAt: started, elapsed: 0 },
+      offset: 0,
+    }),
+    [t, song.title, started],
+  );
 }

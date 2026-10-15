@@ -625,7 +625,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -694,7 +695,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -767,7 +769,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -835,7 +838,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -895,8 +899,906 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
+            },
+            "grid": null
+          }
+        },
+        {
+          "name": "a grid (issue #268): a widget of a kind from a later version, or that can't be read, leaves its cells empty",
+          "args": [
+            {
+              "grid": {
+                "columns": 6,
+                "rows": 4,
+                "widgets": [
+                  {
+                    "id": "a",
+                    "kind": "clock",
+                    "x": 4,
+                    "y": 0,
+                    "w": 2,
+                    "h": 1,
+                    "options": {
+                      "seconds": true
+                    }
+                  },
+                  {
+                    "id": "b",
+                    "kind": "weather",
+                    "x": 0,
+                    "y": 0,
+                    "w": 2,
+                    "h": 2
+                  },
+                  {
+                    "id": "c",
+                    "kind": "text",
+                    "x": 0,
+                    "y": 3,
+                    "w": 9,
+                    "h": 1,
+                    "style": {
+                      "color": "blue"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": true,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1
+            },
+            "grid": {
+              "columns": 6,
+              "rows": 4,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "a",
+                  "kind": "clock",
+                  "x": 4,
+                  "y": 0,
+                  "w": 2,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": true,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                }
+              ]
             }
           }
+        },
+        {
+          "name": "a grid that can't be read: none, the words fill the screen",
+          "args": [
+            {
+              "grid": {
+                "columns": 99
+              },
+              "text": {
+                "font": "serif"
+              }
+            }
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "text": {
+              "font": "serif",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": true,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1
+            },
+            "grid": null
+          }
+        }
+      ]
+    },
+    "placeScreenWidget": {
+      "about": "Where a client draws a widget (issue #268): its cells kept inside the grid, whatever the template says.",
+      "params": [
+        "widget",
+        "grid"
+      ],
+      "cases": [
+        {
+          "name": "inside: as it is",
+          "args": [
+            {
+              "x": 2,
+              "y": 1,
+              "w": 3,
+              "h": 2
+            },
+            {
+              "columns": 12,
+              "rows": 12
+            }
+          ],
+          "expected": {
+            "x": 2,
+            "y": 1,
+            "w": 3,
+            "h": 2
+          }
+        },
+        {
+          "name": "past the right and bottom edges: cut to fit",
+          "args": [
+            {
+              "x": 10,
+              "y": 11,
+              "w": 5,
+              "h": 4
+            },
+            {
+              "columns": 12,
+              "rows": 12
+            }
+          ],
+          "expected": {
+            "x": 10,
+            "y": 11,
+            "w": 2,
+            "h": 1
+          }
+        },
+        {
+          "name": "starting outside a smaller grid: its last cell",
+          "args": [
+            {
+              "x": 20,
+              "y": 20,
+              "w": 2,
+              "h": 2
+            },
+            {
+              "columns": 6,
+              "rows": 4
+            }
+          ],
+          "expected": {
+            "x": 5,
+            "y": 3,
+            "w": 1,
+            "h": 1
+          }
+        }
+      ]
+    },
+    "screenLayoutPresets": {
+      "about": "The ready-made grids a template's layout starts from (issue #268), by id.",
+      "params": [
+        "id"
+      ],
+      "cases": [
+        {
+          "name": "words",
+          "args": [
+            "words"
+          ],
+          "expected": null
+        },
+        {
+          "name": "words-clock",
+          "args": [
+            "words-clock"
+          ],
+          "expected": {
+            "columns": 12,
+            "rows": 12,
+            "gap": 1,
+            "black": "all",
+            "widgets": [
+              {
+                "id": "stage",
+                "kind": "stage",
+                "x": 0,
+                "y": 0,
+                "w": 12,
+                "h": 12,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": null,
+                  "background": "#000000",
+                  "opacity": 0,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              },
+              {
+                "id": "clock",
+                "kind": "clock",
+                "x": 9,
+                "y": 0,
+                "w": 3,
+                "h": 1,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": null,
+                  "background": "#000000",
+                  "opacity": 0.4,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "stage-display",
+          "args": [
+            "stage-display"
+          ],
+          "expected": {
+            "columns": 12,
+            "rows": 12,
+            "gap": 1,
+            "black": "words",
+            "widgets": [
+              {
+                "id": "current",
+                "kind": "current-slide",
+                "x": 0,
+                "y": 0,
+                "w": 8,
+                "h": 7,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": null,
+                  "background": "#000000",
+                  "opacity": 0,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              },
+              {
+                "id": "next",
+                "kind": "next-slide",
+                "x": 0,
+                "y": 7,
+                "w": 8,
+                "h": 3,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": "#a3a3a3",
+                  "background": "#000000",
+                  "opacity": 0,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              },
+              {
+                "id": "clock",
+                "kind": "clock",
+                "x": 8,
+                "y": 0,
+                "w": 4,
+                "h": 2,
+                "options": {
+                  "format": "24h",
+                  "seconds": true,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": null,
+                  "background": "#000000",
+                  "opacity": 0,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              },
+              {
+                "id": "countdown",
+                "kind": "countdown",
+                "x": 8,
+                "y": 2,
+                "w": 4,
+                "h": 4,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": null,
+                  "background": "#1f2937",
+                  "opacity": 0.5,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              },
+              {
+                "id": "song",
+                "kind": "song",
+                "x": 8,
+                "y": 6,
+                "w": 4,
+                "h": 2,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": null,
+                  "background": "#000000",
+                  "opacity": 0,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              },
+              {
+                "id": "next-song",
+                "kind": "next-song",
+                "x": 8,
+                "y": 8,
+                "w": 4,
+                "h": 2,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": "#a3a3a3",
+                  "background": "#000000",
+                  "opacity": 0,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              },
+              {
+                "id": "message",
+                "kind": "message",
+                "x": 0,
+                "y": 10,
+                "w": 12,
+                "h": 2,
+                "options": {
+                  "format": "24h",
+                  "seconds": false,
+                  "date": false,
+                  "source": "operator",
+                  "duration": 300,
+                  "until": "10:00",
+                  "overtime": "count",
+                  "warn": 60,
+                  "label": "",
+                  "text": "",
+                  "details": true
+                },
+                "style": {
+                  "font": null,
+                  "color": "#ffffff",
+                  "background": "#b91c1c",
+                  "opacity": 0.9,
+                  "align": "center",
+                  "size": "auto",
+                  "radius": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "readScreenTimer": {
+      "about": "What a countdown or count up widget shows (issue #268): its seconds, past zero or not, near the end or not, running or not - from the operator's timer, a length from when the set item came on, a time of day, or the song on screen. Null when there's nothing to count.",
+      "params": [
+        "widget",
+        "context"
+      ],
+      "cases": [
+        {
+          "name": "the operator's countdown, running",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            {
+              "now": 100000,
+              "itemStartedAt": null,
+              "localMidnight": 0,
+              "operator": {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": 40000,
+                "elapsed": 10000
+              }
+            }
+          ],
+          "expected": {
+            "seconds": 230,
+            "overtime": false,
+            "warn": false,
+            "running": true
+          }
+        },
+        {
+          "name": "the operator's countdown, paused near the end: warned",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            {
+              "now": 100000,
+              "itemStartedAt": null,
+              "localMidnight": 0,
+              "operator": {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": null,
+                "elapsed": 250500
+              }
+            }
+          ],
+          "expected": {
+            "seconds": 50,
+            "overtime": false,
+            "warn": true,
+            "running": false
+          }
+        },
+        {
+          "name": "the operator's countdown, past zero: counting on",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            {
+              "now": 400000,
+              "itemStartedAt": null,
+              "localMidnight": 0,
+              "operator": {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": 0,
+                "elapsed": 0
+              }
+            }
+          ],
+          "expected": {
+            "seconds": 100,
+            "overtime": true,
+            "warn": false,
+            "running": true
+          }
+        },
+        {
+          "name": "past zero, holding at 0:00",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "overtime": "stop"
+              }
+            },
+            {
+              "now": 400000,
+              "itemStartedAt": null,
+              "localMidnight": 0,
+              "operator": {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": 0,
+                "elapsed": 0
+              }
+            }
+          ],
+          "expected": {
+            "seconds": 0,
+            "overtime": true,
+            "warn": false,
+            "running": true
+          }
+        },
+        {
+          "name": "no operator timer: nothing to show",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            {
+              "now": 1000,
+              "itemStartedAt": null,
+              "localMidnight": 0,
+              "operator": null
+            }
+          ],
+          "expected": null
+        },
+        {
+          "name": "a length from when the item came on",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "source": "duration",
+                "duration": 120
+              }
+            },
+            {
+              "now": 90000,
+              "itemStartedAt": 30000,
+              "localMidnight": 0,
+              "operator": null
+            }
+          ],
+          "expected": {
+            "seconds": 60,
+            "overtime": false,
+            "warn": true,
+            "running": true
+          }
+        },
+        {
+          "name": "until a time of day",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "source": "until",
+                "until": "10:30"
+              }
+            },
+            {
+              "now": 37000000,
+              "itemStartedAt": null,
+              "localMidnight": 1000000,
+              "operator": null
+            }
+          ],
+          "expected": {
+            "seconds": 1800,
+            "overtime": false,
+            "warn": false,
+            "running": true
+          }
+        },
+        {
+          "name": "a count up since the song came on",
+          "args": [
+            {
+              "id": "t",
+              "kind": "count-up",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "source": "song"
+              }
+            },
+            {
+              "now": 200000,
+              "itemStartedAt": 75000,
+              "localMidnight": 0,
+              "operator": null
+            }
+          ],
+          "expected": {
+            "seconds": 125,
+            "overtime": false,
+            "warn": false,
+            "running": true
+          }
+        },
+        {
+          "name": "the operator's count up",
+          "args": [
+            {
+              "id": "t",
+              "kind": "count-up",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            {
+              "now": 200000,
+              "itemStartedAt": null,
+              "localMidnight": 0,
+              "operator": {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 100000,
+                "elapsed": 5000
+              }
+            }
+          ],
+          "expected": {
+            "seconds": 105,
+            "overtime": false,
+            "warn": false,
+            "running": true
+          }
+        }
+      ]
+    },
+    "formatTimer": {
+      "about": "Seconds as a timer shows them: m:ss, h:mm:ss past an hour, a + in front past zero.",
+      "params": [
+        "seconds",
+        "overtime"
+      ],
+      "cases": [
+        {
+          "name": "under a minute",
+          "args": [
+            42,
+            false
+          ],
+          "expected": "0:42"
+        },
+        {
+          "name": "minutes",
+          "args": [
+            245,
+            false
+          ],
+          "expected": "4:05"
+        },
+        {
+          "name": "past an hour",
+          "args": [
+            3723,
+            false
+          ],
+          "expected": "1:02:03"
+        },
+        {
+          "name": "past zero",
+          "args": [
+            65,
+            true
+          ],
+          "expected": "+1:05"
         }
       ]
     },
@@ -963,7 +1865,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -1026,7 +1929,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -1088,7 +1992,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -1151,7 +2056,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -1213,7 +2119,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -1274,7 +2181,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -1334,7 +2242,8 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
-            }
+            },
+            "grid": null
           }
         },
         {
@@ -1394,6 +2303,285 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1
+            },
+            "grid": null
+          }
+        },
+        {
+          "name": "stage-display",
+          "args": [
+            "stage-display"
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "text": {
+              "font": "condensed",
+              "customFont": null,
+              "size": "auto",
+              "weight": 700,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "none",
+              "lineHeight": 1.05,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 0,
+              "after": 0,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 2
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": false,
+              "when": "first"
+            },
+            "credits": {
+              "show": false,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "cut",
+              "duration": 0,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1
+            },
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "words",
+              "widgets": [
+                {
+                  "id": "current",
+                  "kind": "current-slide",
+                  "x": 0,
+                  "y": 0,
+                  "w": 8,
+                  "h": 7,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "next",
+                  "kind": "next-slide",
+                  "x": 0,
+                  "y": 7,
+                  "w": 8,
+                  "h": 3,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": "#a3a3a3",
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "clock",
+                  "kind": "clock",
+                  "x": 8,
+                  "y": 0,
+                  "w": 4,
+                  "h": 2,
+                  "options": {
+                    "format": "24h",
+                    "seconds": true,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "countdown",
+                  "kind": "countdown",
+                  "x": 8,
+                  "y": 2,
+                  "w": 4,
+                  "h": 4,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#1f2937",
+                    "opacity": 0.5,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song",
+                  "kind": "song",
+                  "x": 8,
+                  "y": 6,
+                  "w": 4,
+                  "h": 2,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "next-song",
+                  "kind": "next-song",
+                  "x": 8,
+                  "y": 8,
+                  "w": 4,
+                  "h": 2,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": "#a3a3a3",
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "message",
+                  "kind": "message",
+                  "x": 0,
+                  "y": 10,
+                  "w": 12,
+                  "h": 2,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true
+                  },
+                  "style": {
+                    "font": null,
+                    "color": "#ffffff",
+                    "background": "#b91c1c",
+                    "opacity": 0.9,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                }
+              ]
             }
           }
         },
@@ -1454,7 +2642,8 @@
             "chords": {
               "color": "#facc15",
               "scale": 1.2
-            }
+            },
+            "grid": null
           }
         }
       ]

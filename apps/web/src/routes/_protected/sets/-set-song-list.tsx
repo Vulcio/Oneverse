@@ -9,9 +9,9 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { degreeChords, SET_TRANSITIONS, TRANSPOSE_STEP_OPTIONS, transposeKey, type SetlistItem, type SetlistSongRef, type UpdateSetlistItemRequest } from "@songverse/core";
+import { degreeChords, formatTimer, SET_TRANSITIONS, TRANSPOSE_STEP_OPTIONS, transposeKey, type SetlistItem, type SetlistSongRef, type UpdateSetlistItemRequest } from "@songverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Check, GripVertical, Pencil, X } from "lucide-react";
+import { Check, GripVertical, Pencil, Timer, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@songverse/ui/components/badge";
@@ -335,6 +335,32 @@ function SongRow({
         </span>
       ) : null}
 
+      {/* Its own timer (issue #269): started on the screens when Live comes to it. */}
+      {canEdit ? (
+        <NativeSelect
+          aria-label={t("sets.timer")}
+          value={timerValue(item.timer)}
+          onChange={(event) => onChange({ timer: timerFrom(event.target.value) })}
+          compact
+          className="text-sm"
+          data-testid="set-song-timer"
+        >
+          <option value="">{t("sets.timerNone")}</option>
+          <option value="up">{t("sets.timerUp")}</option>
+          {ITEM_TIMER_MINUTES.map((minutes) => (
+            <option key={minutes} value={String(minutes * 60)}>
+              {t("sets.timerDown", { time: formatTimer(minutes * 60) })}
+            </option>
+          ))}
+          {item.timer?.kind === "countdown" && !ITEM_TIMER_MINUTES.includes(item.timer.duration / 60) ? <option value={String(item.timer.duration)}>{t("sets.timerDown", { time: formatTimer(item.timer.duration) })}</option> : null}
+        </NativeSelect>
+      ) : item.timer ? (
+        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+          <Timer className="size-3.5" aria-hidden />
+          {item.timer.kind === "count-up" ? t("sets.timerUp") : t("sets.timerDown", { time: formatTimer(item.timer.duration) })}
+        </span>
+      ) : null}
+
       {canEdit ? (
         <Button variant="ghost" size="icon" className="size-8" aria-label={t("sets.removeSong", { title })} onClick={onRemove}>
           <X />
@@ -343,6 +369,11 @@ function SongRow({
     </li>
   );
 }
+
+/** The lengths a set item's countdown is picked from (minutes). */
+const ITEM_TIMER_MINUTES = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60];
+const timerValue = (timer: SetlistItem["timer"]) => (!timer ? "" : timer.kind === "count-up" ? "up" : String(timer.duration));
+const timerFrom = (value: string): UpdateSetlistItemRequest["timer"] => (!value ? null : value === "up" ? { kind: "count-up", duration: 0 } : { kind: "countdown", duration: Number(value) });
 
 /** "Shared by …" and, for a team set, asking for / handing over / deciding on the song. */
 function OwnershipLine({ item, ownership }: { item: SetlistItem; ownership: OwnershipActions }) {

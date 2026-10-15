@@ -18,6 +18,7 @@ import {
 import { ChevronLeft, ChevronRight, Pause, Play, TriangleAlert } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@songverse/ui/components/button";
 import { Dialog, DialogContent, DialogTitle } from "@songverse/ui/components/dialog";
@@ -61,6 +62,10 @@ export function ScreenThemeEditor({ draft, teams, onClose, onSaved }: { draft: T
   const [assets, setAssets] = useState<ScreenThemeAsset[]>(draft.assets ?? []);
   const [uploading, setUploading] = useState<ScreenThemeAsset["kind"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The layout (issue #268): the widget picked, and the grid drawn over the preview to move them.
+  const [selected, setSelected] = useState<string | null>(null);
+  const [showGrid, setShowGrid] = useState(true);
+  const setGrid = (grid: Grid | null) => setTheme((before) => ScreenThemeSchema.parse({ ...before, grid }));
   const sample = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
   const adminTeams = teams.filter((team) => team.currentUserRole === "ADMIN");
   const contrast = screenThemeContrast(theme);
@@ -218,6 +223,9 @@ export function ScreenThemeEditor({ draft, teams, onClose, onSaved }: { draft: T
                 <Slider value={theme.layout.margin} min={0} max={20} step={1} unit="%" onChange={(margin) => set("layout", { margin })} />
               </Field>
             </Group>
+            <Group title={t("screens.editor.widgets")} open={!!theme.grid} testId="theme-group-widgets">
+              <LayoutSettings grid={theme.grid} onGrid={setGrid} selected={selected} onSelect={setSelected} />
+            </Group>
             <Group title={t("screens.editor.background")} open>
               <Field label={t("screens.editor.backgroundKind")}>
                 <Choices value={theme.background.kind} options={SCREEN_BACKGROUNDS} label={(one) => t(`screens.editor.backgrounds.${one}`)} onChange={(kind) => set("background", { kind })} testId="theme-background" />
@@ -356,6 +364,12 @@ export function ScreenThemeEditor({ draft, teams, onClose, onSaved }: { draft: T
               <span className="text-sm font-medium">{t("screens.preview")}</span>
               <Choices value={aspect} options={["16/9", "4/3"] as const} label={(one) => one.replace("/", ":")} onChange={setAspect} />
               <Choices value={mode} options={["LYRICS", "CHART"] as const} label={(one) => t(`screens.modes.${one}`)} onChange={setMode} />
+              {theme.grid ? (
+                <label className="flex items-center gap-1.5 text-xs">
+                  <input type="checkbox" className="accent-primary" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} data-testid="theme-show-grid" />
+                  {t("screens.editor.editLayout")}
+                </label>
+              ) : null}
               <span className="ml-auto flex items-center gap-1">
                 <Button variant="outline" size="icon" className="size-8" onClick={() => step(-1)} aria-label={t("screens.previousSlidePreview")}>
                   <ChevronLeft />
@@ -368,7 +382,9 @@ export function ScreenThemeEditor({ draft, teams, onClose, onSaved }: { draft: T
                 </Button>
               </span>
             </div>
-            <ScreenThemePreview theme={theme} assets={assets} mode={mode} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")} />
+            <ScreenThemePreview theme={theme} assets={assets} mode={mode} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
+              {theme.grid && showGrid ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={setSelected} onGrid={setGrid} /> : null}
+            </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">
               {contrast < 4.5 ? <TriangleAlert className="size-3.5 shrink-0" aria-hidden /> : null}
               {contrast < 4.5 ? t("screens.contrastLow", { ratio: contrast }) : t("screens.contrastOk", { ratio: contrast })}
@@ -417,9 +433,9 @@ export function ScreenThemeEditor({ draft, teams, onClose, onSaved }: { draft: T
   );
 }
 
-function Group({ title, open = false, children }: { title: string; open?: boolean; children: ReactNode }) {
+function Group({ title, open = false, testId, children }: { title: string; open?: boolean; testId?: string; children: ReactNode }) {
   return (
-    <details open={open} className="group rounded-md border bg-card [&[open]>summary]:border-b">
+    <details open={open} className="group rounded-md border bg-card [&[open]>summary]:border-b" data-testid={testId}>
       <summary className="cursor-pointer px-3 py-2 text-sm font-semibold select-none">{title}</summary>
       <div className="flex flex-col gap-3 p-3">{children}</div>
     </details>

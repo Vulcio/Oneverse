@@ -24,6 +24,7 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
   - sa **Version** - **Tel qu'écrit**, ou l'une de vos [versions](/fr/versions/) ou de celles de votre équipe. Dans une liste d'équipe, la version habituelle de l'équipe est choisie pour vous ;
   - sa **Tonalité** - déplace le chant depuis la tonalité de la version (« un ton plus bas ce dimanche ») sans changer la version ;
   - **Après ce chant** - ce qui suit : **Arrêt** (la fin, attendre le meneur), **Enchaîner le suivant** (directement le chant suivant), **Segue (sans pause)** (le décompte du suivant sur la dernière mesure) ou **Transition**, un pont vers le chant suivant avec une note à côté (« Pad sous la prière ») et [des accords pour y entrer](/fr/sets/#accords-vers-le-chant-suivant). Le mode Live l'indique avant la fin du chant, avec le changement de tonalité et de tempo quand le chant suivant en a d'autres.
+  - son **Minuteur sur les écrans** - **Pas de minuteur**, **Chronomètre** ou un compte à rebours : lancé sur les [écrans](/fr/screens/#lopérateur-média) de la liste quand Live arrive à ce chant.
 - **×** retire un chant de la liste (le chant lui-même n'est pas touché).
 
 ### Accords vers le chant suivant

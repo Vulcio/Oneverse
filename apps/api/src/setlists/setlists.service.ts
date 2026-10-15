@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { type SavedDisplaySettings, chartEdgeChords, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@songverse/core";
+import { Prisma } from "@songverse/db";
+import { type SavedDisplaySettings, chartEdgeChords, readItemTimer, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@songverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -193,6 +194,7 @@ export class SetlistsService {
           transition: item.transition,
           transitionNote: item.transitionNote,
           transitionChords: item.transitionChords,
+          timer: readItemTimer(item.timer),
           // Its first and last chords as played, where transitions start and lead (issue #217).
           edgeChords: shown ? edgeChords(item) : null,
           // Null when this viewer can't read the song (shown as a placeholder).
@@ -354,6 +356,7 @@ export class SetlistsService {
         ...(dto.transition !== undefined && { transition: dto.transition }),
         ...(dto.transitionNote !== undefined && { transitionNote: dto.transitionNote }),
         ...(dto.transitionChords !== undefined && { transitionChords: dto.transitionChords }),
+        ...(dto.timer !== undefined && { timer: dto.timer ?? Prisma.DbNull }),
       },
       });
     });

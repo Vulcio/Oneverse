@@ -24,6 +24,7 @@ Choose **Sets** > **New set**:
   - its **Version** - **As written**, or one of your or your team's [versions](/versions/). In a team set, the team's usual version is picked for you;
   - its **Key** - moves the song from the version's key ("a tone lower this Sunday") without changing the version;
   - **After this song** - what happens next: **Stop** (the end, wait for the leader), **Go to next** (straight into the next song), **Segue (no pause)** (the next song's count-in on the last bar) or **Transition**, a bridge into the next song with a note beside it ("Pad under the prayer") and [chords to play into it](/sets/#chords-into-the-next-song). Live says it before the song ends, with the change of key and tempo when the next song has another one.
+  - its **Timer on the screens** - **No timer**, **Count up** or a countdown: started on the set's [screens](/screens/#the-media-operator) when Live comes to the song.
 - **×** removes a song from the set (the song itself isn't affected).
 
 ### Chords into the next song

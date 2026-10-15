@@ -1,7 +1,7 @@
 import { ApiError, keptSetDetail, onlineOrKept, type SetlistDetail, type SetlistItem, type TeamSummary } from "@songverse/core";
 import { DatePicker } from "@songverse/ui/components/date-picker";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { Mic, RotateCcw } from "lucide-react";
+import { Mic, RotateCcw, Timer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@songverse/ui/components/badge";
@@ -145,6 +145,13 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
             <Button onClick={() => setMode("live")} render={<Link to="/sets/$setlistId/live/$itemId" params={{ setlistId: set.id, itemId: resumeAt }} />} data-testid="set-live">
               <Mic />
               {resuming ? t("live.resume") : t("live.start")}
+            </Button>
+          ) : null}
+          {/* The media operator's view (issue #269): the screens' timer and messages. */}
+          {set.canEdit ? (
+            <Button variant="outline" render={<Link to="/sets/$setlistId/operate" params={{ setlistId: set.id }} />} data-testid="set-operate">
+              <Timer />
+              {t("screens.operator.open")}
             </Button>
           ) : null}
           {set.isGuest ? <LeaveSetButton setlistId={set.id} /> : null}

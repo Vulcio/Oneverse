@@ -68,6 +68,7 @@ Les **Modèles intégrés** jouent chacun un chant d'exemple, pour voir comment 
 - **Projecteurs** - de grandes lettres d'affiche sous des projecteurs qui balaient la scène.
 - **Diffusion** - paroles avec contour dans le tiers inférieur, l'image au-dessus laissée libre pour une vidéo ou une diffusion en direct.
 - **Minimal** - aligné à gauche et discret, les lignes suivantes visibles, tapé.
+- **Affichage de scène** - pour la scène, sur une grille de [widgets](/fr/screens/#widgets) : la diapositive en cours et la suivante, l'heure, un compte à rebours, le chant et la suite, et les messages de l'opérateur.
 - **Retour de scène** - de grandes majuscules en haut et toute la partie, pour les musiciens.
 
 **Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3**, sur les paroles ou la grille des musiciens - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
@@ -79,6 +80,7 @@ Les **Modèles intégrés** jouent chacun un chant d'exemple, pour voir comment 
 - **Mouvement** - **Entre les diapositives** : une coupe, un fondu, un glissement, une montée, une échelle, un flou ou un zoom, et sa durée (un nouveau chant prend deux fois plus de temps). **Apparition des mots** : d'un coup, ligne par ligne, mot par mot, lettre par lettre, tapés ou en lumière.
 - **Titre et crédits** - afficher ou non le titre du chant et ses crédits (auteurs, copyright, numéro CCLI), sur quelles diapositives et où.
 - **Accords** - pour **La grille, pour le groupe** : la couleur des accords et la taille de la grille.
+- **Mise en page et widgets** - place des [widgets](/fr/screens/#widgets) sur une grille. Voir plus bas.
 
 L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1. Les images, vidéos et polices s'ajoutent à un modèle enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage. Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous administrez une équipe - à l'équipe, pour que chaque membre puisse le choisir pour ses écrans (seuls ses administrateurs le modifient). Un modèle que vous pouvez modifier a **Modifier** et **Supprimer** ; le supprimer remet ses écrans sur l'apparence par défaut.
 
@@ -88,4 +90,34 @@ Pour essayer un modèle intégré sur un écran, ou afficher les paroles dans un
 
 ## Widgets
 
-L'onglet **Widgets** liste ce qu'un écran peut afficher en plus des paroles : **Paroles ou grille**, **Diapositive en cours** et **Diapositive suivante** pour un retour de scène, une **Horloge**, un **Compte à rebours**, un **Chronomètre**, un **Message** de l'opérateur média, le **Chant** et le **Chant suivant**, et un **Texte** à vous. Ils se placent sur la grille d'un modèle : chaque écran qui l'utilise les affiche.
+Un modèle peut placer des widgets sur une grille : un affichage de scène montre aux chanteurs la diapositive en cours et la suivante, l'heure et le temps restant ; l'écran de l'assemblée peut ajouter une horloge dans un coin, ou le mot de passe Wi-Fi. L'onglet **Widgets** les liste :
+
+- **Paroles ou grille** - ce que l'écran affiche sans grille : les paroles, ou la grille pour le groupe, avec l'apparence du modèle.
+- **Diapositive en cours** et **Diapositive suivante** - les paroles affichées pour l'assemblée, et celles qui arrivent (la première du chant suivant, à la fin d'un chant).
+- **Horloge** - sur **24 heures** ou **12 heures (AM/PM)**, avec **Les secondes** et **La date** au besoin.
+- **Compte à rebours** - le temps restant. **Temps donné par** : **L'opérateur média**, **Une durée fixe, depuis l'arrivée de l'élément**, ou **Jusqu'à une heure donnée** (le début du culte). **Après zéro**, il peut **Continuer, en rouge** ou **Rester à 0:00**, et passe à l'orange vers la fin.
+- **Chronomètre** - le temps écoulé depuis **Le chant à l'écran, depuis son arrivée**, ou depuis que l'opérateur média l'a lancé.
+- **Message** - un court message de l'opérateur média, affiché jusqu'à ce qu'il l'efface.
+- **Chant** et **Chant suivant** - le titre du chant, avec sa tonalité et son tempo, et ce qui vient ensuite dans la liste.
+- **Texte** - vos propres mots.
+
+Dans l'éditeur de modèle, **Mise en page et widgets** les place :
+
+1. **Partir de** une mise en page toute faite - **Les paroles seules**, **Paroles et horloge** ou **Affichage de scène** - ou **Ajouter un widget** aux paroles.
+2. Sur l'aperçu, faites glisser un widget pour le déplacer, et tirez son coin pour le redimensionner. Une fois choisi, les flèches du clavier le déplacent, et avec Maj elles le redimensionnent. **Afficher la grille** masque les cases pour voir l'écran tel qu'il sera.
+3. Choisissez un widget, dans la liste ou sur l'aperçu, pour régler ce qu'il affiche et son **Apparence** : sa police et sa couleur (ou celles du modèle), sa taille, un **Fond derrière** et des **Coins arrondis**. Dans la liste, les flèches le mettent devant ou derrière, là où des widgets se chevauchent.
+4. **Colonnes**, **Lignes** et **Espace entre les cases** règlent la grille, et **L'écran noir masque** **Tout** ou **Seulement les paroles (minuteurs et horloge restent)** - un affichage de scène garde son horloge et son compte à rebours quand les écrans de l'assemblée passent au noir.
+
+![La grille de l'éditeur de modèle](../../../assets/screenshots/fr/screen-widgets.jpg)
+
+Chaque écran qui utilise le modèle affiche ses widgets, chacun dans ses cases. Les widgets que l'opérateur média pilote - ses comptes à rebours et ses messages - viennent de la liste présentée.
+
+## L'opérateur média
+
+Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live (elle s'ouvre dans un nouvel onglet, pour que Live continue). Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non ; elle ne joue ni le métronome ni les pistes.
+
+- **Sur les écrans** - le chant et la diapositive que les écrans affichent, et s'ils sont au noir.
+- **Minuteur** - ce qu'affichent les widgets **Compte à rebours** et **Chronomètre** quand leur temps est donné par **L'opérateur média** : choisissez une durée (1, 3, 5, 10, 15 ou 30 minutes, ou tapez-en une et **Régler**), ou **Chronomètre** ; puis **Démarrer** et **Pause**, **Remettre à zéro**, une minute de moins ou de plus (**-** et **+**), ou **Effacer**. Après zéro, un compte à rebours passe au rouge.
+- **Message à la scène** - tapez-en un et **Envoyer**, ou choisissez-en un tout prêt (**On conclut**, **Une minute**, **Chant suivant**…). Il s'affiche dans le widget **Message** des écrans de la liste jusqu'à ce que vous l'effaciez (**Effacer**).
+
+Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans**, sur la [page de la liste](/fr/sets/#les-chants-dune-liste)) : un compte à rebours de cinq minutes pour une prise de parole, un chronomètre pour un chant. Quand le Live de qui mène arrive à ce chant, le minuteur démarre tout seul sur les écrans.

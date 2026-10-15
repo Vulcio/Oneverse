@@ -191,6 +191,8 @@ export interface SetlistItem {
   transitionNote?: string | null;
   /** The chords played into the next song (issue #10), as degrees of its key. */
   transitionChords?: string[];
+  /** Its own timer (issue #269), started on the screens' stage when Live comes to it; left out by an older API. */
+  timer?: { kind: "countdown" | "count-up"; duration: number } | null;
   /** Its first and last chords as played (issue #217); null when the viewer can't read it. */
   edgeChords?: { first: string | null; last: string | null } | null;
   /** Null when the song isn't readable by the current user (shown as a placeholder). */

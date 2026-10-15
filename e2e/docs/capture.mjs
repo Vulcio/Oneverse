@@ -349,8 +349,21 @@ try {
       },
       { element: page.getByTestId("builtin-themes") },
     );
+    // Widgets on a template's grid (issue #268): the Stage display layout in the editor.
+    await page.getByTestId("builtin-theme-stage-display").getByTestId("customize-theme").click();
+    await shoot(
+      "screen-widgets",
+      null,
+      async () => {
+        await page.getByTestId("theme-grid-overlay").getByTestId("grid-widget-countdown").click();
+        await page.waitForTimeout(1200);
+      },
+      { element: page.getByTestId("theme-editor") },
+    );
+    await page.keyboard.press("Escape");
+    await page.getByTestId("theme-editor").waitFor({ state: "detached" });
     await shoot("screens-pair", `/screens?code=${screenCode}&setlistId=${set.id}`, () => page.getByTestId("screen-pair-form").waitFor());
-    await page.getByTestId("screen-pair-form").getByRole("button").click();
+    await page.getByTestId("screen-pair-form").getByRole("button").first().click();
     await page.getByTestId("screen-paired").waitFor();
     await tv.locator('[data-testid="screen-display"][data-state="showing"]').waitFor({ timeout: 15000 });
     await page.goto(`${WEB}/sets/${set.id}/live/${items[0].id}`);

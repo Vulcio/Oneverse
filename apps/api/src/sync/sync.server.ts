@@ -1,5 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
-import { STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_DOC_UPDATE_MAX, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStems } from "@songverse/core";
+import { applyStageCommand, readItemTimer, STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_DOC_UPDATE_MAX, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStage, type SyncStageCommand, type SyncStems } from "@songverse/core";
 import type { Redis } from "ioredis";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, Server } from "node:http";
@@ -27,6 +27,10 @@ const PRESENCE_MS = 20_000;
 const CHANNEL = "songverse:sync:changed";
 const sessionKey = (setId: string) => `songverse:sync:session:${setId}`;
 const membersKey = (setId: string) => `songverse:sync:members:${setId}`;
+/** The media operator's timer and message for a set's screens (issue #269): kept without a session. */
+const stageKey = (setId: string) => `songverse:sync:stage:${setId}`;
+/** A stage nobody changed for this long is gone: a service, and then some. */
+const STAGE_TTL_S = 12 * 60 * 60;
 /** Who's doing what in a song (issue #27), by connection; announced on PRESENCE_CHANNEL. */
 const presenceKey = (songVersionId: string) => `songverse:presence:${songVersionId}`;
 const PRESENCE_CHANNEL = "songverse:presence:changed";
@@ -204,6 +208,8 @@ export class SyncServer implements OnModuleDestroy {
         return this.lead(connection);
       case "update":
         return this.update(connection, message);
+      case "stage":
+        return this.stage(connection, message);
       case "end":
         return this.end(connection);
       case "watch":
@@ -609,11 +615,44 @@ export class SyncServer implements OnModuleDestroy {
       next.stems = message.stems;
     }
     if (message.itemId !== undefined) next.itemId = typeof message.itemId === "string" ? message.itemId.slice(0, 64) : null;
+    // Another item: its own timer, if it has one, starts (issue #269).
+    if (next.itemId && next.itemId !== current.itemId) await this.itemTimer(setId, next.itemId).catch(() => undefined);
     if (message.presenting !== undefined) {
       if (message.presenting !== null && !validPresenting(message.presenting)) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid presenting" });
       next.presenting = message.presenting;
     }
     await this.write(setId, next);
+  }
+
+  /** The media operator (issue #269): anyone who can lead the set changes its timer and its message to the stage. */
+  private async stage(connection: Connection, message: Extract<SyncClientMessage, { type: "stage" }>) {
+    const setId = connection.setId;
+    if (!setId) return this.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
+    if (!(await this.stillAllowed(connection))) return;
+    if (!connection.canLead) return this.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set runs its screens" });
+    const command: SyncStageCommand = { timer: message.timer, reset: message.reset === true, run: typeof message.run === "boolean" ? message.run : undefined, add: message.add, message: message.message };
+    const next = applyStageCommand(await this.readStage(setId), command, Date.now());
+    if (!next) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid timer or message" });
+    await this.writeStage(setId, next);
+  }
+
+  /** A set item with a timer of its own (issue #269), come on in Live: the stage's timer, started. */
+  private async itemTimer(setId: string, itemId: string) {
+    const item = await this.prisma.client.setlistItem.findUnique({ where: { id: itemId }, select: { setlistId: true, timer: true } });
+    const timer = item?.setlistId === setId ? readItemTimer(item.timer) : null;
+    if (!timer) return;
+    const next = applyStageCommand(await this.readStage(setId), { timer, run: true }, Date.now());
+    if (next) await this.writeStage(setId, next);
+  }
+
+  private async readStage(setId: string): Promise<SyncStage | null> {
+    const raw = await redis().get(stageKey(setId));
+    return raw ? (JSON.parse(raw) as SyncStage) : null;
+  }
+
+  private async writeStage(setId: string, stage: SyncStage) {
+    await redis().set(stageKey(setId), JSON.stringify(stage), "EX", STAGE_TTL_S);
+    await this.changed(setId);
   }
 
   private async end(connection: Connection) {
@@ -663,7 +702,7 @@ export class SyncServer implements OnModuleDestroy {
   private async broadcastLocal(setId: string) {
     const local = [...this.connections.values()].filter((connection) => connection.setId === setId);
     if (local.length === 0) return;
-    const [stored, rawMembers] = await Promise.all([this.read(setId), redis().hgetall(membersKey(setId))]);
+    const [stored, rawMembers, stage] = await Promise.all([this.read(setId), redis().hgetall(membersKey(setId)), this.readStage(setId)]);
     const now = Date.now();
     const present = Object.entries(rawMembers)
       .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean }) }))
@@ -680,6 +719,7 @@ export class SyncServer implements OnModuleDestroy {
         members,
         leading: stored?.leader.conn === `${this.instance}:${connection.id}`,
         canLead: connection.canLead,
+        stage,
       });
     }
   }

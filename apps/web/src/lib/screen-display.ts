@@ -1,4 +1,4 @@
-import { SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage } from "@songverse/core";
+import { SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@songverse/core";
 import { useEffect, useRef, useState } from "react";
 import { getApiUrl } from "@songverse/app/public-env";
 
@@ -19,7 +19,16 @@ const RELOAD_EVERY_MS = 2 * 60_000;
 export type ScreenDisplayState =
   | { kind: "starting" }
   | { kind: "pairing"; code: string; expiresAt: string }
-  | { kind: "showing"; current: ScreenCurrent; presenting: SyncPresenting | null; online: boolean }
+  | {
+      kind: "showing";
+      current: ScreenCurrent;
+      presenting: SyncPresenting | null;
+      online: boolean;
+      /** The media operator's timer and message (issue #269). */
+      stage: SyncStage | null;
+      /** The server's clock less this device's (ms), from its pings: the operator's timer is on the server's. */
+      offset: number;
+    }
   | { kind: "error"; message: string };
 
 function storedToken(): string | null {
@@ -49,6 +58,8 @@ export function useScreenDisplay(): ScreenDisplayState {
   const [state, setState] = useState<ScreenDisplayState>({ kind: "starting" });
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const presenting = useRef<SyncPresenting | null>(null);
+  const stage = useRef<SyncStage | null>(null);
+  const offset = useRef(0);
 
   // The token kept from last time, once in the browser.
   useEffect(() => setToken(storedToken()), []);
@@ -111,7 +122,7 @@ export function useScreenDisplay(): ScreenDisplayState {
       setToken(null);
     };
     const show = () => {
-      if (current) setState({ kind: "showing", current, presenting: presenting.current, online });
+      if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current });
     };
     async function load() {
       const response = await fetch(api("/screens/current"), { headers: { Authorization: `Screen ${token}` } }).catch(() => null);
@@ -127,6 +138,7 @@ export function useScreenDisplay(): ScreenDisplayState {
       ws.onopen = () => {
         retries = 0;
         ws.send(JSON.stringify({ type: "screen", token }));
+        ws.send(JSON.stringify({ type: "ping", id: Date.now(), sent: Date.now() }));
         pinger = setInterval(() => ws.send(JSON.stringify({ type: "ping", id: Date.now(), sent: Date.now() })), PING_EVERY_MS);
       };
       ws.onmessage = (event) => {
@@ -142,9 +154,16 @@ export function useScreenDisplay(): ScreenDisplayState {
           online = true;
           void load();
         }
+        if (message.type === "pong") {
+          // Half the round trip each way: near enough for a timer's seconds.
+          const was = offset.current;
+          offset.current = message.at - (message.sent + Date.now()) / 2;
+          if (Math.abs(offset.current - was) > 500) show();
+        }
         if (message.type === "session") {
           online = true;
           presenting.current = message.session?.presenting ?? null;
+          stage.current = message.stage ?? null;
           // A song it doesn't have (added since): loaded again.
           const itemId = presenting.current?.itemId;
           if (itemId && current?.set && !current.set.songs.some((song) => song.item.id === itemId)) void load();

@@ -1,3 +1,4 @@
+import type { SyncTimer } from "../screens/timers.js";
 import type { MetronomeSettings } from "../metronome/index.js";
 
 /**
@@ -73,6 +74,71 @@ export interface SyncSession {
   presenting?: SyncPresenting | null;
 }
 
+/**
+ * What the media operator runs for a set's screens (issue #269): its timer
+ * and its message to the stage. Kept beside the session - it needs no
+ * leader - and sent with it to everyone in the set, screens included.
+ */
+export interface SyncStage {
+  rev: number;
+  timer: SyncTimer | null;
+  /** `at`: when it was sent (server time, ms). */
+  message: { text: string; at: number } | null;
+}
+
+/** The longest message to the stage. */
+export const SYNC_STAGE_MESSAGE_MAX = 200;
+
+/** What the operator changes, all optional; see applyStageCommand. */
+export interface SyncStageCommand {
+  /** A new timer, stopped at its start; null takes it away. */
+  timer?: { kind: SyncTimer["kind"]; duration: number } | null;
+  /** Back to its start, running or not as it was. */
+  reset?: boolean;
+  /** Starts (true) or pauses (false) it. */
+  run?: boolean;
+  /** Seconds more (a countdown's length) or fewer. */
+  add?: number;
+  /** The message to the stage; null or "" clears it. */
+  message?: string | null;
+}
+
+/**
+ * A stage after the operator's command (issue #269), at `now` (server time,
+ * ms): a new timer, then reset, run or pause, more or less time, then the
+ * message. Null when the command can't be read (a duration out of range, a
+ * message too long), so the server refuses it.
+ */
+export function applyStageCommand(stage: SyncStage | null, command: SyncStageCommand, now: number): SyncStage | null {
+  let timer = stage?.timer ?? null;
+  let message = stage?.message ?? null;
+  if (command.timer !== undefined) {
+    if (command.timer === null) timer = null;
+    else {
+      const { kind, duration } = command.timer;
+      if ((kind !== "countdown" && kind !== "count-up") || !Number.isInteger(duration) || duration < 0 || duration > 86_400) return null;
+      timer = { kind, duration, startedAt: null, elapsed: 0 };
+    }
+  }
+  if (command.reset && timer) timer = { ...timer, elapsed: 0, startedAt: timer.startedAt === null ? null : now };
+  if (command.run !== undefined && timer) {
+    if (command.run && timer.startedAt === null) timer = { ...timer, startedAt: now };
+    if (!command.run && timer.startedAt !== null) timer = { ...timer, elapsed: timer.elapsed + Math.max(0, now - timer.startedAt), startedAt: null };
+  }
+  if (command.add !== undefined) {
+    if (!Number.isInteger(command.add) || Math.abs(command.add) > 3600) return null;
+    // A countdown's length; a count up's time so far.
+    if (timer?.kind === "countdown") timer = { ...timer, duration: Math.max(0, Math.min(86_400, timer.duration + command.add)) };
+    else if (timer) timer = { ...timer, elapsed: Math.max(0, timer.elapsed + command.add * 1000) };
+  }
+  if (command.message !== undefined) {
+    if (command.message !== null && (typeof command.message !== "string" || command.message.length > SYNC_STAGE_MESSAGE_MAX)) return null;
+    const text = command.message?.trim() ?? "";
+    message = text ? { text, at: now } : null;
+  }
+  return { rev: (stage?.rev ?? 0) + 1, timer, message };
+}
+
 export interface SyncMember {
   id: string;
   name: string;
@@ -92,6 +158,13 @@ export type SyncClientMessage =
   | { type: "lead" }
   | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null }
   | { type: "end" }
+  /**
+   * The media operator (issue #269), anyone who can lead the set: its timer
+   * - a new one, stopped; started or paused; back to its start; a minute
+   * more or less - and its message to the stage. Applied in that order by
+   * applyStageCommand; leading isn't needed.
+   */
+  | ({ type: "stage" } & SyncStageCommand)
   /**
    * The songs whose notes this device shows (issue #27): told when they
    * change, each opened in a set or not. Replaces what it watched; [] stops.
@@ -150,6 +223,8 @@ export type SyncServerMessage =
       leading: boolean;
       /** This user may lead (they can edit the set). */
       canLead: boolean;
+      /** The set's timer and message for its screens (issue #269); left out by an older server. */
+      stage?: SyncStage | null;
     }
   /** The songs it now watches: those it may see (issue #27). */
   | { type: "watching"; songVersionIds: string[] }

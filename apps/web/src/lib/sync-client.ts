@@ -8,6 +8,8 @@ import {
   type SyncServerMessage,
   type SyncPresenting,
   type SyncSession,
+  type SyncStage,
+  type SyncStageCommand,
 } from "@songverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { apiToken, forgetApiToken } from "#/lib/api-client";
@@ -68,9 +70,13 @@ export interface SyncState {
   error: string | null;
   /** The server's clock less this device's (ms), once measured. */
   offset: number | null;
+  /** The set's timer and message for its screens (issue #269). */
+  stage: SyncStage | null;
 }
 
-let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null };
+let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null };
+/** Plays what the leader plays (the metronome, the stems); an operator's page (issue #269) only watches. */
+let following = true;
 const listeners = new Set<() => void>();
 function emit(next: Partial<SyncState>) {
   state = { ...state, ...next };
@@ -197,7 +203,7 @@ function receive(message: SyncServerMessage) {
         wantLead = true;
         keep();
       }
-      emit({ status: "on", error: null, session: message.session, members: message.members, leading: message.leading, canLead: message.canLead });
+      emit({ status: "on", error: null, session: message.session, members: message.members, leading: message.leading, canLead: message.canLead, stage: message.stage ?? null });
       setMetronomeStartDelay(message.leading ? LEADER_START_DELAY : 0.08);
       // Just took the lead: the metronome carries on as it was (followed, or the session's), and goes out.
       if (message.leading && !wasLeading) {
@@ -223,7 +229,7 @@ function receive(message: SyncServerMessage) {
 /** Following: the leader's metronome, placed on this device's clock. */
 function applySession() {
   const { session, leading, offset } = state;
-  if (!session || leading) {
+  if (!session || leading || !following) {
     if (!leading) {
       unfollowMetronome();
       unfollowStems();
@@ -353,13 +359,21 @@ function resync() {
 // --- what pages call
 
 /** Turns sync on for a set (from a press: the metronome may make sound then). */
-export function enableSync(setId: string, lead = false) {
-  if (state.setId === setId && state.status !== "off") return;
+export function enableSync(setId: string, lead = false, { follow = true }: { follow?: boolean } = {}) {
+  if (state.setId === setId && state.status !== "off") {
+    // From the operator's page to Live: playing along now.
+    if (follow && !following) {
+      following = true;
+      applySession();
+    }
+    return;
+  }
+  following = follow;
   disableSync();
   samples = [];
   wantLead = lead;
   setStemsDirectOutput(true);
-  emit({ setId, status: "connecting", session: null, members: [], leading: false, canLead: false, error: null, offset: null });
+  emit({ setId, status: "connecting", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null });
   keep();
   connect();
 }
@@ -381,7 +395,8 @@ export function disableSync() {
   setMetronomeStartDelay(0.08);
   lastSent = null;
   lastStemsSent = null;
-  emit({ setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null });
+  emit({ setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null });
+  following = true;
   keep();
 }
 
@@ -408,9 +423,19 @@ export function publishPresenting(presenting: SyncPresenting | null) {
   send({ type: "update", presenting });
 }
 
+/** The media operator (issue #269): the set's timer and message for its screens; anyone who can lead the set, leading or not. */
+export function sendStage(command: SyncStageCommand) {
+  if (state.canLead) send({ type: "stage", ...command });
+}
+
 /** Leading: the set's song the leader has open, for the others to follow. */
 export function publishSyncItem(itemId: string) {
   if (state.leading && state.session?.itemId !== itemId) send({ type: "update", itemId });
+}
+
+/** Sync's state now, outside React. */
+export function syncState(): SyncState {
+  return state;
 }
 
 export function useSync(): SyncState {

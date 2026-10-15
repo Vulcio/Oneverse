@@ -9,6 +9,7 @@ import "#/styles/screen-stage.css";
 import { SCREEN_FONT_FAMILIES, sectionEnergy, type RenderedChart, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { ScreenGrid, type StageLive } from "#/components/screen-widgets";
 import { SongChart } from "#/components/song-chart";
 import { cn } from "@songverse/ui/lib/utils";
 
@@ -41,6 +42,7 @@ export function ScreenStage({
   black = false,
   idle,
   assets = [],
+  live = {},
   className,
 }: {
   theme: ScreenTheme;
@@ -52,6 +54,8 @@ export function ScreenStage({
   idle?: ReactNode;
   /** The theme's own pictures, videos and fonts (issue #194), which it refers to by id. */
   assets?: ScreenThemeAsset[];
+  /** What widgets read besides the song (issue #268): the next song, timers, the operator's message. */
+  live?: StageLive;
   className?: string;
 }) {
   const index = song ? Math.max(0, Math.min(slide, song.slides.length - 1)) : 0;
@@ -86,6 +90,20 @@ export function ScreenStage({
   const customFont = useThemeFont(assets.find((asset) => asset.id === theme.text.customFont && asset.kind === "font"));
   const media = assets.find((asset) => asset.id === theme.background.media && asset.kind === "media");
 
+  const grid = theme.grid && theme.grid.widgets.length > 0 ? theme.grid : null;
+  /** The words, as a screen has always shown them: the whole stage, or a grid's Lyrics or chart cell. */
+  const words = (look: ScreenTheme) =>
+    dark ? null : !song || !current ? (
+      <div className="sv-words items-center justify-center text-center">{idle}</div>
+    ) : mode === "CHART" && song.chart ? (
+      <ChartStage theme={look} chart={song.chart} title={song.title} passId={current.passId} />
+    ) : (
+      <>
+        {outgoing?.song ? <Words key={outgoing.key} theme={look} song={outgoing.song} index={outgoing.index} phase="out" /> : null}
+        <Words key={viewKey} theme={look} song={song} index={index} phase={outgoing ? "in" : "still"} />
+      </>
+    );
+
   const style = {
     "--t": `${duration}ms`,
     "--stagger": `${theme.motion.stagger}ms`,
@@ -113,17 +131,21 @@ export function ScreenStage({
       <Background theme={theme} media={media} />
       {theme.background.reactive && song ? <div key={viewKey} className="sv-pulse" aria-hidden /> : null}
       {theme.background.dim > 0 ? <div className="sv-bg-dim" style={{ opacity: theme.background.dim }} aria-hidden /> : null}
-      {dark ? null : !song || !current ? (
-        <div className="sv-words items-center justify-center text-center">{idle}</div>
-      ) : mode === "CHART" && song.chart ? (
-        <ChartStage theme={theme} chart={song.chart} title={song.title} passId={current.passId} />
+      {grid ? (
+        // Widgets on a grid (issue #268): the words in their cell, with a small margin of their own.
+        <ScreenGrid
+          theme={theme}
+          grid={grid}
+          slides={song && current ? song.slides : null}
+          index={index}
+          black={dark && grid.black === "words"}
+          live={live}
+          words={words({ ...theme, layout: { ...theme.layout, margin: 2 } })}
+        />
       ) : (
-        <>
-          {outgoing?.song ? <Words key={outgoing.key} theme={theme} song={outgoing.song} index={outgoing.index} phase="out" /> : null}
-          <Words key={viewKey} theme={theme} song={song} index={index} phase={outgoing ? "in" : "still"} />
-        </>
+        words(theme)
       )}
-      <div className="sv-black" data-on={black ? "" : undefined} data-testid="screen-black" />
+      <div className="sv-black" data-on={black && (!grid || grid.black === "all") ? "" : undefined} data-testid="screen-black" />
     </div>
   );
 }

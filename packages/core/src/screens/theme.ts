@@ -45,6 +45,87 @@ export const SCREEN_TEXT_EFFECTS = ["none", "shadow", "outline", "glow"] as cons
 
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: "a colour is written #rrggbb" });
 
+/**
+ * What a screen can show besides the words (issue #267), placed on a
+ * template's grid (issue #268). Their names and descriptions are in the
+ * locale files (`screens.widgetKinds.<kind>`).
+ */
+export const SCREEN_WIDGET_KINDS = ["stage", "current-slide", "next-slide", "clock", "countdown", "count-up", "message", "song", "next-song", "text"] as const;
+export type ScreenWidgetKind = (typeof SCREEN_WIDGET_KINDS)[number];
+/** Where a timer's time comes from: the media operator (issue #269), a length from when the set item came on, a time of day, the song on screen. */
+export const SCREEN_TIMER_SOURCES = ["operator", "duration", "until", "song"] as const;
+/** The most columns or rows a template's grid has. */
+export const SCREEN_GRID_MAX = 24;
+
+/** A widget on a template's grid (issue #268): what it is, the cells it covers, its options and its look. */
+function screenWidgetSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    id: z.string().min(1).max(40),
+    kind: z.enum(SCREEN_WIDGET_KINDS),
+    /** Its first column and row (from 0), and how many it covers. */
+    x: z.number().int().min(0).max(SCREEN_GRID_MAX - 1),
+    y: z.number().int().min(0).max(SCREEN_GRID_MAX - 1),
+    w: z.number().int().min(1).max(SCREEN_GRID_MAX),
+    h: z.number().int().min(1).max(SCREEN_GRID_MAX),
+    /** What it shows; each kind reads the options it has, and ignores the others. */
+    options: object({
+      /** Clock: 24 or 12 hours, the seconds, the date. */
+      format: z.enum(["24h", "12h"]).default("24h"),
+      seconds: z.boolean().default(false),
+      date: z.boolean().default(false),
+      /** Countdown and count up: where the time comes from. */
+      source: z.enum(SCREEN_TIMER_SOURCES).default("operator"),
+      /** Countdown from "duration": its length, in seconds. */
+      duration: z.number().int().min(1).max(86_400).default(300),
+      /** Countdown "until": a time of day, HH:MM. */
+      until: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: "until is a time written HH:MM" }).default("10:00"),
+      /** Countdown past zero: counting on (in red), or holding at 0:00. */
+      overtime: z.enum(["count", "stop"]).default("count"),
+      /** Countdown: shown in amber under this many seconds. */
+      warn: z.number().int().min(0).max(3600).default(60),
+      /** A few words above it ("Sermon", "Next"). */
+      label: z.string().max(60).default(""),
+      /** Text: its words. */
+      text: z.string().max(280).default(""),
+      /** Song: its key and tempo beside the title. */
+      details: z.boolean().default(true),
+    }).prefault({}),
+    style: object({
+      /** The template's font, or another. */
+      font: z.enum(SCREEN_FONTS).nullable().default(null),
+      /** The template's text colour, or another. */
+      color: color.nullable().default(null),
+      /** A panel behind it, and how much it shows (0: none). */
+      background: color.default("#000000"),
+      opacity: z.number().min(0).max(1).default(0),
+      align: z.enum(["left", "center", "right"]).default("center"),
+      /** "auto" fits the cell; a number is the text's height in % of the cell's. */
+      size: z.union([z.literal("auto"), z.number().min(5).max(90)]).default("auto"),
+      /** Rounded corners, in % of the screen's shorter side. */
+      radius: z.number().min(0).max(10).default(1),
+    }).prefault({}),
+  });
+}
+
+export const ScreenWidgetSchema = screenWidgetSchema(false);
+export type ScreenWidget = z.output<typeof ScreenWidgetSchema>;
+export type ScreenWidgetInput = z.input<typeof ScreenWidgetSchema>;
+
+/** A template's grid (issue #268): its columns and rows inside the safe margin, the gap between cells, and its widgets, drawn in order (later ones on top). */
+function screenGridSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    columns: z.number().int().min(1).max(SCREEN_GRID_MAX).default(12),
+    rows: z.number().int().min(1).max(SCREEN_GRID_MAX).default(12),
+    /** Between cells, in % of the screen's shorter side. */
+    gap: z.number().min(0).max(5).default(1),
+    /** What Black hides: the whole screen, or only the words (a stage display keeps its clock and timers). */
+    black: z.enum(["all", "words"]).default("all"),
+    widgets: z.array(screenWidgetSchema(strict)).max(32).default([]),
+  });
+}
+
 /** A theme's parts, as an object that ignores fields it doesn't know (reading) or refuses them (a request). */
 function screenThemeSchema(strict: boolean) {
   const object = strict ? z.strictObject : z.object;
@@ -124,6 +205,8 @@ function screenThemeSchema(strict: boolean) {
       scale: z.number().min(0.5).max(2).default(1),
     })
     .prefault({}),
+  /** Widgets placed on a grid (issue #268); none, and the words fill the screen as they always have. */
+  grid: screenGridSchema(strict).nullable().default(null),
   });
 }
 
@@ -152,11 +235,69 @@ export function resolveScreenTheme(input: unknown): ScreenTheme {
   const theme: Record<string, unknown> = {};
   for (const key of Object.keys(ScreenThemeSchema.shape)) {
     if (key === "$schema" || parts[key] === undefined) continue;
+    if (key === "grid") {
+      theme.grid = resolveGrid(parts.grid);
+      continue;
+    }
     const one = ScreenThemeSchema.shape[key as keyof typeof ScreenThemeSchema.shape].safeParse(parts[key]);
     if (one.success) theme[key] = one.data;
   }
   return ScreenThemeSchema.parse(theme);
 }
+
+/** A grid as a client reads it: a widget it can't read (a kind from a newer client) leaves its cells empty, the rest stay. */
+function resolveGrid(input: unknown): ScreenTheme["grid"] {
+  if (!input || typeof input !== "object") return null;
+  const { widgets, ...rest } = input as Record<string, unknown>;
+  const grid = screenGridSchema(false).safeParse({ ...rest, widgets: [] });
+  if (!grid.success) return null;
+  const read = Array.isArray(widgets) ? widgets.flatMap((one) => {
+    const widget = ScreenWidgetSchema.safeParse(one);
+    return widget.success ? [widget.data] : [];
+  }) : [];
+  return { ...grid.data, widgets: read.slice(0, 32) };
+}
+
+/** A widget's cells kept inside its grid: what a client draws, whatever the template says. */
+export function placeScreenWidget(widget: Pick<ScreenWidget, "x" | "y" | "w" | "h">, grid: Pick<NonNullable<ScreenTheme["grid"]>, "columns" | "rows">) {
+  const x = Math.min(widget.x, grid.columns - 1);
+  const y = Math.min(widget.y, grid.rows - 1);
+  return { x, y, w: Math.max(1, Math.min(widget.w, grid.columns - x)), h: Math.max(1, Math.min(widget.h, grid.rows - y)) };
+}
+
+/** A widget of a kind, where it's put, with its defaults. */
+export function newScreenWidget(kind: ScreenWidgetKind, place: { x: number; y: number; w: number; h: number }, id: string, input: Omit<ScreenWidgetInput, "id" | "kind" | "x" | "y" | "w" | "h"> = {}): ScreenWidget {
+  return ScreenWidgetSchema.parse({ ...input, id, kind, ...place });
+}
+
+/** Ready-made grids to start a layout from (issue #268): their names are in the locale files (`screens.editor.layouts.<id>`). */
+export const SCREEN_LAYOUT_PRESETS: { id: string; grid: ScreenTheme["grid"] }[] = [
+  { id: "words", grid: null },
+  {
+    id: "words-clock",
+    grid: screenGridSchema(false).parse({
+      widgets: [
+        { id: "stage", kind: "stage", x: 0, y: 0, w: 12, h: 12 },
+        { id: "clock", kind: "clock", x: 9, y: 0, w: 3, h: 1, style: { opacity: 0.4, radius: 1 } },
+      ],
+    }),
+  },
+  {
+    id: "stage-display",
+    grid: screenGridSchema(false).parse({
+      black: "words",
+      widgets: [
+        { id: "current", kind: "current-slide", x: 0, y: 0, w: 8, h: 7 },
+        { id: "next", kind: "next-slide", x: 0, y: 7, w: 8, h: 3, style: { color: "#a3a3a3" } },
+        { id: "clock", kind: "clock", x: 8, y: 0, w: 4, h: 2, options: { seconds: true } },
+        { id: "countdown", kind: "countdown", x: 8, y: 2, w: 4, h: 4, style: { opacity: 0.5, background: "#1f2937" } },
+        { id: "song", kind: "song", x: 8, y: 6, w: 4, h: 2 },
+        { id: "next-song", kind: "next-song", x: 8, y: 8, w: 4, h: 2, style: { color: "#a3a3a3" } },
+        { id: "message", kind: "message", x: 0, y: 10, w: 12, h: 2, style: { background: "#b91c1c", opacity: 0.9, color: "#ffffff" } },
+      ],
+    }),
+  },
+];
 
 /** A built-in look to start from, picked as it is or copied and changed. */
 export interface ScreenThemeTemplate {
@@ -220,6 +361,16 @@ export const SCREEN_THEME_TEMPLATES: ScreenThemeTemplate[] = [
     layout: { position: "center", margin: 8 },
     background: { kind: "color", colors: ["#0a0a0a"] },
     motion: { transition: "fade", duration: 250, reveal: "typewriter", stagger: 18 },
+  }),
+  template("stage-display", {
+    text: { font: "condensed", weight: 700, effect: "none", lineHeight: 1.05 },
+    lines: { before: 0, after: 0 },
+    layout: { margin: 2 },
+    background: { kind: "color", colors: ["#000000"] },
+    title: { show: false },
+    credits: { show: false },
+    motion: { transition: "cut", duration: 0, reveal: "none" },
+    grid: SCREEN_LAYOUT_PRESETS.find((one) => one.id === "stage-display")!.grid,
   }),
   template("stage-monitor", {
     text: { font: "condensed", weight: 700, upperCase: true, effect: "none", size: 9, lineHeight: 1.05 },

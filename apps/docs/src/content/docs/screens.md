@@ -68,6 +68,7 @@ A template is how a screen looks: its font, colours and background, the lines ar
 - **Spotlight** - tall display letters under sweeping stage lights.
 - **Stream** - outlined words in a lower third, leaving the picture above free for a video or a livestream.
 - **Minimal** - left-aligned and quiet, the next lines in view, typed in.
+- **Stage display** - for the platform, on a grid of [widgets](/screens/#widgets): the slide now and the next one, the clock, a countdown, the song and what's next, and the operator's messages.
 - **Stage monitor** - big capitals at the top and the whole section, for the band.
 
 **Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3**, on the lyrics or the band's chart - changing as you change them. **⏵** plays the sample song, **‹ ›** go slide by slide.
@@ -79,6 +80,7 @@ A template is how a screen looks: its font, colours and background, the lines ar
 - **Motion** - **Between slides**: a cut, a fade, a slide, rise, scale, blur or zoom, and how long it takes (a new song takes twice as long). **Words appear** all at once, line by line, word by word, letter by letter, typed or glowing.
 - **Title and credits** - whether to show the song's title and its credits (writers, copyright, CCLI number), on which slides and where.
 - **Chords** - for **The chart, for the band**: the chords' colour and the chart's size.
+- **Layout and widgets** - places [widgets](/screens/#widgets) on a grid. Below.
 
 The editor checks the contrast between the words and the background and warns when it's under 4.5:1. Pictures, videos and fonts are added to a saved template, so save it first; they count toward your storage. Name the template and **Save template**: it's yours, or - if you're an admin of a team - the team's, for every member to pick for their screens (only its admins change it). A template you can change has **Edit** and **Delete**; deleting it puts its screens back to the default look.
 
@@ -88,4 +90,34 @@ To try a built-in template on one screen, or to show the words in streaming soft
 
 ## Widgets
 
-The **Widgets** tab lists what a screen can show besides the words: **Lyrics or chart**, **Current slide** and **Next slide** for a stage display, a **Clock**, a **Countdown**, a **Count up**, a **Message** from the media operator, the **Song** and the **Next song**, and **Text** of your own. They are placed on a template's grid, so every screen using the template shows them.
+A template can place widgets on a grid: a stage display shows the singers the slide now and the next one, the time and how long is left; an audience screen can add a clock in a corner, or the Wi-Fi password. The **Widgets** tab lists them:
+
+- **Lyrics or chart** - what the screen shows without a grid: the lyrics, or the chart for the band, in the template's look.
+- **Current slide** and **Next slide** - the words on the audience's screens now, and the ones coming (the next song's first, at the end of a song).
+- **Clock** - in **24 hours** or **12 hours (AM/PM)**, with **Seconds** and **The date** if you like.
+- **Countdown** - the time left. **Time from**: **The media operator**, **A set length, from when the item comes on**, or **Until a time of day** (when the service starts). **Past zero** it can **Count on, in red** or **Stay at 0:00**, and it turns amber near the end.
+- **Count up** - the time since **The song on screen, since it came on**, or since the media operator started it.
+- **Message** - a short message from the media operator, shown until it's cleared.
+- **Song** and **Next song** - the song's title, with its key and tempo, and what comes next in the set.
+- **Text** - words of your own.
+
+In the template editor, **Layout and widgets** places them:
+
+1. **Start from** a ready-made layout - **Words only**, **Words and a clock** or **Stage display** - or **Add a widget** to the words.
+2. On the preview, drag a widget to move it, and drag its corner to resize it. Picked, the arrow keys move it, and with Shift they resize it. **Show the grid** hides the cells to see the screen as it will be.
+3. Pick a widget, in the list or on the preview, to set what it shows and its **Look**: its font and colour (or the template's), size, a **Panel behind it** and **Rounded corners**. In the list, the arrows bring one forward or send it back, where widgets overlap.
+4. **Columns**, **Rows** and **Space between cells** set the grid, and **Black screen hides** **Everything** or **Only the words (timers and the clock stay)** - a stage display keeps its clock and countdown when the audience's screens go black.
+
+![The template editor's grid](../../assets/screenshots/en/screen-widgets.jpg)
+
+Every screen using the template shows its widgets, each in its cells. Widgets the media operator runs - their countdowns and messages - come from the set being presented.
+
+## The media operator
+
+Whoever runs the screens during a service - the media operator - has a view of their own: **Operator view**, on the set's page, or in Live's Sync menu (it opens in a new tab, so Live carries on). Anyone who can edit the set can use it, leading the set or not; it doesn't play the metronome or the stems.
+
+- **On the screens** - the song and slide the screens show now, and whether they're black.
+- **Timer** - what the **Countdown** and **Count up** widgets show when their time comes from **The media operator**: pick a length (1, 3, 5, 10, 15 or 30 minutes, or type one and **Set**), or **Count up**; then **Start** and **Pause**, **Reset**, a minute less or more (**-** and **+**), or **Clear**. Past zero, a countdown turns red.
+- **Message to the stage** - type one and **Send**, or press a quick one (**Wrap up**, **One minute**, **Next song**…). It shows in the **Message** widget of the set's screens until you **Clear** it.
+
+A song of the set can carry its own timer (**Timer on the screens**, on the [set's page](/sets/#songs-in-a-set)): a five-minute countdown for a talk, a count up for a song. When the leader's Live comes to that song, the timer starts on the screens by itself.
