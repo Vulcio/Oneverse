@@ -146,6 +146,31 @@ await step("written offline: kept, then sent once back online", async () => {
   if (!(await songNotes(member)).some((note) => note.content === "Written on the train")) throw new Error("not sent");
 });
 
+await step("live: someone else's note appears without reloading (issue #27)", async () => {
+  // Practice back to every note (the Display step left it on My notes).
+  await api(member, "PATCH", "/users/me", { displaySettings: { PRACTICE: { notes: null } } });
+  await open(member);
+  await page.waitForTimeout(1000);
+  await api(owner, "POST", "/notes", { songVersionId: song.id, content: "Live from Olivia", place: "TEAM", teamId: team.id });
+  await page.getByTestId("song-notes-top").locator("[data-note-id]", { hasText: "Live from Olivia" }).waitFor({ timeout: 5000 });
+});
+
+await step("live in Live: held behind Notes changed, shown on a tap - nothing moves under the reader", async () => {
+  await page.goto(`${WEB}/library/${song.id}/live`);
+  const live = page.getByTestId("live-song");
+  await live.locator("[data-note-id]").first().waitFor();
+  await page.waitForTimeout(1000);
+  const before = await live.locator("[data-pass]").first().boundingBox();
+  await api(owner, "POST", "/notes", { songVersionId: song.id, content: "Held for later", place: "SONG" });
+  await page.getByTestId("notes-incoming").waitFor({ timeout: 5000 });
+  if ((await live.getByText("Held for later").count()) > 0) throw new Error("shown before the tap");
+  const after = await live.locator("[data-pass]").first().boundingBox();
+  if (Math.abs(after.y - before.y) > 1) throw new Error(`the chart moved: ${before.y} -> ${after.y}`);
+  await page.getByTestId("notes-incoming").click();
+  await live.getByText("Held for later").waitFor();
+  await page.getByTestId("notes-incoming").waitFor({ state: "detached" });
+});
+
 await step("no page errors", async () => {
   if (errors.length) throw new Error(errors.join(" | "));
 });

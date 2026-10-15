@@ -91,7 +91,15 @@ export type SyncClientMessage =
   /** Starts a session, or takes over the lead of the one going on. */
   | { type: "lead" }
   | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null }
-  | { type: "end" };
+  | { type: "end" }
+  /**
+   * The songs whose notes this device shows (issue #27): told when they
+   * change, each opened in a set or not. Replaces what it watched; [] stops.
+   */
+  | { type: "watch"; songs: { songVersionId: string; setlistId?: string }[] };
+
+/** How many songs one connection may watch at once. */
+export const SYNC_WATCH_MAX = 30;
 
 export type SyncServerMessage =
   | { type: "ready"; userId: string }
@@ -108,6 +116,10 @@ export type SyncServerMessage =
       /** This user may lead (they can edit the set). */
       canLead: boolean;
     }
+  /** The songs it now watches: those it may see (issue #27). */
+  | { type: "watching"; songVersionIds: string[] }
+  /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */
+  | { type: "notes"; songVersionId: string }
   | { type: "error"; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected"; message: string };
 
 /** One ping's round trip: sent and received on the device's clock, `at` on the server's (all ms). */

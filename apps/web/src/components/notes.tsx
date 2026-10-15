@@ -11,7 +11,7 @@ import {
   type SongNote,
 } from "@songverse/core";
 import { CheckCheck, CloudOff, MessageSquare, MessageSquarePlus, MoveUp, Pencil, RotateCcw, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
 import { Button } from "@songverse/ui/components/button";
@@ -209,6 +209,12 @@ export function useChartNotes({
       : undefined,
   };
 
+  // A thread or the list open: someone else's changes come in at once (a reply at the thread's end), never held.
+  const { incoming, showIncoming } = state;
+  useEffect(() => {
+    if (incoming && (threadId || listOpen)) showIncoming();
+  }, [incoming, threadId, listOpen]);
+
   const thread = threadId ? (state.notes.find((note) => note.id === threadId) ?? null) : null;
   const dialogs = (
     <>
@@ -250,10 +256,28 @@ export function useChartNotes({
     button: <NotesButton count={state.notes.length} onClick={() => setListOpen(true)} />,
     /** Opens the list of every note (from a menu). */
     openList: () => setListOpen(true),
+    /** Someone else's changes, held so nothing moves under the reader (Live): a quiet button to show them. */
+    incoming: state.incoming ? <IncomingNotes onShow={state.showIncoming} /> : null,
   };
 }
 
 const EMPTY: ReadonlySet<string> = new Set();
+
+function IncomingNotes({ onShow }: { onShow: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onShow}
+      className="inline-flex h-9 items-center gap-1.5 rounded-full border border-amber-300/70 bg-amber-50 px-3 text-xs font-medium text-amber-950 hover:bg-amber-100 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100"
+      data-testid="notes-incoming"
+    >
+      <MessageSquare className="size-3.5" aria-hidden />
+      {t("songNotes.changed")}
+      <span className="font-semibold underline underline-offset-2">{t("songNotes.show")}</span>
+    </button>
+  );
+}
 
 function NotesButton({ count, onClick }: { count: number; onClick: () => void }) {
   const { t } = useTranslation();

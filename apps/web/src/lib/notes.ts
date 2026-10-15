@@ -1,8 +1,9 @@
 import { deviceOffline, isNetworkError, keptSongNotes, type CreateNoteRequest, type NoteAnchor, type NotePlaceChoice, type SongNote, type SongNotes, type UpdateNoteRequest } from "@songverse/core";
 import { useRouteContext } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage } from "#/lib/offline-data";
+import { watchSongNotes } from "#/lib/live-notes";
 
 /**
  * Notes on songs (issue #256): what one sees on a song, opened in a set or a
@@ -118,11 +119,24 @@ export function noteBody(context: NotesContext, place: NotePlaceChoice, content:
 
 export type SongNotesState = ReturnType<typeof useSongNotes>;
 
-/** The notes one sees on a song, and what one may do with them. */
-export function useSongNotes(context: NotesContext) {
+/** The same notes, as shown: content, places, replies, resolved. */
+function sameNotes(a: SongNotes, b: SongNotes): boolean {
+  return JSON.stringify(a.notes) === JSON.stringify(b.notes);
+}
+
+/**
+ * The notes one sees on a song, and what one may do with them. Live (issue
+ * #27): someone else's change is read at once - or, with `hold` (Live, where
+ * nothing may move under the reader), kept aside as `incoming` until
+ * `showIncoming()`.
+ */
+export function useSongNotes(context: NotesContext, { hold = false }: { hold?: boolean } = {}) {
   const { session } = useRouteContext({ from: "/_protected" });
   const me: Me = { userId: session.userId, displayName: session.displayName, avatarUrl: session.avatarUrl };
   const [data, setData] = useState<SongNotes | null>(null);
+  const [incoming, setIncoming] = useState<SongNotes | null>(null);
+  const current = useRef<SongNotes | null>(null);
+  current.current = data;
   const [kept, setKept] = useState(false);
   const [version, setVersion] = useState(0);
   const { songVersionId, setlistId, songbookId } = context;
@@ -133,6 +147,7 @@ export function useSongNotes(context: NotesContext) {
   if (loadedKey !== key) {
     setLoadedKey(key);
     setData(null);
+    setIncoming(null);
   }
 
   useEffect(() => {
@@ -144,6 +159,8 @@ export function useSongNotes(context: NotesContext) {
         if (live) {
           setData(fresh);
           setKept(false);
+          // What was held is in what was just read (one's own change, heard twice).
+          setIncoming((held) => (held && sameNotes(held, fresh) ? null : held));
         }
       } catch (error) {
         // Refused (the song gone, no access): no notes.
@@ -163,6 +180,22 @@ export function useSongNotes(context: NotesContext) {
       live = false;
     };
   }, [songVersionId, setlistId, songbookId, version]);
+
+  // Someone else changed the song's notes (issue #27): read again, now or held.
+  useEffect(() => {
+    if (kept) return;
+    return watchSongNotes({ songVersionId, setlistId }, () => {
+      apiClient
+        .getSongNotes(songVersionId, { setlistId: setlistId ?? undefined, songbookId: songbookId ?? undefined })
+        .then((fresh) => {
+          const shown = current.current;
+          if (shown && sameNotes(shown, fresh)) return setIncoming(null);
+          if (hold && shown) setIncoming(fresh);
+          else setData(fresh);
+        })
+        .catch(() => undefined);
+    });
+  }, [songVersionId, setlistId, songbookId, hold, kept]);
 
   // Another part of the page changed a note, or the outbox was sent.
   useEffect(() => {
@@ -191,6 +224,12 @@ export function useSongNotes(context: NotesContext) {
     loaded: data !== null,
     /** Read from the device: changes wait for the network. */
     kept,
+    /** Someone else's changes, held (`hold`): show them with showIncoming(). */
+    incoming: incoming !== null,
+    showIncoming: () => {
+      if (incoming) setData(incoming);
+      setIncoming(null);
+    },
     me: me.userId,
     add: async (body: CreateNoteRequest) => {
       try {

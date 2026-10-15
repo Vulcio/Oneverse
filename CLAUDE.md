@@ -213,6 +213,11 @@ share goes in the session (`SyncSession`) the same way, as the leader's
 of a set's session, signed in by their own token (`{type: "screen"}`); what
 they show is `SyncSession.presenting` - "this song, slide N" - and every
 client cuts a song into the same slides with `lyricSlides()` from core.
+Live notes (issue #27) use the same socket: a device `watch`es the songs it
+shows (only ones it can open), `NotesService` announces a change on
+`NOTES_CHANNEL` after each write, and the device reads the notes again with
+its own rights - the signal never carries content. A new thing to make live
+works the same way.
 
 ## Tests
 

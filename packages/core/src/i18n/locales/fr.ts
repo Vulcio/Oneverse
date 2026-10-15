@@ -2918,6 +2918,8 @@ const fr: typeof en = {
   },
   songNotes: {
     title: "Notes",
+    changed: "Notes modifiées",
+    show: "Afficher",
     button_one: "{{count}} note",
     button_other: "{{count}} notes",
     add: "Ajouter une note",

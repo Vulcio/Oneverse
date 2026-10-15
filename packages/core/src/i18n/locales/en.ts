@@ -2915,6 +2915,8 @@ const en = {
   },
   songNotes: {
     title: "Notes",
+    changed: "Notes changed",
+    show: "Show",
     button_one: "{{count}} note",
     button_other: "{{count}} notes",
     add: "Add a note",

@@ -12,6 +12,7 @@ import {
 import type { Prisma } from "@songverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { redis } from "../jobs/redis.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { CreateNoteDto, UpdateNoteDto } from "./notes.dto.js";
@@ -118,6 +119,7 @@ export class NotesService {
       },
       include: NOTE_INCLUDE,
     });
+    await announceNotes(song.id);
     return this.view(row, readSongDocument(song.documentJson), true, user.id);
   }
 
@@ -132,18 +134,21 @@ export class NotesService {
       },
       include: NOTE_INCLUDE,
     });
+    await announceNotes(song.id);
     return this.view(updated, readSongDocument(song.documentJson), true, user.id, await this.moderator(user, song, { author: false })(updated));
   }
 
   async remove(user: AuthenticatedUser, noteId: string): Promise<void> {
     const { row } = await this.editable(user, noteId);
     await this.prisma.client.note.delete({ where: { id: row.id } });
+    await announceNotes(row.songVersionId);
   }
 
   /** A reply: anyone who sees the note. Its author and those in the thread are told (issue #149). */
   async reply(user: AuthenticatedUser, noteId: string, content: string): Promise<SongNote> {
     const { row, song } = await this.readable(user, noteId);
     await this.prisma.client.noteReply.create({ data: { noteId: row.id, authorUserId: user.id, content } });
+    await announceNotes(song.id);
     const told = new Set([row.authorUserId, ...row.replies.map((reply) => reply.authorUserId)]);
     told.delete(user.id);
     const by = (await this.prisma.client.user.findUnique({ where: { id: user.id }, select: { displayName: true } }))?.displayName ?? "";
@@ -156,13 +161,28 @@ export class NotesService {
   async updateReply(user: AuthenticatedUser, noteId: string, replyId: string, content: string): Promise<SongNote> {
     const { row, song } = await this.replyEditable(user, noteId, replyId);
     await this.prisma.client.noteReply.update({ where: { id: replyId }, data: { content } });
+    await announceNotes(song.id);
     return this.fresh(user, row.id, song);
   }
 
   async removeReply(user: AuthenticatedUser, noteId: string, replyId: string): Promise<SongNote> {
     const { row, song } = await this.replyEditable(user, noteId, replyId);
     await this.prisma.client.noteReply.delete({ where: { id: replyId } });
+    await announceNotes(song.id);
     return this.fresh(user, row.id, song);
+  }
+
+  /**
+   * Whether a device may hear when a song's notes change (issue #27): the
+   * viewer can open the song, in their library or through the set it's
+   * opened in. The signal carries nothing - each device reads the notes
+   * again with its own rights - but who's told is still who could look.
+   */
+  async canWatch(user: AuthenticatedUser, songVersionId: string, setlistId?: string): Promise<boolean> {
+    return this.reach(user, songVersionId, setlistId).then(
+      () => true,
+      () => false,
+    );
   }
 
   // --- Who sees what
@@ -345,6 +365,16 @@ export class NotesService {
     }
     return `/library/${row.songVersionId}?note=${row.id}`;
   }
+}
+
+/** Where a song's notes changing is announced (issue #27), to every API instance: SyncServer tells the devices watching it. */
+export const NOTES_CHANNEL = "songverse:notes:changed";
+
+/** Tells the devices watching a song that its notes changed. A Redis that's down mustn't fail the write. */
+export async function announceNotes(songVersionId: string): Promise<void> {
+  await redis()
+    .publish(NOTES_CHANNEL, songVersionId)
+    .catch(() => undefined);
 }
 
 /** A set's name, or its date when it has none. */

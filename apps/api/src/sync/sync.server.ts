@@ -1,5 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
-import { STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_PATH, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStems } from "@songverse/core";
+import { STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_PATH, SYNC_WATCH_MAX, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStems } from "@songverse/core";
 import type { Redis } from "ioredis";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, Server } from "node:http";
@@ -12,6 +12,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
 import { SCREEN_CHANNEL, ScreensService } from "../screens/screens.service.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
+import { NOTES_CHANNEL, NotesService } from "../notes/notes.service.js";
 
 /** A session outlasts its leader's last change by this long, then goes. */
 const SESSION_TTL_S = 12 * 60 * 60;
@@ -58,6 +59,8 @@ interface Connection {
    * write it back, so handled together the first could write over the second.
    */
   queue: Promise<void>;
+  /** The songs whose notes it's told about (issue #27), each one it may see. */
+  watching: Set<string>;
 }
 
 /**
@@ -86,6 +89,7 @@ export class SyncServer implements OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly access: SetlistAccessService,
     private readonly screens: ScreensService,
+    private readonly notes: NotesService,
   ) {}
 
   /** Takes the WebSocket upgrades to /sync on the API's HTTP server (not in the Worker). */
@@ -97,8 +101,12 @@ export class SyncServer implements OnModuleDestroy {
       this.wss!.handleUpgrade(request, socket, head, (ws) => this.connected(ws));
     });
     this.subscriber = redis().duplicate();
-    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
-    this.subscriber.on("message", (channel, id: string) => void (channel === SCREEN_CHANNEL ? this.screenChanged(id) : this.broadcastLocal(id)));
+    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
+    this.subscriber.on("message", (channel, id: string) => {
+      if (channel === SCREEN_CHANNEL) void this.screenChanged(id);
+      else if (channel === NOTES_CHANNEL) this.notesChanged(id);
+      else void this.broadcastLocal(id);
+    });
     this.presenceTimer = setInterval(() => void this.refreshPresence(), PRESENCE_MS);
   }
 
@@ -110,7 +118,7 @@ export class SyncServer implements OnModuleDestroy {
   }
 
   private connected(socket: WebSocket) {
-    const connection: Connection = { id: randomUUID(), allowance: MESSAGE_BURST, lastMessageAt: Date.now(), socket, user: null, screen: null, setId: null, canLead: false, accessCheckedAt: 0, queue: Promise.resolve() };
+    const connection: Connection = { id: randomUUID(), allowance: MESSAGE_BURST, lastMessageAt: Date.now(), socket, user: null, screen: null, setId: null, canLead: false, accessCheckedAt: 0, queue: Promise.resolve(), watching: new Set() };
     this.connections.set(connection.id, connection);
     // A device that doesn't sign in soon is dropped.
     const signIn = setTimeout(() => {
@@ -171,9 +179,33 @@ export class SyncServer implements OnModuleDestroy {
         return this.update(connection, message);
       case "end":
         return this.end(connection);
+      case "watch":
+        return this.watch(connection, message.songs);
       default:
         return this.send(connection, { type: "error", code: "bad-request", message: "Unknown message" });
     }
+  }
+
+  /**
+   * The songs whose notes the device shows (issue #27): each one it can
+   * open - in its library, or through the set it's opened in - is watched,
+   * the rest left out; it's told which.
+   */
+  private async watch(connection: Connection, songs: unknown) {
+    if (!Array.isArray(songs) || songs.length > SYNC_WATCH_MAX) return this.send(connection, { type: "error", code: "bad-request", message: `Watch at most ${SYNC_WATCH_MAX} songs` });
+    const watching = new Set<string>();
+    for (const song of songs as { songVersionId?: unknown; setlistId?: unknown }[]) {
+      const songVersionId = typeof song?.songVersionId === "string" ? song.songVersionId.slice(0, 64) : null;
+      const setlistId = typeof song?.setlistId === "string" ? song.setlistId.slice(0, 64) : undefined;
+      if (songVersionId && !watching.has(songVersionId) && (await this.notes.canWatch(connection.user!, songVersionId, setlistId))) watching.add(songVersionId);
+    }
+    connection.watching = watching;
+    this.send(connection, { type: "watching", songVersionIds: [...watching] });
+  }
+
+  /** A song's notes changed: this instance's connections watching it are told. */
+  private notesChanged(songVersionId: string) {
+    for (const connection of this.connections.values()) if (connection.watching.has(songVersionId)) this.send(connection, { type: "notes", songVersionId });
   }
 
   private async signIn(connection: Connection, token: string) {
