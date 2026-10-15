@@ -9,6 +9,8 @@
   "devDependencies": {
     "pdf-lib": "^1.17.1",
     "playwright": "1.56.1",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "y-protocols": "1.0.7",
+    "yjs": "13.6.33"
   }
 }

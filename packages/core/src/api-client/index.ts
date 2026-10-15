@@ -33,7 +33,7 @@ import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
 import type { z } from "zod";
-import type { SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
+import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
 import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
@@ -752,6 +752,12 @@ export interface AdminTeamSummary {
 }
 
 /** Admin > Security (issue #113): each setting's value, and whether it comes from the database, its env var or the default. */
+/** Admin > Collaboration (issue #27). */
+export interface CollaborationSettingsSummary {
+  source: "database" | "env" | "none";
+  settings: { liveCoEditing: SecuritySetting<boolean> };
+}
+
 export interface SecuritySettingsSummary {
   source: "database" | "env" | "none";
   settings: {
@@ -2783,6 +2789,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminSetUserRoles: (userId: string, data: AssignRolesRequest) => request<void>(`/admin/users/${userId}/roles`, { method: "PUT", body: JSON.stringify(data) }),
     adminListTeams: () => request<AdminTeamSummary[]>("/admin/teams"),
     adminSetTeamRoles: (teamId: string, data: AssignRolesRequest) => request<void>(`/admin/teams/${teamId}/roles`, { method: "PUT", body: JSON.stringify(data) }),
+    adminGetCollaborationSettings: () => request<CollaborationSettingsSummary>("/admin/collaboration"),
+    adminSaveCollaborationSettings: (data: SaveCollaborationSettingsRequest) => request<void>("/admin/collaboration", { method: "PUT", body: JSON.stringify(data) }),
+    adminClearCollaborationSettings: () => request<void>("/admin/collaboration", { method: "DELETE" }),
     adminGetSecuritySettings: () => request<SecuritySettingsSummary>("/admin/security"),
     adminSaveSecuritySettings: (data: SaveSecuritySettingsRequest) => request<void>("/admin/security", { method: "PUT", body: JSON.stringify(data) }),
     adminClearSecuritySettings: () => request<void>("/admin/security", { method: "DELETE" }),

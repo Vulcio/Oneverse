@@ -24,6 +24,7 @@ WORKDIR /repo
 
 FROM base AS deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY patches ./patches
 COPY packages/tsconfig/package.json packages/tsconfig/
 COPY packages/core/package.json packages/core/
 COPY packages/db/package.json packages/db/

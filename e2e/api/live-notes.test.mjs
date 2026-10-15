@@ -1,6 +1,7 @@
 // Live notes (issue #27): a device watches songs on /sync and hears when their notes change - added, replied to, edited, resolved,
 // deleted - with nothing about the notes themselves; only songs it could open (in its library, or through the set it's opened in).
-import { API, api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
+import { api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
+import { syncDevice } from "../lib/sync-device.mjs";
 
 const owner = await user("Notes owner");
 const member = await user("Notes member");
@@ -14,47 +15,16 @@ await api(owner, "POST", `/setlists/${set.id}/items`, { songVersionId: song.id }
 const token = (await api(owner, "POST", `/setlists/${set.id}/share-link`)).link.token;
 await api(guest, "POST", `/set-invites/${token}/join`);
 
-/** A device signed in: its messages as they come, and a wait for the next one that matches (null after `ms`). */
+/** A device signed in, watching songs: `heard` waits for the next change to the song's notes. */
 async function device(who) {
-  const ws = new WebSocket(`${API.replace(/^http/, "ws")}/sync`);
-  const messages = [];
-  const waiting = [];
-  ws.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    const w = waiting.find((one) => one.match(message));
-    if (w) {
-      waiting.splice(waiting.indexOf(w), 1);
-      w.resolve(message);
-    } else messages.push(message);
-  };
-  await new Promise((resolve, reject) => {
-    ws.onopen = resolve;
-    ws.onerror = reject;
-  });
-  const next = (match, ms = 3000) =>
-    new Promise((resolve) => {
-      const early = messages.findIndex(match);
-      if (early >= 0) return resolve(messages.splice(early, 1)[0]);
-      const w = { match, resolve };
-      waiting.push(w);
-      setTimeout(() => {
-        if (waiting.includes(w)) {
-          waiting.splice(waiting.indexOf(w), 1);
-          resolve(null);
-        }
-      }, ms);
-    });
-  const send = (message) => ws.send(JSON.stringify(message));
-  const ready = next((m) => m.type === "ready");
-  send({ type: "hello", token: who.bearer });
-  await ready;
+  const one = await syncDevice(who);
   const watch = async (songs) => {
-    const answer = next((m) => m.type === "watching" || m.type === "error");
-    send({ type: "watch", songs });
+    const answer = one.next((m) => m.type === "watching" || m.type === "error");
+    one.send({ type: "watch", songs });
     return answer;
   };
-  const heard = (ms) => next((m) => m.type === "notes" && m.songVersionId === song.id, ms);
-  return { watch, heard, next, send, close: () => ws.close() };
+  const heard = (ms) => one.next((m) => m.type === "notes" && m.songVersionId === song.id, ms);
+  return { ...one, watch, heard };
 }
 
 const memberDevice = await device(member);

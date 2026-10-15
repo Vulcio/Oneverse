@@ -449,3 +449,26 @@ body.sv-dragging {
     padding-right: 20rem;
   }
 }
+
+/* Typing together (issue #27): the others' carets, in their colour, with their name over them. */
+.sv-editor .collaboration-carets__caret {
+  position: relative;
+  margin-inline: -1px;
+  border-inline: 1px solid;
+  word-break: normal;
+  pointer-events: none;
+}
+.sv-editor .collaboration-carets__label {
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px 3px 3px 0;
+  color: #fff;
+  font-family: var(--font-sans, sans-serif);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  user-select: none;
+}

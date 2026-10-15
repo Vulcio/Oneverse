@@ -8,6 +8,7 @@ import {
 } from "@songverse/core";
 import { Extension, InputRule, Node } from "@tiptap/core";
 import { isHistoryTransaction } from "@tiptap/pm/history";
+import { ySyncPluginKey } from "@tiptap/y-tiptap";
 import { Fragment, Slice, type Node as PMNode, type ResolvedPos } from "@tiptap/pm/model";
 import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import { Mapping } from "@tiptap/pm/transform";
@@ -301,6 +302,15 @@ function lineTextSurvives(line: PMNode, linePos: number, mapping: Mapping): bool
   return survives;
 }
 
+/**
+ * A change that came from someone typing in the song too (issue #27), or an
+ * undo of the shared document: their editor already kept its chords and IDs,
+ * so it's taken as it is - fixing it here as well would fix it twice.
+ */
+function fromElsewhere(tr: Transaction): boolean {
+  return !!(tr.getMeta(ySyncPluginKey) as { isChangeOrigin?: boolean } | undefined)?.isChangeOrigin;
+}
+
 const PREFIXES: Record<string, string> = { section: ID_PREFIXES.section, line: ID_PREFIXES.line, chord: ID_PREFIXES.chord };
 
 /** A copy of `node` with fresh IDs throughout (duplicating a section). */
@@ -329,7 +339,7 @@ function chordKeeper() {
     key: new PluginKey("songverseChordKeeper"),
     appendTransaction(transactions, oldState, newState) {
       if (!transactions.some((tr) => tr.docChanged)) return null;
-      if (transactions.some((tr) => tr.getMeta(REPLACE_META) || isHistoryTransaction(tr))) return null;
+      if (transactions.some((tr) => tr.getMeta(REPLACE_META) || isHistoryTransaction(tr) || fromElsewhere(tr))) return null;
       const removedOnPurpose = new Set(transactions.flatMap((tr) => (tr.getMeta(REMOVE_CHORDS_META) as string[] | undefined) ?? []));
       const now = new Set(chordsIn(newState.doc).map((chord) => chord.node.attrs.id as string));
       const missing = chordsIn(oldState.doc).filter((chord) => !now.has(chord.node.attrs.id) && !removedOnPurpose.has(chord.node.attrs.id));
@@ -367,7 +377,7 @@ function uniqueIds() {
   return new Plugin({
     key: new PluginKey("songverseUniqueIds"),
     appendTransaction(transactions, oldState, newState) {
-      if (!transactions.some((tr) => tr.docChanged)) return null;
+      if (!transactions.some((tr) => tr.docChanged) || transactions.every(fromElsewhere)) return null;
       const oldPositions = new Map<string, number>();
       oldState.doc.descendants((node, pos) => {
         if (PREFIXES[node.type.name] && node.attrs.id) oldPositions.set(node.attrs.id as string, pos);

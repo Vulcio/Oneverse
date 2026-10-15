@@ -103,7 +103,17 @@ When they save, you're told at once, over the page, so nothing moves while you w
 
 In Practice, a save shows as **Song changed · Load it**; the chart changes only when you tap it.
 
-Two people can't yet type in the same song at the same time and see each other's changes as they type: that comes later.
+### Typing together
+
+Where an admin has turned on **Live co-editing** (see [Admin](/admin/#collaboration)), people who can change the song type in it together in the Editor's **Visual** mode. Each sees what the others type as they type it, with their caret and their name. That works for the words, the chords, the sections, the song's order, the key and transposing.
+
+- **Undo** takes back your own changes only, not what others typed meanwhile.
+- **Save song** saves the song as everyone has it. After someone saves, the others carry on without being told it was saved elsewhere, and any of them can save again.
+- **Discard changes** drops the changes nobody saved, for everyone in the song.
+- While someone else is in the song, **Text** mode only shows the chart; change it in **Visual**.
+- If the song is changed somewhere else meanwhile (a version restored from **History**, a suggestion accepted), everyone in it gets the song as saved now, and changes nobody had saved are dropped. A message over the page says so.
+
+Where it's off, each person edits on their own, as described above.
 
 ## History
 

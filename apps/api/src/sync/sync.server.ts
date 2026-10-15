@@ -1,5 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
-import { STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStems } from "@songverse/core";
+import { STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_DOC_UPDATE_MAX, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStems } from "@songverse/core";
 import type { Redis } from "ioredis";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, Server } from "node:http";
@@ -15,6 +15,9 @@ import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { NOTES_CHANNEL, NotesService } from "../notes/notes.service.js";
 import { SONG_CHANNEL, type SongSaved } from "../song-versions/song-announce.js";
 import { NOTIFICATIONS_CHANNEL } from "../notifications/notifications.service.js";
+import { AccessPolicyService } from "../access/access-policy.service.js";
+import { liveCoEditingEnabled } from "./collaboration-settings.js";
+import { announce, appendUpdate, claimReset, DOC_CHANNEL, joinRoom, keepRoom, leaveRoom, resetRoom, roomRevision, roomSaved, touchMember, validAwareness, validUpdate, type DocAnnouncement } from "./doc-room.js";
 
 /** A session outlasts its leader's last change by this long, then goes. */
 const SESSION_TTL_S = 12 * 60 * 60;
@@ -37,7 +40,11 @@ interface StoredSession extends Omit<SyncSession, "leader"> {
  * changes); one that floods is dropped.
  */
 const MESSAGE_BURST = 60;
-const MESSAGES_PER_SECOND = 20;
+const MESSAGES_PER_SECOND = 30;
+/** Songs a connection types in at once (issue #27). */
+const DOC_ROOMS_MAX = 3;
+/** A save heard for a song with a room, not said by one of its members within this, came from elsewhere: the room starts over. */
+const OUTSIDE_SAVE_MS = 3000;
 /**
  * How long a connection's right to its set is trusted before it's looked up
  * again (issue #112): someone taken off the set, no longer allowed to edit
@@ -68,6 +75,8 @@ interface Connection {
   watching: Set<string>;
   /** What it's doing in one of those songs, for the others in it (issue #27). */
   presence: { songVersionId: string; doing: SongActivity; noteId?: string } | null;
+  /** The songs it types in with others (issue #27), with when its right to was last looked up. */
+  docs: Map<string, number>;
 }
 
 /**
@@ -97,24 +106,27 @@ export class SyncServer implements OnModuleDestroy {
     private readonly access: SetlistAccessService,
     private readonly screens: ScreensService,
     private readonly notes: NotesService,
+    private readonly policy: AccessPolicyService,
   ) {}
 
   /** Takes the WebSocket upgrades to /sync on the API's HTTP server (not in the Worker). */
   attach(server: Server) {
-    this.wss = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 });
+    // A shared document's update can be large (a pasted song).
+    this.wss = new WebSocketServer({ noServer: true, maxPayload: SYNC_DOC_UPDATE_MAX + 4 * 1024 });
     server.on("upgrade", (request: IncomingMessage, socket: Duplex, head: Buffer) => {
       const path = (request.url ?? "").split("?")[0];
       if (path !== SYNC_PATH) return;
       this.wss!.handleUpgrade(request, socket, head, (ws) => this.connected(ws));
     });
     this.subscriber = redis().duplicate();
-    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL, NOTIFICATIONS_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
+    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL, NOTIFICATIONS_CHANNEL, DOC_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
     this.subscriber.on("message", (channel, id: string) => {
       if (channel === SCREEN_CHANNEL) void this.screenChanged(id);
       else if (channel === NOTES_CHANNEL) this.notesChanged(id);
       else if (channel === SONG_CHANNEL) this.songSaved(id);
       else if (channel === PRESENCE_CHANNEL) void this.presenceChanged(id);
       else if (channel === NOTIFICATIONS_CHANNEL) this.notificationsChanged(id);
+      else if (channel === DOC_CHANNEL) this.docAnnounced(id);
       else void this.broadcastLocal(id);
     });
     this.presenceTimer = setInterval(() => void this.refreshPresence(), PRESENCE_MS);
@@ -128,7 +140,7 @@ export class SyncServer implements OnModuleDestroy {
   }
 
   private connected(socket: WebSocket) {
-    const connection: Connection = { id: randomUUID(), allowance: MESSAGE_BURST, lastMessageAt: Date.now(), socket, user: null, screen: null, setId: null, canLead: false, accessCheckedAt: 0, queue: Promise.resolve(), watching: new Set(), presence: null };
+    const connection: Connection = { id: randomUUID(), allowance: MESSAGE_BURST, lastMessageAt: Date.now(), socket, user: null, screen: null, setId: null, canLead: false, accessCheckedAt: 0, queue: Promise.resolve(), watching: new Set(), presence: null, docs: new Map() };
     this.connections.set(connection.id, connection);
     // A device that doesn't sign in soon is dropped.
     const signIn = setTimeout(() => {
@@ -158,6 +170,7 @@ export class SyncServer implements OnModuleDestroy {
       this.connections.delete(connection.id);
       if (connection.setId) void this.leaveSet(connection);
       if (connection.presence) void this.setPresence(connection, null);
+      for (const songVersionId of connection.docs.keys()) void this.leaveDoc(connection, songVersionId);
     });
     socket.on("error", () => undefined);
   }
@@ -194,6 +207,18 @@ export class SyncServer implements OnModuleDestroy {
         return this.watch(connection, message.songs);
       case "presence":
         return this.presence(connection, message);
+      case "doc-join":
+        return this.joinDoc(connection, message);
+      case "doc-leave":
+        return this.leaveDoc(connection, String(message.songVersionId));
+      case "doc-update":
+        return this.docUpdate(connection, message);
+      case "doc-awareness":
+        return this.docAwareness(connection, message);
+      case "doc-saved":
+        return this.docSaved(connection, message);
+      case "doc-discard":
+        return this.docDiscard(connection, String(message.songVersionId));
       default:
         return this.send(connection, { type: "error", code: "bad-request", message: "Unknown message" });
     }
@@ -297,11 +322,128 @@ export class SyncServer implements OnModuleDestroy {
     for (const connection of this.connections.values()) {
       if (connection.watching.has(saved.songVersionId)) this.send(connection, { type: "song", ...saved });
     }
+    // Typed in together here: a save its members don't say was theirs came from elsewhere (a restore, an accepted suggestion…).
+    if ([...this.connections.values()].some((connection) => connection.docs.has(saved.songVersionId))) {
+      setTimeout(() => void this.outsideSave(saved.songVersionId, saved.revision).catch(() => undefined), OUTSIDE_SAVE_MS);
+    }
   }
 
   /** A song's notes changed: this instance's connections watching it are told. */
   private notesChanged(songVersionId: string) {
     for (const connection of this.connections.values()) if (connection.watching.has(songVersionId)) this.send(connection, { type: "notes", songVersionId });
+  }
+
+  // --- Typing together (issue #27): a song's shared document, kept by doc-room.ts
+
+  private member(connection: Connection): string {
+    return `${this.instance}:${connection.id}`;
+  }
+
+  /** The song, if co-editing is on and the connection may change it; else why not. */
+  private async mayType(connection: Connection, songVersionId: string): Promise<"off" | "forbidden" | null> {
+    if (!(await liveCoEditingEnabled())) return "off";
+    const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { id: true, ownerScope: true, ownerUserId: true, ownerTeamId: true } });
+    const user = await this.prisma.client.user.findUnique({ where: { id: connection.user!.id }, select: { bannedAt: true, deletedAt: true } });
+    if (!song || !user || user.bannedAt || user.deletedAt || !(await this.policy.canEditContent(connection.user!, song))) return "forbidden";
+    return null;
+  }
+
+  /** Still in the room, its right looked up again now and then; out of it (and told) when it's lost. */
+  private async inDoc(connection: Connection, songVersionId: string): Promise<boolean> {
+    const checkedAt = connection.docs.get(songVersionId);
+    if (checkedAt === undefined) {
+      // Not (or no longer) in it: start over.
+      this.send(connection, { type: "doc-reset", songVersionId });
+      return false;
+    }
+    if (Date.now() - checkedAt < ACCESS_RECHECK_MS) return true;
+    connection.docs.set(songVersionId, Date.now());
+    const refused = await this.mayType(connection, songVersionId);
+    if (!refused) return true;
+    await this.leaveDoc(connection, songVersionId);
+    this.send(connection, { type: "doc-refused", songVersionId, reason: refused });
+    return false;
+  }
+
+  private async joinDoc(connection: Connection, message: Extract<SyncClientMessage, { type: "doc-join" }>) {
+    const songVersionId = typeof message.songVersionId === "string" ? message.songVersionId.slice(0, 64) : "";
+    if (!songVersionId || !Number.isInteger(message.revision) || message.revision < 0) return this.send(connection, { type: "error", code: "bad-request", message: "doc-join needs a song and its revision" });
+    if (!connection.docs.has(songVersionId) && connection.docs.size >= DOC_ROOMS_MAX) return this.send(connection, { type: "error", code: "bad-request", message: `Type in at most ${DOC_ROOMS_MAX} songs at once` });
+    const refused = await this.mayType(connection, songVersionId);
+    if (refused) return this.send(connection, { type: "doc-refused", songVersionId, reason: refused });
+    // A member before the state is read: an update that comes meanwhile isn't missed (Yjs takes it in any order).
+    connection.docs.set(songVersionId, Date.now());
+    const room = await joinRoom(songVersionId, this.member(connection), message.revision);
+    // What the others had was behind the song: they start over too.
+    if (room.dropped) await announce({ songVersionId, kind: "reset" });
+    this.send(connection, { type: "doc-state", songVersionId, state: room.state, seed: room.seed, revision: room.revision });
+    for (const update of room.awareness) this.send(connection, { type: "doc-awareness", songVersionId, update });
+  }
+
+  private async leaveDoc(connection: Connection, songVersionId: string) {
+    if (!connection.docs.delete(songVersionId)) return;
+    const gone = await leaveRoom(songVersionId, this.member(connection), PRESENCE_MS * 2);
+    if (gone) await announce({ songVersionId, kind: "awareness", from: this.member(connection), update: gone });
+  }
+
+  private async docUpdate(connection: Connection, message: Extract<SyncClientMessage, { type: "doc-update" }>) {
+    const songVersionId = String(message.songVersionId);
+    if (typeof message.update !== "string" || message.update.length > SYNC_DOC_UPDATE_MAX || !validUpdate(message.update)) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid document update" });
+    if (!(await this.inDoc(connection, songVersionId))) return;
+    if (!(await appendUpdate(songVersionId, this.member(connection), message.update, message.seed === true))) {
+      // A seed it wasn't picked for, or a room that was reset: load the song and join again.
+      connection.docs.delete(songVersionId);
+      return this.send(connection, { type: "doc-reset", songVersionId });
+    }
+    await announce({ songVersionId, kind: "update", from: this.member(connection), update: message.update });
+  }
+
+  private async docAwareness(connection: Connection, message: Extract<SyncClientMessage, { type: "doc-awareness" }>) {
+    const songVersionId = String(message.songVersionId);
+    if (typeof message.update !== "string" || message.update.length > 8 * 1024 || !validAwareness(message.update)) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid awareness" });
+    if (!connection.docs.has(songVersionId)) return;
+    await touchMember(songVersionId, this.member(connection), message.update);
+    await announce({ songVersionId, kind: "awareness", from: this.member(connection), update: message.update });
+  }
+
+  /** A member saved the song: the room is at that revision (as the database says), and a save it heard isn't from elsewhere. */
+  private async docSaved(connection: Connection, message: Extract<SyncClientMessage, { type: "doc-saved" }>) {
+    const songVersionId = String(message.songVersionId);
+    if (!Number.isInteger(message.revision) || !(await this.inDoc(connection, songVersionId))) return;
+    const rows = await this.prisma.client.$queryRaw<{ revision: number | null }[]>`select ("documentJson"->>'revision')::int as revision from "SongVersion" where id = ${songVersionId}`;
+    if (rows[0]?.revision === message.revision) await roomSaved(songVersionId, message.revision);
+  }
+
+  /** Drops what nobody saved, for everyone in the song. */
+  private async docDiscard(connection: Connection, songVersionId: string) {
+    if (!(await this.inDoc(connection, songVersionId))) return;
+    await resetRoom(songVersionId);
+  }
+
+  /** A save the room's members didn't say was theirs: the room starts over from the song as saved (once, whichever instance gets there). */
+  private async outsideSave(songVersionId: string, revision: number) {
+    const current = await roomRevision(songVersionId);
+    if (current === null || current >= revision) return;
+    if (await claimReset(songVersionId, revision)) await resetRoom(songVersionId);
+  }
+
+  /** A room's update, awareness or reset: this instance's members are told (an update not back to who sent it). */
+  private docAnnounced(raw: string) {
+    let message: DocAnnouncement;
+    try {
+      message = JSON.parse(raw) as DocAnnouncement;
+    } catch {
+      return;
+    }
+    for (const connection of this.connections.values()) {
+      if (!connection.docs.has(message.songVersionId)) continue;
+      if (message.kind === "reset") {
+        connection.docs.delete(message.songVersionId);
+        this.send(connection, { type: "doc-reset", songVersionId: message.songVersionId });
+      } else if (message.from !== this.member(connection)) {
+        this.send(connection, { type: message.kind === "update" ? "doc-update" : "doc-awareness", songVersionId: message.songVersionId, update: message.update });
+      }
+    }
   }
 
   private async signIn(connection: Connection, token: string) {
@@ -316,7 +458,7 @@ export class SyncServer implements OnModuleDestroy {
       if (!user || user.deletedAt || user.bannedAt) throw new Error("No such user");
       const { canReview } = await capabilitiesOf(this.prisma.client, user.id);
       connection.user = { id: user.id, email: user.email, isGlobalAdmin: user.isGlobalAdmin, isReviewer: canReview, name: user.displayName };
-      this.send(connection, { type: "ready", userId: user.id });
+      this.send(connection, { type: "ready", userId: user.id, coEditing: await liveCoEditingEnabled() });
     } catch {
       this.send(connection, { type: "error", code: "unauthorized", message: "Invalid or expired token" });
     }
@@ -495,6 +637,10 @@ export class SyncServer implements OnModuleDestroy {
     for (const connection of this.connections.values()) {
       await this.present(connection).catch(() => undefined);
       await this.storePresence(connection).catch(() => undefined);
+      for (const songVersionId of connection.docs.keys()) {
+        await touchMember(songVersionId, this.member(connection)).catch(() => undefined);
+        await keepRoom(songVersionId).catch(() => undefined);
+      }
     }
   }
 

@@ -14,8 +14,8 @@ import {
   type Tag,
 } from "@songverse/core";
 import { useBlocker, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
-import { PresenceChip, SavedElsewhere } from "#/components/presence";
-import { usePresence, useSongPresence, watchSong } from "#/lib/live-notes";
+import { PresenceChip, SavedElsewhere, StartedOver } from "#/components/presence";
+import { sendDoc, usePresence, useSongPresence, watchSong } from "#/lib/live-notes";
 import { useChartNotes } from "#/components/notes";
 import { useDisplaySettings } from "#/lib/display-settings";
 import { useSongNotes } from "#/lib/notes";
@@ -125,11 +125,24 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   // only if it hasn't been edited since: the reload lands a moment after a
   // save, and an edit made in between must survive it (#39).
   const baseline = useRef(loaded);
+  // Typing in the song with others (issue #27): the chart is the room's, not the page's.
+  const [inRoom, setInRoom] = useState(false);
+  const inRoomRef = useRef(false);
+  inRoomRef.current = inRoom;
   useEffect(() => {
     const base = baseline.current;
     baseline.current = loaded;
     setInitial(loaded);
-    setForm((current) => (isDirty(current, base) ? current : loaded));
+    setForm((current) => {
+      if (!inRoomRef.current) return isDirty(current, base) ? current : loaded;
+      // In a room, someone else's save: their details where this page didn't change them, the chart as the room has it.
+      const merged = { ...current };
+      for (const field of Object.keys(loaded) as (keyof SongForm)[]) {
+        if (field === "sections" || field === "flow" || field === "key") continue;
+        if (JSON.stringify(current[field]) === JSON.stringify(base[field])) (merged as Record<string, unknown>)[field] = loaded[field];
+      }
+      return merged;
+    });
   }, [loaded]);
 
   const [showErrors, setShowErrors] = useState(false);
@@ -180,6 +193,13 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   usePresence(edit?.version.id, "editing", canEdit && !suggesting);
   const others = useSongPresence(edit?.version.id, session.userId);
   const [savedElsewhere, setSavedElsewhere] = useState<{ by: string | null; revision: number } | null>(null);
+  // The room started over (a save or a Discard from elsewhere): said for a moment.
+  const [startedOver, setStartedOver] = useState(false);
+  useEffect(() => {
+    if (!startedOver) return;
+    const timer = setTimeout(() => setStartedOver(false), 8000);
+    return () => clearTimeout(timer);
+  }, [startedOver]);
   const revision = edit?.version.documentJson.revision ?? 0;
   const revisionRef = useRef(revision);
   revisionRef.current = revision;
@@ -191,6 +211,11 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       { songVersionId: edit.version.id },
       {
         onSaved: (saved) => {
+          // In a room, a save is everyone's: the page takes the revision quietly (a save from elsewhere starts the room over).
+          if (inRoomRef.current) {
+            if (saved.revision > revisionRef.current && !savingRef.current) void router.invalidate();
+            return;
+          }
           if (saved.revision <= revisionRef.current || (savingRef.current && saved.byId === session.userId)) return;
           setSavedElsewhere({ by: saved.by, revision: saved.revision });
         },
@@ -366,7 +391,17 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       const update = toUpdateInput(current, initial);
       // The revision this edit started from: refused if someone saved in the meantime.
       if (Object.keys(update).length > 0) {
-        await apiClient.updateSongVersion(edit.version.id, { ...update, revision: edit.version.documentJson.revision });
+        let saved: SongVersionDetail;
+        try {
+          saved = await apiClient.updateSongVersion(edit.version.id, { ...update, revision: edit.version.documentJson.revision });
+        } catch (err) {
+          // In a room, someone else saved a moment before: the chart is the room's either way, so saved again over theirs.
+          if (!(inRoomRef.current && err instanceof ApiError && err.status === 409)) throw err;
+          const fresh = await apiClient.getSongVersion(edit.version.id);
+          saved = await apiClient.updateSongVersion(edit.version.id, { ...update, revision: fresh.documentJson.revision });
+        }
+        // The room is at this revision: the save isn't one from elsewhere.
+        if (inRoomRef.current) sendDoc({ type: "doc-saved", songVersionId: edit.version.id, revision: saved.documentJson.revision });
       }
       // Saved: edits made from here on are new ones, kept when the song reloads.
       baseline.current = current;
@@ -436,6 +471,12 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
     } catch (err) {
       setMessage({ kind: "error", text: err instanceof Error ? err.message : String(err) });
     }
+  }
+
+  /** Discard: in a room, what nobody saved goes for everyone (each loads the song again). */
+  function discardChanges() {
+    if (inRoom && edit) sendDoc({ type: "doc-discard", songVersionId: edit.version.id });
+    discard();
   }
 
   function discard() {
@@ -609,7 +650,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           {canEdit ? (
             <>
               {edit ? (
-                <Button type="button" variant="outline" onClick={discard} disabled={!dirty || saving}>
+                <Button type="button" variant="outline" onClick={discardChanges} disabled={!dirty || saving}>
                   {t("songEditor.discard")}
                 </Button>
               ) : (
@@ -736,6 +777,27 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                 onReplaceChart={() => setReplacing(true)}
                 onFactChange={(field, value) => setField(field, value)}
                 readOnly={!canChangeChart}
+                shared={
+                  edit && canEdit && !suggesting
+                    ? {
+                        songVersionId: edit.version.id,
+                        me: { name: session.displayName, color: caretColor(session.userId) },
+                        loadSaved: async () => {
+                          const saved = await apiClient.getSongVersion(edit.version.id);
+                          const form = formFromVersion(saved);
+                          return { revision: saved.documentJson.revision, sections: form.sections, flow: form.flow, key: form.key };
+                        },
+                        onNewer: () => void router.invalidate(),
+                        onReset: () => {
+                          discard();
+                          setSavedElsewhere(null);
+                          void router.invalidate();
+                          setStartedOver(true);
+                        },
+                        onRoomChange: setInRoom,
+                      }
+                    : undefined
+                }
               />
             </Suspense>
           </fieldset>
@@ -794,6 +856,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       </Dialog>
 
       {edit ? <ShareDialog songVersionId={edit.version.id} open={sharing} onOpenChange={setSharing} /> : null}
+      {startedOver ? <StartedOver onDismiss={() => setStartedOver(false)} /> : null}
       {savedElsewhere ? <SavedElsewhere by={savedElsewhere.by} dirty={dirty} onLoad={loadTheirs} onDismiss={() => setSavedElsewhere(null)} /> : null}
 
       <Dialog open={confirmingDelete} onOpenChange={(open) => !deleting && setConfirmingDelete(open)}>
@@ -880,4 +943,12 @@ function EditorNotes({ version, songbookId, openNoteId, openSignal }: { version:
       {notes.dialogs}
     </>
   );
+}
+
+/** One's caret's colour, the same on every device (issue #27). */
+function caretColor(userId: string): string {
+  const colors = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#0891b2", "#db2777", "#65a30d"];
+  let hash = 0;
+  for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  return colors[Math.abs(hash) % colors.length]!;
 }

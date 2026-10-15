@@ -14,6 +14,8 @@ import { SaveAuthConfigDto } from "./dto/save-auth-config.dto.js";
 import { SaveStorageConfigDto } from "./dto/save-storage-config.dto.js";
 import { SaveStorageLimitsDto, StorageLimitsResponseDto } from "./dto/storage-limits.dto.js";
 import { SaveSecuritySettingsDto } from "./dto/security-settings.dto.js";
+import { SaveCollaborationSettingsDto } from "./dto/collaboration-settings.dto.js";
+import { clearCollaborationSettings, getCollaborationSettingsSummary, saveCollaborationSettings } from "../sync/collaboration-settings.js";
 import { clearSecuritySettings, getSecuritySettingsSummary, saveSecuritySettings } from "../security/security-settings.js";
 import { SaveNotificationServerSettingsDto } from "./dto/notification-settings.dto.js";
 import { clearNotificationSettings, generatePushKeys, getNotificationSettingsSummary, saveNotificationSettings } from "../notifications/notification-settings.js";
@@ -140,6 +142,26 @@ export class AdminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   clearSecuritySettings(): Promise<void> {
     return clearSecuritySettings();
+  }
+
+  // --- live collaboration (issue #27): typing in the same song together
+
+  @Get("collaboration")
+  @ApiOkResponse({ description: "Whether live co-editing is on, and whether that comes from the database, LIVE_CO_EDITING or the default (off)." })
+  getCollaborationSettings(): ReturnType<typeof getCollaborationSettingsSummary> {
+    return getCollaborationSettingsSummary();
+  }
+
+  @Put("collaboration")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  saveCollaborationSettings(@Body() dto: SaveCollaborationSettingsDto): Promise<void> {
+    return saveCollaborationSettings(dto);
+  }
+
+  @Delete("collaboration")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  clearCollaborationSettings(): Promise<void> {
+    return clearCollaborationSettings();
   }
 
   // --- how notifications go out besides the bell (issue #236)

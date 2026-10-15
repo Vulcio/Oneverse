@@ -2450,6 +2450,14 @@ model StemSeparation {
   @@index([requestedByUserId, createdAt])
 }
 
+// Live collaboration (issue #27): typing in the same song together in the
+// editor. Off by default while it's new; Admin > Collaboration turns it on.
+model CollaborationSettings {
+  id            String   @id @default("singleton")
+  liveCoEditing Boolean?
+  updatedAt     DateTime @updatedAt
+}
+
 model AuthSettings {
   id                    String   @id @default("singleton")
   resendApiKeyEnc       String?

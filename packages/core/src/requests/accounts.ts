@@ -138,6 +138,12 @@ export const SaveSecuritySettingsSchema = z.strictObject({
 });
 export type SaveSecuritySettingsRequest = z.input<typeof SaveSecuritySettingsSchema>;
 
+/** PUT /admin/collaboration (issue #27): left out keeps its value; null goes back to LIVE_CO_EDITING, else off. */
+export const SaveCollaborationSettingsSchema = z.strictObject({
+  liveCoEditing: z.boolean().nullable().optional().describe("Typing in the same song together in the editor"),
+});
+export type SaveCollaborationSettingsRequest = z.input<typeof SaveCollaborationSettingsSchema>;
+
 /** PUT /admin/storage/limits: a field left out keeps its value; null goes back to the built-in default. */
 export const SaveStorageLimitsSchema = z.strictObject({
   defaultLimitMb: z.number().int().min(0).max(1_000_000).nullable().optional().describe("A user's, when no role sets one (MB)"),

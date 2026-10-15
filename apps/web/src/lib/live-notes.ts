@@ -30,7 +30,12 @@ interface Watch {
 const watches = new Set<Watch>();
 /** The bell (issue #27): told when one's notifications change, the connection kept while it's there. */
 const notificationListeners = new Set<() => void>();
-const wanted = () => watches.size > 0 || notificationListeners.size > 0;
+/** Songs typed in together (issue #27, lib/shared-song.ts): their room's messages, and being told when the connection is back. */
+export type DocMessage = Extract<SyncServerMessage, { type: `doc-${string}` }> | { type: "doc-connected" };
+const docListeners = new Map<string, (message: DocMessage) => void>();
+const wanted = () => watches.size > 0 || notificationListeners.size > 0 || docListeners.size > 0;
+/** Whether Admin turned live co-editing on, as the server said on signing in (null: not heard yet). */
+let coEditing: boolean | null = null;
 let socket: WebSocket | null = null;
 let retry: ReturnType<typeof setTimeout> | null = null;
 let closing: ReturnType<typeof setTimeout> | null = null;
@@ -79,7 +84,9 @@ function notesChanged(songVersionId: string | null) {
 function receive(message: SyncServerMessage) {
   if (message.type === "ready") {
     signedIn = true;
+    coEditing = message.coEditing ?? false;
     sendWatches();
+    for (const listener of [...docListeners.values()]) listener({ type: "doc-connected" });
     // Back after a drop: what changed meanwhile wasn't heard.
     if (retries > 0) notesChanged(null);
     retries = 0;
@@ -88,6 +95,9 @@ function receive(message: SyncServerMessage) {
   else if (message.type === "song") {
     const saved = { revision: message.revision, byId: message.byId, by: message.by };
     for (const watch of [...watches]) if (watch.songVersionId === message.songVersionId) watch.onSaved?.(saved);
+  } else if (message.type.startsWith("doc-")) {
+    const doc = message as Extract<SyncServerMessage, { type: `doc-${string}` }>;
+    docListeners.get(doc.songVersionId)?.(doc);
   } else if (message.type === "presence") {
     presence.set(message.songVersionId, message.people);
     for (const watch of [...watches]) if (watch.songVersionId === message.songVersionId) watch.onPresence?.(message.people);
@@ -177,6 +187,35 @@ export function watchNotifications(onChange: () => void): () => void {
     notificationListeners.delete(onChange);
     closeWhenUnwanted();
   };
+}
+
+/**
+ * A song's room (issue #27): its messages to `listener`, told "doc-connected"
+ * each time the connection is (re)made and signed in - at once if it is
+ * already. Until the returned function is called.
+ */
+export function openDocChannel(songVersionId: string, listener: (message: DocMessage) => void): () => void {
+  docListeners.set(songVersionId, listener);
+  if (closing) clearTimeout(closing);
+  closing = null;
+  if (socket && signedIn) listener({ type: "doc-connected" });
+  else connect();
+  return () => {
+    if (docListeners.get(songVersionId) === listener) docListeners.delete(songVersionId);
+    closeWhenUnwanted();
+  };
+}
+
+/** Sends a room's message, when the connection is up (else it's dropped: joining again after it's back sends what's missing). */
+export function sendDoc(message: Extract<SyncClientMessage, { type: `doc-${string}` }>): boolean {
+  if (!signedIn || socket?.readyState !== WebSocket.OPEN) return false;
+  send(message);
+  return true;
+}
+
+/** Whether live co-editing is on, as last heard (null: not signed in yet). */
+export function coEditingOn(): boolean | null {
+  return coEditing;
 }
 
 /** Calls `onChange` whenever the song's notes change, until the returned function is called. */

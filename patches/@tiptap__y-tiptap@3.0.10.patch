@@ -1,0 +1,26 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index d5fd6a2ed2f52041b092e75fe3380156919ca3d1..aa2168630d01951a4afb4f4126c15c4d58a982bf 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -623,7 +623,7 @@ const isMisresolvedAfterStructuralChange = (oldDoc, newDoc, oldAbs, resolvedAbs)
+ //#region src/lib/utils/positions/restoreRelativeSelection.ts
+ const recoverSelectionEndpoint = (newDoc, oldDoc, oldAbs, resolved) => {
+ 	if (oldAbs == null || oldAbs < 0 || oldAbs > oldDoc.content.size) return resolved;
+-	if (!(resolved === null || oldAbs > 1 && resolved <= 1 || isMisresolvedAfterStructuralChange(oldDoc, newDoc, oldAbs, resolved))) return resolved;
++	if (!(resolved === null || oldAbs > 1 && resolved <= 1)) return resolved;
+ 	const recovered = findAbsolutePositionAfterStructuralChange(oldDoc, newDoc, oldAbs);
+ 	return recovered !== null ? recovered : resolved;
+ };
+diff --git a/dist/index.js b/dist/index.js
+index 50bcfe723ad3dd8b8c24c11d710f5607319fb8a8..034a59d2f0789da419904e0116c5796e83008d6e 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -590,7 +590,7 @@ const isMisresolvedAfterStructuralChange = (oldDoc, newDoc, oldAbs, resolvedAbs)
+ //#region src/lib/utils/positions/restoreRelativeSelection.ts
+ const recoverSelectionEndpoint = (newDoc, oldDoc, oldAbs, resolved) => {
+ 	if (oldAbs == null || oldAbs < 0 || oldAbs > oldDoc.content.size) return resolved;
+-	if (!(resolved === null || oldAbs > 1 && resolved <= 1 || isMisresolvedAfterStructuralChange(oldDoc, newDoc, oldAbs, resolved))) return resolved;
++	if (!(resolved === null || oldAbs > 1 && resolved <= 1)) return resolved;
+ 	const recovered = findAbsolutePositionAfterStructuralChange(oldDoc, newDoc, oldAbs);
+ 	return recovered !== null ? recovered : resolved;
+ };

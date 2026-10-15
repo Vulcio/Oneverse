@@ -14,6 +14,9 @@ import {
   type SectionInstance,
   type SectionV2,
 } from "@songverse/core";
+import { getSchema } from "@tiptap/core";
+import { Collaboration } from "@tiptap/extension-collaboration";
+import { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
 import { Placeholder } from "@tiptap/extensions";
 import { UndoRedo } from "@tiptap/extensions";
 import type { Node as PMNode } from "@tiptap/pm/model";
@@ -36,6 +39,7 @@ import { ChordBar } from "./chord-bar";
 import { SectionInserter } from "./section-inserter";
 import { SongOrder } from "./song-order";
 import { SongOrderActionsContext, type SongOrderActions } from "./song-order-context";
+import { passDetails, SHARED_LOCAL, useSharedSong, type SavedSong, type SharedSong } from "./shared-song";
 import {
   deleteChord,
   insertChord,
@@ -67,24 +71,7 @@ export interface SongFacts {
   capo: string;
 }
 
-/**
- * The song editor's Editor tab: the chart edited as it looks - chords above
- * the lyrics, dragged or nudged onto any character, lyrics typed around
- * them - with a text mode for tricky fixes and a preview. Edits the
- * sections' IDs never change (docs/song-document-v2.md, "Editor rules").
- */
-export function StructuredEditor({
-  sections,
-  onChange,
-  flow,
-  onFlowChange,
-  songKey,
-  onSongKeyChange,
-  facts,
-  onFactChange,
-  onReplaceChart,
-  readOnly,
-}: {
+type EditorProps = {
   sections: SectionV2[];
   onChange: (sections: SectionV2[]) => void;
   flow: SectionInstance[];
@@ -96,7 +83,74 @@ export function StructuredEditor({
   /** Opens "Replace from a file or paste…" (issue #254). */
   onReplaceChart?: () => void;
   readOnly: boolean;
-}) {
+};
+
+/** Typing in the song together (issue #27): what the editor needs to join the others, where Admin turned it on. */
+export interface SharedEditing {
+  songVersionId: string;
+  /** Who this is, on their caret. */
+  me: { name: string; color: string };
+  /** The song as saved now: what the room starts from, and the revision to join with. */
+  loadSaved: () => Promise<SavedSong>;
+  /** The room is at a newer revision than the page's: load the song (for saving). */
+  onNewer: (revision: number) => void;
+  /** The song changed outside the room: what nobody saved is dropped, load it again. */
+  onReset: () => void;
+  /** In a room with others, or not (saves, Discard and saves heard work differently in one). */
+  onRoomChange: (inRoom: boolean) => void;
+}
+
+/** The editor's schema, for the shared document's start (made before the editor). */
+const editorSchema = getSchema(songEditorExtensions({ onChordPointerDown: () => {}, onEditChord: () => {} }));
+
+/**
+ * The song editor's Editor tab: the chart edited as it looks - chords above
+ * the lyrics, dragged or nudged onto any character, lyrics typed around
+ * them - with a text mode for tricky fixes and a preview. Edits the
+ * sections' IDs never change (docs/song-document-v2.md, "Editor rules").
+ * With `shared`, typed in together with whoever else has it open (issue #27).
+ */
+export function StructuredEditor({ shared, ...props }: EditorProps & { shared?: SharedEditing }) {
+  const { t } = useTranslation();
+  const state = useSharedSong({
+    songVersionId: shared?.songVersionId ?? null,
+    enabled: !!shared && !props.readOnly,
+    schema: editorSchema,
+    me: shared?.me ?? { name: "", color: "" },
+    loadSaved: () => shared!.loadSaved(),
+    onNewer: (revision) => shared?.onNewer(revision),
+    onReset: () => shared?.onReset(),
+  });
+  const onRoomChange = useRef(shared?.onRoomChange);
+  onRoomChange.current = shared?.onRoomChange;
+  const inRoom = state.status === "ready";
+  useEffect(() => {
+    onRoomChange.current?.(inRoom);
+  }, [inRoom]);
+  if (state.status === "joining") {
+    return (
+      <p className="py-10 text-center text-sm text-muted-foreground" role="status" data-testid="editor-joining">
+        {t("structuredEditor.joining")}
+      </p>
+    );
+  }
+  return <EditorBody key={state.status === "ready" ? `room-${state.generation}` : "alone"} {...props} room={state.status === "ready" ? state.room : null} me={shared?.me} />;
+}
+
+function EditorBody({
+  sections,
+  onChange,
+  flow,
+  onFlowChange,
+  songKey,
+  onSongKeyChange,
+  facts,
+  onFactChange,
+  onReplaceChart,
+  readOnly,
+  room,
+  me,
+}: EditorProps & { room: SharedSong | null; me?: { name: string; color: string } }) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<EditorMode>(readOnly ? "preview" : "visual");
   const [editTick, setEditTick] = useState(0);
@@ -108,8 +162,11 @@ export function StructuredEditor({
   const setFlow = (next: SectionInstance[]) => {
     flowRef.current = next;
     emittedFlow.current = next;
+    if (room) writePasses(room, next);
     onFlowChangeRef.current(next);
   };
+  // In a room (issue #27), a pass's details are the room's: a pass someone else added comes with theirs.
+  const previousFlow = () => (room ? roomFlow(room) : flowRef.current);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   // The pass the user moved the cursor into (not a reload's), chosen in the song order (issue #251).
@@ -130,15 +187,21 @@ export function StructuredEditor({
         onChordPointerDown: (event, pos) => events.current.onChordPointerDown(event, pos),
         onEditChord: () => events.current.onEditChord(),
       }),
-      UndoRedo,
+      // Together (issue #27): the chart is the room's document; undo takes back one's own changes only; the others' carets show.
+      ...(room
+        ? [
+            Collaboration.configure({ document: room.doc, field: "chart", yUndoOptions: { undoManager: room.undoManager } }),
+            CollaborationCaret.configure({ provider: room.provider, user: me ?? { name: "", color: "#888" } }),
+          ]
+        : [UndoRedo]),
       Placeholder.configure({ placeholder: t("structuredEditor.placeholder"), includeChildren: true, showOnlyCurrent: false }),
     ],
     [],
   );
   const editor = useEditor({
     extensions,
-    // In the order it's sung, linked copies and all (issue #205).
-    content: { ...songToEditorJSON(sections, flow), attrs: { key: songKey || null } },
+    // In the order it's sung, linked copies and all (issue #205). In a room, the room's document.
+    ...(!room && { content: { ...songToEditorJSON(sections, flow), attrs: { key: songKey || null } } }),
     editable: !readOnly,
     immediatelyRender: false,
     shouldRerenderOnTransaction: false,
@@ -153,7 +216,8 @@ export function StructuredEditor({
       // A transposition (or its undo) moves the key with the chords.
       const key = (current.state.doc.attrs.key as string | null) ?? "";
       if (key !== keyRef.current) onSongKeyChangeRef.current(key);
-      const next = editorToSong(current.state.doc, flowRef.current);
+      const next = editorToSong(current.state.doc, previousFlow());
+      if (room) remember(next.sections, next.flow);
       emitted.current = next.sections;
       onChangeRef.current(next.sections);
       setFlow(next.flow);
@@ -176,10 +240,50 @@ export function StructuredEditor({
 
   useEffect(() => {
     if (editor) setDocumentKey(editor.view, songKey || null);
+    // The key changed here (the picker, a transposition): the others' too.
+    if (room && ((room.song.get("key") as string | null) ?? "") !== songKey) room.doc.transact(() => room.song.set("key", songKey || null), SHARED_LOCAL);
   }, [editor, songKey]);
 
+  // In a room: the key and the passes' details as the others change them (or undo takes them back).
+  useEffect(() => {
+    if (!room || !editor) return;
+    const keyChanged = () => {
+      const key = (room.song.get("key") as string | null) ?? "";
+      if (key !== keyRef.current) onSongKeyChangeRef.current(key);
+    };
+    const passesChanged = () => {
+      const next = editorToSong(editor.state.doc, roomFlow(room)).flow;
+      if (JSON.stringify(next) === JSON.stringify(flowRef.current)) return;
+      remember(editorToSections(editor.state.doc), next);
+      flowRef.current = next;
+      emittedFlow.current = next;
+      onFlowChangeRef.current(next);
+    };
+    keyChanged();
+    room.song.observe(keyChanged);
+    room.passes.observe(passesChanged);
+    return () => {
+      room.song.unobserve(keyChanged);
+      room.passes.unobserve(passesChanged);
+    };
+  }, [room, editor]);
+  // The song order's details changed from its bar: the others' too.
+  useEffect(() => {
+    if (room) writePasses(room, flow);
+  }, [room, flow]);
+
+  // In a room, the props the editor was made with are the room's to replace: only a change made since is loaded.
+  const propsSeen = useRef({ sections, flow });
+  // In a room, what the editor reported lately: the page can render one of them after the others' typing moved on (it's not a change from outside).
+  const recent = useRef<string[]>([]);
+  function remember(next: SectionV2[], nextFlow: SectionInstance[]) {
+    recent.current = [...recent.current.slice(-30), chartKey(next, nextFlow)];
+  }
   // Load the song when it changes from outside (Song Info's text, Discard, a save, text mode, the song order bar).
   useEffect(() => {
+    const seen = propsSeen.current;
+    propsSeen.current = { sections, flow };
+    if (room && ((seen.sections === sections && seen.flow === flow) || recent.current.includes(chartKey(sections, flow)))) return;
     if (!editor || (sameSections(sections, emitted.current) && sameOrder(flow, emittedFlow.current))) return;
     emitted.current = sections;
     emittedFlow.current = flow;
@@ -263,6 +367,16 @@ export function StructuredEditor({
     editor.view.dispatch(editor.state.tr.insert(block.pos + block.node.nodeSize, node).scrollIntoView());
   }
 
+  // Others in the room (issue #27): text mode only reads, so their typing isn't overwritten by a text edited from before it.
+  const [othersHere, setOthersHere] = useState(0);
+  useEffect(() => {
+    if (!room) return;
+    const count = () => setOthersHere([...room.awareness.getStates().keys()].filter((id) => id !== room.doc.clientID).length);
+    count();
+    room.awareness.on("change", count);
+    return () => room.awareness.off("change", count);
+  }, [room]);
+
   // The chart's own lettering, as Edit's Display settings have it (issue #249): the chords' room measured again with it.
   const display = useDisplaySettings("EDIT");
   useEffect(() => {
@@ -301,7 +415,7 @@ export function StructuredEditor({
         </div>
         {mode === "visual" && editor ? <Palette editor={editor} songKey={songKey} sections={sections} /> : null}
         {mode === "visual" && editor ? <ChordBar editor={editor} songKey={songKey} used={chordsUsed(sections)} /> : null}
-        {mode === "text" ? <TextMode sections={sections} onChange={(next) => onChangeRef.current(next)} /> : null}
+        {mode === "text" ? <TextMode sections={sections} onChange={(next) => onChangeRef.current(next)} locked={othersHere > 0} /> : null}
         {mode === "preview" ? <EditPreview chart={chartOfSections(sections, flow, songKey || null)} withPanel /> : null}
         {mode !== "preview" ? (
           <aside className="hidden min-w-0 flex-col gap-2 border-l pl-6 @7xl:flex" aria-label={t("structuredEditor.modes.preview")} data-testid="editor-side-preview">
@@ -755,7 +869,23 @@ function ChordPopover({ editor, songKey, editTick }: { editor: Editor; songKey: 
 }
 
 /** The chart as ChordPro text; each change is read back with the IDs kept (reconcileSections). */
-function TextMode({ sections, onChange }: { sections: SectionV2[]; onChange: (sections: SectionV2[]) => void }) {
+function TextMode({ sections, onChange, locked = false }: { sections: SectionV2[]; onChange: (sections: SectionV2[]) => void; locked?: boolean }) {
+  const { t } = useTranslation();
+  if (locked) {
+    // As the others type it, to read; Visual mode to change it.
+    return (
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <Textarea value={sectionsToChordPro(sections)} readOnly rows={24} spellCheck={false} aria-label={t("structuredEditor.textLabel")} data-testid="structured-editor-text" className="min-h-60 font-mono text-sm" />
+        <p className="text-xs text-muted-foreground" role="status" data-testid="text-mode-locked">
+          {t("structuredEditor.textLocked")}
+        </p>
+      </div>
+    );
+  }
+  return <TextModeEditable sections={sections} onChange={onChange} />;
+}
+
+function TextModeEditable({ sections, onChange }: { sections: SectionV2[]; onChange: (sections: SectionV2[]) => void }) {
   const { t } = useTranslation();
   // What the text started from: every change is matched against it, so IDs survive a round of edits.
   const base = useRef(sections);
@@ -788,4 +918,23 @@ function TextMode({ sections, onChange }: { sections: SectionV2[]; onChange: (se
       </p>
     </div>
   );
+}
+
+/** The passes as the room has their details (issue #27): what editorToSong keeps for each. */
+function roomFlow(room: SharedSong): SectionInstance[] {
+  return [...room.passes.entries()].map(([id, details]) => ({ ...(details as object), id, sectionId: "" }) as SectionInstance);
+}
+
+/** Each pass's details written into the room where they differ from what it has (one's own change, undone with one's typing). */
+function writePasses(room: SharedSong, flow: SectionInstance[]) {
+  const changed = flow.filter((pass) => JSON.stringify(passDetails(pass)) !== JSON.stringify(room.passes.get(pass.id) ?? {}));
+  if (changed.length === 0) return;
+  room.doc.transact(() => {
+    for (const pass of changed) room.passes.set(pass.id, passDetails(pass));
+  }, SHARED_LOCAL);
+}
+
+/** The chart and its order, as one string to compare (issue #27). */
+function chartKey(sections: SectionV2[], flow: SectionInstance[]): string {
+  return JSON.stringify([sections.map((section) => [section.id, section.type, section.label ?? null, section.lines.map((line) => [line.id, line.text, line.chords.map((chord) => [chord.id, chord.at, chord.raw])])]), flow.map((item) => [item.id, item.sectionId])]);
 }

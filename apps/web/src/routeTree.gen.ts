@@ -32,6 +32,7 @@ import { Route as TransferTokenRouteImport } from './routes/transfer.$token'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
 import { Route as ProtectedAdminAuthRouteImport } from './routes/_protected/admin/auth'
 import { Route as ProtectedAdminCatalogsRouteImport } from './routes/_protected/admin/catalogs'
+import { Route as ProtectedAdminCollaborationRouteImport } from './routes/_protected/admin/collaboration'
 import { Route as ProtectedAdminInstrumentsRouteImport } from './routes/_protected/admin/instruments'
 import { Route as ProtectedAdminMetadataRouteImport } from './routes/_protected/admin/metadata'
 import { Route as ProtectedAdminNotificationsRouteImport } from './routes/_protected/admin/notifications'
@@ -186,6 +187,12 @@ const ProtectedAdminCatalogsRoute = ProtectedAdminCatalogsRouteImport.update({
   path: '/catalogs',
   getParentRoute: () => ProtectedAdminRoute,
 } as any)
+const ProtectedAdminCollaborationRoute =
+  ProtectedAdminCollaborationRouteImport.update({
+    id: '/collaboration',
+    path: '/collaboration',
+    getParentRoute: () => ProtectedAdminRoute,
+  } as any)
 const ProtectedAdminInstrumentsRoute =
   ProtectedAdminInstrumentsRouteImport.update({
     id: '/instruments',
@@ -424,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/transfer/$token': typeof TransferTokenRoute
   '/admin/auth': typeof ProtectedAdminAuthRoute
   '/admin/catalogs': typeof ProtectedAdminCatalogsRoute
+  '/admin/collaboration': typeof ProtectedAdminCollaborationRoute
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
@@ -485,6 +493,7 @@ export interface FileRoutesByTo {
   '/transfer/$token': typeof TransferTokenRoute
   '/admin/auth': typeof ProtectedAdminAuthRoute
   '/admin/catalogs': typeof ProtectedAdminCatalogsRoute
+  '/admin/collaboration': typeof ProtectedAdminCollaborationRoute
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
@@ -550,6 +559,7 @@ export interface FileRoutesById {
   '/transfer/$token': typeof TransferTokenRoute
   '/_protected/admin/auth': typeof ProtectedAdminAuthRoute
   '/_protected/admin/catalogs': typeof ProtectedAdminCatalogsRoute
+  '/_protected/admin/collaboration': typeof ProtectedAdminCollaborationRoute
   '/_protected/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/_protected/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/_protected/admin/notifications': typeof ProtectedAdminNotificationsRoute
@@ -615,6 +625,7 @@ export interface FileRouteTypes {
     | '/transfer/$token'
     | '/admin/auth'
     | '/admin/catalogs'
+    | '/admin/collaboration'
     | '/admin/instruments'
     | '/admin/metadata'
     | '/admin/notifications'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/transfer/$token'
     | '/admin/auth'
     | '/admin/catalogs'
+    | '/admin/collaboration'
     | '/admin/instruments'
     | '/admin/metadata'
     | '/admin/notifications'
@@ -740,6 +752,7 @@ export interface FileRouteTypes {
     | '/transfer/$token'
     | '/_protected/admin/auth'
     | '/_protected/admin/catalogs'
+    | '/_protected/admin/collaboration'
     | '/_protected/admin/instruments'
     | '/_protected/admin/metadata'
     | '/_protected/admin/notifications'
@@ -955,6 +968,13 @@ declare module '@tanstack/react-router' {
       path: '/catalogs'
       fullPath: '/admin/catalogs'
       preLoaderRoute: typeof ProtectedAdminCatalogsRouteImport
+      parentRoute: typeof ProtectedAdminRoute
+    }
+    '/_protected/admin/collaboration': {
+      id: '/_protected/admin/collaboration'
+      path: '/collaboration'
+      fullPath: '/admin/collaboration'
+      preLoaderRoute: typeof ProtectedAdminCollaborationRouteImport
       parentRoute: typeof ProtectedAdminRoute
     }
     '/_protected/admin/instruments': {
@@ -1236,6 +1256,7 @@ declare module '@tanstack/react-router' {
 interface ProtectedAdminRouteChildren {
   ProtectedAdminAuthRoute: typeof ProtectedAdminAuthRoute
   ProtectedAdminCatalogsRoute: typeof ProtectedAdminCatalogsRoute
+  ProtectedAdminCollaborationRoute: typeof ProtectedAdminCollaborationRoute
   ProtectedAdminInstrumentsRoute: typeof ProtectedAdminInstrumentsRoute
   ProtectedAdminMetadataRoute: typeof ProtectedAdminMetadataRoute
   ProtectedAdminNotificationsRoute: typeof ProtectedAdminNotificationsRoute
@@ -1252,6 +1273,7 @@ interface ProtectedAdminRouteChildren {
 const ProtectedAdminRouteChildren: ProtectedAdminRouteChildren = {
   ProtectedAdminAuthRoute: ProtectedAdminAuthRoute,
   ProtectedAdminCatalogsRoute: ProtectedAdminCatalogsRoute,
+  ProtectedAdminCollaborationRoute: ProtectedAdminCollaborationRoute,
   ProtectedAdminInstrumentsRoute: ProtectedAdminInstrumentsRoute,
   ProtectedAdminMetadataRoute: ProtectedAdminMetadataRoute,
   ProtectedAdminNotificationsRoute: ProtectedAdminNotificationsRoute,

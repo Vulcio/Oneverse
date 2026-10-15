@@ -68,3 +68,20 @@ export function SavedElsewhere({
     </div>
   );
 }
+
+/** The song changed outside the room one was typing in (issue #27): loaded again, what nobody saved dropped. */
+export function StartedOver({ onDismiss }: { onDismiss: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="fixed inset-x-4 bottom-[calc(var(--save-bar-h,0px)+1rem)] z-50 mx-auto flex max-w-xl items-center gap-3 rounded-lg border bg-popover p-3 text-sm text-popover-foreground shadow-lg"
+      role="status"
+      data-testid="started-over"
+    >
+      <p className="min-w-0 flex-1">{t("presence.startedOver")}</p>
+      <Button size="sm" variant="outline" onClick={onDismiss}>
+        {t("presence.gotIt")}
+      </Button>
+    </div>
+  );
+}

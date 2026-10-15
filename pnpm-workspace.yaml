@@ -15,6 +15,10 @@ overrides:
   # @nestjs/platform-express 10 brings multer 2.0.2, which reads uploaded
   # files' names as Latin-1 whatever it's told; 2.4 takes defParamCharset
   # (issue #130: "même" came out "mÃªme").
+  # One @types/node (Node 22, what runs everything): Vite+'s core is installed
+  # once per @types/node version, and `vp dev` loading one copy while TanStack
+  # Start's plugins load another left the dev server answering 404.
+  "@types/node": ^22.10.5
   multer: ^2.4.0
   # Vite+ (issue #159): every Vite and Vitest in the workspace is the one
   # vite-plus bundles, so plugins (TanStack Start's) and vp test share one copy.
@@ -26,10 +30,11 @@ overrides:
   # again (Vitest's, once apps/planiverse came).
   vite@*: npm:@voidzero-dev/vite-plus-core@1.0.0
   vitest@*: 5.0.1
-  # One @types/node (Node 22, what runs everything): Vite+'s core is installed
-  # once per @types/node version, and `vp dev` loading one copy while TanStack
-  # Start's plugins load another left the dev server answering 404.
-  "@types/node": ^22.10.5
+patchedDependencies:
+  # Typing together (issue #27): y-tiptap 3.0.6+ second-guesses where a cursor goes after someone else's
+  # change and puts it back at its old offset whenever their change is in the same line (the text differs, so
+  # Yjs's answer is taken as wrong). Yjs's answer is kept, unless it found none or the very start.
+  '@tiptap/y-tiptap@3.0.10': patches/@tiptap__y-tiptap@3.0.10.patch
 
 peerDependencyRules:
   allowedVersions:

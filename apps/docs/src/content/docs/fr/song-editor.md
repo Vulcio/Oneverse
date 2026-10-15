@@ -103,7 +103,17 @@ Quand cette personne enregistre, vous êtes prévenu aussitôt, par-dessus la pa
 
 En Session, un enregistrement s'affiche comme **Chant modifié · Charger** ; la grille ne change que quand vous le touchez.
 
-Deux personnes ne peuvent pas encore taper dans le même chant en même temps en voyant les modifications de l'autre au fil de la frappe : cela viendra plus tard.
+### Écrire à plusieurs
+
+Là où un administrateur a activé **Modification à plusieurs en direct** (voir [Administration](/fr/admin/#collaboration)), les personnes qui peuvent modifier le chant y écrivent ensemble dans le mode **Visuel** de l'éditeur. Chacun voit ce que les autres tapent au fil de la frappe, avec leur curseur et leur nom. Cela vaut pour les paroles, les accords, les parties, l'ordre du chant, la tonalité et la transposition.
+
+- **Annuler** ne reprend que vos propres modifications, pas ce que les autres ont tapé entre-temps.
+- **Enregistrer le chant** enregistre le chant tel que tout le monde l'a. Après l'enregistrement de quelqu'un, les autres continuent sans être prévenus d'un enregistrement ailleurs, et chacun peut enregistrer à nouveau.
+- **Annuler les modifications** abandonne ce que personne n'a enregistré, pour tous ceux qui sont dans le chant.
+- Tant que quelqu'un d'autre est dans le chant, le mode **Texte** ne fait qu'afficher la grille ; modifiez-la en **Visuel**.
+- Si le chant est modifié ailleurs pendant ce temps (une version restaurée depuis l'**Historique**, une suggestion acceptée), tous ceux qui y sont reçoivent le chant tel qu'il est enregistré, et les modifications que personne n'avait enregistrées sont abandonnées. Un message par-dessus la page l'indique.
+
+Là où elle est désactivée, chacun modifie de son côté, comme décrit plus haut.
 
 ## Historique
 

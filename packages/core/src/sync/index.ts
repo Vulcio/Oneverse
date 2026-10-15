@@ -101,7 +101,23 @@ export type SyncClientMessage =
    * What this device is doing in a song it watches (issue #27): editing it,
    * or replying to one of its notes; null song: nothing. Its watchers see it.
    */
-  | { type: "presence"; songVersionId: string | null; doing?: SongActivity; noteId?: string };
+  | { type: "presence"; songVersionId: string | null; doing?: SongActivity; noteId?: string }
+  /**
+   * Live co-editing (issue #27): a song's shared document - Yjs updates,
+   * base64 - for who can change its content, where Admin turned it on.
+   * Joined with the revision the device loaded; `doc-saved` after saving it.
+   */
+  | { type: "doc-join"; songVersionId: string; revision: number }
+  | { type: "doc-leave"; songVersionId: string }
+  /** `seed`: the document's start, by the device `doc-state` picked. */
+  | { type: "doc-update"; songVersionId: string; update: string; seed?: boolean }
+  | { type: "doc-awareness"; songVersionId: string; update: string }
+  | { type: "doc-saved"; songVersionId: string; revision: number }
+  /** Drops the changes nobody saved, for everyone in the song: each loads it again. */
+  | { type: "doc-discard"; songVersionId: string };
+
+/** The most a shared document's update may weigh (base64). */
+export const SYNC_DOC_UPDATE_MAX = 512 * 1024;
 
 /** What someone is doing in a song, for the others in it. */
 export type SongActivity = "editing" | "replying";
@@ -118,7 +134,8 @@ export interface SongPresence {
 export const SYNC_WATCH_MAX = 30;
 
 export type SyncServerMessage =
-  | { type: "ready"; userId: string }
+  /** Signed in; `coEditing`: live co-editing is on (issue #27). */
+  | { type: "ready"; userId: string; coEditing?: boolean }
   /** To a screen: what it is, again whenever that changes (renamed, another mode or set). Then it's gone: disconnected. */
   | { type: "screen"; screen: SyncScreenInfo }
   | { type: "pong"; id: number; sent: number; at: number }
@@ -138,6 +155,18 @@ export type SyncServerMessage =
   | { type: "presence"; songVersionId: string; people: SongPresence[] }
   /** A watched song was saved (issue #27): by whom, now at `revision`. */
   | { type: "song"; songVersionId: string; revision: number; byId: string | null; by: string | null }
+  /**
+   * A song's shared document, on joining (issue #27): its state, or none
+   * yet - `seed`: this device starts it from the song it loaded; else it
+   * waits for the device that does. `revision`: the song's, as the room has it.
+   */
+  | { type: "doc-state"; songVersionId: string; state: string | null; seed: boolean; revision: number }
+  | { type: "doc-update"; songVersionId: string; update: string }
+  | { type: "doc-awareness"; songVersionId: string; update: string }
+  /** The song changed outside the room (a restore, an accepted suggestion, an import): load it again and join again. */
+  | { type: "doc-reset"; songVersionId: string }
+  /** Not joined: co-editing is off, or one can't change this song. */
+  | { type: "doc-refused"; songVersionId: string; reason: "off" | "forbidden" }
   /** One's notifications changed (one came, or was read elsewhere): the bell reads its count again (issue #27). */
   | { type: "notifications" }
   /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */
