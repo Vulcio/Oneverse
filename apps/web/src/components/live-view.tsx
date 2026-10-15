@@ -1,4 +1,4 @@
-import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup } from "@songverse/core";
+import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2 } from "@songverse/core";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type RefObject, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,8 @@ import { PresentPanel } from "#/components/present-panel";
 import { TransitionChordsChooser, TransitionSymbol, TransitionVariations, transitionText } from "#/components/set-transition";
 import { CapoBadge } from "#/components/capo-badge";
 import { ChartWithDiagrams, ChordSteps, type ChordStep } from "#/components/chord-diagrams";
+import { useChartNotes } from "#/components/notes";
+import { useSongNotes, type NotesContext } from "#/lib/notes";
 import { Button } from "@songverse/ui/components/button";
 import { SyncControl } from "#/components/sync-control";
 import { SidebarTrigger } from "@songverse/ui/components/sidebar";
@@ -39,7 +41,8 @@ export interface LiveSong {
   arrangementName: string | null;
   /** Where it is in the player's songbooks: "JEM 855 · JEM3" (issue #59). */
   references: string[];
-  notes: { label?: string; text: string }[];
+  /** The set's note on it ("Softer"), above the chart. */
+  setNotes: { label?: string; text: string }[];
   /** Back to wherever a song on its own was pulled up from (a set's song, say), beside the sidebar's button; a set's songs have the sidebar (issue #154). */
   exit?: { label: string; go: () => void };
   /** Its chart or its PDF, as the player reads it (issue #155); null: the chart, no switch. */
@@ -58,6 +61,8 @@ export interface LiveSong {
   songVersionId?: string;
   /** Who can change the set changes its transition's chords in Live (issue #214); absent for who can't. */
   onTransitionChords?: (degrees: string[]) => void;
+  /** Its notes (issue #256): where it's opened from (a set or not), and the song they're pinned in. Absent: none. */
+  notes?: { context: NotesContext; document: SongDocumentV2 };
 }
 
 /** How far down a chart is scrolled for its song to count as played (issue #153). */
@@ -528,6 +533,22 @@ export function LiveView({
   );
 }
 
+/** A Live song's chart with its notes (issue #256): the song's own above it, the rest where they're pinned, as Live's Display setting shows them. */
+function LiveChartWithNotes({ song, notes: source, chart, display }: { song: LiveSong; notes: NonNullable<LiveSong["notes"]>; chart: RenderedChart; display: EffectiveDisplaySettings }) {
+  const { t } = useTranslation();
+  const notes = useChartNotes({ state: useSongNotes(source.context), chart, document: source.document, show: display.notes, context: source.context });
+  return (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">{notes.top}</div>
+        {notes.button}
+      </div>
+      <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={song.player} songVersionId={song.songVersionId} notes={notes.layer} />
+      {notes.dialogs}
+    </>
+  );
+}
+
 /**
  * One song of a Live page: its title, key and details, notes, then its
  * chart or PDF, and what happens after it. Stacked (issue #214), only the
@@ -593,9 +614,9 @@ function LiveSongSection({
           ) : null}
           {chart?.key && onTranspose ? <KeyButton musicalKey={chart.key} shift={shiftOf(song.keyShift + extraSteps)} extraSteps={extraSteps} onTranspose={onTranspose} testId={id("live-key")} /> : null}
         </div>
-        {song.notes.length > 0 ? (
+        {song.setNotes.length > 0 ? (
           <div className="flex flex-col gap-1 rounded-md border-l-4 border-primary bg-muted px-3 py-2 text-sm">
-            {song.notes.map((note, i) => (
+            {song.setNotes.map((note, i) => (
               <p key={i} className={note.label ? "whitespace-pre-wrap text-muted-foreground" : "whitespace-pre-wrap"}>
                 {note.label ? <span className="font-medium">{note.label}: </span> : null}
                 {note.text}
@@ -605,6 +626,8 @@ function LiveSongSection({
         ) : null}
         {pdf && song.reading ? (
           <PdfPages key={pdf.id} source={() => song.reading!.source(pdf)} name={pdf.filename} className="max-sm:-mx-4" />
+        ) : chart && song.notes ? (
+          <LiveChartWithNotes song={song} notes={song.notes} chart={chart} display={display} />
         ) : chart ? (
           <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={song.player} songVersionId={song.songVersionId} />
         ) : (

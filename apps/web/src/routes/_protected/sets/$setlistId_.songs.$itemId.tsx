@@ -13,9 +13,7 @@ import { ChartOrPdf, setSongViewStore } from "#/components/chart-or-pdf";
 import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
 import { Badge } from "@songverse/ui/components/badge";
 import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
@@ -26,9 +24,11 @@ import { useSyncSong } from "#/lib/sync-client";
 /**
  * One song of a set, readable by anyone who can open the set - guests
  * included, and songs that aren't in the viewer's own library - with the
- * viewer's private notes and a way through the set in order.
+ * notes seen in the set (issue #256) and a way through the set in order.
  */
 export const Route = createFileRoute("/_protected/sets/$setlistId_/songs/$itemId")({
+  // A note's thread to open (issue #256): from a notification.
+  validateSearch: (search: Record<string, unknown>): { note?: string } => (typeof search.note === "string" && search.note ? { note: search.note } : {}),
   // Null when the set or song doesn't exist or isn't visible to this user.
   // Offline, from the set kept on the device (issue #50).
   loader: ({ params }) =>
@@ -63,6 +63,7 @@ function SetSongRoute() {
 function SetSongPage({ view }: { view: SetlistSongView }) {
   const { t, i18n } = useTranslation();
   const { set, item, song } = view;
+  const { note } = Route.useSearch();
   const navigate = useNavigate();
   useSongView(song?.id);
   // Sync play (issue #13): the leader's song, followed.
@@ -140,7 +141,7 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
         <ChartOrPdf songVersionId={song.id} defaultView={view.view.liveView ?? "CHART"} store={setSongViewStore(set.id, item.id, view.view.preferences)}>
           <Card>
             <CardContent>
-              <PlayerChart view={view} />
+              <PlayerChart view={view} openNoteId={note} />
             </CardContent>
           </Card>
         </ChartOrPdf>
@@ -156,8 +157,6 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
           </CardContent>
         </Card>
       ) : null}
-
-      <MyNotesCard view={view} />
 
       <nav className="flex items-center justify-between gap-3" aria-label={t("sets.songs")}>
         {view.previousItemId ? (
@@ -176,77 +175,6 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
         ) : null}
       </nav>
     </div>
-  );
-}
-
-function MyNotesCard({ view }: { view: SetlistSongView }) {
-  const { t } = useTranslation();
-  const [text, setText] = useState(view.myNote);
-  const [saved, setSaved] = useState(view.myNote);
-  const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
-
-  // Moving to another song of the set reuses this component.
-  useEffect(() => {
-    setText(view.myNote);
-    setSaved(view.myNote);
-    setMessage(null);
-  }, [view.item.id, view.myNote]);
-
-  async function save() {
-    setPending(true);
-    setMessage(null);
-    try {
-      const { myNote } = await apiClient.setSetlistNote(view.set.id, view.item.id, text);
-      setText(myNote);
-      setSaved(myNote);
-      setMessage({ kind: "ok", text: t("sets.saved") });
-    } catch (err) {
-      setMessage({ kind: "error", text: err instanceof Error ? err.message : String(err) });
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{t("sets.myNotes")}</CardTitle>
-        <CardDescription>{t("sets.myNotesHint")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          className="flex flex-col gap-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void save();
-          }}
-        >
-          <Label htmlFor="my-notes" className="sr-only">
-            {t("sets.myNotes")}
-          </Label>
-          <Textarea
-            id="my-notes"
-            value={text}
-            maxLength={5000}
-            rows={4}
-            placeholder={t("sets.myNotesPlaceholder")}
-            onChange={(event) => {
-              setText(event.target.value);
-              setMessage(null);
-            }}
-          />
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={pending || text.trim() === saved}>
-              {pending ? t("sets.saving") : t("sets.saveNotes")}
-            </Button>
-            {message ? (
-              <p className={message.kind === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{message.text}</p>
-            ) : null}
-          </div>
-        </form>
-      </CardContent>
-    </Card>
   );
 }
 

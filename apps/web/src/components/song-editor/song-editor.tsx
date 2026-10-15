@@ -1,6 +1,7 @@
 import {
   ISO_639_1_CODES,
   getLanguageDisplayName,
+  renderChart,
   songToChordPro,
   type Attachment,
   type MetadataMatch,
@@ -12,6 +13,9 @@ import {
   type Tag,
 } from "@songverse/core";
 import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
+import { useChartNotes } from "#/components/notes";
+import { useDisplaySettings } from "#/lib/display-settings";
+import { useSongNotes } from "#/lib/notes";
 import { FileText, History, Info, Layers, Link2, MoreHorizontal, Music, PenLine, Share2, Star } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
@@ -65,6 +69,10 @@ type EditProps = {
   attachments: Attachment[];
   songbookMemberships: SongVersionSongbookMembership[];
   notices?: SongNotice[];
+  /** Opened from this songbook: new notes are saved in it by default (issue #256). */
+  songbookId?: string;
+  /** A note's thread to open (a notification's link). */
+  openNoteId?: string;
 };
 /** `linkTo`: the song this one is a translation or adaptation of, when started from it. */
 type CreateProps = { mode: "create"; linkTo?: { id: string; label: string } };
@@ -539,6 +547,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         </div>
         {/* One row of actions that wraps as a whole, never leaving a button alone on a line. */}
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          {edit ? <EditorNotes version={edit.version} songbookId={edit.songbookId} openNoteId={edit.openNoteId} /> : null}
           {canSuggest && !suggesting ? (
             <Button type="button" variant="outline" onClick={() => setSuggesting(true)}>
               <PenLine />
@@ -801,5 +810,19 @@ function FavoriteButton({ songVersionId, initial }: { songVersionId: string; ini
     >
       <Star className={on ? "fill-amber-400 text-amber-500" : undefined} />
     </Button>
+  );
+}
+
+/** The song's notes in Edit (issue #256): every note one sees, to read, reply to and add to the song or a part of it from the list. */
+function EditorNotes({ version, songbookId, openNoteId }: { version: SongVersionDetail; songbookId?: string; openNoteId?: string }) {
+  const display = useDisplaySettings("EDIT");
+  const chart = useMemo(() => renderChart(version.documentJson), [version.documentJson]);
+  const context = { songVersionId: version.id, songbookId };
+  const notes = useChartNotes({ state: useSongNotes(context), chart, document: version.documentJson, show: display.notes, context, openNoteId });
+  return (
+    <>
+      {notes.button}
+      {notes.dialogs}
+    </>
   );
 }

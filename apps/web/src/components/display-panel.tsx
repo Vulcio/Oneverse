@@ -37,6 +37,9 @@ import {
   Unlink2,
   X,
   type LucideIcon,
+  MessageSquare,
+  MessageSquareOff,
+  UserRound,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -153,7 +156,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -270,6 +273,19 @@ export function DisplayPanel({
                     { value: "1", label: t("chart.columnsCount", { count: 1 }), content: <RectangleVertical /> },
                     { value: "2", label: t("chart.columnsCount", { count: 2 }), content: <Columns2 /> },
                     { value: "3", label: t("chart.columnsCount", { count: 3 }), content: <Columns3 /> },
+                  ]}
+                />
+              </Row>
+              {/* Notes on the chart (issue #256): every note, one's own, or none - each mode its own. */}
+              <Row label={t("display.notes")}>
+                <Choices
+                  value={settings.notes}
+                  onChange={(notes) => change({ notes })}
+                  name="notes"
+                  options={[
+                    { value: "ALL", label: t("display.notesAll"), content: <MessageSquare /> },
+                    { value: "MINE", label: t("display.notesMine"), content: <UserRound /> },
+                    { value: "NONE", label: t("display.notesNone"), content: <MessageSquareOff /> },
                   ]}
                 />
               </Row>

@@ -7,6 +7,8 @@ import { chartDisplayProps, displayModeOf, displaySeed, useDiagramPlayer, useDis
 import { useMode } from "#/lib/mode";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { apiClient } from "#/lib/api-client";
+import { useChartNotes } from "#/components/notes";
+import { useSongNotes } from "#/lib/notes";
 import { cn } from "@songverse/ui/lib/utils";
 
 const EMPTY: ChartPreferences = { $schema: "chart-preferences/v1", hiddenChordIds: [], simplifyChords: false, hideBassNotes: false };
@@ -37,7 +39,7 @@ export function renderPlayerChart(
  * chords, no bass notes, capo shapes, solfège. Changes save as they're
  * made, for this player only.
  */
-export function PlayerChart({ view }: { view: SetlistSongView }) {
+export function PlayerChart({ view, openNoteId }: { view: SetlistSongView; /** A note's thread to open (a notification's link). */ openNoteId?: string }) {
   const { t } = useTranslation();
   const song = view.song!;
   const [preferences, setPreferences] = useState<ChartPreferences>(view.view.preferences ?? EMPTY);
@@ -67,12 +69,17 @@ export function PlayerChart({ view }: { view: SetlistSongView }) {
     apiClient.setSetlistChartPreferences(view.set.id, view.item.id, mine).catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
   }
 
+  // Notes seen in this set (issue #256): new ones saved in it by default.
+  const notesContext = { songVersionId: song.id, setlistId: view.set.id };
+  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: song.document, show: display.notes, context: notesContext, openNoteId });
+
   const hiddenCount = preferences.hiddenChordIds.length;
   const capoIsSuggestion = !view.arrangement?.document.defaults.capo && !!song.suggestedCapo;
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("player.myView")}>
         <DisplayPanel mode={displayMode} settings={display} player={player} className="mr-1" />
+        <span className="mr-1 [&>button]:h-7 [&>button]:text-xs">{notes.button}</span>
         <span className="mr-1 text-xs font-medium text-muted-foreground">{t("player.myView")}</span>
         <Toggle pressed={hiding} onClick={() => setHiding(!hiding)}>
           <EyeOff className="size-3.5" aria-hidden />
@@ -109,8 +116,10 @@ export function PlayerChart({ view }: { view: SetlistSongView }) {
           {error}
         </p>
       ) : null}
+      {notes.top}
       <div style={{ zoom: display.textSize }}>
       <ChartWithDiagrams
+        notes={notes.layer}
         chart={chart}
         {...chartDisplayProps(display)}
         player={player}
@@ -119,6 +128,7 @@ export function PlayerChart({ view }: { view: SetlistSongView }) {
         onChordClick={hiding ? (id) => savePreferences({ ...preferences, hiddenChordIds: [...new Set([...preferences.hiddenChordIds, id])] }) : undefined}
       />
       </div>
+      {notes.dialogs}
     </div>
   );
 }

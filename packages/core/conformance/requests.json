@@ -359,6 +359,137 @@
         }
       ]
     },
+    "CreateNoteSchema": {
+      "about": "POST /notes (issue #256): where it's saved needs its team, songbook or set, and nothing else",
+      "params": [
+        "body"
+      ],
+      "cases": [
+        {
+          "name": "just me, on the whole song",
+          "args": [
+            {
+              "songVersionId": "song_1",
+              "content": " Capo 2 ",
+              "place": "ME"
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "value": {
+              "songVersionId": "song_1",
+              "content": "Capo 2",
+              "place": "ME",
+              "anchor": {
+                "kind": "song"
+              }
+            }
+          }
+        },
+        {
+          "name": "just me, only in a set, on a chord",
+          "args": [
+            {
+              "songVersionId": "song_1",
+              "content": "Let ring",
+              "place": "ME",
+              "setlistId": "set_1",
+              "anchor": {
+                "kind": "chord",
+                "sectionId": "sec_verse",
+                "lineId": "line_v1",
+                "chordId": "chd_v2"
+              }
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "value": {
+              "songVersionId": "song_1",
+              "content": "Let ring",
+              "place": "ME",
+              "setlistId": "set_1",
+              "anchor": {
+                "kind": "chord",
+                "sectionId": "sec_verse",
+                "lineId": "line_v1",
+                "chordId": "chd_v2"
+              }
+            }
+          }
+        },
+        {
+          "name": "in a team, without the team",
+          "args": [
+            {
+              "songVersionId": "song_1",
+              "content": "Softer",
+              "place": "TEAM"
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "teamId is needed for a note saved in a team"
+            ]
+          }
+        },
+        {
+          "name": "in a set, with a team too",
+          "args": [
+            {
+              "songVersionId": "song_1",
+              "content": "Softer",
+              "place": "SET",
+              "setlistId": "set_1",
+              "teamId": "team_1"
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "teamId doesn't go with a note saved in a set"
+            ]
+          }
+        },
+        {
+          "name": "empty",
+          "args": [
+            {
+              "songVersionId": "song_1",
+              "content": "  ",
+              "place": "SONG"
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "content should not be empty"
+            ]
+          }
+        },
+        {
+          "name": "an anchor that isn't one",
+          "args": [
+            {
+              "songVersionId": "song_1",
+              "content": "x",
+              "place": "ME",
+              "anchor": {
+                "kind": "bar",
+                "bar": 3
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "anchor's kind must be one of song, section, afterPass, afterLine, line, chord, word"
+            ]
+          }
+        }
+      ]
+    },
     "UpdateUserSchema": {
       "about": "PATCH /users/me",
       "params": [

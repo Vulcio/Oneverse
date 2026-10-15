@@ -218,10 +218,12 @@ enum DisplayMode {
   DRUMMER
 }
 
-enum NoteScope {
-  USER
+enum NotePlace {
+  ME
   TEAM
-  SETLIST_ITEM
+  SONGBOOK
+  SET
+  SONG
 }
 
 enum AuditAction {
@@ -300,75 +302,76 @@ model User {
   pianoNoteNames    String            @default("card")
   /// What the Display panel changed for each mode (issue #209): { EDIT, PRACTICE, LIVE } each a partial
   /// DisplaySettings (@songverse/core), over the account settings above.
-  displaySettings Json @default("{}")
+  displaySettings   Json              @default("{}")
   voicingPreference VoicingPreference @default(AUTO)
   pedalMappingJson  Json? // UserPedalMapping — null = use defaults
   midiOutputDevice  String? // Last selected MIDI output device name
 
   // Relations
-  teamMemberships     TeamMembership[]
-  organizationMemberships OrganizationMembership[]
-  hostedOrganizationEvents  OrganizationEvent[] @relation("OrganizationEventHost")
-  createdOrganizationEvents OrganizationEvent[] @relation("OrganizationEventCreatedBy")
-  ownedVersions       SongVersion[]          @relation("VersionOwnerUser")
-  contributorCredits  VersionContributor[]
-  ownedArrangements   Arrangement[]          @relation("ArrangementOwnerUser")
-  chartPreferences    ChartPreference[]
-  chordShapeChoices   ChordShapeChoice[]
-  submissions         Submission[]
-  reviewedSubmissions Submission[]           @relation("SubmissionReviewer")
-  proposals           ChangeProposal[]
-  notes               Note[]
-  auditEvents         AuditEvent[]
-  accessGrants        AccessGrant[]
-  shareLinks          ShareLink[]
-  inkAnnotations      InkAnnotation[]
-  midiConfigs         UserArrangementMidi[]
-  ownedTags           Tag[]
-  stemSeparations     StemSeparation[]
-  roleAssignments     RoleAssignment[]
+  teamMemberships           TeamMembership[]
+  organizationMemberships   OrganizationMembership[]
+  hostedOrganizationEvents  OrganizationEvent[]      @relation("OrganizationEventHost")
+  createdOrganizationEvents OrganizationEvent[]      @relation("OrganizationEventCreatedBy")
+  ownedVersions             SongVersion[]            @relation("VersionOwnerUser")
+  contributorCredits        VersionContributor[]
+  ownedArrangements         Arrangement[]            @relation("ArrangementOwnerUser")
+  chartPreferences          ChartPreference[]
+  chordShapeChoices         ChordShapeChoice[]
+  submissions               Submission[]
+  reviewedSubmissions       Submission[]             @relation("SubmissionReviewer")
+  proposals                 ChangeProposal[]
+  notes                     Note[]
+  noteReplies               NoteReply[]              @relation("NoteReplyAuthor")
+  auditEvents               AuditEvent[]
+  accessGrants              AccessGrant[]
+  shareLinks                ShareLink[]
+  inkAnnotations            InkAnnotation[]
+  midiConfigs               UserArrangementMidi[]
+  ownedTags                 Tag[]
+  stemSeparations           StemSeparation[]
+  roleAssignments           RoleAssignment[]
   // Their own screens (issue #186), and those they put a set on (issue #222).
-  screens             Screen[]
-  screensSet          Screen[] @relation("ScreenSetBy")
+  screens                   Screen[]
+  screensSet                Screen[]                 @relation("ScreenSetBy")
   // Their own screen themes (issue #194).
-  screenThemes        ScreenTheme[]
+  screenThemes              ScreenTheme[]
   // The people they invited to sign up (issue #198).
-  signupInvitations   SignupInvitation[]
-  ownedSongbooks      Songbook[]             @relation("SongbookOwnerUser")
-  songbookShares      SongbookShare[]        @relation("SongbookShareUser")
-  songbooksShared     SongbookShare[]        @relation("SongbookShareBy")
-  importJobs          ImportJob[]
-  uploadedAttachments Attachment[]           @relation("AttachmentUploader")
-  ownedSetlists       Setlist[]              @relation("SetlistOwnerUser")
-  guestSetlists       SetlistGuest[]
-  sharedSetlistItems  SetlistItem[]          @relation("SetlistItemSharedBy")
-  ownershipRequests   SongOwnershipRequest[]
-  contentTransfer     ContentTransfer?
-  offlinePins         OfflinePin[]
+  signupInvitations         SignupInvitation[]
+  ownedSongbooks            Songbook[]               @relation("SongbookOwnerUser")
+  songbookShares            SongbookShare[]          @relation("SongbookShareUser")
+  songbooksShared           SongbookShare[]          @relation("SongbookShareBy")
+  importJobs                ImportJob[]
+  uploadedAttachments       Attachment[]             @relation("AttachmentUploader")
+  ownedSetlists             Setlist[]                @relation("SetlistOwnerUser")
+  guestSetlists             SetlistGuest[]
+  sharedSetlistItems        SetlistItem[]            @relation("SetlistItemSharedBy")
+  ownershipRequests         SongOwnershipRequest[]
+  contentTransfer           ContentTransfer?
+  offlinePins               OfflinePin[]
 
   // BetterAuth
-  sessions            Session[]
-  accounts            Account[]
-  passkeys            Passkey[]
-  smartLists          SmartList[]
-  songRevisions       SongVersionRevision[]
-  contributedVersions SongVersion[]         @relation("VersionContributedBy")
-  songsSharedWithMe   AccessGrant[]         @relation("AccessGrantTo")
-  favoriteSongs       FavoriteSong[]
-  songViews           SongView[]
-  connectionsAsked    Connection[]          @relation("ConnectionRequester")
-  connectionsAnswered Connection[]          @relation("ConnectionAddressee")
-  reviewedProposals   ChangeProposal[]      @relation("ProposalReviewer")
-  teamEventsCreated   TeamEvent[]           @relation("TeamEventCreatedBy")
-  eventAnswers        TeamEventAnswer[]     @relation("TeamEventAnswerUser")
-  eventAnswersGiven   TeamEventAnswer[]     @relation("TeamEventAnswerBy")
-  awayRanges          UserAway[]
-  calendarFeed        CalendarFeed?
-  notifications       Notification[]
-  pushSubscriptions   PushSubscription[]
-  answerRequestsMade  TeamAnswerRequest[] @relation("AnswerRequestsMade")
-  assignments         TeamEventAssignment[] @relation("Assignments")
-  assignmentsMade     TeamEventAssignment[] @relation("AssignmentsMade")
+  sessions             Session[]
+  accounts             Account[]
+  passkeys             Passkey[]
+  smartLists           SmartList[]
+  songRevisions        SongVersionRevision[]
+  contributedVersions  SongVersion[]         @relation("VersionContributedBy")
+  songsSharedWithMe    AccessGrant[]         @relation("AccessGrantTo")
+  favoriteSongs        FavoriteSong[]
+  songViews            SongView[]
+  connectionsAsked     Connection[]          @relation("ConnectionRequester")
+  connectionsAnswered  Connection[]          @relation("ConnectionAddressee")
+  reviewedProposals    ChangeProposal[]      @relation("ProposalReviewer")
+  teamEventsCreated    TeamEvent[]           @relation("TeamEventCreatedBy")
+  eventAnswers         TeamEventAnswer[]     @relation("TeamEventAnswerUser")
+  eventAnswersGiven    TeamEventAnswer[]     @relation("TeamEventAnswerBy")
+  awayRanges           UserAway[]
+  calendarFeed         CalendarFeed?
+  notifications        Notification[]
+  pushSubscriptions    PushSubscription[]
+  answerRequestsMade   TeamAnswerRequest[]   @relation("AnswerRequestsMade")
+  assignments          TeamEventAssignment[] @relation("Assignments")
+  assignmentsMade      TeamEventAssignment[] @relation("AssignmentsMade")
   // How each kind of notification reaches them (issue #236): push, email; quiet hours.
   notificationSettings Json?
 
@@ -468,18 +471,18 @@ model Jwks {
 // ============================================================
 
 model Team {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
   // Its picture (issue #161): served by the API at avatarUrl, the stored
   // object at avatarStorageKey; and its colour, a key of ENTITY_COLORS in
   // @songverse/core (null: one derived from the name).
   avatarUrl        String?
   avatarStorageKey String?
   color            String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
   memberships         TeamMembership[]
@@ -551,13 +554,13 @@ model Organization {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  memberships OrganizationMembership[]
-  inviteLinks OrganizationInviteLink[]
-  teams       Team[]
-  events      OrganizationEvent[]
+  memberships  OrganizationMembership[]
+  inviteLinks  OrganizationInviteLink[]
+  teams        Team[]
+  events       OrganizationEvent[]
   eventPresets OrganizationEventPreset[]
   // Its screens (issue #222): the church's projector, its stage monitor.
-  screens     Screen[]
+  screens      Screen[]
 }
 
 model OrganizationMembership {
@@ -593,23 +596,23 @@ model OrganizationInviteLink {
 // Whether the instance has organisations (issue #241), set in Admin >
 // Organisations: each field null takes its env var, then the default.
 model OrganizationSettings {
-  id        String   @id @default("singleton")
+  id            String   @id @default("singleton")
   // NONE (Songverse alone), SINGLE (one, everyone in it) or MULTI (ORGANIZATION_MODE).
-  mode      String?
+  mode          String?
   // With several: anyone may create one, not only global admins (ORGANIZATIONS_OPEN).
   anyoneCreates Boolean?
-  updatedAt DateTime @updatedAt
+  updatedAt     DateTime @updatedAt
 }
 
 model TeamMembership {
-  id        String   @id @default(cuid())
-  teamId    String
-  userId    String
-  role      TeamRole @default(MEMBER)
+  id          String   @id @default(cuid())
+  teamId      String
+  userId      String
+  role        TeamRole @default(MEMBER)
   // The group's own positions they cover (TeamPosition ids, issue #241).
   positionIds String[] @default([])
-  joinedAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  joinedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -894,7 +897,7 @@ model SongVersion {
   auditEvents       AuditEvent[]
   setlistItems      SetlistItem[]
   ownershipRequests SongOwnershipRequest[]
-  userNotes         Note[] // people's own notes on it (Note model); not the song's `notes` field
+  userNotes         Note[] // notes on it (issue #256); not the song's `notes` field
   revisions         SongVersionRevision[]
   favoritedBy       FavoriteSong[]
   views             SongView[]
@@ -1022,7 +1025,6 @@ model Arrangement {
   ownerUser        User?                 @relation("ArrangementOwnerUser", fields: [ownerUserId], references: [id])
   ownerTeam        Team?                 @relation("ArrangementOwnerTeam", fields: [ownerTeamId], references: [id])
   setlistItems     SetlistItem[]         @relation("PlayedArrangement")
-  notes            Note[]
   midiConfigs      UserArrangementMidi[]
   grooveOverrides  ArrangementGroove[]
   chartPreferences ChartPreference[]
@@ -1138,45 +1140,45 @@ model Setlist {
 // its time zone (the same across daylight saving); its dates are worked out
 // by eventDates() in @songverse/core. Managed by the team's admins.
 model TeamEvent {
-  id               String    @id @default(cuid())
-  teamId           String
-  title            String
+  id                  String    @id @default(cuid())
+  teamId              String
+  title               String
   // Its first date, and its start ("HH:MM") in timeZone.
-  date             DateTime  @db.Date
-  startTime        String
-  durationMinutes  Int       @default(90)
+  date                DateTime  @db.Date
+  startTime           String
+  durationMinutes     Int       @default(90)
   // Its call time (issue #240): minutes before the start to be there.
-  callMinutes      Int?
-  timeZone         String
-  place            String?
-  note             String?
+  callMinutes         Int?
+  timeZone            String
+  place               String?
+  note                String?
   // Null: a one-off.
-  repeatEveryWeeks Int?
-  repeatUntil      DateTime? @db.Date
+  repeatEveryWeeks    Int?
+  repeatUntil         DateTime? @db.Date
   // The parts it needs (issue #235, phase 7): [{ part, name, count }] - an
   // instrument or role key (or custom instrument ID), or a name of its own.
-  parts            Json?
+  parts               Json?
   // A rehearsal tied to another of the team's events (issue #235, phase 7):
   // its dates are that event's, daysBefore days earlier, at its own time;
   // it has no set of its own (it uses the date's), and goes with the event.
-  rehearsalForId   String?
-  daysBefore       Int?
+  rehearsalForId      String?
+  daysBefore          Int?
   // A group's part of an organisation's event (issue #241): its timing is
   // that event's, set there; the group's admins only choose its parts.
   organizationEventId String?
-  createdByUserId  String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdByUserId     String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  team      Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  createdBy User?           @relation("TeamEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  dates     TeamEventDate[]
-  answers   TeamEventAnswer[]
-  reminders TeamEventReminder[]
-  lineup    TeamEventAssignment[]
-  rehearsalFor TeamEvent?  @relation("Rehearsals", fields: [rehearsalForId], references: [id], onDelete: Cascade)
-  rehearsals   TeamEvent[] @relation("Rehearsals")
-  organizationEvent OrganizationEvent? @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
+  team              Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy         User?                 @relation("TeamEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  dates             TeamEventDate[]
+  answers           TeamEventAnswer[]
+  reminders         TeamEventReminder[]
+  lineup            TeamEventAssignment[]
+  rehearsalFor      TeamEvent?            @relation("Rehearsals", fields: [rehearsalForId], references: [id], onDelete: Cascade)
+  rehearsals        TeamEvent[]           @relation("Rehearsals")
+  organizationEvent OrganizationEvent?    @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
 
   @@unique([organizationEventId, teamId])
   @@index([teamId])
@@ -1480,15 +1482,15 @@ model SetlistItem {
   // Per-item overrides. Transposition is in semitones relative to the song
   // version's own key (same convention as Arrangement.transposeSteps), so it
   // works even when the song has no key recorded.
-  transposeSteps Int     @default(0)
-  tempoOverride  Int?
-  notes          String? // Quick inline note
+  transposeSteps   Int            @default(0)
+  tempoOverride    Int?
+  notes            String? // Quick inline note
   // What happens after it (issue #199): null, nothing said; and for a
   // TRANSITION, what's played into the next song.
-  transition     SetTransition?
-  transitionNote String?
+  transition       SetTransition?
+  transitionNote   String?
   /// Chords played into the next song (issue #10), as degrees of its key: "2m7", "57".
-  transitionChords String[] @default([])
+  transitionChords String[]       @default([])
 
   // Set on a song shared into the set by its owner - when a personal set
   // moves to a team, its owner's songs a team set couldn't otherwise hold.
@@ -1501,7 +1503,6 @@ model SetlistItem {
   // Its own arrangement for this set, if one was made (see Arrangement.setlistItemId).
   setArrangement Arrangement? @relation("SetOnlyArrangement")
   sharedBy       User?        @relation("SetlistItemSharedBy", fields: [sharedByUserId], references: [id], onDelete: SetNull)
-  fullNotes      Note[]
 
   @@index([setlistId, position])
 }
@@ -1560,6 +1561,7 @@ model Songbook {
   entries SongbookEntry[]
   // Who else sees it, or changes it too (issue #211).
   shares  SongbookShare[]
+  notes   Note[]
 
   @@index([ownerUserId])
   @@index([ownerTeamId])
@@ -1689,46 +1691,46 @@ model SongbookCatalogEntry {
 // ============================================================
 
 model Attachment {
-  id               String               @id @default(cuid())
-  songVersionId    String
-  type             AttachmentType
-  filename         String
-  mimeType         String
-  storageKey       String // S3 object key
-  sizeBytes        Int?
-  stemPart         StemPart?
+  id                     String               @id @default(cuid())
+  songVersionId          String
+  type                   AttachmentType
+  filename               String
+  mimeType               String
+  storageKey             String // S3 object key
+  sizeBytes              Int?
+  stemPart               StemPart?
   // How many semitones above its multitrack it was recorded (issue #135):
   // a take sung while the player was transposed. The player shifts it by
   // its transposition minus this, so it fits with the rest.
-  pitchOffset      Int?
+  pitchOffset            Int?
   /// Where each section starts in the recording (issue #110): [{ at, sectionId }], the same on each file of a multitrack.
-  cuePoints        Json?
+  cuePoints              Json?
   /// Kept as uploaded (issue #145): not deleted, replaced by another take, merged or cleaned up until its uploader unlocks it.
-  locked           Boolean  @default(false)
+  locked                 Boolean              @default(false)
   /// How it came in (issue #175): uploaded, separated from a recording, or recorded in Songverse's recorder - a multitrack's stems apart from the recordings people made into it.
-  origin           AttachmentOrigin @default(UPLOADED)
+  origin                 AttachmentOrigin     @default(UPLOADED)
   /// Its recording details found by the separation server's analysis (issue #175), not yet confirmed or changed: "key", "tempo", "timeSignature", "firstBeat", "sections".
-  detected         String[]         @default([])
+  detected               String[]             @default([])
   // Its own name for the part (issue #131): "Descant", "Acoustic guitar",
   // "Count-in" - shown instead of the part's.
-  partName         String?
+  partName               String?
   // For audio: the recording's own key ("G", "Bbm", as written) and tempo
   // (BPM), when they aren't the song's - null means the song's (issue #65).
-  recordingKey     String?
-  recordingTempo   Float?
+  recordingKey           String?
+  recordingTempo         Float?
   // Where its first beat falls, in seconds from its start (issue #100):
   // what places the metronome against it. Null means at 0:00.
-  recordingFirstBeat Float?
+  recordingFirstBeat     Float?
   // Its beginning is played freely, off the grid (issue #178): the click
   // waits for the first beat, with a count-in before it, rather than
   // clicking from 0:00.
-  recordingFreeIntro Boolean @default(false)
+  recordingFreeIntro     Boolean              @default(false)
   // A lossless upload's original (issue #182), as FLAC, kept beside the Opus
   // copy in storageKey that's played: for downloading, and for separating
   // stems from. Its uploader had a role that keeps them.
-  originalStorageKey String?
-  originalMimeType   String?
-  originalSizeBytes  Int?
+  originalStorageKey     String?
+  originalMimeType       String?
+  originalSizeBytes      Int?
   // Its time signature ("4/4", "6/8"), when it isn't the song's (issue #123).
   recordingTimeSignature String?
   // The multitrack it's part of (issue #123): files recorded together,
@@ -1736,34 +1738,34 @@ model Attachment {
   // together. Null: the song's original stems. A group id, not a table:
   // the files carry the multitrack's name and values between them, as
   // they already did its key and tempo.
-  multitrackId   String?
-  multitrackName String?
+  multitrackId           String?
+  multitrackName         String?
   // The set its multitrack was recorded for (issue #127): on that set's
   // song page, it's the one the player picks. Kept on every file of the
   // multitrack, as its name is.
-  multitrackSetlistId String?
+  multitrackSetlistId    String?
   // Another take of a part (issue #127): kept, not played; "Use this take"
   // swaps it with the one playing.
-  otherTake      Boolean @default(false)
+  otherTake              Boolean              @default(false)
   // A recorded take being turned into Opus by the Worker (issue #127):
   // PENDING until then, FAILED if it couldn't be (it stays as recorded).
-  processing     TakeProcessing?
+  processing             TakeProcessing?
   // Who the upload counts against for storage limits. Null for files
   // uploaded before this was tracked into a team-owned song, or whose
   // uploader has since been deleted.
-  uploadedByUserId String?
+  uploadedByUserId       String?
   // Who sees it, besides its uploader (issue #72): each person's files on
   // a song are their own layer. Files uploaded through the app start
   // PRIVATE; the default here is for rows from before, and bulk uploads.
-  visibility       AttachmentVisibility @default(SONG)
+  visibility             AttachmentVisibility @default(SONG)
   // TEAM: the team that sees it (one its uploader belongs to).
-  visibleToTeamId  String?
-  createdAt        DateTime             @default(now())
+  visibleToTeamId        String?
+  createdAt              DateTime             @default(now())
 
-  songVersion   SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
-  uploadedBy    User?       @relation("AttachmentUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
-  visibleToTeam Team?       @relation("AttachmentVisibleToTeam", fields: [visibleToTeamId], references: [id], onDelete: SetNull)
-  multitrackSetlist Setlist? @relation("AttachmentMultitrackSetlist", fields: [multitrackSetlistId], references: [id], onDelete: SetNull)
+  songVersion       SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
+  uploadedBy        User?       @relation("AttachmentUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  visibleToTeam     Team?       @relation("AttachmentVisibleToTeam", fields: [visibleToTeamId], references: [id], onDelete: SetNull)
+  multitrackSetlist Setlist?    @relation("AttachmentMultitrackSetlist", fields: [multitrackSetlistId], references: [id], onDelete: SetNull)
 
   @@index([songVersionId])
   @@index([uploadedByUserId])
@@ -1822,34 +1824,50 @@ model OfflinePin {
   @@unique([userId, kind, targetId])
 }
 
+// A note on a song (issues #104, #256): one person writes it, pins it
+// somewhere in the song (`anchor`, a NoteAnchor from @songverse/core, by the
+// chart's IDs) and saves it in a place, which decides who sees it: ME (its
+// author; with setlistId, only in that set), TEAM, SONGBOOK, SET, or SONG
+// (everyone who sees the song, written by its editors).
 model Note {
-  id        String    @id @default(cuid())
-  scope     NoteScope
-  content   String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  // Owner
-  authorUserId String
-
-  // Targets (one of these will be set depending on scope)
-  songVersionId String?
-  arrangementId String?
-  setlistId     String?
-  setlistItemId String?
+  id            String    @id @default(cuid())
+  place         NotePlace
+  content       String
+  anchor        Json
+  songVersionId String
+  authorUserId  String
   teamId        String?
+  songbookId    String?
+  setlistId     String?
+  // Resolved: off the chart, kept in its thread.
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  author      User         @relation(fields: [authorUserId], references: [id])
-  songVersion SongVersion? @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
-  arrangement Arrangement? @relation(fields: [arrangementId], references: [id], onDelete: Cascade)
-  setlist     Setlist?     @relation(fields: [setlistId], references: [id], onDelete: Cascade)
-  setlistItem SetlistItem? @relation(fields: [setlistItemId], references: [id], onDelete: Cascade)
-  team        Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorUserId], references: [id])
+  songVersion SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
+  team        Team?       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  songbook    Songbook?   @relation(fields: [songbookId], references: [id], onDelete: Cascade)
+  setlist     Setlist?    @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  replies     NoteReply[]
 
-  @@index([authorUserId])
   @@index([songVersionId])
-  @@index([arrangementId])
-  @@index([setlistItemId])
+  @@index([authorUserId])
+}
+
+model NoteReply {
+  id           String   @id @default(cuid())
+  noteId       String
+  authorUserId String
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  note   Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  author User @relation("NoteReplyAuthor", fields: [authorUserId], references: [id])
+
+  @@index([noteId])
+  @@index([authorUserId])
 }
 
 // ============================================================
@@ -2308,15 +2326,15 @@ model SecuritySettings {
 // How notifications go out besides the bell (issue #236), set in Admin >
 // Notifications: each field null takes its env var, then the default.
 model NotificationSettings {
-  id           String   @id @default("singleton")
+  id                       String   @id @default("singleton")
   // Notifications sent by email at all (NOTIFICATION_EMAILS; off by default).
-  emailEnabled Boolean?
+  emailEnabled             Boolean?
   // Web push's VAPID key pair (VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY), the private key
   // encrypted with SETTINGS_ENCRYPTION_KEY; and who sends (VAPID_SUBJECT).
   vapidPublicKey           String?
   vapidPrivateKeyEncrypted String?
   vapidSubject             String?
-  updatedAt    DateTime @updatedAt
+  updatedAt                DateTime @updatedAt
 }
 
 // A device someone turned notifications on for (issue #236): its browser's
@@ -2401,18 +2419,18 @@ enum StemSeparationStatus {
 // the multitrack its stems became - the fast pass's, replaced in place by
 // the HQ pass's.
 model StemSeparation {
-  id                 String               @id @default(cuid())
-  songVersionId      String
+  id                   String               @id @default(cuid())
+  songVersionId        String
   // The recording it came from (no foreign key: the stems stay if it goes).
-  sourceAttachmentId String
-  requestedByUserId  String?
+  sourceAttachmentId   String
+  requestedByUserId    String?
   // "4" (htdemucs), "6" (htdemucs_6s) or "2" (vocals and the rest).
-  parts              String
-  status             StemSeparationStatus @default(QUEUED)
-  jobId              String?              @unique
-  multitrackId       String?
-  hqRequested        Boolean              @default(false)
-  hqDone             Boolean              @default(false)
+  parts                String
+  status               StemSeparationStatus @default(QUEUED)
+  jobId                String?              @unique
+  multitrackId         String?
+  hqRequested          Boolean              @default(false)
+  hqDone               Boolean              @default(false)
   // The models it was sent with (issue #175): Admin's at the time, which can
   // change later. No finer pass, no hqModel.
   fastModel            String?
@@ -2421,9 +2439,9 @@ model StemSeparation {
   sourceFilename       String?
   // The earlier separation's multitrack its stems replace (issue #175), once in.
   replacesMultitrackId String?
-  error              String?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  error                String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
   songVersion SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
   requestedBy User?       @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
@@ -2656,29 +2674,29 @@ model SongView {
 // limit to its pool); someone can do what any of their roles allows, and the
 // largest limit wins. Global admins can do everything, whatever their roles.
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String   @default("")
+  id                         String   @id @default(cuid())
+  name                       String   @unique
+  description                String   @default("")
   // The ones that came with Songverse ("REVIEWER", "STEM_SEPARATION",
   // "AUDIO_UPLOADS"): kept, so they can be edited but not deleted.
-  builtIn     String?  @unique
-  canReview        Boolean @default(false)
-  canSeparateStems Boolean @default(false)
+  builtIn                    String?  @unique
+  canReview                  Boolean  @default(false)
+  canSeparateStems           Boolean  @default(false)
   // Lossless audio uploads (WAV, FLAC, AIFF) keep their original, as FLAC,
   // beside the Opus copy that's played (issue #182); without it, only the
   // Opus copy is kept.
-  canKeepLosslessAudio Boolean @default(false)
+  canKeepLosslessAudio       Boolean  @default(false)
   // Uploading audio files (issue #183). Without it, someone can still record
   // in Songverse (a take it processes) and have stems separated.
-  canUploadAudio Boolean @default(false)
+  canUploadAudio             Boolean  @default(false)
   // Separations a month for who has this role; null uses Admin > Stem separation's.
   stemSeparationMonthlyLimit Int?
   // A storage tier: the limit it gives a user, or a team's pool.
-  storageLimitMb   Int?
+  storageLimitMb             Int?
   // Granted by plugins later (issue #157).
-  permissions String[] @default([])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  permissions                String[] @default([])
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 
   assignments RoleAssignment[]
 }
@@ -2718,31 +2736,31 @@ model CustomInstrument {
 // which reads the set it's given and nothing else. Deleting it disconnects
 // the screen.
 model Screen {
-  id          String     @id @default(cuid())
-  name        String
-  mode        ScreenMode @default(LYRICS)
-  tokenHash   String     @unique
+  id                  String     @id @default(cuid())
+  name                String
+  mode                ScreenMode @default(LYRICS)
+  tokenHash           String     @unique
   // Whose it is (issue #222): a person's, a team's or an organisation's -
   // exactly one. Its managers rename it, change its look or disconnect it.
   ownerUserId         String?
   ownerTeamId         String?
   ownerOrganizationId String?
-  setlistId   String?
+  setlistId           String?
   // Who put its set on it: it reads the set as they would.
-  setByUserId String?
+  setByUserId         String?
   // Its look (issue #194): a saved theme, or a built-in one by its id ("concert"); neither, the default.
-  themeId       String?
-  themeTemplate String?
-  lastSeenAt  DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  themeId             String?
+  themeTemplate       String?
+  lastSeenAt          DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
   owner             User?         @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   ownerTeam         Team?         @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
   ownerOrganization Organization? @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
   setBy             User?         @relation("ScreenSetBy", fields: [setByUserId], references: [id], onDelete: SetNull)
-  setlist Setlist?     @relation(fields: [setlistId], references: [id], onDelete: SetNull)
-  theme   ScreenTheme? @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  setlist           Setlist?      @relation(fields: [setlistId], references: [id], onDelete: SetNull)
+  theme             ScreenTheme?  @relation(fields: [themeId], references: [id], onDelete: SetNull)
 
   @@index([ownerUserId])
   @@index([ownerTeamId])

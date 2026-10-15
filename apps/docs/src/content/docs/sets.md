@@ -56,7 +56,7 @@ Click a song in the set to open its chart, as the set plays it: its version, in 
 
 - **Previous** and **Next** go through the set in order.
 - **My view** changes the chart for you only - hide chords, simpler chords, no bass notes. See [Your own view of a chart](/versions/#your-own-view-of-a-chart). **Display** beside it sets how charts read - chord names, capo shapes, diagrams, text, columns: see [Display](/display/).
-- **My notes** are private: capo, cues, reminders. Only you see them.
+- **Notes** on the song - yours, the set's, your team's - show on the chart, where they're pinned. Right-click (or press and hold) a chord, a word or a section's name to add one; a note saved in the set shows only in this set. See [Notes](/notes/).
 
 ## Playing a set live
 

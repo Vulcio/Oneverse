@@ -704,6 +704,10 @@
             "PART_RECORDED": {
               "email": true,
               "push": true
+            },
+            "NOTE_REPLY": {
+              "email": true,
+              "push": true
             }
           }
         },
@@ -827,6 +831,10 @@
               "push": true
             },
             "PART_RECORDED": {
+              "email": true,
+              "push": true
+            },
+            "NOTE_REPLY": {
               "email": true,
               "push": true
             }
@@ -960,6 +968,10 @@
                 "push": true
               },
               "PART_RECORDED": {
+                "email": true,
+                "push": true
+              },
+              "NOTE_REPLY": {
                 "email": true,
                 "push": true
               }

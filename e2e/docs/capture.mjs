@@ -253,9 +253,29 @@ try {
     await shoot("versions", `/library/${grace.id}?tab=arrangements`, () => page.getByTestId("arrangement-list").waitFor());
     await shoot("version-editor", `/library/${grace.id}/arrangements/${arrangement.id}`, () => page.locator("[data-pass-editor]").first().waitFor(), { fullPage: true });
     await shoot("set", `/sets/${set.id}`, () => page.getByTestId("set-song-row").first().waitFor());
-    await shoot("set-song", `/sets/${set.id}/songs/${items[0].id}`, () => page.locator("[data-pass]").first().waitFor(), { fullPage: true });
+    // Notes (issue #256): the band's on a chord, the set's after a verse with a reply, one's own on the song.
+    {
+      const graceDoc = (await api(me, "GET", `/song-versions/${grace.id}`)).documentJson;
+      const [verse1, verse2] = graceDoc.sections;
+      const line = verse1.lines[0];
+      const fr = locale === "fr";
+      await api(me, "POST", "/notes", { songVersionId: grace.id, content: fr ? "Laisser sonner" : "Let ring", place: "TEAM", teamId: team.id, anchor: { kind: "chord", sectionId: verse1.id, lineId: line.id, chordId: line.chords[1].id } });
+      const setNote = await api(me, "POST", "/notes", { songVersionId: grace.id, content: fr ? "Piano seul sur ce couplet" : "Piano only on this verse", place: "SET", setlistId: set.id, anchor: { kind: "section", sectionId: verse2.id, passId: graceDoc.flow.find((pass) => pass.sectionId === verse2.id).id } });
+      await api(me, "POST", `/notes/${setNote.id}/replies`, { content: fr ? "Je reprends au refrain" : "I'll come back in on the last line" });
+      await api(me, "POST", "/notes", { songVersionId: grace.id, content: fr ? "Capo 3, commencer doucement" : "Capo 3, start soft", place: "ME" });
+    }
+    await shoot("set-song", `/sets/${set.id}/songs/${items[0].id}`, () => page.locator("[data-note-id]").first().waitFor(), { fullPage: true });
     // The Display panel (issue #209), on a phone: the bottom of the screen, the chart still in view.
     await page.setViewportSize({ width: 390, height: 844 });
+    // Adding a note on a word, on a phone (issue #256): where it's saved says who sees it.
+    await shoot("notes", `/sets/${set.id}/songs/${items[0].id}`, async () => {
+      const word = page.getByTestId("song-chart").locator("[data-line] [data-at]", { hasText: locale === "fr" ? "grace" : "grace" }).first();
+      await word.scrollIntoViewIfNeeded();
+      const box = await word.boundingBox();
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: "right" });
+      await page.getByTestId("add-note-input").fill(locale === "fr" ? "Tenir jusqu'à la ligne suivante" : "Hold it into the next line");
+    });
+    await page.keyboard.press("Escape");
     await shoot("display", `/sets/${set.id}/songs/${items[0].id}`, async () => {
       await page.locator("[data-pass]").first().waitFor();
       await page.getByTestId("display-open").click();

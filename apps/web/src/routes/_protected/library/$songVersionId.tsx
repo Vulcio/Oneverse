@@ -45,7 +45,7 @@ async function loadOnline(songVersionId: string) {
 
 function SongVersionPage() {
   const loaded = Route.useLoaderData();
-  const { tab, notice, from, songbook, line } = Route.useSearch();
+  const { tab, notice, from, songbook, line, note } = Route.useSearch();
   const navigate = Route.useNavigate();
   const { mode } = useMode();
   const songVersionId = "offline" in loaded ? loaded.offline.songVersionId : loaded.online.version.id;
@@ -78,6 +78,8 @@ function SongVersionPage() {
         colors={data.me?.chordColors ?? false}
         player={data.me ?? undefined}
         displaySettings={data.me?.displaySettings}
+        songbookId={songbook}
+        openNoteId={note}
         />
       </>
     );
@@ -90,6 +92,8 @@ function SongVersionPage() {
       mode="edit"
       {...data}
       notices={parseNotices(notice)}
+      songbookId={songbook}
+      openNoteId={note}
       // Opened at a line (a lyrics search, issue #221): where the chart is.
       tab={tab ?? (line ? "editor" : "info")}
       onTabChange={(next) => void navigate({ search: (prev) => ({ ...prev, tab: next === "info" ? undefined : next }), replace: true })}

@@ -12,6 +12,8 @@ export interface SongSearch {
   from?: string;
   /** Found by its words (issue #221): the line it opens at. */
   line?: string;
+  /** A note's thread to open (issue #256): from a notification. */
+  note?: string;
 }
 
 export function parseSongSearch(search: Record<string, unknown>): SongSearch {
@@ -22,6 +24,7 @@ export function parseSongSearch(search: Record<string, unknown>): SongSearch {
     ...(typeof search.songbook === "string" && search.songbook && { songbook: search.songbook }),
     ...(typeof search.from === "string" && search.from && { from: search.from }),
     ...(typeof search.line === "string" && search.line && { line: search.line }),
+    ...(typeof search.note === "string" && search.note && { note: search.note }),
   };
 }
 

@@ -21,7 +21,7 @@ Vous pouvez en garder davantage :
 - **Garder une copie locale**, sur un recueil, le conserve avec tous ses chants.
 - **Avec l'audio**, à côté, télécharge aussi ses fichiers audio. Ils sont volumineux : ils ne viennent jamais autrement.
 
-Les PDF, images et fichiers ChordPro d'un chant viennent avec lui.
+Les PDF, images et fichiers ChordPro d'un chant viennent avec lui, ainsi que les [notes](/fr/notes/) que vous y voyez - dans une liste, celles de la liste aussi.
 
 Tant que Songverse est ouvert avec une connexion, il se met à jour toutes les quelques minutes : les chants et listes modifiés sont mis à jour. Une liste est retirée une fois supprimée, quand vous ne pouvez plus l'ouvrir, ou le lendemain de sa date. Un chant ou un recueil est retiré quand vous ne pouvez plus l'ouvrir ou ne le gardez plus.
 

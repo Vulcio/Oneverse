@@ -3690,6 +3690,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3738,6 +3739,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3781,6 +3783,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3826,6 +3829,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {
               "source": "FINGERED",
               "position": "beside"
@@ -3885,6 +3889,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3931,6 +3936,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {
               "names": "ROMAN",
               "position": "right",
@@ -3990,6 +3996,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {
               "names": "ROMAN",
               "position": "above"
@@ -4033,6 +4040,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4077,6 +4085,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4128,6 +4137,7 @@
               "transpose"
             ],
             "controlsOpacity": 0.4,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4166,6 +4176,7 @@
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
             "controlsOpacity": 0.7,
+            "notes": "ALL",
             "secondRowKept": {},
             "chordRows": {
               "main": {

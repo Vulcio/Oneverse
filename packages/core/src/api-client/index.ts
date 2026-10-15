@@ -26,6 +26,7 @@ import type { MusicBrainzWorkMatch } from "../schemas/musicbrainz.js";
 import type { SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song-document-v2.js";
 import type { SongbookSection } from "../songbook-sections/index.js";
 import type { StemPart } from "../stems/index.js";
+import type { NoteAnchor, NotePlace, NoteShow } from "../notes/index.js";
 import type { NotificationData, NotificationKind, NotificationPreferences, QuietHours } from "../notifications/index.js";
 import type { LyricsMatch } from "../search-text/lyrics.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
@@ -37,6 +38,7 @@ import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, S
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { UpdateSetlistItemRequest } from "../requests/sets.js";
+import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
 import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
@@ -260,13 +262,14 @@ export interface SetlistSongView {
   /** The next song's title; null at the end of the set, or when the viewer can't read that song. */
   nextTitle: string | null;
   /** The current user's private note on this song of the set. */
-  myNote: string;
 }
 
 /** A set to keep offline (GET /setlists/:id/offline): the set, and each of its songs as the song view gives it. */
 export interface SetlistOfflineCopy {
   set: SetlistDetail;
   songs: SetlistSongView[];
+  /** The notes one sees on each of its songs in this set (issue #256), by song. */
+  notes: Record<string, SongNotes>;
   /** Changes whenever anything in the copy would. */
   version: string;
 }
@@ -275,6 +278,8 @@ export interface SetlistOfflineCopy {
 export interface SongOfflineCopy {
   song: SongVersionDetail;
   attachments: Attachment[];
+  /** The notes one sees on it, outside any set (issue #256). */
+  notes: SongNotes;
   version: string;
 }
 
@@ -483,6 +488,64 @@ export interface DisplaySettings {
   controlsPosition?: ControlsPositionValue;
   hiddenControls?: LiveControlValue[];
   controlsOpacity?: number;
+  /** Notes on the chart (issue #256). */
+  notes?: NoteShow;
+}
+
+/** Someone who wrote a note or a reply (issue #256). */
+export interface NoteAuthor {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface SongNoteReply {
+  id: string;
+  content: string;
+  author: NoteAuthor;
+  createdAt: string;
+  updatedAt: string;
+  /** Its author, or a moderator of the note's place. */
+  canEdit: boolean;
+}
+
+/** A note on a song (issue #256): where it's saved decides who sees it. */
+export interface SongNote {
+  id: string;
+  songVersionId: string;
+  content: string;
+  place: NotePlace;
+  /** The team, songbook or set it's saved in; for ME, the set it only shows in, if any. */
+  placeId: string | null;
+  /** That team's, songbook's or set's name ("Morning Band", "Sunday service"). */
+  placeName: string | null;
+  /** Where it's pinned, as the song is now. */
+  anchor: NoteAnchor;
+  /** What it was pinned to is gone: it moved up (to its line, section, or the song). */
+  moved: boolean;
+  author: NoteAuthor;
+  resolved: boolean;
+  createdAt: string;
+  updatedAt: string;
+  replies: SongNoteReply[];
+  /** Its author, or a moderator of its place (a team's or songbook's admins, a set's leaders, the song's editors): edit, resolve, delete. */
+  canEdit: boolean;
+  /** Anyone who sees it may reply. */
+  canReply: boolean;
+}
+
+/** A place one may save a note in, from where the song was opened. */
+export interface NotePlaceChoice {
+  place: NotePlace;
+  /** The team, songbook or set; null for ME and SONG. */
+  id: string | null;
+  name: string | null;
+}
+
+export interface SongNotes {
+  notes: SongNote[];
+  /** Where a new note may go; the first is the default (where one came from). */
+  places: NotePlaceChoice[];
 }
 
 export interface UserProfile {
@@ -2474,9 +2537,18 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getSongbookOffline: (songbookId: string) => request<SongbookOfflineCopy>(`/offline/songbooks/${songbookId}`),
     /** Entries by number (issue #213): exactly it, then starting with it, then containing it; `more` for Show more. */
     searchSongbookEntries: (q: string, more = false) => request<SongbookEntryHit[]>(`/songbook-entries?q=${encodeURIComponent(q)}${more ? "&more=true" : ""}`),
-    /** An empty note deletes it. */
-    setSetlistNote: (setlistId: string, itemId: string, content: string) =>
-      request<{ myNote: string }>(`/setlists/${setlistId}/items/${itemId}/my-note`, { method: "PUT", body: JSON.stringify({ content }) }),
+    /** The notes one sees on a song (issue #256), opened in a set or not, and where a new one may go. */
+    getSongNotes: (songVersionId: string, context: { setlistId?: string; songbookId?: string } = {}) => {
+      const query = new URLSearchParams(Object.entries(context).filter((entry): entry is [string, string] => !!entry[1]));
+      return request<SongNotes>(`/song-versions/${songVersionId}/notes${query.size ? `?${query}` : ""}`);
+    },
+    createNote: (body: CreateNoteRequest) => request<SongNote>("/notes", { method: "POST", body: JSON.stringify(body) }),
+    updateNote: (noteId: string, body: UpdateNoteRequest) => request<SongNote>(`/notes/${noteId}`, { method: "PATCH", body: JSON.stringify(body) }),
+    deleteNote: (noteId: string) => request<void>(`/notes/${noteId}`, { method: "DELETE" }),
+    replyToNote: (noteId: string, content: string) => request<SongNote>(`/notes/${noteId}/replies`, { method: "POST", body: JSON.stringify({ content }) }),
+    updateNoteReply: (noteId: string, replyId: string, content: string) =>
+      request<SongNote>(`/notes/${noteId}/replies/${replyId}`, { method: "PATCH", body: JSON.stringify({ content }) }),
+    deleteNoteReply: (noteId: string, replyId: string) => request<SongNote>(`/notes/${noteId}/replies/${replyId}`, { method: "DELETE" }),
     requestSongOwnership: (setlistId: string, itemId: string) =>
       request<SetlistDetail>(`/setlists/${setlistId}/items/${itemId}/ownership-request`, { method: "POST" }),
     getSetlistSharing: (setlistId: string) => request<SetlistSharing>(`/setlists/${setlistId}/sharing`),

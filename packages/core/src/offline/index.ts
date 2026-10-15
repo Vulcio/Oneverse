@@ -10,6 +10,7 @@ import type {
   SongbookDetail,
   SongbookEntryHit,
   SongbookOfflineCopy,
+  SongNotes,
   SongOfflineCopy,
 } from "../api-client/index.js";
 import { lyricsLines, matchLyrics, parseLyricsQuery, type LyricsMatch } from "../search-text/lyrics.js";
@@ -54,6 +55,15 @@ export async function keptSetDetail(storage: OfflineStorage, setlistId: string):
 /** One song of a kept set, as its song page and Live show it. */
 export async function keptSetSong(storage: OfflineStorage, setlistId: string, itemId: string): Promise<SetlistSongView | undefined> {
   return (await keptSet(storage, setlistId))?.songs.find((view) => view.item.id === itemId);
+}
+
+/** The notes kept for a song (issue #256): as seen in a kept set, else outside sets (a kept song's). */
+export async function keptSongNotes(storage: OfflineStorage, songVersionId: string, setlistId?: string | null): Promise<SongNotes | undefined> {
+  if (setlistId) {
+    const inSet = (await keptSet(storage, setlistId))?.notes?.[songVersionId];
+    if (inSet) return inSet;
+  }
+  return (await keptSongCopy(storage, songVersionId))?.notes;
 }
 
 export async function allKeptSets(storage: OfflineStorage): Promise<KeptSet[]> {

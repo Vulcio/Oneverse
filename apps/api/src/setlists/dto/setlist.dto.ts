@@ -1,4 +1,4 @@
-import { CreateSetlistSchema, UpdateSetlistSchema, AddSetlistItemSchema, UpdateSetlistItemSchema, SetArrangementSchema, ReorderSetlistItemsSchema, MyNoteSchema } from "@songverse/core";
+import { CreateSetlistSchema, UpdateSetlistSchema, AddSetlistItemSchema, UpdateSetlistItemSchema, SetArrangementSchema, ReorderSetlistItemsSchema } from "@songverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class CreateSetlistDto extends zodDto(CreateSetlistSchema) {}
@@ -13,4 +13,3 @@ export class SetArrangementDto extends zodDto(SetArrangementSchema) {}
 
 export class ReorderSetlistItemsDto extends zodDto(ReorderSetlistItemsSchema) {}
 
-export class MyNoteDto extends zodDto(MyNoteSchema) {}

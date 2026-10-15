@@ -50,6 +50,7 @@ export default defineConfig({
             { slug: "song-editor" },
             { slug: "versions" },
             { slug: "display" },
+            { slug: "notes" },
           ],
         },
         {

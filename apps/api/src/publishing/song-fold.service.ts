@@ -4,6 +4,9 @@ import {
   generateId,
   ID_PREFIXES,
   mapChartIds,
+  mapFlowIds,
+  NoteAnchorSchema,
+  remapNoteAnchor,
   newArrangementDocument,
   readSongDocument,
   remapArrangement,
@@ -245,7 +248,15 @@ export class SongFoldService implements OnApplicationBootstrap {
       else await tx.chartPreference.update({ where: { id: preference.id }, data: { songVersionId: targetId, arrangementKey: key, arrangementId: ownArrangementId } });
     }
 
-    await tx.note.updateMany({ where: { songVersionId: songId }, data: { songVersionId: targetId } });
+    // Notes (issue #256): pinned to the same places in the catalogue song; what has no match there moves up.
+    const flowMap = mapFlowIds(songDoc, targetDoc, map);
+    for (const note of await tx.note.findMany({ where: { songVersionId: songId }, select: { id: true, anchor: true } })) {
+      const anchor = NoteAnchorSchema.safeParse(note.anchor);
+      await tx.note.update({
+        where: { id: note.id },
+        data: { songVersionId: targetId, anchor: anchor.success ? remapNoteAnchor(anchor.data, map, flowMap) : { kind: "song" } },
+      });
+    }
     await tx.submission.updateMany({ where: { songVersionId: songId }, data: { songVersionId: targetId } });
     await tx.changeProposal.updateMany({ where: { songVersionId: songId }, data: { songVersionId: targetId } });
 

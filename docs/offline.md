@@ -136,8 +136,9 @@ Songs, songbooks, pins and files (#52):
 - **The same sync** carries songs and songbooks (`knownSongs`,
   `knownSongbooks` in; `songs`, `songbooks`, `goneSongs`, `goneSongbooks`
   out). Songs: the user's own, pinned, and those in kept sets and
-  songbooks, each with `audio`. A song's version is its `updatedAt` and
-  its files, computed in one query; full copies only where they changed.
+  songbooks, each with `audio`. A song's version is its `updatedAt`, its
+  files and a stamp of its notes (how many notes and replies, and the last
+  change), computed in a few queries; full copies only where they changed.
   Songbooks: pinned. It also returns the pins and the user's chord
   settings (`viewer`), for songs shown on their own offline.
 - **Files:** `syncKeptFiles()` (core) downloads a kept song's files by
@@ -146,6 +147,11 @@ Songs, songbooks, pins and files (#52):
 - **Offline pages:** a kept song's page is read-only (`OfflineSongPage`:
   its chart, its files, Live); a kept songbook opens read-only; search
   finds every kept song.
+- **Notes** (issue #256): a set's copy has the notes seen in it, by song
+  (`notes`), and a song's copy those seen outside sets; `keptSongNotes()`
+  (core) reads them. A note written offline waits in the device's outbox
+  (`songverse.notes.outbox`, `apps/web/src/lib/notes.ts`) and is sent when
+  the connection is back; it shows meanwhile, marked as waiting.
 - **Storage page** (`/offline`): last sync and "Sync now", persistent
   storage, the days-ahead setting (kept on the device, sent as `days`),
   and what's kept with a way to remove it. Removing a pinned item unpins

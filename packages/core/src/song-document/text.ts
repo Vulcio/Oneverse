@@ -264,12 +264,15 @@ export function songDocumentFromText(
   if (parsed && parsed.flow.length > parsed.sections.length) {
     // The reconciled sections line up with the parsed ones.
     const ids = new Map(parsed.sections.map((section, i) => [section.id, sections[i]!.id]));
-    const seen = new Set<string>();
+    // A section's passes keep their IDs, in order (notes and arrangements point at them, issue #256).
+    const before = new Map<string, string[]>();
+    for (const item of previous?.flow ?? []) before.set(item.sectionId, [...(before.get(item.sectionId) ?? []), item.id]);
+    const seen = new Map<string, number>();
     flow = parsed.flow.map((item) => {
       const sectionId = ids.get(item.sectionId)!;
-      const first = !seen.has(sectionId);
-      seen.add(sectionId);
-      return { ...item, id: first ? flowItemId(sectionId) : item.id, sectionId };
+      const n = seen.get(sectionId) ?? 0;
+      seen.set(sectionId, n + 1);
+      return { ...item, id: n === 0 ? flowItemId(sectionId) : (before.get(sectionId)?.[n] ?? item.id), sectionId };
     });
   } else {
     flow = reconcileFlow(previous, sections);

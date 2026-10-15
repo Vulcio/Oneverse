@@ -173,6 +173,7 @@ export class UserDeletionService {
   private async removeAccount(tx: Tx, userId: string): Promise<string[]> {
     const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { displayName: true, avatarStorageKey: true } });
 
+    await tx.noteReply.deleteMany({ where: { authorUserId: userId } });
     await tx.note.deleteMany({ where: { authorUserId: userId } });
     await tx.submission.deleteMany({ where: { submitterId: userId } });
     await tx.changeProposal.deleteMany({ where: { proposerId: userId } });

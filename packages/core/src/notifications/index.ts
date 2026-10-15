@@ -57,6 +57,8 @@ export const NOTIFICATION_KINDS = [
   "SUBMISSION_RETURNED",
   // Someone records a part in a multitrack of one's song.
   "PART_RECORDED",
+  // Someone replies to a note one wrote or replied to (issue #256).
+  "NOTE_REPLY",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

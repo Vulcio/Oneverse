@@ -144,7 +144,9 @@ function SongLiveView({ song, back }: { song: LoneSong; back: string | undefined
         durationSeconds: song.document.defaults.durationSeconds,
         arrangementName: null,
         references: song.references,
-        notes: [],
+        setNotes: [],
+        // Its notes outside any set (issue #256).
+        notes: { context: { songVersionId: song.id }, document: song.document },
         exit: {
           label: t("live.back"),
           // The song's own page would open Live again: the library instead.

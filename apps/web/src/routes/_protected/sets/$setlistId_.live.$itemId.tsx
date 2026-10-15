@@ -154,7 +154,9 @@ function SetLiveView({ views, readings }: { views: SetlistSongView[]; readings: 
       arrangementName: view.arrangement?.name ?? null,
       // A copy kept before #59 has none.
       references: view.songbookReferences ?? [],
-      notes: [...(item.notes ? [{ text: item.notes }] : []), ...(view.myNote ? [{ label: t("sets.myNotes"), text: view.myNote }] : [])],
+      setNotes: item.notes ? [{ text: item.notes }] : [],
+      // Notes seen in this set (issue #256).
+      notes: song ? { context: { songVersionId: song.id, setlistId: set.id }, document: song.document } : undefined,
       onPlayed: () => markPlayed(set.id, item.id),
       reading: song ? (readings[i] ?? null) : null,
       previous: goTo(view.previousItemId),

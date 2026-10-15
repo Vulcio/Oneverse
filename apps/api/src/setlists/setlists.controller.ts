@@ -5,7 +5,6 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import {
   AddSetlistItemDto,
   CreateSetlistDto,
-  MyNoteDto,
   ReorderSetlistItemsDto,
   SetArrangementDto,
   UpdateSetlistDto,
@@ -131,16 +130,6 @@ export class SetlistsController {
     @Param("itemId") itemId: string,
   ) {
     return this.setlists.songView(requireUser(user), setlistId, itemId);
-  }
-
-  @Put(":setlistId/items/:itemId/my-note")
-  setMyNote(
-    @CurrentUser() user: AuthenticatedUser | undefined,
-    @Param("setlistId") setlistId: string,
-    @Param("itemId") itemId: string,
-    @Body() dto: MyNoteDto,
-  ) {
-    return this.setlists.setMyNote(requireUser(user), setlistId, itemId, dto.content);
   }
 
   /** Gives this song its own arrangement for this set, which the set then plays. */

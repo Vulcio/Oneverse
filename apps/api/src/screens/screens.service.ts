@@ -155,7 +155,7 @@ export class ScreensService {
     let set = null;
     if (reader && screen.setlistId) {
       try {
-        const copy = await this.setlists.offlineCopy(reader, screen.setlistId);
+        const copy = await this.setlists.offlineCopy(reader, screen.setlistId, { withNotes: false });
         set = { ...copy, credits: await this.credits(copy.songs.flatMap((song) => (song.song ? [song.song.id] : []))) };
       } catch {
         // No longer theirs to read: the screen waits for another set.

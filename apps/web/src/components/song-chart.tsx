@@ -14,9 +14,10 @@ import {
   type RenderedPass,
   type SectionInstance,
   type SectionV2,
+  type NoteAnchor,
 } from "@songverse/core";
 import { AlertTriangle } from "lucide-react";
-import { Fragment, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChartColumns } from "#/lib/chart-columns";
 import type { DisplayFontValue, DisplaySpacingValue } from "@songverse/core";
@@ -55,6 +56,7 @@ export function SongChart({
   chordScale = 1,
   rows,
   passAside,
+  notes,
 }: {
   chart: RenderedChart;
   emptyText?: string;
@@ -76,8 +78,11 @@ export function SongChart({
   rows?: ChordRowsView;
   /** Something beside each pass's heading - its chord diagrams (issue #212); under it on a phone. */
   passAside?: (pass: RenderedPass) => ReactNode;
+  /** Notes on the chart (issue #256): drawn where they're pinned, and a press and hold (or right-click) to add one. */
+  notes?: ChartNotesLayer;
 }) {
   const { t } = useTranslation();
+  const gestures = useNoteGestures(notes?.onAdd);
   if (chart.passes.length === 0) {
     return <p className="text-sm text-muted-foreground">{emptyText ?? t("chart.empty")}</p>;
   }
@@ -98,7 +103,12 @@ export function SongChart({
         flowed ? "gap-x-12 [column-rule:1px_solid_var(--color-border)] [&>[data-pass]]:mb-5 [&>[data-pass]]:break-inside-avoid" : "flex flex-col gap-5",
       )}
       // Auto: as many columns of at least 24rem as fit; 2 or 3: up to that many, never narrower than 18rem (a phone keeps one).
-      style={{ ...(flowed && { columns: columns === "auto" ? "24rem" : `${columns} 18rem` }), ...(chordScale !== 1 && ({ "--chord-scale": chordScale } as CSSProperties)) }}
+      style={{
+        ...(flowed && { columns: columns === "auto" ? "24rem" : `${columns} 18rem` }),
+        ...(chordScale !== 1 && ({ "--chord-scale": chordScale } as CSSProperties)),
+        // A long press adds a note (issue #256): no callout (copy, look up) over the chart.
+        ...(notes?.onAdd && { WebkitTouchCallout: "none" }),
+      }}
       data-chord-scale={chordScale}
       data-columns={columns}
       data-font={font}
@@ -106,6 +116,7 @@ export function SongChart({
       data-hide-chords={hideChords ? "" : undefined}
       data-capo-shapes={chart.capoShapes ? "" : undefined}
       data-testid="song-chart"
+      {...gestures}
     >
       {chart.passes.map((pass) => {
         const heading = pass.section.showLabel === false ? null : labelFor(pass);
@@ -114,12 +125,13 @@ export function SongChart({
           <div
             key={pass.id}
             data-section={pass.section.type}
+            data-section-id={pass.section.id}
             data-pass={pass.id}
             data-differs={pass.differs ? "" : undefined}
             className={cn(pass.differs && "-ml-3 border-l-2 border-amber-500/70 pl-2.5")}
           >
             {heading || pass.keyChange || pass.differs || pass.changed || pass.transpose || aside ? (
-              <div className="mb-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+              <div className="mb-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1" data-pass-heading="">
               <p className="flex flex-wrap items-baseline gap-x-2 font-sans text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {heading ? <span>{heading}</span> : null}
                 {/* Its own chords, lines or transposition (issue #205). */}
@@ -145,6 +157,7 @@ export function SongChart({
               </div>
             ) : null}
             {pass.note ? <p className="mb-1 font-sans text-xs text-muted-foreground italic">{pass.note}</p> : null}
+            {notes?.section?.(pass)}
             {pass.problems.length > 0 ? (
               <p className="mb-1 flex items-center gap-1 font-sans text-xs text-destructive" role="note">
                 <AlertTriangle className="size-3" aria-hidden />
@@ -153,17 +166,21 @@ export function SongChart({
             ) : null}
             <div className="flex flex-col gap-1">
               {pass.lines.map((line) => (
-                <ChartLine
-                  key={line.id}
-                  line={hideChords && line.kind !== "note" ? { ...line, chords: [] } : line}
-                  onChordClick={onChordClick}
-                  action={chordClickAction}
-                  colors={colors}
-                  rows={shownRows}
-                  capo={chart.capo}
-                />
+                <Fragment key={line.id}>
+                  <ChartLine
+                    line={hideChords && line.kind !== "note" ? { ...line, chords: [] } : line}
+                    onChordClick={onChordClick}
+                    action={chordClickAction}
+                    colors={colors}
+                    rows={shownRows}
+                    capo={chart.capo}
+                    noted={notes?.markedChords?.(pass)}
+                  />
+                  {notes?.line?.(pass, line.id)}
+                </Fragment>
               ))}
             </div>
+            {notes?.afterPass?.(pass)}
           </div>
         );
       })}
@@ -188,6 +205,7 @@ function ChartLine({
   colors,
   rows,
   capo,
+  noted,
 }: {
   line: RenderedLine;
   onChordClick?: (chordId: string, element: HTMLElement, chord: RenderedChord) => void;
@@ -195,6 +213,8 @@ function ChartLine({
   colors: boolean;
   rows?: ChordRowsView;
   capo: number | null;
+  /** Its chords with a note on them (issue #256), marked. */
+  noted?: ReadonlySet<string>;
 }) {
   const { t } = useTranslation();
   const note = line.note ? <span className="ml-2 font-sans text-xs text-amber-700 italic dark:text-amber-400">{line.note}</span> : null;
@@ -202,7 +222,7 @@ function ChartLine({
   if (line.chords.length === 0) {
     return (
       <p className={cn("whitespace-pre-wrap", line.inserted && "text-amber-800 dark:text-amber-300")} data-line="" data-line-id={line.id}>
-        {line.text || " "}
+        <span data-at={0}>{line.text || " "}</span>
         {note}
       </p>
     );
@@ -230,6 +250,8 @@ function ChartLine({
         row.color === "muted" && "text-muted-foreground",
         row.color === "family" && (family ? FAMILY_COLORS[family] : "text-primary"),
         id && replaced.has(id) && "underline decoration-amber-500 decoration-2",
+        // A note on it (issue #256).
+        id && noted?.has(id) && "rounded-sm bg-amber-200/70 px-0.5 dark:bg-amber-400/25",
       );
     };
     const custom = row.color.startsWith("#") ? { color: row.color } : undefined;
@@ -245,6 +267,7 @@ function ChartLine({
               className={cn("rounded-sm hover:bg-primary/10", look(chord.id))}
               style={custom}
               data-chord-id={chord.id}
+              data-chord-ref={chord.id}
               data-family={byId.get(chord.id)?.family ?? undefined}
               aria-label={t(action === "hide" ? "chart.hideChord" : "chart.showDiagram", { chord: label })}
               onClick={(event) => onChordClick(chord.id!, event.currentTarget, byId.get(chord.id!)!)}
@@ -252,7 +275,7 @@ function ChartLine({
               {label}
             </button>
           ) : (
-            <span className={look(chord.id)} style={custom} data-family={(chord.id && byId.get(chord.id)?.family) || undefined}>
+            <span className={look(chord.id)} style={custom} data-family={(chord.id && byId.get(chord.id)?.family) || undefined} data-chord-ref={chord.id}>
               {label}
             </span>
           )}
@@ -263,6 +286,18 @@ function ChartLine({
   };
 
   const lineHasText = words.some((word) => word.some((cell) => cell.text.length > 0));
+  // Where each cell's text starts in the line, for a note on a word (issue #256).
+  const starts: number[][] = [];
+  let offset = 0;
+  for (const word of words) {
+    starts.push(
+      word.map((cell) => {
+        const start = offset;
+        offset += cell.text.length;
+        return start;
+      }),
+    );
+  }
 
   return (
     <p data-line="" data-line-id={line.id} className={cn(line.inserted && "text-amber-800 dark:text-amber-300")}>
@@ -273,6 +308,7 @@ function ChartLine({
           {/* Words of different heights (a second row, diagrams) line up by their lyrics, at the bottom. */}
           <span className="inline-flex whitespace-pre align-bottom">
             {word.map((cell, c) => {
+              const at = starts[w]![c]!;
               const mainRow = rowOf(main, cell, true);
               const secondRow = second && cell.chords.length > 0 ? rowOf(second, cell, false) : null;
               // A chord wider than its text widens the cell, so the next chord stays over its own character (both rows' names).
@@ -314,7 +350,7 @@ function ChartLine({
                   {second?.position === "below" ? (secondEl ?? <span> </span>) : null}
                   <span className="flex">
                     {/* Chords after the last letter: a blank under them, so they stay on the chords' row (not on a line of chords alone). */}
-                    <span>{cell.text || (lineHasText ? " " : null)}</span>
+                    <span data-at={cell.text ? at : undefined}>{cell.text || (lineHasText ? " " : null)}</span>
                     {stretched ? (
                       <span aria-hidden className="flex-1 text-center text-muted-foreground">
                         -
@@ -349,4 +385,98 @@ function secondRowDiffers(chart: RenderedChart, rows: ChordRowsView): boolean {
 export interface ChordRowsView {
   main: ChordRowSettings;
   second: SecondChordRow | null;
+}
+
+/** Notes on a chart (issue #256), placed by the page: what's drawn where, and how one is added. */
+export interface ChartNotesLayer {
+  /** Under a pass's heading: the notes on its section. */
+  section?: (pass: RenderedPass) => ReactNode;
+  /** After a pass: notes between it and the next. */
+  afterPass?: (pass: RenderedPass) => ReactNode;
+  /** Under a line: the notes on it, its chords and words, and between it and the next. */
+  line?: (pass: RenderedPass, lineId: string) => ReactNode;
+  /** The pass's chords with a note, marked. */
+  markedChords?: (pass: RenderedPass) => ReadonlySet<string>;
+  /** A press and hold (or right-click) on the chart: a note on what's there. A word's `at` is the character pressed. */
+  onAdd?: (anchor: NoteAnchor) => void;
+}
+
+const HOLD_MS = 500;
+const HOLD_SLOP = 10;
+
+/** What's at a point of the chart, as a note's anchor: a chord, a word, a line, a section's name, or the section. */
+function anchorAt(target: Element, x: number, y: number): NoteAnchor | null {
+  const passEl = target.closest<HTMLElement>("[data-pass]");
+  const passId = passEl?.dataset.pass;
+  const sectionId = passEl?.dataset.sectionId;
+  if (!passId || !sectionId) return null;
+  if (target.closest("[data-notes]")) return null;
+  const lineEl = target.closest<HTMLElement>("[data-line-id]");
+  if (!lineEl || target.closest("[data-pass-heading]")) return { kind: "section", sectionId, passId };
+  const lineId = lineEl.dataset.lineId!;
+  const chordId = target.closest<HTMLElement>("[data-chord-ref]")?.dataset.chordRef;
+  if (chordId) return { kind: "chord", sectionId, lineId, chordId, passId };
+  const at = characterAt(x, y);
+  if (at && lineEl.contains(at.element)) return { kind: "word", sectionId, lineId, at: at.at, passId };
+  return { kind: "line", sectionId, lineId, passId };
+}
+
+/** The character of a line's text under a point: its span's start plus the offset in it. */
+function characterAt(x: number, y: number): { element: Element; at: number } | null {
+  const doc = document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+  const position = doc.caretPositionFromPoint?.(x, y) ?? (() => {
+    const range = document.caretRangeFromPoint?.(x, y);
+    return range ? { offsetNode: range.startContainer, offset: range.startOffset } : null;
+  })();
+  const element = position?.offsetNode.parentElement?.closest<HTMLElement>("[data-at]");
+  if (!position || !element) return null;
+  return { element, at: Number(element.dataset.at) + position.offset };
+}
+
+/** Right-click, or press and hold with a finger or pen, on the chart: `onAdd` with what's there. The tap that follows a hold is swallowed. */
+function useNoteGestures(onAdd: ((anchor: NoteAnchor) => void) | undefined) {
+  const hold = useRef<{ timer: number; x: number; y: number } | null>(null);
+  const swallow = useRef(false);
+  if (!onAdd) return {};
+  const cancel = () => {
+    if (hold.current) window.clearTimeout(hold.current.timer);
+    hold.current = null;
+  };
+  return {
+    onContextMenu: (event: React.MouseEvent<HTMLDivElement>) => {
+      const anchor = anchorAt(event.target as Element, event.clientX, event.clientY);
+      if (!anchor) return;
+      event.preventDefault();
+      cancel();
+      onAdd(anchor);
+    },
+    onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.pointerType === "mouse") return;
+      cancel();
+      const target = event.target as Element;
+      const { clientX: x, clientY: y } = event;
+      hold.current = {
+        x,
+        y,
+        timer: window.setTimeout(() => {
+          hold.current = null;
+          const anchor = anchorAt(target, x, y);
+          if (!anchor) return;
+          swallow.current = true;
+          onAdd(anchor);
+        }, HOLD_MS),
+      };
+    },
+    onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (hold.current && Math.hypot(event.clientX - hold.current.x, event.clientY - hold.current.y) > HOLD_SLOP) cancel();
+    },
+    onPointerUp: cancel,
+    onPointerCancel: cancel,
+    onClickCapture: (event: React.MouseEvent) => {
+      if (!swallow.current) return;
+      swallow.current = false;
+      event.preventDefault();
+      event.stopPropagation();
+    },
+  };
 }

@@ -13,6 +13,7 @@ import type {
 } from "../constants/index.js";
 import { APP_MODES } from "../constants/index.js";
 import type { DisplaySettings } from "../api-client/index.js";
+import type { NoteShow } from "../notes/index.js";
 import { chordRowNotation, type ChordRow, type SecondChordRow } from "./chord-rows.js";
 
 /**
@@ -46,6 +47,8 @@ export interface EffectiveDisplaySettings {
   chordRows: { main: ChordRow; second: SecondChordRow | null };
   /** The second row's settings as kept, on or off: what it comes back with when turned on again. */
   secondRowKept: Partial<SecondChordRow>;
+  /** Notes on the chart (issue #256): every note unless the mode says otherwise. */
+  notes: NoteShow;
 }
 
 export type SavedDisplaySettings = Partial<Record<AppModeValue, DisplaySettings>>;
@@ -90,6 +93,7 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     controlsPosition: own.controlsPosition ?? "bottom-right",
     hiddenControls: own.hiddenControls ?? [],
     controlsOpacity: own.controlsOpacity ?? 0.7,
+    notes: own.notes ?? "ALL",
     secondRowKept: Object.fromEntries(Object.entries(own.secondRow ?? {}).filter(([field]) => field !== "on")) as Partial<SecondChordRow>,
     chordRows: {
       main,

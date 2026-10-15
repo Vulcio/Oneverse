@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { type SavedDisplaySettings, chartEdgeChords, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue } from "@songverse/core";
+import { type SavedDisplaySettings, chartEdgeChords, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@songverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -12,13 +12,13 @@ import type {
   UpdateSetlistDto,
   UpdateSetlistItemDto,
 } from "./dto/setlist.dto.js";
+import { NotesService } from "../notes/notes.service.js";
 import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./setlist-access.service.js";
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CANDIDATE_LIMIT = 20;
-const NOTE_MAX_LENGTH = 5000;
 
 export interface SongRef {
   id: string;
@@ -63,6 +63,7 @@ export class SetlistsService {
     private readonly sets: SetlistAccessService,
     private readonly arrangements: ArrangementsService,
     private readonly policy: AccessPolicyService,
+    private readonly notes: NotesService,
   ) {}
 
   async list(user: AuthenticatedUser) {
@@ -415,10 +416,9 @@ export class SetlistsService {
     const item = set.items[index]!;
     const next = set.items[index + 1];
 
-    const [readable, inViewersLibrary, note, viewer] = await Promise.all([
+    const [readable, inViewersLibrary, viewer] = await Promise.all([
       this.sets.readableItems(set, next ? [item, next] : [item]),
       this.sets.visibilityFor(user),
-      this.myNoteRow(user.id, itemId),
       this.prisma.client.user.findUnique({ where: { id: user.id }, select: { chordNotation: true, capoDisplayMode: true, liveView: true, chordDiagrams: true, chordColors: true, leftHanded: true, guitarTuning: true, ukuleleTuning: true, pianoSmooth: true, pianoHands: true, pianoNoteNames: true, displaySettings: true } }),
     ]);
     const song = item.songVersion;
@@ -472,7 +472,6 @@ export class SetlistsService {
       nextItemId: next?.id ?? null,
       // What's coming, for Perform mode - unless the viewer can't read that song.
       nextTitle: next && (readable.has(next.id) || inViewersLibrary(next.songVersion)) ? next.songVersion.title : null,
-      myNote: note?.content ?? "",
     };
   }
 
@@ -504,13 +503,16 @@ export class SetlistsService {
    * a version: a hash of all of it, which changes whenever anything the
    * device shows would (a song edited, an item moved, access lost...).
    */
-  async offlineCopy(user: AuthenticatedUser, setlistId: string) {
+  async offlineCopy(user: AuthenticatedUser, setlistId: string, { withNotes = true } = {}) {
     const set = await this.findOne(user, setlistId);
     const songs = [];
     // One at a time: a set is a handful of songs, and each view checks access itself.
     for (const item of set.items) songs.push(await this.songView(user, setlistId, item.id));
-    const version = createHash("sha256").update(JSON.stringify({ set, songs })).digest("hex").slice(0, 32);
-    return { set, songs, version };
+    // The notes one sees on each song in this set (issue #256), by song.
+    const notes: Record<string, SongNotes> = {};
+    if (withNotes) for (const view of songs) if (view.song && !notes[view.song.id]) notes[view.song.id] = await this.notes.list(user, view.song.id, { setlistId });
+    const version = createHash("sha256").update(JSON.stringify({ set, songs, notes })).digest("hex").slice(0, 32);
+    return { set, songs, notes, version };
   }
 
   /** The viewer's own chart preferences for one song of the set, as the set plays it (guests too). */
@@ -518,33 +520,6 @@ export class SetlistsService {
     await this.sets.findViewable(user, setlistId);
     const item = await this.findItem(setlistId, itemId);
     return this.arrangements.savePreferences(user.id, item.songVersionId, item.arrangementId, preferences);
-  }
-
-  /** The viewer's private note on one song of the set; an empty one deletes it. */
-  async setMyNote(user: AuthenticatedUser, setlistId: string, itemId: string, content: string): Promise<{ myNote: string }> {
-    await this.sets.findViewable(user, setlistId);
-    await this.findItem(setlistId, itemId);
-    const text = content.trim();
-    if (text.length > NOTE_MAX_LENGTH) throw new BadRequestException(`Notes are limited to ${NOTE_MAX_LENGTH} characters`);
-    const existing = await this.myNoteRow(user.id, itemId);
-    if (!text) {
-      if (existing) await this.prisma.client.note.delete({ where: { id: existing.id } });
-      return { myNote: "" };
-    }
-    if (existing) {
-      await this.prisma.client.note.update({ where: { id: existing.id }, data: { content: text } });
-    } else {
-      await this.prisma.client.note.create({ data: { scope: "SETLIST_ITEM", content: text, authorUserId: user.id, setlistItemId: itemId } });
-    }
-    return { myNote: text };
-  }
-
-  // Private to its author for now; one per person per song in the set.
-  private myNoteRow(userId: string, itemId: string) {
-    return this.prisma.client.note.findFirst({
-      where: { scope: "SETLIST_ITEM", setlistItemId: itemId, authorUserId: userId },
-      select: { id: true, content: true },
-    });
   }
 
   private async findItem(setlistId: string, itemId: string) {

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { type SavedDisplaySettings, offlineFingerprint, setListing } from "@songverse/core";
+import { type SavedDisplaySettings, type SongNotes, offlineFingerprint, setListing } from "@songverse/core";
+import { NotesService } from "../notes/notes.service.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AttachmentsService } from "../attachments/attachments.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -22,6 +23,7 @@ function hash(value: unknown): string {
 type SongCopy = {
   song: Awaited<ReturnType<SongVersionsService["findDetails"]>> extends Map<string, infer Song> ? Song : never;
   attachments: Awaited<ReturnType<AttachmentsService["listForSongVersions"]>> extends Map<string, infer Files> ? Files : never;
+  notes: SongNotes;
   version: string;
 };
 
@@ -44,6 +46,7 @@ export class OfflineService {
     private readonly songs: SongVersionsService,
     private readonly songbooks: SongbooksService,
     private readonly attachments: AttachmentsService,
+    private readonly notes: NotesService,
   ) {}
 
   listPins(user: AuthenticatedUser) {
@@ -93,12 +96,30 @@ export class OfflineService {
       user,
       [...details.values()].map((song) => ({ id: song.id, canEditSong: song.canManage })),
     );
+    // The notes one sees on each (issue #256), outside any set.
+    const notesBySong = new Map<string, SongNotes>();
+    for (const id of details.keys()) notesBySong.set(id, await this.notes.list(user, id, {}));
+    const stamps = await this.notesStamps([...details.keys()]);
     return new Map(
       [...details.values()].map((song) => {
         const attachments = files.get(song.id) ?? [];
-        return [song.id, { song, attachments, version: songVersion(song.updatedAt, attachments) }] as const;
+        return [song.id, { song, attachments, notes: notesBySong.get(song.id)!, version: withNotes(songVersion(song.updatedAt, attachments), stamps.get(song.id)) }] as const;
       }),
     );
+  }
+
+  /**
+   * When each song's notes last changed (issue #256), for its version: how
+   * many notes and replies it has, and the latest change. Anyone's - a
+   * change one doesn't see only costs a copy fetched again.
+   */
+  private async notesStamps(ids: string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.prisma.client.$queryRaw<{ songVersionId: string; notes: number; replies: number; last: Date }[]>`
+      SELECT n."songVersionId", count(DISTINCT n.id)::int AS notes, count(r.id)::int AS replies, greatest(max(n."updatedAt"), max(r."updatedAt")) AS last
+      FROM "Note" n LEFT JOIN "NoteReply" r ON r."noteId" = n.id
+      WHERE n."songVersionId" = ANY(${ids}) GROUP BY n."songVersionId"`;
+    return new Map(rows.map((row) => [row.songVersionId, `${row.notes}.${row.replies}@${new Date(row.last).toISOString()}`]));
   }
 
   /**
@@ -193,7 +214,8 @@ export class OfflineService {
         attachments: { where: visibleFiles, select: { id: true, createdAt: true, stemPart: true, partName: true, recordingKey: true, recordingTempo: true, recordingFirstBeat: true, recordingFreeIntro: true, pitchOffset: true, recordingTimeSignature: true, multitrackId: true, multitrackName: true, multitrackSetlistId: true, cuePoints: true, locked: true, otherTake: true, processing: true, visibility: true, visibleToTeamId: true } },
       },
     });
-    const entries = current.map((row) => ({ id: row.id, version: songVersion(row.updatedAt, row.attachments), audio: audio.has(row.id) }));
+    const stamps = await this.notesStamps(current.map((row) => row.id));
+    const entries = current.map((row) => ({ id: row.id, version: withNotes(songVersion(row.updatedAt, row.attachments), stamps.get(row.id)), audio: audio.has(row.id) }));
     const viewerRow = await this.prisma.client.user.findUnique({ where: { id: user.id }, select: { chordNotation: true, capoDisplayMode: true, liveView: true, chordDiagrams: true, chordColors: true, leftHanded: true, guitarTuning: true, ukuleleTuning: true, pianoSmooth: true, pianoHands: true, pianoNoteNames: true, displaySettings: true } });
     const viewer = {
       chordNotation: viewerRow?.chordNotation ?? "LETTERS",
@@ -248,6 +270,11 @@ export class OfflineService {
       viewer,
     };
   }
+}
+
+/** A song's version with its notes' stamp, when it has notes. */
+function withNotes(version: string, stamp: string | undefined): string {
+  return stamp ? hash([version, stamp]) : version;
 }
 
 /** A song's version: its last change and its files (a file added or removed, or its part, key or tempo changed, changes it too). */

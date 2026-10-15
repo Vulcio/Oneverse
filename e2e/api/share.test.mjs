@@ -73,15 +73,16 @@ check("joining twice is harmless", r.status === 201 && sql(`select count(*) from
 r = await call(owner, "POST", `/set-invites/${token}/join`);
 check("the owner opening their own link isn't made a guest", r.body.setlistId === set.id && sql(`select count(*) from "SetlistGuest" where "setlistId"='${set.id}'`) === "1");
 
-// --- private notes
-r = await call(guest, "PUT", `/setlists/${set.id}/items/${personalItem.id}/my-note`, { content: "  capo 2, soft intro  " });
-check("guest saves a private note", r.status === 200 && r.body.myNote === "capo 2, soft intro");
-r = await call(owner, "GET", `/setlists/${set.id}/items/${personalItem.id}/song`);
-check("the owner doesn't see the guest's note", r.body.myNote === "");
-r = await call(guest, "GET", `/setlists/${set.id}/items/${personalItem.id}/song`);
-check("the guest does", r.body.myNote === "capo 2, soft intro");
-r = await call(guest, "PUT", `/setlists/${set.id}/items/${personalItem.id}/my-note`, { content: "" });
-check("an empty note deletes it", r.body.myNote === "" && sql(`select count(*) from "Note" where "setlistItemId"='${personalItem.id}'`) === "0");
+// --- private notes: a guest's own note, only in this set (issue #256)
+r = await call(guest, "POST", "/notes", { songVersionId: personal.id, content: "  capo 2, soft intro  ", place: "ME", setlistId: set.id });
+check("guest saves a note just for them in the set, on a song only the set lets them read", r.status === 201 && r.body.content === "capo 2, soft intro" && r.body.place === "ME" && r.body.placeId === set.id, JSON.stringify(r.body));
+const guestNote = r.body;
+r = await call(owner, "GET", `/song-versions/${personal.id}/notes?setlistId=${set.id}`);
+check("the owner doesn't see the guest's note", r.status === 200 && !r.body.notes.some((n) => n.id === guestNote.id));
+r = await call(guest, "GET", `/song-versions/${personal.id}/notes?setlistId=${set.id}`);
+check("the guest does", r.status === 200 && r.body.notes.some((n) => n.id === guestNote.id));
+r = await call(guest, "DELETE", `/notes/${guestNote.id}`);
+check("…and deletes it", r.status === 204 && sql(`select count(*) from "Note" where id='${guestNote.id}'`) === "0");
 
 // --- outsiders
 r = await call(outsider, "GET", `/setlists/${set.id}`);

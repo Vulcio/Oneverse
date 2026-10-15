@@ -33,6 +33,8 @@ import { isPushEndpoint, notificationEmail, notificationPush, notificationPrefer
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
 import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { notePasses, resolveNoteAnchor, shownNotes } from "../notes/index.js";
+import { CreateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
 
 /**
@@ -637,6 +639,10 @@ export const CONFORMANCE: ConformanceArea[] = [
             args: [SONG, { content: "{start_of_verse}\n[G]Amazing grace how [G7]sweet the [C]sound\n{comment: softly}\n[D/F#]That saved a wretch [Em7]like me\n{end_of_verse}\n{start_of_chorus}\nI [C]once was lost but [Dsus4]now am [Bm7b5]found\nWas [G]blind but now I see\n{end_of_chorus}\n", format: "CHORDPRO" }],
           },
           { name: "only the key changed", args: [SONG, { format: "CHORDPRO", defaults: { key: "A" } }] },
+          {
+            name: "a repeated chorus: its passes keep their IDs",
+            args: [SONG, { content: "{start_of_verse}\n[G]Amazing grace how [G7]sweet the [C]sound\n{end_of_verse}\n{start_of_chorus}\nI [C]once was lost but [Dsus4]now am [Bm7b5]found\n{end_of_chorus}\n{chorus}\n", format: "CHORDPRO" }],
+          },
         ],
       },
       songDocumentFromSections: {
@@ -1611,6 +1617,51 @@ export const CONFORMANCE: ConformanceArea[] = [
     },
   },
   {
+    area: "notes",
+    about:
+      "Notes on songs (issue #256): where one is pinned as the song changes (moved up, never dropped), the passes of a chart it shows on, and which a viewer sees.",
+    functions: {
+      resolveNoteAnchor: {
+        about: "A note's anchor as the song is now: what it was pinned to, or moved up (chord, line, section, song) when that's gone.",
+        params: ["song", "anchor"],
+        run: resolveNoteAnchor,
+        cases: [
+          { name: "the whole song", args: [SONG, { kind: "song" }] },
+          { name: "a chord that's there", args: [SONG, { kind: "chord", sectionId: "sec_verse", lineId: "line_v1", chordId: "chd_v2", passId: "fi_verse" }] },
+          { name: "a chord that's gone: its line", args: [SONG, { kind: "chord", sectionId: "sec_verse", lineId: "line_v1", chordId: "chd_gone" }] },
+          { name: "a line that's gone: its section", args: [SONG, { kind: "line", sectionId: "sec_chorus", lineId: "line_gone", passId: "fi_chorus2" }] },
+          { name: "a section that's gone: the song", args: [SONG, { kind: "afterLine", sectionId: "sec_gone", lineId: "line_gone" }] },
+          { name: "a line moved to another section", args: [SONG, { kind: "line", sectionId: "sec_chorus", lineId: "line_v3" }] },
+          { name: "a pass that's gone: every pass", args: [SONG, { kind: "section", sectionId: "sec_chorus", passId: "fi_gone" }] },
+          { name: "a word past the end of its line", args: [SONG, { kind: "word", sectionId: "sec_chorus", lineId: "line_c1", at: 400 }] },
+          { name: "between sections, after a pass that's gone", args: [SONG, { kind: "afterPass", passId: "fi_gone" }] },
+        ],
+      },
+      notePasses: {
+        about: "The passes of a chart a note shows on: one, every pass of its section, only those showing its line, or none (the song's notes are above the chart).",
+        params: ["chart", "anchor"],
+        run: (chart: { passes: { id: string; section: { id: string }; lines: { id: string }[] }[] }, anchor: Parameters<typeof notePasses>[1]) => notePasses(chart as Parameters<typeof notePasses>[0], anchor),
+        cases: [
+          { name: "the chorus, every pass", args: [renderChart(SONG_WITH_PASSES as never), { kind: "section", sectionId: "sec_chorus" }] },
+          { name: "the chorus, its second pass", args: [renderChart(SONG_WITH_PASSES as never), { kind: "section", sectionId: "sec_chorus", passId: "fi_chorus_up" }] },
+          { name: "a line some passes leave out", args: [renderChart(SONG_WITH_PASSES as never), { kind: "line", sectionId: "sec_verse", lineId: "line_v1" }] },
+          { name: "a pass an arrangement doesn't have: the section's first", args: [renderChart(SONG as never, ARRANGEMENT as never), { kind: "section", sectionId: "sec_verse", passId: "fi_verse" }] },
+          { name: "the whole song", args: [renderChart(SONG as never), { kind: "song" }] },
+        ],
+      },
+      shownNotes: {
+        about: "The notes a viewer's Display setting shows: ALL, MINE or NONE; resolved ones never.",
+        params: ["notes", "show", "viewerId"],
+        run: shownNotes,
+        cases: [
+          { name: "all", args: [[{ id: "n1", authorId: "u1", resolved: false }, { id: "n2", authorId: "u2", resolved: false }, { id: "n3", authorId: "u2", resolved: true }], "ALL", "u1"] },
+          { name: "mine", args: [[{ id: "n1", authorId: "u1", resolved: false }, { id: "n2", authorId: "u2", resolved: false }], "MINE", "u1"] },
+          { name: "none", args: [[{ id: "n1", authorId: "u1", resolved: false }], "NONE", "u1"] },
+        ],
+      },
+    },
+  },
+  {
     area: "requests",
     about:
       "What the API takes (issue #118), checked as it checks them (checkRequest): the body it goes on with (defaults filled in, text trimmed), or the messages it answers 400 with. A client can check a form the same way before sending it.",
@@ -1680,6 +1731,19 @@ export const CONFORMANCE: ConformanceArea[] = [
         cases: [
           { name: "a song", args: [{ songVersionId: "song_1" }] },
           { name: "nothing", args: [{}] },
+        ],
+      },
+      CreateNoteSchema: {
+        about: "POST /notes (issue #256): where it's saved needs its team, songbook or set, and nothing else",
+        params: ["body"],
+        run: checked(CreateNoteSchema),
+        cases: [
+          { name: "just me, on the whole song", args: [{ songVersionId: "song_1", content: " Capo 2 ", place: "ME" }] },
+          { name: "just me, only in a set, on a chord", args: [{ songVersionId: "song_1", content: "Let ring", place: "ME", setlistId: "set_1", anchor: { kind: "chord", sectionId: "sec_verse", lineId: "line_v1", chordId: "chd_v2" } }] },
+          { name: "in a team, without the team", args: [{ songVersionId: "song_1", content: "Softer", place: "TEAM" }] },
+          { name: "in a set, with a team too", args: [{ songVersionId: "song_1", content: "Softer", place: "SET", setlistId: "set_1", teamId: "team_1" }] },
+          { name: "empty", args: [{ songVersionId: "song_1", content: "  ", place: "SONG" }] },
+          { name: "an anchor that isn't one", args: [{ songVersionId: "song_1", content: "x", place: "ME", anchor: { kind: "bar", bar: 3 } }] },
         ],
       },
       UpdateUserSchema: {

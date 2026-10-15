@@ -60,6 +60,3 @@ export const ReorderSetlistItemsSchema = z.strictObject({
     .describe("Every item id of the set, in the new order"),
 });
 
-export const MyNoteSchema = z.strictObject({
-  content: z.string().max(5000).describe("Private to you; empty deletes it"),
-});

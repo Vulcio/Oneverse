@@ -21,7 +21,7 @@ You can keep more:
 - **Keep a local copy**, on a songbook, keeps it and all its songs.
 - **Include audio**, next to either, downloads its audio files too. They're large, so they never come otherwise.
 
-A song's PDFs, images and ChordPro files come with it.
+A song's PDFs, images and ChordPro files come with it, and so do the [notes](/notes/) you see on it - in a set, the set's too.
 
 Whenever Songverse is open with a connection, it catches up every few minutes: changed songs and sets are updated. A set is removed once it's deleted, once you can no longer open it, or a day after its date. A song or songbook is removed once you can no longer open it or stop keeping it.
 

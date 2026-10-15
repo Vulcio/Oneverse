@@ -17,6 +17,8 @@ import { apiClient } from "#/lib/api-client";
 import { artistNames } from "#/lib/artists";
 import { setMode } from "#/lib/mode";
 import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
+import { useChartNotes } from "#/components/notes";
+import { useSongNotes } from "#/lib/notes";
 
 /**
  * A library song in Practice (issue #67): its chart, as written and read
@@ -35,6 +37,8 @@ export function PracticeSongPage({
   colors,
   player: accountPlayer,
   displaySettings,
+  songbookId,
+  openNoteId,
 }: {
   version: SongVersionDetail;
   attachments: Attachment[];
@@ -51,6 +55,10 @@ export function PracticeSongPage({
   player?: DiagramPlayer;
   /** Each mode's display settings (issue #209). */
   displaySettings?: SavedDisplaySettings | null;
+  /** Opened from this songbook: new notes are saved in it by default (issue #256). */
+  songbookId?: string;
+  /** A note's thread to open (a notification's link). */
+  openNoteId?: string;
 }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -66,6 +74,9 @@ export function PracticeSongPage({
       }),
     [version, display.chordNotation, display.capoDisplayMode],
   );
+  // Notes on the chart (issue #256).
+  const notesContext = { songVersionId: version.id, songbookId };
+  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: version.documentJson, show: display.notes, context: notesContext, openNoteId });
   const playable = stemFilesOf(attachments, useChosenMultitrack(version.id));
   const cueSections = useMemo(() => cueSectionsOf(version.documentJson), [version]);
   const youtubeId = version.identifiers.find((identifier) => identifier.type === "YOUTUBE")?.value ?? null;
@@ -99,6 +110,7 @@ export function PracticeSongPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <DisplayPanel mode="PRACTICE" settings={display} player={player} className="h-9" />
+          {notes.button}
           <MetronomeSongButton songId={version.id} tempo={chart.tempo} timeSignature={chart.timeSignature} variant="button" />
           <Button variant="outline" onClick={() => setMode("edit")}>
             <Pencil />
@@ -116,12 +128,15 @@ export function PracticeSongPage({
         <Card>
           <CardContent className="flex flex-col gap-3">
             {/* Zoom, not font size: the chart's own sizes keep their proportions. */}
+            {notes.top}
             <div style={{ zoom: display.textSize }}>
-              <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={player} songVersionId={version.id} />
+              <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={player} songVersionId={version.id} notes={notes.layer} />
             </div>
           </CardContent>
         </Card>
       </ChartOrPdf>
+
+      {notes.dialogs}
 
       {/* Its stems or recording, else its YouTube video, docked at the bottom (issues #64, #66). */}
       {playable.stems.length > 0 ? (

@@ -84,20 +84,24 @@ await step("guest reads a song that isn't in their library, through the set", as
   if ((await guestPage.getByRole("link", { name: "Open in library" }).count()) > 0) throw new Error("offered to open in library");
 });
 
-await step("guest keeps a private note that survives a reload", async () => {
-  await guestPage.fill("#my-notes", "Capo 2, start soft");
-  await guestPage.getByRole("button", { name: "Save notes" }).click();
-  await guestPage.getByText("Saved.", { exact: true }).waitFor();
+await step("guest keeps a note just for them in this set, that survives a reload", async () => {
+  await guestPage.getByTestId("notes-button").click();
+  await guestPage.getByTestId("notes-add").click();
+  await guestPage.getByTestId("add-note-input").fill("Capo 2, start soft");
+  await guestPage.getByTestId("add-note-places").locator('[data-place="ME:set"]').click();
+  await guestPage.getByTestId("add-note-save").click();
+  await guestPage.getByTestId("song-notes-top").getByText("Capo 2, start soft").waitFor();
   await guestPage.reload();
   await guestPage.waitForLoadState("networkidle");
-  if ((await guestPage.locator("#my-notes").inputValue()) !== "Capo 2, start soft") throw new Error("note lost");
+  await guestPage.getByTestId("song-notes-top").getByText("Capo 2, start soft").waitFor();
 });
 
 await step("guest steps to the next song", async () => {
   await guestPage.getByRole("link", { name: "Next" }).click();
   await guestPage.getByRole("heading", { name: `Second Song ${tag}` }).waitFor();
   await guestPage.getByText("Song 2 of 2").waitFor();
-  if ((await guestPage.locator("#my-notes").inputValue()) !== "") throw new Error("note carried over");
+  await guestPage.waitForLoadState("networkidle");
+  if ((await guestPage.getByText("Capo 2, start soft").count()) > 0) throw new Error("note carried over");
   await guestPage.getByRole("link", { name: "Previous" }).waitFor();
 });
 
@@ -108,8 +112,8 @@ await step("owner sees the guest, but not their note", async () => {
   await ownerPage.getByTestId("set-guests").getByText("Gabe Guest").waitFor();
   await ownerPage.goto(`${WEB}/sets/${set.id}/songs/${(await api(owner, "GET", `/setlists/${set.id}`)).items[0].id}`);
   await ownerPage.waitForLoadState("networkidle");
-  if ((await ownerPage.locator("#my-notes").inputValue()) !== "") throw new Error("owner sees guest's note");
   await ownerPage.getByRole("link", { name: "Open in library" }).waitFor();
+  if ((await ownerPage.getByText("Capo 2, start soft").count()) > 0) throw new Error("owner sees guest's note");
 });
 
 await step("owner moves the set to their team; their songs show as shared", async () => {

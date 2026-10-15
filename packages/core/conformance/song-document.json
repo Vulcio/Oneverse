@@ -1498,6 +1498,225 @@
               }
             ]
           }
+        },
+        {
+          "name": "a repeated chorus: its passes keep their IDs",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            },
+            {
+              "content": "{start_of_verse}\n[G]Amazing grace how [G7]sweet the [C]sound\n{end_of_verse}\n{start_of_chorus}\nI [C]once was lost but [Dsus4]now am [Bm7b5]found\n{end_of_chorus}\n{chorus}\n",
+              "format": "CHORDPRO"
+            }
+          ],
+          "expected": {
+            "$schema": "song-document/v2",
+            "revision": 4,
+            "defaults": {
+              "key": "G",
+              "tempo": 72,
+              "timeSignature": {
+                "numerator": 4,
+                "denominator": 4
+              },
+              "durationSeconds": 180
+            },
+            "sections": [
+              {
+                "id": "sec_verse",
+                "type": "verse",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_v1",
+                    "kind": "lyric",
+                    "text": "Amazing grace how sweet the sound",
+                    "chords": [
+                      {
+                        "id": "chd_v1",
+                        "at": 0,
+                        "raw": "G"
+                      },
+                      {
+                        "id": "chd_v2",
+                        "at": 18,
+                        "raw": "G7"
+                      },
+                      {
+                        "id": "chd_v3",
+                        "at": 28,
+                        "raw": "C"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              },
+              {
+                "id": "sec_chorus",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_c1",
+                    "kind": "lyric",
+                    "text": "I once was lost but now am found",
+                    "chords": [
+                      {
+                        "id": "chd_c1",
+                        "at": 2,
+                        "raw": "C"
+                      },
+                      {
+                        "id": "chd_c2",
+                        "at": 20,
+                        "raw": "Dsus4"
+                      },
+                      {
+                        "id": "chd_c3",
+                        "at": 27,
+                        "raw": "Bm7b5"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              }
+            ],
+            "flow": [
+              {
+                "id": "fi_verse",
+                "sectionId": "sec_verse"
+              },
+              {
+                "id": "fi_chorus",
+                "sectionId": "sec_chorus"
+              },
+              {
+                "id": "fi_chorus2",
+                "sectionId": "sec_chorus"
+              }
+            ]
+          }
         }
       ]
     },

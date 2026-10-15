@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
 import { chartDisplayProps, displayModeOf, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
+import { useChartNotes } from "#/components/notes";
+import { useSongNotes } from "#/lib/notes";
 import { StemDock } from "#/components/stem-dock";
 import { downloadBlob } from "#/lib/download";
 import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
@@ -71,6 +73,10 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
     [song, display.chordNotation, display.capoDisplayMode],
   );
 
+  // The notes kept with it (issue #256); new ones wait for the network.
+  const notesContext = { songVersionId: song.songVersionId };
+  const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: song.document, show: display.notes, context: notesContext });
+
   useEffect(() => {
     void keysOffline("files").then((keys) => setKeptFiles(new Set(keys)));
   }, [song.songVersionId]);
@@ -100,6 +106,7 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
         </div>
         <div className="flex items-center gap-2">
         <DisplayPanel mode={displayMode} settings={display} player={player} className="h-9" />
+        {notes.button}
         <Button onClick={() => setMode("live")} render={<Link to="/library/$songVersionId/live" params={{ songVersionId: song.songVersionId }} />}>
             <Mic />
             {t("live.start")}
@@ -127,9 +134,11 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
 
       <Card>
         <CardContent>
+          {notes.top}
           <div style={{ zoom: display.textSize }}>
-            <ChartWithDiagrams chart={chart} {...chartDisplayProps(display)} player={player} songVersionId={song.songVersionId} />
+            <ChartWithDiagrams chart={chart} {...chartDisplayProps(display)} player={player} songVersionId={song.songVersionId} notes={notes.layer} />
           </div>
+          {notes.dialogs}
         </CardContent>
       </Card>
 
