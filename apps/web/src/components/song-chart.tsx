@@ -95,7 +95,7 @@ export function SongChart({
   return (
     <div
       className={cn(
-        "text-sm",
+        "relative text-sm",
         font === "sans" ? "font-sans" : "font-mono",
         spacing === "compact" ? "leading-tight" : spacing === "relaxed" ? "leading-relaxed [&_[data-line]]:mb-1" : "leading-snug",
         // Chords named as capo shapes, not as they sound (issue #219): in italics, never mistaken for the sounding ones.
@@ -106,6 +106,9 @@ export function SongChart({
       style={{
         ...(flowed && { columns: columns === "auto" ? "24rem" : `${columns} 18rem` }),
         ...(chordScale !== 1 && ({ "--chord-scale": chordScale } as CSSProperties)),
+        // Notes (issue #264): their colour for what they mark, room for the margin's.
+        ...(notes?.markColor && ({ "--note-mark": notes.markColor } as CSSProperties)),
+        ...(notes?.reserveRight ? { paddingRight: notes.reserveRight } : {}),
         // A long press adds a note (issue #256): no callout (copy, look up) over the chart.
         ...(notes?.onAdd && { WebkitTouchCallout: "none" }),
       }}
@@ -135,7 +138,7 @@ export function SongChart({
               <div className="mb-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1" data-pass-heading="">
               <p className="flex flex-wrap items-baseline gap-x-2 font-sans text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {heading ? (
-                  <span className={cn(marks?.section && "-mx-1 rounded bg-amber-200/70 px-1 text-amber-950 dark:bg-amber-400/25 dark:text-amber-100")} data-note-mark={marks?.section ? "section" : undefined}>
+                  <span className={cn(marks?.section && "-mx-1 rounded bg-[color-mix(in_oklab,var(--note-mark,#f59e0b)_35%,transparent)] px-1 text-foreground")} data-note-mark={marks?.section ? "section" : undefined}>
                     {heading}
                   </span>
                 ) : null}
@@ -182,6 +185,7 @@ export function SongChart({
                     noted={marks?.chords}
                     lineMarked={marks?.line(line.id)}
                     wordMarks={marks?.words(line.id)}
+                    room={notes?.lineRoom?.(pass, line.id)}
                   />
                   {notes?.line?.(pass, line.id)}
                 </Fragment>
@@ -191,6 +195,7 @@ export function SongChart({
           </div>
         );
       })}
+      {notes?.overlay}
     </div>
   );
 }
@@ -215,6 +220,7 @@ function ChartLine({
   noted,
   lineMarked,
   wordMarks,
+  room,
 }: {
   line: RenderedLine;
   onChordClick?: (chordId: string, element: HTMLElement, chord: RenderedChord) => void;
@@ -228,13 +234,15 @@ function ChartLine({
   lineMarked?: boolean;
   /** Words with a note on them (issue #263), as characters from-to: underlined. */
   wordMarks?: readonly (readonly [number, number])[];
+  /** Room under it for the notes beside its words (issue #264), px. */
+  room?: number;
 }) {
   const { t } = useTranslation();
   const note = line.note ? <span className="ml-2 font-sans text-xs text-amber-700 italic dark:text-amber-400">{line.note}</span> : null;
   if (line.kind === "note") return <p className="font-sans text-xs text-muted-foreground italic">{line.text}</p>;
   if (line.chords.length === 0) {
     return (
-      <p className={cn("whitespace-pre-wrap", line.inserted && "text-amber-800 dark:text-amber-300", lineMarked && LINE_MARK)} data-line="" data-line-id={line.id} data-note-mark={lineMarked ? "line" : undefined}>
+      <p className={cn("whitespace-pre-wrap", line.inserted && "text-amber-800 dark:text-amber-300", lineMarked && LINE_MARK)} data-line="" data-line-id={line.id} data-note-mark={lineMarked ? "line" : undefined} style={room ? { paddingBottom: room } : undefined}>
         {line.text ? <MarkedText text={line.text} start={0} marks={wordMarks} /> : <span data-at={0}> </span>}
         {note}
       </p>
@@ -264,7 +272,7 @@ function ChartLine({
         row.color === "family" && (family ? FAMILY_COLORS[family] : "text-primary"),
         id && replaced.has(id) && "underline decoration-amber-500 decoration-2",
         // A note on it (issue #256).
-        id && noted?.has(id) && "rounded-sm bg-amber-200/70 px-0.5 dark:bg-amber-400/25",
+        id && noted?.has(id) && "rounded-sm bg-[color-mix(in_oklab,var(--note-mark,#f59e0b)_35%,transparent)] px-0.5",
       );
     };
     const custom = row.color.startsWith("#") ? { color: row.color } : undefined;
@@ -281,6 +289,7 @@ function ChartLine({
               style={custom}
               data-chord-id={chord.id}
               data-chord-ref={chord.id}
+              data-note-mark={noted?.has(chord.id) ? "chord" : undefined}
               data-family={byId.get(chord.id)?.family ?? undefined}
               aria-label={t(action === "hide" ? "chart.hideChord" : "chart.showDiagram", { chord: label })}
               onClick={(event) => onChordClick(chord.id!, event.currentTarget, byId.get(chord.id!)!)}
@@ -288,7 +297,7 @@ function ChartLine({
               {label}
             </button>
           ) : (
-            <span className={look(chord.id)} style={custom} data-family={(chord.id && byId.get(chord.id)?.family) || undefined} data-chord-ref={chord.id}>
+            <span className={look(chord.id)} style={custom} data-family={(chord.id && byId.get(chord.id)?.family) || undefined} data-chord-ref={chord.id} data-note-mark={chord.id && noted?.has(chord.id) ? "chord" : undefined}>
               {label}
             </span>
           )}
@@ -313,7 +322,7 @@ function ChartLine({
   }
 
   return (
-    <p data-line="" data-line-id={line.id} className={cn(line.inserted && "text-amber-800 dark:text-amber-300", lineMarked && LINE_MARK)} data-note-mark={lineMarked ? "line" : undefined}>
+    <p data-line="" data-line-id={line.id} className={cn(line.inserted && "text-amber-800 dark:text-amber-300", lineMarked && LINE_MARK)} data-note-mark={lineMarked ? "line" : undefined} style={room ? { paddingBottom: room } : undefined}>
       {words.map((word, w) => (
         <Fragment key={w}>
           {/* A place the line may wrap, between words (never inside one). */}
@@ -382,7 +391,7 @@ function ChartLine({
 }
 
 /** A line with a note on it (issue #263): a bar in the margin, the text where it was. */
-const LINE_MARK = "-ml-2 border-l-2 border-amber-500/70 pl-1.5";
+const LINE_MARK = "-ml-2 border-l-2 border-[var(--note-mark,#f59e0b)] pl-1.5";
 
 /**
  * Some of a line's text, from character `start`, with the words that have a
@@ -407,7 +416,7 @@ function MarkedText({ text, start, marks }: { text: string; start: number; marks
         <span
           key={piece.from}
           data-at={start + piece.from}
-          className={cn(piece.marked && "underline decoration-amber-500 decoration-2 underline-offset-4")}
+          className={cn(piece.marked && "underline decoration-[var(--note-mark,#f59e0b)] decoration-2 underline-offset-4")}
           data-note-mark={piece.marked ? "word" : undefined}
         >
           {text.slice(piece.from, piece.to)}
@@ -454,6 +463,14 @@ export interface ChartNotesLayer {
   line?: (pass: RenderedPass, lineId: string) => ReactNode;
   /** What the pass's notes are on, marked (issue #263); none when the Display setting turns marks off. */
   marks?: (pass: RenderedPass) => PassMarks;
+  /** The notes' colour (issue #264), for the marks. */
+  markColor?: string;
+  /** Notes beside what they're on, or in the margin (issue #264): drawn over the chart. */
+  overlay?: ReactNode;
+  /** Room under a line for the notes beside its words (px). */
+  lineRoom?: (pass: RenderedPass, lineId: string) => number;
+  /** Room kept on the chart's right for the margin's notes (px). */
+  reserveRight?: number;
   /** A press and hold (or right-click) on the chart: a note on what's there. A word's `at` is the character pressed. */
   onAdd?: (anchor: NoteAnchor) => void;
 }

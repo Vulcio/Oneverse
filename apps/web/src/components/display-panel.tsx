@@ -1,4 +1,4 @@
-import { type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, TUNINGS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings } from "@songverse/core";
+import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, TUNINGS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings } from "@songverse/core";
 import {
   ArrowDown,
   Superscript,
@@ -51,11 +51,12 @@ import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@songverse/ui/components/select";
 import { useMediaQuery } from "@songverse/ui/hooks/use-media-query";
 import { changeDiagramPlayer, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
+import { noteColorValue } from "#/components/notes";
 import { cn } from "@songverse/ui/lib/utils";
 
-const SECTIONS = ["text", "chords", "instrument", "layout", "controls"] as const;
+const SECTIONS = ["text", "chords", "instrument", "layout", "notes", "controls"] as const;
 type Section = (typeof SECTIONS)[number];
-const SECTION_ICONS: Record<Section, LucideIcon> = { text: Type, chords: Music, instrument: Guitar, layout: Columns3, controls: PanelBottom };
+const SECTION_ICONS: Record<Section, LucideIcon> = { text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom };
 /** Only Live has controls to lay out (issue #224). */
 const sectionsFor = (mode: AppModeValue) => SECTIONS.filter((one) => one !== "controls" || mode === "LIVE");
 
@@ -158,7 +159,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -278,8 +279,14 @@ export function DisplayPanel({
                   ]}
                 />
               </Row>
+            </SectionBlock>
+          ) : null}
+          {sections.includes("notes") && shown("notes") ? (
+            <SectionBlock section="notes" heading={wide}>
+              {/* Ready-made ways notes show (issue #264), each a start to change. */}
+              <NotePresets style={settings.noteStyle} onChange={change} />
               {/* Notes on the chart (issue #256): every note, one's own, or none - each mode its own. */}
-              <Row label={t("display.notes")}>
+              <Row label={t("display.notesShow")}>
                 <Choices
                   value={settings.notes}
                   onChange={(notes) => change({ notes })}
@@ -317,6 +324,61 @@ export function DisplayPanel({
                   />
                 </Row>
               ) : null}
+              {/* Where notes go, and how they look (issue #264). */}
+              <Row label={t("display.notesPlacement")}>
+                <Choices
+                  value={settings.noteStyle.placement}
+                  onChange={(notesPlacement) => change({ notesPlacement })}
+                  name="notesPlacement"
+                  options={[
+                    { value: "below", label: t("display.notesBelow"), content: t("display.notesBelow") },
+                    { value: "beside", label: t("display.notesBeside"), content: t("display.notesBeside") },
+                    { value: "margin", label: t("display.notesMargin"), content: t("display.notesMargin") },
+                  ]}
+                />
+              </Row>
+              <Row label={t("display.notesLook")}>
+                <Choices
+                  value={settings.noteStyle.look}
+                  onChange={(notesLook) => change({ notesLook })}
+                  name="notesLook"
+                  options={[
+                    { value: "card", label: t("display.notesCard"), content: t("display.notesCard") },
+                    { value: "minimal", label: t("display.notesMinimal"), content: t("display.notesMinimal") },
+                    { value: "plain", label: t("display.notesPlain"), content: t("display.notesPlain") },
+                  ]}
+                />
+              </Row>
+              <Row label={t("display.notesSize")}>
+                <Choices
+                  value={settings.noteStyle.size}
+                  onChange={(notesSize) => change({ notesSize })}
+                  name="notesSize"
+                  options={[
+                    { value: "S", label: t("display.notesSmall"), content: <span className="text-[0.7rem]">A</span> },
+                    { value: "M", label: t("display.notesMedium"), content: <span className="text-xs">A</span> },
+                    { value: "L", label: t("display.notesLarge"), content: <span className="text-base">A</span> },
+                  ]}
+                />
+              </Row>
+              <Row label={t("display.notesColor")}>
+                <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("display.notesColor")}>
+                  {NOTE_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      role="radio"
+                      aria-checked={settings.noteStyle.color === color}
+                      aria-label={t(`display.noteColors.${color}`)}
+                      title={t(`display.noteColors.${color}`)}
+                      onClick={() => change({ notesColor: color })}
+                      className={cn("size-7 rounded-full border-2", settings.noteStyle.color === color ? "border-foreground" : "border-transparent")}
+                      style={{ backgroundColor: noteColorValue(color) }}
+                      data-testid={`display-notesColor-${color}`}
+                    />
+                  ))}
+                </div>
+              </Row>
             </SectionBlock>
           ) : null}
           {sections.includes("controls") && shown("controls") ? (
@@ -733,5 +795,37 @@ function Choice({ pressed, onClick, label, testId, disabled, children }: { press
     >
       {children}
     </button>
+  );
+}
+
+/** The note presets (issue #264): one tap sets where notes go and how they look; "Custom" once one of them is changed. */
+function NotePresets({ style, onChange }: { style: NoteStyle; onChange: (changes: { notesPlacement: NotePlacement; notesLook: NoteLook; notesSize: NoteSize; notesColor: NoteColor }) => void }) {
+  const { t } = useTranslation();
+  const current = notePresetOf(style);
+  return (
+    <Row label={t("display.notesPreset")}>
+      <div className="flex flex-wrap gap-1" role="radiogroup" aria-label={t("display.notesPreset")}>
+        {(Object.keys(NOTE_PRESETS) as NotePreset[]).map((name) => {
+          const preset = NOTE_PRESETS[name];
+          return (
+            <button
+              key={name}
+              type="button"
+              role="radio"
+              aria-checked={current === name}
+              onClick={() => onChange({ notesPlacement: preset.placement, notesLook: preset.look, notesSize: preset.size, notesColor: preset.color })}
+              className={cn(
+                "h-8 rounded-md border px-2.5 text-xs font-medium",
+                current === name ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+              data-testid={`display-notesPreset-${name}`}
+            >
+              {t(`display.notePresets.${name}`)}
+            </button>
+          );
+        })}
+        {current ? null : <span className="self-center px-1 text-xs text-muted-foreground" data-testid="display-notesPreset-custom">{t("display.notePresets.custom")}</span>}
+      </div>
+    </Row>
   );
 }

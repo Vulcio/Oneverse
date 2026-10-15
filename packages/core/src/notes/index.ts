@@ -130,6 +130,41 @@ export type NoteShow = (typeof NOTE_SHOWS)[number];
 export const NEW_NOTES = ["SHOW", "HOLD"] as const;
 export type NewNotes = (typeof NEW_NOTES)[number];
 
+/** Where notes go on a chart (issue #264): under what they're on, next to it, or in the margin with a line to it. */
+export const NOTE_PLACEMENTS = ["below", "beside", "margin"] as const;
+export type NotePlacement = (typeof NOTE_PLACEMENTS)[number];
+/** How a note looks: a card with its writer's picture, a light tint, or its text alone. */
+export const NOTE_LOOKS = ["card", "minimal", "plain"] as const;
+export type NoteLook = (typeof NOTE_LOOKS)[number];
+export const NOTE_SIZES = ["S", "M", "L"] as const;
+export type NoteSize = (typeof NOTE_SIZES)[number];
+export const NOTE_COLORS = ["amber", "blue", "green", "pink", "violet", "gray"] as const;
+export type NoteColor = (typeof NOTE_COLORS)[number];
+
+export interface NoteStyle {
+  placement: NotePlacement;
+  look: NoteLook;
+  size: NoteSize;
+  color: NoteColor;
+}
+
+/** Ready-made ways notes show (issue #264), each a starting point to change. */
+export const NOTE_PRESETS = {
+  standard: { placement: "below", look: "card", size: "M", color: "amber" },
+  clean: { placement: "beside", look: "plain", size: "S", color: "gray" },
+  margin: { placement: "margin", look: "minimal", size: "M", color: "amber" },
+  stage: { placement: "beside", look: "plain", size: "L", color: "amber" },
+} as const satisfies Record<string, NoteStyle>;
+export type NotePreset = keyof typeof NOTE_PRESETS;
+
+/** The preset a style is, if it's one exactly. */
+export function notePresetOf(style: NoteStyle): NotePreset | null {
+  for (const [name, preset] of Object.entries(NOTE_PRESETS) as [NotePreset, NoteStyle][]) {
+    if (preset.placement === style.placement && preset.look === style.look && preset.size === style.size && preset.color === style.color) return name;
+  }
+  return null;
+}
+
 /** The notes a viewer sees, as their Display setting says: all of them, only theirs, or none. Resolved notes stay off the chart. */
 export function shownNotes<T extends { authorId: string; resolved: boolean }>(notes: T[], show: NoteShow, viewerId: string): T[] {
   if (show === "NONE") return [];

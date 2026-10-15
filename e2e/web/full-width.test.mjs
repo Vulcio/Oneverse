@@ -35,10 +35,13 @@ try {
     if (gap < 1800) throw new Error(`the column is ${gap}px wide`);
   });
 
-  await step("Practice: the chart in columns (Auto), no section split", async () => {
+  await step("Practice: one column by default (issue #264); Auto flows it, no section split", async () => {
     await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
     await page.goto(`${WEB}/library/${song.id}`);
     await page.getByTestId("song-chart").waitFor();
+    await page.locator('[data-testid="song-chart"][data-columns="1"]').waitFor();
+    if ((await columnsOf()) !== 1) throw new Error(`${await columnsOf()} columns by default`);
+    await displaySetting(page, "layout", "display-columns-auto");
     await page.locator('[data-testid="song-chart"][data-columns="auto"]').waitFor();
     const all = await passes();
     if ((await columnsOf()) < 2) throw new Error(`one column: ${JSON.stringify(all)}`);
@@ -59,9 +62,11 @@ try {
     await displaySetting(page, "layout", "display-columns-auto");
   });
 
-  await step("Live: in columns too (Auto)", async () => {
+  await step("Live: one column by default too; Auto flows it", async () => {
     await page.goto(`${WEB}/library/${song.id}/live`);
     await page.getByTestId("song-chart").waitFor();
+    await page.locator('[data-testid="song-chart"][data-columns="1"]').waitFor();
+    await displaySetting(page, "layout", "display-columns-auto");
     await page.locator('[data-testid="song-chart"][data-columns="auto"]').waitFor();
     if ((await columnsOf()) < 2) throw new Error("one column in Live");
   });

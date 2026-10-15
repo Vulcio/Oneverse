@@ -33,7 +33,7 @@ import { isPushEndpoint, notificationEmail, notificationPush, notificationPrefer
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
 import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
-import { notePasses, resolveNoteAnchor, shownNotes } from "../notes/index.js";
+import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
 
@@ -799,6 +799,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a second row turned off keeps its settings", args: [null, { LIVE: { secondRow: { on: false, names: "ROMAN", position: "above" } } }, "LIVE"] },
           { name: "colours by chord type from the account", args: [{ chordColors: true }, null, "LIVE"] },
           { name: "Live shows new notes at once, nothing marked (issue #263)", args: [null, { LIVE: { newNotes: "SHOW", noteMarks: false } }, "LIVE"] },
+          { name: "notes in the margin, plain, large, in blue (issue #264)", args: [null, { PRACTICE: { notesPlacement: "margin", notesLook: "plain", notesSize: "L", notesColor: "blue" } }, "PRACTICE"] },
           { name: "diagrams docked at the bottom", args: [{ chordDiagrams: "GUITAR" }, { LIVE: { diagramsPosition: "bottom" } }, "LIVE"] },
           { name: "Live's controls floating, some hidden", args: [null, { LIVE: { controls: "floating", controlsPosition: "right", hiddenControls: ["metronome", "transpose"], controlsOpacity: 0.4 } }, "LIVE"] },
           { name: "no account settings", args: [null, null, "EDIT"] },
@@ -1658,6 +1659,16 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "all", args: [[{ id: "n1", authorId: "u1", resolved: false }, { id: "n2", authorId: "u2", resolved: false }, { id: "n3", authorId: "u2", resolved: true }], "ALL", "u1"] },
           { name: "mine", args: [[{ id: "n1", authorId: "u1", resolved: false }, { id: "n2", authorId: "u2", resolved: false }], "MINE", "u1"] },
           { name: "none", args: [[{ id: "n1", authorId: "u1", resolved: false }], "NONE", "u1"] },
+        ],
+      },
+      notePresetOf: {
+        about: "The preset a note style is (issue #264), when its placement, look, size and colour all match one; else none (changed from it).",
+        params: ["style"],
+        run: notePresetOf,
+        cases: [
+          { name: "the standard one", args: [{ placement: "below", look: "card", size: "M", color: "amber" }] },
+          { name: "on stage", args: [{ placement: "beside", look: "plain", size: "L", color: "amber" }] },
+          { name: "the margin one in another colour", args: [{ placement: "margin", look: "minimal", size: "M", color: "blue" }] },
         ],
       },
     },

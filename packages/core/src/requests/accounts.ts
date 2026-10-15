@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { NEW_NOTES, NOTE_SHOWS } from "../notes/index.js";
+import { NEW_NOTES, NOTE_COLORS, NOTE_LOOKS, NOTE_PLACEMENTS, NOTE_SHOWS, NOTE_SIZES } from "../notes/index.js";
 import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
 import { TUNINGS } from "../chords/shapes.js";
 import { clearableText, optional, requiredText } from "./fields.js";
@@ -82,6 +82,11 @@ export const DisplaySettingsSchema = z.strictObject({
   noteMarks: z.boolean().nullable().optional(),
   /** Someone else's new notes: shown at once, or held until a tap (issue #263). */
   newNotes: z.enum(NEW_NOTES).nullable().optional(),
+  /** Where notes go and how they look (issue #264). */
+  notesPlacement: z.enum(NOTE_PLACEMENTS).nullable().optional(),
+  notesLook: z.enum(NOTE_LOOKS).nullable().optional(),
+  notesSize: z.enum(NOTE_SIZES).nullable().optional(),
+  notesColor: z.enum(NOTE_COLORS).nullable().optional(),
 });
 export type DisplaySettingsRequest = z.input<typeof DisplaySettingsSchema>;
 

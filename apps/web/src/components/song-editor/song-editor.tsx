@@ -930,7 +930,7 @@ function EditorNotes({ version, songbookId, openNoteId, openSignal }: { version:
   const display = useDisplaySettings("EDIT");
   const chart = useMemo(() => renderChart(version.documentJson), [version.documentJson]);
   const context = { songVersionId: version.id, songbookId };
-  const notes = useChartNotes({ state: useSongNotes(context), chart, document: version.documentJson, show: display.notes, marks: display.noteMarks, context, openNoteId });
+  const notes = useChartNotes({ state: useSongNotes(context), chart, document: version.documentJson, show: display.notes, marks: display.noteMarks, style: display.noteStyle, context, openNoteId });
   const { openList } = notes;
   useEffect(() => {
     if (openSignal > 0) openList();

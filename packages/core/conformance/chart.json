@@ -3679,7 +3679,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "SOLFEGE",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -3693,6 +3693,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3730,7 +3736,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "NASHVILLE",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -3744,6 +3750,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "SHOW",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3776,7 +3788,7 @@
             "sizesLinked": false,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -3790,6 +3802,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3824,7 +3842,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -3838,6 +3856,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {
               "source": "FINGERED",
               "position": "beside"
@@ -3886,7 +3910,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "NASHVILLE",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -3900,6 +3924,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "SHOW",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -3935,7 +3965,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -3949,6 +3979,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {
               "names": "ROMAN",
               "position": "right",
@@ -3997,7 +4033,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -4011,6 +4047,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {
               "names": "ROMAN",
               "position": "above"
@@ -4043,7 +4085,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": true,
             "capoDisplayMode": "SOUNDING",
@@ -4057,6 +4099,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4089,7 +4137,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -4103,6 +4151,66 @@
             "notes": "ALL",
             "noteMarks": false,
             "newNotes": "SHOW",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
+            "secondRowKept": {},
+            "chordRows": {
+              "main": {
+                "names": "LETTERS",
+                "source": "SOUNDING",
+                "size": 1,
+                "font": "same",
+                "weight": "bold",
+                "color": "theme"
+              },
+              "second": null
+            }
+          }
+        },
+        {
+          "name": "notes in the margin, plain, large, in blue (issue #264)",
+          "args": [
+            null,
+            {
+              "PRACTICE": {
+                "notesPlacement": "margin",
+                "notesLook": "plain",
+                "notesSize": "L",
+                "notesColor": "blue"
+              }
+            },
+            "PRACTICE"
+          ],
+          "expected": {
+            "textSize": 1,
+            "chordSize": 1,
+            "sizesLinked": true,
+            "font": "mono",
+            "spacing": "normal",
+            "columns": "1",
+            "chordNotation": "LETTERS",
+            "chordColors": false,
+            "capoDisplayMode": "SOUNDING",
+            "chordDiagrams": "OFF",
+            "diagramsPosition": "top",
+            "hideChords": false,
+            "controls": "footer",
+            "controlsPosition": "bottom-right",
+            "hiddenControls": [],
+            "controlsOpacity": 0.7,
+            "notes": "ALL",
+            "noteMarks": true,
+            "newNotes": "SHOW",
+            "noteStyle": {
+              "placement": "margin",
+              "look": "plain",
+              "size": "L",
+              "color": "blue"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4136,7 +4244,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -4150,6 +4258,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4187,7 +4301,7 @@
             "sizesLinked": true,
             "font": "mono",
             "spacing": "normal",
-            "columns": "auto",
+            "columns": "1",
             "chordNotation": "LETTERS",
             "chordColors": false,
             "capoDisplayMode": "SOUNDING",
@@ -4204,6 +4318,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "HOLD",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {
@@ -4245,6 +4365,12 @@
             "notes": "ALL",
             "noteMarks": true,
             "newNotes": "SHOW",
+            "noteStyle": {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            },
             "secondRowKept": {},
             "chordRows": {
               "main": {

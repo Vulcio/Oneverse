@@ -13,7 +13,7 @@ import type {
 } from "../constants/index.js";
 import { APP_MODES } from "../constants/index.js";
 import type { DisplaySettings } from "../api-client/index.js";
-import type { NewNotes, NoteShow } from "../notes/index.js";
+import { NOTE_PRESETS, type NewNotes, type NoteShow, type NoteStyle } from "../notes/index.js";
 import { chordRowNotation, type ChordRow, type SecondChordRow } from "./chord-rows.js";
 
 /**
@@ -53,6 +53,8 @@ export interface EffectiveDisplaySettings {
   noteMarks: boolean;
   /** Someone else's new notes (issue #263): held until a tap in Live, else shown at once. */
   newNotes: NewNotes;
+  /** Where notes go and how they look (issue #264): the Standard preset unless changed. */
+  noteStyle: NoteStyle;
 }
 
 export type SavedDisplaySettings = Partial<Record<AppModeValue, DisplaySettings>>;
@@ -86,7 +88,8 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     sizesLinked: own.chordSize == null,
     font: own.font ?? "mono",
     spacing: own.spacing ?? "normal",
-    columns: own.columns ?? "auto",
+    // One column unless asked (issue #264): the room on the right is for other things, notes first. The editor's preview flows.
+    columns: own.columns ?? (mode === "EDIT" ? "auto" : "1"),
     chordNotation: chordRowNotation(main.names),
     chordColors: main.color === "family",
     capoDisplayMode: main.source,
@@ -100,6 +103,12 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     notes: own.notes ?? "ALL",
     noteMarks: own.noteMarks ?? true,
     newNotes: own.newNotes ?? (mode === "LIVE" ? "HOLD" : "SHOW"),
+    noteStyle: {
+      placement: own.notesPlacement ?? NOTE_PRESETS.standard.placement,
+      look: own.notesLook ?? NOTE_PRESETS.standard.look,
+      size: own.notesSize ?? NOTE_PRESETS.standard.size,
+      color: own.notesColor ?? NOTE_PRESETS.standard.color,
+    },
     secondRowKept: Object.fromEntries(Object.entries(own.secondRow ?? {}).filter(([field]) => field !== "on")) as Partial<SecondChordRow>,
     chordRows: {
       main,

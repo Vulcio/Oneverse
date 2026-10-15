@@ -265,6 +265,14 @@ try {
       await api(me, "POST", "/notes", { songVersionId: grace.id, content: fr ? "Capo 3, commencer doucement" : "Capo 3, start soft", place: "ME" });
     }
     await shoot("set-song", `/sets/${set.id}/songs/${items[0].id}`, () => page.locator("[data-note-id]").first().waitFor(), { fullPage: true });
+    // Notes in the margin (issue #264): numbered, a line to what each is on.
+    {
+      const margin = { notesPlacement: "margin", notesLook: "minimal", notesSize: "M", notesColor: "amber" };
+      await api(me, "PATCH", "/users/me", { displaySettings: { EDIT: margin, PRACTICE: margin, LIVE: margin } });
+      await shoot("notes-margin", `/sets/${set.id}/songs/${items[0].id}`, () => page.locator("[data-note-connector]").first().waitFor({ state: "attached" }), { element: page.getByTestId("song-chart") });
+      const back = { notesPlacement: null, notesLook: null, notesSize: null, notesColor: null };
+      await api(me, "PATCH", "/users/me", { displaySettings: { EDIT: back, PRACTICE: back, LIVE: back } });
+    }
     // The Display panel (issue #209), on a phone: the bottom of the screen, the chart still in view.
     await page.setViewportSize({ width: 390, height: 844 });
     // Adding a note on a word, on a phone (issue #256): where it's saved says who sees it.

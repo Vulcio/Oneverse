@@ -44,6 +44,10 @@ Each note shows where it's pinned:
 - a line's, a chord's or a word's under the line, with the chord or the word it's about;
 - notes between two sections after the first.
 
+That's the **Standard** way. In the [Display](/display/) panel, **Notes** > **Where** can put them **Beside** what they're on (under the word or chord, the lines moving apart to make room) or in the **Margin** on the right of a large screen (each one numbered, the same number on what it's on, a thin line leading to it; pointing at a note lights up what it's on). **Look**, **Size** and **Colour** change how they look, from a card with the writer's picture to plain text, and the presets (**Standard**, **Clean**, **Margin**, **Stage**) set them all at once. Each mode keeps its own.
+
+![Notes in the margin, numbered, a line to what each is on](../../assets/screenshots/en/notes-margin.jpg)
+
 What a note is on is marked on the chart too: a chord is highlighted, a word underlined, a line gets a bar in the margin, a section its name highlighted. **Marks** in the [Display](/display/) panel turns the marks off, keeping the notes. Each note shows its writer's picture or initials and how many replies it has. If what a note was pinned to is deleted, the note moves up: from a chord to its line, from a line to its section, from a section to the whole song. A small arrow says it moved. A note is never lost to an edit.
 
 ## Replies
@@ -83,7 +87,7 @@ A dot marks a note that's new since you last opened the song on this device: wri
 
 ## Showing notes, mode by mode
 
-In [Display](/display/), **Layout** > **Notes** sets what the chart shows in each mode: **All notes** (the default), **My notes**, or **No notes**. Practice and Live keep their own choice, so Live can show only your notes while Practice shows everyone's.
+In [Display](/display/), **Notes** > **Show** sets what the chart shows in each mode: **All notes** (the default), **My notes**, or **No notes**. Practice and Live keep their own choice, so Live can show only your notes while Practice shows everyone's.
 
 ## Offline
 

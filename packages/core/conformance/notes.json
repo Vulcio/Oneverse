@@ -3029,6 +3029,50 @@
           "expected": []
         }
       ]
+    },
+    "notePresetOf": {
+      "about": "The preset a note style is (issue #264), when its placement, look, size and colour all match one; else none (changed from it).",
+      "params": [
+        "style"
+      ],
+      "cases": [
+        {
+          "name": "the standard one",
+          "args": [
+            {
+              "placement": "below",
+              "look": "card",
+              "size": "M",
+              "color": "amber"
+            }
+          ],
+          "expected": "standard"
+        },
+        {
+          "name": "on stage",
+          "args": [
+            {
+              "placement": "beside",
+              "look": "plain",
+              "size": "L",
+              "color": "amber"
+            }
+          ],
+          "expected": "stage"
+        },
+        {
+          "name": "the margin one in another colour",
+          "args": [
+            {
+              "placement": "margin",
+              "look": "minimal",
+              "size": "M",
+              "color": "blue"
+            }
+          ],
+          "expected": null
+        }
+      ]
     }
   }
 }

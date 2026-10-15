@@ -44,6 +44,10 @@ Chaque note s'affiche là où elle est attachée :
 - celles d'une ligne, d'un accord ou d'un mot sous la ligne, avec l'accord ou le mot concerné ;
 - celles entre deux parties après la première.
 
+C'est l'affichage **Standard**. Dans le panneau [Affichage](/fr/display/), **Notes** > **Où** peut les mettre **À côté** de ce qu'elles portent (sous le mot ou l'accord, les lignes s'écartant pour leur faire place) ou dans la **Marge** à droite d'un grand écran (chacune numérotée, le même numéro sur ce qu'elle porte, un trait fin qui y mène ; pointer une note éclaire ce qu'elle porte). **Style**, **Taille** et **Couleur** changent leur apparence, d'une carte avec la photo de l'auteur au texte seul, et les préréglages (**Standard**, **Épuré**, **Marge**, **Scène**) les règlent d'un coup. Chaque mode garde les siens.
+
+![Des notes dans la marge, numérotées, un trait vers ce que chacune porte](../../../assets/screenshots/fr/notes-margin.jpg)
+
 Ce que porte une note est aussi marqué sur la grille : un accord est surligné, un mot souligné, une ligne a une barre dans la marge, une partie son nom surligné. **Repères** dans le panneau [Affichage](/fr/display/) retire ces repères, en gardant les notes. Chaque note montre la photo ou les initiales de son auteur, et son nombre de réponses. Si ce à quoi une note était attachée est supprimé, la note remonte : d'un accord à sa ligne, d'une ligne à sa partie, d'une partie à tout le chant. Une petite flèche indique qu'elle a été déplacée. Une modification ne fait jamais perdre une note.
 
 ## Réponses
@@ -83,7 +87,7 @@ Un point marque une note nouvelle depuis la dernière fois que vous avez ouvert 
 
 ## Afficher les notes, mode par mode
 
-Dans [Affichage](/fr/display/), **Mise en page** > **Notes** règle ce que la grille montre dans chaque mode : **Toutes les notes** (par défaut), **Mes notes** ou **Aucune note**. Session et Live gardent chacun leur choix : Live peut ne montrer que vos notes pendant que Session montre celles de tout le monde.
+Dans [Affichage](/fr/display/), **Notes** > **Afficher** règle ce que la grille montre dans chaque mode : **Toutes les notes** (par défaut), **Mes notes** ou **Aucune note**. Session et Live gardent chacun leur choix : Live peut ne montrer que vos notes pendant que Session montre celles de tout le monde.
 
 ## Hors ligne
 

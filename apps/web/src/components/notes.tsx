@@ -1,10 +1,16 @@
 import {
+  NOTE_PRESETS,
   notePasses,
   prettyChord,
   shownNotes,
   type NoteAnchor,
   type NotePlaceChoice,
+  type NoteColor,
+  type NoteLook,
   type NoteShow,
+  type NoteSize,
+  type NotePlacement,
+  type NoteStyle,
   type RenderedChart,
   type RenderedPass,
   type SongDocumentV2,
@@ -20,6 +26,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Textarea } from "@songverse/ui/components/textarea";
 import { cn } from "@songverse/ui/lib/utils";
 import type { ChartNotesLayer, PassMarks } from "#/components/song-chart";
+import { MARGIN_WIDTH, NotesOverlay, type OverlayLayout, type OverlayNote } from "#/components/notes-overlay";
 import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
 import { usePresence, useSongPresence } from "#/lib/live-notes";
 import { PresenceChip } from "#/components/presence";
@@ -80,24 +87,92 @@ function short(text: string, max = 32): string {
 }
 
 /** A note on the chart: who wrote it, what it says, its replies; a tap opens it. */
-export function NoteChip({ note, label, onOpen, isNew = false }: { note: Note; label?: string; onOpen: (noteId: string) => void; /** Written or replied to since one last opened the song (issue #27). */ isNew?: boolean }) {
+/** Each colour's looks (issue #264): a card, a light tint, plain text; and its value, for marks and lines. */
+const NOTE_COLOR_CLASSES: Record<NoteColor, Record<NoteLook, string> & { value: string }> = {
+  amber: {
+    card: "border-amber-300/70 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 dark:hover:bg-amber-400/20",
+    minimal: "bg-amber-100/80 text-amber-950 hover:bg-amber-200/80 dark:bg-amber-400/15 dark:text-amber-100",
+    plain: "text-amber-700 hover:underline dark:text-amber-300",
+    value: "#f59e0b",
+  },
+  blue: {
+    card: "border-sky-300/70 bg-sky-50 text-sky-950 hover:bg-sky-100 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-100 dark:hover:bg-sky-400/20",
+    minimal: "bg-sky-100/80 text-sky-950 hover:bg-sky-200/80 dark:bg-sky-400/15 dark:text-sky-100",
+    plain: "text-sky-700 hover:underline dark:text-sky-300",
+    value: "#0ea5e9",
+  },
+  green: {
+    card: "border-emerald-300/70 bg-emerald-50 text-emerald-950 hover:bg-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100 dark:hover:bg-emerald-400/20",
+    minimal: "bg-emerald-100/80 text-emerald-950 hover:bg-emerald-200/80 dark:bg-emerald-400/15 dark:text-emerald-100",
+    plain: "text-emerald-700 hover:underline dark:text-emerald-300",
+    value: "#10b981",
+  },
+  pink: {
+    card: "border-pink-300/70 bg-pink-50 text-pink-950 hover:bg-pink-100 dark:border-pink-400/30 dark:bg-pink-400/10 dark:text-pink-100 dark:hover:bg-pink-400/20",
+    minimal: "bg-pink-100/80 text-pink-950 hover:bg-pink-200/80 dark:bg-pink-400/15 dark:text-pink-100",
+    plain: "text-pink-700 hover:underline dark:text-pink-300",
+    value: "#ec4899",
+  },
+  violet: {
+    card: "border-violet-300/70 bg-violet-50 text-violet-950 hover:bg-violet-100 dark:border-violet-400/30 dark:bg-violet-400/10 dark:text-violet-100 dark:hover:bg-violet-400/20",
+    minimal: "bg-violet-100/80 text-violet-950 hover:bg-violet-200/80 dark:bg-violet-400/15 dark:text-violet-100",
+    plain: "text-violet-700 hover:underline dark:text-violet-300",
+    value: "#8b5cf6",
+  },
+  gray: {
+    card: "border-zinc-300/70 bg-zinc-50 text-zinc-900 hover:bg-zinc-100 dark:border-zinc-400/30 dark:bg-zinc-400/10 dark:text-zinc-100 dark:hover:bg-zinc-400/20",
+    minimal: "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-400/15 dark:text-zinc-100",
+    plain: "text-zinc-600 hover:underline dark:text-zinc-300",
+    value: "#71717a",
+  },
+};
+const NOTE_SIZE_CLASSES: Record<NoteSize, string> = { S: "text-[0.7rem]", M: "text-xs", L: "text-base" };
+
+/** A note's colour, for what it marks and the lines leading to it (issue #264). */
+export const noteColorValue = (color: NoteColor) => NOTE_COLOR_CLASSES[color].value;
+
+export function NoteChip({
+  note,
+  label,
+  onOpen,
+  isNew = false,
+  look = "card",
+  size = "M",
+  color = "amber",
+}: {
+  note: Note;
+  label?: string;
+  onOpen: (noteId: string) => void;
+  /** Written or replied to since one last opened the song (issue #27). */
+  isNew?: boolean;
+  /** How it looks (issue #264): a card with its writer's picture, a light tint, or its text alone. */
+  look?: NoteLook;
+  size?: NoteSize;
+  color?: NoteColor;
+}) {
   const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={() => onOpen(note.id)}
       className={cn(
-        "inline-flex max-w-full items-start gap-1.5 rounded-md border border-amber-300/70 bg-amber-50 px-1.5 py-1 text-left font-sans text-xs leading-snug text-amber-950 hover:bg-amber-100 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 dark:hover:bg-amber-400/20",
-        "pointer-coarse:min-h-9 pointer-coarse:items-center",
+        "inline-flex max-w-full items-start gap-1.5 text-left font-sans leading-snug",
+        NOTE_SIZE_CLASSES[size],
+        NOTE_COLOR_CLASSES[color][look],
+        look === "card" && "rounded-md border px-1.5 py-1",
+        look === "minimal" && "rounded px-1.5 py-0.5",
+        look === "plain" && "italic",
+        look !== "plain" && "pointer-coarse:min-h-9 pointer-coarse:items-center",
         note.pending && "border-dashed opacity-80",
       )}
+      data-note-look={look}
       title={note.placeName ?? undefined}
       aria-label={t("songNotes.open", { name: note.author.displayName, content: note.content })}
       data-note-id={note.id}
       data-note-place={note.place}
       data-note-new={isNew ? "" : undefined}
     >
-      <PersonAvatar name={note.author.displayName} avatarUrl={note.author.avatarUrl} size={16} className="mt-px" />
+      {look === "card" ? <PersonAvatar name={note.author.displayName} avatarUrl={note.author.avatarUrl} size={16} className="mt-px" /> : null}
       {isNew ? <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" role="img" aria-label={t("songNotes.new")} title={t("songNotes.new")} /> : null}
       {label ? <span className="shrink-0 font-semibold">{label}</span> : null}
       <span className="line-clamp-2 min-w-0 break-words whitespace-pre-wrap">{note.content}</span>
@@ -113,12 +188,24 @@ export function NoteChip({ note, label, onOpen, isNew = false }: { note: Note; l
   );
 }
 
-function Chips({ notes, labelOf, onOpen, isNew }: { notes: Note[]; labelOf?: (note: Note) => string | undefined; onOpen: (noteId: string) => void; isNew?: (note: Note) => boolean }) {
+function Chips({
+  notes,
+  labelOf,
+  onOpen,
+  isNew,
+  style,
+}: {
+  notes: Note[];
+  labelOf?: (note: Note) => string | undefined;
+  onOpen: (noteId: string) => void;
+  isNew?: (note: Note) => boolean;
+  style?: NoteStyle;
+}) {
   if (notes.length === 0) return null;
   return (
-    <div className="my-1 flex flex-wrap gap-1" data-notes="">
+    <div className={cn("my-1 flex flex-wrap", style?.look === "plain" ? "gap-x-3 gap-y-0.5" : "gap-1")} data-notes="">
       {notes.map((note) => (
-        <NoteChip key={note.id} note={note} label={labelOf?.(note)} onOpen={onOpen} isNew={isNew?.(note)} />
+        <NoteChip key={note.id} note={note} label={labelOf?.(note)} onOpen={onOpen} isNew={isNew?.(note)} look={style?.look} size={style?.size} color={style?.color} />
       ))}
     </div>
   );
@@ -136,6 +223,7 @@ export function useChartNotes({
   context,
   openNoteId,
   marks = true,
+  style = NOTE_PRESETS.standard,
 }: {
   state: SongNotesState;
   chart: RenderedChart;
@@ -147,8 +235,13 @@ export function useChartNotes({
   context: NotesContext;
   /** A note's thread to open first (a notification's link). */
   openNoteId?: string;
+  /** The mode's Display settings (issue #264): where notes go, and how they look. */
+  style?: NoteStyle;
 }) {
   const [threadId, setThreadId] = useState<string | null>(openNoteId ?? null);
+  // Beside or in the margin (issue #264): what the overlay measured - the room under lines, and whether the margin fits.
+  const [layout, setLayout] = useState<OverlayLayout>({ room: {}, marginFits: true });
+  const placement: NotePlacement = style.placement === "margin" && !layout.marginFits ? "below" : style.placement;
   const [adding, setAdding] = useState<NoteAnchor | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const labelOf = useAnchorLabel(chart, document);
@@ -167,14 +260,18 @@ export function useChartNotes({
     const chords = new Map<string, Set<string>>();
     // What each note is on, marked on the chart (issue #263): a word's characters, a line, a section.
     const words = new Map<string, [number, number][]>();
+    // Beside or in the margin (issue #264): the notes on a chord, a word, a line or a section, placed by the overlay.
+    const floating: { note: Note; passId: string }[] = [];
     const markedLines = new Set<string>();
     const sections = new Set<string>();
     const push = (map: Map<string, Note[]>, key: string, note: Note) => map.set(key, [...(map.get(key) ?? []), note]);
+    const floats = (kind: NoteAnchor["kind"]) => style.placement !== "below" && (kind === "chord" || kind === "word" || kind === "line" || kind === "section");
     for (const note of visible) {
       const passes = notePasses(chart, note.anchor);
       if (passes.length === 0) top.push(note);
       for (const passId of passes) {
         const anchor = note.anchor;
+        if (floats(anchor.kind)) floating.push({ note, passId });
         if (anchor.kind === "section") {
           push(section, passId, note);
           sections.add(passId);
@@ -194,14 +291,42 @@ export function useChartNotes({
         }
       }
     }
-    return { top, section, after, lines, chords, words, markedLines, sections };
-  }, [state.notes, state.me, show, chart]);
+    return { top, section, after, lines, chords, words, markedLines, sections, floating };
+  }, [state.notes, state.me, show, chart, style.placement]);
 
   const chipLabel = (note: Note) => (note.anchor.kind === "chord" || note.anchor.kind === "word" ? labelOf(note.anchor).replace(/^\S+\s/, "") : undefined);
+  // Beside or in the margin, those notes are the overlay's; below (or the margin not fitting), under what they're on.
+  const floating = placement !== "below";
+  const notFloating = (notes: Note[]) => (floating ? notes.filter((note) => !(note.anchor.kind === "chord" || note.anchor.kind === "word" || note.anchor.kind === "line" || note.anchor.kind === "section")) : notes);
+  const overlayNotes = useMemo<OverlayNote[]>(
+    () =>
+      style.placement === "below"
+        ? []
+        : placed.floating.map(({ note, passId }) => ({
+            id: `${passId}:${note.id}`,
+            passId,
+            anchor: note.anchor,
+            node: <NoteChip note={note} onOpen={setThreadId} isNew={isNew(note)} look={style.look} size={style.size} color={style.color} />,
+          })),
+    [placed, style, isNew],
+  );
   const layer: ChartNotesLayer = {
-    section: (pass) => <Chips notes={placed.section.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} />,
-    afterPass: (pass) => <Chips notes={placed.after.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} />,
-    line: (pass, lineId) => <Chips notes={placed.lines.get(`${pass.id}|${lineId}`) ?? []} labelOf={chipLabel} onOpen={setThreadId} isNew={isNew} />,
+    section: (pass) => <Chips notes={notFloating(placed.section.get(pass.id) ?? [])} onOpen={setThreadId} isNew={isNew} style={style} />,
+    afterPass: (pass) => <Chips notes={placed.after.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} style={style} />,
+    line: (pass, lineId) => <Chips notes={notFloating(placed.lines.get(`${pass.id}|${lineId}`) ?? [])} labelOf={chipLabel} onOpen={setThreadId} isNew={isNew} style={style} />,
+    markColor: noteColorValue(style.color),
+    ...(style.placement !== "below" && {
+      overlay: (
+        <NotesOverlay
+          notes={placement === "below" ? [] : overlayNotes}
+          placement={style.placement}
+          color={noteColorValue(style.color)}
+          onLayout={setLayout}
+        />
+      ),
+      lineRoom: (pass: RenderedPass, lineId: string) => (placement === "beside" ? (layout.room[`${pass.id}|${lineId}`] ?? 0) : 0),
+      reserveRight: placement === "margin" ? MARGIN_WIDTH + 40 : 0,
+    }),
     ...(marks && {
       marks: (pass: RenderedPass): PassMarks => ({
         chords: placed.chords.get(pass.id) ?? EMPTY,
@@ -260,7 +385,7 @@ export function useChartNotes({
     top:
       placed.top.length > 0 ? (
         <div data-testid="song-notes-top">
-          <Chips notes={placed.top} labelOf={(note) => (note.anchor.kind === "song" ? undefined : labelOf(note.anchor))} onOpen={setThreadId} isNew={isNew} />
+          <Chips notes={placed.top} labelOf={(note) => (note.anchor.kind === "song" ? undefined : labelOf(note.anchor))} onOpen={setThreadId} isNew={isNew} style={style} />
         </div>
       ) : null,
     dialogs,

@@ -46,7 +46,7 @@ await step("Practice: right-click a chord, a note on it saved in the team", asyn
   const chip = chart().locator("[data-note-id]", { hasText: "Let ring" });
   await chip.waitFor();
   if (!(await chip.textContent()).includes("G7")) throw new Error("the chip doesn't say which chord");
-  if (!(await chart().locator("[data-chord-ref]", { hasText: "G7" }).first().getAttribute("class")).includes("bg-amber")) throw new Error("the chord isn't marked");
+  if ((await chart().locator("[data-chord-ref]", { hasText: "G7" }).first().getAttribute("data-note-mark")) !== "chord") throw new Error("the chord isn't marked");
 });
 
 await step("…a word, just for me", async () => {
@@ -74,11 +74,39 @@ await step("what each note is on is marked on the chart: the word, the section (
   await chart().locator('[data-note-mark="word"]', { hasText: "grace" }).waitFor();
   await chart().locator('[data-note-mark="section"]').first().waitFor();
   // Display > Marks: off takes the marks away, not the notes.
-  await displaySetting(page, "layout", "display-noteMarks-off");
+  await displaySetting(page, "notes", "display-noteMarks-off");
   await chart().locator("[data-note-mark]").first().waitFor({ state: "detached" });
   if ((await chart().locator("[data-note-id]").count()) === 0) throw new Error("the notes went with the marks");
-  await displaySetting(page, "layout", "display-noteMarks-on");
+  await displaySetting(page, "notes", "display-noteMarks-on");
   await chart().locator('[data-note-mark="word"]').first().waitFor();
+});
+
+await step("Display > Notes: beside what they're on, in the margin with numbered lines, or below; presets (issue #264)", async () => {
+  const chart = () => page.getByTestId("song-chart");
+  const sure = (label, promise) => promise.catch((error) => {
+    throw new Error(`${label}: ${error.message.split("\n")[0]}`);
+  });
+  // Margin: on the right, each with a line and a number on what it's on.
+  await displaySetting(page, "notes", "display-notesPreset-margin");
+  await sure("chart().locator('[data-notes-overlay='margin'] [data-note-placed]').fi", chart().locator('[data-notes-overlay="margin"] [data-note-placed]').first().waitFor());
+  await sure("chart().locator('[data-note-connector]').first().waitFor()", chart().locator("[data-note-connector]").first().waitFor({ state: "attached" }));
+  await sure("chart().getByTestId('note-number-1').waitFor()", chart().getByTestId("note-number-1").waitFor());
+  await sure("chart().getByTestId('note-number-target-1').waitFor()", chart().getByTestId("note-number-target-1").waitFor());
+  // Beside: under the word or chord, no lines; the line under it has room for them.
+  await displaySetting(page, "notes", "display-notesPreset-stage");
+  await sure("chart().locator('[data-notes-overlay='beside'] [data-note-placed]', { ", chart().locator('[data-notes-overlay="beside"] [data-note-placed]', { hasText: "Hold it" }).waitFor());
+  if ((await chart().locator("[data-note-connector]").count()) > 0) throw new Error("lines beside");
+  const placed = await chart().locator("[data-note-placed]", { hasText: "Hold it" }).boundingBox();
+  const word = await chart().locator('[data-note-mark="word"]', { hasText: "grace" }).boundingBox();
+  if (!placed || !word || placed.y < word.y + word.height - 2 || Math.abs(placed.x - word.x) > 4) throw new Error(`not under its word: ${JSON.stringify({ placed, word })}`);
+  if ((await chart().locator('[data-note-look="plain"]').count()) === 0) throw new Error("not plain");
+  // A look changed: no preset any more, and back to the standard one.
+  await displaySetting(page, "notes", "display-notesColor-blue");
+  await page.getByTestId("display-open").first().click();
+  await sure("page.getByTestId('display-panel').getByTestId('display-notesPreset-cus", page.getByTestId("display-panel").getByTestId("display-notesPreset-custom").waitFor());
+  await page.keyboard.press("Escape");
+  await displaySetting(page, "notes", "display-notesPreset-standard");
+  await sure("chart().locator('[data-notes] [data-note-look='card']').first().waitFo", chart().locator('[data-notes] [data-note-look="card"]').first().waitFor());
 });
 
 await step("a team member sees the team's note, not someone's own; replies in its thread", async () => {
@@ -153,7 +181,7 @@ await step("Display: Practice shows only my notes; Live still shows all", async 
   const panel = page.getByTestId("display-panel");
   if (await panel.getByTestId("display-section").isVisible()) {
     await panel.getByTestId("display-section").click();
-    await page.getByTestId("display-section-layout").click();
+    await page.getByTestId("display-section-notes").click();
   }
   await panel.getByTestId("display-notes-MINE").click();
   await chart().locator("[data-note-id]").first().waitFor({ state: "detached" });
@@ -215,7 +243,7 @@ await step("live in Live: held behind Notes changed, shown on a tap - nothing mo
 });
 
 await step("Live's Display: new notes at once, no button to tap (issue #263)", async () => {
-  await displaySetting(page, "layout", "display-newNotes-SHOW");
+  await displaySetting(page, "notes", "display-newNotes-SHOW");
   const live = page.getByTestId("live-song");
   await api(owner, "POST", "/notes", { songVersionId: song.id, content: "Straight in", place: "SONG" });
   await live.getByText("Straight in").waitFor({ timeout: 5000 });

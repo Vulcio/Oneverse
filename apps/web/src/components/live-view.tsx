@@ -537,7 +537,7 @@ export function LiveView({
 function LiveChartWithNotes({ song, notes: source, chart, display }: { song: LiveSong; notes: NonNullable<LiveSong["notes"]>; chart: RenderedChart; display: EffectiveDisplaySettings }) {
   const { t } = useTranslation();
   // Someone else's new notes: held behind a button, unless Live's Display says at once (issue #263).
-  const notes = useChartNotes({ state: useSongNotes(source.context, { hold: display.newNotes === "HOLD" }), chart, document: source.document, show: display.notes, marks: display.noteMarks, context: source.context });
+  const notes = useChartNotes({ state: useSongNotes(source.context, { hold: display.newNotes === "HOLD" }), chart, document: source.document, show: display.notes, marks: display.noteMarks, style: display.noteStyle, context: source.context });
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-2">
