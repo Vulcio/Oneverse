@@ -151,6 +151,60 @@ try {
     await tv.getByTestId("widget-current-slide").waitFor();
   });
 
+  await step("more widgets (issue #272): the sections, the song's structure, the set's items, an analog clock, a countdown's colours by time", async () => {
+    const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.id === theme.id);
+    const widgets = [
+      { id: "section", kind: "current-section", x: 0, y: 0, w: 6, h: 6 },
+      { id: "after", kind: "next-section", x: 0, y: 6, w: 6, h: 3 },
+      { id: "structure", kind: "song-structure", x: 0, y: 9, w: 6, h: 3 },
+      { id: "item", kind: "current-item", x: 6, y: 0, w: 6, h: 2 },
+      { id: "next-item", kind: "next-item", x: 6, y: 2, w: 6, h: 2 },
+      { id: "dial", kind: "analog-clock", x: 6, y: 4, w: 3, h: 4, options: { seconds: true } },
+      { id: "late", kind: "countdown", x: 9, y: 4, w: 3, h: 4, options: { source: "until", until: "23:59", breakpoints: [{ at: 86400, color: "#ffffff", background: "#dc2626" }] } },
+    ];
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: { ...saved.theme, grid: { ...saved.theme.grid, black: "all", widgets } } });
+    page = tv;
+    const section = tv.getByTestId("widget-current-section");
+    await section.getByText("third line here").waitFor({ timeout: 10000 });
+    // The slide on screen (the second) picked out among the section's lines.
+    if ((await section.locator("[data-now]").allInnerTexts()).join(" / ") !== "third line here / fourth line here") throw new Error(await section.innerText());
+    await tv.getByTestId("widget-next-section").getByText("Other line here").waitFor();
+    const structure = tv.getByTestId("widget-song-structure");
+    await structure.locator("[data-now]").waitFor();
+    if ((await tv.getByTestId("widget-song-progress").getAttribute("data-progress")) !== "100") throw new Error("not at the end of the song");
+    await tv.getByTestId("widget-current-item").getByText(`First song ${stamp}`).waitFor();
+    await tv.getByTestId("widget-current-item").getByText("1 of 2").waitFor();
+    await tv.getByTestId("widget-next-item").getByText(`Second song ${stamp}`, { exact: false }).waitFor();
+    const time = await tv.getByTestId("widget-analog-clock").getAttribute("data-time");
+    const now = new Date();
+    if (time !== `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}` && !time) throw new Error(`analog clock: ${time}`);
+    await tv.locator('[data-testid="widget-countdown"] [data-color="#ffffff"]').waitFor();
+    await tv.locator('[data-testid="widget-timer-background"][data-color="#dc2626"]').waitFor();
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: saved.theme });
+    await tv.getByTestId("widget-song-structure").waitFor({ state: "detached", timeout: 10000 });
+  });
+
+  await step("the editor: a countdown's colours by time, added", async () => {
+    page = tablet;
+    await tablet.goto(`${WEB}/screens?tab=templates`);
+    await tablet.getByTestId(`saved-theme-Stage ${stamp}`).getByTestId("edit-theme").click();
+    await editor.getByTestId("theme-grid-overlay").getByTestId("grid-widget-countdown").click();
+    await editor.getByTestId("theme-widget-breakpoint-add").click();
+    await editor.getByTestId("theme-widget-breakpoint-add").click();
+    await editor.getByTestId("theme-widget-breakpoint-at").nth(1).fill("0:30");
+    await editor.getByTestId("theme-widget-breakpoint-at").nth(1).blur();
+    await editor.getByTestId("theme-widget-breakpoint-background").nth(1).check();
+    await editor.getByTestId("theme-widget-add").selectOption("analog-clock");
+    await editor.getByTestId("theme-preview").getByTestId("widget-analog-clock").waitFor();
+    await editor.getByTestId("theme-save").click();
+    await editor.waitFor({ state: "detached" });
+    const after = (await api(leader, "GET", "/screen-themes")).find((one) => one.id === theme.id);
+    const countdown = after.theme.grid.widgets.find((one) => one.kind === "countdown");
+    if (JSON.stringify(countdown.options.breakpoints) !== JSON.stringify([{ at: 300, color: "#f59e0b", background: null }, { at: 30, color: "#f59e0b", background: "#dc2626" }])) throw new Error(JSON.stringify(countdown.options.breakpoints));
+    if (!after.theme.grid.widgets.some((one) => one.kind === "analog-clock")) throw new Error("no analog clock");
+    page = tv;
+  });
+
   await step("no page errors", async () => {
     if (errors.length) throw new Error(errors.join(" | "));
   });

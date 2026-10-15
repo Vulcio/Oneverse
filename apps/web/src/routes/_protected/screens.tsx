@@ -1,6 +1,6 @@
 import { DEFAULT_SCREEN_THEME, formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, SCREEN_WIDGET_KINDS, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type ScreenWidgetKind, type SetlistSummary } from "@songverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
-import { AlarmClock, Building2, Clock, Hourglass, LayoutPanelTop, MessageSquareText, MonitorCheck, MonitorUp, Music, Palette, Pencil, Plus, Presentation, Settings2, SkipForward, Timer, Type, User, Users, type LucideIcon } from "lucide-react";
+import { AlarmClock, Building2, ChevronsDown, Clock, Clock3, ListChecks, ListEnd, ListOrdered, TextQuote, Hourglass, LayoutPanelTop, MessageSquareText, MonitorCheck, MonitorUp, Music, Palette, Pencil, Plus, Presentation, Settings2, SkipForward, Timer, Type, User, Users, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 import { cn } from "@songverse/ui/lib/utils";
@@ -211,12 +211,18 @@ const WIDGET_ICONS: Record<ScreenWidgetKind, LucideIcon> = {
   stage: LayoutPanelTop,
   "current-slide": Presentation,
   "next-slide": SkipForward,
+  "current-section": TextQuote,
+  "next-section": ChevronsDown,
+  "song-structure": ListOrdered,
   clock: Clock,
+  "analog-clock": Clock3,
   countdown: Hourglass,
   "count-up": Timer,
   message: MessageSquareText,
   song: Music,
   "next-song": AlarmClock,
+  "current-item": ListChecks,
+  "next-item": ListEnd,
   text: Type,
 };
 

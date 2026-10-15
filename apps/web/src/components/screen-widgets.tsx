@@ -1,4 +1,4 @@
-import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, type ScreenSlide, type ScreenTheme, type ScreenWidget, type SyncTimer } from "@songverse/core";
+import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type SyncTimer } from "@songverse/core";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@songverse/ui/lib/utils";
@@ -11,6 +11,9 @@ import { cn } from "@songverse/ui/lib/utils";
  */
 export interface StageLive {
   nextSong?: { title: string; slides: ScreenSlide[] } | null;
+  /** The set's item on screen and the one after it (issue #272): a song's title, or another item's own; where it is in the set. */
+  item?: { title: string; position: number; count: number } | null;
+  nextItem?: { title: string } | null;
   /** The song on screen: its title, key and tempo, for the Song widget. */
   details?: { title: string; key: string | null; tempo: number | null } | null;
   itemStartedAt?: number | null;
@@ -48,7 +51,7 @@ export function ScreenGrid({
   live: StageLive;
   words: ReactNode;
 }) {
-  const timed = grid.widgets.some((one) => one.kind === "clock" || one.kind === "countdown" || one.kind === "count-up");
+  const timed = grid.widgets.some((one) => one.kind === "clock" || one.kind === "analog-clock" || one.kind === "countdown" || one.kind === "count-up");
   const now = useNow(timed);
   const margin = theme.layout.margin;
   return (
@@ -64,7 +67,7 @@ export function ScreenGrid({
     >
       {grid.widgets.map((widget) => {
         const place = placeScreenWidget(widget, grid);
-        const wordsKind = widget.kind === "stage" || widget.kind === "current-slide" || widget.kind === "next-slide";
+        const wordsKind = ["stage", "current-slide", "next-slide", "current-section", "next-section"].includes(widget.kind);
         return (
           <WidgetCell key={widget.id} widget={widget} theme={theme} place={place} data-kind={widget.kind}>
             {black && wordsKind ? null : <WidgetBody widget={widget} theme={theme} slides={slides} index={index} live={live} now={now} words={words} />}
@@ -168,14 +171,21 @@ function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget
         localMidnight: midnight.getTime() + offset,
       });
       const text = reading ? formatTimer(reading.seconds, reading.overtime) : "–:––";
-      return box(
-        <p className={cn("tabular-nums", !reading && "opacity-40")} data-overtime={reading?.overtime ? "" : undefined} data-running={reading?.running ? "" : undefined}>
-          {text}
-        </p>,
-        `widget-${widget.kind}`,
-        text.length,
-        1,
-        { color: reading?.overtime ? "#ef4444" : reading?.warn ? "#f59e0b" : undefined },
+      // Its colours by time (issue #272): the break points it has, else amber near the end and red past zero.
+      const colors = reading ? timerColors(widget, reading) : null;
+      return (
+        <>
+          {colors?.background ? <div className="absolute inset-0" style={{ background: colors.background }} data-testid="widget-timer-background" data-color={colors.background} aria-hidden /> : null}
+          {box(
+            <p className={cn("tabular-nums", !reading && "opacity-40")} data-overtime={reading?.overtime ? "" : undefined} data-running={reading?.running ? "" : undefined} data-color={colors?.color ?? undefined}>
+              {text}
+            </p>,
+            `widget-${widget.kind}`,
+            text.length,
+            1,
+            { color: colors?.color ?? undefined },
+          )}
+        </>
       );
     }
     case "message": {
@@ -202,6 +212,85 @@ function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget
       if (!title) return null;
       return box(<p className="truncate">{label ? title : t("screens.widgetSample.nextSong", { title })}</p>, "widget-next-song", title.length + 6);
     }
+    case "analog-clock":
+      return now === null ? null : <AnalogClock now={now} seconds={options.seconds} label={label} />;
+    case "current-section":
+    case "next-section": {
+      // The whole section (issue #272): every slide of the pass, the one on screen picked out in the current one.
+      const current = slides?.[index];
+      if (!slides || !current) return null;
+      let pass: ScreenSlide[];
+      if (widget.kind === "current-section") pass = slides.filter((one) => one.passIndex === current.passIndex);
+      else {
+        const next = slides.find((one) => one.passIndex > current.passIndex);
+        pass = next ? slides.filter((one) => one.passIndex === next.passIndex) : (live.nextSong?.slides.filter((one) => one.passIndex === live.nextSong!.slides[0]?.passIndex) ?? []);
+      }
+      const lines = pass.flatMap((one) => one.lines.map((line) => ({ line, now: widget.kind === "current-section" && one === current })));
+      if (lines.length === 0) return null;
+      const name = pass[0]?.label;
+      return box(
+        <>
+          {name && !label ? <p className="mb-[0.3em] text-[0.55em] font-semibold tracking-wide uppercase opacity-60">{name}</p> : null}
+          {lines.map(({ line, now: shown }, i) => (
+            <p key={i} className={cn(widget.kind === "current-section" && !shown && "opacity-45")} data-now={shown ? "" : undefined} style={{ textTransform: theme.text.upperCase ? "uppercase" : undefined }}>
+              {line}
+            </p>
+          ))}
+        </>,
+        `widget-${widget.kind}`,
+        Math.max(...lines.map(({ line }) => line.length)),
+        lines.length + 0.5,
+      );
+    }
+    case "song-structure": {
+      // The song's passes in the order they're sung (issue #272), the one on screen picked out, and how far through it is.
+      const current = slides?.[index];
+      if (!slides || !current) return null;
+      const passes = slides.filter((one, i) => i === 0 || slides[i - 1]!.passIndex !== one.passIndex);
+      const progress = slides.length > 1 ? index / (slides.length - 1) : 1;
+      return (
+        <div className={cn("absolute inset-0 flex flex-col justify-center gap-[6cqh] px-[4cqw] py-[3cqh]", justify)} data-testid="widget-song-structure">
+          {label ? <p className="text-[16cqh] leading-none font-semibold tracking-wide uppercase opacity-70">{label}</p> : null}
+          <div className="flex w-full flex-wrap gap-[1.5cqw]" style={{ justifyContent: { left: "flex-start", center: "center", right: "flex-end" }[widget.style.align] }}>
+            {passes.map((pass, i) => {
+              const now = pass.passIndex === current.passIndex;
+              const sung = pass.passIndex < current.passIndex;
+              return (
+                <span
+                  key={i}
+                  className={cn("rounded-[1cqh] border px-[1.2cqw] py-[1cqh] leading-none font-semibold", now ? "border-current" : "border-transparent", sung ? "opacity-35" : !now && "opacity-70")}
+                  style={{ fontSize: widget.style.size === "auto" ? `min(${(label ? 34 : 42) / Math.max(1, Math.ceil(passes.length / 8))}cqh, ${60 / Math.min(passes.length, 8)}cqw)` : `${widget.style.size}cqh`, ...(now && { background: "color-mix(in srgb, currentColor 20%, transparent)" }) }}
+                  data-now={now ? "" : undefined}
+                >
+                  {shortLabel(pass.label, i)}
+                </span>
+              );
+            })}
+          </div>
+          {options.details ? (
+            <div className="h-[5cqh] w-full overflow-hidden rounded-full bg-current/20" aria-hidden>
+              <div className="h-full rounded-full bg-current transition-[width] duration-300" style={{ width: `${Math.round(progress * 100)}%` }} data-testid="widget-song-progress" data-progress={Math.round(progress * 100)} />
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+    case "current-item":
+    case "next-item": {
+      // The set's items (issue #272), songs or not.
+      const item = widget.kind === "current-item" ? live.item : live.nextItem;
+      if (!item) return null;
+      const where = widget.kind === "current-item" && options.details && live.item ? t("screens.widgetSample.itemOf", { position: live.item.position, count: live.item.count }) : null;
+      return box(
+        <>
+          <p className="truncate">{label || widget.kind === "current-item" ? item.title : t("screens.widgetSample.nextSong", { title: item.title })}</p>
+          {where ? <p className="mt-[2cqh] text-[0.5em] opacity-75">{where}</p> : null}
+        </>,
+        `widget-${widget.kind}`,
+        Math.min(item.title.length + (widget.kind === "next-item" ? 8 : 0), 28),
+        where ? 1.6 : 1,
+      );
+    }
     case "text":
       return options.text ? box(<p className="whitespace-pre-line">{options.text}</p>, "widget-text", Math.min(options.text.length, 36), Math.ceil(options.text.length / 36)) : null;
   }
@@ -217,4 +306,43 @@ function useNow(ticking: boolean): number | null {
     return () => clearInterval(timer);
   }, [ticking]);
   return now;
+}
+
+/** A section's label made short for a row of them (Verse 1 → V1, Chorus → C); its place when it has none. */
+function shortLabel(label: string | null, index: number): string {
+  if (!label) return String(index + 1);
+  const words = label.trim().split(/\s+/);
+  if (label.length <= 3) return label;
+  const number = words.find((word) => /^\d+$/.test(word)) ?? "";
+  const first = words.find((word) => !/^\d+$/.test(word)) ?? label;
+  return `${first.slice(0, first.toLowerCase().startsWith("pre") ? 3 : 1).toUpperCase()}${number}`;
+}
+
+/** An analog clock (issue #272): a face, the hours marked, its hands - the second hand if asked - in the cell's text colour. */
+function AnalogClock({ now, seconds, label }: { now: number; seconds: boolean; label: string }) {
+  const date = new Date(now);
+  const s = date.getSeconds();
+  const m = date.getMinutes() + s / 60;
+  const h = (date.getHours() % 12) + m / 60;
+  const hand = (angle: number, length: number, width: number, opacity = 1) => {
+    const radians = (angle - 90) * (Math.PI / 180);
+    return <line x1={50} y1={50} x2={50 + Math.cos(radians) * length} y2={50 + Math.sin(radians) * length} stroke="currentColor" strokeWidth={width} strokeLinecap="round" opacity={opacity} />;
+  };
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[2cqh] p-[4cqmin]" data-testid="widget-analog-clock" data-time={`${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`}>
+      {label ? <p className="text-[12cqh] leading-none font-semibold tracking-wide uppercase opacity-70">{label}</p> : null}
+      <svg viewBox="0 0 100 100" className="min-h-0 w-full flex-1" role="img" aria-label={date.toLocaleTimeString()}>
+        <circle cx={50} cy={50} r={47} fill="none" stroke="currentColor" strokeWidth={2} opacity={0.6} />
+        {Array.from({ length: 12 }, (_, i) => {
+          const radians = (i * 30 - 90) * (Math.PI / 180);
+          const inner = i % 3 === 0 ? 37 : 40;
+          return <line key={i} x1={50 + Math.cos(radians) * inner} y1={50 + Math.sin(radians) * inner} x2={50 + Math.cos(radians) * 44} y2={50 + Math.sin(radians) * 44} stroke="currentColor" strokeWidth={i % 3 === 0 ? 2.5 : 1.2} opacity={0.8} />;
+        })}
+        {hand(h * 30, 24, 4.5)}
+        {hand(m * 6, 35, 3)}
+        {seconds ? hand(s * 6, 39, 1.2, 0.85) : null}
+        <circle cx={50} cy={50} r={2.5} fill="currentColor" />
+      </svg>
+    </div>
+  );
 }

@@ -87,7 +87,8 @@ A theme (a "template" in the app) can place widgets on a grid (issue #268).
   "widgets": [                // drawn in order: later ones on top; up to 32
     {
       "id": "clock",          // unique in the grid
-      "kind": "clock",        // stage, current-slide, next-slide, clock, countdown, count-up, message, song, next-song, text
+      "kind": "clock",        // stage, current-slide, next-slide, current-section, next-section, song-structure, clock, analog-clock,
+                              // countdown, count-up, message, song, next-song, current-item, next-item, text
       "x": 8, "y": 0, "w": 4, "h": 2,   // first column and row (from 0), cells covered
       "options": {            // each kind reads its own and ignores the rest
         "format": "24h", "seconds": false, "date": false,        // clock
@@ -98,7 +99,8 @@ A theme (a "template" in the app) can place widgets on a grid (issue #268).
         "warn": 60,           // amber under this many seconds
         "label": "",          // a few words above it
         "text": "",           // text: its words
-        "details": true       // song: key and tempo
+        "details": true,      // song: key and tempo; song-structure: a progress bar; current-item: its place (3 of 8)
+        "breakpoints": []     // countdown, count up: [{ "at": 300, "color": "#f59e0b", "background": null }] - colours by time (timerColors)
       },
       "style": {
         "font": null, "color": null,           // null: the theme's

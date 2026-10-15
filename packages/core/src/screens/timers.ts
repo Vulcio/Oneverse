@@ -82,7 +82,26 @@ export function readSyncTimer(timer: SyncTimer, now: number, warn = 60): TimerRe
   return readScreenTimer({ kind: timer.kind, options: { ...TIMER_OPTIONS, warn } }, { now, itemStartedAt: null, operator: timer, localMidnight: 0 })!;
 }
 
-const TIMER_OPTIONS: ScreenWidget["options"] = { format: "24h", seconds: false, date: false, source: "operator", duration: 300, until: "10:00", overtime: "count", warn: 60, label: "", text: "", details: true };
+const TIMER_OPTIONS: ScreenWidget["options"] = { format: "24h", seconds: false, date: false, source: "operator", duration: 300, until: "10:00", overtime: "count", warn: 60, label: "", text: "", details: true, breakpoints: [] };
+
+/**
+ * A timer widget's colours at a reading (issue #272): from its break points
+ * when it has some - a countdown's with the fewest seconds still at or above
+ * what's left (past zero counts as below every one), a count up's with the
+ * most seconds gone by - else amber near the end and red past zero; null:
+ * its own colours.
+ */
+export function timerColors(widget: { kind: ScreenWidget["kind"]; options: Pick<ScreenWidget["options"], "breakpoints"> }, reading: TimerReading): { color: string | null; background: string | null } | null {
+  const points = widget.options.breakpoints;
+  if (points.length === 0) return reading.overtime ? { color: "#ef4444", background: null } : reading.warn ? { color: "#f59e0b", background: null } : null;
+  if (widget.kind === "countdown") {
+    const left = reading.overtime ? -1 : reading.seconds;
+    const hit = points.filter((point) => left <= point.at).sort((a, b) => a.at - b.at)[0];
+    return hit ? { color: hit.color, background: hit.background } : null;
+  }
+  const hit = points.filter((point) => reading.seconds >= point.at).sort((a, b) => b.at - a.at)[0];
+  return hit ? { color: hit.color, background: hit.background } : null;
+}
 
 /** Seconds as a timer shows them: 4:05, 1:02:03; past zero with a +. */
 export function formatTimer(seconds: number, overtime = false): string {

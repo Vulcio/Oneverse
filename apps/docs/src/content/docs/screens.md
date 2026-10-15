@@ -94,11 +94,14 @@ A template can place widgets on a grid: a stage display shows the singers the sl
 
 - **Lyrics or chart** - what the screen shows without a grid: the lyrics, or the chart for the band, in the template's look.
 - **Current slide** and **Next slide** - the words on the audience's screens now, and the ones coming (the next song's first, at the end of a song).
-- **Clock** - in **24 hours** or **12 hours (AM/PM)**, with **Seconds** and **The date** if you like.
-- **Countdown** - the time left. **Time from**: **The media operator**, **A set length, from when the item comes on**, or **Until a time of day** (when the service starts). **Past zero** it can **Count on, in red** or **Stay at 0:00**, and it turns amber near the end.
-- **Count up** - the time since **The song on screen, since it came on**, or since the media operator started it.
+- **Current section** and **Next section** - the whole section, every line: the one being sung, with the slide on screen picked out, and the one after it.
+- **Song structure** - the song's sections in the order they're sung (V1 C V2 C B C), the one now picked out, and a **Progress bar** through the song.
+- **Clock** - in **24 hours** or **12 hours (AM/PM)**, with **Seconds** and **The date** if you like. **Analog clock** - a clock face, with a **Second hand** if you like.
+- **Countdown** - the time left. **Time from**: **The media operator**, **A set length, from when the item comes on**, or **Until a time of day** (when the service starts). **Past zero** it can **Count on, in red** or **Stay at 0:00**, and it turns amber near the end. **Colours by time left** sets your own instead: **Add a break point**, give it a time (m:ss) and the colour of its **Text** and **Panel** from then on - amber under 5:00 and white on red under 1:00, say.
+- **Count up** - the time since **The song on screen, since it came on**, or since the media operator started it. **Colours by time gone by** works as a countdown's does, once that much time has gone by.
 - **Message** - a short message from the media operator, shown until it's cleared.
 - **Song** and **Next song** - the song's title, with its key and tempo, and what comes next in the set.
+- **Current item** and **Next item** - what's on in the set and what comes next, songs or not, with **Its place in the set (3 of 8)**.
 - **Text** - words of your own.
 
 In the template editor, **Layout and widgets** places them:

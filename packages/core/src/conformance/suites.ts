@@ -20,7 +20,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyStageCommand, clockOffset, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenThemeContrast, sectionEnergy } from "../screens/index.js";
+import { formatTimer, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenThemeContrast, sectionEnergy } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
@@ -1150,6 +1150,22 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "until a time of day", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { source: "until", until: "10:30" } }, { now: 1_000_000 + 10 * 3_600_000, itemStartedAt: null, localMidnight: 1_000_000, operator: null }] },
           { name: "a count up since the song came on", args: [{ id: "t", kind: "count-up", x: 0, y: 0, w: 1, h: 1, options: { source: "song" } }, { now: 200_000, itemStartedAt: 75_000, localMidnight: 0, operator: null }] },
           { name: "the operator's count up", args: [{ id: "t", kind: "count-up", x: 0, y: 0, w: 1, h: 1 }, { now: 200_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "count-up", duration: 0, startedAt: 100_000, elapsed: 5_000 } }] },
+        ],
+      },
+      timerColors: {
+        about: "A countdown's or count up's colours by time (issue #272): its break points when it has some, else amber near the end and red past zero; null for its own.",
+        params: ["widget", "reading"],
+        run: (widget: unknown, reading: Parameters<typeof timerColors>[1]) => timerColors(ScreenWidgetSchema.parse(widget), reading),
+        cases: [
+          { name: "no break points, near the end: amber", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { seconds: 30, overtime: false, warn: true, running: true }] },
+          { name: "no break points, past zero: red", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { seconds: 4, overtime: true, warn: false, running: true }] },
+          ...[400, 200, 45, 0].map((seconds) => ({
+            name: `break points at 5:00 and 1:00, ${seconds} s left`,
+            args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { breakpoints: [{ at: 300, color: "#f59e0b" }, { at: 60, color: "#ffffff", background: "#dc2626" }] } }, { seconds, overtime: false, warn: false, running: true }],
+          })),
+          { name: "break points, past zero: the lowest", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { breakpoints: [{ at: 300, color: "#f59e0b" }, { at: 60, color: "#ef4444" }] } }, { seconds: 12, overtime: true, warn: false, running: true }] },
+          { name: "a count up past 10:00", args: [{ id: "t", kind: "count-up", x: 0, y: 0, w: 1, h: 1, options: { breakpoints: [{ at: 300, color: "#f59e0b" }, { at: 600, background: "#dc2626" }] } }, { seconds: 700, overtime: false, warn: false, running: true }] },
+          { name: "a count up not there yet", args: [{ id: "t", kind: "count-up", x: 0, y: 0, w: 1, h: 1, options: { breakpoints: [{ at: 300, color: "#f59e0b" }] } }, { seconds: 100, overtime: false, warn: false, running: true }] },
         ],
       },
       formatTimer: {

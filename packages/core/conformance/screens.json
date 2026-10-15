@@ -1022,7 +1022,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,
@@ -1222,7 +1223,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1252,7 +1254,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1296,7 +1299,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1326,7 +1330,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1356,7 +1361,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1386,7 +1392,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1416,7 +1423,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1446,7 +1454,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1476,7 +1485,8 @@
                   "warn": 60,
                   "label": "",
                   "text": "",
-                  "details": true
+                  "details": true,
+                  "breakpoints": []
                 },
                 "style": {
                   "font": null,
@@ -1758,6 +1768,300 @@
             "warn": false,
             "running": true
           }
+        }
+      ]
+    },
+    "timerColors": {
+      "about": "A countdown's or count up's colours by time (issue #272): its break points when it has some, else amber near the end and red past zero; null for its own.",
+      "params": [
+        "widget",
+        "reading"
+      ],
+      "cases": [
+        {
+          "name": "no break points, near the end: amber",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            {
+              "seconds": 30,
+              "overtime": false,
+              "warn": true,
+              "running": true
+            }
+          ],
+          "expected": {
+            "color": "#f59e0b",
+            "background": null
+          }
+        },
+        {
+          "name": "no break points, past zero: red",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            },
+            {
+              "seconds": 4,
+              "overtime": true,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": {
+            "color": "#ef4444",
+            "background": null
+          }
+        },
+        {
+          "name": "break points at 5:00 and 1:00, 400 s left",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "breakpoints": [
+                  {
+                    "at": 300,
+                    "color": "#f59e0b"
+                  },
+                  {
+                    "at": 60,
+                    "color": "#ffffff",
+                    "background": "#dc2626"
+                  }
+                ]
+              }
+            },
+            {
+              "seconds": 400,
+              "overtime": false,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": null
+        },
+        {
+          "name": "break points at 5:00 and 1:00, 200 s left",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "breakpoints": [
+                  {
+                    "at": 300,
+                    "color": "#f59e0b"
+                  },
+                  {
+                    "at": 60,
+                    "color": "#ffffff",
+                    "background": "#dc2626"
+                  }
+                ]
+              }
+            },
+            {
+              "seconds": 200,
+              "overtime": false,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": {
+            "color": "#f59e0b",
+            "background": null
+          }
+        },
+        {
+          "name": "break points at 5:00 and 1:00, 45 s left",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "breakpoints": [
+                  {
+                    "at": 300,
+                    "color": "#f59e0b"
+                  },
+                  {
+                    "at": 60,
+                    "color": "#ffffff",
+                    "background": "#dc2626"
+                  }
+                ]
+              }
+            },
+            {
+              "seconds": 45,
+              "overtime": false,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": {
+            "color": "#ffffff",
+            "background": "#dc2626"
+          }
+        },
+        {
+          "name": "break points at 5:00 and 1:00, 0 s left",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "breakpoints": [
+                  {
+                    "at": 300,
+                    "color": "#f59e0b"
+                  },
+                  {
+                    "at": 60,
+                    "color": "#ffffff",
+                    "background": "#dc2626"
+                  }
+                ]
+              }
+            },
+            {
+              "seconds": 0,
+              "overtime": false,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": {
+            "color": "#ffffff",
+            "background": "#dc2626"
+          }
+        },
+        {
+          "name": "break points, past zero: the lowest",
+          "args": [
+            {
+              "id": "t",
+              "kind": "countdown",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "breakpoints": [
+                  {
+                    "at": 300,
+                    "color": "#f59e0b"
+                  },
+                  {
+                    "at": 60,
+                    "color": "#ef4444"
+                  }
+                ]
+              }
+            },
+            {
+              "seconds": 12,
+              "overtime": true,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": {
+            "color": "#ef4444",
+            "background": null
+          }
+        },
+        {
+          "name": "a count up past 10:00",
+          "args": [
+            {
+              "id": "t",
+              "kind": "count-up",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "breakpoints": [
+                  {
+                    "at": 300,
+                    "color": "#f59e0b"
+                  },
+                  {
+                    "at": 600,
+                    "background": "#dc2626"
+                  }
+                ]
+              }
+            },
+            {
+              "seconds": 700,
+              "overtime": false,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": {
+            "color": null,
+            "background": "#dc2626"
+          }
+        },
+        {
+          "name": "a count up not there yet",
+          "args": [
+            {
+              "id": "t",
+              "kind": "count-up",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "breakpoints": [
+                  {
+                    "at": 300,
+                    "color": "#f59e0b"
+                  }
+                ]
+              }
+            },
+            {
+              "seconds": 100,
+              "overtime": false,
+              "warn": false,
+              "running": true
+            }
+          ],
+          "expected": null
         }
       ]
     },
@@ -2389,7 +2693,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,
@@ -2419,7 +2724,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,
@@ -2449,7 +2755,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,
@@ -2479,7 +2786,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,
@@ -2509,7 +2817,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,
@@ -2539,7 +2848,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,
@@ -2569,7 +2879,8 @@
                     "warn": 60,
                     "label": "",
                     "text": "",
-                    "details": true
+                    "details": true,
+                    "breakpoints": []
                   },
                   "style": {
                     "font": null,

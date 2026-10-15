@@ -50,7 +50,24 @@ const color = z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: "a colour is writ
  * template's grid (issue #268). Their names and descriptions are in the
  * locale files (`screens.widgetKinds.<kind>`).
  */
-export const SCREEN_WIDGET_KINDS = ["stage", "current-slide", "next-slide", "clock", "countdown", "count-up", "message", "song", "next-song", "text"] as const;
+export const SCREEN_WIDGET_KINDS = [
+  "stage",
+  "current-slide",
+  "next-slide",
+  "current-section",
+  "next-section",
+  "song-structure",
+  "clock",
+  "analog-clock",
+  "countdown",
+  "count-up",
+  "message",
+  "song",
+  "next-song",
+  "current-item",
+  "next-item",
+  "text",
+] as const;
 export type ScreenWidgetKind = (typeof SCREEN_WIDGET_KINDS)[number];
 /** Where a timer's time comes from: the media operator (issue #269), a length from when the set item came on, a time of day, the song on screen. */
 export const SCREEN_TIMER_SOURCES = ["operator", "duration", "until", "song"] as const;
@@ -88,8 +105,17 @@ function screenWidgetSchema(strict: boolean) {
       label: z.string().max(60).default(""),
       /** Text: its words. */
       text: z.string().max(280).default(""),
-      /** Song: its key and tempo beside the title. */
+      /** Song: its key and tempo beside the title; current and next item: where it is in the set (3 of 8). */
       details: z.boolean().default(true),
+      /**
+       * Countdown and count up (issue #272): colours by time, for the text and
+       * the panel behind it - a countdown's once that many seconds are left
+       * (the fewest that apply), a count up's once that many have gone by.
+       */
+      breakpoints: z
+        .array(object({ at: z.number().int().min(0).max(86_400), color: color.nullable().default(null), background: color.nullable().default(null) }))
+        .max(6)
+        .default([]),
     }).prefault({}),
     style: object({
       /** The template's font, or another. */

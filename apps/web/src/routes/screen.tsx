@@ -103,6 +103,9 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
     return {
       details: view?.song && song ? { title: view.song.title, key: song.chart?.key ?? view.song.key, tempo: view.song.tempo } : null,
       nextSong: next?.song && nextChart ? { title: next.song.title, slides: lyricSlides(nextChart) } : null,
+      // The set's items (issue #272): the one on screen and the one after, whatever they are.
+      item: view && at >= 0 ? { title: view.song?.title ?? "", position: at + 1, count: songs.length } : null,
+      nextItem: at >= 0 && songs[at + 1]?.song ? { title: songs[at + 1]!.song!.title } : null,
       itemStartedAt,
       // The media operator's (issue #269).
       operator: stage?.timer ?? null,

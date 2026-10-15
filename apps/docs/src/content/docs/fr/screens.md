@@ -94,11 +94,14 @@ Un modèle peut placer des widgets sur une grille : un affichage de scène montr
 
 - **Paroles ou grille** - ce que l'écran affiche sans grille : les paroles, ou la grille pour le groupe, avec l'apparence du modèle.
 - **Diapositive en cours** et **Diapositive suivante** - les paroles affichées pour l'assemblée, et celles qui arrivent (la première du chant suivant, à la fin d'un chant).
-- **Horloge** - sur **24 heures** ou **12 heures (AM/PM)**, avec **Les secondes** et **La date** au besoin.
-- **Compte à rebours** - le temps restant. **Temps donné par** : **L'opérateur média**, **Une durée fixe, depuis l'arrivée de l'élément**, ou **Jusqu'à une heure donnée** (le début du culte). **Après zéro**, il peut **Continuer, en rouge** ou **Rester à 0:00**, et passe à l'orange vers la fin.
-- **Chronomètre** - le temps écoulé depuis **Le chant à l'écran, depuis son arrivée**, ou depuis que l'opérateur média l'a lancé.
+- **Partie en cours** et **Partie suivante** - toute la partie, chaque ligne : celle qu'on chante, la diapositive à l'écran mise en avant, et celle d'après.
+- **Structure du chant** - les parties du chant dans l'ordre où on les chante (C1 R C2 R P R), celle en cours mise en avant, et une **Barre de progression** dans le chant.
+- **Horloge** - sur **24 heures** ou **12 heures (AM/PM)**, avec **Les secondes** et **La date** au besoin. **Horloge à aiguilles** - un cadran, avec une **Trotteuse** au besoin.
+- **Compte à rebours** - le temps restant. **Temps donné par** : **L'opérateur média**, **Une durée fixe, depuis l'arrivée de l'élément**, ou **Jusqu'à une heure donnée** (le début du culte). **Après zéro**, il peut **Continuer, en rouge** ou **Rester à 0:00**, et passe à l'orange vers la fin. **Couleurs selon le temps restant** règle les vôtres : **Ajouter un palier**, donnez-lui une durée (m:ss) et la couleur de son **Texte** et de son **Fond** à partir de là - orange sous 5:00 et blanc sur rouge sous 1:00, par exemple.
+- **Chronomètre** - le temps écoulé depuis **Le chant à l'écran, depuis son arrivée**, ou depuis que l'opérateur média l'a lancé. **Couleurs selon le temps écoulé** fonctionne comme pour un compte à rebours, une fois ce temps passé.
 - **Message** - un court message de l'opérateur média, affiché jusqu'à ce qu'il l'efface.
 - **Chant** et **Chant suivant** - le titre du chant, avec sa tonalité et son tempo, et ce qui vient ensuite dans la liste.
+- **Élément en cours** et **Élément suivant** - ce qui se passe dans la liste et ce qui vient ensuite, chants ou non, avec **Sa place dans la liste (3 sur 8)**.
 - **Texte** - vos propres mots.
 
 Dans l'éditeur de modèle, **Mise en page et widgets** les place :

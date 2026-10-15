@@ -1,4 +1,5 @@
 import {
+  formatTimer,
   newScreenWidget,
   placeScreenWidget,
   SCREEN_FONTS,
@@ -9,7 +10,7 @@ import {
   type ScreenWidget,
   type ScreenWidgetKind,
 } from "@songverse/core";
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
@@ -36,12 +37,18 @@ const SIZES: Record<ScreenWidgetKind, [number, number]> = {
   stage: [12, 12],
   "current-slide": [8, 6],
   "next-slide": [8, 3],
+  "current-section": [8, 8],
+  "next-section": [8, 4],
+  "song-structure": [8, 2],
   clock: [4, 2],
+  "analog-clock": [3, 4],
   countdown: [4, 3],
   "count-up": [4, 3],
   message: [12, 2],
   song: [4, 2],
   "next-song": [4, 2],
+  "current-item": [4, 2],
+  "next-item": [4, 2],
   text: [6, 2],
 };
 
@@ -233,6 +240,10 @@ function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onChange: 
         </Field>
       ) : null}
       {kind === "song" ? <Check label={t("screens.editor.songDetails")} checked={widget.options.details} onChange={(details) => options({ details })} /> : null}
+      {kind === "analog-clock" ? <Check label={t("screens.editor.secondHand")} checked={widget.options.seconds} onChange={(seconds) => options({ seconds })} testId="theme-widget-seconds" /> : null}
+      {kind === "song-structure" ? <Check label={t("screens.editor.structureProgress")} checked={widget.options.details} onChange={(details) => options({ details })} /> : null}
+      {kind === "current-item" ? <Check label={t("screens.editor.itemPosition")} checked={widget.options.details} onChange={(details) => options({ details })} /> : null}
+      {timer ? <Breakpoints kind={kind} points={widget.options.breakpoints} onChange={(breakpoints) => options({ breakpoints })} /> : null}
       {kind !== "stage" ? (
         <Field label={t("screens.editor.widgetLabel")}>
           <Input value={widget.options.label} maxLength={60} placeholder={t("screens.editor.widgetLabelHint")} onChange={(e) => options({ label: e.target.value })} data-testid="theme-widget-label" />
@@ -286,6 +297,74 @@ function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onChange: 
       </Field>
     </div>
   );
+}
+
+/**
+ * A timer's colours by time (issue #272): each break point a time (m:ss) and
+ * the text's and the panel's colour from then on - a countdown's once that
+ * much is left, a count up's once that much has gone by.
+ */
+function Breakpoints({ kind, points, onChange }: { kind: ScreenWidgetKind; points: ScreenWidget["options"]["breakpoints"]; onChange: (points: ScreenWidget["options"]["breakpoints"]) => void }) {
+  const { t } = useTranslation();
+  const set = (i: number, change: Partial<ScreenWidget["options"]["breakpoints"][number]>) => onChange(points.map((point, j) => (j === i ? { ...point, ...change } : point)));
+  return (
+    <Field label={t(kind === "countdown" ? "screens.editor.breakpointsLeft" : "screens.editor.breakpointsGone")}>
+      <div className="flex flex-col gap-1.5" data-testid="theme-widget-breakpoints">
+        {points.length === 0 ? <p className="text-xs text-muted-foreground">{t(kind === "countdown" ? "screens.editor.breakpointsNoneDown" : "screens.editor.breakpointsNoneUp")}</p> : null}
+        {points.map((point, i) => (
+          <div key={i} className="flex items-center gap-1.5" data-testid="theme-widget-breakpoint">
+            <Input
+              defaultValue={formatTimer(point.at)}
+              onBlur={(e) => {
+                const at = parseTime(e.target.value);
+                if (at !== null) set(i, { at });
+                e.target.value = formatTimer(at ?? point.at);
+              }}
+              className="h-7 w-16 text-xs tabular-nums"
+              aria-label={t("screens.editor.breakpointAt")}
+              data-testid="theme-widget-breakpoint-at"
+            />
+            <OptionalColor label={t("screens.editor.breakpointText")} value={point.color} fallback="#f59e0b" onChange={(color) => set(i, { color })} testId="theme-widget-breakpoint-color" />
+            <OptionalColor label={t("screens.editor.breakpointPanel")} value={point.background} fallback="#dc2626" onChange={(background) => set(i, { background })} testId="theme-widget-breakpoint-background" />
+            <Button type="button" size="icon" variant="ghost" className="ml-auto size-6" onClick={() => onChange(points.filter((_, j) => j !== i))} aria-label={t("screens.editor.removeWidget")}>
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+        ))}
+        {points.length < 6 ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 w-fit text-xs"
+            onClick={() => onChange([...points, { at: kind === "countdown" ? (points.length === 0 ? 300 : 60) : 600, color: "#f59e0b", background: null }])}
+            data-testid="theme-widget-breakpoint-add"
+          >
+            <Plus className="size-3.5" />
+            {t("screens.editor.breakpointAdd")}
+          </Button>
+        ) : null}
+      </div>
+    </Field>
+  );
+}
+
+/** A colour that can be left as it is (null): ticked, its swatch. */
+function OptionalColor({ label, value, fallback, onChange, testId }: { label: string; value: string | null; fallback: string; onChange: (value: string | null) => void; testId?: string }) {
+  return (
+    <label className="flex items-center gap-1 text-xs" title={label}>
+      <input type="checkbox" className="accent-primary" checked={value !== null} onChange={(e) => onChange(e.target.checked ? fallback : null)} aria-label={label} data-testid={testId} />
+      {value !== null ? <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="h-6 w-7 rounded border bg-transparent p-0.5" aria-label={label} /> : <span className="text-muted-foreground">{label}</span>}
+    </label>
+  );
+}
+
+/** "5:00", "90" or "1:02:03" as seconds; null when it isn't a time. */
+function parseTime(text: string): number | null {
+  const parts = text.trim().split(":").map((one) => Number(one));
+  if (parts.length === 0 || parts.length > 3 || parts.some((one) => !Number.isFinite(one) || one < 0)) return null;
+  const seconds = parts.reduce((sum, one) => sum * 60 + one, 0);
+  return Number.isInteger(seconds) && seconds <= 86_400 ? seconds : null;
 }
 
 /**
