@@ -7,6 +7,7 @@ import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
   AudioWaveform,
+  Bell,
   BadgeCheck,
   Guitar,
   Handshake,
@@ -245,6 +246,7 @@ function SectionPanel({
           { to: "/admin/instruments", label: t("nav.adminInstruments"), icon: <Guitar /> },
           { to: "/admin/auth", label: t("nav.adminAuth"), icon: <KeyRound /> },
           { to: "/admin/security", label: t("nav.adminSecurity"), icon: <ShieldCheck /> },
+          { to: "/admin/notifications", label: t("nav.adminNotifications"), icon: <Bell /> },
           { to: "/admin/collaboration", label: t("nav.adminCollaboration"), icon: <Handshake /> },
           { to: "/admin/storage", label: t("nav.adminStorage"), icon: <Database /> },
           { to: "/admin/stem-separation", label: t("nav.adminStemSeparation"), icon: <AudioWaveform /> },
@@ -927,7 +929,7 @@ function PeoplePanel({ title }: { title: string }) {
   );
 }
 
-function LinksPanel({ title, pathname, links }: { title: string; pathname: string; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/collaboration" | "/admin/storage" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata"; label: string; icon: ReactNode }[] }) {
+function LinksPanel({ title, pathname, links }: { title: string; pathname: string; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata"; label: string; icon: ReactNode }[] }) {
   return (
     <>
       <PanelHeader title={title} />
