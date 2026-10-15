@@ -11,6 +11,7 @@ import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
 import { SCREEN_CHANNEL, ScreensService } from "../screens/screens.service.js";
+import { SCREEN_ONLINE_TTL_S, screenOnlineKey } from "../screens/screen-channel.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { NOTES_CHANNEL, NotesService } from "../notes/notes.service.js";
 import { SONG_CHANNEL, type SongSaved } from "../song-versions/song-announce.js";
@@ -171,6 +172,7 @@ export class SyncServer implements OnModuleDestroy {
       if (connection.setId) void this.leaveSet(connection);
       if (connection.presence) void this.setPresence(connection, null);
       for (const songVersionId of connection.docs.keys()) void this.leaveDoc(connection, songVersionId);
+      if (connection.screen) void this.screenOnline(connection.screen.id, false);
     });
     socket.on("error", () => undefined);
   }
@@ -183,6 +185,7 @@ export class SyncServer implements OnModuleDestroy {
     // The clock first: answered at once, before anything else.
     if (message.type === "ping") {
       this.send(connection, { type: "pong", id: message.id, sent: message.sent, at: Date.now() });
+      if (connection.screen) void this.screenOnline(connection.screen.id, true);
       // Pings keep coming while a device follows, so they carry the re-check.
       if (connection.setId) await this.stillAllowed(connection);
       return;
@@ -470,6 +473,7 @@ export class SyncServer implements OnModuleDestroy {
     if (!screen) return this.send(connection, { type: "error", code: "disconnected", message: "This screen was disconnected" });
     connection.screen = { id: screen.id, name: screen.name, mode: screen.mode, setId: screen.setlistId };
     connection.accessCheckedAt = Date.now();
+    void this.screenOnline(screen.id, true);
     this.send(connection, { type: "screen", screen: connection.screen });
     if (screen.setlistId) await this.joinAsScreen(connection, screen.setlistId);
   }
@@ -480,6 +484,17 @@ export class SyncServer implements OnModuleDestroy {
     connection.canLead = false;
     await this.present(connection);
     await this.changed(setId);
+  }
+
+  /** Whether a screen is connected (issue #267), for Screens to show: set with each of its pings, gone when it goes. */
+  private async screenOnline(screenId: string, online: boolean) {
+    try {
+      if (online) await redis().set(screenOnlineKey(screenId), "1", "EX", SCREEN_ONLINE_TTL_S);
+      // Another connection of the same screen (a reload) renews it with its next ping.
+      else await redis().del(screenOnlineKey(screenId));
+    } catch {
+      // Only for show: the screen works without it.
+    }
   }
 
   /** A screen changed or was deleted (announced by ScreensService): its connections here are told, moved or dropped. */

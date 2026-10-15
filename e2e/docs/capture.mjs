@@ -338,11 +338,10 @@ try {
     await tv.getByTestId("screen-pairing").waitFor();
     await shootTv("screen-code");
     const screenCode = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
-    await shoot("screens-pair", `/screens?code=${screenCode}&setlistId=${set.id}`, () => page.getByTestId("screen-pair-form").waitFor());
-    // Screen themes (issue #194): the built-in ones, each playing its sample song.
+    // Screen templates (issue #194): the built-in ones, each playing its sample song.
     await shoot(
       "screen-themes",
-      null,
+      "/screens?tab=templates",
       async () => {
         await page.getByTestId("builtin-themes").scrollIntoViewIfNeeded();
         await page.getByTestId("builtin-theme-concert").getByTestId("screen-lyrics").waitFor();
@@ -350,6 +349,7 @@ try {
       },
       { element: page.getByTestId("builtin-themes") },
     );
+    await shoot("screens-pair", `/screens?code=${screenCode}&setlistId=${set.id}`, () => page.getByTestId("screen-pair-form").waitFor());
     await page.getByTestId("screen-pair-form").getByRole("button").click();
     await page.getByTestId("screen-paired").waitFor();
     await tv.locator('[data-testid="screen-display"][data-state="showing"]').waitFor({ timeout: 15000 });

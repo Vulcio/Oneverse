@@ -1,7 +1,9 @@
-import { formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
-import { createFileRoute, useRouteContext, useRouter } from "@tanstack/react-router";
-import { MonitorCheck, MonitorUp, Palette, Pencil, Users } from "lucide-react";
+import { DEFAULT_SCREEN_THEME, formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, SCREEN_WIDGET_KINDS, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type ScreenWidgetKind, type SetlistSummary } from "@songverse/core";
+import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
+import { AlarmClock, Building2, Clock, Hourglass, LayoutPanelTop, MessageSquareText, MonitorCheck, MonitorUp, Music, Palette, Pencil, Plus, Presentation, Settings2, SkipForward, Timer, Type, User, Users, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
+import { cn } from "@songverse/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { ScreenThemeEditor, type ThemeDraft } from "#/components/screen-theme-editor";
@@ -14,7 +16,12 @@ import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
 
+/** Screens' tabs (issue #267): the screens, the templates they pick from, the widgets placed on templates. */
+const TABS = ["screens", "templates", "widgets"] as const;
+type ScreensTab = (typeof TABS)[number];
+
 export interface ScreensSearch {
+  tab?: Exclude<ScreensTab, "screens">;
   /** The code a screen shows, from its QR code. */
   code?: string;
   /** The set to show, from its Live view. */
@@ -31,6 +38,7 @@ const ownerFrom = (value: string): ScreenOwnerRequest => {
 
 export const Route = createFileRoute("/_protected/screens")({
   validateSearch: (search: Record<string, unknown>): ScreensSearch => ({
+    ...(search.tab === "templates" || search.tab === "widgets" ? { tab: search.tab } : {}),
     ...(typeof search.code === "string" ? { code: search.code } : {}),
     ...(typeof search.setlistId === "string" ? { setlistId: search.setlistId } : {}),
   }),
@@ -58,29 +66,69 @@ export const Route = createFileRoute("/_protected/screens")({
 });
 
 /**
- * Screens (issue #186): a big screen paired by the code it shows - typed,
- * or scanned from its QR code, which opens this page with it - and the
- * screens showing a set, to rename, change what they show and how they look
- * (issue #194), or disconnect - and the themes to pick from.
+ * Screens (issue #186), in three tabs (issue #267). Screens: a big screen
+ * paired by the code it shows - typed, or scanned from its QR code, which
+ * opens this page with it - and the screens one may use as tiles, filtered by
+ * whose they are, each opening to rename it, change what it shows and how
+ * (issue #194), or disconnect it. Templates: how screens look. Widgets: what
+ * else a template can put on a screen (issue #268).
  */
 function ScreensPage() {
-  const { t, i18n } = useTranslation();
-  const router = useRouter();
+  const { t } = useTranslation();
+  const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
-  const { sets, screens, themes, owners } = Route.useLoaderData();
-  const [paired, setPaired] = useState<ScreenSummary | null>(null);
-  const setName = (id: string | null) => {
-    const set = sets.find((one) => one.id === id);
-    return set ? setlistTitle(set, t, i18n.language) : t("screens.noSet");
-  };
-
+  const tab: ScreensTab = search.tab ?? "screens";
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("screens.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("screens.description")}</p>
       </div>
+      <Tabs value={tab} onValueChange={(value) => void navigate({ search: (prev) => ({ ...prev, tab: value === "screens" ? undefined : (value as ScreensSearch["tab"]) }) })}>
+        <TabsList data-testid="screens-tabs">
+          {TABS.map((one) => (
+            <TabsTrigger key={one} value={one} data-testid={`screens-tab-${one}`}>
+              {t(`screens.tabs.${one}`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent value="screens" className="pt-4">
+          {/* Opened again from a QR code or a set (or Screens in the menu): starts afresh. */}
+          <ScreensTabPanel key={`${search.code ?? ""}|${search.setlistId ?? ""}`} />
+        </TabsContent>
+        <TabsContent value="templates" className="pt-4">
+          <ThemesCard themes={Route.useLoaderData().themes} />
+        </TabsContent>
+        <TabsContent value="widgets" className="pt-4">
+          <WidgetsCard />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
 
+/** Whose screens a filter shows: all, one's own, a team's or an organisation's (`team:<id>`). */
+type ScreenFilter = "all" | "user" | `${"team" | "organization"}:${string}`;
+
+/** Add screen, then the screens as tiles, filtered by whose they are. */
+function ScreensTabPanel() {
+  const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const search = Route.useSearch();
+  const { sets, screens, themes, owners } = Route.useLoaderData();
+  const [paired, setPaired] = useState<ScreenSummary | null>(null);
+  // Open from a screen's QR code, or from a set's Live view.
+  const [adding, setAdding] = useState(!!search.code || !!search.setlistId);
+  const [filter, setFilter] = useState<ScreenFilter>("all");
+  const setName = (id: string | null) => {
+    const set = sets.find((one) => one.id === id);
+    return set ? setlistTitle(set, t, i18n.language) : t("screens.noSet");
+  };
+  const filters = screenFilters(screens, t);
+  const shown = screens.filter((screen) => filter === "all" || ownerFilter(screen.owner) === filter);
+
+  return (
+    <div className="flex flex-col gap-6">
       {paired ? (
         <Card data-testid="screen-paired">
           <CardContent className="flex items-center gap-3">
@@ -91,50 +139,113 @@ function ScreensPage() {
             </Button>
           </CardContent>
         </Card>
-      ) : (
+      ) : adding ? (
         <PairForm
           owners={owners}
           sets={sets}
           code={search.code ?? ""}
           setlistId={search.setlistId}
+          onClose={() => setAdding(false)}
           onPaired={async (screen) => {
             setPaired(screen);
             await router.invalidate();
           }}
         />
+      ) : (
+        <div>
+          <Button type="button" onClick={() => setAdding(true)} data-testid="screen-add">
+            <Plus />
+            {t("screens.add")}
+          </Button>
+        </div>
       )}
 
-      {/* Grouped by whose they are (issue #222): one's own, then each team's and organisation's. */}
-      {(search.setlistId ? [{ key: "set", title: t("screens.ofSet", { set: setName(search.setlistId) }), screens }] : screenGroups(screens, t)).map((group) => (
-        <Card key={group.key} data-testid={`screens-group-${group.key}`}>
-          <CardHeader>
-            <CardTitle className="text-sm">{group.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {group.screens.length === 0 ? <p className="text-sm text-muted-foreground">{t("screens.none")}</p> : null}
-            <ul className="flex flex-col divide-y" data-testid="screens-list">
-              {group.screens.map((screen) => (
-                <ScreenRow key={screen.id} screen={screen} sets={sets} themes={themes} owners={owners} onChanged={() => router.invalidate()} />
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ))}
-
-      <ThemesCard themes={themes} onChanged={() => router.invalidate()} />
+      <section className="flex flex-col gap-3" data-testid="screens-list">
+        {search.setlistId ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-sm font-semibold">{t("screens.ofSet", { set: setName(search.setlistId) })}</h2>
+            <Link to="/screens" className="text-xs text-muted-foreground hover:underline">
+              {t("screens.showAll")}
+            </Link>
+          </div>
+        ) : filters.length > 2 ? (
+          // Whose they are (issue #222): all, one's own, each team's and organisation's.
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t("screens.owner")} data-testid="screens-filters">
+            {filters.map((one) => (
+              <Button key={one.value} type="button" size="sm" variant={filter === one.value ? "default" : "outline"} aria-pressed={filter === one.value} onClick={() => setFilter(one.value)} data-testid={`screens-filter-${one.value}`}>
+                {one.icon ? <one.icon /> : null}
+                {one.label}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+        {shown.length === 0 ? <p className="text-sm text-muted-foreground">{screens.length === 0 ? t("screens.none") : t("screens.noneHere")}</p> : null}
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {shown.map((screen) => (
+            <ScreenTile key={screen.id} screen={screen} sets={sets} themes={themes} owners={owners} onChanged={() => router.invalidate()} />
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
 
-/** The screens by whose they are: one's own first (always shown), then each team's and organisation's. */
-function screenGroups(screens: ScreenSummary[], t: (key: string, values?: Record<string, unknown>) => string) {
-  const groups = new Map<string, { key: string; title: string; screens: ScreenSummary[] }>([["user", { key: "user", title: t("screens.yours"), screens: [] }]]);
+const ownerFilter = (owner: ScreenSummary["owner"]): ScreenFilter => (owner.kind === "user" ? "user" : `${owner.kind}:${owner.id}`);
+const OWNER_ICONS: Record<ScreenSummary["owner"]["kind"], LucideIcon> = { user: User, team: Users, organization: Building2 };
+
+/** The filters the screens call for: all, one's own, then each team's and organisation's that has some. */
+function screenFilters(screens: ScreenSummary[], t: (key: string, values?: Record<string, unknown>) => string) {
+  const filters = new Map<ScreenFilter, { value: ScreenFilter; label: string; icon?: LucideIcon }>([
+    ["all", { value: "all", label: t("screens.filterAll") }],
+    ["user", { value: "user", label: t("screens.filterMine"), icon: User }],
+  ]);
   for (const screen of screens) {
-    const key = screen.owner.kind === "user" ? "user" : `${screen.owner.kind}-${screen.owner.id}`;
-    if (!groups.has(key)) groups.set(key, { key, title: t(screen.owner.kind === "team" ? "screens.teamScreens" : "screens.organizationScreens", { name: screen.owner.name }), screens: [] });
-    groups.get(key)!.screens.push(screen);
+    const value = ownerFilter(screen.owner);
+    if (!filters.has(value)) filters.set(value, { value, label: screen.owner.name, icon: OWNER_ICONS[screen.owner.kind] });
   }
-  return [...groups.values()];
+  return [...filters.values()];
+}
+
+/** What widgets there are (issue #267): placed on a template's grid (issue #268). */
+const WIDGET_ICONS: Record<ScreenWidgetKind, LucideIcon> = {
+  stage: LayoutPanelTop,
+  "current-slide": Presentation,
+  "next-slide": SkipForward,
+  clock: Clock,
+  countdown: Hourglass,
+  "count-up": Timer,
+  message: MessageSquareText,
+  song: Music,
+  "next-song": AlarmClock,
+  text: Type,
+};
+
+function WidgetsCard() {
+  const { t } = useTranslation();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{t("screens.widgetsTitle")}</CardTitle>
+        <CardDescription>{t("screens.widgetsDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" data-testid="widgets-list">
+          {SCREEN_WIDGET_KINDS.map((kind) => {
+            const Icon = WIDGET_ICONS[kind];
+            return (
+              <li key={kind} className="flex gap-3 rounded-lg border p-3" data-testid={`widget-${kind}`}>
+                <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{t(`screens.widgetKinds.${kind}.name`)}</p>
+                  <p className="text-xs text-muted-foreground">{t(`screens.widgetKinds.${kind}.description`)}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
+  );
 }
 
 /** Whose a screen is, as a select: the user's own, the teams and organisations they run. */
@@ -189,8 +300,10 @@ function ThemeSelect({ id, value, themes, onChange }: { id: string; value: strin
  * to customize; the user's own and their teams', to change (theirs, or a
  * team's they're an admin of) or delete.
  */
-function ThemesCard({ themes, onChanged }: { themes: ScreenThemeSummary[]; onChanged: () => Promise<void> }) {
+function ThemesCard({ themes }: { themes: ScreenThemeSummary[] }) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const onChanged = () => router.invalidate();
   const { teams } = useRouteContext({ from: "/_protected" });
   const [draft, setDraft] = useState<ThemeDraft | null>(null);
   return (
@@ -201,6 +314,12 @@ function ThemesCard({ themes, onChanged }: { themes: ScreenThemeSummary[]; onCha
           {t("screens.themesTitle")}
         </CardTitle>
         <CardDescription>{t("screens.themesDescription")}</CardDescription>
+        <div>
+          <Button type="button" size="sm" onClick={() => setDraft({ name: t("screens.newTemplateName"), theme: DEFAULT_SCREEN_THEME })} data-testid="new-theme">
+            <Plus />
+            {t("screens.newTemplate")}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         {themes.length > 0 ? (
@@ -311,7 +430,7 @@ function SetSelect({ id, sets, value, onChange, allowNone = false }: { id: strin
 }
 
 /** The code the screen shows, the set it's to show and how: confirmed, the screen shows it at once. */
-function PairForm({ owners, sets, code: initialCode, setlistId, onPaired }: { owners: ScreenOwnerChoice[]; sets: SetlistSummary[]; code: string; setlistId?: string; onPaired: (screen: ScreenSummary) => Promise<void> }) {
+function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClose }: { owners: ScreenOwnerChoice[]; sets: SetlistSummary[]; code: string; setlistId?: string; onPaired: (screen: ScreenSummary) => Promise<void>; onClose: () => void }) {
   const { t } = useTranslation();
   const [owner, setOwner] = useState("user");
   const [code, setCode] = useState(initialCode ? formatScreenCode(normalizeScreenCode(initialCode) ?? initialCode) : "");
@@ -337,7 +456,7 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired }: { ow
   }
 
   return (
-    <Card>
+    <Card data-testid="screen-add-section">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <MonitorUp className="size-5" />
@@ -386,9 +505,12 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired }: { ow
                 {error}
               </p>
             ) : null}
-            <div className="sm:col-span-2">
+            <div className="flex gap-2 sm:col-span-2">
               <Button type="submit" disabled={pending || !set}>
                 {pending ? t("screens.pairing") : t("screens.pair")}
+              </Button>
+              <Button type="button" variant="ghost" onClick={onClose}>
+                {t("admin.cancel")}
               </Button>
             </div>
           </form>
@@ -398,9 +520,14 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired }: { ow
   );
 }
 
-/** A screen: its name, the set it shows and how, changed as they're picked; or disconnected. */
-function ScreenRow({ screen, sets, themes, owners, onChanged }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; owners: ScreenOwnerChoice[]; onChanged: () => Promise<void> }) {
+/**
+ * A screen as a tile (issue #267): how it looks, whether it's connected,
+ * whose it is, what it shows; its settings open under it - its name, the set
+ * it shows and how, changed as they're picked - or it's disconnected.
+ */
+function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; owners: ScreenOwnerChoice[]; onChanged: () => Promise<void> }) {
   const { t, i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState(screen.name);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -416,8 +543,39 @@ function ScreenRow({ screen, sets, themes, owners, onChanged }: { screen: Screen
     }
   }
 
+  const saved = screen.themeId ? themes.find((one) => one.id === screen.themeId) : undefined;
+  const look = saved?.theme ?? screenThemeTemplate(screen.themeTemplate)?.theme ?? DEFAULT_SCREEN_THEME;
+  const lookName = saved?.name ?? (screen.themeTemplate ? t(`screens.templates.${screen.themeTemplate}.name`) : t("screens.themeDefault"));
+  const OwnerIcon = OWNER_ICONS[screen.owner.kind];
+
   return (
-    <li className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0" data-testid={`screen-${screen.name}`}>
+    <li className={cn("flex flex-col gap-3 rounded-xl border bg-card p-3", open && "sm:col-span-2 xl:col-span-3")} data-testid={`screen-${screen.name}`} data-online={String(!!screen.online)}>
+      <div className={cn("flex flex-col gap-3", open && "sm:flex-row")}>
+        <ScreenThemePreview theme={look} mode={screen.mode} assets={saved?.assets} playing={false} slide={0} className={cn(open && "sm:w-64 sm:shrink-0")} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className={cn("size-2 shrink-0 rounded-full", screen.online ? "bg-emerald-500" : "bg-muted-foreground/40")} aria-hidden />
+            <p className="min-w-0 flex-1 truncate font-medium">{screen.name}</p>
+            <Button type="button" size="sm" variant={open ? "default" : "outline"} aria-expanded={open} onClick={() => setOpen((was) => !was)} data-testid="screen-settings">
+              <Settings2 />
+              {open ? t("screens.settingsDone") : t("screens.settings")}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground" data-testid="screen-status">
+            {screen.online ? t("screens.online") : screen.lastSeenAt ? t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) }) : t("screens.offline")}
+          </p>
+          <p className="truncate text-sm">{screen.setlist ? setlistTitle(screen.setlist, t, i18n.language) : t("screens.noSet")}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {t(`screens.modesShort.${screen.mode}`)} · {lookName}
+          </p>
+          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+            <OwnerIcon className="size-3.5 shrink-0" aria-hidden />
+            {screen.owner.kind === "user" ? t("screens.forMe") : screen.owner.name}
+          </p>
+        </div>
+      </div>
+      {open ? (
+      <>
       <div className="grid gap-3 sm:grid-cols-2 sm:items-end lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`screen-name-${screen.id}`}>{t("screens.name")}</Label>
@@ -485,7 +643,8 @@ function ScreenRow({ screen, sets, themes, owners, onChanged }: { screen: Screen
         </div>
       ) : null}
       {!screen.canManage ? <p className="text-xs text-muted-foreground">{t("screens.notYours")}</p> : null}
-      {screen.lastSeenAt ? <p className="text-xs text-muted-foreground">{t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) })}</p> : null}
+      </>
+      ) : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}

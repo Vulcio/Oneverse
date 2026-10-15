@@ -70,7 +70,7 @@ try {
   await step("the built-in themes play on a sample song; one customized in the editor and saved", async () => {
     page = tablet;
     await signIn(tablet, leader);
-    await tablet.goto(`${WEB}/screens`);
+    await tablet.goto(`${WEB}/screens?tab=templates`);
     const builtIn = tablet.getByTestId("builtin-theme-chapel");
     await builtIn.getByTestId("screen-lyrics").first().waitFor();
     await builtIn.getByTestId("customize-theme").click();
@@ -97,8 +97,11 @@ try {
   });
 
   await step("picked for the screen from its row: the screen changes at once", async () => {
+    // From the Screens tab (issue #267): its tile's settings.
+    await tablet.getByTestId("screens-tab-screens").click();
     const row = tablet.getByTestId(`screen-TV ${stamp}`);
-    await row.getByLabel("Theme").selectOption({ label: `Starry ${stamp}` });
+    await row.getByTestId("screen-settings").click();
+    await row.getByLabel("Template").selectOption({ label: `Starry ${stamp}` });
     page = tv;
     await tv.locator('[data-testid="screen-stage"][data-background="particles"]').waitFor();
     await tv.locator(`[data-testid="screen-showing"][data-theme]`).waitFor();
@@ -140,7 +143,7 @@ try {
   await step("a picture for the background and an uploaded font, from the editor: on the screen", async () => {
     page = tablet;
     await tablet.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
-    await tablet.goto(`${WEB}/screens`);
+    await tablet.goto(`${WEB}/screens?tab=templates`);
     await tablet.getByTestId(`saved-theme-Starry ${stamp}`).getByTestId("edit-theme").click();
     const editor = tablet.getByTestId("theme-editor");
     await editor.getByTestId("theme-background").locator('[data-value="image"]').click();

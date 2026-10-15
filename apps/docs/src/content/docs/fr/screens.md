@@ -18,13 +18,13 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 
 L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
-Dans **Écrans**, chaque écran de la liste peut être renommé, passé à une autre liste ou basculé entre paroles et grille ; l'écran change aussitôt. **Déconnecter** l'arrête : il revient à un nouveau code.
+**Écrans** a trois onglets : **Écrans**, **Modèles** et **Widgets**. Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, paroles ou grille, son modèle et à qui il est. **Réglages** ouvre une vignette pour renommer l'écran, le passer à une autre liste, le basculer entre paroles et grille ou changer son modèle ; l'écran change aussitôt. **Déconnecter** l'arrête : il revient à un nouveau code.
 
 ### À qui est l'écran
 
-Un écran est à vous, à une équipe ou à une organisation. En l'associant, **Pour** le choisit : **Moi seulement**, ou une équipe ou une [organisation](/fr/organizations/) dont vous êtes administrateur - le projecteur et l'écran de retour de l'église appartiennent à l'église, et restent quand la personne qui les a associés s'en va. **Écrans** liste les vôtres, puis ceux de chacune de vos équipes et organisations.
+Un écran est à vous, à une équipe ou à une organisation. En l'associant, **Pour** le choisit : **Moi seulement**, ou une équipe ou une [organisation](/fr/organizations/) dont vous êtes administrateur - le projecteur et l'écran de retour de l'église appartiennent à l'église, et restent quand la personne qui les a associés s'en va. Les boutons au-dessus des vignettes les montrent **Tous**, **Les miens**, ou ceux d'une équipe ou d'une organisation.
 
-- L'écran d'une équipe est géré par ses administrateurs, celui d'une organisation par les siens : ils le renomment, changent ce qu'il affiche et son thème, le donnent à quelqu'un d'autre avec **Appartient à**, ou le déconnectent.
+- L'écran d'une équipe est géré par ses administrateurs, celui d'une organisation par les siens : ils le renomment, changent ce qu'il affiche et son modèle, le donnent à quelqu'un d'autre avec **Appartient à**, ou le déconnectent.
 - Les membres de l'équipe ou de l'organisation le voient et y mettent une de leurs listes - une liste qu'ils peuvent modifier. L'écran l'affiche comme eux la voient.
 - Vos écrans partent avec votre compte ; ceux d'une équipe ou d'une organisation, quand elle est supprimée.
 
@@ -44,7 +44,7 @@ La présentation passe par la [Synchro](/fr/sets/#jouer-synchronisé) : les écr
 
 ## Ce qu'affichent les écrans
 
-Avec **Les paroles, pour l'assemblée**, les deux lignes de chaque diapositive sont grandes et centrées. La ligne d'avant est estompée au-dessus, celle d'après en dessous, et chaque diapositive apparaît en fondu - avec l'apparence par défaut ; un [thème](/fr/screens/#thèmes) change tout cela. Une section sans paroles, comme un instrumental, est une diapositive vide : on avance dans le chant au rythme du groupe. La première diapositive d'un chant affiche son titre, et la première et la dernière ses crédits en bas : qui l'a écrit, son copyright et son numéro de chant CCLI, tirés des informations du chant.
+Avec **Les paroles, pour l'assemblée**, les deux lignes de chaque diapositive sont grandes et centrées. La ligne d'avant est estompée au-dessus, celle d'après en dessous, et chaque diapositive apparaît en fondu - avec l'apparence par défaut ; un [modèle](/fr/screens/#modèles) change tout cela. Une section sans paroles, comme un instrumental, est une diapositive vide : on avance dans le chant au rythme du groupe. La première diapositive d'un chant affiche son titre, et la première et la dernière ses crédits en bas : qui l'a écrit, son copyright et son numéro de chant CCLI, tirés des informations du chant.
 
 ![Des paroles sur un écran](../../../assets/screenshots/fr/screen-lyrics.jpg)
 
@@ -52,13 +52,13 @@ Avec **La grille, pour le groupe**, l'écran affiche la grille du chant avec ses
 
 Les paroles sont celles de la version et de la tonalité que joue la liste. Les notes du chant et les accords ne sont jamais montrés à l'assemblée. Si l'écran perd sa connexion, il l'indique dans un coin et se reconnecte tout seul.
 
-## Thèmes
+## Modèles
 
-Un thème, c'est l'apparence d'un écran : sa police, ses couleurs et son fond, les lignes autour des lignes en cours, la place des paroles, et la façon dont les diapositives arrivent et partent. Chaque écran a le sien : un retour de scène peut afficher de grandes majuscules en haut pendant que l'écran de l'assemblée a un fond animé. Choisissez-le dans **Thème**, sur la ligne de l'écran, sous **Vos écrans** ; l'écran change aussitôt.
+Un modèle, c'est l'apparence d'un écran : sa police, ses couleurs et son fond, les lignes autour des lignes en cours, la place des paroles, et la façon dont les diapositives arrivent et partent. Chaque écran a le sien : un retour de scène peut afficher de grandes majuscules en haut pendant que l'écran de l'assemblée a un fond animé. Ils sont dans l'onglet **Modèles**. Un écran en choisit un dans **Modèle**, dans les **Réglages** de sa vignette ; l'écran change aussitôt. **Nouveau modèle** en commence un depuis l'apparence par défaut.
 
-![Les thèmes sur la page Écrans](../../../assets/screenshots/fr/screen-themes.jpg)
+![Les modèles sur la page Écrans](../../../assets/screenshots/fr/screen-themes.jpg)
 
-Les **Thèmes intégrés** jouent chacun un chant d'exemple, pour voir comment ils bougent :
+Les **Modèles intégrés** jouent chacun un chant d'exemple, pour voir comment ils bougent :
 
 - **Classique** - paroles blanches sur noir, la ligne d'avant et d'après atténuées : l'apparence par défaut.
 - **Concert** - majuscules grasses sur une lumière colorée en mouvement, les mots révélés un à un.
@@ -70,7 +70,7 @@ Les **Thèmes intégrés** jouent chacun un chant d'exemple, pour voir comment i
 - **Minimal** - aligné à gauche et discret, les lignes suivantes visibles, tapé.
 - **Retour de scène** - de grandes majuscules en haut et toute la partie, pour les musiciens.
 
-**Personnaliser** en ouvre un dans l'éditeur de thème, avec son aperçu à côté des réglages - en **16:9** ou **4:3**, sur les paroles ou la grille des musiciens - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
+**Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3**, sur les paroles ou la grille des musiciens - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
 
 - **Texte** - la police (ou une **Police envoyée** : un fichier WOFF2, WOFF, TTF ou OTF que vous avez le droit d'utiliser ainsi), sa taille (**Ajustée à la ligne**, ou fixe), sa graisse, sa couleur, **Majuscules**, **Lisibilité** (une ombre, un contour ou un halo, pour des paroles sur un fond animé), l'alignement, l'interligne et l'espacement des lettres.
 - **Lignes** - **La diapositive**, avec les lignes d'avant et d'après, ou **Toute la partie** avec les lignes de la diapositive mises en avant ; les lignes autour **Atténuées**, **Plus petites**, **Floues** ou **Masquées**.
@@ -80,8 +80,12 @@ Les **Thèmes intégrés** jouent chacun un chant d'exemple, pour voir comment i
 - **Titre et crédits** - afficher ou non le titre du chant et ses crédits (auteurs, copyright, numéro CCLI), sur quelles diapositives et où.
 - **Accords** - pour **La grille, pour le groupe** : la couleur des accords et la taille de la grille.
 
-L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1. Les images, vidéos et polices s'ajoutent à un thème enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage. Nommez le thème et **Enregistrer le thème** : il est à vous ou - si vous administrez une équipe - à l'équipe, pour que chaque membre puisse le choisir pour ses écrans (seuls ses administrateurs le modifient). Un thème que vous pouvez modifier a **Modifier** et **Supprimer** ; le supprimer remet ses écrans sur l'apparence par défaut.
+L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1. Les images, vidéos et polices s'ajoutent à un modèle enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage. Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous administrez une équipe - à l'équipe, pour que chaque membre puisse le choisir pour ses écrans (seuls ses administrateurs le modifient). Un modèle que vous pouvez modifier a **Modifier** et **Supprimer** ; le supprimer remet ses écrans sur l'apparence par défaut.
 
 Tout ce qui bouge est dessiné par la puce graphique de l'écran : ça reste fluide sur le navigateur d'un téléviseur. Un appareil qui demande moins d'animations a des fonds immobiles et de simples fondus.
 
-Pour essayer un thème intégré sur un écran, ou afficher les paroles dans un logiciel de diffusion (comme source navigateur), ajoutez `?theme=` et son nom à l'adresse de l'écran : **songverse.one/screen?theme=stream**. C'est pour cet appareil seulement, tant que l'adresse ne change pas.
+Pour essayer un modèle intégré sur un écran, ou afficher les paroles dans un logiciel de diffusion (comme source navigateur), ajoutez `?theme=` et son nom à l'adresse de l'écran : **songverse.one/screen?theme=stream**. C'est pour cet appareil seulement, tant que l'adresse ne change pas.
+
+## Widgets
+
+L'onglet **Widgets** liste ce qu'un écran peut afficher en plus des paroles : **Paroles ou grille**, **Diapositive en cours** et **Diapositive suivante** pour un retour de scène, une **Horloge**, un **Compte à rebours**, un **Chronomètre**, un **Message** de l'opérateur média, le **Chant** et le **Chant suivant**, et un **Texte** à vous. Ils se placent sur la grille d'un modèle : chaque écran qui l'utilise les affiche.

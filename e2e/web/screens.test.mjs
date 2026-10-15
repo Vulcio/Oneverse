@@ -58,10 +58,23 @@ try {
     await tablet.getByTestId("screen-pair-form").getByRole("button", { name: "Pair screen" }).click();
     await tablet.getByTestId("screen-paired").getByText(`Front TV is paired: it shows Sunday ${stamp}`).waitFor();
     await tablet.getByTestId("screens-list").getByTestId("screen-Front TV").waitFor();
-    // Screens, under Tools: it's among the team's.
+    // Screens, under Tools (issue #267): a tile, among the team's when filtered.
     await tablet.getByTestId("nav-screens").click();
     await tablet.waitForURL(`${WEB}/screens`);
-    await tablet.getByTestId(`screens-group-team-${band.id}`).getByTestId("screen-Front TV").waitFor();
+    await tablet.getByTestId("screen-add").waitFor();
+    await tablet.getByTestId("screens-list").getByTestId("screen-Front TV").waitFor();
+    await tablet.getByTestId("screens-filter-user").click();
+    await tablet.getByTestId("screens-list").getByTestId("screen-Front TV").waitFor({ state: "detached" });
+    await tablet.getByTestId(`screens-filter-team:${band.id}`).click();
+    await tablet.getByTestId("screens-list").getByTestId("screen-Front TV").waitFor();
+    // The other tabs: the templates, and the widgets a template can place (issue #267).
+    await tablet.getByTestId("screens-tab-widgets").click();
+    await tablet.waitForURL(`${WEB}/screens?tab=widgets`);
+    await tablet.getByTestId("widgets-list").getByTestId("widget-countdown").getByText("Countdown").waitFor();
+    await tablet.getByTestId("screens-tab-templates").click();
+    await tablet.getByTestId("builtin-themes").waitFor();
+    await tablet.getByTestId("screens-tab-screens").click();
+    await tablet.getByTestId("screen-add").waitFor();
     page = tv;
     // The screen claims its token and waits on the set.
     await tv.locator('[data-testid="screen-display"][data-state="showing"]').waitFor({ timeout: 15000 });
@@ -152,6 +165,9 @@ try {
     page = tablet;
     await tablet.goto(`${WEB}/screens?setlistId=${set.id}`);
     const row = tablet.getByTestId("screens-list").getByTestId("screen-Front TV");
+    // Connected: its tile says so (issue #267).
+    if ((await row.getAttribute("data-online")) !== "true") throw new Error(`not shown as connected: ${await row.getByTestId("screen-status").innerText()}`);
+    await row.getByTestId("screen-settings").click();
     await row.getByRole("button", { name: "Disconnect" }).click();
     await row.getByRole("button", { name: "Disconnect it" }).click();
     await row.waitFor({ state: "detached" });

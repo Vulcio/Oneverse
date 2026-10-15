@@ -682,6 +682,8 @@ export interface ScreenSummary {
   setlist: { id: string; name: string | null; eventDate: string | null; fromEvent?: boolean } | null;
   /** When it last loaded its set. */
   lastSeenAt: string | null;
+  /** Connected now (issue #267); left out where it isn't known (a screen's own view of itself). */
+  online?: boolean;
   createdAt: string;
   /** Its look (issue #194): a saved theme, or a built-in one by its id; neither, the default. */
   themeId: string | null;

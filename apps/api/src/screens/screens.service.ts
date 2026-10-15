@@ -10,7 +10,7 @@ import { SetlistsService } from "../setlists/setlists.service.js";
 
 /** How long a pairing code waits to be confirmed. */
 export const PAIRING_TTL_S = 10 * 60;
-import { SCREEN_CHANNEL } from "./screen-channel.js";
+import { SCREEN_CHANNEL, screenOnlineKey } from "./screen-channel.js";
 import { presentScreenThemeAssets } from "./screen-theme-assets.js";
 import { ScreenThemesService } from "./screen-themes.service.js";
 
@@ -171,14 +171,14 @@ export class ScreensService {
     if (setlistId) {
       await this.assertCanPresent(user, setlistId);
       const screens = await this.prisma.client.screen.findMany({ where: { setlistId }, select: SCREEN_SELECT, orderBy: { createdAt: "asc" } });
-      return screens.map((screen) => present(screen, true));
+      return withOnline(screens.map((screen) => present(screen, true)));
     }
     const screens = await this.prisma.client.screen.findMany({
       where: { OR: [{ ownerUserId: user.id }, { ownerTeamId: { in: [...scope.teams] } }, { ownerOrganizationId: { in: [...scope.organizations] } }] },
       select: SCREEN_SELECT,
       orderBy: { createdAt: "asc" },
     });
-    return screens.map((screen) => present(screen, manages(user, scope, screen)));
+    return withOnline(screens.map((screen) => present(screen, manages(user, scope, screen))));
   }
 
   /**
@@ -322,6 +322,12 @@ const manages = (user: AuthenticatedUser, scope: Scope, screen: Owned) =>
 /** Its team's or organisation's members put their sets on it. */
 const uses = (user: AuthenticatedUser, scope: Scope, screen: Owned) =>
   (!!screen.ownerTeamId && scope.teams.has(screen.ownerTeamId)) || (!!screen.ownerOrganizationId && scope.organizations.has(screen.ownerOrganizationId));
+
+/** Which of the screens are connected now (issue #267). */
+async function withOnline<T extends { id: string }>(screens: T[]): Promise<(T & { online: boolean })[]> {
+  const online = screens.length ? await redis().mget(screens.map((screen) => screenOnlineKey(screen.id))).catch(() => []) : [];
+  return screens.map((screen, i) => ({ ...screen, online: online[i] === "1" }));
+}
 
 function present(
   screen: Owned & {
