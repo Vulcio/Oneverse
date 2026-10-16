@@ -684,6 +684,8 @@ export interface ScreenSummary {
   setlist: { id: string; name: string | null; eventDate: string | null; fromEvent?: boolean } | null;
   /** When it last loaded its set. */
   lastSeenAt: string | null;
+  /** A set put on it, or its owner's set of the day (issue #274); left out by an older API. */
+  setMode?: "FIXED" | "DAY";
   /** Connected now (issue #267); left out where it isn't known (a screen's own view of itself). */
   online?: boolean;
   createdAt: string;

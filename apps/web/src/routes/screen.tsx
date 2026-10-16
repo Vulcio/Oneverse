@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { renderSVG } from "uqr";
 import { LocaleProvider } from "@songverse/app/components/locale-provider";
+import { ScreenSetPicker } from "#/components/screen-set-picker";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
 import type { StageLive } from "#/components/screen-widgets";
 import { loadLocale } from "@songverse/app/i18n";
@@ -114,10 +115,30 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
     };
   }, [set, view, song, itemStartedAt, stage, offset]);
 
+  // Following its owner's schedule (issue #274): no set today, the sets to pick from; OK while nothing's presented opens them too.
+  const daySet = current.screen.setMode === "DAY";
+  const [picking, setPicking] = useState(false);
+  const showPicker = daySet && (picking || !set);
+  useEffect(() => {
+    if (!daySet) return setPicking(false);
+    // Open, the list takes the keys (OK on a set picks it).
+    if (showPicker) return;
+    const open = (event: KeyboardEvent) => {
+      if ((event.key === "Enter" || event.key === " ") && !presenting) {
+        event.preventDefault();
+        setPicking(true);
+      }
+    };
+    window.addEventListener("keydown", open);
+    return () => window.removeEventListener("keydown", open);
+  }, [daySet, presenting, showPicker]);
+  // Picked: the set comes, the list goes.
+  useEffect(() => setPicking(false), [current.screen.setlistId]);
+
   const idle = !set ? (
     <Idle title={current.screen.name} subtitle={t("screens.displayNoSet")} />
   ) : !presenting || !view ? (
-    <Idle title={setlistTitle(set.set, t, i18n.language)} subtitle={current.screen.name} />
+    <Idle title={setlistTitle(set.set, t, i18n.language)} subtitle={daySet ? t("screens.picker.okHint") : current.screen.name} />
   ) : null;
 
   return (
@@ -141,6 +162,7 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
         assets={current.assets}
         live={live}
       />
+      {showPicker ? <ScreenSetPicker onClose={set ? () => setPicking(false) : undefined} /> : null}
       {/* Lost the connection: said quietly, in a corner; it comes back by itself. */}
       {!online ? <WifiOff className="absolute right-[2vmin] bottom-[2vmin] z-10 size-[3vmin] text-neutral-600" aria-label={t("screens.displayOffline")} /> : null}
     </div>

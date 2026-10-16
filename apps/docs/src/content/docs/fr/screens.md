@@ -12,13 +12,21 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
    ![Un écran affichant son code](../../../assets/screenshots/fr/screen-code.jpg)
 
 2. Sur votre téléphone ou votre tablette, scannez le code QR, ou ouvrez **Écrans** - sous **Outils** dans la barre latérale, ou depuis le menu Synchro de Live (**Écrans…**) - et saisissez le code.
-3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche et ce qu'il **Affiche** : **Les paroles, pour l'assemblée** ou **La grille, pour le groupe**. Puis **Associer l'écran**.
+3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche - une des vôtres, ou **La liste du jour (automatique)** (voir [plus bas](/fr/screens/#la-liste-du-jour)) - et ce qu'il **Affiche** : **Les paroles, pour l'assemblée** ou **La grille, pour le groupe**. Puis **Associer l'écran**.
 
    ![Associer un écran](../../../assets/screenshots/fr/screens-pair.jpg)
 
 L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
 **Écrans** a trois onglets : **Écrans**, **Modèles** et **Widgets**. Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, paroles ou grille, son modèle et à qui il est. **Réglages** ouvre une vignette pour renommer l'écran, le passer à une autre liste, le basculer entre paroles et grille ou changer son modèle ; l'écran change aussitôt. **Déconnecter** l'arrête : il revient à un nouveau code.
+
+### La liste du jour
+
+Un écran sur **La liste du jour (automatique)** suit le planning de son propriétaire : l'écran d'une équipe affiche la liste de l'équipe datée d'aujourd'hui, celui d'une organisation la liste du jour parmi celles de ses équipes, et votre propre écran la vôtre. S'il y a deux listes le même jour, il affiche celle en cours (commencée depuis moins de trois heures), sinon la prochaine. L'écran le calcule avec sa propre horloge à chaque chargement : il passe tout seul à la liste du lendemain.
+
+Sur l'écran lui-même, quand rien n'est présenté, **OK** sur la télécommande (ou Entrée sur un clavier) ouvre la liste des listes du propriétaire : **Aujourd'hui et à venir**, **Sans date**, puis **Archives** quand vous l'ouvrez. Déplacez-vous avec les flèches de la télécommande et choisissez avec **OK** ; le choix tient jusqu'au lendemain. **Revenir à la liste du jour** revient à celle du jour, et Retour (Échap) ferme la liste. Sans liste aujourd'hui, elle s'affiche d'elle-même. Cela fonctionne avec la télécommande d'un Chromecast avec Google TV, ou les flèches d'un ordinateur.
+
+Une liste mise sur un écran depuis **Écrans**, dans les **Réglages** de sa vignette, est fixe : l'écran l'affiche jusqu'à ce que vous la changiez, et OK n'ouvre pas la liste. Sa vignette indique quelle est la liste du jour, ou qu'il n'y en a pas aujourd'hui.
 
 ### À qui est l'écran
 

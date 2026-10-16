@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, GoneException, Injectable, NotFoundException } from "@nestjs/common";
-import { SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, normalizeScreenCode, resolveScreenTheme, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenTheme } from "@songverse/core";
+import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, normalizeScreenCode, resolveScreenTheme, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenTheme } from "@songverse/core";
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
@@ -39,6 +39,8 @@ const SCREEN_SELECT = {
   ownerTeamId: true,
   ownerOrganizationId: true,
   setByUserId: true,
+  setMode: true,
+  setlistPickedOn: true,
   owner: { select: { displayName: true } },
   ownerTeam: { select: { name: true } },
   ownerOrganization: { select: { name: true } },
@@ -104,14 +106,14 @@ export class ScreensService {
    * or (issue #222) a team's or an organisation's they run - its token
    * waiting for it to claim.
    */
-  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode: ScreenMode; setlistId: string; themeId?: string | null; themeTemplate?: string | null }) {
+  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string; themeId?: string | null; themeTemplate?: string | null }) {
     const { code, pairingId, pairing } = await this.waiting(input);
-    await this.assertCanPresent(user, change.setlistId);
+    if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
     const owner = await this.ownerFor(user, change.owner);
     const token = `scr_${randomBytes(32).toString("base64url")}`;
     const screen = await this.prisma.client.screen.create({
-      data: { name: change.name, mode: change.mode, setlistId: change.setlistId, setByUserId: user.id, ...owner, tokenHash: hash(token), ...lookChange(change) },
+      data: { name: change.name, mode: change.mode, setMode: change.setMode ?? "FIXED", setlistId: change.setlistId ?? null, setByUserId: user.id, ...owner, tokenHash: hash(token), ...lookChange(change) },
       select: SCREEN_SELECT,
     });
     const ttl = Math.max(30, await redis().ttl(pairingKey(pairingId)));
@@ -142,27 +144,115 @@ export class ScreensService {
   }
 
   /** What a screen shows: itself, and its set as the person who paired it reads it (null without one, or when they no longer can). */
-  async current(token: string) {
-    const screen = await this.byToken(token);
+  async current(token: string, day: { today?: string; time?: string } = {}) {
+    let screen = await this.byToken(token);
     if (!screen) throw new NotFoundException("This screen was disconnected");
+    // Its owner's set of the day (issue #274): worked out now, from the screen's own day and time.
+    if (screen.setMode === "DAY" && day.today) screen = await this.followDay(screen, day.today, day.time ?? "12:00");
     const { theme } = await this.prisma.client.screen.update({
       where: { id: screen.id },
       data: { lastSeenAt: new Date() },
       select: { theme: { select: { document: true, assets: { select: { id: true, kind: true, storageKey: true, mimeType: true, filename: true } } } } },
     });
-    // Read as whoever put the set on it (issue #222); before that, as who paired it.
-    const reader = await this.ownerOf(screen.setByUserId ?? screen.ownerUserId);
     let set = null;
-    if (reader && screen.setlistId) {
-      try {
-        const copy = await this.setlists.offlineCopy(reader, screen.setlistId, { withNotes: false });
-        set = { ...copy, credits: await this.credits(copy.songs.flatMap((song) => (song.song ? [song.song.id] : []))) };
-      } catch {
-        // No longer theirs to read: the screen waits for another set.
+    if (screen.setlistId) {
+      for (const reader of await this.readersFor(screen, screen.setlistId)) {
+        try {
+          const copy = await this.setlists.offlineCopy(reader, screen.setlistId, { withNotes: false });
+          set = { ...copy, credits: await this.credits(copy.songs.flatMap((song) => (song.song ? [song.song.id] : []))) };
+          break;
+        } catch {
+          // Not theirs to read: the next one; nobody, and the screen waits for another set.
+        }
       }
     }
     // Its theme's pictures, videos and fonts (issue #194), at addresses a screen can load without a session.
     return { screen: present(screen), theme: screenLook({ themeTemplate: screen.themeTemplate, theme }), assets: presentScreenThemeAssets(theme?.assets ?? []), set };
+  }
+
+  /**
+   * The sets a screen offers to pick from (issue #274): its owner's -
+   * upcoming by date, then undated, then past ones - with the one it shows.
+   */
+  async sets(token: string, today: string) {
+    const screen = await this.byToken(token);
+    if (!screen) throw new NotFoundException("This screen was disconnected");
+    const { upcoming, undated, archive } = orderScreenSets(await this.ownerSets(screen), today);
+    const strip = ({ startTime: _startTime, ...set }: Awaited<ReturnType<ScreensService["ownerSets"]>>[number]) => set;
+    return {
+      setMode: screen.setMode,
+      setlistId: screen.setlistId,
+      picked: screen.setlistPickedOn === today,
+      upcoming: upcoming.slice(0, 60).map(strip),
+      undated: undated.slice(0, 30).map(strip),
+      archive: archive.slice(0, 60).map(strip),
+    };
+  }
+
+  /** A set picked on the screen (issue #274): its owner's, for the rest of the day; null goes back to the day's own. */
+  async pick(token: string, setlistId: string | null, today: string) {
+    const screen = await this.byToken(token);
+    if (!screen) throw new NotFoundException("This screen was disconnected");
+    if (screen.setMode !== "DAY") throw new ForbiddenException("This screen shows the set put on it: change it from Screens");
+    if (setlistId && !(await this.ownerSets(screen)).some((set) => set.id === setlistId)) throw new NotFoundException("Set not found");
+    const updated = await this.prisma.client.screen.update({
+      where: { id: screen.id },
+      data: setlistId ? { setlistId, setlistPickedOn: today } : { setlistPickedOn: null },
+      select: SCREEN_SELECT,
+    });
+    const followed = setlistId ? updated : await this.followDay(updated, today, new Date().toTimeString().slice(0, 5));
+    await redis().publish(SCREEN_CHANNEL, screen.id);
+    return present(followed);
+  }
+
+  /** A screen on its owner's set of the day: picked on it today, else pickDaySet's; moved there (and told) when it changed. */
+  private async followDay<T extends { id: string; setlistId: string | null; setlistPickedOn: string | null } & Owned>(screen: T, today: string, time: string): Promise<T> {
+    if (screen.setlistPickedOn === today && screen.setlistId) return screen;
+    const target = pickDaySet(await this.ownerSets(screen), today, time);
+    if (target === screen.setlistId && !screen.setlistPickedOn) return screen;
+    const updated = await this.prisma.client.screen.update({ where: { id: screen.id }, data: { setlistId: target, setlistPickedOn: null }, select: SCREEN_SELECT });
+    if (target !== screen.setlistId) await redis().publish(SCREEN_CHANNEL, screen.id);
+    return { ...screen, setlistId: updated.setlistId, setlistPickedOn: null, setlist: updated.setlist };
+  }
+
+  /** Its owner's sets (issue #274): a team's, its organisation's teams', its person's own - with their dates and start times. */
+  private async ownerSets(screen: Owned) {
+    const where = screen.ownerTeamId
+      ? { ownerTeamId: screen.ownerTeamId }
+      : screen.ownerOrganizationId
+        ? { ownerTeam: { organizationId: screen.ownerOrganizationId } }
+        : { ownerUserId: screen.ownerUserId ?? "-" };
+    const sets = await this.prisma.client.setlist.findMany({
+      where,
+      select: { id: true, name: true, eventDate: true, ownerTeam: { select: { name: true } }, eventDateOf: { select: { startTime: true, event: { select: { startTime: true } } } } },
+      orderBy: { eventDate: "desc" },
+      take: 300,
+    });
+    return sets.map((set) => ({
+      id: set.id,
+      name: set.name,
+      eventDate: set.eventDate ? set.eventDate.toISOString().slice(0, 10) : null,
+      startTime: set.eventDateOf?.startTime ?? set.eventDateOf?.event.startTime ?? null,
+      fromEvent: !!set.eventDateOf,
+      teamName: set.ownerTeam?.name ?? null,
+    }));
+  }
+
+  /**
+   * Who a screen reads its set as: whoever put it on (issue #222), its
+   * person, then the admins of the set's team and of the screen's team or
+   * organisation - for a set of the day nobody put on it (issue #274).
+   */
+  private async readersFor(screen: { setByUserId: string | null } & Owned, setlistId: string): Promise<AuthenticatedUser[]> {
+    const set = await this.prisma.client.setlist.findUnique({ where: { id: setlistId }, select: { ownerTeamId: true } });
+    const teams = [set?.ownerTeamId, screen.ownerTeamId].filter((one): one is string => !!one);
+    const [teamAdmins, organizationAdmins] = await Promise.all([
+      teams.length ? this.prisma.client.teamMembership.findMany({ where: { teamId: { in: teams }, role: "ADMIN" }, select: { userId: true }, take: 5 }) : [],
+      screen.ownerOrganizationId ? this.prisma.client.organizationMembership.findMany({ where: { organizationId: screen.ownerOrganizationId, role: "ADMIN" }, select: { userId: true }, take: 5 }) : [],
+    ]);
+    const ids = [...new Set([screen.setByUserId, screen.ownerUserId, ...teamAdmins.map((one) => one.userId), ...organizationAdmins.map((one) => one.userId)].filter((one): one is string => !!one))];
+    const readers = await Promise.all(ids.map((id) => this.ownerOf(id)));
+    return readers.filter((one): one is AuthenticatedUser => !!one);
   }
 
   /** The screens of a set its leaders see, or those the user may use: their own, their teams', their organisations' (issue #222). */
@@ -186,9 +276,9 @@ export class ScreensService {
    * leads the set it shows, gives it another set (one they can edit) - it
    * then reads that set as them.
    */
-  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setlistId?: string | null; themeId?: string | null; themeTemplate?: string | null }) {
+  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string | null; themeId?: string | null; themeTemplate?: string | null }) {
     const { screen, canManage } = await this.changeable(user, screenId);
-    const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId");
+    const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode");
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
@@ -199,7 +289,9 @@ export class ScreensService {
         ...(owner ?? {}),
         ...(change.name !== undefined && { name: change.name }),
         ...(change.mode !== undefined && { mode: change.mode }),
-        ...(change.setlistId !== undefined && { setlistId: change.setlistId, setByUserId: change.setlistId ? user.id : null }),
+        ...(change.setlistId !== undefined && { setlistId: change.setlistId, setByUserId: change.setlistId ? user.id : null, setlistPickedOn: null }),
+        // A set put on it is fixed; the day's set is worked out when it next loads (issue #274).
+        ...(change.setMode !== undefined ? { setMode: change.setMode, ...(change.setMode === "DAY" && change.setlistId === undefined && { setlistPickedOn: null }) } : change.setlistId ? { setMode: "FIXED" as const } : {}),
         ...lookChange(change),
       },
       select: SCREEN_SELECT,
@@ -338,6 +430,7 @@ function present(
     themeId: string | null;
     themeTemplate: string | null;
     lastSeenAt: Date | null;
+    setMode: "FIXED" | "DAY";
     createdAt: Date;
     owner: { displayName: string } | null;
     ownerTeam: { name: string } | null;
@@ -360,6 +453,7 @@ function present(
     setlistId: screen.setlistId,
     setlist: screen.setlist ? { id: screen.setlist.id, name: screen.setlist.name, eventDate: screen.setlist.eventDate ? screen.setlist.eventDate.toISOString().slice(0, 10) : null, fromEvent: !!screen.setlist.eventDateOf } : null,
     lastSeenAt: screen.lastSeenAt?.toISOString() ?? null,
+    setMode: screen.setMode,
     createdAt: screen.createdAt.toISOString(),
     themeId: screen.themeId,
     themeTemplate: screen.themeTemplate,

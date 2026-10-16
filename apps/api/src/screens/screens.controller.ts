@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, UpdateScreenSchema } from "@songverse/core";
+import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, ScreenCurrentQuerySchema, UpdateScreenSchema } from "@songverse/core";
 import type { Response } from "express";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
@@ -12,6 +12,8 @@ import { ScreensService } from "./screens.service.js";
 class ConfirmScreenPairingDto extends zodDto(ConfirmScreenPairingSchema) {}
 class ClaimScreenPairingDto extends zodDto(ClaimScreenPairingSchema) {}
 class UpdateScreenDto extends zodDto(UpdateScreenSchema) {}
+class ScreenCurrentQueryDto extends zodDto(ScreenCurrentQuerySchema) {}
+class PickScreenSetDto extends zodDto(PickScreenSetSchema) {}
 
 function requireUser(user: AuthenticatedUser | undefined): AuthenticatedUser {
   if (!user) throw new UnauthorizedException();
@@ -66,8 +68,23 @@ export class ScreensController {
   @Public()
   @RateLimit("none")
   @Get("current")
-  current(@Headers("authorization") authorization: string | undefined): ReturnType<ScreensService["current"]> {
-    return this.screens.current(screenToken(authorization));
+  current(@Headers("authorization") authorization: string | undefined, @Query() query: ScreenCurrentQueryDto): ReturnType<ScreensService["current"]> {
+    return this.screens.current(screenToken(authorization), query);
+  }
+
+  /** The sets the screen offers to pick from (issue #274): its owner's, upcoming first, then the archive. */
+  @Public()
+  @Get("current/sets")
+  sets(@Headers("authorization") authorization: string | undefined, @Query() query: ScreenCurrentQueryDto): ReturnType<ScreensService["sets"]> {
+    return this.screens.sets(screenToken(authorization), query.today ?? new Date().toISOString().slice(0, 10));
+  }
+
+  /** A set picked on the screen for today (issue #274); null goes back to the day's own. */
+  @Public()
+  @Post("current/set")
+  @HttpCode(HttpStatus.OK)
+  pick(@Headers("authorization") authorization: string | undefined, @Body() dto: PickScreenSetDto): ReturnType<ScreensService["pick"]> {
+    return this.screens.pick(screenToken(authorization), dto.setlistId, dto.today);
   }
 
   /** The screens showing a set (for who leads it), or the user's own. */

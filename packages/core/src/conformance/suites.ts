@@ -20,7 +20,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyStageCommand, clockOffset, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenThemeContrast, sectionEnergy } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenThemeContrast, sectionEnergy } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
@@ -1117,6 +1117,44 @@ export const CONFORMANCE: ConformanceArea[] = [
             args: [{ grid: { columns: 6, rows: 4, widgets: [{ id: "a", kind: "clock", x: 4, y: 0, w: 2, h: 1, options: { seconds: true } }, { id: "b", kind: "weather", x: 0, y: 0, w: 2, h: 2 }, { id: "c", kind: "text", x: 0, y: 3, w: 9, h: 1, style: { color: "blue" } }] } }],
           },
           { name: "a grid that can't be read: none, the words fill the screen", args: [{ grid: { columns: 99 }, text: { font: "serif" } }] },
+        ],
+      },
+      pickDaySet: {
+        about:
+          "The set a screen following its owner's schedule shows (issue #274): among today's, the one going on (started within 3 hours, the latest), else the next to start, else the latest that started; none today: null.",
+        params: ["sets", "today", "now"],
+        run: pickDaySet,
+        cases: [
+          { name: "none today", args: [[{ id: "a", eventDate: "2026-10-17", startTime: "10:00" }], "2026-10-16", "09:00"] },
+          { name: "the only one today, before it starts", args: [[{ id: "a", eventDate: "2026-10-16", startTime: "10:00" }, { id: "b", eventDate: "2026-10-17", startTime: "10:00" }], "2026-10-16", "08:00"] },
+          { name: "morning and evening, during the morning one", args: [[{ id: "am", eventDate: "2026-10-16", startTime: "10:00" }, { id: "pm", eventDate: "2026-10-16", startTime: "18:00" }], "2026-10-16", "10:45"] },
+          { name: "morning and evening, in the afternoon: the evening one", args: [[{ id: "am", eventDate: "2026-10-16", startTime: "10:00" }, { id: "pm", eventDate: "2026-10-16", startTime: "18:00" }], "2026-10-16", "15:00"] },
+          { name: "late at night: the evening one, the latest started", args: [[{ id: "am", eventDate: "2026-10-16", startTime: "10:00" }, { id: "pm", eventDate: "2026-10-16", startTime: "18:00" }], "2026-10-16", "23:30"] },
+          { name: "without a time: as if at midnight", args: [[{ id: "a", eventDate: "2026-10-16", startTime: null }], "2026-10-16", "11:00"] },
+        ],
+      },
+      orderScreenSets: {
+        about: "The owner's sets as a screen offers them (issue #274): upcoming by date and time, then undated, then the archive, the latest first.",
+        params: ["sets", "today"],
+        run: (sets: Parameters<typeof orderScreenSets>[0], today: string) => {
+          const { upcoming, undated, archive } = orderScreenSets(sets, today);
+          return { upcoming: upcoming.map((set) => set.id), undated: undated.map((set) => set.id), archive: archive.map((set) => set.id) };
+        },
+        cases: [
+          {
+            name: "a mix",
+            args: [
+              [
+                { id: "next-week", eventDate: "2026-10-23", startTime: "10:00" },
+                { id: "today-pm", eventDate: "2026-10-16", startTime: "18:00" },
+                { id: "today-am", eventDate: "2026-10-16", startTime: "10:00" },
+                { id: "draft", eventDate: null, startTime: null },
+                { id: "last-week", eventDate: "2026-10-09", startTime: "10:00" },
+                { id: "yesterday", eventDate: "2026-10-15", startTime: null },
+              ],
+              "2026-10-16",
+            ],
+          },
         ],
       },
       placeScreenWidget: {

@@ -396,10 +396,15 @@ function ModeSelect({ id, value, onChange }: { id: string; value: ScreenMode; on
   );
 }
 
+/** The set select's value for "The day's set" (issue #274). */
+const DAY_SET = "__day__";
+
 function SetSelect({ id, sets, value, onChange, allowNone = false }: { id: string; sets: SetlistSummary[]; value: string; onChange: (id: string) => void; allowNone?: boolean }) {
   const { t, i18n } = useTranslation();
   return (
     <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)}>
+      {/* Its owner's set of the day (issue #274). */}
+      <option value={DAY_SET}>{t("screens.daySet")}</option>
       {allowNone || !value ? <option value="">{t("screens.noSet")}</option> : null}
       {sets.map((set) => (
         <option key={set.id} value={set.id}>
@@ -415,7 +420,8 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
   const { t } = useTranslation();
   const [owner, setOwner] = useState("user");
   const [code, setCode] = useState(initialCode ? formatScreenCode(normalizeScreenCode(initialCode) ?? initialCode) : "");
-  const [set, setSet] = useState(setlistId && sets.some((one) => one.id === setlistId) ? setlistId : (sets[0]?.id ?? ""));
+  // A set from Live, else the owner's set of the day (issue #274).
+  const [set, setSet] = useState(setlistId && sets.some((one) => one.id === setlistId) ? setlistId : DAY_SET);
   const [mode, setMode] = useState<ScreenMode>("LYRICS");
   const [name, setName] = useState(t("screens.defaultName"));
   const [pending, setPending] = useState(false);
@@ -428,7 +434,7 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
     setPending(true);
     setError(null);
     try {
-      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), mode, setlistId: set }));
+      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), mode, ...(set === DAY_SET ? { setMode: "DAY" as const } : { setlistId: set }) }));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -446,10 +452,9 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
         <CardDescription>{t("screens.pairDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
-        {sets.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("screens.noSets")}</p>
-        ) : (
-          <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit} data-testid="screen-pair-form">
+        {/* No set of one's own to put on it: it can still follow its owner's set of the day (issue #274). */}
+        {sets.length === 0 ? <p className="mb-4 text-sm text-muted-foreground">{t("screens.noSets")}</p> : null}
+        <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit} data-testid="screen-pair-form">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="screen-code">{t("screens.code")}</Label>
               <Input
@@ -495,7 +500,6 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
               </Button>
             </div>
           </form>
-        )}
       </CardContent>
     </Card>
   );
@@ -512,7 +516,7 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
   const [name, setName] = useState(screen.name);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const known = !screen.setlistId || sets.some((set) => set.id === screen.setlistId);
+  const known = screen.setMode === "DAY" || !screen.setlistId || sets.some((set) => set.id === screen.setlistId);
 
   async function change(data: Parameters<typeof apiClient.updateScreen>[1]) {
     setError(null);
@@ -545,7 +549,15 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
           <p className="text-xs text-muted-foreground" data-testid="screen-status">
             {screen.online ? t("screens.online") : screen.lastSeenAt ? t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) }) : t("screens.offline")}
           </p>
-          <p className="truncate text-sm">{screen.setlist ? setlistTitle(screen.setlist, t, i18n.language) : t("screens.noSet")}</p>
+          <p className="truncate text-sm" data-testid="screen-set">
+            {screen.setMode === "DAY"
+              ? screen.setlist
+                ? t("screens.daySetNow", { set: setlistTitle(screen.setlist, t, i18n.language) })
+                : t("screens.daySetNone")
+              : screen.setlist
+                ? setlistTitle(screen.setlist, t, i18n.language)
+                : t("screens.noSet")}
+          </p>
           <p className="truncate text-xs text-muted-foreground">
             {t(`screens.modesShort.${screen.mode}`)} · {lookName}
           </p>
@@ -572,7 +584,13 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`screen-set-${screen.id}`}>{t("screens.set")}</Label>
           {known ? (
-            <SetSelect id={`screen-set-${screen.id}`} sets={sets} value={screen.setlistId ?? ""} allowNone onChange={(id) => void change({ setlistId: id || null })} />
+            <SetSelect
+              id={`screen-set-${screen.id}`}
+              sets={sets}
+              value={screen.setMode === "DAY" ? DAY_SET : (screen.setlistId ?? "")}
+              allowNone
+              onChange={(id) => void change(id === DAY_SET ? { setMode: "DAY" } : { setMode: "FIXED", setlistId: id || null })}
+            />
           ) : (
             <p className="text-sm">{screen.setlist ? setlistTitle(screen.setlist, t, i18n.language) : t("screens.noSet")}</p>
           )}

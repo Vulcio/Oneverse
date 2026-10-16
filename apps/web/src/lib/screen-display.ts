@@ -54,6 +54,52 @@ async function json<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
+/** The screen's own date (YYYY-MM-DD) and time (HH:MM), as its clock has them. */
+export function screenNow(): { today: string; time: string } {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return { today: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`, time: `${pad(now.getHours())}:${pad(now.getMinutes())}` };
+}
+
+/** A set a screen offers to pick (issue #274). */
+export interface ScreenSetOption {
+  id: string;
+  name: string | null;
+  eventDate: string | null;
+  fromEvent: boolean;
+  teamName: string | null;
+}
+
+export interface ScreenSets {
+  setMode: "FIXED" | "DAY";
+  setlistId: string | null;
+  /** Picked on the screen today, rather than the day's own. */
+  picked: boolean;
+  upcoming: ScreenSetOption[];
+  undated: ScreenSetOption[];
+  archive: ScreenSetOption[];
+}
+
+/** The owner's sets, to pick one on the screen (issue #274). */
+export async function fetchScreenSets(): Promise<ScreenSets | null> {
+  const token = storedToken();
+  if (!token) return null;
+  const response = await fetch(api(`/screens/current/sets?today=${screenNow().today}`), { headers: { Authorization: `Screen ${token}` } }).catch(() => null);
+  return response?.ok ? json<ScreenSets>(response) : null;
+}
+
+/** A set picked on the screen for today, or (null) back to the day's own; the screen loads it again when the server says so. */
+export async function pickScreenSet(setlistId: string | null): Promise<boolean> {
+  const token = storedToken();
+  if (!token) return false;
+  const response = await fetch(api("/screens/current/set"), {
+    method: "POST",
+    headers: { Authorization: `Screen ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ setlistId, today: screenNow().today }),
+  }).catch(() => null);
+  return !!response?.ok;
+}
+
 export function useScreenDisplay(): ScreenDisplayState {
   const [state, setState] = useState<ScreenDisplayState>({ kind: "starting" });
   const [token, setToken] = useState<string | null | undefined>(undefined);
@@ -125,7 +171,9 @@ export function useScreenDisplay(): ScreenDisplayState {
       if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current });
     };
     async function load() {
-      const response = await fetch(api("/screens/current"), { headers: { Authorization: `Screen ${token}` } }).catch(() => null);
+      // Its own day and time: a screen following its owner's schedule shows the set of the day (issue #274).
+      const { today, time } = screenNow();
+      const response = await fetch(api(`/screens/current?today=${today}&time=${time}`), { headers: { Authorization: `Screen ${token}` } }).catch(() => null);
       if (stopped) return;
       if (response?.status === 404) return forget();
       if (!response?.ok) return;

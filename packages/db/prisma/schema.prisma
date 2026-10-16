@@ -2748,24 +2748,29 @@ model CustomInstrument {
 // which reads the set it's given and nothing else. Deleting it disconnects
 // the screen.
 model Screen {
-  id                  String     @id @default(cuid())
+  id                  String        @id @default(cuid())
   name                String
-  mode                ScreenMode @default(LYRICS)
-  tokenHash           String     @unique
+  mode                ScreenMode    @default(LYRICS)
+  tokenHash           String        @unique
   // Whose it is (issue #222): a person's, a team's or an organisation's -
   // exactly one. Its managers rename it, change its look or disconnect it.
   ownerUserId         String?
   ownerTeamId         String?
   ownerOrganizationId String?
   setlistId           String?
+  // A set put on it (FIXED), or its owner's set of the day (DAY, issue
+  // #274): then setlistId is the one it shows now, worked out each time it
+  // loads; picked on the screen itself, it stays for that day (setlistPickedOn).
+  setMode             ScreenSetMode @default(FIXED)
+  setlistPickedOn     String?
   // Who put its set on it: it reads the set as they would.
   setByUserId         String?
   // Its look (issue #194): a saved theme, or a built-in one by its id ("concert"); neither, the default.
   themeId             String?
   themeTemplate       String?
   lastSeenAt          DateTime?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   owner             User?         @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   ownerTeam         Team?         @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
@@ -2838,6 +2843,11 @@ model ScreenThemeAsset {
 
   @@index([themeId])
   @@index([storageKey])
+}
+
+enum ScreenSetMode {
+  FIXED
+  DAY
 }
 
 enum ScreenMode {

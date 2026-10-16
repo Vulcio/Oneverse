@@ -12,13 +12,21 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
    ![A screen showing its code](../../assets/screenshots/en/screen-code.jpg)
 
 2. On your phone or tablet, scan the QR code, or open **Screens** - under **Tools** in the sidebar, or from the Sync menu in Live (**Screens…**) - and type the code.
-3. Give the screen a **Name** ("Church TV"), pick the **Set** it shows and what it **Shows**: **Lyrics, for the audience** or **The chart, for the band**. Then **Pair screen**.
+3. Give the screen a **Name** ("Church TV"), pick the **Set** it shows - one of yours, or **The day's set (automatic)** (see [below](/screens/#the-days-set)) - and what it **Shows**: **Lyrics, for the audience** or **The chart, for the band**. Then **Pair screen**.
 
    ![Pairing a screen](../../assets/screenshots/en/screens-pair.jpg)
 
 The screen remembers it's paired: next time, open the same page and it reconnects by itself. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
 **Screens** has three tabs: **Screens**, **Templates** and **Widgets**. On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, lyrics or chart, its template and whose it is. **Settings** opens a tile to rename the screen, move it to another set, switch it between lyrics and chart or change its template; the screen changes at once. **Disconnect** stops it: it goes back to showing a new code.
+
+### The day's set
+
+A screen on **The day's set (automatic)** follows its owner's schedule: a team's screen shows the team's set dated today, an organisation's the set of the day among its teams', and your own screen yours. With two sets on the same day, it shows the one going on (started within three hours), else the next to start. The screen works it out from its own clock each time it loads, so it moves on to the next day's set by itself.
+
+On the screen itself, with nothing presented, **OK** on the remote (or Enter on a keyboard) opens the list of the owner's sets: **Today and coming up**, **Without a date**, then **Archive** when you open it. Move with the remote's arrows and pick one with **OK**; it stays until the next day. **Back to the day's set** returns to the day's own, and Back (Escape) closes the list. With no set today, the list shows by itself. It works with a Chromecast with Google TV's remote, or the arrow keys on a computer.
+
+A set put on a screen from **Screens**, in its tile's **Settings**, is fixed instead: the screen shows it until you change it, and OK doesn't open the list. Its tile says which set the day's set is, or that there's none today.
 
 ### Whose screen it is
 

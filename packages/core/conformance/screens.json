@@ -1109,6 +1109,187 @@
         }
       ]
     },
+    "pickDaySet": {
+      "about": "The set a screen following its owner's schedule shows (issue #274): among today's, the one going on (started within 3 hours, the latest), else the next to start, else the latest that started; none today: null.",
+      "params": [
+        "sets",
+        "today",
+        "now"
+      ],
+      "cases": [
+        {
+          "name": "none today",
+          "args": [
+            [
+              {
+                "id": "a",
+                "eventDate": "2026-10-17",
+                "startTime": "10:00"
+              }
+            ],
+            "2026-10-16",
+            "09:00"
+          ],
+          "expected": null
+        },
+        {
+          "name": "the only one today, before it starts",
+          "args": [
+            [
+              {
+                "id": "a",
+                "eventDate": "2026-10-16",
+                "startTime": "10:00"
+              },
+              {
+                "id": "b",
+                "eventDate": "2026-10-17",
+                "startTime": "10:00"
+              }
+            ],
+            "2026-10-16",
+            "08:00"
+          ],
+          "expected": "a"
+        },
+        {
+          "name": "morning and evening, during the morning one",
+          "args": [
+            [
+              {
+                "id": "am",
+                "eventDate": "2026-10-16",
+                "startTime": "10:00"
+              },
+              {
+                "id": "pm",
+                "eventDate": "2026-10-16",
+                "startTime": "18:00"
+              }
+            ],
+            "2026-10-16",
+            "10:45"
+          ],
+          "expected": "am"
+        },
+        {
+          "name": "morning and evening, in the afternoon: the evening one",
+          "args": [
+            [
+              {
+                "id": "am",
+                "eventDate": "2026-10-16",
+                "startTime": "10:00"
+              },
+              {
+                "id": "pm",
+                "eventDate": "2026-10-16",
+                "startTime": "18:00"
+              }
+            ],
+            "2026-10-16",
+            "15:00"
+          ],
+          "expected": "pm"
+        },
+        {
+          "name": "late at night: the evening one, the latest started",
+          "args": [
+            [
+              {
+                "id": "am",
+                "eventDate": "2026-10-16",
+                "startTime": "10:00"
+              },
+              {
+                "id": "pm",
+                "eventDate": "2026-10-16",
+                "startTime": "18:00"
+              }
+            ],
+            "2026-10-16",
+            "23:30"
+          ],
+          "expected": "pm"
+        },
+        {
+          "name": "without a time: as if at midnight",
+          "args": [
+            [
+              {
+                "id": "a",
+                "eventDate": "2026-10-16",
+                "startTime": null
+              }
+            ],
+            "2026-10-16",
+            "11:00"
+          ],
+          "expected": "a"
+        }
+      ]
+    },
+    "orderScreenSets": {
+      "about": "The owner's sets as a screen offers them (issue #274): upcoming by date and time, then undated, then the archive, the latest first.",
+      "params": [
+        "sets",
+        "today"
+      ],
+      "cases": [
+        {
+          "name": "a mix",
+          "args": [
+            [
+              {
+                "id": "next-week",
+                "eventDate": "2026-10-23",
+                "startTime": "10:00"
+              },
+              {
+                "id": "today-pm",
+                "eventDate": "2026-10-16",
+                "startTime": "18:00"
+              },
+              {
+                "id": "today-am",
+                "eventDate": "2026-10-16",
+                "startTime": "10:00"
+              },
+              {
+                "id": "draft",
+                "eventDate": null,
+                "startTime": null
+              },
+              {
+                "id": "last-week",
+                "eventDate": "2026-10-09",
+                "startTime": "10:00"
+              },
+              {
+                "id": "yesterday",
+                "eventDate": "2026-10-15",
+                "startTime": null
+              }
+            ],
+            "2026-10-16"
+          ],
+          "expected": {
+            "upcoming": [
+              "today-am",
+              "today-pm",
+              "next-week"
+            ],
+            "undated": [
+              "draft"
+            ],
+            "archive": [
+              "yesterday",
+              "last-week"
+            ]
+          }
+        }
+      ]
+    },
     "placeScreenWidget": {
       "about": "Where a client draws a widget (issue #268): its cells kept inside the grid, whatever the template says.",
       "params": [
