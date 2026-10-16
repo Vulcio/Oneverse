@@ -205,6 +205,39 @@ try {
     page = tv;
   });
 
+  await step("the Widgets tab (issue #273): each widget live; a default look saved, then put on the widget as it's added", async () => {
+    page = tablet;
+    await tablet.goto(`${WEB}/screens?tab=widgets`);
+    const list = tablet.getByTestId("widgets-list");
+    await list.getByTestId("widget-analog-clock").getByTestId("widget-analog-clock").waitFor();
+    if ((await list.getByTestId("theme-preview").count()) !== 16) throw new Error(`previews: ${await list.getByTestId("theme-preview").count()}`);
+    await list.getByTestId("widget-countdown").getByTestId("widget-countdown").waitFor();
+    await list.getByTestId("widget-countdown").getByTestId("widget-customize").click();
+    const dialog = tablet.getByTestId("widget-default-editor");
+    await dialog.getByTestId("theme-widget-opacity").fill("0.8");
+    await dialog.getByTestId("theme-widget-label").fill(`Talk ${stamp}`);
+    await dialog.getByTestId("theme-preview").getByText(`Talk ${stamp}`).waitFor();
+    await dialog.getByTestId("widget-default-save").click();
+    await dialog.waitFor({ state: "detached" });
+    await list.locator('[data-testid="widget-countdown"][data-customized]').getByText("Your look").waitFor();
+    const saved = (await api(leader, "GET", "/screen-widget-defaults")).find((one) => one.kind === "countdown");
+    if (saved?.look.style.opacity !== 0.8 || saved.look.options.label !== `Talk ${stamp}`) throw new Error(JSON.stringify(saved));
+    // Added to a template: it comes with that look.
+    await tablet.goto(`${WEB}/screens?tab=templates`);
+    await tablet.getByTestId("new-theme").click();
+    await editor.getByTestId("theme-group-widgets").locator("summary").click();
+    await editor.getByTestId("theme-widget-add").selectOption("countdown");
+    await editor.getByTestId("theme-widget-label").waitFor();
+    if ((await editor.getByTestId("theme-widget-label").inputValue()) !== `Talk ${stamp}`) throw new Error("the default look wasn't put on the widget");
+    await editor.getByRole("button", { name: "Close" }).last().click();
+    // Back to the built-in look.
+    await tablet.goto(`${WEB}/screens?tab=widgets`);
+    await tablet.getByTestId("widgets-list").getByTestId("widget-countdown").getByTestId("widget-customize").click();
+    await tablet.getByTestId("widget-default-reset").click();
+    await tablet.getByTestId("widget-default-editor").waitFor({ state: "detached" });
+    if ((await api(leader, "GET", "/screen-widget-defaults")).some((one) => one.kind === "countdown")) throw new Error("still there");
+  });
+
   await step("no page errors", async () => {
     if (errors.length) throw new Error(errors.join(" | "));
   });

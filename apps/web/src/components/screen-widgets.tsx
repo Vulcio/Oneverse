@@ -103,7 +103,8 @@ function WidgetCell({ widget, theme, place, children, ...rest }: { widget: Scree
 /** A size for text in a cell: the widget's own (% of the cell's height), or one that fits `chars` across and `lines` down. */
 function fit(widget: ScreenWidget, chars: number, lines = 1, most = 70): string {
   if (widget.style.size !== "auto") return `${widget.style.size}cqh`;
-  return `min(${most / lines}cqh, ${165 / Math.max(4, chars)}cqw)`;
+  // A character is about 0.6em wide (wider for digits in some fonts), and the box keeps 8cqw of padding.
+  return `min(${most / lines}cqh, ${140 / Math.max(4, chars)}cqw)`;
 }
 
 function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget: ScreenWidget; theme: ScreenTheme; slides: ScreenSlide[] | null; index: number; live: StageLive; now: number | null; words: ReactNode }) {
@@ -292,7 +293,11 @@ function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget
       );
     }
     case "text":
-      return options.text ? box(<p className="whitespace-pre-line">{options.text}</p>, "widget-text", Math.min(options.text.length, 36), Math.ceil(options.text.length / 36)) : null;
+    {
+      // In a preview, words to show what it looks like.
+      const text = options.text || (live.preview ? t("screens.widgetSample.text") : "");
+      return text ? box(<p className={cn("whitespace-pre-line", !options.text && "opacity-60")}>{text}</p>, "widget-text", Math.min(text.length, 36), Math.ceil(text.length / 36)) : null;
+    }
   }
 }
 

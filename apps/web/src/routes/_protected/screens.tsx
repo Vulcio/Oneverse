@@ -1,6 +1,6 @@
-import { DEFAULT_SCREEN_THEME, formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, SCREEN_WIDGET_KINDS, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type ScreenWidgetKind, type SetlistSummary } from "@songverse/core";
+import { DEFAULT_SCREEN_THEME, formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
-import { AlarmClock, Building2, ChevronsDown, Clock, Clock3, ListChecks, ListEnd, ListOrdered, TextQuote, Hourglass, LayoutPanelTop, MessageSquareText, MonitorCheck, MonitorUp, Music, Palette, Pencil, Plus, Presentation, Settings2, SkipForward, Timer, Type, User, Users, type LucideIcon } from "lucide-react";
+import { Building2, MonitorCheck, MonitorUp, Palette, Pencil, Plus, Settings2, User, Users, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 import { cn } from "@songverse/ui/lib/utils";
@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { ScreenThemeEditor, type ThemeDraft } from "#/components/screen-theme-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
+import { WidgetGallery } from "#/components/screen-widget-gallery";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
@@ -44,12 +45,13 @@ export const Route = createFileRoute("/_protected/screens")({
   }),
   loaderDeps: ({ search }) => ({ setlistId: search.setlistId }),
   loader: async ({ deps }) => {
-    const [sets, screens, themes, teams, organizations] = await Promise.all([
+    const [sets, screens, themes, teams, organizations, widgetDefaults] = await Promise.all([
       apiClient.listSetlists(),
       apiClient.listScreens(deps.setlistId).catch(() => apiClient.listScreens()),
       apiClient.listScreenThemes(),
       apiClient.listTeams().catch(() => []),
       apiClient.listMyOrganizations().catch(() => null),
+      apiClient.listScreenWidgetDefaults().catch(() => []),
     ]);
     // Whose a new screen can be (issue #222): theirs, a team's they run, an organisation's they run.
     const owners: ScreenOwnerChoice[] = [
@@ -60,7 +62,7 @@ export const Route = createFileRoute("/_protected/screens")({
         .map((organization) => ({ kind: "organization" as const, id: organization.id, name: organization.name })),
     ];
     // Only a set they lead can be shown: its sync session is theirs to lead.
-    return { sets: sets.filter((set) => set.canEdit), screens, themes, owners };
+    return { sets: sets.filter((set) => set.canEdit), screens, themes, owners, widgetDefaults };
   },
   component: ScreensPage,
 });
@@ -206,28 +208,12 @@ function screenFilters(screens: ScreenSummary[], t: (key: string, values?: Recor
   return [...filters.values()];
 }
 
-/** What widgets there are (issue #267): placed on a template's grid (issue #268). */
-const WIDGET_ICONS: Record<ScreenWidgetKind, LucideIcon> = {
-  stage: LayoutPanelTop,
-  "current-slide": Presentation,
-  "next-slide": SkipForward,
-  "current-section": TextQuote,
-  "next-section": ChevronsDown,
-  "song-structure": ListOrdered,
-  clock: Clock,
-  "analog-clock": Clock3,
-  countdown: Hourglass,
-  "count-up": Timer,
-  message: MessageSquareText,
-  song: Music,
-  "next-song": AlarmClock,
-  "current-item": ListChecks,
-  "next-item": ListEnd,
-  text: Type,
-};
-
+/** What a screen can show besides the words (issue #267), each live, with its default look (issue #273). */
 function WidgetsCard() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { widgetDefaults } = Route.useLoaderData();
+  const { teams } = useRouteContext({ from: "/_protected" });
   return (
     <Card>
       <CardHeader>
@@ -235,20 +221,7 @@ function WidgetsCard() {
         <CardDescription>{t("screens.widgetsDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" data-testid="widgets-list">
-          {SCREEN_WIDGET_KINDS.map((kind) => {
-            const Icon = WIDGET_ICONS[kind];
-            return (
-              <li key={kind} className="flex gap-3 rounded-lg border p-3" data-testid={`widget-${kind}`}>
-                <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{t(`screens.widgetKinds.${kind}.name`)}</p>
-                  <p className="text-xs text-muted-foreground">{t(`screens.widgetKinds.${kind}.description`)}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <WidgetGallery defaults={widgetDefaults} teams={teams} onChanged={() => router.invalidate()} />
       </CardContent>
     </Card>
   );
@@ -311,6 +284,7 @@ function ThemesCard({ themes }: { themes: ScreenThemeSummary[] }) {
   const router = useRouter();
   const onChanged = () => router.invalidate();
   const { teams } = useRouteContext({ from: "/_protected" });
+  const { widgetDefaults } = Route.useLoaderData();
   const [draft, setDraft] = useState<ThemeDraft | null>(null);
   return (
     <Card>
@@ -397,6 +371,7 @@ function ThemesCard({ themes }: { themes: ScreenThemeSummary[] }) {
         <ScreenThemeEditor
           draft={draft}
           teams={teams}
+          widgetDefaults={widgetDefaults}
           onClose={() => setDraft(null)}
           onSaved={async () => {
             setDraft(null);

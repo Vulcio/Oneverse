@@ -135,6 +135,10 @@ function screenWidgetSchema(strict: boolean) {
 }
 
 export const ScreenWidgetSchema = screenWidgetSchema(false);
+/** A widget's look and options without its place (issue #273): a kind's default, applied when it's added to a template. */
+export const ScreenWidgetLookSchema = screenWidgetSchema(false).pick({ options: true, style: true });
+export const ScreenWidgetLookRequestSchema = screenWidgetSchema(true).pick({ options: true, style: true });
+export type ScreenWidgetLook = z.output<typeof ScreenWidgetLookSchema>;
 export type ScreenWidget = z.output<typeof ScreenWidgetSchema>;
 export type ScreenWidgetInput = z.input<typeof ScreenWidgetSchema>;
 

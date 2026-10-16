@@ -104,6 +104,8 @@ Un modèle peut placer des widgets sur une grille : un affichage de scène montr
 - **Élément en cours** et **Élément suivant** - ce qui se passe dans la liste et ce qui vient ensuite, chants ou non, avec **Sa place dans la liste (3 sur 8)**.
 - **Texte** - vos propres mots.
 
+Chacun s'anime dans l'onglet **Widgets**, avec un chant d'exemple. **Personnaliser** règle son apparence par défaut - ses options, sa police, sa couleur, sa taille, son fond et ses coins - qu'il prend quand on l'ajoute à un modèle : **Enregistrer par défaut** pour vous, ou, avec **Pour**, pour une équipe dont vous êtes administrateur. Un modèle d'équipe prend l'apparence de l'équipe, sinon la vôtre, sinon celle intégrée ; **Revenir à l'apparence intégrée** oublie la vôtre. Un modèle qui a déjà le widget garde la sienne.
+
 Dans l'éditeur de modèle, **Mise en page et widgets** les place :
 
 1. **Partir de** une mise en page toute faite - **Les paroles seules**, **Paroles et horloge** ou **Affichage de scène** - ou **Ajouter un widget** aux paroles.

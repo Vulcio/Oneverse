@@ -13,6 +13,7 @@ import {
   type ScreenTheme,
   type ScreenThemeAsset,
   type ScreenThemeSummary,
+  type ScreenWidgetDefault,
   type TeamSummary,
 } from "@songverse/core";
 import { ChevronLeft, ChevronRight, Pause, Play, TriangleAlert } from "lucide-react";
@@ -49,7 +50,20 @@ export interface ThemeDraft {
  * as they're changed - at 16:9 or 4:3, on its lyrics or the band's chart.
  * Saved for the user, or for a team they're an admin of.
  */
-export function ScreenThemeEditor({ draft, teams, onClose, onSaved }: { draft: ThemeDraft; teams: TeamSummary[]; onClose: () => void; onSaved: (theme: ScreenThemeSummary) => void }) {
+export function ScreenThemeEditor({
+  draft,
+  teams,
+  widgetDefaults = [],
+  onClose,
+  onSaved,
+}: {
+  draft: ThemeDraft;
+  teams: TeamSummary[];
+  /** Widgets' default looks (issue #273): the team's for a team's template, else the user's own. */
+  widgetDefaults?: ScreenWidgetDefault[];
+  onClose: () => void;
+  onSaved: (theme: ScreenThemeSummary) => void;
+}) {
   const { t } = useTranslation();
   const [theme, setTheme] = useState<ScreenTheme>(draft.theme);
   const [name, setName] = useState(draft.name);
@@ -224,7 +238,16 @@ export function ScreenThemeEditor({ draft, teams, onClose, onSaved }: { draft: T
               </Field>
             </Group>
             <Group title={t("screens.editor.widgets")} open={!!theme.grid} testId="theme-group-widgets">
-              <LayoutSettings grid={theme.grid} onGrid={setGrid} selected={selected} onSelect={setSelected} />
+              <LayoutSettings
+                grid={theme.grid}
+                onGrid={setGrid}
+                selected={selected}
+                onSelect={setSelected}
+                lookFor={(kind) => {
+                  const team = draft.ownerTeamId ?? (owner || null);
+                  return (widgetDefaults.find((one) => one.kind === kind && team && one.teamId === team) ?? widgetDefaults.find((one) => one.kind === kind && !one.teamId))?.look ?? null;
+                }}
+              />
             </Group>
             <Group title={t("screens.editor.background")} open>
               <Field label={t("screens.editor.backgroundKind")}>

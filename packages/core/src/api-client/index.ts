@@ -44,8 +44,8 @@ import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventR
 import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
-import type { ConfirmScreenPairingRequest, CreateScreenThemeRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
-import type { ScreenTheme } from "../screens/theme.js";
+import type { ConfirmScreenPairingRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
+import type { ScreenTheme, ScreenWidgetKind, ScreenWidgetLook } from "../screens/theme.js";
 import type { ScreenMode } from "../screens/index.js";
 import type {
   CreateCatalogSchema,
@@ -699,6 +699,16 @@ export interface ScreenThemeAsset {
   mimeType: string;
   filename: string;
   url: string;
+}
+
+/** A widget's default look (issue #273): the user's own, or a team's. */
+export interface ScreenWidgetDefault {
+  kind: ScreenWidgetKind;
+  teamId: string | null;
+  teamName: string | null;
+  look: ScreenWidgetLook;
+  /** Theirs, or a team's they're an admin of. */
+  canEdit: boolean;
 }
 
 /** A saved screen theme (issue #194): the user's own or a team's. */
@@ -2786,6 +2796,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createScreenTheme: (data: CreateScreenThemeRequest) => request<ScreenThemeSummary>("/screen-themes", { method: "POST", body: JSON.stringify(data) }),
     updateScreenTheme: (themeId: string, data: UpdateScreenThemeRequest) => request<ScreenThemeSummary>(`/screen-themes/${themeId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteScreenTheme: (themeId: string) => request<void>(`/screen-themes/${themeId}`, { method: "DELETE" }),
+    /** Widgets' default looks (issue #273): the user's own and their teams'. */
+    listScreenWidgetDefaults: () => request<ScreenWidgetDefault[]>("/screen-widget-defaults"),
+    saveScreenWidgetDefault: (kind: ScreenWidgetKind, data: SaveScreenWidgetDefaultRequest) => request<ScreenWidgetDefault>(`/screen-widget-defaults/${kind}`, { method: "PUT", body: JSON.stringify(data) }),
+    deleteScreenWidgetDefault: (kind: ScreenWidgetKind, teamId?: string) => request<void>(`/screen-widget-defaults/${kind}${teamId ? `?teamId=${encodeURIComponent(teamId)}` : ""}`, { method: "DELETE" }),
     /** A background picture or video ("media"), or a font, for a saved theme. */
     uploadScreenThemeAsset: (themeId: string, kind: "media" | "font", file: Blob, filename: string) => {
       const form = new FormData();

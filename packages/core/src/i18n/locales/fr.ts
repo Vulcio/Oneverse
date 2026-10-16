@@ -210,6 +210,15 @@ const fr: typeof en = {
     settingsDone: "Terminé",
     modesShort: { LYRICS: "Paroles", CHART: "Grille" },
     noneHere: "Aucun écran ici.",
+    widgetDefaults: {
+      title: "{{widget}} : apparence par défaut",
+      description: "Son apparence, et ce qu'il affiche, quand on l'ajoute à un modèle. Les modèles qui l'ont déjà gardent la leur.",
+      yours: "Votre apparence",
+      team: "Apparence de {{team}}",
+      forTeam: "Pour les modèles de {{team}}.",
+      save: "Enregistrer par défaut",
+      reset: "Revenir à l'apparence intégrée",
+    },
     operator: {
       title: "Opérateur",
       open: "Vue opérateur",
@@ -244,6 +253,7 @@ const fr: typeof en = {
       bpm: "{{tempo}} BPM",
       nextSong: "Ensuite : {{title}}",
       itemOf: "{{position}} sur {{count}}",
+      text: "Bienvenue ! Wi-Fi : Invités",
       nextTitle: "Dieu tout-puissant",
       nextLine1: "Dieu tout-puissant, quand mon cœur considère",
       nextLine2: "Tout l'univers créé par ton pouvoir",

@@ -210,6 +210,15 @@ const en = {
     settingsDone: "Done",
     modesShort: { LYRICS: "Lyrics", CHART: "Chart" },
     noneHere: "No screens here.",
+    widgetDefaults: {
+      title: "{{widget}}: default look",
+      description: "How it looks, and what it shows, when it's added to a template. Templates that already have it keep theirs.",
+      yours: "Your look",
+      team: "{{team}}'s look",
+      forTeam: "For {{team}}'s templates.",
+      save: "Save as default",
+      reset: "Back to the built-in look",
+    },
     operator: {
       title: "Operator",
       open: "Operator view",
@@ -244,6 +253,7 @@ const en = {
       bpm: "{{tempo}} BPM",
       nextSong: "Next: {{title}}",
       itemOf: "{{position}} of {{count}}",
+      text: "Welcome! Wi-Fi: Guest",
       nextTitle: "How Great Thou Art",
       nextLine1: "O Lord my God, when I in awesome wonder",
       nextLine2: "Consider all the worlds Thy hands have made",

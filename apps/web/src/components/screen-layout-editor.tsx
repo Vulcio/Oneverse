@@ -9,6 +9,7 @@ import {
   type ScreenTheme,
   type ScreenWidget,
   type ScreenWidgetKind,
+  type ScreenWidgetLook,
 } from "@songverse/core";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
@@ -57,7 +58,20 @@ const SIZES: Record<ScreenWidgetKind, [number, number]> = {
  * grid to start from, the grid's size, what Black hides, the widgets in
  * drawing order, and the picked one's options and look.
  */
-export function LayoutSettings({ grid, onGrid, selected, onSelect }: { grid: Grid | null; onGrid: (grid: Grid | null) => void; selected: string | null; onSelect: (id: string | null) => void }) {
+export function LayoutSettings({
+  grid,
+  onGrid,
+  selected,
+  onSelect,
+  lookFor,
+}: {
+  grid: Grid | null;
+  onGrid: (grid: Grid | null) => void;
+  selected: string | null;
+  onSelect: (id: string | null) => void;
+  /** A kind's default look (issue #273), put on a widget as it's added. */
+  lookFor?: (kind: ScreenWidgetKind) => ScreenWidgetLook | null;
+}) {
   const { t } = useTranslation();
   const widget = grid?.widgets.find((one) => one.id === selected) ?? null;
   const change = (id: string, update: (widget: ScreenWidget) => ScreenWidget) => grid && onGrid({ ...grid, widgets: grid.widgets.map((one) => (one.id === id ? update(one) : one)) });
@@ -67,7 +81,7 @@ export function LayoutSettings({ grid, onGrid, selected, onSelect }: { grid: Gri
     const w = Math.max(1, Math.round((SIZES[kind][0] * base.columns) / 12));
     const h = Math.max(1, Math.round((SIZES[kind][1] * base.rows) / 12));
     const id = `${kind}-${Math.random().toString(36).slice(2, 8)}`;
-    onGrid({ ...base, widgets: [...base.widgets, newScreenWidget(kind, { ...freeSpot(base, w, h), w, h }, id)] });
+    onGrid({ ...base, widgets: [...base.widgets, newScreenWidget(kind, { ...freeSpot(base, w, h), w, h }, id, lookFor?.(kind) ?? {})] });
     onSelect(id);
   }
 
@@ -180,7 +194,7 @@ export function LayoutSettings({ grid, onGrid, selected, onSelect }: { grid: Gri
 }
 
 /** The picked widget's options (what it shows) and look. */
-function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onChange: (update: (widget: ScreenWidget) => ScreenWidget) => void }) {
+export function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onChange: (update: (widget: ScreenWidget) => ScreenWidget) => void }) {
   const { t } = useTranslation();
   const options = (change: Partial<ScreenWidget["options"]>) => onChange((one) => ({ ...one, options: { ...one.options, ...change } }));
   const style = (change: Partial<ScreenWidget["style"]>) => onChange((one) => ({ ...one, style: { ...one.style, ...change } }));

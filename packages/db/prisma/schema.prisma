@@ -374,6 +374,7 @@ model User {
   assignmentsMade      TeamEventAssignment[] @relation("AssignmentsMade")
   // How each kind of notification reaches them (issue #236): push, email; quiet hours.
   notificationSettings Json?
+  screenWidgetDefaults ScreenWidgetDefault[]
 
   @@index([email])
 }
@@ -485,44 +486,45 @@ model Team {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  memberships         TeamMembership[]
-  inviteLinks         TeamInviteLink[]
-  ownedVersions       SongVersion[]          @relation("VersionOwnerTeam")
-  ownedArrangements   Arrangement[]          @relation("ArrangementOwnerTeam")
-  notes               Note[]
-  accessGrants        AccessGrant[]
-  shareLinks          ShareLink[]
-  ownedTags           Tag[]
-  ownedSongbooks      Songbook[]             @relation("SongbookOwnerTeam")
-  songbookShares      SongbookShare[]        @relation("SongbookShareTeam")
-  ownedSetlists       Setlist[]              @relation("SetlistOwnerTeam")
-  ownershipRequests   SongOwnershipRequest[]
-  visibleAttachments  Attachment[]           @relation("AttachmentVisibleToTeam")
-  contributedVersions SongVersion[]          @relation("VersionContributedByTeam")
+  memberships          TeamMembership[]
+  inviteLinks          TeamInviteLink[]
+  ownedVersions        SongVersion[]          @relation("VersionOwnerTeam")
+  ownedArrangements    Arrangement[]          @relation("ArrangementOwnerTeam")
+  notes                Note[]
+  accessGrants         AccessGrant[]
+  shareLinks           ShareLink[]
+  ownedTags            Tag[]
+  ownedSongbooks       Songbook[]             @relation("SongbookOwnerTeam")
+  songbookShares       SongbookShare[]        @relation("SongbookShareTeam")
+  ownedSetlists        Setlist[]              @relation("SetlistOwnerTeam")
+  ownershipRequests    SongOwnershipRequest[]
+  visibleAttachments   Attachment[]           @relation("AttachmentVisibleToTeam")
+  contributedVersions  SongVersion[]          @relation("VersionContributedByTeam")
   // What its members may do (issue #160), and its storage pool's limit.
-  roleAssignments     RoleAssignment[]
+  roleAssignments      RoleAssignment[]
   // Its screens' looks (issue #194), for every member to pick.
-  screenThemes        ScreenTheme[]
+  screenThemes         ScreenTheme[]
   // Its screens (issue #222), which outlive whoever paired them.
-  screens             Screen[]
+  screens              Screen[]
   // Its calendar (issue #235), and how many weeks ahead each date's set is made (1-52).
-  events              TeamEvent[]
-  calendarFeed        CalendarFeed?
-  answerRequests      TeamAnswerRequest[]
-  setsAheadWeeks      Int                    @default(4)
+  events               TeamEvent[]
+  calendarFeed         CalendarFeed?
+  answerRequests       TeamAnswerRequest[]
+  setsAheadWeeks       Int                    @default(4)
   // The organisation it's part of (issue #241), or none: a team of its own,
   // as in Songverse alone. Its members are the organisation's members too.
-  organizationId      String?
-  organization        Organization?          @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  organizationId       String?
+  organization         Organization?          @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   // A group of an organisation (issue #241): whether it's a Songverse team -
   // songs, songbooks, sets - or only plans (a welcome team, a cleaning rota);
   // the group it's under, in the same organisation; the positions of its own
   // its members cover ("Greeter", "Coffee"), besides instruments and roles.
-  usesSongverse       Boolean                @default(true)
-  parentId            String?
-  parent              Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
-  subgroups           Team[]                 @relation("Subgroups")
-  positions           TeamPosition[]
+  usesSongverse        Boolean                @default(true)
+  parentId             String?
+  parent               Team?                  @relation("Subgroups", fields: [parentId], references: [id], onDelete: SetNull)
+  subgroups            Team[]                 @relation("Subgroups")
+  positions            TeamPosition[]
+  screenWidgetDefaults ScreenWidgetDefault[]
 
   @@index([slug])
   @@index([organizationId])
@@ -2799,6 +2801,24 @@ model ScreenTheme {
 
   @@index([ownerUserId])
   @@index([ownerTeamId])
+}
+
+// A widget's default look (issue #273): its options and style (a
+// ScreenWidgetLook), applied when it's added to a template - a person's own,
+// or a team's, set by its admins.
+model ScreenWidgetDefault {
+  id          String   @id @default(cuid())
+  kind        String
+  look        Json
+  ownerUserId String?
+  ownerTeamId String?
+  updatedAt   DateTime @updatedAt
+
+  owner User? @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  team  Team? @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerUserId, kind])
+  @@unique([ownerTeamId, kind])
 }
 
 // A theme's own file (issue #194): a background picture or looping video

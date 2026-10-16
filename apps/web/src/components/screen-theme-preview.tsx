@@ -6,13 +6,13 @@ import type { StageLive } from "#/components/screen-widgets";
 import { cn } from "@songverse/ui/lib/utils";
 
 const SAMPLE = `{key: G}
-{start_of_verse}
+{start_of_verse: Verse 1}
 [G]Amazing grace, how [C]sweet the [G]sound
 That saved a wretch like [D]me
 I [G]once was lost, but [C]now am [G]found
 Was blind, but [D]now I [G]see
 {end_of_verse}
-{start_of_chorus}
+{start_of_chorus: Chorus}
 My [C]chains are gone, I've been set [G]free
 My God, my Saviour has [D]ransomed me
 And like a [C]flood His mercy [G]reigns

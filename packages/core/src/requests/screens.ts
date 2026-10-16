@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { SCREEN_MODES, SCREEN_THEME_TEMPLATES, ScreenThemeRequestSchema } from "../screens/index.js";
+import { SCREEN_MODES, SCREEN_THEME_TEMPLATES, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
 import { optional } from "./fields.js";
 
 /** Screens (issue #186): a screen paired by its code, and changed later by whoever paired it. */
@@ -69,3 +69,15 @@ export const UpdateScreenThemeSchema = z.strictObject({
   theme: optional(ScreenThemeRequestSchema),
 });
 export type UpdateScreenThemeRequest = z.input<typeof UpdateScreenThemeSchema>;
+
+/** PUT /screen-widget-defaults/:kind (issue #273): a widget's default look, the user's own or (`teamId`) their team's, which its admins set. */
+export const SaveScreenWidgetDefaultSchema = z.strictObject({
+  teamId: optional(z.string().min(1).max(40)),
+  look: ScreenWidgetLookRequestSchema,
+});
+export type SaveScreenWidgetDefaultRequest = z.input<typeof SaveScreenWidgetDefaultSchema>;
+
+/** DELETE /screen-widget-defaults/:kind: back to the built-in look, the user's own or (`teamId`) their team's. */
+export const ScreenWidgetDefaultQuerySchema = z.strictObject({
+  teamId: optional(z.string().min(1).max(40)),
+});

@@ -104,6 +104,8 @@ A template can place widgets on a grid: a stage display shows the singers the sl
 - **Current item** and **Next item** - what's on in the set and what comes next, songs or not, with **Its place in the set (3 of 8)**.
 - **Text** - words of your own.
 
+Each one plays live on the **Widgets** tab, with a sample song. **Customize** sets its default look - its options, font, colour, size, panel and corners - which it gets when it's added to a template: **Save as default** for yourself, or, with **For**, for a team you're an admin of. A team's template takes the team's look, else yours, else the built-in one; **Back to the built-in look** forgets yours. A template that already has the widget keeps its own.
+
 In the template editor, **Layout and widgets** places them:
 
 1. **Start from** a ready-made layout - **Words only**, **Words and a clock** or **Stage display** - or **Add a widget** to the words.
