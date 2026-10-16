@@ -1,7 +1,8 @@
 import { CalendarDays, Undo2 } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchScreenSets, pickScreenSet, type ScreenSetOption, type ScreenSets } from "#/lib/screen-display";
+import { useRemoteList } from "#/lib/screen-remote";
 import { setlistTitle } from "#/lib/setlists";
 import { cn } from "@songverse/ui/lib/utils";
 
@@ -33,28 +34,8 @@ export function ScreenSetPicker({ onClose }: { onClose?: () => void }) {
     if (archive) list.current?.querySelector<HTMLButtonElement>("[data-archive] [data-pick]")?.focus();
   }, [archive]);
 
-  // The whole page's keys while it's open: a remote's press counts even before a set has the focus.
-  const keys = useRef<(event: globalThis.KeyboardEvent) => void>(() => undefined);
-  useEffect(() => {
-    const listen = (event: globalThis.KeyboardEvent) => keys.current(event);
-    window.addEventListener("keydown", listen);
-    return () => window.removeEventListener("keydown", listen);
-  }, []);
-  keys.current = (event) => move(event);
+  useRemoteList(list, onClose);
 
-  const move = (event: Pick<KeyboardEvent, "key" | "preventDefault">) => {
-    const buttons = [...(list.current?.querySelectorAll<HTMLButtonElement>("[data-pick]") ?? [])];
-    const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    const to = { ArrowDown: at + 1, ArrowRight: at + 1, ArrowUp: at - 1, ArrowLeft: at - 1, Home: 0, End: buttons.length - 1, PageDown: at + 5, PageUp: at - 5 }[event.key];
-    if (to !== undefined) {
-      event.preventDefault();
-      buttons[Math.max(0, Math.min(buttons.length - 1, to))]?.focus({ preventScroll: false });
-      buttons[Math.max(0, Math.min(buttons.length - 1, to))]?.scrollIntoView({ block: "nearest" });
-    } else if ((event.key === "Escape" || event.key === "Backspace" || event.key === "GoBack") && onClose) {
-      event.preventDefault();
-      onClose();
-    }
-  };
   const pick = async (setlistId: string | null) => {
     setBusy(true);
     // The server tells the screen, which loads the set; until then, this stays.

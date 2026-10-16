@@ -28,6 +28,16 @@ On the screen itself, with nothing presented, **OK** on the remote (or Enter on 
 
 A set put on a screen from **Screens**, in its tile's **Settings**, is fixed instead: the screen shows it until you change it, and OK doesn't open the list. Its tile says which set the day's set is, or that there's none today.
 
+### The screen's menu
+
+The screen has a menu of its own, for whoever stands by it, even while a set is presented. To open it, **hold OK** on the remote (or Enter on a keyboard) for about a second, **double-click** or right-click the screen with a mouse, or **press and hold** a touch screen. A short OK or a single click never opens it, so it doesn't appear over the words by accident.
+
+![The screen's menu, over the words](../../assets/screenshots/en/screen-menu.jpg)
+
+- **Choose a set** opens the list of sets above. On a screen with a fixed set it's greyed out: change that set from **Screens**.
+- **Theme** lists the **Built-in** templates and the owner's **Saved themes**, with the one in use marked. Pick one with **OK** and the screen changes at once. It keeps that theme, as if you'd picked it in the tile's **Settings**.
+- **Back** steps out of the themes, and Back (Escape) or **Close** closes the menu.
+
 ### Whose screen it is
 
 A screen is yours, a team's or an organisation's. When you pair it, **For** chooses: **Just me**, or a team or [organisation](/organizations/) you're an admin of - the church's projector and stage monitor belong to the church, and stay when whoever paired them leaves. The buttons above the tiles show **All** of them, **Mine**, or one team's or organisation's.

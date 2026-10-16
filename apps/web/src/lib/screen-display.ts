@@ -100,6 +100,33 @@ export async function pickScreenSet(setlistId: string | null): Promise<boolean> 
   return !!response?.ok;
 }
 
+export interface ScreenThemeOptions {
+  themeId: string | null;
+  themeTemplate: string | null;
+  /** Its owner's saved themes (issue #276). */
+  themes: { id: string; name: string; teamName: string | null }[];
+}
+
+/** The themes the screen offers (issue #276). */
+export async function fetchScreenThemes(): Promise<ScreenThemeOptions | null> {
+  const token = storedToken();
+  if (!token) return null;
+  const response = await fetch(api("/screens/current/themes"), { headers: { Authorization: `Screen ${token}` } }).catch(() => null);
+  return response?.ok ? json<ScreenThemeOptions>(response) : null;
+}
+
+/** A theme picked on the screen - saved, built-in, or (both null) the default look; the screen loads it again when the server says so. */
+export async function pickScreenTheme(pick: { themeId: string | null; themeTemplate: string | null }): Promise<boolean> {
+  const token = storedToken();
+  if (!token) return false;
+  const response = await fetch(api("/screens/current/theme"), {
+    method: "POST",
+    headers: { Authorization: `Screen ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(pick),
+  }).catch(() => null);
+  return !!response?.ok;
+}
+
 export function useScreenDisplay(): ScreenDisplayState {
   const [state, setState] = useState<ScreenDisplayState>({ kind: "starting" });
   const [token, setToken] = useState<string | null | undefined>(undefined);

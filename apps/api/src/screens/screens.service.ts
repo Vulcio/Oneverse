@@ -205,6 +205,42 @@ export class ScreensService {
     return present(followed);
   }
 
+  /** The themes a screen offers (issue #276): its owner's saved ones - a person's, a team's, its organisation's teams' - and the one it has. */
+  async themeOptions(token: string) {
+    const screen = await this.byToken(token);
+    if (!screen) throw new NotFoundException("This screen was disconnected");
+    const themes = await this.ownerThemes(screen);
+    return { themeId: screen.themeId, themeTemplate: screen.themeTemplate, themes: themes.map((one) => ({ id: one.id, name: one.name, teamName: one.team?.name ?? null })) };
+  }
+
+  /** A theme picked on the screen (issue #276): kept on it, as if set from Screens. */
+  async pickTheme(token: string, pick: { themeId: string | null; themeTemplate: string | null }) {
+    const screen = await this.byToken(token);
+    if (!screen) throw new NotFoundException("This screen was disconnected");
+    if (pick.themeId && !(await this.ownerThemes(screen)).some((one) => one.id === pick.themeId)) throw new NotFoundException("Theme not found");
+    const updated = await this.prisma.client.screen.update({
+      where: { id: screen.id },
+      data: pick.themeId ? { themeId: pick.themeId, themeTemplate: null } : { themeId: null, themeTemplate: pick.themeTemplate },
+      select: SCREEN_SELECT,
+    });
+    await redis().publish(SCREEN_CHANNEL, screen.id);
+    return present(updated);
+  }
+
+  private async ownerThemes(screen: { themeId: string | null } & Owned) {
+    const owners = screen.ownerTeamId
+      ? [{ ownerTeamId: screen.ownerTeamId }]
+      : screen.ownerOrganizationId
+        ? [{ team: { organizationId: screen.ownerOrganizationId } }]
+        : [{ ownerUserId: screen.ownerUserId ?? "-" }];
+    return this.prisma.client.screenTheme.findMany({
+      where: { OR: [...owners, ...(screen.themeId ? [{ id: screen.themeId }] : [])] },
+      select: { id: true, name: true, team: { select: { name: true } } },
+      orderBy: { name: "asc" },
+      take: 100,
+    });
+  }
+
   /** A screen on its owner's set of the day: picked on it today, else pickDaySet's; moved there (and told) when it changed. */
   private async followDay<T extends { id: string; setlistId: string | null; setlistPickedOn: string | null } & Owned>(screen: T, today: string, time: string): Promise<T> {
     if (screen.setlistPickedOn === today && screen.setlistId) return screen;

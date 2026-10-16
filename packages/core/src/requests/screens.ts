@@ -99,3 +99,12 @@ export const PickScreenSetSchema = z.strictObject({
   setlistId: z.string().min(1).max(40).nullable(),
   today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "today is a date written YYYY-MM-DD"),
 });
+
+/** POST /screens/current/theme (issue #276): a theme picked on the screen - a saved one, a built-in one, or (both null) the default look. */
+export const PickScreenThemeSchema = z
+  .strictObject({
+    themeId: screenFields.themeId,
+    themeTemplate: screenFields.themeTemplate,
+  })
+  .refine((pick) => !(pick.themeId && pick.themeTemplate), "Pick a saved theme or a built-in one, not both");
+export type PickScreenThemeRequest = z.input<typeof PickScreenThemeSchema>;

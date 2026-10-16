@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, ScreenCurrentQuerySchema, UpdateScreenSchema } from "@songverse/core";
+import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, UpdateScreenSchema } from "@songverse/core";
 import type { Response } from "express";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
@@ -14,6 +14,7 @@ class ClaimScreenPairingDto extends zodDto(ClaimScreenPairingSchema) {}
 class UpdateScreenDto extends zodDto(UpdateScreenSchema) {}
 class ScreenCurrentQueryDto extends zodDto(ScreenCurrentQuerySchema) {}
 class PickScreenSetDto extends zodDto(PickScreenSetSchema) {}
+class PickScreenThemeDto extends zodDto(PickScreenThemeSchema) {}
 
 function requireUser(user: AuthenticatedUser | undefined): AuthenticatedUser {
   if (!user) throw new UnauthorizedException();
@@ -85,6 +86,21 @@ export class ScreensController {
   @HttpCode(HttpStatus.OK)
   pick(@Headers("authorization") authorization: string | undefined, @Body() dto: PickScreenSetDto): ReturnType<ScreensService["pick"]> {
     return this.screens.pick(screenToken(authorization), dto.setlistId, dto.today);
+  }
+
+  /** The themes the screen offers (issue #276): its owner's saved ones, and the one it has. */
+  @Public()
+  @Get("current/themes")
+  themes(@Headers("authorization") authorization: string | undefined): ReturnType<ScreensService["themeOptions"]> {
+    return this.screens.themeOptions(screenToken(authorization));
+  }
+
+  /** A theme picked on the screen (issue #276), kept on it. */
+  @Public()
+  @Post("current/theme")
+  @HttpCode(HttpStatus.OK)
+  pickTheme(@Headers("authorization") authorization: string | undefined, @Body() dto: PickScreenThemeDto): ReturnType<ScreensService["pickTheme"]> {
+    return this.screens.pickTheme(screenToken(authorization), { themeId: dto.themeId, themeTemplate: dto.themeTemplate });
   }
 
   /** The screens showing a set (for who leads it), or the user's own. */

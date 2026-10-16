@@ -28,6 +28,16 @@ Sur l'écran lui-même, quand rien n'est présenté, **OK** sur la télécommand
 
 Une liste mise sur un écran depuis **Écrans**, dans les **Réglages** de sa vignette, est fixe : l'écran l'affiche jusqu'à ce que vous la changiez, et OK n'ouvre pas la liste. Sa vignette indique quelle est la liste du jour, ou qu'il n'y en a pas aujourd'hui.
 
+### Le menu de l'écran
+
+L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une liste est présentée. Pour l'ouvrir, **maintenez OK** sur la télécommande (ou Entrée sur un clavier) environ une seconde, **double-cliquez** ou faites un clic droit sur l'écran avec une souris, ou **appuyez longuement** sur un écran tactile. Un appui bref sur OK ou un simple clic ne l'ouvre jamais : il n'apparaît pas par accident par-dessus les paroles.
+
+![Le menu de l'écran, par-dessus les paroles](../../../assets/screenshots/fr/screen-menu.jpg)
+
+- **Choisir une liste** ouvre la liste des listes ci-dessus. Sur un écran à liste fixe, il est grisé : changez cette liste depuis **Écrans**.
+- **Thème** propose les modèles **Intégrés** et les **Thèmes enregistrés** du propriétaire, celui utilisé étant marqué. Choisissez-en un avec **OK** et l'écran change aussitôt. Il garde ce thème, comme s'il avait été choisi dans les **Réglages** de sa vignette.
+- **Retour** sort des thèmes, et Retour (Échap) ou **Fermer** ferme le menu.
+
 ### À qui est l'écran
 
 Un écran est à vous, à une équipe ou à une organisation. En l'associant, **Pour** le choisit : **Moi seulement**, ou une équipe ou une [organisation](/fr/organizations/) dont vous êtes administrateur - le projecteur et l'écran de retour de l'église appartiennent à l'église, et restent quand la personne qui les a associés s'en va. Les boutons au-dessus des vignettes les montrent **Tous**, **Les miens**, ou ceux d'une équipe ou d'une organisation.

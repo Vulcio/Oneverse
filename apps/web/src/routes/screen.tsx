@@ -1,10 +1,11 @@
 import { formatScreenCode, lyricSlides, renderChart, screenThemeTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@songverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Music2, WifiOff } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { renderSVG } from "uqr";
 import { LocaleProvider } from "@songverse/app/components/locale-provider";
+import { ScreenMenu } from "#/components/screen-menu";
 import { ScreenSetPicker } from "#/components/screen-set-picker";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
 import type { StageLive } from "#/components/screen-widgets";
@@ -121,21 +122,41 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
   const daySet = current.screen.setMode === "DAY";
   const [picking, setPicking] = useState(false);
   const showPicker = daySet && (picking || !set);
+  // The screen's own menu (issue #276): OK held, else a double-click, a right-click or a long press - never a passing tap.
+  const [menu, setMenu] = useState(false);
   useEffect(() => {
-    if (!daySet) return setPicking(false);
-    // Open, the list takes the keys (OK on a set picks it).
-    if (showPicker) return;
-    const open = (event: KeyboardEvent) => {
-      if ((event.key === "Enter" || event.key === " ") && !presenting) {
-        event.preventDefault();
-        setPicking(true);
-      }
+    if (!daySet) setPicking(false);
+    // Open, the list takes the keys (OK on an entry picks it).
+    if (showPicker || menu) return;
+    let hold: ReturnType<typeof setTimeout> | undefined;
+    const down = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      if (event.repeat || hold || event.key !== "Enter") return;
+      hold = setTimeout(() => {
+        hold = undefined;
+        setMenu(true);
+      }, HOLD_MS);
     };
-    window.addEventListener("keydown", open);
-    return () => window.removeEventListener("keydown", open);
-  }, [daySet, presenting, showPicker]);
+    // A short press: the sets, on a screen following the day's with nothing presented.
+    const up = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const short = event.key === " " || hold !== undefined;
+      clearTimeout(hold);
+      hold = undefined;
+      if (short && daySet && !presenting) setPicking(true);
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      clearTimeout(hold);
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, [daySet, presenting, showPicker, menu]);
   // Picked: the set comes, the list goes.
   useEffect(() => setPicking(false), [current.screen.setlistId]);
+  const press = useLongPress(() => setMenu(true));
 
   const idle = !set ? (
     <Idle title={current.screen.name} subtitle={t("screens.displayNoSet")} />
@@ -152,6 +173,12 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
       data-item={presenting?.itemId ?? ""}
       data-slide={presenting?.slide ?? ""}
       data-theme={current.screen.themeId ?? current.screen.themeTemplate ?? ""}
+      onDoubleClick={() => !showPicker && setMenu(true)}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        if (!showPicker) setMenu(true);
+      }}
+      {...press}
     >
       <ScreenStage
         className="size-full"
@@ -165,6 +192,16 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
         live={live}
       />
       {showPicker ? <ScreenSetPicker onClose={set ? () => setPicking(false) : undefined} /> : null}
+      {menu && !showPicker ? (
+        <ScreenMenu
+          daySet={daySet}
+          onChooseSet={() => {
+            setMenu(false);
+            setPicking(true);
+          }}
+          onClose={() => setMenu(false)}
+        />
+      ) : null}
       {/* Lost the connection: said quietly, in a corner; it comes back by itself. */}
       {!online ? <WifiOff className="absolute right-[2vmin] bottom-[2vmin] z-10 size-[3vmin] text-neutral-600" aria-label={t("screens.displayOffline")} /> : null}
     </div>
@@ -178,6 +215,37 @@ function Idle({ title, subtitle }: { title: string; subtitle: string }) {
       <p className="text-[3cqmin]">{subtitle}</p>
     </div>
   );
+}
+
+/** How long OK, or a finger, is held to open the screen's menu (issue #276). */
+const HOLD_MS = 800;
+
+/** A press held still for HOLD_MS, on a touch screen or with a mouse. */
+function useLongPress(onLongPress: () => void) {
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const cancel = () => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+    start.current = null;
+  };
+  useEffect(() => cancel, []);
+  return {
+    onPointerDown: (event: PointerEvent<HTMLElement>) => {
+      cancel();
+      start.current = { x: event.clientX, y: event.clientY };
+      timer.current = setTimeout(() => {
+        timer.current = undefined;
+        onLongPress();
+      }, HOLD_MS);
+    },
+    onPointerMove: (event: PointerEvent<HTMLElement>) => {
+      if (start.current && Math.hypot(event.clientX - start.current.x, event.clientY - start.current.y) > 10) cancel();
+    },
+    onPointerUp: cancel,
+    onPointerCancel: cancel,
+    onPointerLeave: cancel,
+  };
 }
 
 /** Keeps the screen on while it's shown. */

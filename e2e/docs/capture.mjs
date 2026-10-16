@@ -380,6 +380,12 @@ try {
     await tv.locator('[data-testid="screen-showing"][data-slide="1"]').getByTestId("screen-lyrics").waitFor({ timeout: 10000 });
     await shoot("present-panel", null, null, { element: page.getByTestId("present-panel") });
     await shootTv("screen-lyrics");
+    // The screen's own menu (issue #276), opened over the words with a double-click.
+    await tv.getByTestId("screen-showing").dblclick({ position: { x: 300, y: 300 } });
+    await tv.getByTestId("screen-menu").waitFor();
+    await shootTv("screen-menu");
+    await tv.keyboard.press("Escape");
+    await tv.getByTestId("screen-menu").waitFor({ state: "detached" });
     // The operator view (issue #275), in a tab of its own while Live leads: the screens taken, a song's slides.
     {
       const live = page;
