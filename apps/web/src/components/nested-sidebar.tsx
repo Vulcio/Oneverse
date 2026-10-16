@@ -53,6 +53,7 @@ import { initials } from "@songverse/ui/lib/initials";
 import { useMode } from "#/lib/mode";
 import { clearSetProgress, useSetProgress } from "#/lib/set-progress";
 import { setStackSegues, useStackSegues } from "#/lib/live-stack";
+import { useSync } from "#/lib/sync-client";
 import type { AppSession } from "@songverse/app/server-auth";
 import { deviceStorage } from "#/lib/offline-data";
 import { setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
@@ -533,8 +534,13 @@ function SetSongsPanel({ setId, pathname, sets, onBack }: { setId: string; pathn
   const [set, setSet] = useState<SetlistDetail | null>(null);
   const [reorderError, setReorderError] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  // The operator's view (issue #277): a song opens its slides there, and the one on the screens is the one playing.
+  const operating = pathname === `/sets/${setId}/operate`;
+  const looked = useRouterState({ select: (s) => (operating ? ((s.location.search as { item?: string }).item ?? null) : null) });
+  const sync = useSync();
+  const onScreens = operating && sync.setId === setId ? (sync.session?.presenting?.itemId ?? null) : null;
   // The song playing in Live: the one open there (scrolled on into, on a stacked page: issue #214).
-  const playing = mode === "live" ? /^\/sets\/[^/]+\/live\/([^/]+)/.exec(pathname)?.[1] ?? null : null;
+  const playing = operating ? onScreens : mode === "live" ? /^\/sets\/[^/]+\/live\/([^/]+)/.exec(pathname)?.[1] ?? null : null;
   const stacked = useStackSegues();
 
   const details = useSetDetails();
@@ -664,6 +670,7 @@ function SetSongsPanel({ setId, pathname, sets, onBack }: { setId: string; pathn
                   pathname={pathname}
                   played={!!progress?.played.includes(item.id)}
                   now={playing === item.id}
+                  operating={operating ? { looked: looked ?? onScreens } : null}
                   details={details}
                   onTransition={(kind) => void changeTransition(item.id, kind)}
                 />
@@ -687,6 +694,7 @@ function SetSongEntry({
   pathname,
   played,
   now,
+  operating,
   details,
   onTransition,
 }: {
@@ -696,6 +704,8 @@ function SetSongEntry({
   pathname: string;
   played: boolean;
   now: boolean;
+  /** In the operator's view (issue #277): the song whose slides it shows. */
+  operating: { looked: string | null } | null;
   details: SetListDetailValue[];
   onTransition: (kind: SetTransitionValue | null) => void;
 }) {
@@ -732,7 +742,7 @@ function SetSongEntry({
   return (
     <PanelEntry
       trailing={trailing}
-      active={pathname === `/sets/${set.id}/songs/${item.id}` || pathname === `/sets/${set.id}/live/${item.id}`}
+      active={operating ? operating.looked === item.id : pathname === `/sets/${set.id}/songs/${item.id}` || pathname === `/sets/${set.id}/live/${item.id}`}
       title={`${index + 1}. ${title}`}
       played={played ? t("sets.played") : null}
       now={now ? t("sets.now") : null}
@@ -760,12 +770,19 @@ function SetSongEntry({
           : undefined
       }
     >
-      {(className, content) => (
-        // In Live, its Live view (issue #153).
-        <Link to={mode === "live" ? "/sets/$setlistId/live/$itemId" : "/sets/$setlistId/songs/$itemId"} params={{ setlistId: set.id, itemId: item.id }} className={className} aria-current={now ? "step" : undefined}>
-          {content}
-        </Link>
-      )}
+      {(className, content) =>
+        operating ? (
+          // In the operator's view, its slides (issue #277).
+          <Link to="/sets/$setlistId/operate" params={{ setlistId: set.id }} search={{ item: item.id }} replace className={className} aria-current={now ? "step" : undefined} data-testid="sidebar-operate-item">
+            {content}
+          </Link>
+        ) : (
+          // In Live, its Live view (issue #153).
+          <Link to={mode === "live" ? "/sets/$setlistId/live/$itemId" : "/sets/$setlistId/songs/$itemId"} params={{ setlistId: set.id, itemId: item.id }} className={className} aria-current={now ? "step" : undefined}>
+            {content}
+          </Link>
+        )
+      }
     </PanelEntry>
   );
 }

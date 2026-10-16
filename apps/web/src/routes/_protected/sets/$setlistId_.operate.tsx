@@ -12,22 +12,27 @@ import {
   type TeamMember,
   type TeamPosition,
 } from "@songverse/core";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ChevronLeft, ChevronRight, Crown, Layers, Minus, MonitorOff, MonitorUp, Pause, Play, Plus, RotateCcw, Send, Square, Timer, X } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, ChevronLeft, ChevronRight, Crown, Keyboard, Layers, Minus, MonitorOff, MonitorUp, Pause, Play, Plus, RotateCcw, Send, Square, Timer, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
 import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@songverse/ui/components/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 import { apiClient } from "#/lib/api-client";
+import { setMode } from "#/lib/mode";
+import { markCurrent, markPlayed } from "#/lib/set-progress";
 import { disableSync, enableSync, leadSync, presentScreens, screensLocked, sendStage, syncState, takeScreens, useSync } from "#/lib/sync-client";
 import { setlistTitle } from "#/lib/setlists";
 import { cn } from "@songverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId_/operate")({
+  // The item looked at (issue #277), picked in the sidebar's set list.
+  validateSearch: (search: Record<string, unknown>): { item?: string } => (typeof search.item === "string" && search.item ? { item: search.item } : {}),
   loader: async ({ params }) => {
     const copy = await apiClient.getSetlistOffline(params.setlistId);
     // A team set's positions and who holds them (issue #275): its notes filtered by them.
@@ -44,20 +49,25 @@ const PRESETS = [1, 3, 5, 10, 15, 30];
 const QUICK = ["wrapUp", "oneMinute", "nextSong", "louder", "slowDown", "repeat"] as const;
 
 /**
- * The media operator's view of a set (issues #269, #275): the set's items on
- * the left, as in Live; in the middle, the item's slides as tiles to send
+ * The media operator's view of a set (issues #269, #275, #277), in Live mode:
+ * the set's items in the sidebar, as in Live; the item's slides as tiles to send
  * to the screens - coloured by section, notes shown if asked, all or those
  * of a team position - or the timer, messages and what's on the screens;
  * on the right, a drawer with the screens and their layers. It follows the
  * set without playing along (no metronome, no stems). It runs the screens
  * once it takes them - shared with the leader's Live, or alone - and can
- * take the whole lead.
+ * take the whole lead. The keyboard moves the slides and runs the rest
+ * (OPERATOR_KEYS).
  */
 function OperatorPage() {
   const { t, i18n } = useTranslation();
   const { setlistId } = Route.useParams();
+  const { item: picked } = Route.useSearch();
+  const navigate = useNavigate();
   const { copy } = Route.useLoaderData();
   const sync = useSync();
+  // Always Live (issue #277): the sidebar lists the set as Live does.
+  useEffect(() => setMode("live"), []);
   useEffect(() => {
     // Turned on here: off again on leaving; already on (from Live), left as it was.
     const wasOn = syncState().setId === setlistId;
@@ -69,10 +79,20 @@ function OperatorPage() {
   const ready = sync.setId === setlistId && sync.status === "on";
   const send = (command: SyncStageCommand) => sendStage(command);
   const presenting = sync.session?.presenting ?? null;
-  // The item looked at: the one on the screens, until another's picked.
-  const [picked, setPicked] = useState<string | null>(null);
-  const itemId = picked ?? presenting?.itemId ?? sync.session?.itemId ?? copy.songs[0]?.item.id ?? null;
+  // The item looked at: the one picked in the sidebar, else the one on the screens.
+  const itemId = (picked && copy.songs.some((one) => one.item.id === picked) ? picked : null) ?? presenting?.itemId ?? sync.session?.itemId ?? copy.songs[0]?.item.id ?? null;
+  const look = (item: string) => void navigate({ to: "/sets/$setlistId/operate", params: { setlistId }, search: { item }, replace: true });
   const [drawer, setDrawer] = useState(false);
+  // The sidebar's progress, as in Live: the item on the screens is where the set is, the ones before it played.
+  const shown = useRef<string | null>(null);
+  useEffect(() => {
+    const now = presenting?.itemId ?? null;
+    if (!now || now === shown.current) return;
+    if (shown.current) markPlayed(setlistId, shown.current);
+    markCurrent(setlistId, now);
+    shown.current = now;
+  }, [presenting?.itemId, setlistId]);
+  useOperatorKeys({ copy, itemId, onLook: look, onLayers: send, enabled: ready && sync.canLead && !drawer });
 
   return (
     <div className="flex flex-col gap-4" data-testid="operator">
@@ -84,6 +104,7 @@ function OperatorPage() {
           <h1 className="text-2xl font-semibold">{t("screens.operator.title")}</h1>
           <p className="truncate text-sm text-muted-foreground">{setlistTitle(copy.set, t, i18n.language)}</p>
         </div>
+        <ShortcutsHelp />
         <Button variant="outline" onClick={() => setDrawer(true)} data-testid="operator-drawer-open">
           <Layers />
           {t("screens.operator.screensAndLayers")}
@@ -99,29 +120,26 @@ function OperatorPage() {
       ) : (
         <>
           <ControlBar />
-          <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
-            <ItemsSidebar copy={copy} itemId={itemId} onPick={setPicked} />
-            <Tabs defaultValue="slides" className="min-w-0">
-              <TabsList>
-                <TabsTrigger value="slides" data-testid="operator-tab-slides">
-                  {t("screens.operator.tabSlides")}
-                </TabsTrigger>
-                <TabsTrigger value="stage" data-testid="operator-tab-stage">
-                  {t("screens.operator.tabStage")}
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="slides" className="pt-2">
-                <SlidesTab copy={copy} view={copy.songs.find((one) => one.item.id === itemId) ?? null} />
-              </TabsContent>
-              <TabsContent value="stage" className="pt-2">
-                <div className="grid gap-6 xl:grid-cols-2">
-                  <OnScreens copy={copy} />
-                  <TimerCard send={send} />
-                  <MessageCard send={send} />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+          <Tabs defaultValue="slides" className="min-w-0">
+            <TabsList>
+              <TabsTrigger value="slides" data-testid="operator-tab-slides">
+                {t("screens.operator.tabSlides")}
+              </TabsTrigger>
+              <TabsTrigger value="stage" data-testid="operator-tab-stage">
+                {t("screens.operator.tabStage")}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="slides" className="pt-2">
+              <SlidesTab copy={copy} view={copy.songs.find((one) => one.item.id === itemId) ?? null} />
+            </TabsContent>
+            <TabsContent value="stage" className="pt-2">
+              <div className="grid gap-6 xl:grid-cols-2">
+                <OnScreens copy={copy} />
+                <TimerCard send={send} />
+                <MessageCard send={send} />
+              </div>
+            </TabsContent>
+          </Tabs>
           <Sheet open={drawer} onOpenChange={setDrawer}>
             <SheetContent side="right" className="w-[22rem] max-w-[90vw]" data-testid="operator-drawer">
               <SheetHeader>
@@ -192,29 +210,133 @@ function ControlBar() {
   );
 }
 
-/** The set's items, as Live lists them: the one on the screens marked, the one looked at picked. */
-function ItemsSidebar({ copy, itemId, onPick }: { copy: SetlistOfflineCopy; itemId: string | null; onPick: (itemId: string) => void }) {
+/** Each item's slides (issue #277): what the arrows step through, from one song into the next. */
+function useSetSlides(copy: SetlistOfflineCopy) {
+  return useMemo(
+    () =>
+      copy.songs.map((view) => ({
+        itemId: view.item.id,
+        count: view.song ? lyricSlides(renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps })).length : 0,
+      })),
+    [copy],
+  );
+}
+
+/** The operator's keys (issue #277), as the page lists them: `screens.operator.keys.<id>`. */
+const OPERATOR_KEYS = [
+  { id: "next", keys: ["→", "↓", "Page Down"] },
+  { id: "previous", keys: ["←", "↑", "Page Up"] },
+  { id: "present", keys: ["Enter"] },
+  { id: "firstLast", keys: ["Home", "End"] },
+  { id: "black", keys: ["B", "."] },
+  { id: "stop", keys: ["S"] },
+  { id: "words", keys: ["W"] },
+  { id: "background", keys: ["G"] },
+  { id: "title", keys: ["T"] },
+  { id: "clearLayers", keys: ["C"] },
+] as const;
+
+/**
+ * The keyboard, on the whole page (issue #277): the arrows move the slides on
+ * the screens - past a song's last into the next song, before its first into
+ * the previous one's last - Enter puts up the song looked at, and letters
+ * black the screens, stop presenting and switch the layers. Not while typing,
+ * nor while the drawer's open; ahead of the tabs' own arrow keys.
+ */
+function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: SetlistOfflineCopy; itemId: string | null; onLook: (itemId: string) => void; onLayers: (command: SyncStageCommand) => void; enabled: boolean }) {
+  const sync = useSync();
+  const canPresent = useCanPresent();
+  const slides = useSetSlides(copy);
+  const handle = useRef<(event: KeyboardEvent) => void>(() => undefined);
+  handle.current = (event) => {
+    const target = event.target as HTMLElement | null;
+    if (event.ctrlKey || event.metaKey || event.altKey || target?.closest("input, textarea, select, [contenteditable=true], [aria-roledescription=sortable]")) return;
+    const presenting = sync.session?.presenting ?? null;
+    const layers = sync.stage?.layers ?? DEFAULT_SYNC_LAYERS;
+    const present = (item: string, slide: number) => {
+      presentScreens({ itemId: item, slide, black: false });
+      if (item !== itemId) onLook(item);
+    };
+    const at = presenting ? slides.findIndex((one) => one.itemId === presenting.itemId) : -1;
+    const step = (direction: 1 | -1) => {
+      if (!presenting || at < 0) {
+        const looked = slides.find((one) => one.itemId === itemId);
+        if (direction === 1 && looked?.count) present(looked.itemId, 0);
+        return;
+      }
+      const slide = presenting.slide + direction;
+      if (slide >= 0 && slide < slides[at]!.count) return present(presenting.itemId, slide);
+      // Into the next song with words, or back to the previous one's last slide.
+      for (let i = at + direction; i >= 0 && i < slides.length; i += direction) {
+        if (slides[i]!.count) return present(slides[i]!.itemId, direction === 1 ? 0 : slides[i]!.count - 1);
+      }
+    };
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    const action: Record<string, () => void> = {
+      ArrowRight: () => step(1),
+      ArrowDown: () => step(1),
+      PageDown: () => step(1),
+      ArrowLeft: () => step(-1),
+      ArrowUp: () => step(-1),
+      PageUp: () => step(-1),
+      Enter: () => {
+        const looked = slides.find((one) => one.itemId === itemId);
+        if (looked?.count && presenting?.itemId !== looked.itemId) present(looked.itemId, 0);
+      },
+      Home: () => presenting && present(presenting.itemId, 0),
+      End: () => presenting && at >= 0 && slides[at]!.count && present(presenting.itemId, slides[at]!.count - 1),
+      b: () => presenting && presentScreens({ ...presenting, black: !presenting.black }),
+      ".": () => presenting && presentScreens({ ...presenting, black: !presenting.black }),
+      s: () => presenting && presentScreens(null),
+      w: () => onLayers({ layers: { words: !layers.words } }),
+      g: () => onLayers({ layers: { background: !layers.background } }),
+      t: () => onLayers({ layers: { overlay: layers.overlay === "title" ? "none" : "title" } }),
+      c: () => onLayers({ layers: DEFAULT_SYNC_LAYERS }),
+    };
+    const run = action[key];
+    // A focused button or link keeps its own Enter.
+    if (!run || (key === "Enter" && target?.closest("button, a"))) return;
+    // The slides' keys need the screens; the layers are the stage's, anyone running it may switch them.
+    if (!["w", "g", "t", "c"].includes(key) && !canPresent) return;
+    event.preventDefault();
+    event.stopPropagation();
+    run();
+  };
+  useEffect(() => {
+    if (!enabled) return;
+    const listen = (event: KeyboardEvent) => handle.current(event);
+    // Captured: before a focused tab takes the arrows as its own.
+    window.addEventListener("keydown", listen, true);
+    return () => window.removeEventListener("keydown", listen, true);
+  }, [enabled]);
+}
+
+/** The keys, listed (issue #277). */
+function ShortcutsHelp() {
   const { t } = useTranslation();
-  const { session } = useSync();
-  const shown = session?.presenting?.itemId;
   return (
-    <nav className="flex flex-col gap-1 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto" aria-label={t("screens.operator.items")} data-testid="operator-items">
-      {copy.songs.map((view, index) => (
-        <button
-          key={view.item.id}
-          type="button"
-          onClick={() => onPick(view.item.id)}
-          aria-current={view.item.id === itemId ? "true" : undefined}
-          className={cn("flex items-center gap-2 rounded-md border px-2 py-1.5 text-left text-sm", view.item.id === itemId ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted")}
-          data-testid="operator-item"
-          data-on-screens={view.item.id === shown ? "" : undefined}
-        >
-          <span className="w-5 shrink-0 text-right text-xs text-muted-foreground tabular-nums">{index + 1}</span>
-          <span className="min-w-0 flex-1 truncate">{view.song?.title ?? t("sets.hiddenSong")}</span>
-          {view.item.id === shown ? <span className="size-2 shrink-0 rounded-full bg-red-500" aria-label={t("screens.operator.onScreens")} /> : null}
-        </button>
-      ))}
-    </nav>
+    <Popover>
+      <PopoverTrigger render={<Button variant="ghost" size="icon" aria-label={t("screens.operator.keys.heading")} title={t("screens.operator.keys.heading")} data-testid="operator-keys" />}>
+        <Keyboard />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80" data-testid="operator-keys-list">
+        <p className="mb-2 text-sm font-semibold">{t("screens.operator.keys.heading")}</p>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-sm">
+          {OPERATOR_KEYS.map((one) => (
+            <div key={one.id} className="contents">
+              <dt className="flex flex-wrap gap-1">
+                {one.keys.map((key) => (
+                  <kbd key={key} className="rounded border bg-muted px-1.5 font-mono text-xs">
+                    {key}
+                  </kbd>
+                ))}
+              </dt>
+              <dd className="text-muted-foreground">{t(`screens.operator.keys.${one.id}`)}</dd>
+            </div>
+          ))}
+        </dl>
+      </PopoverContent>
+    </Popover>
   );
 }
 

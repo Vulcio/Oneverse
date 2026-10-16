@@ -138,7 +138,7 @@ Every screen using the template shows its widgets, each in its cells. Widgets th
 
 ## The media operator
 
-Whoever runs the screens during a service - the media operator - has a view of their own: **Operator view**, on the set's page, or in Live's Sync menu (it opens in a new tab, so Live carries on). Anyone who can edit the set can use it, leading the set or not; it doesn't play the metronome or the stems.
+Whoever runs the screens during a service - the media operator - has a view of their own: **Operator view**, on the set's page, or in Live's Sync menu (it opens in a new tab, so Live carries on). It's a Live page: the app switches to Live mode. Anyone who can edit the set can use it, leading the set or not; it doesn't play the metronome or the stems.
 
 ![The operator view: who runs the screens, the set, and the song's slides](../../assets/screenshots/en/operator-view.jpg)
 
@@ -155,7 +155,7 @@ If you close the operator view, the screens go back to the leader.
 
 ### The set and its slides
 
-On the left, **The set** lists the set's items as in Live; the one on the screens is marked. Pick one to see its slides.
+The sidebar lists the set's songs, as in Live. The one on the screens is marked **Now**, and the ones the screens have moved past are ticked as played (**Start from the top** clears them). Pick a song there to see its slides.
 
 The **Slides** tab shows every slide of that song as a tile, coloured by its section (verse, chorus, bridge…). Once you've taken the screens, a tile sends its slide to every screen; the arrows (**Next slide** and back) step through them, and **Black screen** and **Stop presenting** work as in Live.
 
@@ -178,3 +178,22 @@ A song of the set can carry its own timer (**Timer on the screens**, on the [set
 - **The words** - off, the screens show the background alone (for a video or a quiet moment) while the slides keep moving.
 - **The background** - off, the words show on black.
 - **Title card over everything** - the set's name and team, over whatever the screens show, before the service or between parts.
+
+### Keyboard shortcuts
+
+The keyboard runs the screens too, once you've taken them. The keyboard button beside **Screens & layers** lists the shortcuts:
+
+| Keys | What they do |
+| --- | --- |
+| → ↓ Page Down | Next slide, into the next song after the last one |
+| ← ↑ Page Up | Previous slide, back into the previous song |
+| Enter | Put up the song you're looking at |
+| Home, End | First or last slide of the song |
+| B or . | Black screen, or back |
+| S | Stop presenting |
+| W | Words on or off |
+| G | Background on or off |
+| T | Title card on or off |
+| C | Layers back to normal |
+
+Shortcuts don't fire while you type a message. A button that has the focus keeps its own Enter.

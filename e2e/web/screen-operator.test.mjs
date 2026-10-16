@@ -96,6 +96,9 @@ try {
     await desk.getByTestId("set-operate").click();
     await desk.waitForURL(`${WEB}/sets/${set.id}/operate`);
     await desk.getByTestId("operator-control").waitFor();
+    // Live mode (issue #277), the set's songs in the sidebar.
+    if ((await desk.evaluate(() => localStorage.getItem("songverse.mode"))) !== "live") throw new Error("not in Live mode");
+    if ((await desk.getByTestId("sidebar-operate-item").count()) !== 2) throw new Error("the sidebar doesn't list the set's songs");
     // The screens connected, in the drawer.
     await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-drawer").getByTestId("operator-screens").getByText(`Stage ${stamp}`).waitFor({ timeout: 10000 });
@@ -160,7 +163,7 @@ try {
     page = desk;
     await desk.locator('[data-testid="operator-slide"][aria-current="true"]').waitFor();
     // The sidebar marks the item on the screens.
-    await desk.locator('[data-testid="operator-item"][data-on-screens]').getByText(`Opening ${stamp}`).waitFor();
+    await desk.locator('[data-testid="sidebar-operate-item"]:has([data-testid="sidebar-now"])').getByText(`Opening ${stamp}`).waitFor();
   });
 
   await step("alone: the leader's Live can't present; given back, it can", async () => {
@@ -212,6 +215,41 @@ try {
     await tv.getByTestId("screen-overlay").waitFor({ state: "detached", timeout: 5000 });
     await tv.getByTestId("widget-current-slide").waitFor();
     await desk.keyboard.press("Escape");
+  });
+
+  await step("the keyboard (issue #277): the arrows into the next song and back, black, layers, stop, Enter", async () => {
+    page = desk;
+    const at = (item) => tv.locator(`[data-testid="screen-showing"][data-item="${item}"]`);
+    // A tab focused: the arrows are still the slides'.
+    await desk.getByTestId("operator-tab-slides").click();
+    await desk.keyboard.press("ArrowRight");
+    await at(items[1].id).waitFor({ timeout: 10000 });
+    await desk.locator('[data-testid="sidebar-operate-item"]:has([data-testid="sidebar-now"])').getByText(`Sermon song ${stamp}`).waitFor();
+    await desk.getByTestId("sidebar-operate-item").filter({ hasText: `Opening ${stamp}` }).getByTestId("sidebar-played").waitFor();
+    if (!(await desk.getByTestId("operator-slides").isVisible())) throw new Error("the arrows switched the tab");
+    await desk.keyboard.press("ArrowLeft");
+    await at(items[0].id).waitFor({ timeout: 10000 });
+    await desk.keyboard.press("b");
+    await tv.locator('[data-testid="screen-showing"][data-black="true"]').waitFor({ timeout: 5000 });
+    await desk.keyboard.press("b");
+    await tv.locator('[data-testid="screen-showing"][data-black="false"]').waitFor({ timeout: 5000 });
+    await desk.keyboard.press("w");
+    await tv.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
+    await desk.keyboard.press("t");
+    await tv.getByTestId("screen-overlay").waitFor({ timeout: 5000 });
+    await desk.keyboard.press("c");
+    await tv.getByTestId("screen-overlay").waitFor({ state: "detached", timeout: 5000 });
+    await tv.getByTestId("widget-current-slide").waitFor({ timeout: 5000 });
+    await desk.keyboard.press("s");
+    await at("").waitFor({ timeout: 5000 });
+    // Enter, with nothing focused (a focused button keeps its own): the song looked at, put up again.
+    await desk.getByRole("heading", { name: "Operator" }).click();
+    await desk.keyboard.press("Enter");
+    await at(items[0].id).waitFor({ timeout: 5000 });
+    await desk.getByTestId("operator-keys").click();
+    await desk.getByTestId("operator-keys-list").getByText("Black screen, or back").waitFor();
+    await desk.keyboard.press("Escape");
+    await desk.getByTestId("operator-keys-list").waitFor({ state: "detached" });
   });
 
   await step("notes on the slides: all of them, or only those of a team position", async () => {

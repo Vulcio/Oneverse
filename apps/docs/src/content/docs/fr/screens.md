@@ -138,7 +138,7 @@ Chaque écran qui utilise le modèle affiche ses widgets, chacun dans ses cases.
 
 ## L'opérateur média
 
-Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live (elle s'ouvre dans un nouvel onglet, pour que Live continue). Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non ; elle ne joue ni le métronome ni les pistes.
+Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live (elle s'ouvre dans un nouvel onglet, pour que Live continue). C'est une page de Live : l'application passe en mode Live. Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non ; elle ne joue ni le métronome ni les pistes.
 
 ![La vue opérateur : qui pilote les écrans, la liste, et les diapositives du chant](../../../assets/screenshots/fr/operator-view.jpg)
 
@@ -155,7 +155,7 @@ Si vous fermez la vue opérateur, les écrans reviennent à qui mène.
 
 ### La liste et ses diapositives
 
-À gauche, **La liste** montre les éléments de la liste comme dans Live ; celui qui est sur les écrans est marqué. Choisissez-en un pour voir ses diapositives.
+La barre latérale montre les chants de la liste, comme dans Live. Celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface). Choisissez-y un chant pour voir ses diapositives.
 
 L'onglet **Diapositives** montre chaque diapositive de ce chant en vignette, colorée selon sa section (couplet, refrain, pont…). Une fois les écrans pris, une vignette envoie sa diapositive à tous les écrans ; les flèches (**Diapositive suivante** et retour) les font défiler, et **Écran noir** et **Arrêter la présentation** marchent comme dans Live.
 
@@ -178,3 +178,22 @@ Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans*
 - **Les paroles** - désactivées, les écrans n'affichent que le fond (pour une vidéo ou un moment calme) pendant que les diapositives continuent d'avancer.
 - **Le fond** - désactivé, les paroles s'affichent sur du noir.
 - **Carte de titre par-dessus** - le nom de la liste et de l'équipe, par-dessus ce qu'affichent les écrans, avant le culte ou entre deux parties.
+
+### Raccourcis clavier
+
+Le clavier pilote aussi les écrans, une fois que vous les avez pris. Le bouton clavier à côté de **Écrans et calques** liste les raccourcis :
+
+| Touches | Effet |
+| --- | --- |
+| → ↓ Page suivante | Diapositive suivante, jusque dans le chant suivant après la dernière |
+| ← ↑ Page précédente | Diapositive précédente, jusque dans le chant précédent |
+| Entrée | Afficher le chant que vous regardez |
+| Début, Fin | Première ou dernière diapositive du chant |
+| B ou . | Écran noir, ou retour |
+| S | Arrêter la présentation |
+| W | Paroles affichées ou non |
+| G | Fond affiché ou non |
+| T | Carte de titre affichée ou non |
+| C | Calques remis à la normale |
+
+Les raccourcis ne se déclenchent pas pendant que vous tapez un message. Un bouton qui a le focus garde sa propre touche Entrée.
