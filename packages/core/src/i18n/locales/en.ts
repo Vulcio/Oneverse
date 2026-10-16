@@ -250,6 +250,7 @@ const en = {
     operator: {
       title: "Operator",
       screensAndLayers: "Screens & layers",
+      closePanel: "Close",
       drawerDescription: "The screens showing this set now, and what they draw.",
       tabSlides: "Slides",
       tabStage: "Timer & messages",

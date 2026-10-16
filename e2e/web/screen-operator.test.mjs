@@ -102,7 +102,12 @@ try {
     // The screens connected, in the drawer.
     await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-drawer").getByTestId("operator-screens").getByText(`Stage ${stamp}`).waitFor({ timeout: 10000 });
-    await desk.keyboard.press("Escape");
+    // Beside the page, as the Display panel is (issue #278): the page makes room rather than going under it.
+    await desk.waitForTimeout(400);
+    const panel = await desk.getByTestId("operator-drawer").boundingBox();
+    const bar = await desk.getByTestId("operator-control").boundingBox();
+    if (!panel || !bar || bar.x + bar.width > panel.x + 1) throw new Error(`the panel covers the page: ${JSON.stringify({ panel, bar })}`);
+    await desk.getByTestId("operator-drawer-close").click();
     await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
     await desk.getByTestId("operator-tab-stage").click();
     await desk.getByTestId("operator-timer").waitFor();
@@ -214,7 +219,16 @@ try {
     page = tv;
     await tv.getByTestId("screen-overlay").waitFor({ state: "detached", timeout: 5000 });
     await tv.getByTestId("widget-current-slide").waitFor();
-    await desk.keyboard.press("Escape");
+    // The panel open, the page still takes taps and keys.
+    page = desk;
+    await desk.getByRole("heading", { name: "Operator" }).click();
+    await drawer.waitFor();
+    await desk.keyboard.press("t");
+    await tv.getByTestId("screen-overlay").waitFor({ timeout: 5000 });
+    await desk.keyboard.press("t");
+    await tv.getByTestId("screen-overlay").waitFor({ state: "detached", timeout: 5000 });
+    await desk.getByTestId("operator-drawer-open").click();
+    await drawer.waitFor({ state: "detached" });
   });
 
   await step("the keyboard (issue #277): the arrows into the next song and back, black, layers, stop, Enter", async () => {

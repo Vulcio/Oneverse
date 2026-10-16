@@ -44,13 +44,14 @@ import {
   Zap,
   UserRound,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { ButtonGroup } from "@songverse/ui/components/button-group";
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from "@songverse/ui/components/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@songverse/ui/components/select";
 import { useMediaQuery } from "@songverse/ui/hooks/use-media-query";
+import { useSidePanelRoom } from "#/lib/side-panel";
 import { changeDiagramPlayer, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
 import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
@@ -106,11 +107,7 @@ export function DisplayPanel({
   const wide = useMediaQuery(WIDE);
   const shown = (one: Section) => wide || section === one;
   // The page makes room for the column rather than going under it.
-  useEffect(() => {
-    if (!open || !wide) return;
-    document.documentElement.setAttribute("data-side-panel", "");
-    return () => document.documentElement.removeAttribute("data-side-panel");
-  }, [open, wide]);
+  useSidePanelRoom(open && wide);
   const modeName = t(`mode.${mode.toLowerCase()}`);
   const change = (next: Parameters<typeof changeDisplaySettings>[1]) => changeDisplaySettings(mode, next);
 

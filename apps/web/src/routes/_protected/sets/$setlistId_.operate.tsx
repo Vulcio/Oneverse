@@ -20,11 +20,13 @@ import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
 import { NativeSelect } from "@songverse/ui/components/native-select";
+import { useMediaQuery } from "@songverse/ui/hooks/use-media-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@songverse/ui/components/sheet";
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@songverse/ui/components/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 import { apiClient } from "#/lib/api-client";
 import { setMode } from "#/lib/mode";
+import { useSidePanelRoom } from "#/lib/side-panel";
 import { markCurrent, markPlayed } from "#/lib/set-progress";
 import { disableSync, enableSync, leadSync, presentScreens, screensLocked, sendStage, syncState, takeScreens, useSync } from "#/lib/sync-client";
 import { setlistTitle } from "#/lib/setlists";
@@ -53,7 +55,8 @@ const QUICK = ["wrapUp", "oneMinute", "nextSong", "louder", "slowDown", "repeat"
  * the set's items in the sidebar, as in Live; the item's slides as tiles to send
  * to the screens - coloured by section, notes shown if asked, all or those
  * of a team position - or the timer, messages and what's on the screens;
- * on the right, a drawer with the screens and their layers. It follows the
+ * on the right, a panel with the screens and their layers, beside the page
+ * as the Display panel is (issue #278). It follows the
  * set without playing along (no metronome, no stems). It runs the screens
  * once it takes them - shared with the leader's Live, or alone - and can
  * take the whole lead. The keyboard moves the slides and runs the rest
@@ -92,7 +95,7 @@ function OperatorPage() {
     markCurrent(setlistId, now);
     shown.current = now;
   }, [presenting?.itemId, setlistId]);
-  useOperatorKeys({ copy, itemId, onLook: look, onLayers: send, enabled: ready && sync.canLead && !drawer });
+  useOperatorKeys({ copy, itemId, onLook: look, onLayers: send, enabled: ready && sync.canLead });
 
   return (
     <div className="flex flex-col gap-4" data-testid="operator">
@@ -105,7 +108,7 @@ function OperatorPage() {
           <p className="truncate text-sm text-muted-foreground">{setlistTitle(copy.set, t, i18n.language)}</p>
         </div>
         <ShortcutsHelp />
-        <Button variant="outline" onClick={() => setDrawer(true)} data-testid="operator-drawer-open">
+        <Button variant={drawer ? "secondary" : "outline"} aria-pressed={drawer} onClick={() => setDrawer(!drawer)} data-testid="operator-drawer-open">
           <Layers />
           {t("screens.operator.screensAndLayers")}
         </Button>
@@ -140,18 +143,7 @@ function OperatorPage() {
               </div>
             </TabsContent>
           </Tabs>
-          <Sheet open={drawer} onOpenChange={setDrawer}>
-            <SheetContent side="right" className="w-[22rem] max-w-[90vw]" data-testid="operator-drawer">
-              <SheetHeader>
-                <SheetTitle>{t("screens.operator.screensAndLayers")}</SheetTitle>
-                <SheetDescription>{t("screens.operator.drawerDescription")}</SheetDescription>
-              </SheetHeader>
-              <div className="flex flex-col gap-6 px-4 pb-4">
-                <ScreensList />
-                <LayersCard send={send} />
-              </div>
-            </SheetContent>
-          </Sheet>
+          <ScreensPanel open={drawer} onOpenChange={setDrawer} send={send} />
         </>
       )}
     </div>
@@ -240,8 +232,8 @@ const OPERATOR_KEYS = [
  * The keyboard, on the whole page (issue #277): the arrows move the slides on
  * the screens - past a song's last into the next song, before its first into
  * the previous one's last - Enter puts up the song looked at, and letters
- * black the screens, stop presenting and switch the layers. Not while typing,
- * nor while the drawer's open; ahead of the tabs' own arrow keys.
+ * black the screens, stop presenting and switch the layers. Not while typing;
+ * ahead of the tabs' own arrow keys.
  */
 function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: SetlistOfflineCopy; itemId: string | null; onLook: (itemId: string) => void; onLayers: (command: SyncStageCommand) => void; enabled: boolean }) {
   const sync = useSync();
@@ -468,6 +460,41 @@ function NotesList({ notes }: { notes: SongNote[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** From here the panel is a column down the right, as the Display panel's (issue #209). */
+const WIDE = "(min-width: 1024px)";
+
+/**
+ * Screens & layers (issues #275, #278): the Display panel's kind of drawer -
+ * modeless, so the slides, the sidebar and the keys still work beside it; a
+ * column down the right that the page makes room for on a large screen, at
+ * the bottom on a phone.
+ */
+function ScreensPanel({ open, onOpenChange, send }: { open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void }) {
+  const { t } = useTranslation();
+  const wide = useMediaQuery(WIDE);
+  useSidePanelRoom(open && wide);
+  return (
+    <Drawer modal={false} disablePointerDismissal open={open} onOpenChange={onOpenChange} swipeDirection={wide ? "right" : "down"}>
+      <DrawerContent side={wide ? "right" : "bottom"} data-testid="operator-drawer" aria-label={t("screens.operator.screensAndLayers")}>
+        <div className={cn("flex items-center gap-2 border-b px-3 pb-2", wide && "pt-3")}>
+          <DrawerTitle className="flex items-center gap-2">
+            <Layers className="size-4 text-muted-foreground" aria-hidden />
+            {t("screens.operator.screensAndLayers")}
+          </DrawerTitle>
+          <DrawerClose render={<Button variant="ghost" size="icon" className="ml-auto size-8" />} aria-label={t("screens.operator.closePanel")} data-testid="operator-drawer-close">
+            <X aria-hidden />
+          </DrawerClose>
+        </div>
+        <div className="flex flex-col gap-6 overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <p className="text-xs text-muted-foreground">{t("screens.operator.drawerDescription")}</p>
+          <ScreensList />
+          <LayersCard send={send} />
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

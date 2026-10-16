@@ -173,7 +173,7 @@ A song of the set can carry its own timer (**Timer on the screens**, on the [set
 
 ### Screens and layers
 
-**Screens & layers**, at the top right, opens a drawer with the **Connected screens** showing the set now, and its **Layers**:
+**Screens & layers**, at the top right, opens a panel down the right, beside the slides rather than over them, like the **Display** panel. On a phone, it opens at the bottom. The slides, the sidebar and the keyboard keep working while it's open. It lists the **Connected screens** showing the set now, and its **Layers**:
 
 - **The words** - off, the screens show the background alone (for a video or a quiet moment) while the slides keep moving.
 - **The background** - off, the words show on black.

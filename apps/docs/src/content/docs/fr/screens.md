@@ -173,7 +173,7 @@ Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans*
 
 ### Écrans et calques
 
-**Écrans et calques**, en haut à droite, ouvre un tiroir avec les **Écrans connectés** qui affichent la liste, et ses **Calques** :
+**Écrans et calques**, en haut à droite, ouvre un panneau sur la droite, à côté des diapositives plutôt que par-dessus, comme le panneau **Affichage**. Sur un téléphone, il s'ouvre en bas. Les diapositives, la barre latérale et le clavier restent utilisables pendant qu'il est ouvert. Il montre les **Écrans connectés** qui affichent la liste, et ses **Calques** :
 
 - **Les paroles** - désactivées, les écrans n'affichent que le fond (pour une vidéo ou un moment calme) pendant que les diapositives continuent d'avancer.
 - **Le fond** - désactivé, les paroles s'affichent sur du noir.

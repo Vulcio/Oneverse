@@ -250,6 +250,7 @@ const fr: typeof en = {
     operator: {
       title: "Opérateur",
       screensAndLayers: "Écrans et calques",
+      closePanel: "Fermer",
       drawerDescription: "Les écrans qui affichent cette liste, et ce qu'ils dessinent.",
       tabSlides: "Diapositives",
       tabStage: "Minuteur et messages",
