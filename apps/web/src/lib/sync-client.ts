@@ -72,9 +72,11 @@ export interface SyncState {
   offset: number | null;
   /** The set's timer and message for its screens (issue #269). */
   stage: SyncStage | null;
+  /** This device runs the screens (issue #275). */
+  screensMine: boolean;
 }
 
-let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null };
+let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false };
 /** Plays what the leader plays (the metronome, the stems); an operator's page (issue #269) only watches. */
 let following = true;
 const listeners = new Set<() => void>();
@@ -203,7 +205,7 @@ function receive(message: SyncServerMessage) {
         wantLead = true;
         keep();
       }
-      emit({ status: "on", error: null, session: message.session, members: message.members, leading: message.leading, canLead: message.canLead, stage: message.stage ?? null });
+      emit({ status: "on", error: null, session: message.session, members: message.members, leading: message.leading, canLead: message.canLead, stage: message.stage ?? null, screensMine: !!message.screensMine });
       setMetronomeStartDelay(message.leading ? LEADER_START_DELAY : 0.08);
       // Just took the lead: the metronome carries on as it was (followed, or the session's), and goes out.
       if (message.leading && !wasLeading) {
@@ -373,7 +375,7 @@ export function enableSync(setId: string, lead = false, { follow = true }: { fol
   samples = [];
   wantLead = lead;
   setStemsDirectOutput(true);
-  emit({ setId, status: "connecting", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null });
+  emit({ setId, status: "connecting", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false });
   keep();
   connect();
 }
@@ -395,7 +397,7 @@ export function disableSync() {
   setMetronomeStartDelay(0.08);
   lastSent = null;
   lastStemsSent = null;
-  emit({ setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null });
+  emit({ setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false });
   following = true;
   keep();
 }
@@ -419,8 +421,23 @@ export function endSync() {
  * black, or nothing (null: not presenting).
  */
 export function publishPresenting(presenting: SyncPresenting | null) {
-  if (!state.leading) return;
+  if (!state.leading || screensLocked()) return;
   send({ type: "update", presenting });
+}
+
+/** Someone else runs the screens alone (issue #275): this device's Live doesn't present. */
+export function screensLocked(sync: Pick<SyncState, "session" | "screensMine"> = state): boolean {
+  return !!sync.session?.screens?.exclusive && !sync.screensMine;
+}
+
+/** The media operator (issue #275) takes the screens, shared or alone, or (null) gives them back. */
+export function takeScreens(control: "shared" | "exclusive" | null) {
+  if (state.canLead) send({ type: "screens", control });
+}
+
+/** What the screens show, from the operator running them (issue #275). */
+export function presentScreens(presenting: SyncPresenting | null) {
+  if (state.screensMine || (state.leading && !screensLocked())) send({ type: "present", presenting });
 }
 
 /** The media operator (issue #269): the set's timer and message for its screens; anyone who can lead the set, leading or not. */

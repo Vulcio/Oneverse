@@ -988,6 +988,9 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a message sent, the timer kept", args: [{ rev: 1, timer: { kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, message: null }, { message: " Next: announcements " }, 9_000] },
           { name: "a duration out of range: refused", args: [null, { timer: { kind: "countdown", duration: 100_000 } }, 0] },
           { name: "a message too long: refused", args: [null, { message: "x".repeat(201) }, 0] },
+          { name: "the screens' words hidden (issue #275), the rest kept", args: [{ rev: 4, timer: null, message: null }, { layers: { words: false } }, 1_000] },
+          { name: "the title card over everything, then the background back", args: [{ rev: 5, timer: null, message: null, layers: { words: true, background: false, overlay: "none" } }, { layers: { overlay: "title", background: true } }, 1_000] },
+          { name: "a layer that can't be read: refused", args: [null, { layers: { overlay: "logo" } }, 0] },
         ],
       },
       clockOffset: {

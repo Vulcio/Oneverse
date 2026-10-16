@@ -72,6 +72,12 @@ export interface SyncSession {
   itemId: string | null;
   /** What the set's screens show (issue #186); null or left out when nobody's presenting. */
   presenting?: SyncPresenting | null;
+  /**
+   * Who runs the screens besides the leader (issue #275): a media operator,
+   * sharing them with the leader's Live, or alone (exclusive: Live's present
+   * controls wait). Null or left out: the leader runs them.
+   */
+  screens?: { id: string; name: string; exclusive: boolean } | null;
 }
 
 /**
@@ -84,7 +90,18 @@ export interface SyncStage {
   timer: SyncTimer | null;
   /** `at`: when it was sent (server time, ms). */
   message: { text: string; at: number } | null;
+  /** What the screens draw (issue #275); left out: everything, no overlay. */
+  layers?: SyncLayers;
 }
+
+/** The screens' layers (issue #275): the words, the background, and an overlay over both - none, or the set's title card. */
+export interface SyncLayers {
+  words: boolean;
+  background: boolean;
+  overlay: "none" | "title";
+}
+
+export const DEFAULT_SYNC_LAYERS: SyncLayers = { words: true, background: true, overlay: "none" };
 
 /** The longest message to the stage. */
 export const SYNC_STAGE_MESSAGE_MAX = 200;
@@ -101,6 +118,8 @@ export interface SyncStageCommand {
   add?: number;
   /** The message to the stage; null or "" clears it. */
   message?: string | null;
+  /** The screens' layers (issue #275): those given change, the others stay. */
+  layers?: Partial<SyncLayers>;
 }
 
 /**
@@ -136,7 +155,13 @@ export function applyStageCommand(stage: SyncStage | null, command: SyncStageCom
     const text = command.message?.trim() ?? "";
     message = text ? { text, at: now } : null;
   }
-  return { rev: (stage?.rev ?? 0) + 1, timer, message };
+  let layers = stage?.layers ?? DEFAULT_SYNC_LAYERS;
+  if (command.layers !== undefined) {
+    const { words, background, overlay } = command.layers ?? {};
+    if ((words !== undefined && typeof words !== "boolean") || (background !== undefined && typeof background !== "boolean") || (overlay !== undefined && overlay !== "none" && overlay !== "title")) return null;
+    layers = { ...layers, ...(words !== undefined && { words }), ...(background !== undefined && { background }), ...(overlay !== undefined && { overlay }) };
+  }
+  return { rev: (stage?.rev ?? 0) + 1, timer, message, layers };
 }
 
 export interface SyncMember {
@@ -156,6 +181,14 @@ export type SyncClientMessage =
   | { type: "leave" }
   /** Starts a session, or takes over the lead of the one going on. */
   | { type: "lead" }
+  /**
+   * The media operator (issue #275), anyone who can lead the set: takes the
+   * screens, shared with the leader or exclusive; null gives them back. With
+   * no session yet, it starts one, led by them.
+   */
+  | { type: "screens"; control: "shared" | "exclusive" | null }
+  /** What the screens show, from whoever runs them: the leader (unless an operator has them alone) or the operator. */
+  | { type: "present"; presenting: SyncPresenting | null }
   | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null }
   | { type: "end" }
   /**
@@ -225,6 +258,8 @@ export type SyncServerMessage =
       canLead: boolean;
       /** The set's timer and message for its screens (issue #269); left out by an older server. */
       stage?: SyncStage | null;
+      /** This device runs the screens (issue #275): it's session.screens. */
+      screensMine?: boolean;
     }
   /** The songs it now watches: those it may see (issue #27). */
   | { type: "watching"; songVersionIds: string[] }

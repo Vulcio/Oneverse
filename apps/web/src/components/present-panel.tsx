@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, MonitorOff, MonitorUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
-import { publishPresenting, useSync } from "#/lib/sync-client";
+import { publishPresenting, screensLocked, useSync } from "#/lib/sync-client";
 import { cn } from "@songverse/ui/lib/utils";
 
 /** After a step back past a song's first slide: the previous song opens on its last. */
@@ -51,6 +51,8 @@ export function PresentPanel({
   const slides = useMemo(() => (chart ? lyricSlides(chart) : []), [chart]);
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const screens = sync.setId === setId ? sync.members.filter((member) => member.screen) : [];
+  // A media operator running the screens alone (issue #275): this Live shows what's on them, and waits.
+  const locked = screensLocked(sync);
 
   // Another song opened while presenting: its first slide (its last, stepping back), as black or not as it was.
   useEffect(() => {
@@ -86,7 +88,7 @@ export function PresentPanel({
   const goRef = useRef(go);
   goRef.current = go;
   useEffect(() => {
-    if (!presenting) return;
+    if (!presenting || locked) return;
     function onKey(event: KeyboardEvent) {
       if (event.altKey || event.ctrlKey || event.metaKey || event.defaultPrevented) return;
       const target = event.target as HTMLElement | null;
@@ -100,13 +102,19 @@ export function PresentPanel({
     }
     window.addEventListener("keydown", onKey, { capture: true });
     return () => window.removeEventListener("keydown", onKey, { capture: true });
-  }, [!!presenting]);
+  }, [!!presenting, locked]);
 
   if (!presenting) return null;
   const firstOf = (passId: string) => slides.findIndex((one) => one.passId === passId);
 
   return (
     <section className="flex shrink-0 flex-col gap-2 border-t-2 border-t-primary bg-card px-2 py-2 sm:px-4" aria-label={t("screens.presenting")} data-testid="present-panel" data-slide={slide} data-black={String(presenting.black)}>
+      {locked ? (
+        <p className="text-xs text-muted-foreground" data-testid="present-locked">
+          {t("screens.operator.lockedBy", { name: sync.session?.screens?.name })}
+        </p>
+      ) : null}
+      <fieldset disabled={locked} className="contents">
       <div className="flex items-center gap-2">
         <Button type="button" variant="outline" size="icon" className="size-12 shrink-0" onClick={() => go(-1)} aria-label={t("screens.previousSlide")} data-testid="present-previous">
           <ChevronLeft />
@@ -143,6 +151,7 @@ export function PresentPanel({
           <ChevronRight />
         </Button>
       </div>
+      </fieldset>
       {/* The song's sections, to jump to one: V1 C V2 C B C. */}
       <div className="flex items-center gap-1.5 overflow-x-auto">
         {steps.map((step) => {
@@ -155,6 +164,7 @@ export function PresentPanel({
               key={step.passId}
               type="button"
               className={cn("h-7 min-w-8 shrink-0 rounded-full border px-2 text-xs font-semibold", here ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent")}
+              disabled={locked}
               onClick={() => show({ ...presenting, itemId, slide: first, black: false })}
               aria-label={t("live.goToPass", { name })}
               aria-current={here ? "step" : undefined}

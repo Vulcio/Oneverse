@@ -1,4 +1,4 @@
-import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type SyncTimer } from "@songverse/core";
+import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type SyncLayers, type SyncTimer } from "@songverse/core";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@songverse/ui/lib/utils";
@@ -23,6 +23,10 @@ export interface StageLive {
   offset?: number;
   /** In the template editor: an empty message shows what it would look like. */
   preview?: boolean;
+  /** The operator's layers (issue #275): the words, the background, an overlay. */
+  layers?: SyncLayers;
+  /** The overlay's title card: the set's name, and its team's. */
+  title?: { title: string; subtitle: string | null } | null;
 }
 
 type Grid = NonNullable<ScreenTheme["grid"]>;

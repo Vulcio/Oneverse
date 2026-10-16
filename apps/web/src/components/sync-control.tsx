@@ -12,7 +12,7 @@ import {
 } from "@songverse/ui/components/dropdown-menu";
 import { useMetronome } from "#/lib/metronome-engine";
 import { useStems } from "#/lib/stem-engine";
-import { disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
+import { disableSync, enableSync, endSync, leadSync, publishPresenting, screensLocked, unlockSyncAudio, useSync } from "#/lib/sync-client";
 import { cn } from "@songverse/ui/lib/utils";
 
 /**
@@ -92,6 +92,7 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
             {/* Screens (issue #186): presenting the set on them, from Live, and adding one. */}
             {sync.leading && itemId ? (
               <DropdownMenuItem
+                disabled={screensLocked(sync)}
                 onClick={() => publishPresenting(session?.presenting ? null : { itemId, slide: 0, black: false })}
                 data-testid="sync-present"
               >

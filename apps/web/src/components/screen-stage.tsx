@@ -6,7 +6,7 @@ import "@fontsource-variable/nunito";
 import "@fontsource-variable/oswald";
 import "@fontsource/bebas-neue";
 import "#/styles/screen-stage.css";
-import { SCREEN_FONT_FAMILIES, sectionEnergy, type RenderedChart, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
+import { DEFAULT_SYNC_LAYERS, SCREEN_FONT_FAMILIES, sectionEnergy, type RenderedChart, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "#/components/screen-widgets";
@@ -91,9 +91,11 @@ export function ScreenStage({
   const media = assets.find((asset) => asset.id === theme.background.media && asset.kind === "media");
 
   const grid = theme.grid && theme.grid.widgets.length > 0 ? theme.grid : null;
+  // The operator's layers (issue #275).
+  const layers = live.layers ?? DEFAULT_SYNC_LAYERS;
   /** The words, as a screen has always shown them: the whole stage, or a grid's Lyrics or chart cell. */
   const words = (look: ScreenTheme) =>
-    dark ? null : !song || !current ? (
+    dark || !layers.words ? null : !song || !current ? (
       <div className="sv-words items-center justify-center text-center">{idle}</div>
     ) : mode === "CHART" && song.chart ? (
       <ChartStage theme={look} chart={song.chart} title={song.title} passId={current.passId} />
@@ -124,13 +126,18 @@ export function ScreenStage({
       style={style}
       data-testid="screen-stage"
       data-background={theme.background.kind}
+      data-layers={`${layers.words ? "words" : ""}|${layers.background ? "background" : ""}|${layers.overlay}`}
       data-transition={theme.motion.transition}
       data-reveal={theme.motion.reveal}
       data-energy={energy}
     >
-      <Background theme={theme} media={media} />
-      {theme.background.reactive && song ? <div key={viewKey} className="sv-pulse" aria-hidden /> : null}
-      {theme.background.dim > 0 ? <div className="sv-bg-dim" style={{ opacity: theme.background.dim }} aria-hidden /> : null}
+      {layers.background ? (
+        <>
+          <Background theme={theme} media={media} />
+          {theme.background.reactive && song ? <div key={viewKey} className="sv-pulse" aria-hidden /> : null}
+          {theme.background.dim > 0 ? <div className="sv-bg-dim" style={{ opacity: theme.background.dim }} aria-hidden /> : null}
+        </>
+      ) : null}
       {grid ? (
         // Widgets on a grid (issue #268): the words in their cell, with a small margin of their own.
         <ScreenGrid
@@ -138,13 +145,20 @@ export function ScreenStage({
           grid={grid}
           slides={song && current ? song.slides : null}
           index={index}
-          black={dark && grid.black === "words"}
+          black={(dark && grid.black === "words") || !layers.words}
           live={live}
           words={words({ ...theme, layout: { ...theme.layout, margin: 2 } })}
         />
       ) : (
         words(theme)
       )}
+      {/* The operator's overlay (issue #275): the set's title card, over everything. */}
+      {layers.overlay === "title" && live.title ? (
+        <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-[2cqmin] bg-black/85 p-[6cqmin] text-center" data-testid="screen-overlay">
+          <p className="text-[7cqmin] leading-tight font-semibold">{live.title.title}</p>
+          {live.title.subtitle ? <p className="text-[3.5cqmin] opacity-70">{live.title.subtitle}</p> : null}
+        </div>
+      ) : null}
       <div className="sv-black" data-on={black && (!grid || grid.black === "all") ? "" : undefined} data-testid="screen-black" />
     </div>
   );

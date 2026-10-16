@@ -49,6 +49,7 @@ La présentation passe par la [Synchro](/fr/sets/#jouer-synchronisé) : les écr
 - Les sections du chant (S1, R, S2…) sous la diapositive y mènent directement, pour un refrain repris ou un couplet sauté.
 - **Écran noir** éteint tous les écrans, pour une prière, une prise de parole ou entre deux chants. Appuyez de nouveau pour faire revenir les paroles.
 - **Arrêter la présentation**, dans le menu Synchro, laisse les écrans afficher le nom de la liste.
+- Quand l'[opérateur média](/fr/screens/#qui-pilote-les-écrans) a pris les écrans seul, le panneau le dit et ses commandes attendent qu'il les rende.
 
 ## Ce qu'affichent les écrans
 
@@ -129,8 +130,41 @@ Chaque écran qui utilise le modèle affiche ses widgets, chacun dans ses cases.
 
 Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live (elle s'ouvre dans un nouvel onglet, pour que Live continue). Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non ; elle ne joue ni le métronome ni les pistes.
 
+![La vue opérateur : qui pilote les écrans, la liste, et les diapositives du chant](../../../assets/screenshots/fr/operator-view.jpg)
+
+### Qui pilote les écrans
+
+Par défaut, c'est le Live de qui mène la liste qui pilote les écrans. La barre en haut de la vue opérateur dit qui les pilote, et vous permet de les prendre :
+
+- **Prendre les écrans** - vous envoyez des diapositives, le Live de qui mène aussi : le dernier qui bouge l'emporte.
+- **Les prendre seul** - vous seul envoyez des diapositives. Dans Live, le panneau de présentation dit qui pilote les écrans, et ses commandes attendent que vous les rendiez (**Les rendre**).
+- **Partager avec Live** et **Les piloter seul** passent de l'un à l'autre ; **Les rendre** redonne les écrans à qui mène.
+- **Prendre le contrôle complet** vous fait aussi mener la liste : le métronome, les pistes et le chant que tout le monde suit, comme dans Live.
+
+Si vous fermez la vue opérateur, les écrans reviennent à qui mène.
+
+### La liste et ses diapositives
+
+À gauche, **La liste** montre les éléments de la liste comme dans Live ; celui qui est sur les écrans est marqué. Choisissez-en un pour voir ses diapositives.
+
+L'onglet **Diapositives** montre chaque diapositive de ce chant en vignette, colorée selon sa section (couplet, refrain, pont…). Une fois les écrans pris, une vignette envoie sa diapositive à tous les écrans ; les flèches (**Diapositive suivante** et retour) les font défiler, et **Écran noir** et **Arrêter la présentation** marchent comme dans Live.
+
+Cochez **Notes** pour voir les notes du chant sous les diapositives où elles sont : **Toutes les notes**, ou seulement celles des personnes qui tiennent l'un des [postes](/fr/organizations/#postes) de l'équipe (*Notes de : Média*), pour les repères qui vous sont destinés.
+
+### Minuteur et messages
+
+L'onglet **Minuteur et messages** :
+
 - **Sur les écrans** - le chant et la diapositive que les écrans affichent, et s'ils sont au noir.
 - **Minuteur** - ce qu'affichent les widgets **Compte à rebours** et **Chronomètre** quand leur temps est donné par **L'opérateur média** : choisissez une durée (1, 3, 5, 10, 15 ou 30 minutes, ou tapez-en une et **Régler**), ou **Chronomètre** ; puis **Démarrer** et **Pause**, **Remettre à zéro**, une minute de moins ou de plus (**-** et **+**), ou **Effacer**. Après zéro, un compte à rebours passe au rouge.
 - **Message à la scène** - tapez-en un et **Envoyer**, ou choisissez-en un tout prêt (**On conclut**, **Une minute**, **Chant suivant**…). Il s'affiche dans le widget **Message** des écrans de la liste jusqu'à ce que vous l'effaciez (**Effacer**).
 
 Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans**, sur la [page de la liste](/fr/sets/#les-chants-dune-liste)) : un compte à rebours de cinq minutes pour une prise de parole, un chronomètre pour un chant. Quand le Live de qui mène arrive à ce chant, le minuteur démarre tout seul sur les écrans.
+
+### Écrans et calques
+
+**Écrans et calques**, en haut à droite, ouvre un tiroir avec les **Écrans connectés** qui affichent la liste, et ses **Calques** :
+
+- **Les paroles** - désactivées, les écrans n'affichent que le fond (pour une vidéo ou un moment calme) pendant que les diapositives continuent d'avancer.
+- **Le fond** - désactivé, les paroles s'affichent sur du noir.
+- **Carte de titre par-dessus** - le nom de la liste et de l'équipe, par-dessus ce qu'affichent les écrans, avant le culte ou entre deux parties.

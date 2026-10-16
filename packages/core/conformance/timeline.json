@@ -32,7 +32,12 @@
               "startedAt": 10000,
               "elapsed": 0
             },
-            "message": null
+            "message": null,
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "none"
+            }
           }
         },
         {
@@ -61,7 +66,12 @@
               "startedAt": null,
               "elapsed": 60000
             },
-            "message": null
+            "message": null,
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "none"
+            }
           }
         },
         {
@@ -90,7 +100,12 @@
               "startedAt": 100000,
               "elapsed": 60000
             },
-            "message": null
+            "message": null,
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "none"
+            }
           }
         },
         {
@@ -119,7 +134,12 @@
               "startedAt": null,
               "elapsed": 60000
             },
-            "message": null
+            "message": null,
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "none"
+            }
           }
         },
         {
@@ -148,7 +168,12 @@
               "startedAt": 50000,
               "elapsed": 0
             },
-            "message": null
+            "message": null,
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "none"
+            }
           }
         },
         {
@@ -170,7 +195,12 @@
           "expected": {
             "rev": 2,
             "timer": null,
-            "message": null
+            "message": null,
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "none"
+            }
           }
         },
         {
@@ -202,6 +232,11 @@
             "message": {
               "text": "Next: announcements",
               "at": 9000
+            },
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "none"
             }
           }
         },
@@ -225,6 +260,77 @@
             null,
             {
               "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            0
+          ],
+          "expected": null
+        },
+        {
+          "name": "the screens' words hidden (issue #275), the rest kept",
+          "args": [
+            {
+              "rev": 4,
+              "timer": null,
+              "message": null
+            },
+            {
+              "layers": {
+                "words": false
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "rev": 5,
+            "timer": null,
+            "message": null,
+            "layers": {
+              "words": false,
+              "background": true,
+              "overlay": "none"
+            }
+          }
+        },
+        {
+          "name": "the title card over everything, then the background back",
+          "args": [
+            {
+              "rev": 5,
+              "timer": null,
+              "message": null,
+              "layers": {
+                "words": true,
+                "background": false,
+                "overlay": "none"
+              }
+            },
+            {
+              "layers": {
+                "overlay": "title",
+                "background": true
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "rev": 6,
+            "timer": null,
+            "message": null,
+            "layers": {
+              "words": true,
+              "background": true,
+              "overlay": "title"
+            }
+          }
+        },
+        {
+          "name": "a layer that can't be read: refused",
+          "args": [
+            null,
+            {
+              "layers": {
+                "overlay": "logo"
+              }
             },
             0
           ],

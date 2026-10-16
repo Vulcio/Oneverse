@@ -110,10 +110,12 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
       itemStartedAt,
       // The media operator's (issue #269).
       operator: stage?.timer ?? null,
+      layers: stage?.layers,
+      title: set ? { title: setlistTitle(set.set, t, i18n.language), subtitle: set.set.teamName ?? null } : null,
       message: stage?.message?.text ?? null,
       offset,
     };
-  }, [set, view, song, itemStartedAt, stage, offset]);
+  }, [set, view, song, itemStartedAt, stage, offset, t, i18n.language]);
 
   // Following its owner's schedule (issue #274): no set today, the sets to pick from; OK while nothing's presented opens them too.
   const daySet = current.screen.setMode === "DAY";

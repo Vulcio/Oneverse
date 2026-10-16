@@ -211,7 +211,7 @@ try {
 
     // --- the screenshots
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: locale === "fr" ? "fr-FR" : "en-US", colorScheme: "light", permissions: ["microphone"] });
-    const page = await context.newPage();
+    let page = await context.newPage();
     await signIn(page, me);
     const shoot = async (name, url, ready, options = {}) => {
       if (url) {
@@ -380,6 +380,19 @@ try {
     await tv.locator('[data-testid="screen-showing"][data-slide="1"]').getByTestId("screen-lyrics").waitFor({ timeout: 10000 });
     await shoot("present-panel", null, null, { element: page.getByTestId("present-panel") });
     await shootTv("screen-lyrics");
+    // The operator view (issue #275), in a tab of its own while Live leads: the screens taken, a song's slides.
+    {
+      const live = page;
+      page = await live.context().newPage();
+      await page.setViewportSize(live.viewportSize());
+      await shoot("operator-view", `/sets/${set.id}/operate`, async () => {
+        await page.getByTestId("operator-take-shared").click();
+        await page.locator('[data-testid="operator-control"][data-control="shared"]').waitFor();
+        await page.locator('[data-testid="operator-slide"][aria-current="true"]').waitFor({ timeout: 10000 });
+      });
+      await page.close();
+      page = live;
+    }
     await syncControl.first().click();
     await syncItem(/^(End the session|Terminer la session)$/).click();
     await syncControl.first().click();

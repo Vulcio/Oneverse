@@ -49,6 +49,7 @@ Presenting uses [Sync](/sets/#playing-in-sync): the screens are members of the s
 - The song's sections (V1, C, V2…) under the slide jump straight to one, for a chorus sung again or a verse dropped.
 - **Black screen** blanks every screen, for prayer, talking or between songs. Press it again to bring the words back.
 - **Stop presenting**, in the Sync menu, leaves the screens showing the set's name.
+- When the [media operator](/screens/#who-runs-the-screens) has taken the screens alone, the panel says so and its controls wait until they give them back.
 
 ## What the screens show
 
@@ -129,8 +130,41 @@ Every screen using the template shows its widgets, each in its cells. Widgets th
 
 Whoever runs the screens during a service - the media operator - has a view of their own: **Operator view**, on the set's page, or in Live's Sync menu (it opens in a new tab, so Live carries on). Anyone who can edit the set can use it, leading the set or not; it doesn't play the metronome or the stems.
 
+![The operator view: who runs the screens, the set, and the song's slides](../../assets/screenshots/en/operator-view.jpg)
+
+### Who runs the screens
+
+By default the leader's Live runs the screens. The bar at the top of the operator view says who does now, and lets you take them:
+
+- **Take the screens** - you send slides too, and so does the leader's Live: whoever moves last wins.
+- **Take them alone** - only you send slides. In Live, the present panel says who runs the screens, and its controls wait until you **Give them back**.
+- **Share with Live** and **Run them alone** switch between the two; **Give them back** returns the screens to the leader.
+- **Take full control** leads the set as well: the metronome, the stems and the song everyone follows, as in Live.
+
+If you close the operator view, the screens go back to the leader.
+
+### The set and its slides
+
+On the left, **The set** lists the set's items as in Live; the one on the screens is marked. Pick one to see its slides.
+
+The **Slides** tab shows every slide of that song as a tile, coloured by its section (verse, chorus, bridge…). Once you've taken the screens, a tile sends its slide to every screen; the arrows (**Next slide** and back) step through them, and **Black screen** and **Stop presenting** work as in Live.
+
+Tick **Notes** to show the song's notes under the slides they're on: **All notes**, or only those of the people holding one of the team's [positions](/organizations/#positions) (*Media's notes*), for the cues meant for you.
+
+### Timer and messages
+
+The **Timer & messages** tab:
+
 - **On the screens** - the song and slide the screens show now, and whether they're black.
 - **Timer** - what the **Countdown** and **Count up** widgets show when their time comes from **The media operator**: pick a length (1, 3, 5, 10, 15 or 30 minutes, or type one and **Set**), or **Count up**; then **Start** and **Pause**, **Reset**, a minute less or more (**-** and **+**), or **Clear**. Past zero, a countdown turns red.
 - **Message to the stage** - type one and **Send**, or press a quick one (**Wrap up**, **One minute**, **Next song**…). It shows in the **Message** widget of the set's screens until you **Clear** it.
 
 A song of the set can carry its own timer (**Timer on the screens**, on the [set's page](/sets/#songs-in-a-set)): a five-minute countdown for a talk, a count up for a song. When the leader's Live comes to that song, the timer starts on the screens by itself.
+
+### Screens and layers
+
+**Screens & layers**, at the top right, opens a drawer with the **Connected screens** showing the set now, and its **Layers**:
+
+- **The words** - off, the screens show the background alone (for a video or a quiet moment) while the slides keep moving.
+- **The background** - off, the words show on black.
+- **Title card over everything** - the set's name and team, over whatever the screens show, before the service or between parts.

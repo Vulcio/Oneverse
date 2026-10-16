@@ -35,8 +35,10 @@ const STAGE_TTL_S = 12 * 60 * 60;
 const presenceKey = (songVersionId: string) => `songverse:presence:${songVersionId}`;
 const PRESENCE_CHANNEL = "songverse:presence:changed";
 
-interface StoredSession extends Omit<SyncSession, "leader"> {
+interface StoredSession extends Omit<SyncSession, "leader" | "screens"> {
   leader: { id: string; name: string; conn: string };
+  /** The media operator running the screens (issue #275), by connection. */
+  screens?: { id: string; name: string; conn: string; exclusive: boolean } | null;
 }
 
 /**
@@ -206,6 +208,10 @@ export class SyncServer implements OnModuleDestroy {
         return this.leaveSet(connection);
       case "lead":
         return this.lead(connection);
+      case "screens":
+        return this.takeScreens(connection, message.control);
+      case "present":
+        return this.presentFromOperator(connection, message.presenting);
       case "update":
         return this.update(connection, message);
       case "stage":
@@ -576,6 +582,9 @@ export class SyncServer implements OnModuleDestroy {
     const setId = connection.setId;
     if (!setId) return;
     connection.setId = null;
+    // The operator gone: the screens are the leader's again (issue #275).
+    const session = await this.read(setId).catch(() => null);
+    if (session?.screens?.conn === `${this.instance}:${connection.id}`) await redis().set(sessionKey(setId), JSON.stringify({ ...session, rev: session.rev + 1, screens: null }), "EX", SESSION_TTL_S);
     await redis().hdel(membersKey(setId), `${this.instance}:${connection.id}`).catch(() => undefined);
     await this.changed(setId);
   }
@@ -594,6 +603,8 @@ export class SyncServer implements OnModuleDestroy {
       stems: current?.stems ?? null,
       itemId: current?.itemId ?? null,
       presenting: current?.presenting ?? null,
+      // An operator running the screens keeps them (issue #275).
+      screens: current?.screens ?? null,
     };
     await this.write(setId, session);
   }
@@ -619,9 +630,53 @@ export class SyncServer implements OnModuleDestroy {
     if (next.itemId && next.itemId !== current.itemId) await this.itemTimer(setId, next.itemId).catch(() => undefined);
     if (message.presenting !== undefined) {
       if (message.presenting !== null && !validPresenting(message.presenting)) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid presenting" });
+      // An operator running the screens alone (issue #275): the leader's Live waits.
+      if (current.screens?.exclusive && current.screens.conn !== `${this.instance}:${connection.id}`) return this.send(connection, { type: "error", code: "forbidden", message: `${current.screens.name} runs the screens` });
       next.presenting = message.presenting;
     }
     await this.write(setId, next);
+  }
+
+  /**
+   * The media operator (issue #275) takes the screens - shared with the
+   * leader, or alone - or gives them back. With no session yet, it starts
+   * one, led by them: someone has to.
+   */
+  private async takeScreens(connection: Connection, control: "shared" | "exclusive" | null) {
+    const setId = connection.setId;
+    if (!setId) return this.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
+    if (!(await this.stillAllowed(connection))) return;
+    if (!connection.canLead) return this.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set runs its screens" });
+    if (control !== null && control !== "shared" && control !== "exclusive") return this.send(connection, { type: "error", code: "bad-request", message: "Invalid control" });
+    const conn = `${this.instance}:${connection.id}`;
+    const current = await this.read(setId);
+    if (!current) {
+      if (control === null) return;
+      return this.write(setId, {
+        rev: 1,
+        leader: { id: connection.user!.id, name: connection.user!.name, conn },
+        metronome: null,
+        stems: null,
+        itemId: null,
+        presenting: null,
+        screens: { id: connection.user!.id, name: connection.user!.name, conn, exclusive: control === "exclusive" },
+      });
+    }
+    // Giving them back: only who has them.
+    if (control === null && current.screens?.conn !== conn) return;
+    await this.write(setId, { ...current, rev: current.rev + 1, screens: control === null ? null : { id: connection.user!.id, name: connection.user!.name, conn, exclusive: control === "exclusive" } });
+  }
+
+  /** What the screens show, from the operator running them (issue #275), or the leader. */
+  private async presentFromOperator(connection: Connection, presenting: SyncPresenting | null) {
+    const setId = connection.setId;
+    if (setId && !(await this.stillAllowed(connection))) return;
+    const current = setId ? await this.read(setId) : null;
+    const conn = `${this.instance}:${connection.id}`;
+    const runs = !!current && (current.screens?.conn === conn || (current.leader.conn === conn && !(current.screens?.exclusive && current.screens.conn !== conn)));
+    if (!setId || !current || !connection.canLead || !runs) return this.send(connection, { type: "error", code: "forbidden", message: "Take the screens first" });
+    if (presenting !== null && !validPresenting(presenting)) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid presenting" });
+    await this.write(setId, { ...current, rev: current.rev + 1, presenting });
   }
 
   /** The media operator (issue #269): anyone who can lead the set changes its timer and its message to the stage. */
@@ -630,9 +685,9 @@ export class SyncServer implements OnModuleDestroy {
     if (!setId) return this.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
     if (!(await this.stillAllowed(connection))) return;
     if (!connection.canLead) return this.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set runs its screens" });
-    const command: SyncStageCommand = { timer: message.timer, reset: message.reset === true, run: typeof message.run === "boolean" ? message.run : undefined, add: message.add, message: message.message };
+    const command: SyncStageCommand = { timer: message.timer, reset: message.reset === true, run: typeof message.run === "boolean" ? message.run : undefined, add: message.add, message: message.message, layers: message.layers };
     const next = applyStageCommand(await this.readStage(setId), command, Date.now());
-    if (!next) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid timer or message" });
+    if (!next) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid timer, message or layers" });
     await this.writeStage(setId, next);
   }
 
@@ -709,7 +764,11 @@ export class SyncServer implements OnModuleDestroy {
       .filter((member) => now - member.at < PRESENCE_MS * 2);
     const members: SyncMember[] = present.map((member) => ({ id: member.id, name: member.name, leading: member.conn === stored?.leader.conn, ...(member.screen ? { screen: true } : {}) }));
     const session: SyncSession | null = stored
-      ? { ...stored, leader: { id: stored.leader.id, name: stored.leader.name, online: present.some((member) => member.conn === stored.leader.conn) } }
+      ? {
+          ...stored,
+          leader: { id: stored.leader.id, name: stored.leader.name, online: present.some((member) => member.conn === stored.leader.conn) },
+          screens: stored.screens ? { id: stored.screens.id, name: stored.screens.name, exclusive: stored.screens.exclusive } : null,
+        }
       : null;
     for (const connection of local) {
       this.send(connection, {
@@ -720,6 +779,7 @@ export class SyncServer implements OnModuleDestroy {
         leading: stored?.leader.conn === `${this.instance}:${connection.id}`,
         canLead: connection.canLead,
         stage,
+        screensMine: !!stored?.screens && stored.screens.conn === `${this.instance}:${connection.id}`,
       });
     }
   }

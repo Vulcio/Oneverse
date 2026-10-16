@@ -26,6 +26,11 @@ for (const title of ["Opening", "Sermon song"]) {
   await api(leader, "POST", `/setlists/${set.id}/items`, { songVersionId: song.id });
 }
 const items = (await api(leader, "GET", `/setlists/${set.id}`)).items;
+// Notes on the first song (issue #275): one by someone holding the team's "Media" position, one by someone who doesn't.
+const media = await api(leader, "POST", `/teams/${team.id}/positions`, { name: `Media ${stamp}` });
+await api(leader, "PUT", `/teams/${team.id}/members/${member.id}/positions`, { positionIds: [media.id] });
+await api(member, "POST", "/notes", { songVersionId: songs[0].id, content: `Lights down ${stamp}`, place: "TEAM", teamId: team.id });
+await api(operator, "POST", "/notes", { songVersionId: songs[0].id, content: `Capo 2 ${stamp}`, place: "TEAM", teamId: team.id });
 
 // --- a set item's own timer
 let r = await call(leader, "PATCH", `/setlists/${set.id}/items/${items[1].id}`, { timer: { kind: "countdown", duration: 120 } });
@@ -90,8 +95,14 @@ try {
     if ((await api(leader, "GET", `/setlists/${set.id}`)).items[0].timer?.duration !== 180) throw new Error("the item's timer wasn't saved");
     await desk.getByTestId("set-operate").click();
     await desk.waitForURL(`${WEB}/sets/${set.id}/operate`);
+    await desk.getByTestId("operator-control").waitFor();
+    // The screens connected, in the drawer.
+    await desk.getByTestId("operator-drawer-open").click();
+    await desk.getByTestId("operator-drawer").getByTestId("operator-screens").getByText(`Stage ${stamp}`).waitFor({ timeout: 10000 });
+    await desk.keyboard.press("Escape");
+    await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
+    await desk.getByTestId("operator-tab-stage").click();
     await desk.getByTestId("operator-timer").waitFor();
-    await desk.getByTestId("operator-screens").getByText(`Stage ${stamp}`).waitFor({ timeout: 10000 });
   });
 
   await step("a 5-minute countdown, started: on the stage display, ticking; a minute more", async () => {
@@ -133,6 +144,85 @@ try {
     await desk.getByTestId("operator-message-clear").click();
     page = tv;
     await tv.getByTestId("widget-message").waitFor({ state: "detached", timeout: 5000 });
+  });
+
+  await step("the slides (issue #275): the screens taken, shared; a tile sends its slide", async () => {
+    page = desk;
+    await desk.getByTestId("operator-tab-slides").click();
+    const tiles = desk.getByTestId("operator-slide");
+    await tiles.first().waitFor();
+    if (!(await tiles.first().isDisabled())) throw new Error("slides could be sent before taking the screens");
+    await desk.getByTestId("operator-take-shared").click();
+    await desk.locator('[data-testid="operator-control"][data-control="shared"]').waitFor();
+    await tiles.first().click();
+    page = tv;
+    await tv.getByTestId("widget-current-slide").getByText("A line here").waitFor({ timeout: 10000 });
+    page = desk;
+    await desk.locator('[data-testid="operator-slide"][aria-current="true"]').waitFor();
+    // The sidebar marks the item on the screens.
+    await desk.locator('[data-testid="operator-item"][data-on-screens]').getByText(`Opening ${stamp}`).waitFor();
+  });
+
+  await step("alone: the leader's Live can't present; given back, it can", async () => {
+    const leading = await syncDevice(leader);
+    leading.send({ type: "join", setId: set.id });
+    await leading.next((m) => m.type === "session");
+    leading.send({ type: "lead" });
+    await leading.next((m) => m.type === "session" && m.leading);
+    page = desk;
+    await desk.getByTestId("operator-control-switch").click();
+    await desk.locator('[data-testid="operator-control"][data-control="exclusive"]').waitFor();
+    await leading.next((m) => m.type === "session" && m.session?.screens?.exclusive);
+    leading.send({ type: "update", presenting: { itemId: items[1].id, slide: 0, black: false } });
+    const refused = await leading.next((m) => m.type === "error");
+    if (refused?.code !== "forbidden") throw new Error(JSON.stringify(refused));
+    await desk.getByTestId("operator-control-release").click();
+    await desk.locator('[data-testid="operator-control"][data-control="none"]').waitFor();
+    leading.drain();
+    leading.send({ type: "update", presenting: { itemId: items[1].id, slide: 0, black: false } });
+    const moved = await leading.next((m) => m.type === "session" && m.session?.presenting?.itemId === items[1].id);
+    if (!moved) throw new Error("the leader couldn't present once given back");
+    leading.send({ type: "update", presenting: { itemId: items[0].id, slide: 0, black: false } });
+    leading.close();
+    await desk.getByTestId("operator-take-shared").click();
+    await desk.locator('[data-testid="operator-control"][data-control="shared"]').waitFor();
+  });
+
+  await step("layers: the words hidden, then a title card over everything", async () => {
+    page = desk;
+    await desk.getByTestId("operator-drawer-open").click();
+    const drawer = desk.getByTestId("operator-drawer");
+    // A layer's box follows the stage the server sends back.
+    const toggleLayer = async (name, on) => {
+      const box = drawer.getByTestId(`operator-layer-${name}`);
+      await box.click();
+      await drawer.locator(`[data-testid="operator-layer-${name}"]${on ? ":checked" : ":not(:checked)"}`).waitFor({ timeout: 5000 });
+    };
+    await toggleLayer("words", false);
+    page = tv;
+    await tv.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
+    page = desk;
+    await toggleLayer("words", true);
+    await toggleLayer("title", true);
+    page = tv;
+    await tv.getByTestId("screen-overlay").getByText(`Stage ${stamp}`).waitFor({ timeout: 5000 });
+    page = desk;
+    await toggleLayer("title", false);
+    page = tv;
+    await tv.getByTestId("screen-overlay").waitFor({ state: "detached", timeout: 5000 });
+    await tv.getByTestId("widget-current-slide").waitFor();
+    await desk.keyboard.press("Escape");
+  });
+
+  await step("notes on the slides: all of them, or only those of a team position", async () => {
+    page = desk;
+    await desk.getByTestId("operator-notes").check();
+    const notes = desk.getByTestId("operator-slides").getByTestId("operator-note");
+    await notes.getByText(`Lights down ${stamp}`).waitFor();
+    await notes.getByText(`Capo 2 ${stamp}`).waitFor();
+    await desk.getByTestId("operator-notes-position").selectOption({ label: `Media ${stamp}'s notes` });
+    await notes.getByText(`Capo 2 ${stamp}`).waitFor({ state: "detached" });
+    await notes.getByText(`Lights down ${stamp}`).waitFor();
   });
 
   await step("someone who can't edit the set: no operator's controls", async () => {
