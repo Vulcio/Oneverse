@@ -47,7 +47,7 @@ import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
 import type { ConfirmScreenPairingRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
-import type { ScreenTheme, ScreenWidgetKind, ScreenWidgetLook } from "../screens/theme.js";
+import type { ScreenSwitchableLayer, ScreenTheme, ScreenWidgetKind, ScreenWidgetLook } from "../screens/theme.js";
 import type { ScreenMode } from "../screens/index.js";
 import type {
   CreateCatalogSchema,
@@ -694,6 +694,8 @@ export interface ScreenSummary {
   /** Its look (issue #194): a saved theme, or a built-in one by its id; neither, the default. */
   themeId: string | null;
   themeTemplate: string | null;
+  /** The layers it never shows (issue #287); left out by an older API. */
+  hiddenLayers?: ScreenSwitchableLayer[];
 }
 
 /** A screen theme's own file (issue #194): a background picture or video ("media"), or a font, at a signed address. */

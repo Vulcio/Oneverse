@@ -18,7 +18,7 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
 
 The screen remembers it's paired: next time, open the same page and it reconnects by itself. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
-**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, lyrics or chart, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, switch it between lyrics and chart, change its template or its owner, with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
+**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, lyrics or chart, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, switch it between lyrics and chart, change its template or its owner, and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
 
 ### The day's set
 
@@ -36,7 +36,8 @@ The screen has a menu of its own, for whoever stands by it, even while a set is 
 
 - **Choose a set** opens the list of sets above. On a screen with a fixed set it's greyed out: change that set from **Screens**.
 - **Theme** lists the **Built-in** templates and the owner's **Saved themes**, with the one in use marked. Pick one with **OK** and the screen changes at once. It keeps that theme, as if you'd picked it in the tile's **Settings**.
-- **Back** steps out of the themes, and Back (Escape) or **Close** closes the menu.
+- **Video input**, with a template that shows one (see [Layers](/screens/#layers)), lists the device's cameras and capture cards: **The first camera there is**, or one by name. The screen keeps the one picked, on that device. The browser asks to allow the camera the first time.
+- **Back** steps out of the themes or the cameras, and Back (Escape) or **Close** closes the menu.
 
 ### Whose screen it is
 
@@ -100,8 +101,22 @@ A template is how a screen looks: its font, colours and background, the lines ar
 - **Title and credits** - whether to show the song's title and its credits (writers, copyright, CCLI number), on which slides and where.
 - **Chords** - for **The chart, for the band**: the chords' colour and the chart's size.
 - **Layout and widgets** - places [widgets](/screens/#widgets) on a grid. Below.
+- **Layers** - the base colour, the video input and masks. Below.
 
 The editor checks the contrast between the words and the background and warns when it's under 4.5:1. Pictures, videos and fonts are added to a saved template, so save it first; they count toward your storage. Name the template and **Save template**: it's yours, or - if you're an admin of a team - the team's, for every member to pick for their screens (only its admins change it). A template you can change has **Edit** and **Delete**; deleting it puts its screens back to the default look.
+
+### Layers
+
+A screen draws its template as layers, from the bottom up:
+
+1. **Base** - a colour under everything: **The background's first colour**, or one of its own.
+2. **Video input** - the screen's own camera or capture card (**Camera or capture card**), to show a camera or a video mixer's output under the words. **Fill the screen** or **Whole picture**, and how much it shows. Each screen uses the device it's plugged into, picked in [its menu](/screens/#the-screens-menu); a preview shows where it goes.
+3. **Media** - the **Background** above: a colour, a gradient, moving light, a picture or a video. A **Colour** background is the base, so the video input shows through it.
+4. **Content** - the words, and the widgets that show the song (the slide now and the next, sections, the song, the set's items).
+5. **Overlays** - the other widgets (clocks, timers, messages, QR codes…) and the operator's title card.
+6. **Masks** - **Add a mask**: a **Rectangle** or an **Ellipse**, placed in % of the screen, with a **Soft edge**. **Cover in black** hides that part of the picture, for a projector on an odd-shaped wall; **Window to the video** cuts through the media there, so the video input shows through while the words stay over it. **Everything but the shape** turns it inside out.
+
+A widget's **Layer**, in its settings on the grid, moves it between **Content** and **Overlays**. The [media operator](/screens/#screens-and-layers) shows, hides or clears each layer, and a screen's **Layers it shows**, in its tile's **Settings**, leaves some out for good: a stage monitor without the media, a lobby TV without the content. A screen's own choice wins: the operator can't turn on a layer it leaves out.
 
 Everything that moves is drawn by the screen's graphics chip, so it stays smooth on a TV's browser. A viewer whose device asks for reduced motion gets still backgrounds and simple fades.
 
@@ -176,11 +191,17 @@ A song of the set can carry its own timer (**Timer on the screens**, on the [set
 
 ### Screens and layers
 
-**Screens & layers**, at the top right, opens a panel down the right, beside the slides rather than over them, like the **Display** panel. On a phone, it opens at the bottom. The slides, the sidebar and the keyboard keep working while it's open. It lists the **Connected screens** showing the set now, and its **Layers**:
+**Screens & layers**, at the top right, opens a panel down the right, beside the slides rather than over them, like the **Display** panel. On a phone, it opens at the bottom. The slides, the sidebar and the keyboard keep working while it's open. It lists the **Connected screens** showing the set now, and the **Layers** they draw (see [Layers](/screens/#layers)), top first: **Masks**, **Overlays**, **Content**, **Media** and **Video input**.
 
-- **The words** - off, the screens show the background alone (for a video or a quiet moment) while the slides keep moving.
-- **The background** - off, the words show on black.
+![Screens & layers: the overlays cleared until the next slide](../../assets/screenshots/en/operator-layers.jpg)
+
+- **Layers for** - **All screens**, or one of the connected screens. A change for one screen is that screen's own ("its own layers" beside its name); a change for all screens reaches it too. **Like all screens** puts it back.
+- A layer's box shows or hides it. Off **Content**, the screens show the background alone (for a video or a quiet moment) while the slides keep moving; off **Media**, the words show on the base colour.
+- **Clear** hides a layer until the next slide or song, as other presentation software does; it comes back by itself, or with **Bring back**.
 - **Title card over everything** - the set's name and team, over whatever the screens show, before the service or between parts.
+- **Back to normal** shows every layer again, on every screen, without the title card.
+
+A layer a screen leaves out in its own settings stays off there, whatever the panel says.
 
 ### Keyboard shortcuts
 
@@ -194,9 +215,15 @@ The keyboard runs the screens too, once you've taken them. The keyboard button b
 | Home, End | First or last slide of the song |
 | B or . | Black screen, or back |
 | S | Stop presenting |
-| W | Words on or off |
-| G | Background on or off |
+| W | Content on or off (the words) |
+| G | Media on or off (the background) |
+| V | Video input on or off |
+| O | Overlays on or off |
+| M | Masks on or off |
+| Shift with W, G, V, O or M | Clear that layer until the next slide |
 | T | Title card on or off |
 | C | Layers back to normal |
+
+The layer keys act on every screen.
 
 Shortcuts don't fire while you type a message. A button that has the focus keeps its own Enter.

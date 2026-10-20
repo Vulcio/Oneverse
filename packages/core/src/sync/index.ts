@@ -1,4 +1,5 @@
 import type { SyncTimer } from "../screens/timers.js";
+import { SCREEN_SWITCHABLE_LAYERS, type ScreenSwitchableLayer } from "../screens/theme.js";
 import type { MetronomeSettings } from "../metronome/index.js";
 
 /**
@@ -94,14 +95,136 @@ export interface SyncStage {
   layers?: SyncLayers;
 }
 
-/** The screens' layers (issue #275): the words, the background, and an overlay over both - none, or the set's title card. */
-export interface SyncLayers {
-  words: boolean;
-  background: boolean;
-  overlay: "none" | "title";
+/**
+ * What the screens draw (issues #280, #287): the layers hidden, the title
+ * card over everything or not, and the layers cleared - hidden until the
+ * slide or the item on screen changes, as `cleared` notes where they were.
+ */
+export interface SyncLayerState {
+  hidden: ScreenSwitchableLayer[];
+  title: boolean;
+  cleared: { layers: ScreenSwitchableLayer[]; itemId: string | null; slide: number } | null;
 }
 
-export const DEFAULT_SYNC_LAYERS: SyncLayers = { words: true, background: true, overlay: "none" };
+/** The screens' layers: for all of them, and for some screens their own (by screen id), set from the operator's view. */
+export interface SyncLayers extends SyncLayerState {
+  screens?: Record<string, SyncLayerState>;
+}
+
+export const DEFAULT_SYNC_LAYERS: SyncLayers = { hidden: [], title: false, cleared: null };
+
+/** The most screens with layers of their own. */
+export const SYNC_LAYER_SCREENS_MAX = 32;
+
+const isLayer = (value: unknown): value is ScreenSwitchableLayer => (SCREEN_SWITCHABLE_LAYERS as readonly unknown[]).includes(value);
+
+function readLayerState(input: unknown): SyncLayerState {
+  if (!input || typeof input !== "object") return DEFAULT_SYNC_LAYERS;
+  const raw = input as Record<string, unknown>;
+  // Before layers (issue #275): the words, the background and an overlay.
+  if (!("hidden" in raw) && ("words" in raw || "background" in raw || "overlay" in raw)) {
+    return { hidden: [...(raw.background === false ? (["media"] as const) : []), ...(raw.words === false ? (["content"] as const) : [])], title: raw.overlay === "title", cleared: null };
+  }
+  const hidden = Array.isArray(raw.hidden) ? SCREEN_SWITCHABLE_LAYERS.filter((one) => (raw.hidden as unknown[]).includes(one)) : [];
+  const cleared = raw.cleared && typeof raw.cleared === "object" ? (raw.cleared as Record<string, unknown>) : null;
+  return {
+    hidden,
+    title: raw.title === true,
+    cleared:
+      cleared && Array.isArray(cleared.layers)
+        ? { layers: SCREEN_SWITCHABLE_LAYERS.filter((one) => (cleared.layers as unknown[]).includes(one)), itemId: typeof cleared.itemId === "string" ? cleared.itemId : null, slide: typeof cleared.slide === "number" ? cleared.slide : 0 }
+        : null,
+  };
+}
+
+/** A stage's layers as a client reads them: anything it can't read left out, the ones kept before layers (issue #275) read as theirs. Never throws. */
+export function readSyncLayers(input: unknown): SyncLayers {
+  const all = readLayerState(input);
+  const screens = input && typeof input === "object" ? (input as Record<string, unknown>).screens : undefined;
+  if (!screens || typeof screens !== "object") return all;
+  const own = Object.fromEntries(Object.entries(screens as Record<string, unknown>).slice(0, SYNC_LAYER_SCREENS_MAX).map(([id, state]) => [id, readLayerState(state)]));
+  return Object.keys(own).length ? { ...all, screens: own } : all;
+}
+
+/** What a screen draws: each layer shown or not, and the title card. */
+export interface ScreenLayersShown {
+  shown: Record<ScreenSwitchableLayer, boolean>;
+  title: boolean;
+}
+
+/**
+ * What a screen draws now (issue #287): its own layers if the operator gave
+ * it some, else all screens'; less what the screen itself never shows (its
+ * settings win), less what was cleared while the same slide is still on.
+ */
+export function screenLayers(
+  layers: unknown,
+  presenting: Pick<SyncPresenting, "itemId" | "slide"> | null | undefined,
+  screen?: { id: string; hidden?: readonly string[] } | null,
+): ScreenLayersShown {
+  const read = readSyncLayers(layers);
+  const state = (screen && read.screens?.[screen.id]) || read;
+  const cleared = state.cleared && state.cleared.itemId === (presenting?.itemId ?? null) && state.cleared.slide === (presenting?.slide ?? 0) ? state.cleared.layers : [];
+  const shown = Object.fromEntries(
+    SCREEN_SWITCHABLE_LAYERS.map((layer) => [layer, !state.hidden.includes(layer) && !cleared.includes(layer) && !(screen?.hidden ?? []).includes(layer)]),
+  ) as Record<ScreenSwitchableLayer, boolean>;
+  return { shown, title: state.title };
+}
+
+/**
+ * The operator's change to the layers (issues #280, #287), for every screen
+ * or, with `screen`, one: layers shown (true) or hidden (false), the title
+ * card on or off, layers cleared until the next slide, or all back to normal
+ * (`reset`, first). A change for every screen applies to the ones with
+ * layers of their own too.
+ */
+export interface SyncLayersCommand {
+  screen?: string | null;
+  reset?: boolean;
+  show?: Partial<Record<ScreenSwitchableLayer, boolean>>;
+  title?: boolean;
+  clear?: ScreenSwitchableLayer[];
+}
+
+function changeLayerState(state: SyncLayerState, command: SyncLayersCommand, at: { itemId: string | null; slide: number }): SyncLayerState {
+  let { hidden, title, cleared } = state;
+  // A clear from another slide is over.
+  if (cleared && (cleared.itemId !== at.itemId || cleared.slide !== at.slide)) cleared = null;
+  for (const [layer, on] of Object.entries(command.show ?? {}) as [ScreenSwitchableLayer, boolean][]) {
+    hidden = on ? hidden.filter((one) => one !== layer) : hidden.includes(layer) ? hidden : [...hidden, layer];
+    // Shown again: not cleared either.
+    if (on && cleared) cleared = { ...cleared, layers: cleared.layers.filter((one) => one !== layer) };
+  }
+  if (command.title !== undefined) title = command.title;
+  if (command.clear?.length) cleared = { ...at, layers: SCREEN_SWITCHABLE_LAYERS.filter((one) => command.clear!.includes(one) || cleared?.layers.includes(one)) };
+  if (cleared && cleared.layers.length === 0) cleared = null;
+  return { hidden: SCREEN_SWITCHABLE_LAYERS.filter((one) => hidden.includes(one)), title, cleared };
+}
+
+/** The layers after the operator's command, at the slide on screen; null when the command can't be read. */
+export function applyLayersCommand(layers: unknown, command: SyncLayersCommand, presenting?: Pick<SyncPresenting, "itemId" | "slide"> | null): SyncLayers | null {
+  if (!command || typeof command !== "object") return null;
+  const { screen, reset, show, title, clear } = command;
+  if (screen !== undefined && screen !== null && (typeof screen !== "string" || screen.length === 0 || screen.length > 64)) return null;
+  if (reset !== undefined && typeof reset !== "boolean") return null;
+  if (title !== undefined && typeof title !== "boolean") return null;
+  if (show !== undefined && (!show || typeof show !== "object" || Object.entries(show).some(([layer, on]) => !isLayer(layer) || typeof on !== "boolean"))) return null;
+  if (clear !== undefined && (!Array.isArray(clear) || !clear.every(isLayer))) return null;
+  const at = { itemId: presenting?.itemId ?? null, slide: presenting?.slide ?? 0 };
+  const current = readSyncLayers(layers);
+  const { screens = {}, ...all } = current;
+  if (screen) {
+    if (!screens[screen] && Object.keys(screens).length >= SYNC_LAYER_SCREENS_MAX) return null;
+    const own = changeLayerState(reset ? all : (screens[screen] ?? all), command, at);
+    // Back to all screens' layers: none of its own.
+    const rest = Object.fromEntries(Object.entries(screens).filter(([id]) => id !== screen));
+    const next = reset && !show && title === undefined && !clear?.length ? rest : { ...rest, [screen]: own };
+    return Object.keys(next).length ? { ...all, screens: next } : all;
+  }
+  if (reset) return changeLayerState(DEFAULT_SYNC_LAYERS, command, at);
+  const next = Object.fromEntries(Object.entries(screens).map(([id, state]) => [id, changeLayerState(state, command, at)]));
+  return { ...changeLayerState(all, command, at), ...(Object.keys(next).length ? { screens: next } : {}) };
+}
 
 /** The longest message to the stage. */
 export const SYNC_STAGE_MESSAGE_MAX = 200;
@@ -118,17 +241,18 @@ export interface SyncStageCommand {
   add?: number;
   /** The message to the stage; null or "" clears it. */
   message?: string | null;
-  /** The screens' layers (issue #275): those given change, the others stay. */
-  layers?: Partial<SyncLayers>;
+  /** The screens' layers (issues #280, #287): see applyLayersCommand. */
+  layers?: SyncLayersCommand;
 }
 
 /**
  * A stage after the operator's command (issue #269), at `now` (server time,
  * ms): a new timer, then reset, run or pause, more or less time, then the
- * message. Null when the command can't be read (a duration out of range, a
+ * message, then the layers (at the slide `presenting` has on screen, for
+ * a clear). Null when the command can't be read (a duration out of range, a
  * message too long), so the server refuses it.
  */
-export function applyStageCommand(stage: SyncStage | null, command: SyncStageCommand, now: number): SyncStage | null {
+export function applyStageCommand(stage: SyncStage | null, command: SyncStageCommand, now: number, presenting?: Pick<SyncPresenting, "itemId" | "slide"> | null): SyncStage | null {
   let timer = stage?.timer ?? null;
   let message = stage?.message ?? null;
   if (command.timer !== undefined) {
@@ -155,11 +279,11 @@ export function applyStageCommand(stage: SyncStage | null, command: SyncStageCom
     const text = command.message?.trim() ?? "";
     message = text ? { text, at: now } : null;
   }
-  let layers = stage?.layers ?? DEFAULT_SYNC_LAYERS;
+  let layers = readSyncLayers(stage?.layers);
   if (command.layers !== undefined) {
-    const { words, background, overlay } = command.layers ?? {};
-    if ((words !== undefined && typeof words !== "boolean") || (background !== undefined && typeof background !== "boolean") || (overlay !== undefined && overlay !== "none" && overlay !== "title")) return null;
-    layers = { ...layers, ...(words !== undefined && { words }), ...(background !== undefined && { background }), ...(overlay !== undefined && { overlay }) };
+    const next = applyLayersCommand(layers, command.layers, presenting);
+    if (!next) return null;
+    layers = next;
   }
   return { rev: (stage?.rev ?? 0) + 1, timer, message, layers };
 }

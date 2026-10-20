@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, GoneException, Injectable, NotFoundException } from "@nestjs/common";
-import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, normalizeScreenCode, resolveScreenTheme, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenTheme } from "@songverse/core";
+import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, normalizeScreenCode, resolveScreenTheme, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenTheme } from "@songverse/core";
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
@@ -35,6 +35,7 @@ const SCREEN_SELECT = {
   setlistId: true,
   themeId: true,
   themeTemplate: true,
+  hiddenLayers: true,
   ownerUserId: true,
   ownerTeamId: true,
   ownerOrganizationId: true,
@@ -312,7 +313,7 @@ export class ScreensService {
    * leads the set it shows, gives it another set (one they can edit) - it
    * then reads that set as them.
    */
-  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string | null; themeId?: string | null; themeTemplate?: string | null }) {
+  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string | null; themeId?: string | null; themeTemplate?: string | null; hiddenLayers?: string[] }) {
     const { screen, canManage } = await this.changeable(user, screenId);
     const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode");
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
@@ -325,6 +326,7 @@ export class ScreensService {
         ...(owner ?? {}),
         ...(change.name !== undefined && { name: change.name }),
         ...(change.mode !== undefined && { mode: change.mode }),
+        ...(change.hiddenLayers !== undefined && { hiddenLayers: [...new Set(change.hiddenLayers)] }),
         ...(change.setlistId !== undefined && { setlistId: change.setlistId, setByUserId: change.setlistId ? user.id : null, setlistPickedOn: null }),
         // A set put on it is fixed; the day's set is worked out when it next loads (issue #274).
         ...(change.setMode !== undefined ? { setMode: change.setMode, ...(change.setMode === "DAY" && change.setlistId === undefined && { setlistPickedOn: null }) } : change.setlistId ? { setMode: "FIXED" as const } : {}),
@@ -465,6 +467,7 @@ function present(
     setlistId: string | null;
     themeId: string | null;
     themeTemplate: string | null;
+    hiddenLayers: string[];
     lastSeenAt: Date | null;
     setMode: "FIXED" | "DAY";
     createdAt: Date;
@@ -493,5 +496,6 @@ function present(
     createdAt: screen.createdAt.toISOString(),
     themeId: screen.themeId,
     themeTemplate: screen.themeTemplate,
+    hiddenLayers: SCREEN_SWITCHABLE_LAYERS.filter((layer) => screen.hiddenLayers.includes(layer)),
   };
 }

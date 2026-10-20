@@ -1,14 +1,15 @@
 import {
-  DEFAULT_SYNC_LAYERS,
   formatTimer,
   lyricSlides,
   readSyncTimer,
+  readSyncLayers,
   renderChart,
+  SCREEN_SWITCHABLE_LAYERS,
   SYNC_STAGE_MESSAGE_MAX,
+  type ScreenSwitchableLayer,
   type SetlistOfflineCopy,
   type SetlistSongView,
   type SongNote,
-  type SyncLayers,
   type SyncPresenting,
   type SyncStageCommand,
   type TeamMember,
@@ -226,9 +227,16 @@ const OPERATOR_KEYS = [
   { id: "stop", keys: ["S"] },
   { id: "words", keys: ["W"] },
   { id: "background", keys: ["G"] },
+  { id: "video", keys: ["V"] },
+  { id: "overlays", keys: ["O"] },
+  { id: "masks", keys: ["M"] },
+  { id: "clearLayer", keys: ["Shift"] },
   { id: "title", keys: ["T"] },
   { id: "clearLayers", keys: ["C"] },
 ] as const;
+
+/** The letters that switch a layer (issue #280), on every screen; with Shift, they clear it until the next slide. */
+const LAYER_KEYS: Record<string, ScreenSwitchableLayer> = { w: "content", g: "media", v: "video", o: "overlays", m: "masks" };
 
 /**
  * The keyboard, on the whole page (issue #277): the arrows move the slides on
@@ -243,7 +251,7 @@ function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: Se
   const slides = useSetSlides(copy);
   // What these keys last sent, until the server's answer comes back: a key pressed again before it toggles from
   // there, not from a state the screens have already left (B twice quickly: black, then back).
-  const sent = useRef<{ presenting?: SyncPresenting | null; layers?: SyncLayers }>({});
+  const sent = useRef<{ presenting?: SyncPresenting | null; layers?: { hidden: ScreenSwitchableLayer[]; title: boolean } }>({});
   useEffect(() => {
     sent.current.presenting = undefined;
   }, [sync.session?.presenting]);
@@ -255,14 +263,15 @@ function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: Se
     const target = event.target as HTMLElement | null;
     if (event.ctrlKey || event.metaKey || event.altKey || target?.closest("input, textarea, select, [contenteditable=true], [aria-roledescription=sortable]")) return;
     const presenting = sent.current.presenting !== undefined ? sent.current.presenting : (sync.session?.presenting ?? null);
-    const layers = sent.current.layers ?? sync.stage?.layers ?? DEFAULT_SYNC_LAYERS;
+    const layers = sent.current.layers ?? readSyncLayers(sync.stage?.layers);
     const show = (next: SyncPresenting | null) => {
       sent.current.presenting = next;
       presentScreens(next);
     };
-    const layer = (change: Partial<SyncLayers>) => {
-      sent.current.layers = { ...layers, ...change };
-      onLayers({ layers: change });
+    const toggle = (layer: ScreenSwitchableLayer) => {
+      const shown = layers.hidden.includes(layer);
+      sent.current.layers = { ...layers, hidden: shown ? layers.hidden.filter((one) => one !== layer) : [...layers.hidden, layer] };
+      onLayers({ layers: { show: { [layer]: shown } } });
     };
     const present = (item: string, slide: number) => {
       show({ itemId: item, slide, black: false });
@@ -299,16 +308,22 @@ function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: Se
       b: () => presenting && show({ ...presenting, black: !presenting.black }),
       ".": () => presenting && show({ ...presenting, black: !presenting.black }),
       s: () => presenting && show(null),
-      w: () => layer({ words: !layers.words }),
-      g: () => layer({ background: !layers.background }),
-      t: () => layer({ overlay: layers.overlay === "title" ? "none" : "title" }),
-      c: () => layer(DEFAULT_SYNC_LAYERS),
+      t: () => {
+        sent.current.layers = { ...layers, title: !layers.title };
+        onLayers({ layers: { title: !layers.title } });
+      },
+      c: () => {
+        sent.current.layers = { hidden: [], title: false };
+        onLayers({ layers: { reset: true } });
+      },
     };
+    const layer = LAYER_KEYS[key];
+    if (layer) action[key] = event.shiftKey ? () => onLayers({ layers: { clear: [layer] } }) : () => toggle(layer);
     const run = action[key];
     // A focused button or link keeps its own Enter.
     if (!run || (key === "Enter" && target?.closest("button, a"))) return;
     // The slides' keys need the screens; the layers are the stage's, anyone running it may switch them.
-    if (!["w", "g", "t", "c"].includes(key) && !canPresent) return;
+    if (!layer && !["t", "c"].includes(key) && !canPresent) return;
     event.preventDefault();
     event.stopPropagation();
     run();
@@ -538,23 +553,73 @@ function ScreensList() {
   );
 }
 
-/** The screens' layers (issue #275): the words and the background shown or not, and an overlay over them. */
+/**
+ * The screens' layers (issues #275, #280, #287): for every screen or one of
+ * those connected, each layer shown or not, or cleared until the next slide;
+ * the title card over everything; all back to normal. A screen's own
+ * settings may keep some of them off whatever is chosen here.
+ */
 function LayersCard({ send }: { send: (command: SyncStageCommand) => void }) {
   const { t } = useTranslation();
-  const { stage } = useSync();
-  const layers = stage?.layers ?? DEFAULT_SYNC_LAYERS;
-  const toggle = (label: string, on: boolean, change: () => void, testId: string) => (
-    <label className="flex items-center justify-between gap-2 text-sm">
-      {label}
-      <input type="checkbox" className="size-4 accent-primary" checked={on} onChange={change} data-testid={testId} />
-    </label>
-  );
+  const { stage, session, members } = useSync();
+  const screens = members.filter((member) => member.screen);
+  const [target, setTarget] = useState("");
+  // A screen gone: back to all of them.
+  const screen = screens.some((one) => one.id === target) ? target : "";
+  const layers = readSyncLayers(stage?.layers);
+  const state = (screen && layers.screens?.[screen]) || layers;
+  const presenting = session?.presenting ?? null;
+  const cleared = state.cleared && state.cleared.itemId === (presenting?.itemId ?? null) && state.cleared.slide === (presenting?.slide ?? 0) ? state.cleared.layers : [];
+  const command = (change: Omit<NonNullable<SyncStageCommand["layers"]>, "screen">) => send({ layers: { ...change, ...(screen ? { screen } : {}) } });
   return (
     <section className="flex flex-col gap-3" data-testid="operator-layers">
-      <h3 className="text-sm font-semibold">{t("screens.operator.layers")}</h3>
-      {toggle(t("screens.operator.layerWords"), layers.words, () => send({ layers: { words: !layers.words } }), "operator-layer-words")}
-      {toggle(t("screens.operator.layerBackground"), layers.background, () => send({ layers: { background: !layers.background } }), "operator-layer-background")}
-      {toggle(t("screens.operator.layerTitle"), layers.overlay === "title", () => send({ layers: { overlay: layers.overlay === "title" ? "none" : "title" } }), "operator-layer-title")}
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold">{t("screens.operator.layers")}</h3>
+        <NativeSelect className="ml-auto h-8 w-auto text-xs" value={screen} onChange={(event) => setTarget(event.target.value)} aria-label={t("screens.operator.layersFor")} data-testid="operator-layers-for">
+          <option value="">{t("screens.operator.allScreens")}</option>
+          {screens.map((one) => (
+            <option key={one.id} value={one.id}>
+              {one.name}
+              {layers.screens?.[one.id] ? ` · ${t("screens.operator.ownLayers")}` : ""}
+            </option>
+          ))}
+        </NativeSelect>
+      </div>
+      <ul className="flex flex-col gap-1.5">
+        {[...SCREEN_SWITCHABLE_LAYERS].reverse().map((layer) => {
+          const on = !state.hidden.includes(layer);
+          const isCleared = on && cleared.includes(layer);
+          return (
+            <li key={layer} className="flex items-center gap-2 text-sm" data-testid={`operator-layer-${layer}`} data-state={!on ? "hidden" : isCleared ? "cleared" : "shown"}>
+              <label className="flex min-w-0 flex-1 items-center gap-2">
+                <input type="checkbox" className="size-4 accent-primary" checked={on} onChange={() => command({ show: { [layer]: !on } })} data-testid={`operator-layer-${layer}-shown`} />
+                <span className={cn("truncate", isCleared && "text-muted-foreground line-through")}>{t(`screens.layers.${layer}`)}</span>
+              </label>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                disabled={!on}
+                onClick={() => command(isCleared ? { show: { [layer]: true } } : { clear: [layer] })}
+                title={t("screens.operator.clearHint")}
+                data-testid={`operator-layer-${layer}-clear`}
+              >
+                {isCleared ? t("screens.operator.restoreLayer") : t("screens.operator.clearLayer")}
+              </Button>
+            </li>
+          );
+        })}
+        <li className="flex items-center gap-2 border-t pt-2 text-sm">
+          <label className="flex flex-1 items-center gap-2">
+            <input type="checkbox" className="size-4 accent-primary" checked={state.title} onChange={() => command({ title: !state.title })} data-testid="operator-layer-title" />
+            {t("screens.operator.layerTitle")}
+          </label>
+        </li>
+      </ul>
+      <Button variant="outline" size="sm" className="self-start" onClick={() => command({ reset: true })} data-testid="operator-layers-reset">
+        <RotateCcw />
+        {screen ? t("screens.operator.layersLikeAll") : t("screens.operator.layersReset")}
+      </Button>
     </section>
   );
 }

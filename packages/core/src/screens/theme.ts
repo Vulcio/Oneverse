@@ -43,6 +43,24 @@ export const SCREEN_TRANSITIONS = ["cut", "fade", "slide", "rise", "scale", "blu
 export const SCREEN_REVEALS = ["none", "lines", "words", "letters", "typewriter", "glow"] as const;
 export const SCREEN_TEXT_EFFECTS = ["none", "shadow", "outline", "glow"] as const;
 
+/**
+ * What a screen draws, from the bottom (issue #280): a colour; a camera or a
+ * capture card; the picture, video or moving background; the words and the
+ * widgets that show the song; the other widgets and the operator's title
+ * card; and masks over it all. Their names are in the locale files
+ * (`screens.layers.<id>`).
+ */
+export const SCREEN_LAYERS = ["base", "video", "media", "content", "overlays", "masks"] as const;
+export type ScreenLayer = (typeof SCREEN_LAYERS)[number];
+/** The layers a screen or the operator shows, hides or clears: all but the base, which is always there. */
+export const SCREEN_SWITCHABLE_LAYERS = ["video", "media", "content", "overlays", "masks"] as const;
+export type ScreenSwitchableLayer = (typeof SCREEN_SWITCHABLE_LAYERS)[number];
+/** Where a theme's video input comes from (issue #280): none, or a camera or capture card on the screen's device. */
+export const SCREEN_VIDEO_SOURCES = ["none", "camera"] as const;
+/** A mask's shape, and what it does: cover (black, for a projector on an odd-shaped wall) or window (a hole in the media layer, down to the video input and the base). */
+export const SCREEN_MASK_SHAPES = ["rect", "ellipse"] as const;
+export const SCREEN_MASK_KINDS = ["cover", "window"] as const;
+
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: "a colour is written #rrggbb" });
 
 /**
@@ -87,6 +105,8 @@ function screenWidgetSchema(strict: boolean) {
   return object({
     id: z.string().min(1).max(40),
     kind: z.enum(SCREEN_WIDGET_KINDS),
+    /** The layer it's on (issue #280): null, its kind's (screenWidgetLayer). */
+    layer: z.enum(["content", "overlays"]).nullable().default(null),
     /** Its first column and row (from 0), and how many it covers. */
     x: z.number().int().min(0).max(SCREEN_GRID_MAX - 1),
     y: z.number().int().min(0).max(SCREEN_GRID_MAX - 1),
@@ -188,11 +208,41 @@ function screenGridSchema(strict: boolean) {
   });
 }
 
+/** A mask (issue #280): a shape, in % of the screen, covered in black or cut through the media layer; inverted, everything but the shape. */
+function screenMaskSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    id: z.string().min(1).max(40),
+    kind: z.enum(SCREEN_MASK_KINDS).default("cover"),
+    shape: z.enum(SCREEN_MASK_SHAPES).default("rect"),
+    x: z.number().min(0).max(100).default(0),
+    y: z.number().min(0).max(100).default(0),
+    w: z.number().min(1).max(100).default(20),
+    h: z.number().min(1).max(100).default(20),
+    invert: z.boolean().default(false),
+    /** Its edge, softened over this much of the screen's shorter side (%). */
+    feather: z.number().min(0).max(10).default(0),
+  });
+}
+export const ScreenMaskSchema = screenMaskSchema(false);
+export type ScreenMask = z.output<typeof ScreenMaskSchema>;
+/** The most masks a theme has. */
+export const SCREEN_MASKS_MAX = 8;
+
 /** A theme's parts, as an object that ignores fields it doesn't know (reading) or refuses them (a request). */
 function screenThemeSchema(strict: boolean) {
   const object = strict ? z.strictObject : z.object;
   return object({
   $schema: z.literal(SCREEN_THEME_SCHEMA).default(SCREEN_THEME_SCHEMA),
+  /** The bottom layer (issue #280): a colour; null, the background's first, as before layers. */
+  base: object({ color: color.nullable().default(null) }).prefault({}),
+  /** The video input layer (issue #280): the screen's camera or capture card, under the media. */
+  video: object({
+      source: z.enum(SCREEN_VIDEO_SOURCES).default("none"),
+      fit: z.enum(["cover", "contain"]).default("cover"),
+      opacity: z.number().min(0).max(1).default(1),
+    })
+    .prefault({}),
   text: object({
       font: z.enum(SCREEN_FONTS).default("sans"),
       /** A font uploaded with the theme (its asset's id): used when the client has it, `font` otherwise. */
@@ -269,6 +319,8 @@ function screenThemeSchema(strict: boolean) {
     .prefault({}),
   /** Widgets placed on a grid (issue #268); none, and the words fill the screen as they always have. */
   grid: screenGridSchema(strict).nullable().default(null),
+  /** The masks layer (issue #280), drawn in order. */
+  masks: z.array(screenMaskSchema(strict)).max(SCREEN_MASKS_MAX).default([]),
   });
 }
 
@@ -301,6 +353,14 @@ export function resolveScreenTheme(input: unknown): ScreenTheme {
       theme.grid = resolveGrid(parts.grid);
       continue;
     }
+    // A mask it can't read is left out, the others stay.
+    if (key === "masks") {
+      theme.masks = Array.isArray(parts.masks) ? parts.masks.flatMap((one) => {
+        const mask = ScreenMaskSchema.safeParse(one);
+        return mask.success ? [mask.data] : [];
+      }).slice(0, SCREEN_MASKS_MAX) : [];
+      continue;
+    }
     const one = ScreenThemeSchema.shape[key as keyof typeof ScreenThemeSchema.shape].safeParse(parts[key]);
     if (one.success) theme[key] = one.data;
   }
@@ -318,6 +378,19 @@ function resolveGrid(input: unknown): ScreenTheme["grid"] {
     return widget.success ? [widget.data] : [];
   }) : [];
   return { ...grid.data, widgets: read.slice(0, 32) };
+}
+
+/** The widgets that show the song (issue #280): on the content layer unless they say otherwise; the others are overlays. */
+const CONTENT_WIDGETS: ScreenWidgetKind[] = ["stage", "current-slide", "next-slide", "current-section", "next-section", "song-structure", "song", "next-song", "current-item", "next-item"];
+
+/** The layer a widget is on (issue #280): its own, else its kind's. */
+export function screenWidgetLayer(widget: Pick<ScreenWidget, "kind"> & { layer?: ScreenWidget["layer"] }): "content" | "overlays" {
+  return widget.layer ?? (CONTENT_WIDGETS.includes(widget.kind) ? "content" : "overlays");
+}
+
+/** A theme's base colour (issue #280): its own, else its background's first. */
+export function screenBaseColor(theme: Pick<ScreenTheme, "base" | "background">): string {
+  return theme.base.color ?? theme.background.colors[0] ?? "#000000";
 }
 
 /** A widget's cells kept inside its grid: what a client draws, whatever the template says. */

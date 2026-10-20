@@ -98,7 +98,7 @@ try {
     await tv.goto(`${WEB}/screen`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Stage ${stamp}`, mode: "LYRICS", setlistId: set.id, themeId: theme.id });
-    await tv.getByTestId("screen-grid").waitFor({ timeout: 15000 });
+    await tv.getByTestId("screen-grid").first().waitFor({ timeout: 15000 });
     await tv.getByTestId("widget-text").getByText(`Wi-Fi ${stamp}`).waitFor();
     const clock = await tv.getByTestId("widget-clock").innerText();
     if (!/^\d{2}:\d{2}$/.test(clock.trim())) throw new Error(`clock: ${clock}`);

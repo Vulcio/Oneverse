@@ -18,9 +18,9 @@ import { flowToChordPro, lineToInlineText, readSongDocument, sectionsFromText, s
 import { findRepeats, linkRepeats } from "../song-document/repeats.js";
 import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
-import { applyStageCommand, clockOffset, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
+import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, screenBaseColor, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
@@ -976,7 +976,7 @@ export const CONFORMANCE: ConformanceArea[] = [
       applyStageCommand: {
         about:
           "The media operator's timer and message for a set's screens (issue #269): a new timer stopped at its start, reset, started or paused, a minute more or less, then the message. Null: a command that can't be read, refused.",
-        params: ["stage", "command", "now"],
+        params: ["stage", "command", "now", "presenting"],
         run: applyStageCommand,
         cases: [
           { name: "a new 5-minute countdown, started", args: [null, { timer: { kind: "countdown", duration: 300 }, run: true }, 10_000] },
@@ -988,9 +988,50 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a message sent, the timer kept", args: [{ rev: 1, timer: { kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, message: null }, { message: " Next: announcements " }, 9_000] },
           { name: "a duration out of range: refused", args: [null, { timer: { kind: "countdown", duration: 100_000 } }, 0] },
           { name: "a message too long: refused", args: [null, { message: "x".repeat(201) }, 0] },
-          { name: "the screens' words hidden (issue #275), the rest kept", args: [{ rev: 4, timer: null, message: null }, { layers: { words: false } }, 1_000] },
-          { name: "the title card over everything, then the background back", args: [{ rev: 5, timer: null, message: null, layers: { words: true, background: false, overlay: "none" } }, { layers: { overlay: "title", background: true } }, 1_000] },
-          { name: "a layer that can't be read: refused", args: [null, { layers: { overlay: "logo" } }, 0] },
+          { name: "the media hidden on every screen (issue #280), the rest kept", args: [{ rev: 4, timer: null, message: null }, { layers: { show: { media: false } } }, 1_000] },
+          { name: "the content cleared on the slide on screen", args: [{ rev: 5, timer: null, message: null }, { layers: { clear: ["content"] } }, 1_000, { itemId: "i1", slide: 2 }] },
+          { name: "a layer that can't be read: refused", args: [null, { layers: { show: { logo: false } } }, 0] },
+        ],
+      },
+      applyLayersCommand: {
+        about:
+          "The operator's change to the screens' layers (issues #280, #287): for every screen, or one with `screen`; layers shown or hidden, the title card on or off, layers cleared until the slide on screen changes, or all back to normal (`reset`). A change for every screen applies to the ones with layers of their own too. Null: refused.",
+        params: ["layers", "command", "presenting"],
+        run: applyLayersCommand,
+        cases: [
+          { name: "the video and the media hidden on every screen", args: [null, { show: { video: false, media: false } }, null] },
+          { name: "the title card on, the media back", args: [{ hidden: ["media"], title: false, cleared: null }, { show: { media: true }, title: true }, null] },
+          { name: "the content cleared on slide 2, then the overlays on the same slide", args: [{ hidden: [], title: false, cleared: { layers: ["content"], itemId: "i1", slide: 2 } }, { clear: ["overlays"] }, { itemId: "i1", slide: 2 }] },
+          { name: "a clear from another slide is over when the next comes", args: [{ hidden: [], title: false, cleared: { layers: ["content"], itemId: "i1", slide: 1 } }, { clear: ["media"] }, { itemId: "i1", slide: 2 }] },
+          { name: "one screen: its own layers, from every screen's", args: [{ hidden: ["video"], title: true, cleared: null }, { screen: "s1", show: { media: false } }, null] },
+          { name: "every screen: the ones with their own too", args: [{ hidden: [], title: false, cleared: null, screens: { s1: { hidden: ["media"], title: false, cleared: null } } }, { show: { content: false } }, null] },
+          { name: "one screen back to every screen's", args: [{ hidden: [], title: false, cleared: null, screens: { s1: { hidden: ["media"], title: false, cleared: null } } }, { screen: "s1", reset: true }, null] },
+          { name: "all back to normal", args: [{ hidden: ["media", "content"], title: true, cleared: null, screens: { s1: { hidden: ["media"], title: false, cleared: null } } }, { reset: true }, null] },
+          { name: "a layer that can't be read: refused", args: [null, { show: { base: false } }, null] },
+          { name: "a cleared layer that can't be read: refused", args: [null, { clear: ["words"] }, null] },
+        ],
+      },
+      readSyncLayers: {
+        about: "A stage's layers as a client reads them (issue #280): anything it can't read left out; the words, background and overlay kept before layers (issue #275) read as the content, the media and the title card.",
+        params: ["input"],
+        run: readSyncLayers,
+        cases: [
+          { name: "nothing: every layer, no title card", args: [null] },
+          { name: "before layers: the words hidden, the title card on", args: [{ words: false, background: true, overlay: "title" }] },
+          { name: "a layer from a later version: left out", args: [{ hidden: ["media", "hologram"], title: false, cleared: null }] },
+        ],
+      },
+      screenLayers: {
+        about:
+          "What a screen draws now (issue #287): its own layers if the operator gave it some, else every screen's; less what the screen itself never shows (its settings win), less what was cleared while the same slide is on.",
+        params: ["layers", "presenting", "screen"],
+        run: screenLayers,
+        cases: [
+          { name: "nothing set: every layer", args: [null, null, null] },
+          { name: "cleared on this slide: hidden", args: [{ hidden: [], title: false, cleared: { layers: ["content"], itemId: "i1", slide: 2 } }, { itemId: "i1", slide: 2 }, null] },
+          { name: "cleared on the slide before: back", args: [{ hidden: [], title: false, cleared: { layers: ["content"], itemId: "i1", slide: 2 } }, { itemId: "i1", slide: 3 }, null] },
+          { name: "a screen with its own layers", args: [{ hidden: [], title: true, cleared: null, screens: { s1: { hidden: ["overlays"], title: false, cleared: null } } }, null, { id: "s1" }] },
+          { name: "a screen that never shows the media: not even when the operator shows it", args: [{ hidden: [], title: false, cleared: null }, null, { id: "s2", hidden: ["media"] }] },
         ],
       },
       clockOffset: {
@@ -1120,6 +1161,10 @@ export const CONFORMANCE: ConformanceArea[] = [
             args: [{ grid: { columns: 6, rows: 4, widgets: [{ id: "a", kind: "clock", x: 4, y: 0, w: 2, h: 1, options: { seconds: true } }, { id: "b", kind: "weather", x: 0, y: 0, w: 2, h: 2 }, { id: "c", kind: "text", x: 0, y: 3, w: 9, h: 1, style: { color: "blue" } }] } }],
           },
           { name: "a grid that can't be read: none, the words fill the screen", args: [{ grid: { columns: 99 }, text: { font: "serif" } }] },
+          {
+            name: "layers (issue #280): a base colour, the camera, a widget moved to the overlays, masks - one that can't be read left out",
+            args: [{ base: { color: "#102030" }, video: { source: "camera", fit: "contain" }, grid: { widgets: [{ id: "s", kind: "song", layer: "overlays", x: 0, y: 0, w: 4, h: 1 }] }, masks: [{ id: "m1", kind: "window", shape: "ellipse", x: 60, y: 10, w: 30, h: 40, feather: 2 }, { id: "m2", shape: "star" }] }],
+          },
         ],
       },
       pickDaySet: {
@@ -1158,6 +1203,25 @@ export const CONFORMANCE: ConformanceArea[] = [
               "2026-10-16",
             ],
           },
+        ],
+      },
+      screenWidgetLayer: {
+        about: "The layer a widget is on (issue #280): its own, else its kind's - the widgets that show the song are content, the others overlays.",
+        params: ["widget"],
+        run: screenWidgetLayer,
+        cases: [
+          { name: "the words", args: [{ kind: "stage", layer: null }] },
+          { name: "a clock", args: [{ kind: "clock", layer: null }] },
+          { name: "the song's details, moved to the overlays", args: [{ kind: "song", layer: "overlays" }] },
+        ],
+      },
+      screenBaseColor: {
+        about: "A theme's base colour (issue #280): its own, else its background's first, as before layers.",
+        params: ["theme"],
+        run: (input: unknown) => screenBaseColor(resolveScreenTheme(input)),
+        cases: [
+          { name: "the background's first colour", args: [{ background: { kind: "aurora", colors: ["#05010f", "#6d28d9"] } }] },
+          { name: "its own", args: [{ base: { color: "#ffffff" }, background: { colors: ["#000000"] } }] },
         ],
       },
       placeScreenWidget: {

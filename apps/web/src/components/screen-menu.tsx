@@ -1,9 +1,10 @@
 import { SCREEN_THEME_TEMPLATES } from "@songverse/core";
-import { Check, ChevronLeft, ListMusic, Palette, X } from "lucide-react";
+import { Check, ChevronLeft, ListMusic, Palette, Video, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchScreenThemes, pickScreenTheme, type ScreenThemeOptions } from "#/lib/screen-display";
 import { useRemoteList } from "#/lib/screen-remote";
+import { VIDEO_INPUT_KEY } from "#/components/screen-stage";
 import { cn } from "@songverse/ui/lib/utils";
 
 const entry = "flex w-full items-center gap-[2vmin] rounded-[1.2vmin] px-[2.5vmin] py-[1.6vmin] text-left text-[3.2vmin] outline-none hover:bg-white/15 focus:bg-white focus:text-black disabled:opacity-50";
@@ -12,15 +13,19 @@ const entry = "flex w-full items-center gap-[2vmin] rounded-[1.2vmin] px-[2.5vmi
  * A screen's own menu (issue #276), opened on the screen itself - OK held, a
  * double-click, a right-click or a long press - even while a set is showing:
  * another set (on a screen following the day's set; a fixed one keeps the
- * set put on it from Screens), and another theme, kept on the screen.
+ * set put on it from Screens), and another theme, kept on the screen; with a
+ * theme that shows a video input (issue #280), its camera or capture card,
+ * kept on this device.
  */
-export function ScreenMenu({ daySet, onChooseSet, onClose }: { daySet: boolean; onChooseSet: () => void; onClose: () => void }) {
+export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { daySet: boolean; video?: boolean; onChooseSet: () => void; onClose: () => void }) {
   const { t } = useTranslation();
-  const [view, setView] = useState<"menu" | "themes">("menu");
+  const [view, setView] = useState<"menu" | "themes" | "videos">("menu");
+  const [cameras, setCameras] = useState<{ id: string; label: string }[] | null>(null);
+  const [camera, setCamera] = useState<string | null>(() => readCamera());
   const [themes, setThemes] = useState<ScreenThemeOptions | null>(null);
   const [busy, setBusy] = useState(false);
   const list = useRef<HTMLDivElement>(null);
-  useRemoteList(list, view === "themes" ? () => setView("menu") : onClose);
+  useRemoteList(list, view !== "menu" ? () => setView("menu") : onClose);
 
   useEffect(() => {
     void fetchScreenThemes().then(setThemes);
@@ -29,7 +34,26 @@ export function ScreenMenu({ daySet, onChooseSet, onClose }: { daySet: boolean; 
   useEffect(() => {
     const buttons = [...(list.current?.querySelectorAll<HTMLButtonElement>("[data-pick]:not(:disabled)") ?? [])];
     (buttons.find((one) => one.dataset.current !== undefined) ?? buttons[0])?.focus();
-  }, [view, themes]);
+  }, [view, themes, cameras]);
+  // The device's cameras and capture cards, named once the browser has let the page use one.
+  useEffect(() => {
+    if (view !== "videos" || !navigator.mediaDevices?.enumerateDevices) return;
+    void navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => setCameras(devices.filter((one) => one.kind === "videoinput").map((one, i) => ({ id: one.deviceId, label: one.label || t("screens.menu.cameraN", { n: i + 1 }) }))))
+      .catch(() => setCameras([]));
+  }, [view, t]);
+  const pickCamera = (id: string | null) => {
+    try {
+      if (id) localStorage.setItem(VIDEO_INPUT_KEY, id);
+      else localStorage.removeItem(VIDEO_INPUT_KEY);
+    } catch {
+      // Storage blocked: the first camera, as before.
+    }
+    setCamera(id);
+    window.dispatchEvent(new Event("sv-video-input"));
+    onClose();
+  };
 
   const currentName = !themes
     ? ""
@@ -54,7 +78,7 @@ export function ScreenMenu({ daySet, onChooseSet, onClose }: { daySet: boolean; 
     <div className="absolute inset-0 z-20 flex cursor-default items-center justify-center bg-black/90 p-[5vmin]" data-testid="screen-menu" data-view={view}>
       <div className="flex max-h-full w-[min(90vw,110vmin)] flex-col gap-[2vmin]">
         <div>
-          <p className="text-[4.5vmin] font-semibold">{view === "menu" ? t("screens.menu.title") : t("screens.menu.themesTitle")}</p>
+          <p className="text-[4.5vmin] font-semibold">{view === "menu" ? t("screens.menu.title") : view === "themes" ? t("screens.menu.themesTitle") : t("screens.menu.videoTitle")}</p>
           <p className="text-[2.4vmin] opacity-60">{t("screens.menu.hint")}</p>
         </div>
         <div ref={list} className="min-h-0 overflow-y-auto pr-[1vmin]">
@@ -70,10 +94,34 @@ export function ScreenMenu({ daySet, onChooseSet, onClose }: { daySet: boolean; 
                 <span className="min-w-0 flex-1">{t("screens.menu.theme")}</span>
                 <span className="shrink-0 text-[2.4vmin] opacity-60">{currentName}</span>
               </button>
+              {video ? (
+                <button type="button" data-pick="videos" onClick={() => setView("videos")} className={entry} data-testid="screen-menu-videos">
+                  <Video className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
+                  <span className="min-w-0 flex-1">{t("screens.menu.video")}</span>
+                </button>
+              ) : null}
               <button type="button" data-pick="close" onClick={onClose} className={entry} data-testid="screen-menu-close">
                 <X className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
                 {t("screens.menu.close")}
               </button>
+            </>
+          ) : view === "videos" ? (
+            <>
+              <button type="button" data-pick="back" onClick={() => setView("menu")} className={entry} data-testid="screen-menu-back">
+                <ChevronLeft className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
+                {t("screens.menu.back")}
+              </button>
+              <button type="button" data-pick="first" data-current={camera === null ? "" : undefined} onClick={() => pickCamera(null)} className={cn(entry, camera === null && "ring-[0.3vmin] ring-white/50")} data-testid="screen-menu-camera">
+                <span className="min-w-0 flex-1 truncate">{t("screens.menu.firstCamera")}</span>
+                {camera === null ? <Check className="size-[3.2vmin] shrink-0" aria-label={t("screens.menu.current")} /> : null}
+              </button>
+              {(cameras ?? []).map((one) => (
+                <button key={one.id} type="button" data-pick={one.id} data-current={camera === one.id ? "" : undefined} onClick={() => pickCamera(one.id)} className={cn(entry, camera === one.id && "ring-[0.3vmin] ring-white/50")} data-testid="screen-menu-camera">
+                  <span className="min-w-0 flex-1 truncate">{one.label}</span>
+                  {camera === one.id ? <Check className="size-[3.2vmin] shrink-0" aria-label={t("screens.menu.current")} /> : null}
+                </button>
+              ))}
+              {cameras && cameras.length === 0 ? <p className="px-[2.5vmin] text-[2.4vmin] opacity-60">{t("screens.menu.noCamera")}</p> : null}
             </>
           ) : (
             <>
@@ -97,4 +145,12 @@ export function ScreenMenu({ daySet, onChooseSet, onClose }: { daySet: boolean; 
       </div>
     </div>
   );
+}
+
+function readCamera(): string | null {
+  try {
+    return localStorage.getItem(VIDEO_INPUT_KEY);
+  } catch {
+    return null;
+  }
 }

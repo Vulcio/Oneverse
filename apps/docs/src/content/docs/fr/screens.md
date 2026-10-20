@@ -18,7 +18,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 
 L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
-**Écrans** a quatre onglets : **Écrans**, **Modèles**, **Widgets** et **Marques** (les [marques](/fr/brands/) de vos équipes et organisations). Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, paroles ou grille, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, le basculer entre paroles et grille, changer son modèle ou son propriétaire, avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
+**Écrans** a quatre onglets : **Écrans**, **Modèles**, **Widgets** et **Marques** (les [marques](/fr/brands/) de vos équipes et organisations). Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, paroles ou grille, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, le basculer entre paroles et grille, changer son modèle ou son propriétaire, et choisir les **Calques affichés** (voir [Calques](/fr/screens/#calques)), avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
 
 ### La liste du jour
 
@@ -36,7 +36,8 @@ L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une l
 
 - **Choisir une liste** ouvre la liste des listes ci-dessus. Sur un écran à liste fixe, il est grisé : changez cette liste depuis **Écrans**.
 - **Thème** propose les modèles **Intégrés** et les **Thèmes enregistrés** du propriétaire, celui utilisé étant marqué. Choisissez-en un avec **OK** et l'écran change aussitôt. Il garde ce thème, comme s'il avait été choisi dans les **Réglages** de sa vignette.
-- **Retour** sort des thèmes, et Retour (Échap) ou **Fermer** ferme le menu.
+- **Entrée vidéo**, avec un modèle qui en affiche une (voir [Calques](/fr/screens/#calques)), liste les caméras et cartes de capture de l'appareil : **La première caméra disponible**, ou l'une d'elles par son nom. L'écran garde celle choisie, sur cet appareil. Le navigateur demande l'autorisation d'utiliser la caméra la première fois.
+- **Retour** sort des thèmes ou des caméras, et Retour (Échap) ou **Fermer** ferme le menu.
 
 ### À qui est l'écran
 
@@ -100,8 +101,22 @@ Les **Modèles intégrés** jouent chacun un chant d'exemple, pour voir comment 
 - **Titre et crédits** - afficher ou non le titre du chant et ses crédits (auteurs, copyright, numéro CCLI), sur quelles diapositives et où.
 - **Accords** - pour **La grille, pour le groupe** : la couleur des accords et la taille de la grille.
 - **Mise en page et widgets** - place des [widgets](/fr/screens/#widgets) sur une grille. Voir plus bas.
+- **Calques** - la couleur de base, l'entrée vidéo et les masques. Voir plus bas.
 
 L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1. Les images, vidéos et polices s'ajoutent à un modèle enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage. Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous administrez une équipe - à l'équipe, pour que chaque membre puisse le choisir pour ses écrans (seuls ses administrateurs le modifient). Un modèle que vous pouvez modifier a **Modifier** et **Supprimer** ; le supprimer remet ses écrans sur l'apparence par défaut.
+
+### Calques
+
+Un écran dessine son modèle en calques, de bas en haut :
+
+1. **Base** - une couleur sous tout le reste : **La première couleur du fond**, ou une couleur à elle.
+2. **Entrée vidéo** - la caméra ou la carte de capture de l'écran (**Caméra ou carte de capture**), pour montrer une caméra ou la sortie d'une régie vidéo sous les paroles. **Remplir l'écran** ou **Image entière**, et son opacité. Chaque écran utilise l'appareil branché sur lui, choisi dans [son menu](/fr/screens/#le-menu-de-lécran) ; un aperçu montre où elle se place.
+3. **Média** - le **Fond** ci-dessus : une couleur, un dégradé, de la lumière en mouvement, une image ou une vidéo. Un fond **Couleur** est la base : l'entrée vidéo se voit à travers.
+4. **Contenu** - les paroles, et les widgets qui montrent le chant (la diapositive actuelle et la suivante, les parties, le chant, les éléments de la liste).
+5. **Superpositions** - les autres widgets (horloges, minuteurs, messages, codes QR…) et la carte de titre de l'opérateur.
+6. **Masques** - **Ajouter un masque** : un **Rectangle** ou une **Ellipse**, placé en % de l'écran, avec un **Bord adouci**. **Couvrir de noir** cache cette partie de l'image, pour un projecteur sur un mur de forme irrégulière ; **Fenêtre sur la vidéo** traverse le média à cet endroit : l'entrée vidéo s'y voit, les paroles restant par-dessus. **Tout sauf la forme** l'inverse.
+
+Le **Calque** d'un widget, dans ses réglages sur la grille, le fait passer du **Contenu** aux **Superpositions**. L'[opérateur média](/fr/screens/#écrans-et-calques) affiche, masque ou vide chaque calque, et les **Calques affichés** d'un écran, dans les **Réglages** de sa vignette, en écartent certains pour de bon : un retour de scène sans le média, une TV d'accueil sans le contenu. Le choix de l'écran l'emporte : l'opérateur ne peut pas activer un calque qu'il écarte.
 
 Tout ce qui bouge est dessiné par la puce graphique de l'écran : ça reste fluide sur le navigateur d'un téléviseur. Un appareil qui demande moins d'animations a des fonds immobiles et de simples fondus.
 
@@ -176,11 +191,17 @@ Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans*
 
 ### Écrans et calques
 
-**Écrans et calques**, en haut à droite, ouvre un panneau sur la droite, à côté des diapositives plutôt que par-dessus, comme le panneau **Affichage**. Sur un téléphone, il s'ouvre en bas. Les diapositives, la barre latérale et le clavier restent utilisables pendant qu'il est ouvert. Il montre les **Écrans connectés** qui affichent la liste, et ses **Calques** :
+**Écrans et calques**, en haut à droite, ouvre un panneau sur la droite, à côté des diapositives plutôt que par-dessus, comme le panneau **Affichage**. Sur un téléphone, il s'ouvre en bas. Les diapositives, la barre latérale et le clavier restent utilisables pendant qu'il est ouvert. Il montre les **Écrans connectés** qui affichent la liste, et les **Calques** qu'ils dessinent (voir [Calques](/fr/screens/#calques)), du haut vers le bas : **Masques**, **Superpositions**, **Contenu**, **Média** et **Entrée vidéo**.
 
-- **Les paroles** - désactivées, les écrans n'affichent que le fond (pour une vidéo ou un moment calme) pendant que les diapositives continuent d'avancer.
-- **Le fond** - désactivé, les paroles s'affichent sur du noir.
+![Écrans et calques : les superpositions vidées jusqu'à la diapositive suivante](../../../assets/screenshots/fr/operator-layers.jpg)
+
+- **Calques de** - **Tous les écrans**, ou l'un des écrans connectés. Un changement pour un écran lui est propre (« ses propres calques » à côté de son nom) ; un changement pour tous les écrans l'atteint aussi. **Comme tous les écrans** le remet comme les autres.
+- La case d'un calque l'affiche ou le masque. Sans **Contenu**, les écrans n'affichent que le fond (pour une vidéo ou un moment calme) pendant que les diapositives continuent d'avancer ; sans **Média**, les paroles s'affichent sur la couleur de base.
+- **Vider** masque un calque jusqu'à la diapositive ou au chant suivant, comme dans d'autres logiciels de présentation ; il revient tout seul, ou avec **Remettre**.
 - **Carte de titre par-dessus** - le nom de la liste et de l'équipe, par-dessus ce qu'affichent les écrans, avant le culte ou entre deux parties.
+- **Remettre à la normale** réaffiche tous les calques, sur tous les écrans, sans la carte de titre.
+
+Un calque qu'un écran écarte dans ses propres réglages reste masqué sur lui, quoi que dise le panneau.
 
 ### Raccourcis clavier
 
@@ -194,9 +215,15 @@ Le clavier pilote aussi les écrans, une fois que vous les avez pris. Le bouton 
 | Début, Fin | Première ou dernière diapositive du chant |
 | B ou . | Écran noir, ou retour |
 | S | Arrêter la présentation |
-| W | Paroles affichées ou non |
-| G | Fond affiché ou non |
+| W | Contenu affiché ou non (les paroles) |
+| G | Média affiché ou non (le fond) |
+| V | Entrée vidéo affichée ou non |
+| O | Superpositions affichées ou non |
+| M | Masques affichés ou non |
+| Maj avec W, G, V, O ou M | Vider ce calque jusqu'à la diapositive suivante |
 | T | Carte de titre affichée ou non |
 | C | Calques remis à la normale |
+
+Les touches des calques agissent sur tous les écrans.
 
 Les raccourcis ne se déclenchent pas pendant que vous tapez un message. Un bouton qui a le focus garde sa propre touche Entrée.

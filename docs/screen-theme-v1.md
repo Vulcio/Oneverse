@@ -70,7 +70,8 @@ section with the slide's lines picked out.
     "stagger": 60            // ms between pieces; a slide's words are all in within 1.6 s
   },
   "chords": { "color": "#7dd3fc", "scale": 1 },                     // the band's chart
-  "grid": null                                                      // widgets on a grid (below); null: the words fill the screen
+  "grid": null,                                                     // widgets on a grid (below); null: the words fill the screen
+  "base": { "color": null }, "video": { "source": "none" }, "masks": [] // layers (below)
 }
 ```
 
@@ -89,6 +90,7 @@ A theme (a "template" in the app) can place widgets on a grid (issue #268).
       "id": "clock",          // unique in the grid
       "kind": "clock",        // stage, current-slide, next-slide, current-section, next-section, song-structure, clock, analog-clock,
                               // countdown, count-up, message, song, next-song, current-item, next-item, text
+      "layer": null,          // content or overlays (issue #280); null: its kind's
       "x": 8, "y": 0, "w": 4, "h": 2,   // first column and row (from 0), cells covered
       "options": {            // each kind reads its own and ignores the rest
         "format": "24h", "seconds": false, "date": false,        // clock
@@ -127,6 +129,48 @@ A theme (a "template" in the app) can place widgets on a grid (issue #268).
   its cells empty; the rest of the grid stays.
 - `SCREEN_LAYOUT_PRESETS`: grids to start from (words, words-clock,
   stage-display).
+
+## Layers
+
+A screen draws a theme as layers (issue #280), from the bottom: **base**,
+**video**, **media**, **content**, **overlays**, **masks**
+(`SCREEN_LAYERS`). They were added to v1 without changing what any earlier
+field means, so a theme written before them is drawn exactly as it was: its
+base is its background's first colour, it has no video input or masks, and
+its widgets are on their kind's layer.
+
+```jsonc
+"base": { "color": null },     // null: background.colors[0] (screenBaseColor)
+"video": {
+  "source": "none",            // none, camera: the screen's own camera or capture card, picked on the device
+  "fit": "cover",              // cover, contain
+  "opacity": 1
+},
+"masks": [                     // up to 8, drawn in order
+  {
+    "id": "m1",
+    "kind": "cover",           // cover: black over that part; window: a hole in the media layer, down to the video and the base
+    "shape": "rect",           // rect, ellipse
+    "x": 0, "y": 0, "w": 20, "h": 20,  // % of the screen
+    "invert": false,           // true: everything but the shape
+    "feather": 0               // a soft edge, % of the screen's shorter side (0-10)
+  }
+]
+```
+
+- **media** is `background`. A "color" background draws nothing of its own:
+  its colour is the base, so the video input shows under it.
+- **content** is the words, or on a grid the widgets that show the song
+  (stage, current-slide, next-slide, current-section, next-section,
+  song-structure, song, next-song, current-item, next-item); **overlays** are
+  the other widgets and the operator's title card. A widget's `layer`
+  ("content", "overlays", or null for its kind's) moves it:
+  `screenWidgetLayer`.
+- A mask a client can't read is left out; the others stay.
+- Which layers show is the operator's (the set's stage, `SyncLayers`: hidden,
+  cleared until the slide changes, per screen or for all) less the screen's
+  own `hiddenLayers`, worked out by `screenLayers` in core. The base always
+  shows.
 
 ## A theme's files
 

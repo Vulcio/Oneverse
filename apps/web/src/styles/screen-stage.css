@@ -28,6 +28,34 @@
   color: var(--text);
 }
 
+/* ---- Layers (issue #280), from the bottom ----------------------------- */
+
+.sv-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.sv-layer[data-layer="base"] {
+  z-index: 0;
+}
+.sv-layer[data-layer="video"] {
+  z-index: 1;
+}
+.sv-layer[data-layer="media"] {
+  z-index: 2;
+}
+.sv-layer[data-layer="content"] {
+  z-index: 3;
+}
+.sv-layer[data-layer="overlays"] {
+  z-index: 4;
+}
+.sv-layer[data-layer="masks"] {
+  z-index: 5;
+  pointer-events: none;
+}
+
 /* ---- Backgrounds ---------------------------------------------------- */
 
 .sv-bg {
@@ -471,7 +499,7 @@
 .sv-black {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 6;
   background: #000;
   opacity: 0;
   transition: opacity var(--t) ease;

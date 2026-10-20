@@ -8,7 +8,8 @@
       "params": [
         "stage",
         "command",
-        "now"
+        "now",
+        "presenting"
       ],
       "cases": [
         {
@@ -34,9 +35,9 @@
             },
             "message": null,
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "none"
+              "hidden": [],
+              "title": false,
+              "cleared": null
             }
           }
         },
@@ -68,9 +69,9 @@
             },
             "message": null,
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "none"
+              "hidden": [],
+              "title": false,
+              "cleared": null
             }
           }
         },
@@ -102,9 +103,9 @@
             },
             "message": null,
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "none"
+              "hidden": [],
+              "title": false,
+              "cleared": null
             }
           }
         },
@@ -136,9 +137,9 @@
             },
             "message": null,
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "none"
+              "hidden": [],
+              "title": false,
+              "cleared": null
             }
           }
         },
@@ -170,9 +171,9 @@
             },
             "message": null,
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "none"
+              "hidden": [],
+              "title": false,
+              "cleared": null
             }
           }
         },
@@ -197,9 +198,9 @@
             "timer": null,
             "message": null,
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "none"
+              "hidden": [],
+              "title": false,
+              "cleared": null
             }
           }
         },
@@ -234,9 +235,9 @@
               "at": 9000
             },
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "none"
+              "hidden": [],
+              "title": false,
+              "cleared": null
             }
           }
         },
@@ -266,7 +267,7 @@
           "expected": null
         },
         {
-          "name": "the screens' words hidden (issue #275), the rest kept",
+          "name": "the media hidden on every screen (issue #280), the rest kept",
           "args": [
             {
               "rev": 4,
@@ -275,7 +276,9 @@
             },
             {
               "layers": {
-                "words": false
+                "show": {
+                  "media": false
+                }
               }
             },
             1000
@@ -285,41 +288,49 @@
             "timer": null,
             "message": null,
             "layers": {
-              "words": false,
-              "background": true,
-              "overlay": "none"
+              "hidden": [
+                "media"
+              ],
+              "title": false,
+              "cleared": null
             }
           }
         },
         {
-          "name": "the title card over everything, then the background back",
+          "name": "the content cleared on the slide on screen",
           "args": [
             {
               "rev": 5,
               "timer": null,
-              "message": null,
-              "layers": {
-                "words": true,
-                "background": false,
-                "overlay": "none"
-              }
+              "message": null
             },
             {
               "layers": {
-                "overlay": "title",
-                "background": true
+                "clear": [
+                  "content"
+                ]
               }
             },
-            1000
+            1000,
+            {
+              "itemId": "i1",
+              "slide": 2
+            }
           ],
           "expected": {
             "rev": 6,
             "timer": null,
             "message": null,
             "layers": {
-              "words": true,
-              "background": true,
-              "overlay": "title"
+              "hidden": [],
+              "title": false,
+              "cleared": {
+                "itemId": "i1",
+                "slide": 2,
+                "layers": [
+                  "content"
+                ]
+              }
             }
           }
         },
@@ -329,12 +340,512 @@
             null,
             {
               "layers": {
-                "overlay": "logo"
+                "show": {
+                  "logo": false
+                }
               }
             },
             0
           ],
           "expected": null
+        }
+      ]
+    },
+    "applyLayersCommand": {
+      "about": "The operator's change to the screens' layers (issues #280, #287): for every screen, or one with `screen`; layers shown or hidden, the title card on or off, layers cleared until the slide on screen changes, or all back to normal (`reset`). A change for every screen applies to the ones with layers of their own too. Null: refused.",
+      "params": [
+        "layers",
+        "command",
+        "presenting"
+      ],
+      "cases": [
+        {
+          "name": "the video and the media hidden on every screen",
+          "args": [
+            null,
+            {
+              "show": {
+                "video": false,
+                "media": false
+              }
+            },
+            null
+          ],
+          "expected": {
+            "hidden": [
+              "video",
+              "media"
+            ],
+            "title": false,
+            "cleared": null
+          }
+        },
+        {
+          "name": "the title card on, the media back",
+          "args": [
+            {
+              "hidden": [
+                "media"
+              ],
+              "title": false,
+              "cleared": null
+            },
+            {
+              "show": {
+                "media": true
+              },
+              "title": true
+            },
+            null
+          ],
+          "expected": {
+            "hidden": [],
+            "title": true,
+            "cleared": null
+          }
+        },
+        {
+          "name": "the content cleared on slide 2, then the overlays on the same slide",
+          "args": [
+            {
+              "hidden": [],
+              "title": false,
+              "cleared": {
+                "layers": [
+                  "content"
+                ],
+                "itemId": "i1",
+                "slide": 2
+              }
+            },
+            {
+              "clear": [
+                "overlays"
+              ]
+            },
+            {
+              "itemId": "i1",
+              "slide": 2
+            }
+          ],
+          "expected": {
+            "hidden": [],
+            "title": false,
+            "cleared": {
+              "itemId": "i1",
+              "slide": 2,
+              "layers": [
+                "content",
+                "overlays"
+              ]
+            }
+          }
+        },
+        {
+          "name": "a clear from another slide is over when the next comes",
+          "args": [
+            {
+              "hidden": [],
+              "title": false,
+              "cleared": {
+                "layers": [
+                  "content"
+                ],
+                "itemId": "i1",
+                "slide": 1
+              }
+            },
+            {
+              "clear": [
+                "media"
+              ]
+            },
+            {
+              "itemId": "i1",
+              "slide": 2
+            }
+          ],
+          "expected": {
+            "hidden": [],
+            "title": false,
+            "cleared": {
+              "itemId": "i1",
+              "slide": 2,
+              "layers": [
+                "media"
+              ]
+            }
+          }
+        },
+        {
+          "name": "one screen: its own layers, from every screen's",
+          "args": [
+            {
+              "hidden": [
+                "video"
+              ],
+              "title": true,
+              "cleared": null
+            },
+            {
+              "screen": "s1",
+              "show": {
+                "media": false
+              }
+            },
+            null
+          ],
+          "expected": {
+            "hidden": [
+              "video"
+            ],
+            "title": true,
+            "cleared": null,
+            "screens": {
+              "s1": {
+                "hidden": [
+                  "video",
+                  "media"
+                ],
+                "title": true,
+                "cleared": null
+              }
+            }
+          }
+        },
+        {
+          "name": "every screen: the ones with their own too",
+          "args": [
+            {
+              "hidden": [],
+              "title": false,
+              "cleared": null,
+              "screens": {
+                "s1": {
+                  "hidden": [
+                    "media"
+                  ],
+                  "title": false,
+                  "cleared": null
+                }
+              }
+            },
+            {
+              "show": {
+                "content": false
+              }
+            },
+            null
+          ],
+          "expected": {
+            "hidden": [
+              "content"
+            ],
+            "title": false,
+            "cleared": null,
+            "screens": {
+              "s1": {
+                "hidden": [
+                  "media",
+                  "content"
+                ],
+                "title": false,
+                "cleared": null
+              }
+            }
+          }
+        },
+        {
+          "name": "one screen back to every screen's",
+          "args": [
+            {
+              "hidden": [],
+              "title": false,
+              "cleared": null,
+              "screens": {
+                "s1": {
+                  "hidden": [
+                    "media"
+                  ],
+                  "title": false,
+                  "cleared": null
+                }
+              }
+            },
+            {
+              "screen": "s1",
+              "reset": true
+            },
+            null
+          ],
+          "expected": {
+            "hidden": [],
+            "title": false,
+            "cleared": null
+          }
+        },
+        {
+          "name": "all back to normal",
+          "args": [
+            {
+              "hidden": [
+                "media",
+                "content"
+              ],
+              "title": true,
+              "cleared": null,
+              "screens": {
+                "s1": {
+                  "hidden": [
+                    "media"
+                  ],
+                  "title": false,
+                  "cleared": null
+                }
+              }
+            },
+            {
+              "reset": true
+            },
+            null
+          ],
+          "expected": {
+            "hidden": [],
+            "title": false,
+            "cleared": null
+          }
+        },
+        {
+          "name": "a layer that can't be read: refused",
+          "args": [
+            null,
+            {
+              "show": {
+                "base": false
+              }
+            },
+            null
+          ],
+          "expected": null
+        },
+        {
+          "name": "a cleared layer that can't be read: refused",
+          "args": [
+            null,
+            {
+              "clear": [
+                "words"
+              ]
+            },
+            null
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "readSyncLayers": {
+      "about": "A stage's layers as a client reads them (issue #280): anything it can't read left out; the words, background and overlay kept before layers (issue #275) read as the content, the media and the title card.",
+      "params": [
+        "input"
+      ],
+      "cases": [
+        {
+          "name": "nothing: every layer, no title card",
+          "args": [
+            null
+          ],
+          "expected": {
+            "hidden": [],
+            "title": false,
+            "cleared": null
+          }
+        },
+        {
+          "name": "before layers: the words hidden, the title card on",
+          "args": [
+            {
+              "words": false,
+              "background": true,
+              "overlay": "title"
+            }
+          ],
+          "expected": {
+            "hidden": [
+              "content"
+            ],
+            "title": true,
+            "cleared": null
+          }
+        },
+        {
+          "name": "a layer from a later version: left out",
+          "args": [
+            {
+              "hidden": [
+                "media",
+                "hologram"
+              ],
+              "title": false,
+              "cleared": null
+            }
+          ],
+          "expected": {
+            "hidden": [
+              "media"
+            ],
+            "title": false,
+            "cleared": null
+          }
+        }
+      ]
+    },
+    "screenLayers": {
+      "about": "What a screen draws now (issue #287): its own layers if the operator gave it some, else every screen's; less what the screen itself never shows (its settings win), less what was cleared while the same slide is on.",
+      "params": [
+        "layers",
+        "presenting",
+        "screen"
+      ],
+      "cases": [
+        {
+          "name": "nothing set: every layer",
+          "args": [
+            null,
+            null,
+            null
+          ],
+          "expected": {
+            "shown": {
+              "video": true,
+              "media": true,
+              "content": true,
+              "overlays": true,
+              "masks": true
+            },
+            "title": false
+          }
+        },
+        {
+          "name": "cleared on this slide: hidden",
+          "args": [
+            {
+              "hidden": [],
+              "title": false,
+              "cleared": {
+                "layers": [
+                  "content"
+                ],
+                "itemId": "i1",
+                "slide": 2
+              }
+            },
+            {
+              "itemId": "i1",
+              "slide": 2
+            },
+            null
+          ],
+          "expected": {
+            "shown": {
+              "video": true,
+              "media": true,
+              "content": false,
+              "overlays": true,
+              "masks": true
+            },
+            "title": false
+          }
+        },
+        {
+          "name": "cleared on the slide before: back",
+          "args": [
+            {
+              "hidden": [],
+              "title": false,
+              "cleared": {
+                "layers": [
+                  "content"
+                ],
+                "itemId": "i1",
+                "slide": 2
+              }
+            },
+            {
+              "itemId": "i1",
+              "slide": 3
+            },
+            null
+          ],
+          "expected": {
+            "shown": {
+              "video": true,
+              "media": true,
+              "content": true,
+              "overlays": true,
+              "masks": true
+            },
+            "title": false
+          }
+        },
+        {
+          "name": "a screen with its own layers",
+          "args": [
+            {
+              "hidden": [],
+              "title": true,
+              "cleared": null,
+              "screens": {
+                "s1": {
+                  "hidden": [
+                    "overlays"
+                  ],
+                  "title": false,
+                  "cleared": null
+                }
+              }
+            },
+            null,
+            {
+              "id": "s1"
+            }
+          ],
+          "expected": {
+            "shown": {
+              "video": true,
+              "media": true,
+              "content": true,
+              "overlays": false,
+              "masks": true
+            },
+            "title": false
+          }
+        },
+        {
+          "name": "a screen that never shows the media: not even when the operator shows it",
+          "args": [
+            {
+              "hidden": [],
+              "title": false,
+              "cleared": null
+            },
+            null,
+            {
+              "id": "s2",
+              "hidden": [
+                "media"
+              ]
+            }
+          ],
+          "expected": {
+            "shown": {
+              "video": true,
+              "media": false,
+              "content": true,
+              "overlays": true,
+              "masks": true
+            },
+            "title": false
+          }
         }
       ]
     },

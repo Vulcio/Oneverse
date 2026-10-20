@@ -8,6 +8,7 @@ import {
   SCREEN_GRID_MAX,
   SCREEN_LAYOUT_PRESETS,
   SCREEN_WIDGET_KINDS,
+  screenWidgetLayer,
   type ScreenTheme,
   type ScreenWidget,
   type ScreenWidgetKind,
@@ -193,13 +194,13 @@ export function LayoutSettings({
           ))}
         </ul>
       ) : null}
-      {widget ? <WidgetSettings key={widget.id} widget={widget} onChange={(update) => change(widget.id, update)} /> : grid ? <p className="text-xs text-muted-foreground">{t("screens.editor.pickWidget")}</p> : null}
+      {widget ? <WidgetSettings key={widget.id} widget={widget} onChange={(update) => change(widget.id, update)} layered /> : grid ? <p className="text-xs text-muted-foreground">{t("screens.editor.pickWidget")}</p> : null}
     </div>
   );
 }
 
 /** The picked widget's options (what it shows) and look. */
-export function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onChange: (update: (widget: ScreenWidget) => ScreenWidget) => void }) {
+export function WidgetSettings({ widget, onChange, layered = false }: { widget: ScreenWidget; onChange: (update: (widget: ScreenWidget) => ScreenWidget) => void; layered?: boolean }) {
   const { t } = useTranslation();
   const options = (change: Partial<ScreenWidget["options"]>) => onChange((one) => ({ ...one, options: { ...one.options, ...change } }));
   const style = (change: Partial<ScreenWidget["style"]>) => onChange((one) => ({ ...one, style: { ...one.style, ...change } }));
@@ -208,6 +209,19 @@ export function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onC
   return (
     <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3" data-testid="theme-widget-settings" data-kind={kind}>
       <p className="text-xs font-semibold">{t(`screens.widgetKinds.${kind}.name`)}</p>
+      {layered ? (
+        // On a template (issue #280): the content layer, with the words, or the overlays over them; hidden with its layer.
+        <Field label={t("screens.editor.widgetLayer")}>
+          <NativeSelect
+            value={screenWidgetLayer(widget)}
+            onChange={(e) => onChange((one) => ({ ...one, layer: e.target.value === screenWidgetLayer({ kind: one.kind }) ? null : (e.target.value as "content" | "overlays") }))}
+            data-testid="theme-widget-layer"
+          >
+            <option value="content">{t("screens.layers.content")}</option>
+            <option value="overlays">{t("screens.layers.overlays")}</option>
+          </NativeSelect>
+        </Field>
+      ) : null}
       {kind === "clock" ? (
         <>
           <Field label={t("screens.editor.clockFormat")}>

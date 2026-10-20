@@ -3,12 +3,19 @@ import {
   SCREEN_CONTEXT_STYLES,
   SCREEN_FONT_FAMILIES,
   SCREEN_FONTS,
+  SCREEN_MASK_KINDS,
+  SCREEN_MASK_SHAPES,
+  SCREEN_MASKS_MAX,
   SCREEN_POSITIONS,
   SCREEN_REVEALS,
   SCREEN_TEXT_EFFECTS,
   SCREEN_TRANSITIONS,
+  SCREEN_VIDEO_SOURCES,
+  ScreenMaskSchema,
   ScreenThemeSchema,
+  screenBaseColor,
   screenThemeContrast,
+  type ScreenMask,
   type ScreenMode,
   type ScreenTheme,
   type ScreenThemeAsset,
@@ -16,7 +23,7 @@ import {
   type ScreenWidgetDefault,
   type TeamSummary,
 } from "@songverse/core";
-import { ChevronLeft, ChevronRight, Pause, Play, TriangleAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play, Plus, TriangleAlert } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
@@ -147,6 +154,9 @@ export function ScreenThemeEditor({
         <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[24rem_minmax(0,1fr)] lg:overflow-hidden">
           {/* The settings, grouped; their own scroll on a wide screen. */}
           <div className="flex flex-col gap-1 border-b p-3 lg:overflow-y-auto lg:border-r lg:border-b-0">
+            <Group title={t("screens.editor.layers")} testId="theme-group-layers">
+              <LayersSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+            </Group>
             <Group title={t("screens.editor.text")} open>
               <Field label={t("screens.editor.font")}>
                 <NativeSelect value={theme.text.font} onChange={(e) => set("text", { font: e.target.value as ScreenTheme["text"]["font"] })} data-testid="theme-font">
@@ -453,6 +463,83 @@ export function ScreenThemeEditor({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * A template's layers (issue #280), besides its words, widgets and background:
+ * the base colour under everything, the screen's camera or capture card, and
+ * masks - black over part of the picture, or a window through the background.
+ */
+function LayersSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (change: (before: ScreenTheme) => Partial<ScreenTheme>) => void }) {
+  const { t } = useTranslation();
+  const mask = (id: string, change: Partial<ScreenMask>) => onTheme((before) => ({ masks: before.masks.map((one) => (one.id === id ? { ...one, ...change } : one)) }));
+  return (
+    <>
+      <p className="text-xs text-muted-foreground">{t("screens.editor.layersHint")}</p>
+      <Field label={t("screens.layers.base")}>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={theme.base.color === null} onChange={(e) => onTheme((before) => ({ base: { color: e.target.checked ? null : screenBaseColor(before) } }))} data-testid="theme-base-same" />
+            {t("screens.editor.baseSame")}
+          </label>
+          {theme.base.color ? <ColorInput value={theme.base.color} onChange={(color) => onTheme(() => ({ base: { color } }))} testId="theme-base-color" /> : null}
+        </div>
+      </Field>
+      <Field label={t("screens.layers.video")}>
+        <Choices value={theme.video.source} options={SCREEN_VIDEO_SOURCES} label={(one) => t(`screens.editor.videoSources.${one}`)} onChange={(source) => onTheme((before) => ({ video: { ...before.video, source } }))} testId="theme-video-source" />
+        {theme.video.source !== "none" ? (
+          <>
+            <Choices value={theme.video.fit} options={["cover", "contain"] as const} label={(one) => t(`screens.editor.videoFits.${one}`)} onChange={(fit) => onTheme((before) => ({ video: { ...before.video, fit } }))} />
+            <Slider value={theme.video.opacity} min={0} max={1} step={0.05} onChange={(opacity) => onTheme((before) => ({ video: { ...before.video, opacity } }))} />
+            <span className="text-xs text-muted-foreground">{t("screens.editor.videoHint")}</span>
+          </>
+        ) : null}
+      </Field>
+      <Field label={t("screens.layers.masks")}>
+        <ul className="flex flex-col gap-2">
+          {theme.masks.map((one, i) => (
+            <li key={one.id} className="flex flex-col gap-2 rounded-md border bg-muted/30 p-2" data-testid="theme-mask">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold">{t("screens.editor.maskN", { n: i + 1 })}</span>
+                <button type="button" className="ml-auto text-xs text-destructive hover:underline" onClick={() => onTheme((before) => ({ masks: before.masks.filter((other) => other.id !== one.id) }))}>
+                  {t("screens.editor.removeMask")}
+                </button>
+              </div>
+              <Choices value={one.kind} options={SCREEN_MASK_KINDS} label={(kind) => t(`screens.editor.maskKinds.${kind}`)} onChange={(kind) => mask(one.id, { kind })} testId="theme-mask-kind" />
+              <Choices value={one.shape} options={SCREEN_MASK_SHAPES} label={(shape) => t(`screens.editor.maskShapes.${shape}`)} onChange={(shape) => mask(one.id, { shape })} />
+              {(["x", "y", "w", "h"] as const).map((side) => (
+                <div key={side} className="flex items-center gap-2">
+                  <span className="w-16 shrink-0 text-xs text-muted-foreground">{t(`screens.editor.maskSides.${side}`)}</span>
+                  <Slider value={one[side]} min={side === "w" || side === "h" ? 1 : 0} max={100} step={1} unit="%" onChange={(value) => mask(one.id, { [side]: value })} />
+                </div>
+              ))}
+              <div className="flex items-center gap-2">
+                <span className="w-16 shrink-0 text-xs text-muted-foreground">{t("screens.editor.maskFeather")}</span>
+                <Slider value={one.feather} min={0} max={10} step={0.5} onChange={(feather) => mask(one.id, { feather })} />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={one.invert} onChange={(e) => mask(one.id, { invert: e.target.checked })} />
+                {t("screens.editor.maskInvert")}
+              </label>
+            </li>
+          ))}
+        </ul>
+        {theme.masks.length < SCREEN_MASKS_MAX ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="self-start"
+            onClick={() => onTheme((before) => ({ masks: [...before.masks, ScreenMaskSchema.parse({ id: `mask-${Date.now().toString(36)}`, x: 60, y: 10, w: 30, h: 30 })] }))}
+            data-testid="theme-add-mask"
+          >
+            <Plus />
+            {t("screens.editor.addMask")}
+          </Button>
+        ) : null}
+        <span className="text-xs text-muted-foreground">{t("screens.editor.masksHint")}</span>
+      </Field>
+    </>
   );
 }
 

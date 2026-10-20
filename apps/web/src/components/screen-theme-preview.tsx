@@ -1,4 +1,4 @@
-import { lyricSlides, renderChart, songDocumentFromText, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
+import { lyricSlides, renderChart, screenLayers, songDocumentFromText, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
@@ -34,6 +34,7 @@ export function ScreenThemePreview({
   playing = true,
   slide: fixed,
   assets,
+  hiddenLayers,
   className,
   children,
 }: {
@@ -45,6 +46,8 @@ export function ScreenThemePreview({
   slide?: number;
   /** The theme's own pictures, videos and fonts. */
   assets?: ScreenThemeAsset[];
+  /** Layers a screen never shows (issue #287), left out of the preview too. */
+  hiddenLayers?: readonly string[];
   className?: string;
   /** Drawn over it: the template editor's grid (issue #268). */
   children?: ReactNode;
@@ -52,7 +55,8 @@ export function ScreenThemePreview({
   const { t } = useTranslation();
   const song = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
   const [slide, setSlide] = useState(0);
-  const live = useSampleLive(song);
+  const sample = useSampleLive(song);
+  const live = useMemo(() => (hiddenLayers?.length ? { ...sample, layers: screenLayers(null, null, { id: "preview", hidden: hiddenLayers }) } : sample), [sample, hiddenLayers]);
   const box = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   // Only what's on screen moves: a page of previews stays light.

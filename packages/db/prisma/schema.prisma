@@ -2771,6 +2771,9 @@ model Screen {
   // Its look (issue #194): a saved theme, or a built-in one by its id ("concert"); neither, the default.
   themeId             String?
   themeTemplate       String?
+  // The layers it never shows (issue #287), whatever the operator does: a
+  // stage monitor without the background, a lobby TV without the words.
+  hiddenLayers        String[]      @default([])
   lastSeenAt          DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt

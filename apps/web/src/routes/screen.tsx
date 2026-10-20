@@ -1,4 +1,4 @@
-import { formatScreenCode, lyricSlides, renderChart, screenThemeTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@songverse/core";
+import { formatScreenCode, lyricSlides, renderChart, screenLayers, screenThemeTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@songverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
@@ -117,13 +117,14 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
       itemStartedAt,
       // The media operator's (issue #269).
       operator: stage?.timer ?? null,
-      layers: stage?.layers,
+      // The operator's layers, for this screen, less those it never shows (issues #280, #287).
+      layers: screenLayers(stage?.layers, presenting, { id: current.screen.id, hidden: current.screen.hiddenLayers }),
       title: set ? { title: setlistTitle(set.set, t, i18n.language), subtitle: set.set.teamName ?? null } : null,
       setSlides: at >= 0 ? { counts: slideCounts, item: at } : null,
       message: stage?.message?.text ?? null,
       offset,
     };
-  }, [set, view, song, itemStartedAt, stage, offset, slideCounts, t, i18n.language]);
+  }, [set, view, song, itemStartedAt, stage, presenting, current.screen.id, current.screen.hiddenLayers, offset, slideCounts, t, i18n.language]);
 
   // Following its owner's schedule (issue #274): no set today, the sets to pick from; OK while nothing's presented opens them too.
   const daySet = current.screen.setMode === "DAY";
@@ -218,11 +219,13 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
         idle={idle}
         assets={current.assets}
         live={live}
+        videoInput
       />
       {showPicker ? <ScreenSetPicker onClose={set ? () => setPicking(false) : undefined} /> : null}
       {menu && !showPicker ? (
         <ScreenMenu
           daySet={daySet}
+          video={look.video.source !== "none"}
           onChooseSet={() => {
             setMenu(false);
             setPicking(true);

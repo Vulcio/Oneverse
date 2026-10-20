@@ -417,6 +417,19 @@ try {
         await page.locator('[data-testid="operator-control"][data-control="shared"]').waitFor();
         await page.locator('[data-testid="operator-slide"][aria-current="true"]').waitFor({ timeout: 10000 });
       });
+      // Its layers (issues #280, #287), in the Screens & layers panel: the overlays cleared until the next slide.
+      await shoot(
+        "operator-layers",
+        null,
+        async () => {
+          await page.getByTestId("operator-drawer-open").click();
+          await page.getByTestId("operator-layer-overlays-clear").click();
+          await page.locator('[data-testid="operator-layer-overlays"][data-state="cleared"]').waitFor({ timeout: 5000 });
+          await page.waitForTimeout(400);
+        },
+        { element: page.getByTestId("operator-drawer") },
+      );
+      await page.getByTestId("operator-layers-reset").click();
       await page.close();
       page = live;
     }

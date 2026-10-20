@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { SCREEN_MODES, SCREEN_THEME_TEMPLATES, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
+import { SCREEN_MODES, SCREEN_SWITCHABLE_LAYERS, SCREEN_THEME_TEMPLATES, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
 import { optional } from "./fields.js";
 
 /** Screens (issue #186): a screen paired by its code, and changed later by whoever paired it. */
@@ -14,6 +14,8 @@ const screenFields = {
   themeId: z.string().min(1).max(40).nullable(),
   /** A built-in theme by its id ("concert"); null for none. A screen has one or the other, else the default look. */
   themeTemplate: z.enum(SCREEN_THEME_TEMPLATES.map((one) => one.id) as [string, ...string[]]).nullable(),
+  /** The layers it never shows (issue #287), whatever the operator does. */
+  hiddenLayers: z.array(z.enum(SCREEN_SWITCHABLE_LAYERS)).max(SCREEN_SWITCHABLE_LAYERS.length),
 };
 
 /**
@@ -56,6 +58,7 @@ export const UpdateScreenSchema = z.strictObject({
   setlistId: screenFields.setlistId.nullable().optional(),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
+  hiddenLayers: optional(screenFields.hiddenLayers),
 });
 export type UpdateScreenRequest = z.input<typeof UpdateScreenSchema>;
 

@@ -84,7 +84,7 @@ try {
     await tv.goto(`${WEB}/screen`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Stage ${stamp}`, mode: "LYRICS", setlistId: set.id, themeTemplate: "stage-display" });
-    await tv.getByTestId("screen-grid").waitFor({ timeout: 15000 });
+    await tv.getByTestId("screen-grid").first().waitFor({ timeout: 15000 });
     page = desk;
     await signIn(desk, operator);
     await desk.goto(`${WEB}/sets/${set.id}`);
@@ -196,7 +196,7 @@ try {
     await desk.locator('[data-testid="operator-control"][data-control="shared"]').waitFor();
   });
 
-  await step("layers: the words hidden, then a title card over everything", async () => {
+  await step("layers: the content hidden, then a title card over everything", async () => {
     page = desk;
     await desk.getByTestId("operator-drawer-open").click();
     const drawer = desk.getByTestId("operator-drawer");
@@ -206,11 +206,11 @@ try {
       await box.click();
       await drawer.locator(`[data-testid="operator-layer-${name}"]${on ? ":checked" : ":not(:checked)"}`).waitFor({ timeout: 5000 });
     };
-    await toggleLayer("words", false);
+    await toggleLayer("content-shown", false);
     page = tv;
     await tv.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
     page = desk;
-    await toggleLayer("words", true);
+    await toggleLayer("content-shown", true);
     await toggleLayer("title", true);
     page = tv;
     await tv.getByTestId("screen-overlay").getByText(`Stage ${stamp}`).waitFor({ timeout: 5000 });

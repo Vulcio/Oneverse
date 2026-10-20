@@ -689,7 +689,9 @@ export class SyncServer implements OnModuleDestroy {
     if (!(await this.stillAllowed(connection))) return;
     if (!connection.canLead) return this.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set runs its screens" });
     const command: SyncStageCommand = { timer: message.timer, reset: message.reset === true, run: typeof message.run === "boolean" ? message.run : undefined, add: message.add, message: message.message, layers: message.layers };
-    const next = applyStageCommand(await this.readStage(setId), command, Date.now());
+    // A layer cleared stays cleared while the slide on screen now is (issue #280).
+    const presenting = command.layers?.clear?.length ? ((await this.read(setId))?.presenting ?? null) : null;
+    const next = applyStageCommand(await this.readStage(setId), command, Date.now(), presenting);
     if (!next) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid timer, message or layers" });
     await this.writeStage(setId, next);
   }

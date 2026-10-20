@@ -6,7 +6,8 @@ import "@fontsource-variable/nunito";
 import "@fontsource-variable/oswald";
 import "@fontsource/bebas-neue";
 import "#/styles/screen-stage.css";
-import { DEFAULT_SYNC_LAYERS, SCREEN_FONT_FAMILIES, sectionEnergy, type RenderedChart, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
+import { SCREEN_FONT_FAMILIES, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
+import { Video } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "#/components/screen-widgets";
@@ -33,6 +34,11 @@ const REVEAL_MAX_MS = 1600;
  * its font and place, the lines around them, the song's title and credits,
  * and each slide coming in as the theme says - the one before going out at
  * the same time. Fills its box: the whole screen, or a preview card.
+ *
+ * Drawn as layers (issue #280), from the bottom: the base colour, the video
+ * input, the media (the background), the content (the words and the widgets
+ * that show the song), the overlays (the other widgets, the title card) and
+ * the masks; the operator and the screen's settings say which show.
  */
 export function ScreenStage({
   theme,
@@ -43,6 +49,7 @@ export function ScreenStage({
   idle,
   assets = [],
   live = {},
+  videoInput = false,
   className,
 }: {
   theme: ScreenTheme;
@@ -56,6 +63,8 @@ export function ScreenStage({
   assets?: ScreenThemeAsset[];
   /** What widgets read besides the song (issue #268): the next song, timers, the operator's message. */
   live?: StageLive;
+  /** A real screen: the video input layer opens the device's camera or capture card; elsewhere (a preview) it's a placeholder. */
+  videoInput?: boolean;
   className?: string;
 }) {
   const index = song ? Math.max(0, Math.min(slide, song.slides.length - 1)) : 0;
@@ -91,11 +100,11 @@ export function ScreenStage({
   const media = assets.find((asset) => asset.id === theme.background.media && asset.kind === "media");
 
   const grid = theme.grid && theme.grid.widgets.length > 0 ? theme.grid : null;
-  // The operator's layers (issue #275).
-  const layers = live.layers ?? DEFAULT_SYNC_LAYERS;
+  // What the operator and the screen's settings show (issues #275, #280, #287).
+  const { shown: visible, title } = live.layers ?? screenLayers(null, null);
   /** The words, as a screen has always shown them: the whole stage, or a grid's Lyrics or chart cell. */
   const words = (look: ScreenTheme) =>
-    dark || !layers.words ? null : !song || !current ? (
+    dark ? null : !song || !current ? (
       <div className="sv-words items-center justify-center text-center">{idle}</div>
     ) : mode === "CHART" && song.chart ? (
       <ChartStage theme={look} chart={song.chart} title={song.title} passId={current.passId} />
@@ -105,6 +114,24 @@ export function ScreenStage({
         <Words key={viewKey} theme={look} song={song} index={index} phase={outgoing ? "in" : "still"} />
       </>
     );
+  // A grid's widgets, on the layer each is on.
+  const widgets = (layer: "content" | "overlays") => {
+    const on = grid ? grid.widgets.filter((widget) => screenWidgetLayer(widget) === layer) : [];
+    return grid && on.length > 0 ? (
+      <ScreenGrid
+        theme={theme}
+        grid={{ ...grid, widgets: on }}
+        slides={song && current ? song.slides : null}
+        index={index}
+        black={dark && grid.black === "words"}
+        live={live}
+        words={words({ ...theme, layout: { ...theme.layout, margin: 2 } })}
+      />
+    ) : null;
+  };
+  const windows = theme.masks.filter((mask) => mask.kind === "window");
+  const covers = theme.masks.filter((mask) => mask.kind === "cover");
+  const video = theme.video.source !== "none" && visible.video;
 
   const style = {
     "--t": `${duration}ms`,
@@ -126,42 +153,142 @@ export function ScreenStage({
       style={style}
       data-testid="screen-stage"
       data-background={theme.background.kind}
-      data-layers={`${layers.words ? "words" : ""}|${layers.background ? "background" : ""}|${layers.overlay}`}
+      data-layers={(["video", "media", "content", "overlays", "masks"] as const).filter((layer) => visible[layer]).join(" ") + (title ? " title" : "")}
       data-transition={theme.motion.transition}
       data-reveal={theme.motion.reveal}
       data-energy={energy}
     >
-      {layers.background ? (
-        <>
+      <div className="sv-layer" style={{ background: screenBaseColor(theme) }} data-layer="base" />
+      {video ? (
+        <div className="sv-layer" style={{ opacity: theme.video.opacity }} data-layer="video">
+          <VideoInput fit={theme.video.fit} live={videoInput} />
+        </div>
+      ) : null}
+      {visible.media ? (
+        // A window mask cuts through it, down to the video input and the base.
+        <div className="sv-layer" style={windowMask(windows)} data-layer="media">
           <Background theme={theme} media={media} />
           {theme.background.reactive && song ? <div key={viewKey} className="sv-pulse" aria-hidden /> : null}
           {theme.background.dim > 0 ? <div className="sv-bg-dim" style={{ opacity: theme.background.dim }} aria-hidden /> : null}
-        </>
-      ) : null}
-      {grid ? (
-        // Widgets on a grid (issue #268): the words in their cell, with a small margin of their own.
-        <ScreenGrid
-          theme={theme}
-          grid={grid}
-          slides={song && current ? song.slides : null}
-          index={index}
-          black={(dark && grid.black === "words") || !layers.words}
-          live={live}
-          words={words({ ...theme, layout: { ...theme.layout, margin: 2 } })}
-        />
-      ) : (
-        words(theme)
-      )}
-      {/* The operator's overlay (issue #275): the set's title card, over everything. */}
-      {layers.overlay === "title" && live.title ? (
-        <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-[2cqmin] bg-black/85 p-[6cqmin] text-center" data-testid="screen-overlay">
-          <p className="text-[7cqmin] leading-tight font-semibold">{live.title.title}</p>
-          {live.title.subtitle ? <p className="text-[3.5cqmin] opacity-70">{live.title.subtitle}</p> : null}
         </div>
+      ) : null}
+      {visible.content ? (
+        <div className="sv-layer" data-layer="content">
+          {grid ? widgets("content") : words(theme)}
+        </div>
+      ) : null}
+      {visible.overlays ? (
+        <div className="sv-layer" data-layer="overlays">
+          {widgets("overlays")}
+          {/* The operator's title card (issue #275), over the rest. */}
+          {title && live.title ? (
+            <div className="absolute inset-0 z-[5] flex flex-col items-center justify-center gap-[2cqmin] bg-black/85 p-[6cqmin] text-center" data-testid="screen-overlay">
+              <p className="text-[7cqmin] leading-tight font-semibold">{live.title.title}</p>
+              {live.title.subtitle ? <p className="text-[3.5cqmin] opacity-70">{live.title.subtitle}</p> : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {visible.masks && covers.length > 0 ? (
+        <svg className="sv-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden data-layer="masks">
+          {covers.map((mask) => (
+            <g key={mask.id}>
+              {mask.feather > 0 ? (
+                <filter id={`sv-feather-${mask.id}`} x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation={mask.feather / 2} />
+                </filter>
+              ) : null}
+              <path d={maskPath(mask)} fillRule="evenodd" fill="#000" filter={mask.feather > 0 ? `url(#sv-feather-${mask.id})` : undefined} data-testid="screen-mask" />
+            </g>
+          ))}
+        </svg>
       ) : null}
       <div className="sv-black" data-on={black && (!grid || grid.black === "all") ? "" : undefined} data-testid="screen-black" />
     </div>
   );
+}
+
+/** A mask's shape as an SVG path, on a 100 by 100 screen; inverted, everything but the shape (even-odd). */
+function maskPath(mask: ScreenMask): string {
+  const { x, y, w, h } = mask;
+  const shape =
+    mask.shape === "ellipse"
+      ? `M${x} ${y + h / 2}a${w / 2} ${h / 2} 0 1 0 ${w} 0a${w / 2} ${h / 2} 0 1 0 ${-w} 0Z`
+      : `M${x} ${y}h${w}v${h}h${-w}Z`;
+  return mask.invert ? `M-1 -1H101V101H-1Z${shape}` : shape;
+}
+
+/** The media layer's CSS mask for window masks: transparent where they cut it. */
+function windowMask(windows: ScreenMask[]): CSSProperties | undefined {
+  if (windows.length === 0) return undefined;
+  const filters = windows
+    .filter((mask) => mask.feather > 0)
+    .map((mask) => `<filter id="f${mask.id}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${mask.feather / 2}"/></filter>`)
+    .join("");
+  const holes = windows.map((mask) => `<path d="${maskPath(mask)}" fill-rule="evenodd" fill="#000"${mask.feather > 0 ? ` filter="url(#f${mask.id})"` : ""}/>`).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><defs>${filters}<mask id="m"><rect x="-1" y="-1" width="102" height="102" fill="#fff"/>${holes}</mask></defs><rect width="100" height="100" fill="#fff" mask="url(#m)"/></svg>`;
+  const image = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  return { maskImage: image, WebkitMaskImage: image, maskSize: "100% 100%", WebkitMaskSize: "100% 100%", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat" };
+}
+
+/** The key the screen's chosen camera or capture card is kept under, on this device (issue #280). */
+export const VIDEO_INPUT_KEY = "songverse.screen.videoInput";
+
+/**
+ * The video input layer (issue #280): on a screen, its camera or capture card
+ * (the one picked in its menu, else the first); in a preview, a placeholder.
+ * Nothing when it can't be opened: the base shows.
+ */
+function VideoInput({ fit, live }: { fit: "cover" | "contain"; live: boolean }) {
+  const { t } = useTranslation();
+  const element = useRef<HTMLVideoElement>(null);
+  const [device, setDevice] = useState<string | null>(() => readVideoInput());
+  // Picked in the screen's menu, in this tab or another.
+  useEffect(() => {
+    const changed = () => setDevice(readVideoInput());
+    window.addEventListener("storage", changed);
+    window.addEventListener("sv-video-input", changed);
+    return () => {
+      window.removeEventListener("storage", changed);
+      window.removeEventListener("sv-video-input", changed);
+    };
+  }, []);
+  useEffect(() => {
+    if (!live || !navigator.mediaDevices?.getUserMedia) return;
+    let stream: MediaStream | null = null;
+    let current = true;
+    navigator.mediaDevices
+      .getUserMedia({ video: device ? { deviceId: { exact: device } } : true, audio: false })
+      // The one picked gone: the first there is.
+      .catch(() => (device ? navigator.mediaDevices.getUserMedia({ video: true, audio: false }) : Promise.reject(new Error("no camera"))))
+      .then((opened) => {
+        if (!current) return opened.getTracks().forEach((track) => track.stop());
+        stream = opened;
+        if (element.current) element.current.srcObject = opened;
+      })
+      .catch(() => undefined);
+    return () => {
+      current = false;
+      stream?.getTracks().forEach((track) => track.stop());
+    };
+  }, [live, device]);
+  if (!live) {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-[1cqmin] bg-[repeating-linear-gradient(45deg,#1f2937_0_2cqmin,#111827_2cqmin_4cqmin)] text-[3cqmin] text-neutral-400" data-testid="screen-video-placeholder">
+        <Video className="size-[8cqmin]" aria-hidden />
+        {t("screens.layers.video")}
+      </div>
+    );
+  }
+  return <video ref={element} className="sv-media" style={{ objectFit: fit }} autoPlay muted playsInline data-testid="screen-video" />;
+}
+
+function readVideoInput(): string | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage.getItem(VIDEO_INPUT_KEY);
+  } catch {
+    return null;
+  }
 }
 
 /** The background: a colour, a gradient, or lights that move (and answer the song when reactive). */

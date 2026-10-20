@@ -575,6 +575,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -626,7 +634,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -645,6 +654,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "elegant",
               "customFont": null,
@@ -696,7 +713,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -718,6 +736,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -770,7 +796,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -788,6 +815,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -839,7 +874,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -849,6 +885,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -900,7 +944,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -947,6 +992,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -1007,6 +1060,7 @@
                 {
                   "id": "a",
                   "kind": "clock",
+                  "layer": null,
                   "x": 4,
                   "y": 0,
                   "w": 2,
@@ -1055,7 +1109,8 @@
                   }
                 }
               ]
-            }
+            },
+            "masks": []
           }
         },
         {
@@ -1072,6 +1127,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "serif",
               "customFont": null,
@@ -1123,7 +1186,185 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
+          }
+        },
+        {
+          "name": "layers (issue #280): a base colour, the camera, a widget moved to the overlays, masks - one that can't be read left out",
+          "args": [
+            {
+              "base": {
+                "color": "#102030"
+              },
+              "video": {
+                "source": "camera",
+                "fit": "contain"
+              },
+              "grid": {
+                "widgets": [
+                  {
+                    "id": "s",
+                    "kind": "song",
+                    "layer": "overlays",
+                    "x": 0,
+                    "y": 0,
+                    "w": 4,
+                    "h": 1
+                  }
+                ]
+              },
+              "masks": [
+                {
+                  "id": "m1",
+                  "kind": "window",
+                  "shape": "ellipse",
+                  "x": 60,
+                  "y": 10,
+                  "w": 30,
+                  "h": 40,
+                  "feather": 2
+                },
+                {
+                  "id": "m2",
+                  "shape": "star"
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": "#102030"
+            },
+            "video": {
+              "source": "camera",
+              "fit": "contain",
+              "opacity": 1
+            },
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": true,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1
+            },
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "s",
+                  "kind": "song",
+                  "layer": "overlays",
+                  "x": 0,
+                  "y": 0,
+                  "w": 4,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                }
+              ]
+            },
+            "masks": [
+              {
+                "id": "m1",
+                "kind": "window",
+                "shape": "ellipse",
+                "x": 60,
+                "y": 10,
+                "w": 30,
+                "h": 40,
+                "invert": false,
+                "feather": 2
+              }
+            ]
           }
         }
       ]
@@ -1306,6 +1547,83 @@
               "last-week"
             ]
           }
+        }
+      ]
+    },
+    "screenWidgetLayer": {
+      "about": "The layer a widget is on (issue #280): its own, else its kind's - the widgets that show the song are content, the others overlays.",
+      "params": [
+        "widget"
+      ],
+      "cases": [
+        {
+          "name": "the words",
+          "args": [
+            {
+              "kind": "stage",
+              "layer": null
+            }
+          ],
+          "expected": "content"
+        },
+        {
+          "name": "a clock",
+          "args": [
+            {
+              "kind": "clock",
+              "layer": null
+            }
+          ],
+          "expected": "overlays"
+        },
+        {
+          "name": "the song's details, moved to the overlays",
+          "args": [
+            {
+              "kind": "song",
+              "layer": "overlays"
+            }
+          ],
+          "expected": "overlays"
+        }
+      ]
+    },
+    "screenBaseColor": {
+      "about": "A theme's base colour (issue #280): its own, else its background's first, as before layers.",
+      "params": [
+        "theme"
+      ],
+      "cases": [
+        {
+          "name": "the background's first colour",
+          "args": [
+            {
+              "background": {
+                "kind": "aurora",
+                "colors": [
+                  "#05010f",
+                  "#6d28d9"
+                ]
+              }
+            }
+          ],
+          "expected": "#05010f"
+        },
+        {
+          "name": "its own",
+          "args": [
+            {
+              "base": {
+                "color": "#ffffff"
+              },
+              "background": {
+                "colors": [
+                  "#000000"
+                ]
+              }
+            }
+          ],
+          "expected": "#ffffff"
         }
       ]
     },
@@ -1645,6 +1963,7 @@
               {
                 "id": "stage",
                 "kind": "stage",
+                "layer": null,
                 "x": 0,
                 "y": 0,
                 "w": 12,
@@ -1695,6 +2014,7 @@
               {
                 "id": "clock",
                 "kind": "clock",
+                "layer": null,
                 "x": 9,
                 "y": 0,
                 "w": 3,
@@ -1759,6 +2079,7 @@
               {
                 "id": "current",
                 "kind": "current-slide",
+                "layer": null,
                 "x": 0,
                 "y": 0,
                 "w": 8,
@@ -1809,6 +2130,7 @@
               {
                 "id": "next",
                 "kind": "next-slide",
+                "layer": null,
                 "x": 0,
                 "y": 7,
                 "w": 8,
@@ -1859,6 +2181,7 @@
               {
                 "id": "clock",
                 "kind": "clock",
+                "layer": null,
                 "x": 8,
                 "y": 0,
                 "w": 4,
@@ -1909,6 +2232,7 @@
               {
                 "id": "countdown",
                 "kind": "countdown",
+                "layer": null,
                 "x": 8,
                 "y": 2,
                 "w": 4,
@@ -1959,6 +2283,7 @@
               {
                 "id": "song",
                 "kind": "song",
+                "layer": null,
                 "x": 8,
                 "y": 6,
                 "w": 4,
@@ -2009,6 +2334,7 @@
               {
                 "id": "next-song",
                 "kind": "next-song",
+                "layer": null,
                 "x": 8,
                 "y": 8,
                 "w": 4,
@@ -2059,6 +2385,7 @@
               {
                 "id": "message",
                 "kind": "message",
+                "layer": null,
                 "x": 0,
                 "y": 10,
                 "w": 12,
@@ -2727,6 +3054,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -2778,7 +3113,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -2788,6 +3124,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "geometric",
               "customFont": null,
@@ -2842,7 +3186,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -2852,6 +3197,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "elegant",
               "customFont": null,
@@ -2905,7 +3258,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -2915,6 +3269,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "rounded",
               "customFont": null,
@@ -2969,7 +3331,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -2979,6 +3342,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "serif",
               "customFont": null,
@@ -3032,7 +3403,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -3042,6 +3414,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "display",
               "customFont": null,
@@ -3094,7 +3474,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -3104,6 +3485,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -3155,7 +3544,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -3165,6 +3555,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "sans",
               "customFont": null,
@@ -3216,7 +3614,8 @@
               "color": "#7dd3fc",
               "scale": 1
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         },
         {
@@ -3226,6 +3625,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "condensed",
               "customFont": null,
@@ -3286,6 +3693,7 @@
                 {
                   "id": "current",
                   "kind": "current-slide",
+                  "layer": null,
                   "x": 0,
                   "y": 0,
                   "w": 8,
@@ -3336,6 +3744,7 @@
                 {
                   "id": "next",
                   "kind": "next-slide",
+                  "layer": null,
                   "x": 0,
                   "y": 7,
                   "w": 8,
@@ -3386,6 +3795,7 @@
                 {
                   "id": "clock",
                   "kind": "clock",
+                  "layer": null,
                   "x": 8,
                   "y": 0,
                   "w": 4,
@@ -3436,6 +3846,7 @@
                 {
                   "id": "countdown",
                   "kind": "countdown",
+                  "layer": null,
                   "x": 8,
                   "y": 2,
                   "w": 4,
@@ -3486,6 +3897,7 @@
                 {
                   "id": "song",
                   "kind": "song",
+                  "layer": null,
                   "x": 8,
                   "y": 6,
                   "w": 4,
@@ -3536,6 +3948,7 @@
                 {
                   "id": "next-song",
                   "kind": "next-song",
+                  "layer": null,
                   "x": 8,
                   "y": 8,
                   "w": 4,
@@ -3586,6 +3999,7 @@
                 {
                   "id": "message",
                   "kind": "message",
+                  "layer": null,
                   "x": 0,
                   "y": 10,
                   "w": 12,
@@ -3634,7 +4048,8 @@
                   }
                 }
               ]
-            }
+            },
+            "masks": []
           }
         },
         {
@@ -3644,6 +4059,14 @@
           ],
           "expected": {
             "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
             "text": {
               "font": "condensed",
               "customFont": null,
@@ -3695,7 +4118,8 @@
               "color": "#facc15",
               "scale": 1.2
             },
-            "grid": null
+            "grid": null,
+            "masks": []
           }
         }
       ]

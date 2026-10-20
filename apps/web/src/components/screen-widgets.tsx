@@ -1,4 +1,4 @@
-import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type SyncLayers, type SyncTimer } from "@songverse/core";
+import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type ScreenLayersShown, type SyncTimer } from "@songverse/core";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { renderSVG } from "uqr";
 import { useTranslation } from "react-i18next";
@@ -24,8 +24,8 @@ export interface StageLive {
   offset?: number;
   /** In the template editor: an empty message shows what it would look like. */
   preview?: boolean;
-  /** The operator's layers (issue #275): the words, the background, an overlay. */
-  layers?: SyncLayers;
+  /** What the screen draws (issues #280, #287): the operator's layers less the screen's own, as screenLayers works them out. */
+  layers?: ScreenLayersShown;
   /** The set's songs' slide counts, in order, and the one on screen's place among them (issue #289): the Slide count widget's set. */
   setSlides?: { counts: number[]; item: number } | null;
   /** The overlay's title card: the set's name, and its team's. */

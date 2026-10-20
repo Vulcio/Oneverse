@@ -1,4 +1,4 @@
-import { DEFAULT_SCREEN_THEME, formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_THEME_TEMPLATES, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
+import { DEFAULT_SCREEN_THEME, formatScreenCode, normalizeScreenCode, SCREEN_MODES, SCREEN_SWITCHABLE_LAYERS, SCREEN_THEME_TEMPLATES, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenSummary, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { Building2, MonitorCheck, MonitorUp, Palette, Pencil, Plus, Settings2, User, Users, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -682,6 +682,28 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
                 }
               />
             </div>
+            <fieldset className="flex flex-col gap-1.5" data-testid="screen-layers">
+              <legend className="mb-1.5 text-sm font-medium">{t("screens.layersShown")}</legend>
+              <p className="text-xs text-muted-foreground">{t("screens.layersShownHint")}</p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                {SCREEN_SWITCHABLE_LAYERS.map((layer) => {
+                  const hidden = screen.hiddenLayers ?? [];
+                  const on = !hidden.includes(layer);
+                  return (
+                    <label key={layer} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="size-4 accent-primary"
+                        checked={on}
+                        onChange={() => void change({ hiddenLayers: on ? [...hidden, layer] : hidden.filter((one) => one !== layer) })}
+                        data-testid={`screen-layer-${layer}`}
+                      />
+                      {t(`screens.layers.${layer}`)}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
             {screen.canManage && owners.length > 1 ? (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`screen-owner-${screen.id}`}>{t("screens.owner")}</Label>
@@ -692,7 +714,7 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
           </fieldset>
           <div className="flex min-w-0 flex-col gap-2">
             <span className="text-sm font-medium">{t("screens.preview")}</span>
-            <ScreenThemePreview theme={look} mode={screen.mode} assets={saved?.assets} slide={0} />
+            <ScreenThemePreview theme={look} mode={screen.mode} assets={saved?.assets} slide={0} hiddenLayers={screen.hiddenLayers} />
           </div>
         </div>
         <DialogFooter className="flex-row items-center border-t px-4 py-3">
