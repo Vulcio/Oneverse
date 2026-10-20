@@ -50,7 +50,7 @@ export class ScreenPartsController {
   @ApiConsumes("multipart/form-data")
   @ApiOperation({
     summary: "Adds a file to a screen part",
-    description: "A background theme's `kind` media: a picture (JPEG, PNG, WebP, AVIF, GIF, up to 15 MB) or looping video (MP4, WebM, up to 150 MB); a content theme's font: WOFF2, WOFF, TTF or OTF (up to 5 MB). The part's document then refers to it by its id.",
+    description: "A background theme's `kind` media: a picture (JPEG, PNG, WebP, AVIF, GIF, up to 15 MB) or looping video (MP4, WebM, up to 150 MB); a background theme's `shader`: an ISF fragment shader (.fs, .frag, .glsl or .isf, up to 64 KB, its header checked); a content theme's font: WOFF2, WOFF, TTF or OTF (up to 5 MB). The part's document then refers to it by its id.",
   })
   addAsset(
     @Param("partId") partId: string,
@@ -59,7 +59,7 @@ export class ScreenPartsController {
     @CurrentUser() user: AuthenticatedUser | undefined,
   ): ReturnType<ScreenPartsService["addAsset"]> {
     if (!file) throw new BadRequestException("A file is required");
-    if (!(SCREEN_THEME_ASSET_KINDS as readonly string[]).includes(kind ?? "")) throw new BadRequestException("kind must be media or font");
+    if (!(SCREEN_THEME_ASSET_KINDS as readonly string[]).includes(kind ?? "")) throw new BadRequestException("kind must be media, font or shader");
     return this.parts.addAsset(requireUser(user), partId, kind as ScreenThemeAssetKind, file);
   }
 

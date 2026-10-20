@@ -1,6 +1,7 @@
-import { SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@songverse/core";
+import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@songverse/core";
 import { useEffect, useRef, useState } from "react";
 import { getApiUrl } from "@songverse/app/public-env";
+import { screenReport } from "#/lib/screen-report";
 
 /**
  * A screen's side of issue #186, in the browser of whatever drives the big
@@ -13,6 +14,8 @@ import { getApiUrl } from "@songverse/app/public-env";
 const TOKEN_KEY = "songverse.screen.token";
 const CLAIM_EVERY_MS = 2000;
 const PING_EVERY_MS = 10_000;
+/** The first report (issue #286): once the screen has drawn for a while, so it has a frame rate to tell. */
+const REPORT_FIRST_MS = 5_000;
 /** The set's songs reloaded this often (a song edited, one added). */
 const RELOAD_EVERY_MS = 2 * 60_000;
 
@@ -187,6 +190,8 @@ export function useScreenDisplay(): ScreenDisplayState {
     let retry: ReturnType<typeof setTimeout> | null = null;
     let retries = 0;
     let pinger: ReturnType<typeof setInterval> | null = null;
+    let reporter: ReturnType<typeof setInterval> | null = null;
+    let firstReport: ReturnType<typeof setTimeout> | null = null;
     let current: ScreenCurrent | null = null;
     let online = false;
 
@@ -215,6 +220,10 @@ export function useScreenDisplay(): ScreenDisplayState {
         ws.send(JSON.stringify({ type: "screen", token }));
         ws.send(JSON.stringify({ type: "ping", id: Date.now(), sent: Date.now() }));
         pinger = setInterval(() => ws.send(JSON.stringify({ type: "ping", id: Date.now(), sent: Date.now() })), PING_EVERY_MS);
+        // What it is and how it's drawing (issue #286): once it has drawn a little, then every half minute.
+        const report = () => ws.readyState === ws.OPEN && ws.send(JSON.stringify({ type: "report", report: screenReport() }));
+        firstReport = setTimeout(report, REPORT_FIRST_MS);
+        reporter = setInterval(report, SCREEN_REPORT_EVERY_MS);
       };
       ws.onmessage = (event) => {
         let message: SyncServerMessage;
@@ -247,6 +256,8 @@ export function useScreenDisplay(): ScreenDisplayState {
       };
       ws.onclose = () => {
         if (pinger) clearInterval(pinger);
+        if (reporter) clearInterval(reporter);
+        if (firstReport) clearTimeout(firstReport);
         if (stopped || socket !== ws) return;
         online = false;
         show();
@@ -261,6 +272,8 @@ export function useScreenDisplay(): ScreenDisplayState {
       clearInterval(reload);
       if (retry) clearTimeout(retry);
       if (pinger) clearInterval(pinger);
+      if (reporter) clearInterval(reporter);
+      if (firstReport) clearTimeout(firstReport);
       socket?.close();
     };
   }, [token]);

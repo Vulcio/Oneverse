@@ -301,6 +301,8 @@ export type SyncClientMessage =
   /** A screen signs in with its screen token (issue #186), in place of hello; it joins its set by itself. */
   | { type: "screen"; token: string }
   | { type: "ping"; id: number; sent: number }
+  /** A screen's report about itself (issue #286, ScreenReport), every half minute; kept for its owner to see. */
+  | { type: "report"; report: unknown }
   | { type: "join"; setId: string }
   | { type: "leave" }
   /** Starts a session, or takes over the lead of the one going on. */

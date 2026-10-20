@@ -613,7 +613,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -700,7 +705,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -791,7 +801,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -877,7 +892,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -955,7 +975,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -1070,7 +1095,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -1213,7 +1243,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -1328,7 +1363,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -1719,7 +1759,12 @@
               "reactive": true,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -1886,7 +1931,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -1973,7 +2023,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -2060,7 +2115,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -2170,7 +2230,12 @@
                 "reactive": false,
                 "motion": 0.5,
                 "media": null,
-                "dim": 0
+                "dim": 0,
+                "shader": {
+                  "builtIn": null,
+                  "asset": null,
+                  "values": {}
+                }
               },
               "reacts": {
                 "movement": 0.5,
@@ -2282,7 +2347,12 @@
                 "reactive": false,
                 "motion": 0.5,
                 "media": null,
-                "dim": 0
+                "dim": 0,
+                "shader": {
+                  "builtIn": null,
+                  "asset": null,
+                  "values": {}
+                }
               },
               "reacts": {
                 "movement": 0.5,
@@ -2706,6 +2776,511 @@
             }
           ],
           "expected": "#ffffff"
+        }
+      ]
+    },
+    "readScreenReport": {
+      "about": "A screen's report about itself (issue #286) as the server keeps it: each field the device's own word, kept short and in range - one it can't read is left out (null), the rest stay. Null: not a report at all.",
+      "params": [
+        "report"
+      ],
+      "cases": [
+        {
+          "name": "a TV stick drawing a shader",
+          "args": [
+            {
+              "device": {
+                "browser": "Chrome 128 on Android 12",
+                "model": "Chromecast",
+                "cores": 4,
+                "memoryGb": 2,
+                "width": 1920,
+                "height": 1080,
+                "pixelRatio": 1,
+                "gpu": "Mali-G31",
+                "webgl": 2,
+                "maxTexture": 8192
+              },
+              "drawing": {
+                "fps": 41.5,
+                "worstMs": 48,
+                "scale": 0.64,
+                "drawer": "shader",
+                "error": null,
+                "effects": true
+              },
+              "uptimeS": 3600
+            }
+          ],
+          "expected": {
+            "device": {
+              "browser": "Chrome 128 on Android 12",
+              "model": "Chromecast",
+              "cores": 4,
+              "memoryGb": 2,
+              "width": 1920,
+              "height": 1080,
+              "pixelRatio": 1,
+              "gpu": "Mali-G31",
+              "webgl": 2,
+              "maxTexture": 8192
+            },
+            "drawing": {
+              "fps": 41.5,
+              "worstMs": 48,
+              "scale": 0.64,
+              "drawer": "shader",
+              "error": null,
+              "effects": true
+            },
+            "uptimeS": 3600
+          }
+        },
+        {
+          "name": "fields it can't read: left out",
+          "args": [
+            {
+              "device": {
+                "cores": -2,
+                "memoryGb": "lots",
+                "webgl": 3,
+                "gpu": 12
+              },
+              "drawing": {
+                "drawer": "vulkan",
+                "fps": 1000000000
+              },
+              "uptimeS": 1.5
+            }
+          ],
+          "expected": {
+            "device": {
+              "browser": null,
+              "model": null,
+              "cores": null,
+              "memoryGb": null,
+              "width": null,
+              "height": null,
+              "pixelRatio": null,
+              "gpu": null,
+              "webgl": 0,
+              "maxTexture": null
+            },
+            "drawing": {
+              "fps": null,
+              "worstMs": null,
+              "scale": null,
+              "drawer": "css",
+              "error": null,
+              "effects": false
+            },
+            "uptimeS": null
+          }
+        },
+        {
+          "name": "nothing said: all unknown",
+          "args": [
+            {}
+          ],
+          "expected": {
+            "device": {
+              "browser": null,
+              "model": null,
+              "cores": null,
+              "memoryGb": null,
+              "width": null,
+              "height": null,
+              "pixelRatio": null,
+              "gpu": null,
+              "webgl": 0,
+              "maxTexture": null
+            },
+            "drawing": {
+              "fps": null,
+              "worstMs": null,
+              "scale": null,
+              "drawer": "css",
+              "error": null,
+              "effects": false
+            },
+            "uptimeS": null
+          }
+        },
+        {
+          "name": "not a report",
+          "args": [
+            "fast"
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "screenTier": {
+      "about": "What a screen can run, from its report (issue #286): minimal without WebGL, under 25 frames a second or with 1 GB or less; limited with WebGL 1, under 50 frames a second or a shader drawn at under 3/4 of its pixels; smooth when it measured itself drawing faster; measuring nothing, limited with 2 GB or less or 2 cores or fewer, else smooth.",
+      "params": [
+        "report"
+      ],
+      "cases": [
+        {
+          "name": "no WebGL",
+          "args": [
+            {
+              "device": {
+                "webgl": 0,
+                "cores": 8,
+                "memoryGb": 8
+              }
+            }
+          ],
+          "expected": "minimal"
+        },
+        {
+          "name": "a shader at 20 fps",
+          "args": [
+            {
+              "device": {
+                "webgl": 2
+              },
+              "drawing": {
+                "drawer": "shader",
+                "fps": 20,
+                "scale": 0.3
+              }
+            }
+          ],
+          "expected": "minimal"
+        },
+        {
+          "name": "a shader at 41 fps",
+          "args": [
+            {
+              "device": {
+                "webgl": 2
+              },
+              "drawing": {
+                "drawer": "shader",
+                "fps": 41,
+                "scale": 1
+              }
+            }
+          ],
+          "expected": "limited"
+        },
+        {
+          "name": "a shader at 60 fps, drawn at half resolution",
+          "args": [
+            {
+              "device": {
+                "webgl": 2
+              },
+              "drawing": {
+                "drawer": "shader",
+                "fps": 60,
+                "scale": 0.5
+              }
+            }
+          ],
+          "expected": "limited"
+        },
+        {
+          "name": "a shader at 60 fps, full resolution, on 2 GB",
+          "args": [
+            {
+              "device": {
+                "webgl": 2,
+                "memoryGb": 2,
+                "cores": 4
+              },
+              "drawing": {
+                "drawer": "shader",
+                "fps": 60,
+                "scale": 1
+              }
+            }
+          ],
+          "expected": "smooth"
+        },
+        {
+          "name": "a still background on 2 GB and 4 cores",
+          "args": [
+            {
+              "device": {
+                "webgl": 2,
+                "memoryGb": 2,
+                "cores": 4
+              }
+            }
+          ],
+          "expected": "limited"
+        },
+        {
+          "name": "a still background on 8 GB and 2 cores",
+          "args": [
+            {
+              "device": {
+                "webgl": 2,
+                "memoryGb": 8,
+                "cores": 2
+              }
+            }
+          ],
+          "expected": "limited"
+        },
+        {
+          "name": "a still background on a mini PC",
+          "args": [
+            {
+              "device": {
+                "webgl": 2,
+                "memoryGb": 8,
+                "cores": 4
+              }
+            }
+          ],
+          "expected": "smooth"
+        },
+        {
+          "name": "WebGL 1",
+          "args": [
+            {
+              "device": {
+                "webgl": 1,
+                "memoryGb": 8,
+                "cores": 8
+              }
+            }
+          ],
+          "expected": "limited"
+        }
+      ]
+    },
+    "readIsf": {
+      "about": "An ISF shader as every client reads it (issue #297): the JSON header in a comment at its start - its inputs, each with its range and default (a float kept within its range, a colour's channels 0 to 1), the ones a screen fills itself (sv_) marked - and the GLSL after it. An error instead when it can't be used: empty, no header, a header that isn't JSON, an input that isn't a GLSL name or of a type ISF doesn't know, two inputs of one name, several passes.",
+      "params": [
+        "source"
+      ],
+      "cases": [
+        {
+          "name": "a float, a bool, a colour, a choice and one the screen fills",
+          "args": [
+            "/*{\"DESCRIPTION\":\"Test\",\"CREDIT\":\"Songverse\",\"CATEGORIES\":[\"Generator\"],\"INPUTS\":[{\"NAME\":\"speed\",\"LABEL\":\"Speed\",\"TYPE\":\"float\",\"MIN\":0,\"MAX\":2,\"DEFAULT\":5},{\"NAME\":\"on\",\"TYPE\":\"bool\",\"DEFAULT\":1},{\"NAME\":\"tint\",\"TYPE\":\"color\",\"DEFAULT\":[1.5,0.5,0]},{\"NAME\":\"mode\",\"TYPE\":\"long\",\"VALUES\":[0,1,2],\"LABELS\":[\"A\",\"B\",\"C\"],\"DEFAULT\":1},{\"NAME\":\"sv_hue\",\"TYPE\":\"float\"},{\"NAME\":\"sv_words\",\"TYPE\":\"image\"}]}*/\nvoid main() { gl_FragColor = vec4(1.0); }\n"
+          ],
+          "expected": {
+            "description": "Test",
+            "credit": "Songverse",
+            "categories": [
+              "Generator"
+            ],
+            "inputs": [
+              {
+                "name": "speed",
+                "type": "float",
+                "label": "Speed",
+                "min": 0,
+                "max": 2,
+                "default": 2,
+                "values": [],
+                "labels": [],
+                "songverse": false
+              },
+              {
+                "name": "on",
+                "type": "bool",
+                "label": null,
+                "min": null,
+                "max": null,
+                "default": true,
+                "values": [],
+                "labels": [],
+                "songverse": false
+              },
+              {
+                "name": "tint",
+                "type": "color",
+                "label": null,
+                "min": null,
+                "max": null,
+                "default": [
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                "values": [],
+                "labels": [],
+                "songverse": false
+              },
+              {
+                "name": "mode",
+                "type": "long",
+                "label": null,
+                "min": 0,
+                "max": 2,
+                "default": 1,
+                "values": [
+                  0,
+                  1,
+                  2
+                ],
+                "labels": [
+                  "A",
+                  "B",
+                  "C"
+                ],
+                "songverse": false
+              },
+              {
+                "name": "sv_hue",
+                "type": "float",
+                "label": null,
+                "min": 0,
+                "max": 1,
+                "default": 0,
+                "values": [],
+                "labels": [],
+                "songverse": true
+              },
+              {
+                "name": "sv_words",
+                "type": "image",
+                "label": null,
+                "min": null,
+                "max": null,
+                "default": null,
+                "values": [],
+                "labels": [],
+                "songverse": true
+              }
+            ],
+            "body": "\nvoid main() { gl_FragColor = vec4(1.0); }\n"
+          }
+        },
+        {
+          "name": "no inputs",
+          "args": [
+            "/* {} */ void main() {}"
+          ],
+          "expected": {
+            "description": null,
+            "credit": null,
+            "categories": [],
+            "inputs": [],
+            "body": " void main() {}"
+          }
+        },
+        {
+          "name": "empty",
+          "args": [
+            ""
+          ],
+          "expected": {
+            "error": "The shader is empty"
+          }
+        },
+        {
+          "name": "no header",
+          "args": [
+            "void main() {}"
+          ],
+          "expected": {
+            "error": "The shader has no ISF header: a JSON object in a /* */ comment at its start"
+          }
+        },
+        {
+          "name": "a header that isn't JSON",
+          "args": [
+            "/*{ INPUTS: [] }*/ void main() {}"
+          ],
+          "expected": {
+            "error": "The ISF header is not valid JSON"
+          }
+        },
+        {
+          "name": "a name GLSL can't take",
+          "args": [
+            "/*{\"INPUTS\":[{\"NAME\":\"2fast\",\"TYPE\":\"float\"}]}*/"
+          ],
+          "expected": {
+            "error": "An input's NAME must be a GLSL name: \"2fast\""
+          }
+        },
+        {
+          "name": "two of one name",
+          "args": [
+            "/*{\"INPUTS\":[{\"NAME\":\"a\",\"TYPE\":\"float\"},{\"NAME\":\"a\",\"TYPE\":\"bool\"}]}*/"
+          ],
+          "expected": {
+            "error": "Two inputs are named a"
+          }
+        },
+        {
+          "name": "a type ISF doesn't know",
+          "args": [
+            "/*{\"INPUTS\":[{\"NAME\":\"a\",\"TYPE\":\"vec3\"}]}*/"
+          ],
+          "expected": {
+            "error": "a's TYPE isn't one ISF knows: \"vec3\""
+          }
+        },
+        {
+          "name": "several passes",
+          "args": [
+            "/*{\"PASSES\":[{\"TARGET\":\"a\"},{}]}*/"
+          ],
+          "expected": {
+            "error": "Shaders with several passes aren't drawn yet"
+          }
+        }
+      ]
+    },
+    "readIsfValues": {
+      "about": "The values a screen gives a shader's controls (issue #297): those saved, kept within range (a choice among its values), else the input's default; the ones a screen fills itself, images and a value of the wrong kind left out.",
+      "params": [
+        "source",
+        "values"
+      ],
+      "cases": [
+        {
+          "name": "saved, out of range, of the wrong kind, missing",
+          "args": [
+            "/*{\"INPUTS\":[{\"NAME\":\"speed\",\"TYPE\":\"float\",\"MIN\":0,\"MAX\":2,\"DEFAULT\":1},{\"NAME\":\"size\",\"TYPE\":\"float\",\"MIN\":0,\"MAX\":1,\"DEFAULT\":0.5},{\"NAME\":\"on\",\"TYPE\":\"bool\",\"DEFAULT\":false},{\"NAME\":\"tint\",\"TYPE\":\"color\",\"DEFAULT\":[0,0,0,1]},{\"NAME\":\"mode\",\"TYPE\":\"long\",\"VALUES\":[0,2],\"DEFAULT\":0},{\"NAME\":\"sv_pulse\",\"TYPE\":\"float\"},{\"NAME\":\"picture\",\"TYPE\":\"image\"}]}*/",
+            {
+              "speed": 9,
+              "size": "big",
+              "on": true,
+              "tint": [
+                2,
+                0.5,
+                0.25,
+                1
+              ],
+              "mode": 1,
+              "sv_pulse": 1,
+              "gone": 3
+            }
+          ],
+          "expected": {
+            "speed": 2,
+            "size": 0.5,
+            "on": true,
+            "tint": [
+              1,
+              0.5,
+              0.25,
+              1
+            ],
+            "mode": 0
+          }
+        },
+        {
+          "name": "nothing saved: the defaults",
+          "args": [
+            "/*{\"INPUTS\":[{\"NAME\":\"speed\",\"TYPE\":\"float\",\"MIN\":0,\"MAX\":2,\"DEFAULT\":1}]}*/",
+            null
+          ],
+          "expected": {
+            "speed": 1
+          }
         }
       ]
     },
@@ -4174,7 +4749,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -4255,7 +4835,12 @@
               "reactive": true,
               "motion": 0.7,
               "media": null,
-              "dim": 0.15
+              "dim": 0.15,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -4335,7 +4920,12 @@
               "reactive": false,
               "motion": 0.2,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -4416,7 +5006,12 @@
               "reactive": true,
               "motion": 0.5,
               "media": null,
-              "dim": 0.25
+              "dim": 0.25,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -4496,7 +5091,12 @@
               "reactive": true,
               "motion": 0.4,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -4575,7 +5175,12 @@
               "reactive": true,
               "motion": 0.6,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -4653,7 +5258,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": false,
@@ -4731,7 +5341,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,
@@ -4809,7 +5424,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": false,
@@ -5251,7 +5871,12 @@
               "reactive": false,
               "motion": 0.5,
               "media": null,
-              "dim": 0
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
             },
             "title": {
               "show": true,

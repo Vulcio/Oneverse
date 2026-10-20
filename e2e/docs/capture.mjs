@@ -412,6 +412,21 @@ try {
       await page.screenshot({ path: path.join(dir, "screen-backgrounds.jpg"), type: "jpeg", quality: 85, clip: { x, y, width: right - x, height: bottom - y } });
       console.log("  screen-backgrounds");
     }
+    // A shader background (issue #297): the built-in Mesh gradient, customized, its controls.
+    await shoot(
+      "screen-shader",
+      "/screens?tab=templates",
+      async () => {
+        await page.getByTestId("templates-view-background").click();
+        await page.getByTestId("builtin-part-mesh-gradient").getByTestId("customize-part").click();
+        await page.locator('[data-testid="theme-shader-input"][data-name="softness"]').waitFor();
+        await page.getByTestId("theme-shader-controls").scrollIntoViewIfNeeded();
+        await page.waitForTimeout(1500);
+      },
+      { element: page.getByTestId("part-editor") },
+    );
+    await page.keyboard.press("Escape");
+    await page.getByTestId("part-editor").waitFor({ state: "detached" });
     // Effects (issue #281): the built-in Concert effects, customized.
     await shoot(
       "screen-effects",

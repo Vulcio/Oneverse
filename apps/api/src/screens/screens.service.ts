@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, GoneException, Injectable, NotFoundException } from "@nestjs/common";
-import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, type ScreenMode, type ScreenOwnerRequest } from "@songverse/core";
+import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, readScreenReport, screenTier, type ScreenMode, type ScreenReport, type ScreenTier, type ScreenOwnerRequest } from "@songverse/core";
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
@@ -10,7 +10,7 @@ import { SetlistsService } from "../setlists/setlists.service.js";
 
 /** How long a pairing code waits to be confirmed. */
 export const PAIRING_TTL_S = 10 * 60;
-import { SCREEN_CHANNEL, screenOnlineKey } from "./screen-channel.js";
+import { SCREEN_CHANNEL, screenOnlineKey, screenReportKey } from "./screen-channel.js";
 import { templateLayout, templateLook, TEMPLATE_PARTS_SELECT, type TemplateParts } from "./screen-templates.js";
 import { ScreenThemesService } from "./screen-themes.service.js";
 
@@ -468,10 +468,28 @@ const manages = (user: AuthenticatedUser, scope: Scope, screen: Owned) =>
 const uses = (user: AuthenticatedUser, scope: Scope, screen: Owned) =>
   (!!screen.ownerTeamId && scope.teams.has(screen.ownerTeamId)) || (!!screen.ownerOrganizationId && scope.organizations.has(screen.ownerOrganizationId));
 
-/** Which of the screens are connected now (issue #267). */
-async function withOnline<T extends { id: string }>(screens: T[]): Promise<(T & { online: boolean })[]> {
-  const online = screens.length ? await redis().mget(screens.map((screen) => screenOnlineKey(screen.id))).catch(() => []) : [];
-  return screens.map((screen, i) => ({ ...screen, online: online[i] === "1" }));
+/**
+ * Which of the screens are connected now (issue #267), and, for who manages
+ * them, each one's latest report about itself with its tier (issue #286).
+ */
+async function withOnline<T extends { id: string; canManage: boolean }>(screens: T[]): Promise<(T & { online: boolean; report: (ScreenReport & { at: string; tier: ScreenTier }) | null })[]> {
+  if (screens.length === 0) return [];
+  const keys = [...screens.map((screen) => screenOnlineKey(screen.id)), ...screens.map((screen) => screenReportKey(screen.id))];
+  const values = await redis()
+    .mget(keys)
+    .catch(() => [] as (string | null)[]);
+  return screens.map((screen, i) => ({ ...screen, online: values[i] === "1", report: screen.canManage ? storedReport(values[screens.length + i]) : null }));
+}
+
+function storedReport(json: string | null | undefined): (ScreenReport & { at: string; tier: ScreenTier }) | null {
+  if (!json) return null;
+  try {
+    const stored = JSON.parse(json) as { at?: unknown };
+    const report = readScreenReport(stored);
+    return report && typeof stored.at === "string" ? { ...report, at: stored.at, tier: screenTier(report) } : null;
+  } catch {
+    return null;
+  }
 }
 
 function present(

@@ -6,13 +6,14 @@ import "@fontsource-variable/nunito";
 import "@fontsource-variable/oswald";
 import "@fontsource/bebas-neue";
 import "#/styles/screen-stage.css";
-import { SCREEN_FONT_FAMILIES, SCREEN_TEXT_BACKGROUNDS, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
+import { SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
 import { Video } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "#/components/screen-widgets";
 import { useScreenEffects, type ScreenSignals } from "#/lib/screen-effects";
 import { TextBackground, type StageText } from "#/components/screen-text-background";
+import { ShaderBackground } from "#/components/screen-shader-background";
 import { SongChart } from "#/components/song-chart";
 import { cn } from "@songverse/ui/lib/utils";
 
@@ -112,6 +113,7 @@ export function ScreenStage({
 
   const customFont = useThemeFont(assets.find((asset) => asset.id === theme.text.customFont && asset.kind === "font"));
   const media = assets.find((asset) => asset.id === theme.background.media && asset.kind === "media");
+  const shader = useShaderSource(theme, assets);
 
   const grid = theme.grid && theme.grid.widgets.length > 0 ? theme.grid : null;
   // What the operator and the screen's settings show (issues #275, #280, #287).
@@ -186,7 +188,7 @@ export function ScreenStage({
       {visible.media ? (
         // A window mask cuts through it, down to the video input and the base.
         <div className="sv-layer" style={windowMask(windows)} data-layer="media">
-          <Background theme={theme} media={media} text={text} signals={signals} />
+          <Background theme={theme} media={media} shader={shader} text={text} signals={signals} />
           {theme.effects && theme.effects.reactions.length > 0 ? <div className="sv-react-pulse" aria-hidden /> : null}
           {theme.background.dim > 0 ? <div className="sv-bg-dim" style={{ opacity: theme.background.dim }} aria-hidden /> : null}
         </div>
@@ -367,8 +369,33 @@ function useStageText(stage: RefObject<HTMLElement | null>, viewKey: string, the
   return text;
 }
 
+/**
+ * A shader background's source (issue #297): a built-in one, or the one
+ * uploaded with the theme, fetched once; null while it loads, or when the
+ * theme names none (then the built-in default).
+ */
+function useShaderSource(theme: ScreenTheme, assets: ScreenThemeAsset[]): string | null {
+  const { builtIn, asset } = theme.background.shader;
+  const file = theme.background.kind === "shader" && asset ? assets.find((one) => one.id === asset && one.kind === "shader") : undefined;
+  const [fetched, setFetched] = useState<{ url: string; source: string } | null>(null);
+  useEffect(() => {
+    if (!file || fetched?.url === file.url) return;
+    let cancelled = false;
+    fetch(file.url)
+      .then((response) => (response.ok ? response.text() : ""))
+      .catch(() => "")
+      .then((source) => !cancelled && setFetched({ url: file.url, source }));
+    return () => {
+      cancelled = true;
+    };
+  }, [file?.url]);
+  if (theme.background.kind !== "shader") return null;
+  if (file) return fetched?.url === file.url ? fetched.source : null;
+  return screenShader(builtIn) ?? SCREEN_SHADERS[0]!.source;
+}
+
 /** The background: a colour, a gradient, or lights that move (and answer the song when reactive). */
-function Background({ theme, media, text, signals }: { theme: ScreenTheme; media?: ScreenThemeAsset; text: RefObject<StageText>; signals: RefObject<ScreenSignals> }) {
+function Background({ theme, media, shader, text, signals }: { theme: ScreenTheme; media?: ScreenThemeAsset; shader: string | null; text: RefObject<StageText>; signals: RefObject<ScreenSignals> }) {
   const particles = useMemo(() => {
     // The same field every time: a seeded spread, not Math.random on each render.
     let seed = 7;
@@ -385,6 +412,7 @@ function Background({ theme, media, text, signals }: { theme: ScreenTheme; media
   const kind = (theme.background.kind === "image" || theme.background.kind === "video") && !media ? "gradient" : theme.background.kind;
   // Still: no motion asked for.
   const still = theme.background.motion === 0;
+  if (kind === "shader") return <ShaderBackground theme={theme} source={shader} text={text} signals={signals} still={still} />;
   if ((SCREEN_TEXT_BACKGROUNDS as readonly string[]).includes(kind)) {
     return (
       <div className="sv-bg" aria-hidden>

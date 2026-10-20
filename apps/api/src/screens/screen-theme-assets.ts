@@ -1,4 +1,4 @@
-import type { ScreenThemeAssetKind } from "@songverse/core";
+import { ISF_MAX_SOURCE, type ScreenThemeAssetKind } from "@songverse/core";
 import { isValidAddress, signAddress } from "../common/utils/signed-address.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -7,16 +7,18 @@ const expiry = (now: number) => (Math.floor(now / DAY_MS) + 2) * DAY_MS;
 const apiOrigin = () => new URL(process.env.AUTH_URL ?? "http://localhost:3001").origin;
 
 /** The largest of each kind a theme takes. */
-export const SCREEN_THEME_ASSET_LIMITS = { image: 15 * 1024 * 1024, video: 150 * 1024 * 1024, font: 5 * 1024 * 1024 } as const;
+export const SCREEN_THEME_ASSET_LIMITS = { image: 15 * 1024 * 1024, video: 150 * 1024 * 1024, font: 5 * 1024 * 1024, shader: ISF_MAX_SOURCE } as const;
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 const VIDEO_TYPES = new Set(["video/mp4", "video/webm"]);
+const SHADER_EXTENSIONS = new Set(["fs", "frag", "glsl", "isf"]);
 const FONT_TYPES: Record<string, string> = { woff2: "font/woff2", woff: "font/woff", ttf: "font/ttf", otf: "font/otf" };
 
 /**
  * What an upload is, for a theme (issue #194): a background picture or video
- * by its type, a font by its name's extension (browsers name font types
- * inconsistently); null when it's none of them. Never trusted to be shown
+ * by its type, a font or an ISF shader (issue #297, kept as plain text) by
+ * its name's extension (browsers name these inconsistently); null when it's
+ * none of them. Never trusted to be shown
  * as anything but these types (send-file.ts).
  */
 export function screenThemeAssetType(kind: ScreenThemeAssetKind, mimeType: string, filename: string): { mimeType: string; limit: number } | null {
@@ -26,6 +28,7 @@ export function screenThemeAssetType(kind: ScreenThemeAssetKind, mimeType: strin
     if (VIDEO_TYPES.has(type)) return { mimeType: type, limit: SCREEN_THEME_ASSET_LIMITS.video };
     return null;
   }
+  if (kind === "shader") return SHADER_EXTENSIONS.has(filename.split(".").pop()?.toLowerCase() ?? "") ? { mimeType: "text/plain", limit: SCREEN_THEME_ASSET_LIMITS.shader } : null;
   const font = FONT_TYPES[filename.split(".").pop()?.toLowerCase() ?? ""];
   return font ? { mimeType: font, limit: SCREEN_THEME_ASSET_LIMITS.font } : null;
 }

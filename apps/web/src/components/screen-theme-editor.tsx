@@ -1,6 +1,12 @@
 import {
   composeScreenTheme,
   SCREEN_BACKGROUNDS,
+  SCREEN_SHADERS,
+  readIsf,
+  readIsfValues,
+  screenShader,
+  type IsfInput,
+  type IsfValue,
   SCREEN_CONTENT_SHOWS,
   SCREEN_CONTEXT_STYLES,
   SCREEN_EFFECT_TARGETS,
@@ -38,7 +44,7 @@ import {
   type TeamSummary,
 } from "@songverse/core";
 import { ChevronLeft, ChevronRight, Copy, Pause, Pencil, Play, Plus, Trash2, TriangleAlert } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
@@ -204,7 +210,7 @@ export function ScreenThemeEditor({
     }
   }
 
-  /** A font for this (saved) content theme, or a picture or video for this background theme: uploaded, then used at once. */
+  /** A font for this (saved) content theme, or a picture, video or shader for this background theme: uploaded, then used at once. */
   async function upload(assetKind: ScreenThemeAsset["kind"], file: File | undefined) {
     if (!file || !draft.id) return;
     setUploading(assetKind);
@@ -213,6 +219,7 @@ export function ScreenThemeEditor({
       const asset = await apiClient.uploadScreenPartAsset(draft.id, assetKind, file, file.name);
       setAssets((before) => [...before, asset]);
       if (assetKind === "font") set("text", { customFont: asset.id });
+      else if (assetKind === "shader") set("background", { kind: "shader", shader: { builtIn: null, asset: asset.id, values: {} } });
       else set("background", { media: asset.id, kind: asset.mimeType.startsWith("video/") ? "video" : "image" });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -228,6 +235,7 @@ export function ScreenThemeEditor({
       setAssets((before) => before.filter((one) => one.id !== asset.id));
       if (theme.background.media === asset.id) set("background", { media: null });
       if (theme.text.customFont === asset.id) set("text", { customFont: null });
+      if (theme.background.shader.asset === asset.id) set("background", { shader: { builtIn: null, asset: null, values: {} } });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -482,6 +490,17 @@ export function ScreenThemeEditor({
                     <span className="text-xs text-muted-foreground">{t("screens.editor.saveFirst")}</span>
                   )}
                 </Field>
+              ) : null}
+              {theme.background.kind === "shader" ? (
+                <ShaderSettings
+                  theme={theme}
+                  assets={assets}
+                  saved={!!draft.id}
+                  uploading={uploading === "shader"}
+                  onShader={(shader) => set("background", { shader })}
+                  onUpload={(file) => void upload("shader", file)}
+                  onRemove={(asset) => void removeAsset(asset)}
+                />
               ) : null}
               <Field label={t("screens.editor.colors")}>
                 <div className="flex flex-wrap items-center gap-2">
@@ -932,5 +951,172 @@ function FileButton({ accept, busy, onFile, testId }: { accept: string; busy: bo
         }}
       />
     </label>
+  );
+}
+
+/**
+ * A shader background's settings (issue #297): which shader - a built-in one,
+ * or one uploaded with this background theme - and a control for each of its
+ * inputs, from its ISF header (the ones the screen fills itself left out).
+ */
+function ShaderSettings({
+  theme,
+  assets,
+  saved,
+  uploading,
+  onShader,
+  onUpload,
+  onRemove,
+}: {
+  theme: ScreenTheme;
+  assets: ScreenThemeAsset[];
+  saved: boolean;
+  uploading: boolean;
+  onShader: (shader: ScreenTheme["background"]["shader"]) => void;
+  onUpload: (file: File | undefined) => void;
+  onRemove: (asset: ScreenThemeAsset) => void;
+}) {
+  const { t } = useTranslation();
+  const shader = theme.background.shader;
+  const uploaded = assets.filter((asset) => asset.kind === "shader");
+  const file = shader.asset ? uploaded.find((asset) => asset.id === shader.asset) : undefined;
+  const [fetched, setFetched] = useState<{ url: string; source: string } | null>(null);
+  useEffect(() => {
+    if (!file || fetched?.url === file.url) return;
+    let cancelled = false;
+    fetch(file.url)
+      .then((response) => (response.ok ? response.text() : ""))
+      .catch(() => "")
+      .then((source) => !cancelled && setFetched({ url: file.url, source }));
+    return () => {
+      cancelled = true;
+    };
+  }, [file?.url]);
+  const builtIn = file ? null : (shader.builtIn ?? SCREEN_SHADERS[0]!.id);
+  const source = file ? (fetched?.url === file.url ? fetched.source : null) : (screenShader(builtIn) ?? null);
+  const read = useMemo(() => (source === null ? null : readIsf(source)), [source]);
+  const values = read && !("error" in read) ? readIsfValues(read.inputs, shader.values) : {};
+  const setValue = (name: string, value: IsfValue) => onShader({ ...shader, values: { ...shader.values, [name]: value } });
+  const label = (input: IsfInput) => (builtIn ? t(`screens.editor.shaderInputs.${input.name}`, { defaultValue: input.label ?? input.name }) : (input.label ?? input.name));
+  const hex = (rgba: number[]) => `#${rgba.slice(0, 3).map((one) => Math.round(one * 255).toString(16).padStart(2, "0")).join("")}`;
+
+  return (
+    <>
+      <Field label={t("screens.editor.shader")}>
+        <div className="flex flex-col gap-1.5" data-testid="theme-shader">
+          <div className="flex flex-wrap gap-1" role="group">
+            {SCREEN_SHADERS.map((one) => (
+              <button
+                key={one.id}
+                type="button"
+                aria-pressed={builtIn === one.id}
+                data-value={one.id}
+                onClick={() => onShader({ builtIn: one.id, asset: null, values: {} })}
+                className={cn(
+                  "h-7 rounded-md border px-2 text-xs font-medium transition-colors",
+                  builtIn === one.id ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                {t(`screens.editor.shaders.${one.id}`)}
+              </button>
+            ))}
+          </div>
+          {uploaded.length > 0 ? (
+            <ul className="flex flex-col gap-1">
+              {uploaded.map((asset) => (
+                <li key={asset.id} className="flex items-center gap-2 text-xs" data-testid="theme-shader-file">
+                  <button
+                    type="button"
+                    aria-pressed={shader.asset === asset.id}
+                    onClick={() => onShader({ builtIn: null, asset: asset.id, values: {} })}
+                    className={cn("min-w-0 flex-1 truncate rounded border px-2 py-1 text-left", shader.asset === asset.id ? "border-primary bg-primary/10" : "hover:bg-muted")}
+                  >
+                    {asset.filename}
+                  </button>
+                  <button type="button" className="text-destructive hover:underline" onClick={() => onRemove(asset)}>
+                    {t("screens.editor.removeFile")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {saved ? (
+            <FileButton accept=".fs,.frag,.glsl,.isf" busy={uploading} onFile={onUpload} testId="theme-upload-shader" />
+          ) : (
+            <span className="text-xs text-muted-foreground">{t("screens.editor.saveFirst")}</span>
+          )}
+          <span className="text-xs text-muted-foreground">{t("screens.editor.shaderHint")}</span>
+        </div>
+      </Field>
+      <Field label={t("screens.editor.shaderControls")}>
+        <div className="flex flex-col gap-2" data-testid="theme-shader-controls">
+          {read === null ? (
+            <span className="text-xs text-muted-foreground">{t("screens.editor.shaderLoading")}</span>
+          ) : "error" in read ? (
+            <span className="text-xs text-destructive" data-testid="theme-shader-error">
+              {read.error}
+            </span>
+          ) : (
+            <>
+              {read.description && !builtIn ? <span className="text-xs text-muted-foreground">{[read.description, read.credit].filter(Boolean).join(" - ")}</span> : null}
+              {read.inputs
+                .filter((input) => !input.songverse && input.name in values)
+                .map((input) => {
+                  const value = values[input.name]!;
+                  return (
+                    <div key={input.name} className="flex flex-col gap-0.5" data-testid="theme-shader-input" data-name={input.name}>
+                      <span className="text-xs">{input.type === "point2D" ? t("screens.editor.shaderPoint", { label: label(input) }) : label(input)}</span>
+                      {input.type === "float" ? (
+                        <Slider value={value as number} min={input.min ?? 0} max={input.max ?? 1} step={Math.max(0.001, ((input.max ?? 1) - (input.min ?? 0)) / 100)} onChange={(one) => setValue(input.name, one)} />
+                      ) : input.type === "long" && input.values.length > 0 ? (
+                        <NativeSelect value={String(value)} onChange={(event) => setValue(input.name, Number(event.target.value))}>
+                          {input.values.map((one, i) => (
+                            <option key={one} value={one}>
+                              {input.labels[i] || one}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      ) : input.type === "long" ? (
+                        <Slider value={value as number} min={input.min ?? 0} max={input.max ?? 10} step={1} onChange={(one) => setValue(input.name, one)} />
+                      ) : input.type === "bool" ? (
+                        <input type="checkbox" className="size-4" checked={value as boolean} onChange={(event) => setValue(input.name, event.target.checked)} aria-label={label(input)} />
+                      ) : input.type === "color" ? (
+                        <ColorInput
+                          value={hex(value as number[])}
+                          onChange={(color) => setValue(input.name, [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16) / 255).concat((value as number[])[3] ?? 1))}
+                        />
+                      ) : input.type === "point2D" ? (
+                        <div className="flex gap-2">
+                          {[0, 1].map((axis) => (
+                            <Input
+                              key={axis}
+                              type="number"
+                              step="any"
+                              className="h-8"
+                              value={(value as number[])[axis]}
+                              onChange={(event) => {
+                                const point = [...(value as number[])];
+                                point[axis] = Number(event.target.value) || 0;
+                                setValue(input.name, point);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              {read.inputs.some((input) => !input.songverse && input.name in values) ? (
+                <Button variant="outline" size="sm" className="w-fit" onClick={() => onShader({ ...shader, values: {} })}>
+                  {t("screens.editor.shaderReset")}
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">{t("screens.editor.shaderNoControls")}</span>
+              )}
+            </>
+          )}
+        </div>
+      </Field>
+    </>
   );
 }

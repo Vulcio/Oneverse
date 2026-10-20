@@ -1,5 +1,6 @@
 import { SCREEN_EFFECT_TARGETS, type ScreenTheme } from "@songverse/core";
 import { useEffect, useRef, type RefObject } from "react";
+import { screenDrawStats } from "#/lib/screen-draw-stats";
 
 type Target = (typeof SCREEN_EFFECT_TARGETS)[number];
 
@@ -67,6 +68,7 @@ export function useScreenEffects(
     const element = stage.current;
     if (!element || !active || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const levels = signals.current.levels;
+    screenDrawStats.effects = true;
     let frame = 0;
     const tick = () => {
       const time = performance.now();
@@ -87,6 +89,7 @@ export function useScreenEffects(
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
+      screenDrawStats.effects = false;
       for (const target of SCREEN_EFFECT_TARGETS) {
         element.style.removeProperty(`--react-${target}`);
         levels[target] = 0;

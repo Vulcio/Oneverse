@@ -1,7 +1,7 @@
-import { composeBuiltInTemplate, formatScreenCode, normalizeScreenCode, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
+import { composeBuiltInTemplate, formatScreenCode, normalizeScreenCode, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@songverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { Building2, MonitorCheck, MonitorUp, Plus, Settings2, User, Users, type LucideIcon } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { Fragment, useState, type FormEvent } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
 import { cn } from "@songverse/ui/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -441,6 +441,12 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
         </div>
         <p className="text-xs text-muted-foreground" data-testid="screen-status">
           {screen.online ? t("screens.online") : screen.lastSeenAt ? t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) }) : t("screens.offline")}
+          {screen.report ? (
+            <span data-testid="screen-tier" data-tier={screen.report.tier} title={t(`screens.device.tierHints.${screen.report.tier}`)}>
+              {" · "}
+              <span className={cn("inline-block size-1.5 rounded-full align-middle", TIER_COLORS[screen.report.tier])} aria-hidden /> {t(`screens.device.tiers.${screen.report.tier}`)}
+            </span>
+          ) : null}
         </p>
         <p className="truncate text-sm" data-testid="screen-set">
           {screen.setMode === "DAY"
@@ -605,6 +611,7 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
           <div className="flex min-w-0 flex-col gap-2">
             <span className="text-sm font-medium">{t("screens.preview")}</span>
             <ScreenThemePreview theme={look} assets={saved?.assets} slide={0} hiddenLayers={screen.hiddenLayers} />
+            {screen.canManage ? <ScreenDevice report={screen.report ?? null} /> : null}
           </div>
         </div>
         <DialogFooter className="flex-row items-center border-t px-4 py-3">
@@ -619,5 +626,70 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+const TIER_COLORS: Record<ScreenTier, string> = { smooth: "bg-emerald-500", limited: "bg-amber-500", minimal: "bg-red-500" };
+
+/**
+ * What the screen said about itself last (issue #286): its device and how
+ * it's drawing, with what it can run - for its owner to pick a template it
+ * keeps up with, or turn its effects off.
+ */
+function ScreenDevice({ report }: { report: NonNullable<ScreenSummary["report"]> | null }) {
+  const { t, i18n } = useTranslation();
+  if (!report) {
+    return (
+      <section className="flex flex-col gap-1 rounded-lg border p-3" data-testid="screen-device">
+        <span className="text-sm font-medium">{t("screens.device.title")}</span>
+        <p className="text-xs text-muted-foreground">{t("screens.device.none")}</p>
+      </section>
+    );
+  }
+  const { device, drawing } = report;
+  const rows: [string, string | null][] = [
+    [t("screens.device.browser"), device.browser],
+    [t("screens.device.model"), device.model],
+    [t("screens.device.gpu"), device.gpu ? `${device.gpu} · WebGL ${device.webgl}` : device.webgl ? `WebGL ${device.webgl}` : t("screens.device.noWebgl")],
+    [t("screens.device.hardware"), [device.cores ? t("screens.device.cores", { count: device.cores }) : null, device.memoryGb ? t("screens.device.memory", { gb: device.memoryGb }) : null].filter(Boolean).join(" · ") || null],
+    [
+      t("screens.device.display"),
+      device.width && device.height ? `${Math.round(device.width * (device.pixelRatio ?? 1))} × ${Math.round(device.height * (device.pixelRatio ?? 1))}` : null,
+    ],
+    [
+      t("screens.device.drawing"),
+      [
+        t(`screens.device.drawers.${drawing.drawer}`),
+        drawing.fps !== null ? t("screens.device.fps", { fps: Math.round(drawing.fps), worst: Math.round(drawing.worstMs ?? 0) }) : null,
+        drawing.scale !== null && drawing.scale < 1 ? t("screens.device.scale", { percent: Math.round(drawing.scale * 100) }) : null,
+        drawing.effects ? t("screens.device.effectsOn") : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    ],
+    [t("screens.device.problem"), drawing.error],
+  ];
+  return (
+    <section className="flex flex-col gap-2 rounded-lg border p-3" data-testid="screen-device" data-tier={report.tier}>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium">{t("screens.device.title")}</span>
+        <span className="ml-auto flex items-center gap-1.5 text-xs font-medium" data-testid="screen-device-tier">
+          <span className={cn("size-2 rounded-full", TIER_COLORS[report.tier])} aria-hidden />
+          {t(`screens.device.tiers.${report.tier}`)}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">{t(`screens.device.tierHints.${report.tier}`)}</p>
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+        {rows
+          .filter(([, value]) => value)
+          .map(([label, value]) => (
+            <Fragment key={label}>
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="break-words">{value}</dd>
+            </Fragment>
+          ))}
+      </dl>
+      <p className="text-xs text-muted-foreground">{t("screens.device.reportedAt", { when: new Date(report.at).toLocaleString(i18n.language) })}</p>
+    </section>
   );
 }

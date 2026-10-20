@@ -142,6 +142,13 @@ Ce qu'il y a sous les paroles :
   ![Courants, Cordes, Grille et Bokeh parmi les thèmes de fond](../../../assets/screenshots/fr/screen-backgrounds.jpg)
 
   La première couleur est le fond, les autres celles des traînées, cordes, cases ou disques. Avec des effets, ils bougent aussi plus vite, changent de couleur, s'éclairent ou grossissent, selon **Sa réponse aux effets**. Avec un **Mouvement** à 0, ils restent immobiles.
+- Un **Shader** est dessiné par la puce graphique de l'écran (WebGL) : **Dégradé maillé** (des couleurs douces qui se fondent les unes dans les autres), **Lignes lumineuses** (des lignes qui ondulent sur l'écran) ou **Braises** (des points de lumière qui montent en profondeur). Chacun a ses **Réglages du shader** - vitesse, douceur, nombre, etc. - et reste plus calme derrière les paroles. **Réinitialiser les réglages** les remet par défaut.
+
+  ![Un fond shader et ses réglages](../../../assets/screenshots/fr/screen-shader.jpg)
+
+  Vous pouvez aussi **Envoyer…** le vôtre : un shader [ISF](https://isf.video) (un fichier `.fs` jusqu'à 64 Ko), le format de VDMX, Resolume et de nombreux sites de shaders. Ses entrées deviennent ses réglages ; l'écran remplit celles nommées `sv_color1` à `sv_color4` (les couleurs du thème), `sv_movement`, `sv_hue`, `sv_brightness`, `sv_elements`, `sv_pulse` (ce que déclenchent les effets, de 0 à 1) et `sv_words` (une image, blanche là où sont les paroles). Un fichier sans en-tête ISF est refusé ; un que l'écran ne peut pas dessiner montre les couleurs à la place. Les shaders à plusieurs passes ne sont pas encore dessinés.
+
+  Un écran qui ne suit pas dessine le shader plus petit et l'étire, puis plus net dès qu'il peut : une clé TV bouge encore sans à-coups, un mini PC le dessine en pleine taille.
 - **Sa réponse aux effets** - à quel point son **Mouvement**, son **Changement de couleur**, sa **Luminosité** et ses **Éléments** (taches, vagues, particules, faisceaux) bougent quand des effets les déclenchent.
 
 Les polices et les images s'ajoutent à un thème de contenu ou de fond enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage.
@@ -153,6 +160,8 @@ Les effets relient les paroles au fond. **Réactions** : **Quand** une diapositi
 ![Effets : réactions et mouvement des paroles](../../../assets/screenshots/fr/screen-effects.jpg)
 
 Un écran qui ne suit pas - une vieille télé, une petite clé HDMI - peut désactiver les **Effets** dans les **Réglages** de sa vignette : il affiche le même modèle, sans les réactions ni le mouvement des paroles.
+
+Chaque écran dit ce qu'il est et comment il dessine, toutes les demi-minutes tant qu'il est connecté : sa vignette montre s'il suit - **Fluide**, **Limité** ou **Minimal** - et ses **Réglages** montrent son **Appareil** : le navigateur et le modèle, sa puce graphique et le WebGL qu'il a, ses cœurs et sa mémoire, son écran, et comment son fond se dessine (images par seconde, l'image la plus lente, la résolution d'un shader). **Fluide** fait tout tourner ; **Limité** fait tourner les shaders en résolution réduite et des effets légers (une clé TV comme un Chromecast, un Raspberry Pi sur un grand écran) ; **Minimal** doit s'en tenir aux fonds fixes, sans effets.
 
 ### Calques
 

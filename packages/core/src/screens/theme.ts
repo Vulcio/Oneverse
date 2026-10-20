@@ -36,13 +36,14 @@ export const SCREEN_POSITIONS = ["top", "center", "bottom", "lower-third"] as co
  * A still colour, a gradient, or a moving background that answers the words.
  * Flow, strings, grid and bokeh (issue #296) also follow where the words are
  * on the screen: trails part around them, strings bend away, cells light up
- * under each word, discs gather behind the line.
+ * under each word, discs gather behind the line. A shader (issue #297) is an
+ * ISF fragment shader, built in or uploaded, drawn with WebGL.
  */
-export const SCREEN_BACKGROUNDS = ["color", "gradient", "aurora", "waves", "particles", "spotlight", "image", "video", "flow", "strings", "grid", "bokeh"] as const;
+export const SCREEN_BACKGROUNDS = ["color", "gradient", "aurora", "waves", "particles", "spotlight", "image", "video", "flow", "strings", "grid", "bokeh", "shader"] as const;
 /** The backgrounds drawn on a canvas, following the words (issue #296). */
 export const SCREEN_TEXT_BACKGROUNDS = ["flow", "strings", "grid", "bokeh"] as const;
-/** What a theme's own files are for (issue #194): a background picture or looping video, or a font. */
-export const SCREEN_THEME_ASSET_KINDS = ["media", "font"] as const;
+/** What a theme's own files are for (issue #194): a background picture or looping video, a font, or an ISF shader (issue #297). */
+export const SCREEN_THEME_ASSET_KINDS = ["media", "font", "shader"] as const;
 export type ScreenThemeAssetKind = (typeof SCREEN_THEME_ASSET_KINDS)[number];
 /** How one slide gives way to the next. */
 export const SCREEN_TRANSITIONS = ["cut", "fade", "slide", "rise", "scale", "blur", "zoom"] as const;
@@ -351,6 +352,15 @@ function screenThemeSchema(strict: boolean) {
       media: z.string().max(40).nullable().default(null),
       /** Darkens it under the words, 0 to 0.9: words stay readable over anything. */
       dim: z.number().min(0).max(0.9).default(0),
+      /** A "shader" background (issue #297): a built-in one (SCREEN_SHADERS) or one uploaded with the theme (its asset's id), and its controls' values. */
+      shader: object({
+          builtIn: z.string().max(40).nullable().default(null),
+          asset: z.string().max(40).nullable().default(null),
+          values: z.record(z.string().max(40), z.union([z.number(), z.boolean(), z.array(z.number()).max(4)]))
+            .refine((values) => Object.keys(values).length <= 40, "background.shader.values must have at most 40 entries")
+            .default({}),
+        })
+        .prefault({}),
     })
     .prefault({}),
   title: object({

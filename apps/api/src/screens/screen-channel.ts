@@ -5,3 +5,7 @@ export const SCREEN_CHANNEL = "songverse:sync:screen";
 export const screenOnlineKey = (screenId: string) => `songverse:screen:online:${screenId}`;
 /** A little over two of a screen's pings (every 10 s): gone soon after it is. */
 export const SCREEN_ONLINE_TTL_S = 25;
+
+/** A screen's latest report about itself (issue #286), JSON: its device and how it's drawing, kept a day. */
+export const screenReportKey = (screenId: string) => `songverse:screen:report:${screenId}`;
+export const SCREEN_REPORT_TTL_S = 24 * 60 * 60;

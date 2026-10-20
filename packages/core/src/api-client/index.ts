@@ -50,6 +50,7 @@ import type { ConfirmScreenPairingRequest, CreateScreenPartRequest, CreateScreen
 import type { ScreenSwitchableLayer, ScreenTheme, ScreenWidgetKind, ScreenWidgetLook } from "../screens/theme.js";
 import type { ScreenBackgroundTheme, ScreenContentTheme, ScreenEffects, ScreenPartKind, ScreenTemplateLayout } from "../screens/parts.js";
 import type { ScreenMode } from "../screens/index.js";
+import type { ScreenReport, ScreenTier } from "../screens/reports.js";
 import type {
   CreateCatalogSchema,
   CreateInviteLinkSchema,
@@ -699,12 +700,14 @@ export interface ScreenSummary {
   hiddenLayers?: ScreenSwitchableLayer[];
   /** Effects shown (issue #281), or off on a screen that can't keep up; left out by an older API. */
   effects?: boolean;
+  /** Its latest report about itself (issue #286), with what it can run; for who manages it, and null before its first. */
+  report?: (ScreenReport & { at: string; tier: ScreenTier }) | null;
 }
 
 /** A screen theme's own file (issue #194): a background picture or video ("media"), or a font, at a signed address. */
 export interface ScreenThemeAsset {
   id: string;
-  kind: "media" | "font";
+  kind: "media" | "font" | "shader";
   mimeType: string;
   filename: string;
   url: string;
@@ -2865,7 +2868,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     updateScreenPart: (partId: string, data: UpdateScreenPartRequest) => request<ScreenPartSummary>(`/screen-parts/${partId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteScreenPart: (partId: string) => request<void>(`/screen-parts/${partId}`, { method: "DELETE" }),
     /** A background theme's picture or video ("media"), or a content theme's font. */
-    uploadScreenPartAsset: (partId: string, kind: "media" | "font", file: Blob, filename: string) => {
+    uploadScreenPartAsset: (partId: string, kind: "media" | "font" | "shader", file: Blob, filename: string) => {
       const form = new FormData();
       form.append("file", file, filename);
       return request<ScreenThemeAsset>(`/screen-parts/${partId}/assets?kind=${kind}`, { method: "POST", body: form });

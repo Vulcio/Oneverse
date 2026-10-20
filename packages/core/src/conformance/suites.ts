@@ -20,7 +20,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
@@ -1282,6 +1282,85 @@ export const CONFORMANCE: ConformanceArea[] = [
         cases: [
           { name: "the background's first colour", args: [{ background: { kind: "aurora", colors: ["#05010f", "#6d28d9"] } }] },
           { name: "its own", args: [{ base: { color: "#ffffff" }, background: { colors: ["#000000"] } }] },
+        ],
+      },
+      readScreenReport: {
+        about:
+          "A screen's report about itself (issue #286) as the server keeps it: each field the device's own word, kept short and in range - one it can't read is left out (null), the rest stay. Null: not a report at all.",
+        params: ["report"],
+        run: readScreenReport,
+        cases: [
+          {
+            name: "a TV stick drawing a shader",
+            args: [
+              {
+                device: { browser: "Chrome 128 on Android 12", model: "Chromecast", cores: 4, memoryGb: 2, width: 1920, height: 1080, pixelRatio: 1, gpu: "Mali-G31", webgl: 2, maxTexture: 8192 },
+                drawing: { fps: 41.5, worstMs: 48, scale: 0.64, drawer: "shader", error: null, effects: true },
+                uptimeS: 3600,
+              },
+            ],
+          },
+          { name: "fields it can't read: left out", args: [{ device: { cores: -2, memoryGb: "lots", webgl: 3, gpu: 12 }, drawing: { drawer: "vulkan", fps: 1e9 }, uptimeS: 1.5 }] },
+          { name: "nothing said: all unknown", args: [{}] },
+          { name: "not a report", args: ["fast"] },
+        ],
+      },
+      screenTier: {
+        about:
+          "What a screen can run, from its report (issue #286): minimal without WebGL, under 25 frames a second or with 1 GB or less; limited with WebGL 1, under 50 frames a second or a shader drawn at under 3/4 of its pixels; smooth when it measured itself drawing faster; measuring nothing, limited with 2 GB or less or 2 cores or fewer, else smooth.",
+        params: ["report"],
+        run: (input: unknown) => screenTier(readScreenReport(input)!),
+        cases: [
+          { name: "no WebGL", args: [{ device: { webgl: 0, cores: 8, memoryGb: 8 } }] },
+          { name: "a shader at 20 fps", args: [{ device: { webgl: 2 }, drawing: { drawer: "shader", fps: 20, scale: 0.3 } }] },
+          { name: "a shader at 41 fps", args: [{ device: { webgl: 2 }, drawing: { drawer: "shader", fps: 41, scale: 1 } }] },
+          { name: "a shader at 60 fps, drawn at half resolution", args: [{ device: { webgl: 2 }, drawing: { drawer: "shader", fps: 60, scale: 0.5 } }] },
+          { name: "a shader at 60 fps, full resolution, on 2 GB", args: [{ device: { webgl: 2, memoryGb: 2, cores: 4 }, drawing: { drawer: "shader", fps: 60, scale: 1 } }] },
+          { name: "a still background on 2 GB and 4 cores", args: [{ device: { webgl: 2, memoryGb: 2, cores: 4 } }] },
+          { name: "a still background on 8 GB and 2 cores", args: [{ device: { webgl: 2, memoryGb: 8, cores: 2 } }] },
+          { name: "a still background on a mini PC", args: [{ device: { webgl: 2, memoryGb: 8, cores: 4 } }] },
+          { name: "WebGL 1", args: [{ device: { webgl: 1, memoryGb: 8, cores: 8 } }] },
+        ],
+      },
+      readIsf: {
+        about:
+          "An ISF shader as every client reads it (issue #297): the JSON header in a comment at its start - its inputs, each with its range and default (a float kept within its range, a colour's channels 0 to 1), the ones a screen fills itself (sv_) marked - and the GLSL after it. An error instead when it can't be used: empty, no header, a header that isn't JSON, an input that isn't a GLSL name or of a type ISF doesn't know, two inputs of one name, several passes.",
+        params: ["source"],
+        run: readIsf,
+        cases: [
+          {
+            name: "a float, a bool, a colour, a choice and one the screen fills",
+            args: [
+              '/*{"DESCRIPTION":"Test","CREDIT":"Songverse","CATEGORIES":["Generator"],"INPUTS":[{"NAME":"speed","LABEL":"Speed","TYPE":"float","MIN":0,"MAX":2,"DEFAULT":5},{"NAME":"on","TYPE":"bool","DEFAULT":1},{"NAME":"tint","TYPE":"color","DEFAULT":[1.5,0.5,0]},{"NAME":"mode","TYPE":"long","VALUES":[0,1,2],"LABELS":["A","B","C"],"DEFAULT":1},{"NAME":"sv_hue","TYPE":"float"},{"NAME":"sv_words","TYPE":"image"}]}*/\nvoid main() { gl_FragColor = vec4(1.0); }\n',
+            ],
+          },
+          { name: "no inputs", args: ['/* {} */ void main() {}'] },
+          { name: "empty", args: [""] },
+          { name: "no header", args: ["void main() {}"] },
+          { name: "a header that isn't JSON", args: ["/*{ INPUTS: [] }*/ void main() {}"] },
+          { name: "a name GLSL can't take", args: ['/*{"INPUTS":[{"NAME":"2fast","TYPE":"float"}]}*/'] },
+          { name: "two of one name", args: ['/*{"INPUTS":[{"NAME":"a","TYPE":"float"},{"NAME":"a","TYPE":"bool"}]}*/'] },
+          { name: "a type ISF doesn't know", args: ['/*{"INPUTS":[{"NAME":"a","TYPE":"vec3"}]}*/'] },
+          { name: "several passes", args: ['/*{"PASSES":[{"TARGET":"a"},{}]}*/'] },
+        ],
+      },
+      readIsfValues: {
+        about:
+          "The values a screen gives a shader's controls (issue #297): those saved, kept within range (a choice among its values), else the input's default; the ones a screen fills itself, images and a value of the wrong kind left out.",
+        params: ["source", "values"],
+        run: (source: string, values: unknown) => {
+          const shader = readIsf(source);
+          return "error" in shader ? shader : readIsfValues(shader.inputs, values);
+        },
+        cases: [
+          {
+            name: "saved, out of range, of the wrong kind, missing",
+            args: [
+              '/*{"INPUTS":[{"NAME":"speed","TYPE":"float","MIN":0,"MAX":2,"DEFAULT":1},{"NAME":"size","TYPE":"float","MIN":0,"MAX":1,"DEFAULT":0.5},{"NAME":"on","TYPE":"bool","DEFAULT":false},{"NAME":"tint","TYPE":"color","DEFAULT":[0,0,0,1]},{"NAME":"mode","TYPE":"long","VALUES":[0,2],"DEFAULT":0},{"NAME":"sv_pulse","TYPE":"float"},{"NAME":"picture","TYPE":"image"}]}*/',
+              { speed: 9, size: "big", on: true, tint: [2, 0.5, 0.25, 1], mode: 1, sv_pulse: 1, gone: 3 },
+            ],
+          },
+          { name: "nothing saved: the defaults", args: ['/*{"INPUTS":[{"NAME":"speed","TYPE":"float","MIN":0,"MAX":2,"DEFAULT":1}]}*/', null] },
         ],
       },
       placeScreenWidget: {

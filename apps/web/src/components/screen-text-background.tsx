@@ -1,5 +1,6 @@
 import type { ScreenTheme } from "@songverse/core";
 import { useEffect, useRef, type RefObject } from "react";
+import { frameMeter, screenDrawStats } from "#/lib/screen-draw-stats";
 import type { ScreenSignals } from "#/lib/screen-effects";
 
 /** Where the words are on the stage, as fractions of it (0 to 1), and when each word appears (performance.now()). */
@@ -30,7 +31,6 @@ export function TextBackground({ kind, theme, text, signals, still }: { kind: Ki
   const canvas = useRef<HTMLCanvasElement>(null);
   const colors = theme.background.colors;
   const motion = theme.background.motion;
-  const reacts = theme.reacts;
   useEffect(() => {
     const element = canvas.current;
     const context = element?.getContext("2d");
@@ -59,9 +59,14 @@ export function TextBackground({ kind, theme, text, signals, still }: { kind: Ki
     let last = performance.now();
     // A slow device: fewer things drawn, from how long frames take.
     let slow = 0;
+    const meter = frameMeter();
+    screenDrawStats.drawer = "canvas";
+    screenDrawStats.scale = 1;
     const draw = (time: number) => {
+      const measured = meter.frame(time - last);
       const dt = Math.min(64, time - last);
       last = time;
+      if (measured) Object.assign(screenDrawStats, measured);
       slow = slow * 0.95 + (dt > 24 ? 1 : 0) * 0.05;
       const levels = signals.current?.levels ?? { pulse: 0, movement: 0, hue: 0, brightness: 0, elements: 0 };
       scene.draw(context, {
@@ -71,10 +76,11 @@ export function TextBackground({ kind, theme, text, signals, still }: { kind: Ki
         dt: still || reduced ? 0 : dt,
         motion,
         text: text.current ?? { lines: [], words: [], key: 0 },
-        movement: levels.movement * reacts.movement,
-        hue: levels.hue * reacts.hue,
-        brightness: levels.brightness * reacts.brightness + levels.pulse * 0.6,
-        elements: levels.elements * reacts.elements,
+        // The levels already carry how much the background answers (theme.reacts).
+        movement: levels.movement,
+        hue: levels.hue,
+        brightness: levels.brightness + levels.pulse * 0.6,
+        elements: levels.elements,
         quality: slow > 0.5 ? 0.5 : 1,
       });
       if (still || reduced) return;
@@ -91,8 +97,9 @@ export function TextBackground({ kind, theme, text, signals, still }: { kind: Ki
       cancelAnimationFrame(frame);
       observer.disconnect();
       seen.disconnect();
+      Object.assign(screenDrawStats, { drawer: "css", fps: null, worstMs: null });
     };
-  }, [kind, colors.join(), motion, reacts.movement, reacts.hue, reacts.brightness, reacts.elements, still]);
+  }, [kind, colors.join(), motion, still]);
   return <canvas ref={canvas} className="absolute inset-0 size-full" data-testid="screen-text-background" data-kind={kind} aria-hidden />;
 }
 

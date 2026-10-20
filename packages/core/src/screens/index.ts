@@ -71,6 +71,9 @@ export function formatScreenCode(code: string): string {
 }
 export * from "./theme.js";
 export * from "./parts.js";
+export * from "./isf.js";
+export * from "./shaders.js";
+export * from "./reports.js";
 
 export * from "./timers.js";
 export * from "./day-set.js";

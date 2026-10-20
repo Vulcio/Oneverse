@@ -1,5 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
-import { applyStageCommand, readItemTimer, STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_DOC_UPDATE_MAX, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStage, type SyncStageCommand, type SyncStems } from "@songverse/core";
+import { applyStageCommand, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_DOC_UPDATE_MAX, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStage, type SyncStageCommand, type SyncStems } from "@songverse/core";
 import type { Redis } from "ioredis";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, Server } from "node:http";
@@ -11,7 +11,7 @@ import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
 import { SCREEN_CHANNEL, ScreensService } from "../screens/screens.service.js";
-import { SCREEN_ONLINE_TTL_S, screenOnlineKey } from "../screens/screen-channel.js";
+import { SCREEN_ONLINE_TTL_S, SCREEN_REPORT_TTL_S, screenOnlineKey, screenReportKey } from "../screens/screen-channel.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { NOTES_CHANNEL, NotesService } from "../notes/notes.service.js";
 import { SONG_CHANNEL, type SongSaved } from "../song-versions/song-announce.js";
@@ -72,6 +72,8 @@ interface Connection {
   setId: string | null;
   canLead: boolean;
   accessCheckedAt: number;
+  /** A screen's last report kept (issue #286), ms. */
+  reportedAt?: number;
   /**
    * Its messages handled one after the other (pings aside): a leader's two
    * quick updates - another song, then its slide - each read the session and
@@ -201,7 +203,8 @@ export class SyncServer implements OnModuleDestroy {
     }
     if (message.type === "hello") return this.signIn(connection, message.token);
     if (message.type === "screen") return this.signInScreen(connection, message.token);
-    // A screen only follows: it pings, and that's all.
+    if (message.type === "report") return this.report(connection, message.report);
+    // A screen only follows: it pings and reports, and that's all.
     if (connection.screen) return this.send(connection, { type: "error", code: "forbidden", message: "A screen only follows its set" });
     if (!connection.user) return this.send(connection, { type: "error", code: "unauthorized", message: "Sign in first" });
     switch (message.type) {
@@ -499,6 +502,21 @@ export class SyncServer implements OnModuleDestroy {
     connection.canLead = false;
     await this.present(connection);
     await this.changed(setId);
+  }
+
+  /** A screen's report about itself (issue #286): read, and kept a day for Screens to show; from a screen only, not more than every few seconds. */
+  private async report(connection: Connection, input: unknown) {
+    if (!connection.screen) return this.send(connection, { type: "error", code: "forbidden", message: "Only a screen reports" });
+    const now = Date.now();
+    if (connection.reportedAt && now - connection.reportedAt < SCREEN_REPORT_MIN_GAP_MS) return;
+    const report = readScreenReport(input);
+    if (!report) return this.send(connection, { type: "error", code: "bad-request", message: "Not a screen report" });
+    connection.reportedAt = now;
+    try {
+      await redis().set(screenReportKey(connection.screen.id), JSON.stringify({ ...report, at: new Date(now).toISOString() }), "EX", SCREEN_REPORT_TTL_S);
+    } catch {
+      // Only for show, as whether it's online.
+    }
   }
 
   /** Whether a screen is connected (issue #267), for Screens to show: set with each of its pings, gone when it goes. */

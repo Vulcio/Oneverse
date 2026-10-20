@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, PayloadTooLargeException } from "@nestjs/common";
-import { readScreenBackgroundTheme, readScreenContentTheme, readScreenEffects, SCREEN_PART_REQUEST_SCHEMAS, type CreateScreenPartRequest, type ScreenPartKind, type ScreenThemeAssetKind, type UpdateScreenPartRequest } from "@songverse/core";
+import { readIsf, readScreenBackgroundTheme, readScreenContentTheme, readScreenEffects, SCREEN_PART_REQUEST_SCHEMAS, type CreateScreenPartRequest, type ScreenPartKind, type ScreenThemeAssetKind, type UpdateScreenPartRequest } from "@songverse/core";
 import type { Prisma } from "@songverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
@@ -24,8 +24,8 @@ const PART_SELECT = {
 } as const;
 type PartRow = Prisma.ScreenPartGetPayload<{ select: typeof PART_SELECT }>;
 
-/** Each kind's file: a content theme's fonts, a background theme's pictures and videos; effects have none. */
-const ASSET_KIND: Record<ScreenPartKind, ScreenThemeAssetKind | null> = { content: "font", background: "media", effects: null };
+/** Each kind's files: a content theme's fonts, a background theme's pictures, videos and shaders; effects have none. */
+const ASSET_KINDS: Record<ScreenPartKind, ScreenThemeAssetKind[]> = { content: ["font"], background: ["media", "shader"], effects: [] };
 
 /**
  * Templates' parts (issue #281): content themes, background themes and
@@ -85,16 +85,21 @@ export class ScreenPartsService {
   }
 
   /**
-   * A part's own file: a content theme's font, a background theme's picture
-   * or looping video. Counts against the uploader's storage; the part's
-   * document then refers to it by id (text.customFont, background.media).
+   * A part's own file: a content theme's font, a background theme's picture,
+   * looping video or ISF shader. Counts against the uploader's storage; the part's
+   * document then refers to it by id (text.customFont, background.media, background.shader.asset).
    */
   async addAsset(user: AuthenticatedUser, partId: string, kind: ScreenThemeAssetKind, file: { buffer: Buffer; mimetype: string; originalname: string; size: number }) {
     const part = await this.changeable(user, partId);
-    if (ASSET_KIND[part.kind as ScreenPartKind] !== kind) throw new BadRequestException(part.kind === "content" ? "A content theme takes fonts" : part.kind === "background" ? "A background theme takes pictures and videos" : "Effects take no files");
+    if (!ASSET_KINDS[part.kind as ScreenPartKind].includes(kind)) throw new BadRequestException(part.kind === "content" ? "A content theme takes fonts" : part.kind === "background" ? "A background theme takes pictures, videos and shaders" : "Effects take no files");
     const type = screenThemeAssetType(kind, file.mimetype, file.originalname);
-    if (!type) throw new BadRequestException(kind === "font" ? "A font is a WOFF2, WOFF, TTF or OTF file" : "A picture (JPEG, PNG, WebP, AVIF, GIF) or a video (MP4, WebM)");
-    if (file.size > type.limit) throw new PayloadTooLargeException(`This file is over ${Math.round(type.limit / 1024 / 1024)} MB`);
+    if (!type) throw new BadRequestException(kind === "font" ? "A font is a WOFF2, WOFF, TTF or OTF file" : kind === "shader" ? "A shader is an ISF file (.fs, .frag, .glsl or .isf)" : "A picture (JPEG, PNG, WebP, AVIF, GIF) or a video (MP4, WebM)");
+    if (file.size > type.limit) throw new PayloadTooLargeException(type.limit < 1024 * 1024 ? `This file is over ${Math.round(type.limit / 1024)} KB` : `This file is over ${Math.round(type.limit / 1024 / 1024)} MB`);
+    if (kind === "shader") {
+      // Checked as every screen will read it: a shader without a usable ISF header isn't kept.
+      const shader = readIsf(file.buffer.toString("utf8"));
+      if ("error" in shader) throw new BadRequestException(shader.error);
+    }
     await this.quota.assertCanStore(user.id, file.size);
     const stored = await this.storage.put(file.buffer, type.mimeType);
     const asset = await this.prisma.client.screenThemeAsset.create({
