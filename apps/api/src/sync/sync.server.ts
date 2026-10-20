@@ -103,6 +103,9 @@ export class SyncServer implements OnModuleDestroy {
   private readonly logger = new Logger("Sync");
   private readonly instance = randomUUID();
   private readonly connections = new Map<string, Connection>();
+  /** Each set's broadcasts, one after another, and those waiting to start (see queueBroadcast). */
+  private readonly broadcasts = new Map<string, Promise<void>>();
+  private readonly waiting = new Set<string>();
   private wss: WebSocketServer | null = null;
   private subscriber: Redis | null = null;
   private presenceTimer: ReturnType<typeof setInterval> | null = null;
@@ -134,7 +137,7 @@ export class SyncServer implements OnModuleDestroy {
       else if (channel === PRESENCE_CHANNEL) void this.presenceChanged(id);
       else if (channel === NOTIFICATIONS_CHANNEL) this.notificationsChanged(id);
       else if (channel === DOC_CHANNEL) this.docAnnounced(id);
-      else void this.broadcastLocal(id);
+      else this.queueBroadcast(id);
     });
     this.presenceTimer = setInterval(() => void this.refreshPresence(), PRESENCE_MS);
   }
@@ -751,6 +754,27 @@ export class SyncServer implements OnModuleDestroy {
         await keepRoom(songVersionId).catch(() => undefined);
       }
     }
+  }
+
+  /**
+   * A set changed: its session sent again, after the one being sent. Run side
+   * by side, an earlier read could reach the devices after a later one and
+   * leave them on a stale session or stage (a layer the operator turned on,
+   * never shown). One already waiting will read the latest: no second.
+   */
+  private queueBroadcast(setId: string) {
+    if (this.waiting.has(setId)) return;
+    this.waiting.add(setId);
+    const next = (this.broadcasts.get(setId) ?? Promise.resolve())
+      .then(() => {
+        this.waiting.delete(setId);
+        return this.broadcastLocal(setId);
+      })
+      .catch((err: unknown) => this.logger.error(`Can't send the session of ${setId}: ${String(err)}`))
+      .finally(() => {
+        if (this.broadcasts.get(setId) === next) this.broadcasts.delete(setId);
+      });
+    this.broadcasts.set(setId, next);
   }
 
   /** The session and who's there, to this instance's connections in the set. */

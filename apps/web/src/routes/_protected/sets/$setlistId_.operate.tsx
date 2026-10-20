@@ -8,6 +8,8 @@ import {
   type SetlistOfflineCopy,
   type SetlistSongView,
   type SongNote,
+  type SyncLayers,
+  type SyncPresenting,
   type SyncStageCommand,
   type TeamMember,
   type TeamPosition,
@@ -239,14 +241,31 @@ function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: Se
   const sync = useSync();
   const canPresent = useCanPresent();
   const slides = useSetSlides(copy);
+  // What these keys last sent, until the server's answer comes back: a key pressed again before it toggles from
+  // there, not from a state the screens have already left (B twice quickly: black, then back).
+  const sent = useRef<{ presenting?: SyncPresenting | null; layers?: SyncLayers }>({});
+  useEffect(() => {
+    sent.current.presenting = undefined;
+  }, [sync.session?.presenting]);
+  useEffect(() => {
+    sent.current.layers = undefined;
+  }, [sync.stage?.layers]);
   const handle = useRef<(event: KeyboardEvent) => void>(() => undefined);
   handle.current = (event) => {
     const target = event.target as HTMLElement | null;
     if (event.ctrlKey || event.metaKey || event.altKey || target?.closest("input, textarea, select, [contenteditable=true], [aria-roledescription=sortable]")) return;
-    const presenting = sync.session?.presenting ?? null;
-    const layers = sync.stage?.layers ?? DEFAULT_SYNC_LAYERS;
+    const presenting = sent.current.presenting !== undefined ? sent.current.presenting : (sync.session?.presenting ?? null);
+    const layers = sent.current.layers ?? sync.stage?.layers ?? DEFAULT_SYNC_LAYERS;
+    const show = (next: SyncPresenting | null) => {
+      sent.current.presenting = next;
+      presentScreens(next);
+    };
+    const layer = (change: Partial<SyncLayers>) => {
+      sent.current.layers = { ...layers, ...change };
+      onLayers({ layers: change });
+    };
     const present = (item: string, slide: number) => {
-      presentScreens({ itemId: item, slide, black: false });
+      show({ itemId: item, slide, black: false });
       if (item !== itemId) onLook(item);
     };
     const at = presenting ? slides.findIndex((one) => one.itemId === presenting.itemId) : -1;
@@ -277,13 +296,13 @@ function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: Se
       },
       Home: () => presenting && present(presenting.itemId, 0),
       End: () => presenting && at >= 0 && slides[at]!.count && present(presenting.itemId, slides[at]!.count - 1),
-      b: () => presenting && presentScreens({ ...presenting, black: !presenting.black }),
-      ".": () => presenting && presentScreens({ ...presenting, black: !presenting.black }),
-      s: () => presenting && presentScreens(null),
-      w: () => onLayers({ layers: { words: !layers.words } }),
-      g: () => onLayers({ layers: { background: !layers.background } }),
-      t: () => onLayers({ layers: { overlay: layers.overlay === "title" ? "none" : "title" } }),
-      c: () => onLayers({ layers: DEFAULT_SYNC_LAYERS }),
+      b: () => presenting && show({ ...presenting, black: !presenting.black }),
+      ".": () => presenting && show({ ...presenting, black: !presenting.black }),
+      s: () => presenting && show(null),
+      w: () => layer({ words: !layers.words }),
+      g: () => layer({ background: !layers.background }),
+      t: () => layer({ overlay: layers.overlay === "title" ? "none" : "title" }),
+      c: () => layer(DEFAULT_SYNC_LAYERS),
     };
     const run = action[key];
     // A focused button or link keeps its own Enter.

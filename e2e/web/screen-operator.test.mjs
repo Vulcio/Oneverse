@@ -245,6 +245,8 @@ try {
     await at(items[0].id).waitFor({ timeout: 10000 });
     await desk.keyboard.press("b");
     await tv.locator('[data-testid="screen-showing"][data-black="true"]').waitFor({ timeout: 5000 });
+    // The page shows it too (Black screen pressed), as the operator would see before pressing again.
+    await desk.locator('[data-testid="operator-black"][aria-pressed="true"]').waitFor({ timeout: 5000 });
     await desk.keyboard.press("b");
     await tv.locator('[data-testid="screen-showing"][data-black="false"]').waitFor({ timeout: 5000 });
     await desk.keyboard.press("w");
