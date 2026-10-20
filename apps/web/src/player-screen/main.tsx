@@ -12,10 +12,11 @@ type Snapshot = {
   index: number;
 };
 
-const theme = composeBuiltInTemplate("classic");
-if (!theme) throw new Error("Built-in classic screen theme is unavailable");
+const builtIn = composeBuiltInTemplate("classic");
+if (!builtIn) throw new Error("Built-in classic screen theme is unavailable");
+const theme = builtIn;
 
-void i18next.init({ lng: "en", fallbackLng: "en", resources: { en: { translation: {} } }, initImmediate: false });
+void i18next.init({ lng: "en", fallbackLng: "en", resources: { en: { translation: {} } }, initAsync: false });
 
 function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
