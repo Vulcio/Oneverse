@@ -1,4 +1,4 @@
-import { barAt, chartBars, metronomeForSong, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2, type StructureGroup } from "@songverse/core";
+import { barAt, chartBars, recordingBeatPosition, metronomeForSong, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2, type StructureGroup } from "@songverse/core";
 import { Metronome, Square } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,7 +28,7 @@ const LEAD_BEATS = 1;
  * first bar - and the metronome. As the music plays, the current beat
  * fills and the row slides so it stays near the left, what's coming in
  * view. It follows the stems when they play this song (their recording's
- * tempo and first beat), else the song's metronome (or the Sync leader's),
+ * own beats and bars, issue #299, else its tempo and first beat), else the song's metronome (or the Sync leader's),
  * else it stands at bar 1 and can be scrolled.
  */
 export function BarsRow({
@@ -79,7 +79,9 @@ export function BarsRow({
       const now = deviceNow();
       if (stemsHere) {
         const seconds = stemsHere.anchor.position + ((now - stemsHere.anchor.epoch) / 1000) * stemsHere.speed;
-        return ((seconds - stemsHere.beat.firstBeat) * stemsHere.beat.tempo) / 60;
+        // The recording's own beats and bars when they were found (issue #299), else its tempo from its first beat.
+        const mapped = stemsHere.beat.map ? recordingBeatPosition(stemsHere.beat.map, seconds, bars) : null;
+        return mapped ?? ((seconds - stemsHere.beat.firstBeat) * stemsHere.beat.tempo) / 60;
       }
       const { anchor, settings } = clickHere!;
       const beats = anchor.position + (now - anchor.epoch) / 1000 / (60 / settings.tempo);

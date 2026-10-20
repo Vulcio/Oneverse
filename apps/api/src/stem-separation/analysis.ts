@@ -10,7 +10,24 @@ export interface SourceDetails {
   recordingTempo: number | null;
   recordingTimeSignature: string | null;
   recordingFirstBeat: number | null;
+  recordingFreeIntro: boolean;
+  /** The recording's beats and bars (issue #299): empty when it has none. */
+  recordingBeats: number[];
+  recordingDownbeats: number[];
   cuePoints: CuePoint[] | null;
+}
+
+/** The most beats kept: four hours at 300 BPM would be 72,000; a song is far fewer. */
+const MAX_BEATS = 20_000;
+/** Times in seconds, strictly increasing and within a file's length; null when they aren't. */
+function times(list: unknown): number[] | null {
+  if (!Array.isArray(list) || list.length === 0 || list.length > MAX_BEATS) return null;
+  const out: number[] = [];
+  for (const one of list) {
+    if (typeof one !== "number" || !Number.isFinite(one) || one < 0 || one > 4 * 60 * 60 || (out.length > 0 && one <= out.at(-1)!)) return null;
+    out.push(Math.round(one * 1000) / 1000);
+  }
+  return out;
 }
 
 const sure = (confidence: number | undefined) => confidence === undefined || confidence >= MIN_CONFIDENCE;
@@ -53,6 +70,16 @@ export function detailsWithAnalysis(source: SourceDetails, analysis: DemucsAnaly
   if (details.recordingFirstBeat === null && typeof first === "number" && first >= 0 && first <= 600) {
     details.recordingFirstBeat = Math.round(first * 1000) / 1000;
     detected.push("firstBeat");
+  }
+  // The recording's beats and bars (issue #299), as a pair, when it's sure of them and none were set by hand.
+  const beats = times(analysis.beats);
+  const downbeats = times(analysis.downbeats);
+  if (details.recordingBeats.length === 0 && beats && beats.length >= 2 && downbeats && sure(analysis.beats_confidence ?? undefined) && downbeats.every((one) => beats.includes(one))) {
+    details.recordingBeats = beats;
+    details.recordingDownbeats = downbeats;
+    detected.push("beats");
+    // No steady beat before the first downbeat: the click waits for it (issue #178).
+    if (analysis.intro_free === true && !details.recordingFreeIntro && detected.includes("firstBeat")) details.recordingFreeIntro = true;
   }
   if (!details.cuePoints?.length && song && analysis.sections?.length) {
     const found = analysis.sections.flatMap((section) => (typeof section.start === "number" && typeof section.label === "string" ? [{ start: section.start, label: section.label }] : []));

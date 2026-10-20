@@ -2749,6 +2749,8 @@ const en = {
     recordedByOn: "Recorded by {{name}}, {{date}}",
     recordedOn: "Recorded {{date}}",
     detected: "Found by the analysis: {{details}}. Check them; changing one confirms it.",
+    detectedBars_one: "{{count}} bar, beat by beat",
+    detectedBars_other: "{{count}} bars, beat by beat",
     detectedSections: "sections",
     confirmDetected: "Looks right",
     transpose: "Transpose",

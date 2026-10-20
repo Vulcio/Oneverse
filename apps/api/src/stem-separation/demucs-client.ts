@@ -42,6 +42,11 @@ export interface DemucsStage {
 export interface DemucsAnalysis {
   tempo?: { bpm?: number; confidence?: number } | null;
   first_beat?: number | null;
+  /** Every beat and the first of each bar, in seconds (API v1.5, issue #299); with how sure it is of them, and whether the opening is free. */
+  beats?: number[] | null;
+  downbeats?: number[] | null;
+  beats_confidence?: number | null;
+  intro_free?: boolean | null;
   time_signature?: { numerator?: number; denominator?: number; confidence?: number } | null;
   key?: { name?: string; confidence?: number } | null;
   sections?: { start?: number; label?: string }[] | null;

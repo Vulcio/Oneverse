@@ -252,9 +252,17 @@ export class AttachmentsService {
       if (change.otherTake && attachment.locked && !attachment.otherTake) throw new ForbiddenException("This file is locked: its uploader can unlock it on the Audio tab");
       data.otherTake = change.otherTake;
     }
+    // The beat set by hand (issue #299): the detected beats and bars no longer hold, the tempo and first beat do.
+    const beatSetByHand = (change.recordingTempo !== undefined || change.recordingFirstBeat !== undefined) && attachment.recordingBeats.length > 0;
+    if (beatSetByHand) {
+      data.recordingBeats = [];
+      data.recordingDownbeats = [];
+    }
     // What a separation's analysis found (issue #175): confirmed as it is, or by changing it.
     if (attachment.detected.length > 0) {
-      const confirmed = change.confirmDetected ? attachment.detected : attachment.detected.filter((detail) => DETECTED_FIELDS[detail] && change[DETECTED_FIELDS[detail]] !== undefined);
+      const confirmed = change.confirmDetected
+        ? attachment.detected
+        : attachment.detected.filter((detail) => (DETECTED_FIELDS[detail] && change[DETECTED_FIELDS[detail]] !== undefined) || (detail === "beats" && beatSetByHand));
       if (confirmed.length > 0) data.detected = attachment.detected.filter((detail) => !confirmed.includes(detail));
     }
     // Locked or not (issue #145): its uploader's to decide, as who sees it is.

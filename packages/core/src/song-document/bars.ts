@@ -161,3 +161,56 @@ export function barAt(bars: readonly ChartBar[], position: number): BarPosition 
   const changes = bar.chords.filter((chord) => chord.beat - 1 <= within + 1e-9);
   return { bar: bar.index, beat, fraction: within - beat, chord: changes.at(-1) ?? bar.carried };
 }
+
+/** A recording's beats and the first beat of each of its bars, in seconds from its start (issue #299): what the stem separation's analysis finds. */
+export interface BeatMap {
+  beats: readonly number[];
+  downbeats: readonly number[];
+}
+
+/**
+ * Where the music is among a song's bars, in beats from its start, at
+ * `seconds` into a recording, from the recording's own beats and bars
+ * (issue #299) rather than one tempo: it follows a recording that speeds up
+ * or slows down, and each of the recording's bars starts one of the song's.
+ * Between beats it moves evenly; before the first beat and past the last
+ * it goes on at the nearest beats' pace, and past the last downbeat at the
+ * last bar's length. A bar of the recording longer than the song's holds on
+ * the song's last beat until the next downbeat. Negative before bar 1;
+ * null when the map has fewer than two beats or no downbeat.
+ */
+export function recordingBeatPosition(map: BeatMap, seconds: number, bars: readonly Pick<ChartBar, "start" | "beats">[]): number | null {
+  const beats = map.beats.filter(Number.isFinite);
+  if (beats.length < 2 || !map.downbeats.some(Number.isFinite) || !Number.isFinite(seconds)) return null;
+  const index = (time: number): number => {
+    const last = beats.length - 1;
+    if (time < beats[0]!) return (time - beats[0]!) / (beats[1]! - beats[0]!);
+    if (time >= beats[last]!) return last + (time - beats[last]!) / (beats[last]! - beats[last - 1]!);
+    let low = 0;
+    let high = last;
+    while (high - low > 1) {
+      const middle = (low + high) >> 1;
+      if (beats[middle]! <= time) low = middle;
+      else high = middle;
+    }
+    return low + (time - beats[low]!) / (beats[low + 1]! - beats[low]!);
+  };
+  // Each downbeat as the beat it falls on.
+  const downs = [...new Set(map.downbeats.filter(Number.isFinite).map((one) => Math.round(index(one))))].sort((a, b) => a - b);
+  const at = index(seconds);
+  const first = downs[0]!;
+  if (at < first) return at - first;
+  let bar = 0;
+  while (bar + 1 < downs.length && downs[bar + 1]! <= at + 1e-9) bar++;
+  let within = at - downs[bar]!;
+  // Past the last downbeat: bars as long as the last one.
+  if (bar === downs.length - 1) {
+    const length = downs.length > 1 ? downs[bar]! - downs[bar - 1]! : (bars[0]?.beats ?? 4);
+    const more = Math.floor(within / length);
+    bar += more;
+    within -= more * length;
+  }
+  const song = bars[bar];
+  if (!song) return barsLength(bars) + (bar - bars.length) * (bars.at(-1)?.beats ?? 4) + within;
+  return song.start + Math.min(within, song.beats - 1e-6);
+}

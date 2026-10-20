@@ -1483,6 +1483,9 @@ export interface Attachment {
   recordingFirstBeat: number | null;
   /** Played freely before its first beat (issue #178): the click waits for it, with a count-in, rather than clicking from 0:00. */
   recordingFreeIntro?: boolean;
+  /** Its beats and the first beat of each of its bars, in seconds (issue #299), as the stem separation's analysis found them; empty or left out for none. */
+  recordingBeats?: number[];
+  recordingDownbeats?: number[];
   /** A lossless upload's original (issue #182), kept as FLAC beside this Opus copy: downloadAttachmentOriginal. */
   original?: { mimeType: string; sizeBytes: number | null } | null;
   /** Recorded this many semitones above its multitrack (issue #135), while the player was transposed; null: in its key. */
@@ -1522,7 +1525,7 @@ export interface Attachment {
 
 export type AttachmentVisibility = "PRIVATE" | "TEAM" | "SONG" | "SHARED";
 export type AttachmentOrigin = "UPLOADED" | "SEPARATED" | "RECORDED";
-export type DetectedDetail = "key" | "tempo" | "timeSignature" | "firstBeat" | "sections";
+export type DetectedDetail = "key" | "tempo" | "timeSignature" | "firstBeat" | "beats" | "sections";
 
 /** Who sees a file: `teamId` for TEAM. */
 /** An audio file's recording details and multitrack (issues #65, #100, #123). */

@@ -1,5 +1,5 @@
 import { decodeAudio } from "#/lib/decode-audio";
-import { multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type CueSection, type StemPart } from "@songverse/core";
+import { multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type CueSection, type StemPart, type BeatMap } from "@songverse/core";
 import { useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
@@ -142,9 +142,10 @@ export interface StemState {
   /**
    * The recording's beat: its tempo, time signature and where its first
    * beat falls (s), for the metronome with it; `freeIntro` when what comes
-   * before is played freely (issue #178). Null without a tempo.
+   * before is played freely (issue #178); `map`, its own beats and bars when
+   * they were found (issue #299). Null without a tempo.
    */
-  beat: { tempo: number; timeSignature: { numerator: number; denominator: number } | null; firstBeat: number; freeIntro: boolean } | null;
+  beat: { tempo: number; timeSignature: { numerator: number; denominator: number } | null; firstBeat: number; freeIntro: boolean; map: BeatMap | null } | null;
   /** Played over and over (issue #162): from `start` to `end` (s, the recording's time); null: through to the end. */
   loop: { start: number; end: number } | null;
 }
@@ -1226,6 +1227,7 @@ export function beatOf(song: Pick<StemSong, "stems" | "tempo" | "timeSignature">
     timeSignature: timeSignatureOf(first?.recordingTimeSignature) ?? song.timeSignature ?? null,
     firstBeat: first?.recordingFirstBeat ?? 0,
     freeIntro: song.stems.some((stem) => stem.recordingFreeIntro),
+    map: (first?.recordingBeats?.length ?? 0) >= 2 && first?.recordingDownbeats?.length ? { beats: first.recordingBeats!, downbeats: first.recordingDownbeats } : null,
   };
 }
 

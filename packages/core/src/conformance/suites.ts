@@ -11,7 +11,7 @@ import { parseArrangementDocumentV2, findArrangementProblems } from "../schemas/
 import { chordPositionProblem } from "../schemas/song-document-v2.js";
 import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-document/fold.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
-import { barAt, chartBars } from "../song-document/bars.js";
+import { barAt, chartBars, recordingBeatPosition } from "../song-document/bars.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
@@ -269,6 +269,12 @@ const BARS_SONG = {
     { id: "p_chorus", sectionId: "sec_chorus", timeSignature: { numerator: 3, denominator: 4 } },
   ],
 };
+
+/** Four 4/4 bars, and recordings' beat maps for them (issue #299): steady at 120 BPM from 2.5 s, slowing down, and with a 2-beat bar. */
+const FOUR_BARS = [0, 4, 8, 12].map((start) => ({ start, beats: 4 }));
+const STEADY_MAP = { beats: Array.from({ length: 12 }, (_, i) => 2.5 + i * 0.5), downbeats: [2.5, 4.5, 6.5] };
+const SLOWING_MAP = { beats: [2.5, 3.0, 3.5, 4.0, 4.6, 5.2, 5.8, 6.4], downbeats: [2.5, 4.6] };
+const ODD_BAR_MAP = { beats: Array.from({ length: 12 }, (_, i) => 2.5 + i * 0.5), downbeats: [2.5, 4.5, 5.5] };
 
 const read = (json: unknown) => readSongDocument(json);
 const arrangement = (json: unknown) => parseArrangementDocumentV2(json);
@@ -847,6 +853,22 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "in the 3/4 pass", args: [BARS_SONG, 23.5] },
           { name: "past the end", args: [BARS_SONG, 1000] },
           { name: "before the start", args: [BARS_SONG, -1] },
+        ],
+      },
+      recordingBeatPosition: {
+        about:
+          "Where the music is among a song's bars, in beats from its start, at a moment of a recording (issue #299), from the recording's own beats and downbeats (its bars, as the stem separation's analysis finds them) rather than one tempo. Each of the recording's bars starts one of the song's; between beats it moves evenly; before the first beat and past the last at the nearest beats' pace. Negative before bar 1; null without two beats and a downbeat.",
+        params: ["map", "seconds", "bars"],
+        run: recordingBeatPosition,
+        cases: [
+          { name: "steady 120 BPM, bar 2 beat 3", args: [STEADY_MAP, 2.5 + 0.5 * 6, FOUR_BARS] },
+          { name: "halfway between two beats", args: [STEADY_MAP, 2.5 + 0.25, FOUR_BARS] },
+          { name: "before bar 1: the intro, counted back", args: [STEADY_MAP, 1.5, FOUR_BARS] },
+          { name: "slowing down: the same beat, later", args: [SLOWING_MAP, 4.1 + 0.6, FOUR_BARS] },
+          { name: "the recording's 2-beat bar: the song's next bar starts with the recording's", args: [ODD_BAR_MAP, 2.5 + 0.5 * 6, FOUR_BARS] },
+          { name: "past the last downbeat: bars as long as the last", args: [STEADY_MAP, 2.5 + 0.5 * 13, FOUR_BARS] },
+          { name: "past the song's last bar", args: [STEADY_MAP, 2.5 + 0.5 * 20, FOUR_BARS] },
+          { name: "one beat: nothing to follow", args: [{ beats: [1], downbeats: [1] }, 2, FOUR_BARS] },
         ],
       },
       effectiveDisplaySettings: {

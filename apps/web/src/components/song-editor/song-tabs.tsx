@@ -458,6 +458,7 @@ function DetectedNotice({ files, canEdit, busy, onConfirm }: { files: Attachment
     detected.includes("tempo") && holder.recordingTempo ? `${holder.recordingTempo} BPM` : null,
     detected.includes("timeSignature") ? holder.recordingTimeSignature : null,
     detected.includes("firstBeat") && holder.recordingFirstBeat != null ? t("stems.firstBeatAt", { seconds: holder.recordingFirstBeat }) : null,
+    detected.includes("beats") && holder.recordingDownbeats?.length ? t("stems.detectedBars", { count: holder.recordingDownbeats.length }) : null,
     detected.includes("sections") ? t("stems.detectedSections") : null,
   ]
     .filter(Boolean)

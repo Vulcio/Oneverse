@@ -45,7 +45,7 @@ At the top of a song in Practice and in Live, the **bars row** puts the song's c
 
 - **A box for each beat.** A strong line starts each bar, and a chord's name sits on the beat it starts on. Each section's name (V, C, B…) is on its first bar, in the structure bar's colours.
 - **The metronome button** at its left shows the song's tempo and starts or stops the click at it.
-- **While the music plays,** the beat being played fills and the row slides along, so what's coming stays in view. It follows the song's stems or recording when they're playing (from the recording's tempo and first beat), else the metronome, including the leader's when you [play in sync](/sets/#playing-in-sync). Stopped, it stands at the first bar and you can scroll it.
+- **While the music plays,** the beat being played fills and the row slides along, so what's coming stays in view. It follows the song's stems or recording when they're playing - beat by beat when the [stem separation found its beats and bars](/library/#separating-a-recording-into-stems), else from its tempo and first beat - else the metronome, including the leader's when you [play in sync](/sets/#playing-in-sync). Stopped, it stands at the first bar and you can scroll it.
 - **The chords read as on the chart:** transposed, with your capo, names and colours.
 
 The bars come from the chart: each chord gets a bar, and a sung line takes at least two (a line with one chord holds it for a second bar). Lines of chords alone (an intro) take a bar per chord, and notes take none. Each bar has as many beats as the song's time signature says, and a section can have a time signature of its own in the song's order.

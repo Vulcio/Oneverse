@@ -1734,6 +1734,11 @@ model Attachment {
   // waits for the first beat, with a count-in before it, rather than
   // clicking from 0:00.
   recordingFreeIntro     Boolean              @default(false)
+  // The recording's beats and the first beat of each of its bars, in
+  // seconds from its start (issue #299), as the stem separation's analysis
+  // found them: what the bars follow, rather than one tempo. Empty: none.
+  recordingBeats         Float[]              @default([])
+  recordingDownbeats     Float[]              @default([])
   // A lossless upload's original (issue #182), as FLAC, kept beside the Opus
   // copy in storageKey that's played: for downloading, and for separating
   // stems from. Its uploader had a role that keeps them.

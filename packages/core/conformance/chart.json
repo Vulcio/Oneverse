@@ -6491,6 +6491,366 @@
         }
       ]
     },
+    "recordingBeatPosition": {
+      "about": "Where the music is among a song's bars, in beats from its start, at a moment of a recording (issue #299), from the recording's own beats and downbeats (its bars, as the stem separation's analysis finds them) rather than one tempo. Each of the recording's bars starts one of the song's; between beats it moves evenly; before the first beat and past the last at the nearest beats' pace. Negative before bar 1; null without two beats and a downbeat.",
+      "params": [
+        "map",
+        "seconds",
+        "bars"
+      ],
+      "cases": [
+        {
+          "name": "steady 120 BPM, bar 2 beat 3",
+          "args": [
+            {
+              "beats": [
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5,
+                5,
+                5.5,
+                6,
+                6.5,
+                7,
+                7.5,
+                8
+              ],
+              "downbeats": [
+                2.5,
+                4.5,
+                6.5
+              ]
+            },
+            5.5,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": 6
+        },
+        {
+          "name": "halfway between two beats",
+          "args": [
+            {
+              "beats": [
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5,
+                5,
+                5.5,
+                6,
+                6.5,
+                7,
+                7.5,
+                8
+              ],
+              "downbeats": [
+                2.5,
+                4.5,
+                6.5
+              ]
+            },
+            2.75,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": 0.5
+        },
+        {
+          "name": "before bar 1: the intro, counted back",
+          "args": [
+            {
+              "beats": [
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5,
+                5,
+                5.5,
+                6,
+                6.5,
+                7,
+                7.5,
+                8
+              ],
+              "downbeats": [
+                2.5,
+                4.5,
+                6.5
+              ]
+            },
+            1.5,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": -2
+        },
+        {
+          "name": "slowing down: the same beat, later",
+          "args": [
+            {
+              "beats": [
+                2.5,
+                3,
+                3.5,
+                4,
+                4.6,
+                5.2,
+                5.8,
+                6.4
+              ],
+              "downbeats": [
+                2.5,
+                4.6
+              ]
+            },
+            4.699999999999999,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": 4.166666666666666
+        },
+        {
+          "name": "the recording's 2-beat bar: the song's next bar starts with the recording's",
+          "args": [
+            {
+              "beats": [
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5,
+                5,
+                5.5,
+                6,
+                6.5,
+                7,
+                7.5,
+                8
+              ],
+              "downbeats": [
+                2.5,
+                4.5,
+                5.5
+              ]
+            },
+            5.5,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": 8
+        },
+        {
+          "name": "past the last downbeat: bars as long as the last",
+          "args": [
+            {
+              "beats": [
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5,
+                5,
+                5.5,
+                6,
+                6.5,
+                7,
+                7.5,
+                8
+              ],
+              "downbeats": [
+                2.5,
+                4.5,
+                6.5
+              ]
+            },
+            9,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": 13
+        },
+        {
+          "name": "past the song's last bar",
+          "args": [
+            {
+              "beats": [
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5,
+                5,
+                5.5,
+                6,
+                6.5,
+                7,
+                7.5,
+                8
+              ],
+              "downbeats": [
+                2.5,
+                4.5,
+                6.5
+              ]
+            },
+            12.5,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": 20
+        },
+        {
+          "name": "one beat: nothing to follow",
+          "args": [
+            {
+              "beats": [
+                1
+              ],
+              "downbeats": [
+                1
+              ]
+            },
+            2,
+            [
+              {
+                "start": 0,
+                "beats": 4
+              },
+              {
+                "start": 4,
+                "beats": 4
+              },
+              {
+                "start": 8,
+                "beats": 4
+              },
+              {
+                "start": 12,
+                "beats": 4
+              }
+            ]
+          ],
+          "expected": null
+        }
+      ]
+    },
     "effectiveDisplaySettings": {
       "about": "A mode's display settings (issue #209): what the Display panel changed for that mode, else the account's chord settings, else a default (Live's text bigger).",
       "params": [

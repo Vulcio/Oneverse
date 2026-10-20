@@ -3,7 +3,10 @@
 // with the metronome at its left. Started there, the click lights the current beat and the row slides with it; the
 // Display panel turns it off, per mode. Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { API, SP, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -71,6 +74,29 @@ try {
     await page.goto(`${WEB}/library/${song.id}/live`);
     await row().waitFor();
     await page.screenshot({ path: `${SP}/bars-live.png` });
+  });
+
+  await step("a recording with its own beats and bars (issue #299): the row follows them, not the song's tempo", async () => {
+    // A recording whose beats come every quarter second (240 BPM), bars of four: the song's 150 BPM would be much slower.
+    const form = new FormData();
+    form.append("type", "AUDIO");
+    form.append("file", new Blob([readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../fixtures/stems/Morning Light - Bass.mp3"))], { type: "audio/mpeg" }), "Beats.mp3");
+    const uploaded = await (await fetch(`${API}/song-versions/${song.id}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${me.bearer}` }, body: form })).json();
+    const beats = Array.from({ length: 400 }, (_, i) => (i * 0.25).toFixed(3));
+    const downbeats = beats.filter((_, i) => i % 4 === 0);
+    sql(`update "Attachment" set "recordingBeats" = '{${beats.join(",")}}', "recordingDownbeats" = '{${downbeats.join(",")}}' where id = '${uploaded.id}'`);
+    await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
+    await page.goto(`${WEB}/library/${song.id}`);
+    await row().waitFor();
+    const player = page.getByTestId("stem-player");
+    await player.getByRole("button", { name: "Play", exact: true }).click({ timeout: 20000 });
+    await page.locator('[data-testid="bars-row"][data-source="stems"]').waitFor({ timeout: 15000 });
+    await page.waitForTimeout(2600);
+    // Four beats a second: past bar 2 after two and a half seconds; the song's tempo would still be in bar 2 at most.
+    const [bar] = ((await strip().getAttribute("data-position")) ?? "").split(":").map(Number);
+    const seconds = await player.evaluate(() => Number(document.querySelector("audio")?.currentTime ?? NaN));
+    await player.getByRole("button", { name: "Pause", exact: true }).click();
+    if (!(bar >= 2)) throw new Error(`bar ${bar} after ~2.6 s (audio at ${seconds})`);
   });
 
   await step("the Display panel turns the bars off, for this mode only", async () => {

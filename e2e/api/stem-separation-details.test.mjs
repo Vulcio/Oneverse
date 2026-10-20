@@ -48,9 +48,16 @@ try {
   const recording = await upload(song.id, "Live mix.wav", toneWav(300, 2), { recordingTempo: "96" });
 
   // --- What the server found
+  // Its beats and bars too (issue #299): 3/4 at 72 BPM from 0.5 s, a downbeat every three beats, after a free intro.
+  const beats = Array.from({ length: 40 }, (_, i) => Math.round((0.5 + (i * 60) / 72) * 1000) / 1000);
+  const downbeats = beats.filter((_, i) => i % 3 === 0);
   demucs.analysis.next = {
     tempo: { bpm: 72, confidence: 0.9 },
     first_beat: 0.5,
+    beats,
+    downbeats,
+    beats_confidence: 0.8,
+    intro_free: true,
     time_signature: { numerator: 3, denominator: 4, confidence: 0.8 },
     key: { name: "Em", confidence: 0.75 },
     sections: [
@@ -72,8 +79,13 @@ try {
   check("named by its parts, in the asker's language; each file separated", stems.length === 4 && stems.every((file) => file.multitrackName === "Separated (4 parts)" && file.origin === "SEPARATED"), JSON.stringify(stems.map((file) => [file.multitrackName, file.origin])));
   check(
     "what the analysis found, where the recording had nothing: marked detected - its own tempo kept",
-    one.recordingTempo === 96 && one.recordingKey === "Em" && one.recordingTimeSignature === "3/4" && one.recordingFirstBeat === 0.5 && one.detected.join() === "key,timeSignature,firstBeat,sections",
+    one.recordingTempo === 96 && one.recordingKey === "Em" && one.recordingTimeSignature === "3/4" && one.recordingFirstBeat === 0.5 && one.detected.join() === "key,timeSignature,firstBeat,beats,sections",
     JSON.stringify({ tempo: one.recordingTempo, key: one.recordingKey, time: one.recordingTimeSignature, first: one.recordingFirstBeat, detected: one.detected }),
+  );
+  check(
+    "the recording's beats and bars, on every stem, and its free intro (issue #299)",
+    stems.every((file) => JSON.stringify(file.recordingBeats) === JSON.stringify(beats) && JSON.stringify(file.recordingDownbeats) === JSON.stringify(downbeats) && file.recordingFreeIntro === true),
+    JSON.stringify({ beats: one.recordingBeats?.length, downbeats: one.recordingDownbeats?.length, free: one.recordingFreeIntro }),
   );
   check(
     "its sections placed on the song's: verse 1, the chorus, verse 2, the chorus (and once more)",
@@ -83,7 +95,13 @@ try {
 
   // --- Confirmed, or changed
   r = await call(singer, "PATCH", `/song-versions/${song.id}/attachments/${one.id}`, { recordingKey: "G" });
-  check("changing the key confirms it", r.status === 200 && r.body.recordingKey === "G" && r.body.detected.join() === "timeSignature,firstBeat,sections", JSON.stringify(r.body.detected));
+  check("changing the key confirms it", r.status === 200 && r.body.recordingKey === "G" && r.body.detected.join() === "timeSignature,firstBeat,beats,sections", JSON.stringify(r.body.detected));
+  r = await call(singer, "PATCH", `/song-versions/${song.id}/attachments/${stems[2].id}`, { recordingFirstBeat: 0.6 });
+  check(
+    "a first beat set by hand: the detected beats and bars no longer hold",
+    r.status === 200 && r.body.recordingBeats.length === 0 && r.body.recordingDownbeats.length === 0 && !r.body.detected.includes("beats") && !r.body.detected.includes("firstBeat"),
+    JSON.stringify({ beats: r.body.recordingBeats?.length, detected: r.body.detected }),
+  );
   r = await call(singer, "PATCH", `/song-versions/${song.id}/attachments/${stems[1].id}`, { confirmDetected: true });
   check("or all of them, as they are", r.status === 200 && r.body.detected.length === 0 && r.body.recordingKey === "Em", JSON.stringify(r.body.detected));
 

@@ -2752,6 +2752,8 @@ const fr: typeof en = {
     recordedByOn: "Enregistré par {{name}}, le {{date}}",
     recordedOn: "Enregistré le {{date}}",
     detected: "Trouvé par l'analyse : {{details}}. Vérifiez ; en changer un le confirme.",
+    detectedBars_one: "{{count}} mesure, temps par temps",
+    detectedBars_other: "{{count}} mesures, temps par temps",
     detectedSections: "sections",
     confirmDetected: "C'est juste",
     transpose: "Transposer",
