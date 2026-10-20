@@ -1,7 +1,7 @@
 import type { ApiClient, OrganizationTeam, TeamRole } from "@songverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
 import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
@@ -22,7 +22,7 @@ import { forgetMyOrganizations, groupTree } from "../organizations";
 /**
  * An organisation (issue #241): its teams and members for everyone in it;
  * for its admins, its details, roles, invite links, and taking a team or
- * someone out.
+ * someone out, and the app's own cards (`adminCards`: Songverse's brands).
  */
 /** What the page needs, or null when there's no such organisation (or it isn't theirs to see). */
 export async function loadOrganizationPage(api: ApiClient, organizationId: string) {
@@ -36,7 +36,7 @@ export async function loadOrganizationPage(api: ApiClient, organizationId: strin
   return { organization, members, inviteLinks, mode: mine.mode };
 }
 
-export function OrganizationPage({ userId, data }: { userId: string; data: NonNullable<Awaited<ReturnType<typeof loadOrganizationPage>>> }) {
+export function OrganizationPage({ userId, data, adminCards }: { userId: string; data: NonNullable<Awaited<ReturnType<typeof loadOrganizationPage>>>; adminCards?: ReactNode }) {
   const { api, links } = usePlanning();
   const { t } = useTranslation();
   const router = useRouter();
@@ -217,6 +217,8 @@ export function OrganizationPage({ userId, data }: { userId: string; data: NonNu
 
         {isAdmin ? (
           <div className="flex flex-col gap-6">
+            {/* The app's own, for its admins (Songverse's: its brands, issue #279). */}
+            {adminCards}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">{t("organizations.details")}</CardTitle>

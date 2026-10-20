@@ -259,9 +259,10 @@ New user-owned content types also need adding to its transfer step
 so they follow the songs to their new owner).
 
 Storage objects are content-addressed and shared (attachments, avatars,
-song images and artist pictures with identical bytes are one object).
-Delete them only through `StorageService.deleteUnreferenced()`, which checks
-all four.
+song images, artist pictures, team and songbook pictures, screen themes'
+and brands' files with identical bytes are one object). Delete them only
+through `StorageService.deleteUnreferenced()`, which checks every one of
+them - a new kind of stored file needs adding there too.
 
 ## Requests
 

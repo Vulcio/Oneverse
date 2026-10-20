@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { loadTeamPage, TeamPage } from "@songverse/planning/pages/team";
 import { AppearanceCard } from "#/components/appearance-card";
+import { BrandsCard } from "#/components/brands-card";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/teams/$teamId")({
@@ -21,8 +22,12 @@ function TeamDetail() {
       userId={userId}
       data={data}
       adminCards={
-        // Its colour and picture (issue #161).
-        <AppearanceCard owner="teams" id={team.id} name={team.name} color={team.color} avatarUrl={team.avatarUrl} onColor={(color) => apiClient.updateTeam(team.id, { color })} onChanged={() => router.invalidate()} />
+        <>
+          {/* Its colour and picture (issue #161). */}
+          <AppearanceCard owner="teams" id={team.id} name={team.name} color={team.color} avatarUrl={team.avatarUrl} onColor={(color) => apiClient.updateTeam(team.id, { color })} onChanged={() => router.invalidate()} />
+          {/* Its brands (issue #279), for a team that uses Songverse. */}
+          {team.usesSongverse !== false ? <BrandsCard owner={{ teamId: team.id }} /> : null}
+        </>
       }
     />
   );

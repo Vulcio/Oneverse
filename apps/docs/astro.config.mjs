@@ -59,6 +59,7 @@ export default defineConfig({
           items: [
             { slug: "sets" },
             { slug: "screens" },
+            { slug: "brands" },
             { slug: "metronome" },
             { slug: "songbooks" },
             { slug: "teams" },

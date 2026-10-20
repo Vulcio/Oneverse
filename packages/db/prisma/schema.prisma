@@ -525,6 +525,7 @@ model Team {
   subgroups            Team[]                 @relation("Subgroups")
   positions            TeamPosition[]
   screenWidgetDefaults ScreenWidgetDefault[]
+  brands               Brand[]
 
   @@index([slug])
   @@index([organizationId])
@@ -563,6 +564,8 @@ model Organization {
   eventPresets OrganizationEventPreset[]
   // Its screens (issue #222): the church's projector, its stage monitor.
   screens      Screen[]
+  // Its brands (issue #279): logos, colours, fonts, backgrounds, links.
+  brands       Brand[]
 }
 
 model OrganizationMembership {
@@ -2878,4 +2881,53 @@ enum SetTransition {
   NEXT
   SEGUE
   TRANSITION
+}
+
+// A brand (issue #279): an organisation's or a team's logos, colours, fonts,
+// backgrounds and links, for templates and widgets to use. Its admins change
+// it; its members, and an organisation's teams, use it. The colours, fonts
+// and links are kept as sent (checked by core's brand schemas) and read
+// through readBrand.
+model Brand {
+  id                  String   @id @default(cuid())
+  name                String
+  ownerTeamId         String?
+  ownerOrganizationId String?
+  // The one picked first among its owner's.
+  isDefault           Boolean  @default(false)
+  colors              Json     @default("[]")
+  fonts               Json     @default("{}")
+  website             String?
+  socials             Json     @default("[]")
+  whatsapp            Json     @default("[]")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  team         Team?         @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
+  assets       BrandAsset[]
+
+  @@index([ownerTeamId])
+  @@index([ownerOrganizationId])
+}
+
+// A brand's file (issue #279): a logo in one of its slots (one each), a
+// background (several), or a font. Content-addressed in storage, like the
+// screen themes' files.
+model BrandAsset {
+  id         String   @id @default(cuid())
+  brandId    String
+  kind       String
+  // A background's or a font's name; a font's family name in templates.
+  name       String?
+  storageKey String
+  mimeType   String
+  filename   String
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@index([storageKey])
 }

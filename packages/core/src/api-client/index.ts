@@ -32,6 +32,8 @@ import type { LyricsMatch } from "../search-text/lyrics.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
+import type { BrandAssetKind, BrandContent } from "../brands/index.js";
+import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
 import type { z } from "zod";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
 import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
@@ -701,6 +703,31 @@ export interface ScreenThemeAsset {
   mimeType: string;
   filename: string;
   url: string;
+}
+
+/** A brand's file (issue #279): a logo in its slot, a background or a font, at its signed address. */
+export interface BrandAsset {
+  id: string;
+  kind: BrandAssetKind;
+  /** A background's or a font's name. */
+  name: string | null;
+  mimeType: string;
+  filename: string;
+  sizeBytes: number;
+  url: string;
+}
+
+/** A brand (issue #279): a team's or an organisation's logos, colours, fonts, backgrounds and links. */
+export interface Brand extends BrandContent {
+  id: string;
+  name: string;
+  owner: { kind: "team" | "organization"; id: string; name: string };
+  /** The one picked first among its owner's. */
+  isDefault: boolean;
+  /** Its owner's admins change it. */
+  canEdit: boolean;
+  assets: BrandAsset[];
+  updatedAt: string;
 }
 
 /** A widget's default look (issue #273): the user's own, or a team's. */
@@ -2809,6 +2836,21 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       return request<ScreenThemeAsset>(`/screen-themes/${themeId}/assets?kind=${kind}`, { method: "POST", body: form });
     },
     deleteScreenThemeAsset: (themeId: string, assetId: string) => request<void>(`/screen-themes/${themeId}/assets/${assetId}`, { method: "DELETE" }),
+    listBrands: (owner: { teamId?: string; organizationId?: string } = {}) => {
+      const query = new URLSearchParams(Object.entries(owner).filter((entry): entry is [string, string] => !!entry[1]));
+      return request<Brand[]>(`/brands${query.size ? `?${query}` : ""}`);
+    },
+    getBrand: (brandId: string) => request<Brand>(`/brands/${brandId}`),
+    createBrand: (data: CreateBrandRequest) => request<Brand>("/brands", { method: "POST", body: JSON.stringify(data) }),
+    updateBrand: (brandId: string, data: UpdateBrandRequest) => request<Brand>(`/brands/${brandId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteBrand: (brandId: string) => request<void>(`/brands/${brandId}`, { method: "DELETE" }),
+    uploadBrandAsset: (brandId: string, kind: BrandAssetKind, file: Blob, filename: string, name?: string) => {
+      const form = new FormData();
+      form.append("file", file, filename);
+      const query = new URLSearchParams({ kind, ...(name && { name }) });
+      return request<BrandAsset>(`/brands/${brandId}/assets?${query}`, { method: "POST", body: form });
+    },
+    deleteBrandAsset: (brandId: string, assetId: string) => request<void>(`/brands/${brandId}/assets/${assetId}`, { method: "DELETE" }),
     adminCreateInstrument: (data: CreateInstrumentRequest) => request<CustomInstrument>("/admin/instruments", { method: "POST", body: JSON.stringify(data) }),
     adminUpdateInstrument: (id: string, data: UpdateInstrumentRequest) => request<CustomInstrument>(`/admin/instruments/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     adminDeleteInstrument: (id: string) => request<void>(`/admin/instruments/${id}`, { method: "DELETE" }),

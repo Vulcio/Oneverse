@@ -10,6 +10,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { ScreenThemeEditor, type ThemeDraft } from "#/components/screen-theme-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { WidgetGallery } from "#/components/screen-widget-gallery";
+import { BrandsList, type BrandOwnerChoice } from "#/components/brands-list";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
 import { Input } from "@songverse/ui/components/input";
@@ -18,8 +19,8 @@ import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
 
-/** Screens' tabs (issue #267): the screens, the templates they pick from, the widgets placed on templates. */
-const TABS = ["screens", "templates", "widgets"] as const;
+/** Screens' tabs (issue #267): the screens, the templates they pick from, the widgets placed on templates, the brands they use (issue #279). */
+const TABS = ["screens", "templates", "widgets", "brands"] as const;
 type ScreensTab = (typeof TABS)[number];
 
 export interface ScreensSearch {
@@ -40,19 +41,20 @@ const ownerFrom = (value: string): ScreenOwnerRequest => {
 
 export const Route = createFileRoute("/_protected/screens")({
   validateSearch: (search: Record<string, unknown>): ScreensSearch => ({
-    ...(search.tab === "templates" || search.tab === "widgets" ? { tab: search.tab } : {}),
+    ...(search.tab === "templates" || search.tab === "widgets" || search.tab === "brands" ? { tab: search.tab } : {}),
     ...(typeof search.code === "string" ? { code: search.code } : {}),
     ...(typeof search.setlistId === "string" ? { setlistId: search.setlistId } : {}),
   }),
   loaderDeps: ({ search }) => ({ setlistId: search.setlistId }),
   loader: async ({ deps }) => {
-    const [sets, screens, themes, teams, organizations, widgetDefaults] = await Promise.all([
+    const [sets, screens, themes, teams, organizations, widgetDefaults, brands] = await Promise.all([
       apiClient.listSetlists(),
       apiClient.listScreens(deps.setlistId).catch(() => apiClient.listScreens()),
       apiClient.listScreenThemes(),
       apiClient.listTeams().catch(() => []),
       apiClient.listMyOrganizations().catch(() => null),
       apiClient.listScreenWidgetDefaults().catch(() => []),
+      apiClient.listBrands().catch(() => []),
     ]);
     // Whose a new screen can be (issue #222): theirs, a team's they run, an organisation's they run.
     const owners: ScreenOwnerChoice[] = [
@@ -63,7 +65,9 @@ export const Route = createFileRoute("/_protected/screens")({
         .map((organization) => ({ kind: "organization" as const, id: organization.id, name: organization.name })),
     ];
     // Only a set they lead can be shown: its sync session is theirs to lead.
-    return { sets: sets.filter((set) => set.canEdit), screens, themes, owners, widgetDefaults };
+    // Whose a new brand can be (issue #279): a team's or an organisation's they run.
+    const brandOwners = owners.filter((owner): owner is BrandOwnerChoice => owner.kind !== "user");
+    return { sets: sets.filter((set) => set.canEdit), screens, themes, owners, widgetDefaults, brands, brandOwners };
   },
   component: ScreensPage,
 });
@@ -104,6 +108,9 @@ function ScreensPage() {
         </TabsContent>
         <TabsContent value="widgets" className="pt-4">
           <WidgetsCard />
+        </TabsContent>
+        <TabsContent value="brands" className="pt-4">
+          <BrandsCard />
         </TabsContent>
       </Tabs>
     </div>
@@ -223,6 +230,22 @@ function WidgetsCard() {
       </CardHeader>
       <CardContent>
         <WidgetGallery defaults={widgetDefaults} teams={teams} onChanged={() => router.invalidate()} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function BrandsCard() {
+  const { t } = useTranslation();
+  const { brands, brandOwners } = Route.useLoaderData();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{t("brands.title")}</CardTitle>
+        <CardDescription>{t("brands.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <BrandsList brands={brands} owners={brandOwners} />
       </CardContent>
     </Card>
   );

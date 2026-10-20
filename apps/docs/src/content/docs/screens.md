@@ -18,7 +18,7 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
 
 The screen remembers it's paired: next time, open the same page and it reconnects by itself. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
-**Screens** has three tabs: **Screens**, **Templates** and **Widgets**. On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, lyrics or chart, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, switch it between lyrics and chart, change its template or its owner, with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
+**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, lyrics or chart, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, switch it between lyrics and chart, change its template or its owner, with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
 
 ### The day's set
 

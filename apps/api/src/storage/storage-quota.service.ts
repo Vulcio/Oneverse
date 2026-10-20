@@ -16,9 +16,9 @@ export interface StorageUsage {
 }
 
 /**
- * Storage limits (issue #160). What's attached to a team's song counts
- * against the team's pool, whoever uploaded it; the rest against whoever
- * uploaded it. Counted logically: two uploads of the same file each count,
+ * Storage limits (issue #160). What's attached to a team's song, and its
+ * brands' files (issue #279), count against the team's pool, whoever
+ * uploaded them; the rest against whoever uploaded it. Counted logically: two uploads of the same file each count,
  * even though content-addressed storage keeps one copy. Avatars don't count.
  * The limits come from storage roles (the largest wins), else Admin >
  * Storage's defaults.
@@ -66,13 +66,19 @@ export class StorageQuotaService {
     return new Map(rows.map((row) => [row.uploadedByUserId as string, (row._sum.sizeBytes ?? 0) + (row._sum.originalSizeBytes ?? 0)]));
   }
 
-  /** What each team's pool holds: everything on its songs. */
+  /** What each team's pool holds: everything on its songs, and its brands' files (issue #279). */
   async usedBytesByTeam(): Promise<Map<string, number>> {
     const rows = await this.prisma.client.$queryRaw<{ teamId: string; bytes: bigint | null }[]>`
-      SELECT sv."ownerTeamId" AS "teamId", SUM(COALESCE(a."sizeBytes", 0) + COALESCE(a."originalSizeBytes", 0)) AS bytes
-      FROM "Attachment" a JOIN "SongVersion" sv ON sv.id = a."songVersionId"
-      WHERE sv."ownerTeamId" IS NOT NULL
-      GROUP BY sv."ownerTeamId"`;
+      SELECT "teamId", SUM(bytes) AS bytes FROM (
+        SELECT sv."ownerTeamId" AS "teamId", COALESCE(a."sizeBytes", 0) + COALESCE(a."originalSizeBytes", 0) AS bytes
+        FROM "Attachment" a JOIN "SongVersion" sv ON sv.id = a."songVersionId"
+        WHERE sv."ownerTeamId" IS NOT NULL
+        UNION ALL
+        SELECT b."ownerTeamId" AS "teamId", ba."sizeBytes" AS bytes
+        FROM "BrandAsset" ba JOIN "Brand" b ON b.id = ba."brandId"
+        WHERE b."ownerTeamId" IS NOT NULL
+      ) used
+      GROUP BY "teamId"`;
     return new Map(rows.map((row) => [row.teamId, Number(row.bytes ?? 0)]));
   }
 
@@ -101,11 +107,15 @@ export class StorageQuotaService {
   }
 
   async getTeamUsage(teamId: string): Promise<StorageUsage> {
-    const aggregate = await this.prisma.client.attachment.aggregate({
-      where: { songVersion: { ownerTeamId: teamId } },
-      _sum: { sizeBytes: true, originalSizeBytes: true },
-    });
-    return { usedBytes: (aggregate._sum.sizeBytes ?? 0) + (aggregate._sum.originalSizeBytes ?? 0), limitBytes: await this.teamLimitBytes(teamId) };
+    const [aggregate, brands] = await Promise.all([
+      this.prisma.client.attachment.aggregate({
+        where: { songVersion: { ownerTeamId: teamId } },
+        _sum: { sizeBytes: true, originalSizeBytes: true },
+      }),
+      // Its brands' logos, backgrounds and fonts (issue #279).
+      this.prisma.client.brandAsset.aggregate({ where: { brand: { ownerTeamId: teamId } }, _sum: { sizeBytes: true } }),
+    ]);
+    return { usedBytes: (aggregate._sum.sizeBytes ?? 0) + (aggregate._sum.originalSizeBytes ?? 0) + (brands._sum.sizeBytes ?? 0), limitBytes: await this.teamLimitBytes(teamId) };
   }
 
   /**
@@ -116,25 +126,27 @@ export class StorageQuotaService {
     const song = songVersionId
       ? await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { ownerTeamId: true } })
       : null;
-    if (song?.ownerTeamId) {
-      const uploader = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { isGlobalAdmin: true } });
-      if (uploader?.isGlobalAdmin) return;
-      const { usedBytes, limitBytes } = await this.getTeamUsage(song.ownerTeamId);
-      if (usedBytes + incomingBytes > (limitBytes ?? Infinity)) {
-        throw new PayloadTooLargeException({
-          code: "TEAM_STORAGE_LIMIT_EXCEEDED",
-          message: `This upload would exceed the team's storage limit (${formatMb(usedBytes)} of ${formatMb(limitBytes ?? 0)} used).`,
-          usedBytes,
-          limitBytes,
-        });
-      }
-      return;
-    }
+    if (song?.ownerTeamId) return this.assertCanStoreForTeam(userId, song.ownerTeamId, incomingBytes);
     const { usedBytes, limitBytes } = await this.getUsage(userId);
     if (limitBytes !== null && usedBytes + incomingBytes > limitBytes) {
       throw new PayloadTooLargeException({
         code: "STORAGE_LIMIT_EXCEEDED",
         message: `This upload would exceed your storage limit (${formatMb(usedBytes)} of ${formatMb(limitBytes)} used).`,
+        usedBytes,
+        limitBytes,
+      });
+    }
+  }
+
+  /** Throws 413 if storing `incomingBytes` more in a team's pool would go over its limit - a team's song's file, a team's brand's (issue #279). */
+  async assertCanStoreForTeam(userId: string, teamId: string, incomingBytes: number): Promise<void> {
+    const uploader = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { isGlobalAdmin: true } });
+    if (uploader?.isGlobalAdmin) return;
+    const { usedBytes, limitBytes } = await this.getTeamUsage(teamId);
+    if (usedBytes + incomingBytes > (limitBytes ?? Infinity)) {
+      throw new PayloadTooLargeException({
+        code: "TEAM_STORAGE_LIMIT_EXCEEDED",
+        message: `This upload would exceed the team's storage limit (${formatMb(usedBytes)} of ${formatMb(limitBytes ?? 0)} used).`,
         usedBytes,
         limitBytes,
       });

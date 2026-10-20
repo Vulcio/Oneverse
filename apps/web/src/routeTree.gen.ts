@@ -43,6 +43,7 @@ import { Route as ProtectedAdminStemSeparationRouteImport } from './routes/_prot
 import { Route as ProtectedAdminStorageRouteImport } from './routes/_protected/admin/storage'
 import { Route as ProtectedAdminTeamsRouteImport } from './routes/_protected/admin/teams'
 import { Route as ProtectedAdminUsersRouteImport } from './routes/_protected/admin/users'
+import { Route as ProtectedBrandsBrandIdRouteImport } from './routes/_protected/brands.$brandId'
 import { Route as ProtectedLibraryIndexRouteImport } from './routes/_protected/library/index'
 import { Route as ProtectedLibrarySongVersionIdRouteImport } from './routes/_protected/library/$songVersionId'
 import { Route as ProtectedLibraryArtistsRouteImport } from './routes/_protected/library/artists'
@@ -248,6 +249,11 @@ const ProtectedAdminUsersRoute = ProtectedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => ProtectedAdminRoute,
 } as any)
+const ProtectedBrandsBrandIdRoute = ProtectedBrandsBrandIdRouteImport.update({
+  id: '/brands/$brandId',
+  path: '/brands/$brandId',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedLibraryIndexRoute = ProtectedLibraryIndexRouteImport.update({
   id: '/library/',
   path: '/library/',
@@ -449,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/admin/storage': typeof ProtectedAdminStorageRoute
   '/admin/teams': typeof ProtectedAdminTeamsRoute
   '/admin/users': typeof ProtectedAdminUsersRoute
+  '/brands/$brandId': typeof ProtectedBrandsBrandIdRoute
   '/library/$songVersionId': typeof ProtectedLibrarySongVersionIdRoute
   '/library/artists': typeof ProtectedLibraryArtistsRoute
   '/library/new': typeof ProtectedLibraryNewRoute
@@ -512,6 +519,7 @@ export interface FileRoutesByTo {
   '/admin/storage': typeof ProtectedAdminStorageRoute
   '/admin/teams': typeof ProtectedAdminTeamsRoute
   '/admin/users': typeof ProtectedAdminUsersRoute
+  '/brands/$brandId': typeof ProtectedBrandsBrandIdRoute
   '/library/$songVersionId': typeof ProtectedLibrarySongVersionIdRoute
   '/library/artists': typeof ProtectedLibraryArtistsRoute
   '/library/new': typeof ProtectedLibraryNewRoute
@@ -579,6 +587,7 @@ export interface FileRoutesById {
   '/_protected/admin/storage': typeof ProtectedAdminStorageRoute
   '/_protected/admin/teams': typeof ProtectedAdminTeamsRoute
   '/_protected/admin/users': typeof ProtectedAdminUsersRoute
+  '/_protected/brands/$brandId': typeof ProtectedBrandsBrandIdRoute
   '/_protected/library/$songVersionId': typeof ProtectedLibrarySongVersionIdRoute
   '/_protected/library/artists': typeof ProtectedLibraryArtistsRoute
   '/_protected/library/new': typeof ProtectedLibraryNewRoute
@@ -646,6 +655,7 @@ export interface FileRouteTypes {
     | '/admin/storage'
     | '/admin/teams'
     | '/admin/users'
+    | '/brands/$brandId'
     | '/library/$songVersionId'
     | '/library/artists'
     | '/library/new'
@@ -709,6 +719,7 @@ export interface FileRouteTypes {
     | '/admin/storage'
     | '/admin/teams'
     | '/admin/users'
+    | '/brands/$brandId'
     | '/library/$songVersionId'
     | '/library/artists'
     | '/library/new'
@@ -775,6 +786,7 @@ export interface FileRouteTypes {
     | '/_protected/admin/storage'
     | '/_protected/admin/teams'
     | '/_protected/admin/users'
+    | '/_protected/brands/$brandId'
     | '/_protected/library/$songVersionId'
     | '/_protected/library/artists'
     | '/_protected/library/new'
@@ -1060,6 +1072,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAdminUsersRouteImport
       parentRoute: typeof ProtectedAdminRoute
     }
+    '/_protected/brands/$brandId': {
+      id: '/_protected/brands/$brandId'
+      path: '/brands/$brandId'
+      fullPath: '/brands/$brandId'
+      preLoaderRoute: typeof ProtectedBrandsBrandIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/library/': {
       id: '/_protected/library/'
       path: '/library'
@@ -1340,6 +1359,7 @@ interface ProtectedRouteChildren {
   ProtectedReviewRoute: typeof ProtectedReviewRouteWithChildren
   ProtectedScreensRoute: typeof ProtectedScreensRoute
   ProtectedTunerRoute: typeof ProtectedTunerRoute
+  ProtectedBrandsBrandIdRoute: typeof ProtectedBrandsBrandIdRoute
   ProtectedLibrarySongVersionIdRoute: typeof ProtectedLibrarySongVersionIdRoute
   ProtectedLibraryArtistsRoute: typeof ProtectedLibraryArtistsRoute
   ProtectedLibraryNewRoute: typeof ProtectedLibraryNewRoute
@@ -1381,6 +1401,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedReviewRoute: ProtectedReviewRouteWithChildren,
   ProtectedScreensRoute: ProtectedScreensRoute,
   ProtectedTunerRoute: ProtectedTunerRoute,
+  ProtectedBrandsBrandIdRoute: ProtectedBrandsBrandIdRoute,
   ProtectedLibrarySongVersionIdRoute: ProtectedLibrarySongVersionIdRoute,
   ProtectedLibraryArtistsRoute: ProtectedLibraryArtistsRoute,
   ProtectedLibraryNewRoute: ProtectedLibraryNewRoute,

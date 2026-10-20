@@ -62,8 +62,8 @@ Early in the [Bm]morning our [E]song shall rise to [A]Thee;
 ];
 
 const LOCALES = {
-  en: { user: "Alex Martin", email: "alex.martin@example.com", bandmate: "Sam Taylor", guest: "Jordan Kim", friend: "Chris Lane", asking: "Taylor Reed", reviewer: "Robin Lee", why: "It's 'relieved', with one l.", team: "Morning Band", set: "Sunday service", arrangement: "Sunday band", songbook: "Hymns", note: "Softly, piano only", addedLine: "Sing it a|gain", service: "Morning service", rehearsal: "Rehearsal", hall: "Main hall", zone: "Europe/London", organization: "Grace Church", welcome: "Welcome team", greeter: "Greeter", coffee: "Coffee" },
-  fr: { user: "Camille Durand", email: "camille.durand@example.com", bandmate: "Hugo Petit", guest: "Lucas Martin", friend: "Chloe Bernard", asking: "Emma Roux", reviewer: "Alice Moreau", why: "C'est « relieved », avec un seul l.", team: "Groupe du matin", set: "Culte du dimanche", arrangement: "Groupe du dimanche", songbook: "Cantiques", note: "Doucement, piano seul", addedLine: "Chante-le en|core", service: "Culte du matin", rehearsal: "Répétition", hall: "Grande salle", zone: "Europe/Paris", organization: "Église de la Grâce", welcome: "Équipe d'accueil", greeter: "Accueil", coffee: "Café" },
+  en: { user: "Alex Martin", email: "alex.martin@example.com", bandmate: "Sam Taylor", guest: "Jordan Kim", friend: "Chris Lane", asking: "Taylor Reed", reviewer: "Robin Lee", why: "It's 'relieved', with one l.", team: "Morning Band", set: "Sunday service", arrangement: "Sunday band", songbook: "Hymns", note: "Softly, piano only", addedLine: "Sing it a|gain", service: "Morning service", rehearsal: "Rehearsal", hall: "Main hall", zone: "Europe/London", organization: "Grace Church", welcome: "Welcome team", greeter: "Greeter", coffee: "Coffee", brand: "Sunday mornings", brandColors: ["Primary", "Secondary", "Accent"] },
+  fr: { user: "Camille Durand", email: "camille.durand@example.com", bandmate: "Hugo Petit", guest: "Lucas Martin", friend: "Chloe Bernard", asking: "Emma Roux", reviewer: "Alice Moreau", why: "C'est « relieved », avec un seul l.", team: "Groupe du matin", set: "Culte du dimanche", arrangement: "Groupe du dimanche", songbook: "Cantiques", note: "Doucement, piano seul", addedLine: "Chante-le en|core", service: "Culte du matin", rehearsal: "Répétition", hall: "Grande salle", zone: "Europe/Paris", organization: "Église de la Grâce", welcome: "Équipe d'accueil", greeter: "Accueil", coffee: "Café", brand: "Dimanche matin", brandColors: ["Principale", "Secondaire", "Accent"] },
 };
 
 const nextSunday = () => {
@@ -338,6 +338,27 @@ try {
     await tv.getByTestId("screen-pairing").waitFor();
     await shootTv("screen-code");
     const screenCode = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
+    // A brand (issue #279): its logos, colours and fonts.
+    {
+      const brand = await api(me, "POST", "/brands", { name: text.brand, teamId: team.id });
+      await api(me, "PATCH", `/brands/${brand.id}`, {
+        colors: [
+          { id: "primary", name: text.brandColors[0], light: "#4f46e5", dark: "#818cf8" },
+          { id: "secondary", name: text.brandColors[1], light: "#0f766e", dark: "#5eead4" },
+          { id: "accent", name: text.brandColors[2], light: "#d97706", dark: "#fbbf24" },
+        ],
+        fonts: { heading: { family: "display" }, body: { family: "sans" }, lyrics: { family: "rounded" } },
+        website: "https://example.org",
+      });
+      const logo = (fill) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40"><circle cx="20" cy="20" r="14" fill="${fill}"/><text x="42" y="27" font-family="sans-serif" font-size="18" font-weight="700" fill="${fill}">Morning</text></svg>`);
+      await shoot("brand", `/brands/${brand.id}`, async () => {
+        // Through the page, which draws an SVG into a PNG.
+        for (const [kind, fill] of [["logo", "#4f46e5"], ["logo-dark", "#e0e7ff"]]) {
+          await page.getByTestId(`brand-upload-${kind}-input`).setInputFiles({ name: `${kind}.svg`, mimeType: "image/svg+xml", buffer: logo(fill) });
+          await page.locator(`[data-testid="brand-logo-${kind}"][data-filled] img`).waitFor();
+        }
+      });
+    }
     // Screen templates (issue #194): the built-in ones, each playing its sample song.
     await shoot(
       "screen-themes",
