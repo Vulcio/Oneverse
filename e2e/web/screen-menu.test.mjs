@@ -72,6 +72,24 @@ try {
     await menu().waitFor({ state: "detached" });
   });
 
+  await step("OK pressed three times opens it (issue #285); twice doesn't; the remote's Menu key does", async () => {
+    await tv.keyboard.press("Enter");
+    await tv.keyboard.press("Enter");
+    await tv.waitForTimeout(900);
+    if ((await menu().count()) > 0) throw new Error("two presses opened the menu");
+    await tv.keyboard.press("Enter");
+    await tv.keyboard.press("Enter");
+    await tv.keyboard.press("Enter");
+    await menu().waitFor({ timeout: 3000 });
+    if ((await menu().getAttribute("data-view")) !== "menu" || (await picker().count()) > 0) throw new Error("the presses chose an entry");
+    await tv.keyboard.press("Escape");
+    await menu().waitFor({ state: "detached" });
+    await tv.keyboard.press("ContextMenu");
+    await menu().waitFor({ timeout: 3000 });
+    await tv.keyboard.press("Escape");
+    await menu().waitFor({ state: "detached" });
+  });
+
   await step("Choose a set, while presenting: the picker, then tomorrow's set", async () => {
     await showing().dblclick({ position: { x: 300, y: 300 } });
     await menu().waitFor();

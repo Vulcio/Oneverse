@@ -30,7 +30,7 @@ Une liste mise sur un écran depuis **Écrans**, dans les **Réglages** de sa vi
 
 ### Le menu de l'écran
 
-L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une liste est présentée. Pour l'ouvrir, **maintenez OK** sur la télécommande (ou Entrée sur un clavier) environ une seconde, **double-cliquez** ou faites un clic droit sur l'écran avec une souris, ou **appuyez longuement** sur un écran tactile. Un appui bref sur OK ou un simple clic ne l'ouvre jamais : il n'apparaît pas par accident par-dessus les paroles.
+L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une liste est présentée. Pour l'ouvrir, appuyez **trois fois sur OK** rapidement sur la télécommande (ou Entrée sur un clavier), maintenez OK environ une seconde, ou appuyez sur la touche **Menu** de la télécommande. Avec une souris, **double-cliquez** ou faites un clic droit sur l'écran ; sur un écran tactile, **appuyez longuement**. Un seul appui sur OK ou un simple clic ne l'ouvre jamais : il n'apparaît pas par accident par-dessus les paroles. Sur un écran qui suit la liste du jour, un seul appui sur OK ouvre toujours la liste des listes, une demi-seconde plus tard, quand aucun second appui ne suit.
 
 ![Le menu de l'écran, par-dessus les paroles](../../../assets/screenshots/fr/screen-menu.jpg)
 

@@ -215,7 +215,7 @@ const en = {
     daySetNone: "The day's set: none today",
     menu: {
       title: "This screen",
-      hint: "Arrows to move, OK to choose, Back to close. Hold OK, double-click or long-press the screen to open this menu.",
+      hint: "Arrows to move, OK to choose, Back to close. Press OK three times, hold it, or press Menu (or double-click or long-press the screen) to open this menu.",
       chooseSet: "Choose a set",
       fixedSet: "This screen shows the set put on it from Screens.",
       theme: "Theme",

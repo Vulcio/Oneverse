@@ -122,34 +122,55 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
   const daySet = current.screen.setMode === "DAY";
   const [picking, setPicking] = useState(false);
   const showPicker = daySet && (picking || !set);
-  // The screen's own menu (issue #276): OK held, else a double-click, a right-click or a long press - never a passing tap.
+  // The screen's own menu (issues #276, #285): OK pressed three times or held, the remote's Menu key, else a
+  // double-click, a right-click or a long press - never a passing tap.
   const [menu, setMenu] = useState(false);
   useEffect(() => {
     if (!daySet) setPicking(false);
     // Open, the list takes the keys (OK on an entry picks it).
     if (showPicker || menu) return;
     let hold: ReturnType<typeof setTimeout> | undefined;
+    let settle: ReturnType<typeof setTimeout> | undefined;
+    let presses = 0;
+    const opensMenu = () => {
+      clearTimeout(settle);
+      presses = 0;
+      setMenu(true);
+    };
     const down = (event: KeyboardEvent) => {
+      if (MENU_KEYS.includes(event.key)) {
+        event.preventDefault();
+        return opensMenu();
+      }
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       if (event.repeat || hold || event.key !== "Enter") return;
       hold = setTimeout(() => {
         hold = undefined;
-        setMenu(true);
+        opensMenu();
       }, HOLD_MS);
     };
-    // A short press: the sets, on a screen following the day's with nothing presented.
+    // Short presses, counted: the third opens the menu; one alone, once no other follows, the sets (on a screen
+    // following the day's with nothing presented).
     const up = (event: KeyboardEvent) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       const short = event.key === " " || hold !== undefined;
       clearTimeout(hold);
       hold = undefined;
-      if (short && daySet && !presenting) setPicking(true);
+      if (!short) return;
+      presses += 1;
+      clearTimeout(settle);
+      if (presses >= 3) return opensMenu();
+      settle = setTimeout(() => {
+        if (presses === 1 && daySet && !presenting) setPicking(true);
+        presses = 0;
+      }, PRESS_GAP_MS);
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     return () => {
       clearTimeout(hold);
+      clearTimeout(settle);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
@@ -219,6 +240,10 @@ function Idle({ title, subtitle }: { title: string; subtitle: string }) {
 
 /** How long OK, or a finger, is held to open the screen's menu (issue #276). */
 const HOLD_MS = 800;
+/** OK pressed again within this, it's one of three that open the menu (issue #285). */
+const PRESS_GAP_MS = 500;
+/** A remote's or a keyboard's menu keys: the menu straight away (issue #285). */
+const MENU_KEYS = ["ContextMenu", "Menu", "Info"];
 
 /** A press held still for HOLD_MS, on a touch screen or with a mouse. */
 function useLongPress(onLongPress: () => void) {

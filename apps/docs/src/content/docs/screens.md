@@ -30,7 +30,7 @@ A set put on a screen from **Screens**, in its tile's **Settings**, is fixed ins
 
 ### The screen's menu
 
-The screen has a menu of its own, for whoever stands by it, even while a set is presented. To open it, **hold OK** on the remote (or Enter on a keyboard) for about a second, **double-click** or right-click the screen with a mouse, or **press and hold** a touch screen. A short OK or a single click never opens it, so it doesn't appear over the words by accident.
+The screen has a menu of its own, for whoever stands by it, even while a set is presented. To open it, press **OK three times** quickly on the remote (or Enter on a keyboard), hold OK for about a second, or press the remote's **Menu** key. With a mouse, **double-click** or right-click the screen; on a touch screen, **press and hold**. A single OK or a single click never opens it, so it doesn't appear over the words by accident. On a screen following the day's set, a single OK still opens the list of sets, half a second later, once no second press follows.
 
 ![The screen's menu, over the words](../../assets/screenshots/en/screen-menu.jpg)
 

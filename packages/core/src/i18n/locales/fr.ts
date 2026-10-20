@@ -215,7 +215,7 @@ const fr: typeof en = {
     daySetNone: "La liste du jour : aucune aujourd'hui",
     menu: {
       title: "Cet écran",
-      hint: "Flèches pour se déplacer, OK pour choisir, Retour pour fermer. Maintenez OK, double-cliquez ou appuyez longuement sur l'écran pour ouvrir ce menu.",
+      hint: "Flèches pour se déplacer, OK pour choisir, Retour pour fermer. Appuyez trois fois sur OK, maintenez-le ou appuyez sur Menu (ou double-cliquez ou appuyez longuement sur l'écran) pour ouvrir ce menu.",
       chooseSet: "Choisir une liste",
       fixedSet: "Cet écran affiche la liste qui lui a été donnée depuis Écrans.",
       theme: "Thème",
