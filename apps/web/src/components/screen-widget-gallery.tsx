@@ -33,6 +33,9 @@ const PREVIEW_SHAPE: Partial<Record<ScreenWidgetKind, [number, number]>> = {
   "current-item": [10, 4],
   "next-item": [10, 3],
   text: [10, 3],
+  date: [10, 4],
+  "slide-count": [8, 4],
+  "qr-code": [6, 9],
 };
 
 /** A widget alone on a screen, with the sample song, a ticking clock and a running countdown (issue #273). */

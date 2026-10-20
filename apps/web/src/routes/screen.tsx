@@ -94,6 +94,12 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
     return { key: view.item.id, title: view.song.title, slides: lyricSlides(chart), credits: set?.credits[view.song.id], chart };
   }, [view, set]);
 
+  // Each song's slides, counted once per set (issue #289): the Slide count widget's set.
+  const slideCounts = useMemo(
+    () => (set?.songs ?? []).map((one) => (one.song ? lyricSlides(renderChart(one.song.document, one.arrangement?.document ?? null, { transposeSteps: one.item.transposeSteps })).length : 0)),
+    [set],
+  );
+
   // What the template's widgets read (issue #268): the song's details, the next song, when this item came on.
   const [itemStartedAt, setItemStartedAt] = useState<number | null>(null);
   useEffect(() => setItemStartedAt(presenting?.itemId ? Date.now() : null), [presenting?.itemId]);
@@ -113,10 +119,11 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
       operator: stage?.timer ?? null,
       layers: stage?.layers,
       title: set ? { title: setlistTitle(set.set, t, i18n.language), subtitle: set.set.teamName ?? null } : null,
+      setSlides: at >= 0 ? { counts: slideCounts, item: at } : null,
       message: stage?.message?.text ?? null,
       offset,
     };
-  }, [set, view, song, itemStartedAt, stage, offset, t, i18n.language]);
+  }, [set, view, song, itemStartedAt, stage, offset, slideCounts, t, i18n.language]);
 
   // Following its owner's schedule (issue #274): no set today, the sets to pick from; OK while nothing's presented opens them too.
   const daySet = current.screen.setMode === "DAY";

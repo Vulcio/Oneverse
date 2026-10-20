@@ -20,7 +20,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyStageCommand, clockOffset, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenThemeContrast, sectionEnergy } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
@@ -1168,6 +1168,32 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "inside: as it is", args: [{ x: 2, y: 1, w: 3, h: 2 }, { columns: 12, rows: 12 }] },
           { name: "past the right and bottom edges: cut to fit", args: [{ x: 10, y: 11, w: 5, h: 4 }, { columns: 12, rows: 12 }] },
           { name: "starting outside a smaller grid: its last cell", args: [{ x: 20, y: 20, w: 2, h: 2 }, { columns: 6, rows: 4 }] },
+        ],
+      },
+      screenQrPayload: {
+        about: "What a QR code widget encodes (issue #289): an address as it is, an event as an iCalendar VEVENT, a contact as a vCard 3.0, a Wi-Fi network as WIFI:. Null while there's nothing to encode.",
+        params: ["widget"],
+        run: (widget: unknown) => screenQrPayload(ScreenWidgetSchema.parse(widget).options.qr),
+        cases: [
+          { name: "an address", args: [{ id: "q", kind: "qr-code", x: 0, y: 0, w: 1, h: 1, options: { qr: { url: " https://example.org/give " } } }] },
+          { name: "nothing yet", args: [{ id: "q", kind: "qr-code", x: 0, y: 0, w: 1, h: 1 }] },
+          { name: "an event, with a comma in its place", args: [{ id: "q", kind: "qr-code", x: 0, y: 0, w: 1, h: 1, options: { qr: { kind: "event", title: "Youth night", start: "2026-11-06T19:30", end: "2026-11-06T22:00", place: "Hall B, Main St" } } }] },
+          { name: "an event without a start: nothing", args: [{ id: "q", kind: "qr-code", x: 0, y: 0, w: 1, h: 1, options: { qr: { kind: "event", title: "Youth night" } } }] },
+          { name: "a contact", args: [{ id: "q", kind: "qr-code", x: 0, y: 0, w: 1, h: 1, options: { qr: { kind: "contact", name: "Welcome desk", phone: "+33 1 23 45 67 89", email: "hello@example.org", organization: "Our church" } } }] },
+          { name: "a Wi-Fi network, its password escaped", args: [{ id: "q", kind: "qr-code", x: 0, y: 0, w: 1, h: 1, options: { qr: { kind: "wifi", ssid: "Guests", password: "pa;ss:word" } } }] },
+          { name: "an open Wi-Fi network", args: [{ id: "q", kind: "qr-code", x: 0, y: 0, w: 1, h: 1, options: { qr: { kind: "wifi", ssid: "Lobby", security: "nopass" } } }] },
+        ],
+      },
+      screenSlideCount: {
+        about: "Where the Slide count widget says the screens are (issue #289): the slide shown out of the song's, or out of the whole set's. Null when nothing's shown.",
+        params: ["scope", "counts", "item", "slide"],
+        run: screenSlideCount,
+        cases: [
+          { name: "the song's", args: ["song", [4, 6, 3], 1, 2] },
+          { name: "the set's", args: ["set", [4, 6, 3], 1, 2] },
+          { name: "the first slide of the set", args: ["set", [4, 6, 3], 0, 0] },
+          { name: "an item without words, nothing shown", args: ["set", [4, 0, 3], 1, 0] },
+          { name: "a slide past the song's end: nothing", args: ["song", [4], 0, 9] },
         ],
       },
       screenLayoutPresets: {

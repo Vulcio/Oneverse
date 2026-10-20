@@ -122,6 +122,9 @@ A template can place widgets on a grid: a stage display shows the singers the sl
 - **Song** and **Next song** - the song's title, with its key and tempo, and what comes next in the set.
 - **Current item** and **Next item** - what's on in the set and what comes next, songs or not, with **Its place in the set (3 of 8)**.
 - **Text** - words of your own.
+- **Date** - today's date, **Written as** **Sunday 20 October**, **20 Oct 2026**, **20/10/2026**, **2026-10-20** or the weekday alone, **With the time** if you like.
+- **Slide count** - which slide is on screen, as 3 / 12: **Count** **The song's slides** or **The whole set's slides**, with a **Progress bar** (**Thin**, **Thick** or **None**) under it.
+- **QR code** - a code people scan with their phone. **It holds** **A web address**, **An event** (its title, start, end and place, added to their calendar), **A contact card** (name, phone, email, organisation) or **The Wi-Fi** (the network's name and password, to join it in one tap). Its label is written under it.
 
 Each one plays live on the **Widgets** tab, with a sample song. **Customize** sets its default look - its options, font, colour, size, panel and corners - which it gets when it's added to a template: **Save as default** for yourself, or, with **For**, for a team you're an admin of. A team's template takes the team's look, else yours, else the built-in one; **Back to the built-in look** forgets yours. A template that already has the widget keeps its own.
 

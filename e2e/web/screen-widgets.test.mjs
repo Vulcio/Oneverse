@@ -184,6 +184,33 @@ try {
     await tv.getByTestId("widget-song-structure").waitFor({ state: "detached", timeout: 10000 });
   });
 
+  await step("a date, the slide count (the song's and the set's) and a QR code (issue #289)", async () => {
+    const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.id === theme.id);
+    const widgets = [
+      { id: "day", kind: "date", x: 0, y: 0, w: 6, h: 3, options: { dateFormat: "iso", time: true } },
+      { id: "song-count", kind: "slide-count", x: 0, y: 3, w: 6, h: 3 },
+      { id: "set-count", kind: "slide-count", x: 0, y: 6, w: 6, h: 3, options: { scope: "set", progress: "thick" } },
+      { id: "wifi", kind: "qr-code", x: 6, y: 0, w: 6, h: 9, options: { label: "Wi-Fi", qr: { kind: "wifi", ssid: "Guests", password: "pa;ss" } } },
+    ];
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: { ...saved.theme, grid: { ...saved.theme.grid, widgets } } });
+    page = tv;
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    await tv.getByTestId("widget-date").getByText(today).waitFor({ timeout: 10000 });
+    // The second slide of the first song (two each): 2 / 2 of the song, 2 / 4 of the set.
+    const counts = tv.getByTestId("widget-slide-count");
+    await counts.first().waitFor();
+    const seen = await counts.evaluateAll((all) => all.map((one) => `${one.getAttribute("data-position")}/${one.getAttribute("data-count")}`));
+    if (seen.join(" ") !== "2/2 2/4") throw new Error(seen.join(" "));
+    if ((await tv.getByTestId("widget-slide-progress").count()) !== 2) throw new Error("no progress bars");
+    const qr = tv.getByTestId("widget-qr-code");
+    if ((await qr.getAttribute("data-payload")) !== "WIFI:T:WPA;S:Guests;P:pa\\;ss;;") throw new Error(await qr.getAttribute("data-payload"));
+    await qr.locator("svg").waitFor();
+    await qr.getByText("Wi-Fi").waitFor();
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: saved.theme });
+    await tv.getByTestId("widget-qr-code").waitFor({ state: "detached", timeout: 10000 });
+  });
+
   await step("the editor: a countdown's colours by time, added", async () => {
     page = tablet;
     await tablet.goto(`${WEB}/screens?tab=templates`);
@@ -210,7 +237,7 @@ try {
     await tablet.goto(`${WEB}/screens?tab=widgets`);
     const list = tablet.getByTestId("widgets-list");
     await list.getByTestId("widget-analog-clock").getByTestId("widget-analog-clock").waitFor();
-    if ((await list.getByTestId("theme-preview").count()) !== 16) throw new Error(`previews: ${await list.getByTestId("theme-preview").count()}`);
+    if ((await list.getByTestId("theme-preview").count()) !== 19) throw new Error(`previews: ${await list.getByTestId("theme-preview").count()}`);
     await list.getByTestId("widget-countdown").getByTestId("widget-countdown").waitFor();
     await list.getByTestId("widget-countdown").getByTestId("widget-customize").click();
     const dialog = tablet.getByTestId("widget-default-editor");
@@ -230,6 +257,14 @@ try {
     await editor.getByTestId("theme-widget-label").waitFor();
     if ((await editor.getByTestId("theme-widget-label").inputValue()) !== `Talk ${stamp}`) throw new Error("the default look wasn't put on the widget");
     await editor.getByRole("button", { name: "Close" }).last().click();
+    // A QR code's address, set in its default: the preview encodes it.
+    await tablet.goto(`${WEB}/screens?tab=widgets`);
+    await tablet.getByTestId("widgets-list").getByTestId("widget-qr-code").getByTestId("widget-customize").click();
+    const qrDialog = tablet.getByTestId("widget-default-editor");
+    await qrDialog.getByTestId("theme-widget-qr-url").fill(`https://example.org/${stamp}`);
+    await qrDialog.locator(`[data-testid="widget-qr-code"][data-payload="https://example.org/${stamp}"]`).waitFor();
+    await qrDialog.getByRole("button", { name: "Close" }).last().click();
+    await qrDialog.waitFor({ state: "detached" });
     // Back to the built-in look.
     await tablet.goto(`${WEB}/screens?tab=widgets`);
     await tablet.getByTestId("widgets-list").getByTestId("widget-countdown").getByTestId("widget-customize").click();

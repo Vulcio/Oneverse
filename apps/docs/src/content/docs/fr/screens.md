@@ -122,6 +122,9 @@ Un modèle peut placer des widgets sur une grille : un affichage de scène montr
 - **Chant** et **Chant suivant** - le titre du chant, avec sa tonalité et son tempo, et ce qui vient ensuite dans la liste.
 - **Élément en cours** et **Élément suivant** - ce qui se passe dans la liste et ce qui vient ensuite, chants ou non, avec **Sa place dans la liste (3 sur 8)**.
 - **Texte** - vos propres mots.
+- **Date** - la date du jour, **Écrite** **dimanche 20 octobre**, **20 oct. 2026**, **20/10/2026**, **2026-10-20** ou le jour seul, **Avec l'heure** si vous le souhaitez.
+- **Numéro de diapositive** - quelle diapositive est à l'écran, sous la forme 3 / 12 : **Compter** **Les diapositives du chant** ou **Les diapositives de toute la liste**, avec une **Barre de progression** (**Fine**, **Épaisse** ou **Aucune**) dessous.
+- **Code QR** - un code que l'on scanne avec son téléphone. **Il contient** **Une adresse web**, **Un événement** (son titre, son début, sa fin et son lieu, ajouté à l'agenda), **Une fiche contact** (nom, téléphone, e-mail, organisation) ou **Le Wi-Fi** (le nom du réseau et son mot de passe, pour s'y connecter d'un geste). Son libellé s'écrit dessous.
 
 Chacun s'anime dans l'onglet **Widgets**, avec un chant d'exemple. **Personnaliser** règle son apparence par défaut - ses options, sa police, sa couleur, sa taille, son fond et ses coins - qu'il prend quand on l'ajoute à un modèle : **Enregistrer par défaut** pour vous, ou, avec **Pour**, pour une équipe dont vous êtes administrateur. Un modèle d'équipe prend l'apparence de l'équipe, sinon la vôtre, sinon celle intégrée ; **Revenir à l'apparence intégrée** oublie la vôtre. Un modèle qui a déjà le widget garde la sienne.
 

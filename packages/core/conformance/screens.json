@@ -1023,7 +1023,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,
@@ -1362,6 +1381,243 @@
         }
       ]
     },
+    "screenQrPayload": {
+      "about": "What a QR code widget encodes (issue #289): an address as it is, an event as an iCalendar VEVENT, a contact as a vCard 3.0, a Wi-Fi network as WIFI:. Null while there's nothing to encode.",
+      "params": [
+        "widget"
+      ],
+      "cases": [
+        {
+          "name": "an address",
+          "args": [
+            {
+              "id": "q",
+              "kind": "qr-code",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "qr": {
+                  "url": " https://example.org/give "
+                }
+              }
+            }
+          ],
+          "expected": "https://example.org/give"
+        },
+        {
+          "name": "nothing yet",
+          "args": [
+            {
+              "id": "q",
+              "kind": "qr-code",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1
+            }
+          ],
+          "expected": null
+        },
+        {
+          "name": "an event, with a comma in its place",
+          "args": [
+            {
+              "id": "q",
+              "kind": "qr-code",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "qr": {
+                  "kind": "event",
+                  "title": "Youth night",
+                  "start": "2026-11-06T19:30",
+                  "end": "2026-11-06T22:00",
+                  "place": "Hall B, Main St"
+                }
+              }
+            }
+          ],
+          "expected": "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Youth night\r\nDTSTART:20261106T193000\r\nDTEND:20261106T220000\r\nLOCATION:Hall B\\, Main St\r\nEND:VEVENT\r\nEND:VCALENDAR"
+        },
+        {
+          "name": "an event without a start: nothing",
+          "args": [
+            {
+              "id": "q",
+              "kind": "qr-code",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "qr": {
+                  "kind": "event",
+                  "title": "Youth night"
+                }
+              }
+            }
+          ],
+          "expected": null
+        },
+        {
+          "name": "a contact",
+          "args": [
+            {
+              "id": "q",
+              "kind": "qr-code",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "qr": {
+                  "kind": "contact",
+                  "name": "Welcome desk",
+                  "phone": "+33 1 23 45 67 89",
+                  "email": "hello@example.org",
+                  "organization": "Our church"
+                }
+              }
+            }
+          ],
+          "expected": "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Welcome desk\r\nN:Welcome desk;;;;\r\nORG:Our church\r\nTEL:+33 1 23 45 67 89\r\nEMAIL:hello@example.org\r\nEND:VCARD"
+        },
+        {
+          "name": "a Wi-Fi network, its password escaped",
+          "args": [
+            {
+              "id": "q",
+              "kind": "qr-code",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "qr": {
+                  "kind": "wifi",
+                  "ssid": "Guests",
+                  "password": "pa;ss:word"
+                }
+              }
+            }
+          ],
+          "expected": "WIFI:T:WPA;S:Guests;P:pa\\;ss\\:word;;"
+        },
+        {
+          "name": "an open Wi-Fi network",
+          "args": [
+            {
+              "id": "q",
+              "kind": "qr-code",
+              "x": 0,
+              "y": 0,
+              "w": 1,
+              "h": 1,
+              "options": {
+                "qr": {
+                  "kind": "wifi",
+                  "ssid": "Lobby",
+                  "security": "nopass"
+                }
+              }
+            }
+          ],
+          "expected": "WIFI:T:nopass;S:Lobby;;"
+        }
+      ]
+    },
+    "screenSlideCount": {
+      "about": "Where the Slide count widget says the screens are (issue #289): the slide shown out of the song's, or out of the whole set's. Null when nothing's shown.",
+      "params": [
+        "scope",
+        "counts",
+        "item",
+        "slide"
+      ],
+      "cases": [
+        {
+          "name": "the song's",
+          "args": [
+            "song",
+            [
+              4,
+              6,
+              3
+            ],
+            1,
+            2
+          ],
+          "expected": {
+            "position": 3,
+            "count": 6
+          }
+        },
+        {
+          "name": "the set's",
+          "args": [
+            "set",
+            [
+              4,
+              6,
+              3
+            ],
+            1,
+            2
+          ],
+          "expected": {
+            "position": 7,
+            "count": 13
+          }
+        },
+        {
+          "name": "the first slide of the set",
+          "args": [
+            "set",
+            [
+              4,
+              6,
+              3
+            ],
+            0,
+            0
+          ],
+          "expected": {
+            "position": 1,
+            "count": 13
+          }
+        },
+        {
+          "name": "an item without words, nothing shown",
+          "args": [
+            "set",
+            [
+              4,
+              0,
+              3
+            ],
+            1,
+            0
+          ],
+          "expected": null
+        },
+        {
+          "name": "a slide past the song's end: nothing",
+          "args": [
+            "song",
+            [
+              4
+            ],
+            0,
+            9
+          ],
+          "expected": null
+        }
+      ]
+    },
     "screenLayoutPresets": {
       "about": "The ready-made grids a template's layout starts from (issue #268), by id.",
       "params": [
@@ -1405,7 +1661,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1436,7 +1711,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1481,7 +1775,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1512,7 +1825,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1543,7 +1875,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1574,7 +1925,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1605,7 +1975,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1636,7 +2025,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -1667,7 +2075,26 @@
                   "label": "",
                   "text": "",
                   "details": true,
-                  "breakpoints": []
+                  "breakpoints": [],
+                  "dateFormat": "long",
+                  "time": false,
+                  "scope": "song",
+                  "progress": "thin",
+                  "qr": {
+                    "kind": "url",
+                    "url": "",
+                    "title": "",
+                    "start": "",
+                    "end": "",
+                    "place": "",
+                    "name": "",
+                    "phone": "",
+                    "email": "",
+                    "organization": "",
+                    "ssid": "",
+                    "password": "",
+                    "security": "WPA"
+                  }
                 },
                 "style": {
                   "font": null,
@@ -2875,7 +3302,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,
@@ -2906,7 +3352,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,
@@ -2937,7 +3402,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,
@@ -2968,7 +3452,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,
@@ -2999,7 +3502,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,
@@ -3030,7 +3552,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,
@@ -3061,7 +3602,26 @@
                     "label": "",
                     "text": "",
                     "details": true,
-                    "breakpoints": []
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
                   },
                   "style": {
                     "font": null,

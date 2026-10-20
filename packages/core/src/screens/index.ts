@@ -73,3 +73,4 @@ export * from "./theme.js";
 
 export * from "./timers.js";
 export * from "./day-set.js";
+export * from "./widgets.js";

@@ -95,6 +95,7 @@ export function useSampleLive(song: StageSong): StageLive {
       nextSong: { title: t("screens.widgetSample.nextTitle"), slides: [{ passIndex: 0, passId: "next", label: null, lines: [t("screens.widgetSample.nextLine1"), t("screens.widgetSample.nextLine2")], part: 0 }] },
       details: { title: song.title, key: "G", tempo: 72 },
       item: { title: song.title, position: 2, count: 6 },
+      setSlides: { counts: [4, song.slides.length, 5, 6, 3, 4], item: 1 },
       nextItem: { title: t("screens.widgetSample.nextTitle") },
       itemStartedAt: started,
       operator: { kind: "countdown", duration: 300, startedAt: started, elapsed: 0 },

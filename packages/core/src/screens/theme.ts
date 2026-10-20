@@ -67,10 +67,17 @@ export const SCREEN_WIDGET_KINDS = [
   "current-item",
   "next-item",
   "text",
+  "date",
+  "slide-count",
+  "qr-code",
 ] as const;
 export type ScreenWidgetKind = (typeof SCREEN_WIDGET_KINDS)[number];
 /** Where a timer's time comes from: the media operator (issue #269), a length from when the set item came on, a time of day, the song on screen. */
 export const SCREEN_TIMER_SOURCES = ["operator", "duration", "until", "song"] as const;
+/** How the Date widget writes the day (issue #289): "Sunday 20 October", "20 Oct 2026", "20/10/2026", "2026-10-20", or the weekday alone. */
+export const SCREEN_DATE_FORMATS = ["long", "medium", "short", "iso", "weekday"] as const;
+/** What a QR code widget holds (issue #289): an address, an event, a contact card, a Wi-Fi network. */
+export const SCREEN_QR_KINDS = ["url", "event", "contact", "wifi"] as const;
 /** The most columns or rows a template's grid has. */
 export const SCREEN_GRID_MAX = 24;
 
@@ -116,6 +123,31 @@ function screenWidgetSchema(strict: boolean) {
         .array(object({ at: z.number().int().min(0).max(86_400), color: color.nullable().default(null), background: color.nullable().default(null) }))
         .max(6)
         .default([]),
+      /** Date (issue #289): how the day is written; with the time (in the clock's `format`) or not. */
+      dateFormat: z.enum(SCREEN_DATE_FORMATS).default("long"),
+      time: z.boolean().default(false),
+      /** Slide count (issue #289): the song's slides or the whole set's, and a progress bar under it. */
+      scope: z.enum(["song", "set"]).default("song"),
+      progress: z.enum(["none", "thin", "thick"]).default("thin"),
+      /** QR code (issue #289): what it holds; its caption is the label. */
+      qr: object({
+        kind: z.enum(SCREEN_QR_KINDS).default("url"),
+        url: z.string().max(500).default(""),
+        /** An event: its title, start and end (YYYY-MM-DDTHH:MM, the screen's time) and place. */
+        title: z.string().max(120).default(""),
+        start: z.string().max(16).default(""),
+        end: z.string().max(16).default(""),
+        place: z.string().max(200).default(""),
+        /** A contact: name, phone, email, organisation. */
+        name: z.string().max(120).default(""),
+        phone: z.string().max(40).default(""),
+        email: z.string().max(200).default(""),
+        organization: z.string().max(120).default(""),
+        /** Wi-Fi: the network's name, its password and how it's secured. */
+        ssid: z.string().max(64).default(""),
+        password: z.string().max(64).default(""),
+        security: z.enum(["WPA", "WEP", "nopass"]).default("WPA"),
+      }).prefault({}),
     }).prefault({}),
     style: object({
       /** The template's font, or another. */

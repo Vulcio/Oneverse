@@ -1,5 +1,6 @@
-import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type SyncLayers, type SyncTimer } from "@songverse/core";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type SyncLayers, type SyncTimer } from "@songverse/core";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { renderSVG } from "uqr";
 import { useTranslation } from "react-i18next";
 import { cn } from "@songverse/ui/lib/utils";
 
@@ -25,6 +26,8 @@ export interface StageLive {
   preview?: boolean;
   /** The operator's layers (issue #275): the words, the background, an overlay. */
   layers?: SyncLayers;
+  /** The set's songs' slide counts, in order, and the one on screen's place among them (issue #289): the Slide count widget's set. */
+  setSlides?: { counts: number[]; item: number } | null;
   /** The overlay's title card: the set's name, and its team's. */
   title?: { title: string; subtitle: string | null } | null;
 }
@@ -55,7 +58,7 @@ export function ScreenGrid({
   live: StageLive;
   words: ReactNode;
 }) {
-  const timed = grid.widgets.some((one) => one.kind === "clock" || one.kind === "analog-clock" || one.kind === "countdown" || one.kind === "count-up");
+  const timed = grid.widgets.some((one) => one.kind === "clock" || one.kind === "analog-clock" || one.kind === "countdown" || one.kind === "count-up" || one.kind === "date");
   const now = useNow(timed);
   const margin = theme.layout.margin;
   return (
@@ -296,6 +299,44 @@ function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget
         where ? 1.6 : 1,
       );
     }
+    case "date": {
+      // The day (issue #289), written as asked, the time under it if asked.
+      if (now === null) return null;
+      const date = new Date(now);
+      const day = formatScreenDate(date, options.dateFormat, i18n.language);
+      const time = options.time ? date.toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit", hour12: options.format === "12h" }) : null;
+      return box(
+        <>
+          <p>{day}</p>
+          {time ? <p className="mt-[2cqh] text-[0.5em] tabular-nums opacity-75">{time}</p> : null}
+        </>,
+        "widget-date",
+        day.length,
+        time ? 1.6 : 1,
+      );
+    }
+    case "slide-count": {
+      // Where the screens are (issue #289): the song's slide, or the set's, and a bar.
+      const counts = options.scope === "set" ? live.setSlides : slides ? { counts: [slides.length], item: 0 } : null;
+      const at = counts ? screenSlideCount(options.scope, counts.counts, counts.item, index) : null;
+      if (!at) return null;
+      const text = `${at.position} / ${at.count}`;
+      return (
+        <div className={cn("absolute inset-0 flex flex-col justify-center gap-[4cqh] px-[4cqw] py-[3cqh]", justify)} data-testid="widget-slide-count" data-position={at.position} data-count={at.count}>
+          {label ? <p className="text-[16cqh] leading-none font-semibold tracking-wide uppercase opacity-70">{label}</p> : null}
+          <p className="leading-none tabular-nums" style={{ fontSize: fit(widget, text.length, options.progress === "none" ? 1 : 1.4, label ? 52 : 70), fontWeight: theme.text.weight }}>
+            {text}
+          </p>
+          {options.progress !== "none" ? (
+            <div className={cn("w-full overflow-hidden rounded-full bg-current/25", options.progress === "thick" ? "h-[12cqh]" : "h-[4cqh]")} aria-hidden>
+              <div className="h-full rounded-full bg-current" style={{ width: `${(at.position / at.count) * 100}%` }} data-testid="widget-slide-progress" />
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+    case "qr-code":
+      return <QrCode widget={widget} preview={!!live.preview} label={label} />;
     case "text":
     {
       // In a preview, words to show what it looks like.
@@ -303,6 +344,36 @@ function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget
       return text ? box(<p className={cn("whitespace-pre-line", !options.text && "opacity-60")}>{text}</p>, "widget-text", Math.min(text.length, 36), Math.ceil(text.length / 36)) : null;
     }
   }
+}
+
+/** The day written as a Date widget asks (issue #289), in the screen's language. */
+function formatScreenDate(date: Date, format: ScreenWidget["options"]["dateFormat"], language: string): string {
+  switch (format) {
+    case "long":
+      return date.toLocaleDateString(language, { weekday: "long", day: "numeric", month: "long" });
+    case "medium":
+      return date.toLocaleDateString(language, { day: "numeric", month: "short", year: "numeric" });
+    case "short":
+      return date.toLocaleDateString(language, { day: "2-digit", month: "2-digit", year: "numeric" });
+    case "iso":
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    case "weekday":
+      return date.toLocaleDateString(language, { weekday: "long" });
+  }
+}
+
+/** A QR code widget (issue #289): the code on white, as big as the cell allows, its caption under it; in a preview, a sample until it holds something. */
+function QrCode({ widget, preview, label }: { widget: ScreenWidget; preview: boolean; label: string }) {
+  const own = screenQrPayload(widget.options.qr);
+  const payload = own ?? (preview ? "https://songverse.one" : null);
+  const svg = useMemo(() => (payload ? renderSVG(payload, { pixelSize: 8, whiteColor: "#ffffff", blackColor: "#000000" }) : ""), [payload]);
+  if (!payload) return null;
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-[3cqh] p-[4cqmin]" data-testid="widget-qr-code" data-payload={payload}>
+      <div className={cn("aspect-square max-h-full min-h-0 flex-1 rounded-[2cqmin] bg-white p-[3cqmin] [&>svg]:size-full", !own && "opacity-60")} dangerouslySetInnerHTML={{ __html: svg }} />
+      {label ? <p className="shrink-0 truncate text-[10cqh] leading-none font-semibold">{label}</p> : null}
+    </div>
+  );
 }
 
 /** The time, ticking while something on screen shows it; null until the page runs in the browser (the server's time would differ). */

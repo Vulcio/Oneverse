@@ -1,4 +1,4 @@
-import type { ScreenWidget } from "./theme.js";
+import { ScreenWidgetSchema, type ScreenWidget } from "./theme.js";
 
 /**
  * A timer the media operator runs for a set (issue #269), kept in its sync
@@ -82,7 +82,8 @@ export function readSyncTimer(timer: SyncTimer, now: number, warn = 60): TimerRe
   return readScreenTimer({ kind: timer.kind, options: { ...TIMER_OPTIONS, warn } }, { now, itemStartedAt: null, operator: timer, localMidnight: 0 })!;
 }
 
-const TIMER_OPTIONS: ScreenWidget["options"] = { format: "24h", seconds: false, date: false, source: "operator", duration: 300, until: "10:00", overtime: "count", warn: 60, label: "", text: "", details: true, breakpoints: [] };
+/** A widget's options as they default. */
+const TIMER_OPTIONS: ScreenWidget["options"] = ScreenWidgetSchema.parse({ id: "timer", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }).options;
 
 /**
  * A timer widget's colours at a reading (issue #272): from its break points

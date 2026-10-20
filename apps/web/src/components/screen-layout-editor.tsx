@@ -2,7 +2,9 @@ import {
   formatTimer,
   newScreenWidget,
   placeScreenWidget,
+  SCREEN_DATE_FORMATS,
   SCREEN_FONTS,
+  SCREEN_QR_KINDS,
   SCREEN_GRID_MAX,
   SCREEN_LAYOUT_PRESETS,
   SCREEN_WIDGET_KINDS,
@@ -51,6 +53,9 @@ const SIZES: Record<ScreenWidgetKind, [number, number]> = {
   "current-item": [4, 2],
   "next-item": [4, 2],
   text: [6, 2],
+  date: [4, 2],
+  "slide-count": [3, 2],
+  "qr-code": [2, 4],
 };
 
 /**
@@ -253,6 +258,46 @@ export function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onC
           <Textarea value={widget.options.text} maxLength={280} rows={3} onChange={(e) => options({ text: e.target.value })} data-testid="theme-widget-text" />
         </Field>
       ) : null}
+      {kind === "date" ? (
+        <>
+          <Field label={t("screens.editor.dateFormat")}>
+            <NativeSelect value={widget.options.dateFormat} onChange={(e) => options({ dateFormat: e.target.value as ScreenWidget["options"]["dateFormat"] })} data-testid="theme-widget-date-format">
+              {SCREEN_DATE_FORMATS.map((format) => (
+                <option key={format} value={format}>
+                  {t(`screens.editor.dateFormats.${format}`)}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Check label={t("screens.editor.dateTime")} checked={widget.options.time} onChange={(time) => options({ time })} />
+          {widget.options.time ? (
+            <Field label={t("screens.editor.clockFormat")}>
+              <NativeSelect value={widget.options.format} onChange={(e) => options({ format: e.target.value as "24h" | "12h" })}>
+                <option value="24h">{t("screens.editor.clock24")}</option>
+                <option value="12h">{t("screens.editor.clock12")}</option>
+              </NativeSelect>
+            </Field>
+          ) : null}
+        </>
+      ) : null}
+      {kind === "slide-count" ? (
+        <>
+          <Field label={t("screens.editor.slideScope")}>
+            <NativeSelect value={widget.options.scope} onChange={(e) => options({ scope: e.target.value as "song" | "set" })} data-testid="theme-widget-scope">
+              <option value="song">{t("screens.editor.slideScopes.song")}</option>
+              <option value="set">{t("screens.editor.slideScopes.set")}</option>
+            </NativeSelect>
+          </Field>
+          <Field label={t("screens.editor.progress")}>
+            <NativeSelect value={widget.options.progress} onChange={(e) => options({ progress: e.target.value as ScreenWidget["options"]["progress"] })} data-testid="theme-widget-progress">
+              <option value="none">{t("screens.editor.progresses.none")}</option>
+              <option value="thin">{t("screens.editor.progresses.thin")}</option>
+              <option value="thick">{t("screens.editor.progresses.thick")}</option>
+            </NativeSelect>
+          </Field>
+        </>
+      ) : null}
+      {kind === "qr-code" ? <QrSettings qr={widget.options.qr} onChange={(change) => options({ qr: { ...widget.options.qr, ...change } })} /> : null}
       {kind === "song" ? <Check label={t("screens.editor.songDetails")} checked={widget.options.details} onChange={(details) => options({ details })} /> : null}
       {kind === "analog-clock" ? <Check label={t("screens.editor.secondHand")} checked={widget.options.seconds} onChange={(seconds) => options({ seconds })} testId="theme-widget-seconds" /> : null}
       {kind === "song-structure" ? <Check label={t("screens.editor.structureProgress")} checked={widget.options.details} onChange={(details) => options({ details })} /> : null}
@@ -310,6 +355,65 @@ export function WidgetSettings({ widget, onChange }: { widget: ScreenWidget; onC
         <input type="range" className="accent-primary" value={widget.style.radius} min={0} max={10} step={0.5} onChange={(e) => style({ radius: Number(e.target.value) })} />
       </Field>
     </div>
+  );
+}
+
+/** What a QR code widget holds (issue #289): an address, an event, a contact card or a Wi-Fi network, and their fields. */
+function QrSettings({ qr, onChange }: { qr: ScreenWidget["options"]["qr"]; onChange: (change: Partial<ScreenWidget["options"]["qr"]>) => void }) {
+  const { t } = useTranslation();
+  const text = (field: "url" | "title" | "place" | "name" | "phone" | "email" | "organization" | "ssid" | "password", max: number, type = "text") => (
+    <Field label={t(`screens.editor.qr.${field}`)}>
+      <Input type={type} value={qr[field]} maxLength={max} onChange={(e) => onChange({ [field]: e.target.value })} data-testid={`theme-widget-qr-${field}`} />
+    </Field>
+  );
+  return (
+    <>
+      <Field label={t("screens.editor.qr.kind")}>
+        <NativeSelect value={qr.kind} onChange={(e) => onChange({ kind: e.target.value as ScreenWidget["options"]["qr"]["kind"] })} data-testid="theme-widget-qr-kind">
+          {SCREEN_QR_KINDS.map((kind) => (
+            <option key={kind} value={kind}>
+              {t(`screens.editor.qr.kinds.${kind}`)}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+      {qr.kind === "url" ? text("url", 500, "url") : null}
+      {qr.kind === "event" ? (
+        <>
+          {text("title", 120)}
+          <Field label={t("screens.editor.qr.start")}>
+            <Input type="datetime-local" value={qr.start} onChange={(e) => onChange({ start: e.target.value.slice(0, 16) })} data-testid="theme-widget-qr-start" />
+          </Field>
+          <Field label={t("screens.editor.qr.end")}>
+            <Input type="datetime-local" value={qr.end} onChange={(e) => onChange({ end: e.target.value.slice(0, 16) })} />
+          </Field>
+          {text("place", 200)}
+          {text("url", 500, "url")}
+        </>
+      ) : null}
+      {qr.kind === "contact" ? (
+        <>
+          {text("name", 120)}
+          {text("phone", 40, "tel")}
+          {text("email", 200, "email")}
+          {text("organization", 120)}
+          {text("url", 500, "url")}
+        </>
+      ) : null}
+      {qr.kind === "wifi" ? (
+        <>
+          {text("ssid", 64)}
+          <Field label={t("screens.editor.qr.security")}>
+            <NativeSelect value={qr.security} onChange={(e) => onChange({ security: e.target.value as "WPA" | "WEP" | "nopass" })}>
+              <option value="WPA">WPA/WPA2/WPA3</option>
+              <option value="WEP">WEP</option>
+              <option value="nopass">{t("screens.editor.qr.open")}</option>
+            </NativeSelect>
+          </Field>
+          {qr.security !== "nopass" ? text("password", 64) : null}
+        </>
+      ) : null}
+    </>
   );
 }
 
