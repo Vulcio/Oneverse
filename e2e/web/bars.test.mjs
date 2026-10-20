@@ -41,7 +41,7 @@ try {
     if (bars !== 11) throw new Error(`${bars} bars`);
     const cells = await strip().locator("[data-beat]").count();
     if (cells !== 44) throw new Error(`${cells} cells`);
-    const chords = await strip().locator("[data-chord]").allInnerTexts();
+    const chords = await strip().locator("[data-bar-chord]").allInnerTexts();
     if (chords.join(" ") !== "G C G D G Em D C G") throw new Error(chords.join(" "));
     const sections = await strip().getByTestId("bars-section").allInnerTexts();
     if (sections.join(" ") !== "V C") throw new Error(sections.join(" "));

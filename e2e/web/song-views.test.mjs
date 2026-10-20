@@ -49,7 +49,7 @@ await step("Practice: the chart, no tabs; Edit goes back to the editor", async (
   await practice.locator('[data-chord="G"]').first().waitFor();
   await practice.getByText("First song").first().waitFor();
   if (await page.getByRole("tab", { name: "Song info" }).count()) throw new Error("the editor's tabs in Practice");
-  await practice.getByRole("button", { name: "Edit" }).click();
+  await practice.getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByRole("tab", { name: "Song info" }).waitFor();
   if ((await page.evaluate(() => document.documentElement.dataset.mode)) !== "edit") throw new Error("not Edit");
 });
