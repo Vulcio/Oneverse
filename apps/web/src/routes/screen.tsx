@@ -1,4 +1,4 @@
-import { formatScreenCode, lyricSlides, renderChart, screenLayers, screenThemeTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@songverse/core";
+import { composeBuiltInTemplate, formatScreenCode, lyricSlides, renderChart, screenBuiltInTemplate, screenLayers, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@songverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
@@ -26,7 +26,7 @@ import { setlistTitle } from "#/lib/setlists";
  */
 export const Route = createFileRoute("/screen")({
   validateSearch: (search: Record<string, unknown>): { theme?: string } =>
-    typeof search.theme === "string" && screenThemeTemplate(search.theme) ? { theme: search.theme } : {},
+    typeof search.theme === "string" && screenBuiltInTemplate(search.theme) ? { theme: search.theme } : {},
   beforeLoad: async () => ({ locale: await loadLocale(await getVisitorLocale()) }),
   head: () => ({ meta: [{ title: "Songverse screen" }] }),
   component: ScreenPage,
@@ -50,7 +50,7 @@ function ScreenDisplay() {
     <div className="fixed inset-0 cursor-none overflow-hidden bg-black text-white select-none" data-testid="screen-display" data-state={state.kind}>
       {state.kind === "pairing" ? <Pairing code={state.code} /> : null}
       {state.kind === "showing" ? (
-        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} theme={screenThemeTemplate(pinned)?.theme ?? state.current.theme} />
+        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} />
       ) : null}
     </div>
   );
@@ -87,7 +87,7 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
   const set = current.set;
   const view = presenting && set ? set.songs.find((song) => song.item.id === presenting.itemId) : undefined;
   // A copy kept before themes (issue #194) has none: the default look.
-  const look = theme ?? screenThemeTemplate("classic")!.theme;
+  const look = theme ?? composeBuiltInTemplate("classic")!;
   const song = useMemo<StageSong | null>(() => {
     if (!view?.song) return null;
     const chart = renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps, suggestedCapo: view.song.suggestedCapo });
@@ -197,7 +197,7 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
     <div
       className="size-full"
       data-testid="screen-showing"
-      data-mode={current.screen.mode}
+      data-mode={look.shows === "chart" ? "CHART" : "LYRICS"}
       data-black={String(!!presenting?.black)}
       data-item={presenting?.itemId ?? ""}
       data-slide={presenting?.slide ?? ""}
@@ -212,7 +212,6 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
       <ScreenStage
         className="size-full"
         theme={look}
-        mode={current.screen.mode}
         song={idle ? null : song}
         slide={presenting?.slide ?? 0}
         black={!!presenting?.black}

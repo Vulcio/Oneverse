@@ -1,30 +1,44 @@
 import {
+  composeScreenTheme,
   SCREEN_BACKGROUNDS,
+  SCREEN_CONTENT_SHOWS,
   SCREEN_CONTEXT_STYLES,
+  SCREEN_EFFECT_TARGETS,
+  SCREEN_EFFECT_TRIGGERS,
+  SCREEN_EFFECTS,
+  SCREEN_BACKGROUND_THEMES,
+  SCREEN_CONTENT_THEMES,
   SCREEN_FONT_FAMILIES,
   SCREEN_FONTS,
   SCREEN_MASK_KINDS,
   SCREEN_MASK_SHAPES,
   SCREEN_MASKS_MAX,
   SCREEN_POSITIONS,
+  SCREEN_REACTIONS_MAX,
   SCREEN_REVEALS,
+  SCREEN_TEMPLATE_TAGS,
+  SCREEN_TEXT_ANIMATIONS,
   SCREEN_TEXT_EFFECTS,
   SCREEN_TRANSITIONS,
   SCREEN_VIDEO_SOURCES,
   ScreenMaskSchema,
   ScreenThemeSchema,
   screenBaseColor,
+  screenBuiltInPart,
   screenThemeContrast,
   type ScreenMask,
-  type ScreenMode,
+  type ScreenPartKind,
+  type ScreenPartRef,
+  type ScreenPartSummary,
+  type ScreenTemplateTag,
   type ScreenTheme,
   type ScreenThemeAsset,
   type ScreenThemeSummary,
   type ScreenWidgetDefault,
   type TeamSummary,
 } from "@songverse/core";
-import { ChevronLeft, ChevronRight, Pause, Play, Plus, TriangleAlert } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, Copy, Pause, Pencil, Play, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
@@ -36,53 +50,113 @@ import { NativeSelect } from "@songverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { cn } from "@songverse/ui/lib/utils";
 
-type Part = Exclude<keyof ScreenTheme, "$schema">;
+type Part = Exclude<keyof ScreenTheme, "$schema" | "shows" | "grid" | "masks" | "effects">;
 
 /** A pace that suits each way words appear (ms between pieces): a letter comes far sooner after the last than a line does. */
 const REVEAL_PACE: Record<ScreenTheme["motion"]["reveal"], number> = { none: 60, lines: 180, words: 70, letters: 25, typewriter: 18, glow: 90 };
 
-/** What the editor opens on: a saved theme to change, or a starting point (a built-in theme) for a new one. */
+/** What the editor makes (issue #281): a template, or one of its parts. */
+export type EditorKind = "template" | ScreenPartKind;
+/** A template's parts: built-in by id, or saved. */
+export type TemplateRefs = { content: ScreenPartRef; background: ScreenPartRef; effects: ScreenPartRef | null };
+
+/**
+ * What the editor opens on: a saved template or part to change, or a
+ * starting point for a new one - a built-in template's parts and layout, a
+ * built-in part's document.
+ */
 export interface ThemeDraft {
+  kind: EditorKind;
   id?: string;
   name: string;
-  theme: ScreenTheme;
   ownerTeamId?: string | null;
-  /** A saved theme's pictures, videos and fonts. */
+  /** A template's tags, widgets and masks, and its parts. */
+  tags?: ScreenTemplateTag[];
+  grid?: ScreenTheme["grid"];
+  masks?: ScreenMask[];
+  refs?: TemplateRefs;
+  /** A part's document. */
+  document?: unknown;
+  /** A saved part's fonts, pictures and videos. */
   assets?: ScreenThemeAsset[];
 }
 
+/** A part's document by its reference: a built-in one, or a saved one among those listed. */
+export function partDocument(kind: ScreenPartKind, ref: ScreenPartRef | null, parts: ScreenPartSummary[]): unknown {
+  if (!ref) return null;
+  return "builtIn" in ref ? screenBuiltInPart(kind as "content", ref.builtIn) : (parts.find((one) => one.id === ref.id)?.document ?? null);
+}
+
+/** What a part is previewed with (issue #281): the template it's edited from, else the classic words, a moving background, effects that show the background's reactions. */
+const PREVIEW_WITH: Record<ScreenPartKind, TemplateRefs> = {
+  content: { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null },
+  background: { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: { builtIn: "pulse" } },
+  effects: { content: { builtIn: "classic" }, background: { builtIn: "concert" }, effects: null },
+};
+
+/** The part a full theme holds, for saving: its words, its background, or its effects. */
+function extractPart(kind: ScreenPartKind, theme: ScreenTheme): unknown {
+  if (kind === "content") return { shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords };
+  if (kind === "background") return { base: theme.base, video: theme.video, background: { ...theme.background, reactive: false }, reacts: theme.reacts };
+  return { reactions: theme.effects?.reactions ?? [], text: theme.effects?.text ?? {} };
+}
+
 /**
- * A screen theme being made or changed (issue #194): its settings on the
- * left, grouped; the screen on the right, playing a sample song, changing
- * as they're changed - at 16:9 or 4:3, on its lyrics or the band's chart.
- * Saved for the user, or for a team they're an admin of.
+ * A template or one of its parts being made or changed (issues #194, #281):
+ * its settings on the left, grouped; the screen on the right, playing a
+ * sample song, changing as they're changed. A template is its tags, its
+ * parts - a content theme, a background theme, effects - and its layout;
+ * a part is edited on its own, previewed with the template it's edited
+ * from (`context`) or with built-in ones. Saved for the user, or for a team
+ * they're an admin of.
  */
 export function ScreenThemeEditor({
   draft,
   teams,
+  parts,
+  context,
   widgetDefaults = [],
   onClose,
   onSaved,
 }: {
   draft: ThemeDraft;
   teams: TeamSummary[];
+  /** The saved parts one can use (the user's own and their teams'). */
+  parts: ScreenPartSummary[];
+  /** Editing a part from a template: the template's other parts, for the preview. */
+  context?: TemplateRefs & { grid: ScreenTheme["grid"]; masks: ScreenMask[] };
   /** Widgets' default looks (issue #273): the team's for a team's template, else the user's own. */
   widgetDefaults?: ScreenWidgetDefault[];
   onClose: () => void;
-  onSaved: (theme: ScreenThemeSummary) => void;
+  onSaved: (saved: ScreenThemeSummary | ScreenPartSummary) => void;
 }) {
   const { t } = useTranslation();
-  const [theme, setTheme] = useState<ScreenTheme>(draft.theme);
+  const kind = draft.kind;
+  const [refs, setRefs] = useState<TemplateRefs>(draft.refs ?? { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null });
+  const [tags, setTags] = useState<ScreenTemplateTag[]>(draft.tags ?? []);
+  const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[] }, own?: unknown) =>
+    composeScreenTheme({
+      content: kind === "content" ? own : partDocument("content", with_.content, parts),
+      background: kind === "background" ? own : partDocument("background", with_.background, parts),
+      effects: kind === "effects" ? own : partDocument("effects", with_.effects, parts),
+      template: layout,
+    });
+  const [theme, setTheme] = useState<ScreenTheme>(() =>
+    kind === "template"
+      ? compose(refs, { grid: draft.grid ?? null, masks: draft.masks ?? [] })
+      : compose(context ?? PREVIEW_WITH[kind], { grid: context?.grid ?? null, masks: context?.masks ?? [] }, draft.document ?? {}),
+  );
   const [name, setName] = useState(draft.name);
   const [owner, setOwner] = useState(draft.ownerTeamId ?? "");
   const [aspect, setAspect] = useState<"16/9" | "4/3">("16/9");
-  const [mode, setMode] = useState<ScreenMode>("LYRICS");
   const [playing, setPlaying] = useState(true);
   const [slide, setSlide] = useState<number | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [assets, setAssets] = useState<ScreenThemeAsset[]>(draft.assets ?? []);
   const [uploading, setUploading] = useState<ScreenThemeAsset["kind"] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A part opened from the template (issue #281): changed, or customized into one of the user's own.
+  const [editing, setEditing] = useState<ThemeDraft | null>(null);
   // The layout (issue #268): the widget picked, and the grid drawn over the preview to move them.
   const [selected, setSelected] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
@@ -90,19 +164,38 @@ export function ScreenThemeEditor({
   const sample = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
   const adminTeams = teams.filter((team) => team.currentUserRole === "ADMIN");
   const contrast = screenThemeContrast(theme);
+  const teamId = draft.ownerTeamId ?? (owner || null);
+  // A team's template takes the team's parts; a person's, theirs and their teams'.
+  const usable = parts.filter((one) => (teamId ? one.ownerTeamId === teamId : true));
+  // The files the preview needs: a part's own, or those of the template's saved parts.
+  const previewAssets = useMemo(() => {
+    if (kind !== "template") return [...assets, ...(context ? savedAssets(context, parts) : [])];
+    return savedAssets(refs, parts);
+  }, [kind, assets, refs, parts, context]);
 
   function set<P extends Part>(part: P, change: Partial<ScreenTheme[P]>) {
     setTheme((before) => ScreenThemeSchema.parse({ ...before, [part]: { ...before[part], ...change } }));
+  }
+
+  /** A template's part picked: the preview made again with it, keeping the layout. */
+  function pickPart(slot: ScreenPartKind, ref: ScreenPartRef | null) {
+    const next = { ...refs, [slot]: ref } as TemplateRefs;
+    setRefs(next);
+    setTheme((before) => compose(next, { grid: before.grid, masks: before.masks }));
   }
 
   async function save(asNew: boolean) {
     setSaving(true);
     setError(null);
     try {
-      const saved =
-        draft.id && !asNew
-          ? await apiClient.updateScreenTheme(draft.id, { name: name.trim(), theme })
-          : await apiClient.createScreenTheme({ name: name.trim(), theme, ...(owner && { teamId: owner }) });
+      let saved: ScreenThemeSummary | ScreenPartSummary;
+      if (kind === "template") {
+        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks }, content: refs.content, background: refs.background, effects: refs.effects };
+        saved = draft.id && !asNew ? await apiClient.updateScreenTheme(draft.id, body) : await apiClient.createScreenTheme({ ...body, ...(teamId && { teamId }) });
+      } else {
+        const document = extractPart(kind, theme) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
+        saved = draft.id && !asNew ? await apiClient.updateScreenPart(draft.id, { name: name.trim(), document }) : await apiClient.createScreenPart({ kind, name: name.trim(), document, ...(teamId && { teamId }) });
+      }
       onSaved(saved);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -111,15 +204,15 @@ export function ScreenThemeEditor({
     }
   }
 
-  /** A picture, video or font for this (saved) theme: uploaded, then used at once. */
-  async function upload(kind: ScreenThemeAsset["kind"], file: File | undefined) {
+  /** A font for this (saved) content theme, or a picture or video for this background theme: uploaded, then used at once. */
+  async function upload(assetKind: ScreenThemeAsset["kind"], file: File | undefined) {
     if (!file || !draft.id) return;
-    setUploading(kind);
+    setUploading(assetKind);
     setError(null);
     try {
-      const asset = await apiClient.uploadScreenThemeAsset(draft.id, kind, file, file.name);
+      const asset = await apiClient.uploadScreenPartAsset(draft.id, assetKind, file, file.name);
       setAssets((before) => [...before, asset]);
-      if (kind === "font") set("text", { customFont: asset.id });
+      if (assetKind === "font") set("text", { customFont: asset.id });
       else set("background", { media: asset.id, kind: asset.mimeType.startsWith("video/") ? "video" : "image" });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -131,13 +224,25 @@ export function ScreenThemeEditor({
   async function removeAsset(asset: ScreenThemeAsset) {
     if (!draft.id) return;
     try {
-      await apiClient.deleteScreenThemeAsset(draft.id, asset.id);
+      await apiClient.deleteScreenPartAsset(draft.id, asset.id);
       setAssets((before) => before.filter((one) => one.id !== asset.id));
       if (theme.background.media === asset.id) set("background", { media: null });
       if (theme.text.customFont === asset.id) set("text", { customFont: null });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
+  }
+
+  /** A template's part opened: a saved one to change, a built-in one to customize into one of the user's own. */
+  function openPart(slot: ScreenPartKind) {
+    const ref = refs[slot];
+    const saved = ref && "id" in ref ? parts.find((one) => one.id === ref.id) : undefined;
+    const document = partDocument(slot, ref ?? { builtIn: "pulse" }, parts) ?? {};
+    setEditing(
+      saved?.canEdit
+        ? { kind: slot, id: saved.id, name: saved.name, ownerTeamId: saved.ownerTeamId, document: saved.document, assets: saved.assets }
+        : { kind: slot, name: t("screens.parts.copyOf", { name: saved?.name ?? (ref && "builtIn" in ref ? t(`screens.parts.builtIn.${slot}.${ref.builtIn}`) : name) }), ownerTeamId: teamId, document },
+    );
   }
 
   const step = (by: 1 | -1) => {
@@ -147,16 +252,47 @@ export function ScreenThemeEditor({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[94dvh] w-[min(96vw,80rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none" data-testid="theme-editor">
+      <DialogContent className="flex max-h-[94dvh] w-[min(96vw,80rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none" data-testid={kind === "template" ? "theme-editor" : "part-editor"} data-kind={kind}>
         <div className="flex items-center gap-3 border-b px-4 py-3">
-          <DialogTitle className="text-base">{draft.id ? t("screens.editorEdit") : t("screens.editorNew")}</DialogTitle>
+          <DialogTitle className="text-base">{t(`screens.editor.title.${kind}.${draft.id ? "edit" : "new"}`)}</DialogTitle>
         </div>
         <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[24rem_minmax(0,1fr)] lg:overflow-hidden">
           {/* The settings, grouped; their own scroll on a wide screen. */}
           <div className="flex flex-col gap-1 border-b p-3 lg:overflow-y-auto lg:border-r lg:border-b-0">
-            <Group title={t("screens.editor.layers")} testId="theme-group-layers">
-              <LayersSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
-            </Group>
+            {kind === "template" ? (
+              <>
+                <Group title={t("screens.editor.parts")} open testId="theme-group-parts">
+                  <p className="text-xs text-muted-foreground">{t("screens.editor.partsHint")}</p>
+                  {(["content", "background", "effects"] as const).map((slot) => (
+                    <PartPicker key={slot} slot={slot} value={refs[slot]} parts={usable.filter((one) => one.kind === slot)} onPick={(ref) => pickPart(slot, ref)} onOpen={() => openPart(slot)} />
+                  ))}
+                </Group>
+                <Group title={t("screens.editor.tags")} open testId="theme-group-tags">
+                  <TagPicker value={tags} onChange={setTags} testId="theme-tags" />
+                  <span className="text-xs text-muted-foreground">{t("screens.editor.tagsHint")}</span>
+                </Group>
+                <Group title={t("screens.editor.widgets")} open={!!theme.grid} testId="theme-group-widgets">
+              <LayoutSettings
+                grid={theme.grid}
+                onGrid={setGrid}
+                selected={selected}
+                onSelect={setSelected}
+                lookFor={(kind) => {
+                  const team = draft.ownerTeamId ?? (owner || null);
+                  return (widgetDefaults.find((one) => one.kind === kind && team && one.teamId === team) ?? widgetDefaults.find((one) => one.kind === kind && !one.teamId))?.look ?? null;
+                }}
+              />
+                </Group>
+                <Group title={t("screens.layers.masks")} testId="theme-group-masks">
+                  <MasksSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+                </Group>
+              </>
+            ) : null}
+            {kind === "content" ? (
+              <>
+                <Group title={t("screens.editor.shows")} open testId="theme-group-shows">
+                  <Choices value={theme.shows} options={SCREEN_CONTENT_SHOWS} label={(one) => t(`screens.editor.showsOptions.${one}`)} onChange={(shows) => setTheme((before) => ScreenThemeSchema.parse({ ...before, shows }))} testId="theme-shows" />
+                </Group>
             <Group title={t("screens.editor.text")} open>
               <Field label={t("screens.editor.font")}>
                 <NativeSelect value={theme.text.font} onChange={(e) => set("text", { font: e.target.value as ScreenTheme["text"]["font"] })} data-testid="theme-font">
@@ -247,91 +383,6 @@ export function ScreenThemeEditor({
                 <Slider value={theme.layout.margin} min={0} max={20} step={1} unit="%" onChange={(margin) => set("layout", { margin })} />
               </Field>
             </Group>
-            <Group title={t("screens.editor.widgets")} open={!!theme.grid} testId="theme-group-widgets">
-              <LayoutSettings
-                grid={theme.grid}
-                onGrid={setGrid}
-                selected={selected}
-                onSelect={setSelected}
-                lookFor={(kind) => {
-                  const team = draft.ownerTeamId ?? (owner || null);
-                  return (widgetDefaults.find((one) => one.kind === kind && team && one.teamId === team) ?? widgetDefaults.find((one) => one.kind === kind && !one.teamId))?.look ?? null;
-                }}
-              />
-            </Group>
-            <Group title={t("screens.editor.background")} open>
-              <Field label={t("screens.editor.backgroundKind")}>
-                <Choices value={theme.background.kind} options={SCREEN_BACKGROUNDS} label={(one) => t(`screens.editor.backgrounds.${one}`)} onChange={(kind) => set("background", { kind })} testId="theme-background" />
-              </Field>
-              {theme.background.kind === "image" || theme.background.kind === "video" ? (
-                <Field label={t("screens.editor.media")}>
-                  {draft.id ? (
-                    <div className="flex flex-col gap-1.5">
-                      {assets.filter((asset) => asset.kind === "media").length === 0 ? <span className="text-xs text-muted-foreground">{t("screens.editor.noMedia")}</span> : null}
-                      <ul className="flex flex-col gap-1">
-                        {assets
-                          .filter((asset) => asset.kind === "media")
-                          .map((asset) => (
-                            <li key={asset.id} className="flex items-center gap-2 text-xs" data-testid="theme-media">
-                              <button
-                                type="button"
-                                aria-pressed={theme.background.media === asset.id}
-                                onClick={() => set("background", { media: asset.id, kind: asset.mimeType.startsWith("video/") ? "video" : "image" })}
-                                className={cn("min-w-0 flex-1 truncate rounded border px-2 py-1 text-left", theme.background.media === asset.id ? "border-primary bg-primary/10" : "hover:bg-muted")}
-                              >
-                                {asset.filename}
-                              </button>
-                              <button type="button" className="text-destructive hover:underline" onClick={() => void removeAsset(asset)}>
-                                {t("screens.editor.removeFile")}
-                              </button>
-                            </li>
-                          ))}
-                      </ul>
-                      <FileButton accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" busy={uploading === "media"} onFile={(file) => void upload("media", file)} testId="theme-upload-media" />
-                      <span className="text-xs text-muted-foreground">{t("screens.editor.mediaHint")}</span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{t("screens.editor.saveFirst")}</span>
-                  )}
-                </Field>
-              ) : null}
-              <Field label={t("screens.editor.colors")}>
-                <div className="flex flex-wrap items-center gap-2">
-                  {[0, 1, 2, 3].map((i) =>
-                    i === 0 || theme.background.kind !== "color" ? (
-                      <ColorInput
-                        key={i}
-                        value={theme.background.colors[i] ?? theme.background.colors.at(-1)!}
-                        onChange={(color) => {
-                          const colors = [...theme.background.colors];
-                          while (colors.length <= i) colors.push(colors.at(-1)!);
-                          colors[i] = color;
-                          set("background", { colors });
-                        }}
-                        testId={`theme-bg-color-${i}`}
-                      />
-                    ) : null,
-                  )}
-                </div>
-              </Field>
-              {theme.background.kind !== "color" && theme.background.kind !== "gradient" ? (
-                <>
-                  <label className="flex items-start gap-2 text-sm">
-                    <input type="checkbox" className="mt-1" checked={theme.background.reactive} onChange={(e) => set("background", { reactive: e.target.checked })} data-testid="theme-reactive" />
-                    <span>
-                      {t("screens.editor.reactive")}
-                      <span className="block text-xs text-muted-foreground">{t("screens.editor.reactiveHint")}</span>
-                    </span>
-                  </label>
-                  <Field label={t("screens.editor.movement")}>
-                    <Slider value={theme.background.motion} min={0} max={1} step={0.05} onChange={(motion) => set("background", { motion })} />
-                  </Field>
-                </>
-              ) : null}
-              <Field label={t("screens.editor.dim")}>
-                <Slider value={theme.background.dim} min={0} max={0.9} step={0.05} onChange={(dim) => set("background", { dim })} />
-              </Field>
-            </Group>
             <Group title={t("screens.editor.motion")} open>
               <Field label={t("screens.editor.transition")}>
                 <Choices value={theme.motion.transition} options={SCREEN_TRANSITIONS} label={(one) => t(`screens.editor.transitions.${one}`)} onChange={(transition) => set("motion", { transition })} testId="theme-transition" />
@@ -389,6 +440,92 @@ export function ScreenThemeEditor({
                 <Slider value={theme.chords.scale} min={0.5} max={2} step={0.05} onChange={(scale) => set("chords", { scale })} />
               </Field>
             </Group>
+              </>
+            ) : null}
+            {kind === "background" ? (
+              <>
+                <Group title={t("screens.editor.baseAndVideo")} testId="theme-group-layers">
+                  <BaseVideoSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+                </Group>
+            <Group title={t("screens.editor.background")} open>
+              <Field label={t("screens.editor.backgroundKind")}>
+                <Choices value={theme.background.kind} options={SCREEN_BACKGROUNDS} label={(one) => t(`screens.editor.backgrounds.${one}`)} onChange={(kind) => set("background", { kind })} testId="theme-background" />
+              </Field>
+              {theme.background.kind === "image" || theme.background.kind === "video" ? (
+                <Field label={t("screens.editor.media")}>
+                  {draft.id ? (
+                    <div className="flex flex-col gap-1.5">
+                      {assets.filter((asset) => asset.kind === "media").length === 0 ? <span className="text-xs text-muted-foreground">{t("screens.editor.noMedia")}</span> : null}
+                      <ul className="flex flex-col gap-1">
+                        {assets
+                          .filter((asset) => asset.kind === "media")
+                          .map((asset) => (
+                            <li key={asset.id} className="flex items-center gap-2 text-xs" data-testid="theme-media">
+                              <button
+                                type="button"
+                                aria-pressed={theme.background.media === asset.id}
+                                onClick={() => set("background", { media: asset.id, kind: asset.mimeType.startsWith("video/") ? "video" : "image" })}
+                                className={cn("min-w-0 flex-1 truncate rounded border px-2 py-1 text-left", theme.background.media === asset.id ? "border-primary bg-primary/10" : "hover:bg-muted")}
+                              >
+                                {asset.filename}
+                              </button>
+                              <button type="button" className="text-destructive hover:underline" onClick={() => void removeAsset(asset)}>
+                                {t("screens.editor.removeFile")}
+                              </button>
+                            </li>
+                          ))}
+                      </ul>
+                      <FileButton accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" busy={uploading === "media"} onFile={(file) => void upload("media", file)} testId="theme-upload-media" />
+                      <span className="text-xs text-muted-foreground">{t("screens.editor.mediaHint")}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">{t("screens.editor.saveFirst")}</span>
+                  )}
+                </Field>
+              ) : null}
+              <Field label={t("screens.editor.colors")}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {[0, 1, 2, 3].map((i) =>
+                    i === 0 || theme.background.kind !== "color" ? (
+                      <ColorInput
+                        key={i}
+                        value={theme.background.colors[i] ?? theme.background.colors.at(-1)!}
+                        onChange={(color) => {
+                          const colors = [...theme.background.colors];
+                          while (colors.length <= i) colors.push(colors.at(-1)!);
+                          colors[i] = color;
+                          set("background", { colors });
+                        }}
+                        testId={`theme-bg-color-${i}`}
+                      />
+                    ) : null,
+                  )}
+                </div>
+              </Field>
+              {theme.background.kind !== "color" && theme.background.kind !== "gradient" ? (
+                <>
+                  <Field label={t("screens.editor.movement")}>
+                    <Slider value={theme.background.motion} min={0} max={1} step={0.05} onChange={(motion) => set("background", { motion })} />
+                  </Field>
+                </>
+              ) : null}
+              <Field label={t("screens.editor.dim")}>
+                <Slider value={theme.background.dim} min={0} max={0.9} step={0.05} onChange={(dim) => set("background", { dim })} />
+              </Field>
+            </Group>
+                <Group title={t("screens.editor.reacts")} open testId="theme-group-reacts">
+                  <p className="text-xs text-muted-foreground">{t("screens.editor.reactsHint")}</p>
+                  {(["movement", "hue", "brightness", "elements"] as const).map((input) => (
+                    <Field key={input} label={t(`screens.editor.reactsInputs.${input}`)}>
+                      <Slider value={theme.reacts[input]} min={0} max={1} step={0.05} onChange={(value) => set("reacts", { [input]: value })} />
+                    </Field>
+                  ))}
+                </Group>
+              </>
+            ) : null}
+            {kind === "effects" ? (
+              <EffectsSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+            ) : null}
           </div>
 
           {/* The screen, playing the sample song as the theme changes. */}
@@ -396,7 +533,6 @@ export function ScreenThemeEditor({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium">{t("screens.preview")}</span>
               <Choices value={aspect} options={["16/9", "4/3"] as const} label={(one) => one.replace("/", ":")} onChange={setAspect} />
-              <Choices value={mode} options={["LYRICS", "CHART"] as const} label={(one) => t(`screens.modes.${one}`)} onChange={setMode} />
               {theme.grid ? (
                 <label className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" className="accent-primary" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} data-testid="theme-show-grid" />
@@ -415,7 +551,7 @@ export function ScreenThemeEditor({
                 </Button>
               </span>
             </div>
-            <ScreenThemePreview theme={theme} assets={assets} mode={mode} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
+            <ScreenThemePreview theme={theme} assets={previewAssets} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
               {theme.grid && showGrid ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={setSelected} onGrid={setGrid} /> : null}
             </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">
@@ -426,10 +562,10 @@ export function ScreenThemeEditor({
         </div>
         <div className="flex flex-wrap items-end gap-3 border-t px-4 py-3">
           <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-            <Label htmlFor="theme-name">{t("screens.themeName")}</Label>
+            <Label htmlFor="theme-name">{t(`screens.editor.nameOf.${draft.kind}`)}</Label>
             <Input id="theme-name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
           </div>
-          {!draft.id && adminTeams.length > 0 ? (
+          {!draft.id && !context && adminTeams.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="theme-owner">{t("screens.themeOwner")}</Label>
               <NativeSelect id="theme-owner" value={owner} onChange={(e) => setOwner(e.target.value)}>
@@ -457,26 +593,186 @@ export function ScreenThemeEditor({
               </Button>
             ) : null}
             <Button disabled={saving || !name.trim()} onClick={() => void save(false)} data-testid="theme-save">
-              {saving ? t("screens.savingTheme") : t("screens.saveTheme")}
+              {saving ? t("screens.savingTheme") : t(`screens.editor.save.${draft.kind}`)}
             </Button>
           </div>
         </div>
       </DialogContent>
+      {editing ? (
+        <ScreenThemeEditor
+          draft={editing}
+          teams={teams}
+          parts={parts}
+          context={{ ...refs, grid: theme.grid, masks: theme.masks }}
+          onClose={() => setEditing(null)}
+          onSaved={(saved) => {
+            setEditing(null);
+            // The part saved, in the template at once; the list of parts comes again with the page.
+            const part = saved as ScreenPartSummary;
+            pickPart(part.kind, { id: part.id });
+            setTheme((before) => composeScreenTheme({ ...splitParts(before), [part.kind]: part.document, template: { grid: before.grid, masks: before.masks } }));
+            onSaved(saved);
+          }}
+        />
+      ) : null}
     </Dialog>
   );
 }
 
-/**
- * A template's layers (issue #280), besides its words, widgets and background:
- * the base colour under everything, the screen's camera or capture card, and
- * masks - black over part of the picture, or a window through the background.
- */
-function LayersSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (change: (before: ScreenTheme) => Partial<ScreenTheme>) => void }) {
+/** A theme as its three parts again, for one of them to be swapped. */
+function splitParts(theme: ScreenTheme) {
+  return { content: extractPart("content", theme), background: extractPart("background", theme), effects: theme.effects ? extractPart("effects", theme) : null };
+}
+
+/** The files a template's saved parts refer to. */
+function savedAssets(refs: TemplateRefs, parts: ScreenPartSummary[]): ScreenThemeAsset[] {
+  return [refs.content, refs.background].flatMap((ref) => (ref && "id" in ref ? (parts.find((one) => one.id === ref.id)?.assets ?? []) : []));
+}
+
+/** A template's part (issue #281): built-in or saved, picked from a list; opened to change it (a saved one) or to customize it into one's own. */
+function PartPicker({ slot, value, parts, onPick, onOpen }: { slot: ScreenPartKind; value: ScreenPartRef | null; parts: ScreenPartSummary[]; onPick: (ref: ScreenPartRef | null) => void; onOpen: () => void }) {
   const { t } = useTranslation();
-  const mask = (id: string, change: Partial<ScreenMask>) => onTheme((before) => ({ masks: before.masks.map((one) => (one.id === id ? { ...one, ...change } : one)) }));
+  const builtIns = slot === "content" ? SCREEN_CONTENT_THEMES : slot === "background" ? SCREEN_BACKGROUND_THEMES : SCREEN_EFFECTS;
+  const current = value ? ("builtIn" in value ? `b:${value.builtIn}` : `s:${value.id}`) : "";
+  const saved = value && "id" in value ? parts.find((one) => one.id === value.id) : undefined;
+  return (
+    <Field label={t(`screens.parts.kinds.${slot}`)}>
+      <div className="flex items-center gap-2">
+        <NativeSelect
+          className="min-w-0 flex-1"
+          value={current}
+          onChange={(event) => {
+            const picked = event.target.value;
+            onPick(picked === "" ? null : picked.startsWith("b:") ? { builtIn: picked.slice(2) } : { id: picked.slice(2) });
+          }}
+          data-testid={`theme-part-${slot}`}
+        >
+          {slot === "effects" ? <option value="">{t("screens.parts.noEffects")}</option> : null}
+          {parts.length > 0 ? (
+            <optgroup label={t("screens.parts.saved")}>
+              {parts.map((one) => (
+                <option key={one.id} value={`s:${one.id}`}>
+                  {one.teamName ? `${one.name} · ${one.teamName}` : one.name}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          <optgroup label={t("screens.builtIn")}>
+            {builtIns.map((one) => (
+              <option key={one.id} value={`b:${one.id}`}>
+                {t(`screens.parts.builtIn.${slot}.${one.id}`)}
+              </option>
+            ))}
+          </optgroup>
+        </NativeSelect>
+        <Button type="button" variant="outline" size="sm" onClick={onOpen} data-testid={`theme-part-${slot}-open`}>
+          {saved?.canEdit ? <Pencil /> : <Copy />}
+          {saved?.canEdit ? t("screens.parts.edit") : t("screens.customize")}
+        </Button>
+      </div>
+      {saved && saved.templates > 1 ? <span className="text-xs text-muted-foreground">{t("screens.parts.sharedBy", { count: saved.templates })}</span> : null}
+    </Field>
+  );
+}
+
+/** A template's tags (issue #281): what it's for, to find it. */
+export function TagPicker({ value, onChange, testId }: { value: ScreenTemplateTag[]; onChange: (tags: ScreenTemplateTag[]) => void; testId?: string }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-wrap gap-1" role="group" data-testid={testId}>
+      {SCREEN_TEMPLATE_TAGS.map((tag) => {
+        const on = value.includes(tag);
+        return (
+          <button
+            key={tag}
+            type="button"
+            aria-pressed={on}
+            data-value={tag}
+            onClick={() => onChange(on ? value.filter((one) => one !== tag) : [...value, tag])}
+            className={cn("h-7 rounded-full border px-3 text-xs font-medium transition-colors", on ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground")}
+          >
+            {t(`screens.tags.${tag}`)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Effects (issue #281): the glue between the words and the background -
+ * reactions (when a slide comes, a line or a word appears, a section
+ * starts, a chorus goes on: the background pulses, moves, shifts hue,
+ * brightens, its elements swell) - and an animation of the words.
+ */
+function EffectsSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (change: (before: ScreenTheme) => Partial<ScreenTheme>) => void }) {
+  const { t } = useTranslation();
+  const effects = theme.effects ?? { reactions: [], text: { animation: "none" as const, amount: 0.5, speed: 1 } };
+  const change = (next: Partial<typeof effects>) => onTheme((before) => ({ effects: { ...(before.effects ?? effects), ...next } }));
+  const reaction = (i: number, next: Partial<(typeof effects.reactions)[number]>) => change({ reactions: effects.reactions.map((one, at) => (at === i ? { ...one, ...next } : one)) });
   return (
     <>
-      <p className="text-xs text-muted-foreground">{t("screens.editor.layersHint")}</p>
+      <Group title={t("screens.editor.reactions")} open testId="theme-group-reactions">
+        <p className="text-xs text-muted-foreground">{t("screens.editor.reactionsHint")}</p>
+        <ul className="flex flex-col gap-2">
+          {effects.reactions.map((one, i) => (
+            <li key={i} className="flex flex-col gap-2 rounded-md border bg-muted/30 p-2" data-testid="theme-reaction">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-xs text-muted-foreground">{t("screens.editor.reactionWhen")}</span>
+                <NativeSelect className="h-8 min-w-0 flex-1 text-xs" value={one.on} onChange={(e) => reaction(i, { on: e.target.value as typeof one.on })} data-testid="theme-reaction-on">
+                  {SCREEN_EFFECT_TRIGGERS.map((on) => (
+                    <option key={on} value={on}>
+                      {t(`screens.editor.triggers.${on}`)}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <button type="button" className="text-destructive" onClick={() => change({ reactions: effects.reactions.filter((_, at) => at !== i) })} aria-label={t("screens.editor.removeReaction")}>
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{t("screens.editor.reactionThen")}</span>
+                <NativeSelect className="h-8 min-w-0 flex-1 text-xs" value={one.target} onChange={(e) => reaction(i, { target: e.target.value as typeof one.target })} data-testid="theme-reaction-target">
+                  {SCREEN_EFFECT_TARGETS.map((target) => (
+                    <option key={target} value={target}>
+                      {t(`screens.editor.targets.${target}`)}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              <Slider value={one.amount} min={0} max={1} step={0.05} onChange={(amount) => reaction(i, { amount })} />
+            </li>
+          ))}
+        </ul>
+        {effects.reactions.length < SCREEN_REACTIONS_MAX ? (
+          <Button variant="outline" size="sm" className="self-start" onClick={() => change({ reactions: [...effects.reactions, { on: "slide", target: "pulse", amount: 0.5 }] })} data-testid="theme-add-reaction">
+            <Plus />
+            {t("screens.editor.addReaction")}
+          </Button>
+        ) : null}
+      </Group>
+      <Group title={t("screens.editor.textAnimation")} open testId="theme-group-text-animation">
+        <Choices value={effects.text.animation} options={SCREEN_TEXT_ANIMATIONS} label={(one) => t(`screens.editor.textAnimations.${one}`)} onChange={(animation) => change({ text: { ...effects.text, animation } })} testId="theme-text-animation" />
+        {effects.text.animation !== "none" ? (
+          <>
+            <Field label={t("screens.editor.animationAmount")}>
+              <Slider value={effects.text.amount} min={0} max={1} step={0.05} onChange={(amount) => change({ text: { ...effects.text, amount } })} />
+            </Field>
+            <Field label={t("screens.editor.animationSpeed")}>
+              <Slider value={effects.text.speed} min={0.25} max={4} step={0.25} onChange={(speed) => change({ text: { ...effects.text, speed } })} />
+            </Field>
+          </>
+        ) : null}
+      </Group>
+    </>
+  );
+}
+
+/** A background theme's base colour and video input (issue #280). */
+function BaseVideoSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (change: (before: ScreenTheme) => Partial<ScreenTheme>) => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
       <Field label={t("screens.layers.base")}>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-sm">
@@ -496,6 +792,16 @@ function LayersSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (chan
           </>
         ) : null}
       </Field>
+    </>
+  );
+}
+
+/** A template's masks (issue #280): black over part of the picture, or a window through the background to the video. */
+function MasksSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (change: (before: ScreenTheme) => Partial<ScreenTheme>) => void }) {
+  const { t } = useTranslation();
+  const mask = (id: string, change: Partial<ScreenMask>) => onTheme((before) => ({ masks: before.masks.map((one) => (one.id === id ? { ...one, ...change } : one)) }));
+  return (
+    <>
       <Field label={t("screens.layers.masks")}>
         <ul className="flex flex-col gap-2">
           {theme.masks.map((one, i) => (

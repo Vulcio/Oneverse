@@ -635,7 +635,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -714,7 +722,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -797,7 +813,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -875,7 +899,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -945,7 +977,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -1110,7 +1150,15 @@
                 }
               ]
             },
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -1187,7 +1235,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -1364,7 +1420,15 @@
                 "invert": false,
                 "feather": 2
               }
-            ]
+            ],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         }
       ]
@@ -1547,6 +1611,1024 @@
               "last-week"
             ]
           }
+        }
+      ]
+    },
+    "composeScreenTheme": {
+      "about": "What a screen draws (issue #281): a template's content theme, background theme, effects and layout made into one screen theme; with effects off, none - the background doesn't answer the words. A part it can't read falls back to its defaults.",
+      "params": [
+        "parts",
+        "options"
+      ],
+      "cases": [
+        {
+          "name": "elegant words over waves, a pulse with each slide, a clock",
+          "args": [
+            {
+              "content": {
+                "text": {
+                  "font": "elegant"
+                },
+                "motion": {
+                  "transition": "fade"
+                }
+              },
+              "background": {
+                "background": {
+                  "kind": "waves",
+                  "colors": [
+                    "#1e1b4b",
+                    "#f97316"
+                  ]
+                },
+                "reacts": {
+                  "hue": 0.8
+                }
+              },
+              "effects": {
+                "reactions": [
+                  {
+                    "on": "slide",
+                    "target": "pulse",
+                    "amount": 0.7
+                  }
+                ],
+                "text": {
+                  "animation": "breathe"
+                }
+              },
+              "template": {
+                "tags": [
+                  "audience",
+                  "lyrics"
+                ],
+                "grid": {
+                  "widgets": [
+                    {
+                      "id": "c",
+                      "kind": "clock",
+                      "x": 9,
+                      "y": 0,
+                      "w": 3,
+                      "h": 1
+                    }
+                  ]
+                }
+              }
+            },
+            {}
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "elegant",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "waves",
+              "colors": [
+                "#1e1b4b",
+                "#f97316"
+              ],
+              "reactive": true,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": true,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1
+            },
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "c",
+                  "kind": "clock",
+                  "layer": null,
+                  "x": 9,
+                  "y": 0,
+                  "w": 3,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                }
+              ]
+            },
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.8,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": {
+              "reactions": [
+                {
+                  "on": "slide",
+                  "target": "pulse",
+                  "amount": 0.7
+                }
+              ],
+              "text": {
+                "animation": "breathe",
+                "amount": 0.5,
+                "speed": 1
+              }
+            }
+          }
+        },
+        {
+          "name": "the same, effects off on the screen",
+          "args": [
+            {
+              "content": {},
+              "background": {
+                "background": {
+                  "kind": "waves"
+                }
+              },
+              "effects": {
+                "reactions": [
+                  {
+                    "on": "slide",
+                    "target": "pulse"
+                  }
+                ]
+              }
+            },
+            {
+              "effects": false
+            }
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "waves",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": true,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1
+            },
+            "grid": null,
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
+          }
+        },
+        {
+          "name": "the chord chart, for the band",
+          "args": [
+            {
+              "content": {
+                "shows": "chart",
+                "chords": {
+                  "color": "#facc15"
+                }
+              },
+              "background": {}
+            },
+            {}
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": true,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#facc15",
+              "scale": 1
+            },
+            "grid": null,
+            "masks": [],
+            "shows": "chart",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
+          }
+        },
+        {
+          "name": "parts that can't be read: their defaults",
+          "args": [
+            {
+              "content": {
+                "text": {
+                  "color": "red"
+                }
+              },
+              "background": "nothing",
+              "effects": null
+            },
+            {}
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "media": null,
+              "dim": 0
+            },
+            "title": {
+              "show": true,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1
+            },
+            "grid": null,
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
+          }
+        }
+      ]
+    },
+    "splitScreenTheme": {
+      "about": "A screen theme made before parts (issue #281), split into its content theme, background theme, effects and layout; a background that moved with the song gets effects that pulse with each slide and brighten in a chorus. Composing them again gives the same look.",
+      "params": [
+        "theme"
+      ],
+      "cases": [
+        {
+          "name": "the default look",
+          "args": [
+            {}
+          ],
+          "expected": {
+            "content": {
+              "$schema": "screen-content/v1",
+              "shows": "lyrics",
+              "text": {
+                "font": "sans",
+                "customFont": null,
+                "size": "auto",
+                "weight": 600,
+                "upperCase": false,
+                "color": "#ffffff",
+                "effect": "shadow",
+                "lineHeight": 1.15,
+                "align": "center",
+                "letterSpacing": 0
+              },
+              "lines": {
+                "group": "slide",
+                "before": 1,
+                "after": 1,
+                "contextStyle": "dim"
+              },
+              "layout": {
+                "position": "center",
+                "margin": 5
+              },
+              "title": {
+                "show": true,
+                "when": "first"
+              },
+              "credits": {
+                "show": true,
+                "where": "bottom",
+                "when": "first-and-last"
+              },
+              "motion": {
+                "transition": "fade",
+                "duration": 350,
+                "reveal": "none",
+                "stagger": 60
+              },
+              "chords": {
+                "color": "#7dd3fc",
+                "scale": 1
+              }
+            },
+            "background": {
+              "$schema": "screen-background/v1",
+              "base": {
+                "color": null
+              },
+              "video": {
+                "source": "none",
+                "fit": "cover",
+                "opacity": 1
+              },
+              "background": {
+                "kind": "color",
+                "colors": [
+                  "#000000"
+                ],
+                "reactive": false,
+                "motion": 0.5,
+                "media": null,
+                "dim": 0
+              },
+              "reacts": {
+                "movement": 0.5,
+                "hue": 0.3,
+                "brightness": 0.5,
+                "elements": 0.5
+              }
+            },
+            "effects": null,
+            "template": {
+              "$schema": "screen-template/v1",
+              "tags": [],
+              "grid": null,
+              "masks": []
+            }
+          }
+        },
+        {
+          "name": "a moving background that answers the song, and a grid",
+          "args": [
+            {
+              "text": {
+                "font": "rounded"
+              },
+              "background": {
+                "kind": "aurora",
+                "colors": [
+                  "#000000",
+                  "#6d28d9"
+                ],
+                "reactive": true
+              },
+              "grid": {
+                "widgets": [
+                  {
+                    "id": "s",
+                    "kind": "stage",
+                    "x": 0,
+                    "y": 0,
+                    "w": 12,
+                    "h": 12
+                  }
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "content": {
+              "$schema": "screen-content/v1",
+              "shows": "lyrics",
+              "text": {
+                "font": "rounded",
+                "customFont": null,
+                "size": "auto",
+                "weight": 600,
+                "upperCase": false,
+                "color": "#ffffff",
+                "effect": "shadow",
+                "lineHeight": 1.15,
+                "align": "center",
+                "letterSpacing": 0
+              },
+              "lines": {
+                "group": "slide",
+                "before": 1,
+                "after": 1,
+                "contextStyle": "dim"
+              },
+              "layout": {
+                "position": "center",
+                "margin": 5
+              },
+              "title": {
+                "show": true,
+                "when": "first"
+              },
+              "credits": {
+                "show": true,
+                "where": "bottom",
+                "when": "first-and-last"
+              },
+              "motion": {
+                "transition": "fade",
+                "duration": 350,
+                "reveal": "none",
+                "stagger": 60
+              },
+              "chords": {
+                "color": "#7dd3fc",
+                "scale": 1
+              }
+            },
+            "background": {
+              "$schema": "screen-background/v1",
+              "base": {
+                "color": null
+              },
+              "video": {
+                "source": "none",
+                "fit": "cover",
+                "opacity": 1
+              },
+              "background": {
+                "kind": "aurora",
+                "colors": [
+                  "#000000",
+                  "#6d28d9"
+                ],
+                "reactive": false,
+                "motion": 0.5,
+                "media": null,
+                "dim": 0
+              },
+              "reacts": {
+                "movement": 0.5,
+                "hue": 0.3,
+                "brightness": 0.5,
+                "elements": 0.5
+              }
+            },
+            "effects": {
+              "reactions": [
+                {
+                  "on": "slide",
+                  "target": "pulse",
+                  "amount": 0.6
+                },
+                {
+                  "on": "chorus",
+                  "target": "brightness",
+                  "amount": 0.6
+                }
+              ],
+              "text": {
+                "animation": "none",
+                "amount": 0.5,
+                "speed": 1
+              },
+              "$schema": "screen-effects/v1"
+            },
+            "template": {
+              "$schema": "screen-template/v1",
+              "tags": [],
+              "grid": {
+                "columns": 12,
+                "rows": 12,
+                "gap": 1,
+                "black": "all",
+                "widgets": [
+                  {
+                    "id": "s",
+                    "kind": "stage",
+                    "layer": null,
+                    "x": 0,
+                    "y": 0,
+                    "w": 12,
+                    "h": 12,
+                    "options": {
+                      "format": "24h",
+                      "seconds": false,
+                      "date": false,
+                      "source": "operator",
+                      "duration": 300,
+                      "until": "10:00",
+                      "overtime": "count",
+                      "warn": 60,
+                      "label": "",
+                      "text": "",
+                      "details": true,
+                      "breakpoints": [],
+                      "dateFormat": "long",
+                      "time": false,
+                      "scope": "song",
+                      "progress": "thin",
+                      "qr": {
+                        "kind": "url",
+                        "url": "",
+                        "title": "",
+                        "start": "",
+                        "end": "",
+                        "place": "",
+                        "name": "",
+                        "phone": "",
+                        "email": "",
+                        "organization": "",
+                        "ssid": "",
+                        "password": "",
+                        "security": "WPA"
+                      }
+                    },
+                    "style": {
+                      "font": null,
+                      "color": null,
+                      "background": "#000000",
+                      "opacity": 0,
+                      "align": "center",
+                      "size": "auto",
+                      "radius": 1
+                    }
+                  }
+                ]
+              },
+              "masks": []
+            }
+          }
+        }
+      ]
+    },
+    "readScreenEffects": {
+      "about": "Effects as a client reads them (issue #281): a reaction it can't read - a trigger or a target from a later version - is left out, the others stay.",
+      "params": [
+        "input"
+      ],
+      "cases": [
+        {
+          "name": "nothing: no reactions, the words still",
+          "args": [
+            {}
+          ],
+          "expected": {
+            "reactions": [],
+            "text": {
+              "animation": "none",
+              "amount": 0.5,
+              "speed": 1
+            },
+            "$schema": "screen-effects/v1"
+          }
+        },
+        {
+          "name": "a reaction to the beat (a later version): left out",
+          "args": [
+            {
+              "reactions": [
+                {
+                  "on": "beat",
+                  "target": "pulse"
+                },
+                {
+                  "on": "chorus",
+                  "target": "hue",
+                  "amount": 0.8
+                }
+              ],
+              "text": {
+                "animation": "glow",
+                "speed": 2
+              }
+            }
+          ],
+          "expected": {
+            "reactions": [
+              {
+                "on": "chorus",
+                "target": "hue",
+                "amount": 0.8
+              }
+            ],
+            "text": {
+              "animation": "glow",
+              "amount": 0.5,
+              "speed": 2
+            },
+            "$schema": "screen-effects/v1"
+          }
+        }
+      ]
+    },
+    "readScreenTemplate": {
+      "about": "A template's layout as a client reads it (issue #281): its tags (one it doesn't know left out), its widget grid and masks.",
+      "params": [
+        "input"
+      ],
+      "cases": [
+        {
+          "name": "tags, one from a later version",
+          "args": [
+            {
+              "tags": [
+                "stage",
+                "chords",
+                "hologram",
+                "stage"
+              ]
+            }
+          ],
+          "expected": {
+            "$schema": "screen-template/v1",
+            "tags": [
+              "stage",
+              "chords"
+            ],
+            "grid": null,
+            "masks": []
+          }
+        },
+        {
+          "name": "a mask that can't be read: left out",
+          "args": [
+            {
+              "masks": [
+                {
+                  "id": "a",
+                  "shape": "ellipse",
+                  "x": 10
+                },
+                {
+                  "id": "b",
+                  "shape": "star"
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "$schema": "screen-template/v1",
+            "tags": [],
+            "grid": null,
+            "masks": [
+              {
+                "id": "a",
+                "kind": "cover",
+                "shape": "ellipse",
+                "x": 10,
+                "y": 0,
+                "w": 20,
+                "h": 20,
+                "invert": false,
+                "feather": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "filterScreenTemplates": {
+      "about": "Templates with all the tags picked (issue #281); none picked, all of them.",
+      "params": [
+        "templates",
+        "tags"
+      ],
+      "cases": [
+        {
+          "name": "stage",
+          "args": [
+            [
+              {
+                "id": "a",
+                "tags": [
+                  "audience",
+                  "lyrics"
+                ]
+              },
+              {
+                "id": "b",
+                "tags": [
+                  "stage",
+                  "lyrics"
+                ]
+              },
+              {
+                "id": "c",
+                "tags": [
+                  "stage",
+                  "chords"
+                ]
+              }
+            ],
+            [
+              "stage"
+            ]
+          ],
+          "expected": [
+            {
+              "id": "b",
+              "tags": [
+                "stage",
+                "lyrics"
+              ]
+            },
+            {
+              "id": "c",
+              "tags": [
+                "stage",
+                "chords"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "stage and chords",
+          "args": [
+            [
+              {
+                "id": "a",
+                "tags": [
+                  "audience",
+                  "lyrics"
+                ]
+              },
+              {
+                "id": "b",
+                "tags": [
+                  "stage",
+                  "lyrics"
+                ]
+              },
+              {
+                "id": "c",
+                "tags": [
+                  "stage",
+                  "chords"
+                ]
+              }
+            ],
+            [
+              "stage",
+              "chords"
+            ]
+          ],
+          "expected": [
+            {
+              "id": "c",
+              "tags": [
+                "stage",
+                "chords"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "none picked",
+          "args": [
+            [
+              {
+                "id": "a",
+                "tags": [
+                  "audience"
+                ]
+              },
+              {
+                "id": "b",
+                "tags": []
+              }
+            ],
+            []
+          ],
+          "expected": [
+            {
+              "id": "a",
+              "tags": [
+                "audience"
+              ]
+            },
+            {
+              "id": "b",
+              "tags": []
+            }
+          ]
         }
       ]
     },
@@ -3114,7 +4196,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -3187,7 +4277,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -3259,7 +4357,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -3332,7 +4438,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -3404,7 +4518,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -3475,7 +4597,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -3545,7 +4675,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -3615,7 +4753,15 @@
               "scale": 1
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -4049,7 +5195,15 @@
                 }
               ]
             },
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         },
         {
@@ -4119,7 +5273,15 @@
               "scale": 1.2
             },
             "grid": null,
-            "masks": []
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5
+            },
+            "effects": null
           }
         }
       ]

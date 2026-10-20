@@ -56,6 +56,79 @@
   pointer-events: none;
 }
 
+/* ---- Effects (issue #281): the background answering the words ------------
+   --react-<target> (0 to 1) are written frame by frame by useScreenEffects;
+   without effects they're unset, and everything below is as it was. */
+
+.sv-stage[data-effects] .sv-layer[data-layer="media"] {
+  filter: brightness(calc(1 + var(--react-brightness, 0) * 0.7)) hue-rotate(calc(var(--react-hue, 0) * 120deg));
+}
+.sv-stage[data-effects] .sv-bg {
+  scale: calc(1 + var(--react-movement, 0) * 0.08);
+  rotate: calc(var(--react-movement, 0) * 2deg);
+}
+.sv-stage[data-effects] :is(.sv-wave, .sv-particle, .sv-beam) {
+  scale: calc(1 + var(--react-elements, 0) * 0.6);
+}
+.sv-react-pulse {
+  position: absolute;
+  inset: -10%;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c2) 55%, transparent), transparent 75%);
+  opacity: calc(var(--react-pulse, 0) * 0.9);
+  scale: calc(0.7 + var(--react-pulse, 0) * 0.5);
+}
+
+/* The words' own movement: a pulse, a breath, a glow, a shimmer, a float - by --anim-amount, at --anim-speed. */
+.sv-stage[data-text-animation="pulse"] .sv-words:not(.sv-out) .sv-line {
+  animation: sv-text-pulse calc(1.6s / var(--anim-speed, 1)) ease-in-out infinite;
+}
+.sv-stage[data-text-animation="breathe"] .sv-words:not(.sv-out) .sv-line {
+  animation: sv-text-breathe calc(4s / var(--anim-speed, 1)) ease-in-out infinite;
+}
+.sv-stage[data-text-animation="glow"] .sv-words:not(.sv-out) .sv-line {
+  animation: sv-text-glow calc(3s / var(--anim-speed, 1)) ease-in-out infinite;
+}
+.sv-stage[data-text-animation="shimmer"] .sv-words:not(.sv-out) .sv-line {
+  animation: sv-text-shimmer calc(2.4s / var(--anim-speed, 1)) linear infinite;
+}
+.sv-stage[data-text-animation="float"] .sv-words:not(.sv-out) .sv-line {
+  animation: sv-text-float calc(5s / var(--anim-speed, 1)) ease-in-out infinite;
+}
+@keyframes sv-text-pulse {
+  50% {
+    scale: calc(1 + var(--anim-amount, 0.5) * 0.05);
+  }
+}
+@keyframes sv-text-breathe {
+  50% {
+    opacity: calc(1 - var(--anim-amount, 0.5) * 0.45);
+  }
+}
+@keyframes sv-text-glow {
+  50% {
+    text-shadow: 0 0 calc(var(--anim-amount, 0.5) * 3cqmin) color-mix(in srgb, var(--text) 80%, transparent);
+  }
+}
+@keyframes sv-text-shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  25% {
+    opacity: calc(1 - var(--anim-amount, 0.5) * 0.3);
+  }
+  60% {
+    opacity: calc(1 - var(--anim-amount, 0.5) * 0.1);
+  }
+}
+@keyframes sv-text-float {
+  50% {
+    translate: 0 calc(var(--anim-amount, 0.5) * -1.2cqmin);
+  }
+}
+
 /* ---- Backgrounds ---------------------------------------------------- */
 
 .sv-bg {
@@ -105,7 +178,8 @@
   transition:
     opacity 1.2s ease,
     scale 1.2s ease;
-  scale: calc(0.85 + var(--energy) * 0.3);
+  /* Warmer in a chorus; swelling with effects (issue #281). */
+  scale: calc((0.85 + var(--energy) * 0.3) * (1 + var(--react-elements, 0) * 0.6));
   will-change: transform;
   animation: sv-drift calc(26s - var(--motion) * 16s) ease-in-out infinite alternate;
 }
@@ -231,28 +305,6 @@
   }
   to {
     transform: rotate(14deg);
-  }
-}
-
-/* The background answers each new slide: a pulse of light from the middle. */
-.sv-pulse {
-  position: absolute;
-  inset: -20%;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--c2) 45%, transparent), transparent 70%);
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: sv-pulse 1.4s ease-out;
-}
-@keyframes sv-pulse {
-  0% {
-    opacity: calc(0.15 + var(--energy) * 0.45);
-    transform: scale(0.6);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.25);
   }
 }
 

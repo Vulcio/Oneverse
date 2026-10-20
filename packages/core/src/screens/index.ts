@@ -70,6 +70,7 @@ export function formatScreenCode(code: string): string {
   return `${code.slice(0, 3)}-${code.slice(3)}`;
 }
 export * from "./theme.js";
+export * from "./parts.js";
 
 export * from "./timers.js";
 export * from "./day-set.js";

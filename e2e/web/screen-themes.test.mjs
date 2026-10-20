@@ -1,7 +1,7 @@
-// Screen themes (issue #194): built-in looks and saved ones (a person's or a
-// team's), picked per screen; made in an editor with a live preview; a
-// change shows on the screen at once; `?theme=` pins a built-in one on a
-// device. Every client reads the same screen-theme/v1 document.
+// Screen templates (issues #194, #281): built-in looks and saved ones (a person's or a team's), picked per screen; made
+// of parts - a content theme, a background theme, effects - each edited on its own with a live preview, from the
+// template's editor or their own lists; a change shows on the screen at once; `?theme=` pins a built-in one on a
+// device. Every client reads the same documents.
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 import { API, SP, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
@@ -67,33 +67,54 @@ try {
     await tv.getByTestId("screen-idle").waitFor();
   });
 
-  await step("the built-in themes play on a sample song; one customized in the editor and saved", async () => {
+  await step("a built-in template customized: its background and its words made the user's own, from the template's editor", async () => {
     page = tablet;
     await signIn(tablet, leader);
     await tablet.goto(`${WEB}/screens?tab=templates`);
     const builtIn = tablet.getByTestId("builtin-theme-chapel");
     await builtIn.getByTestId("screen-lyrics").first().waitFor();
+    // Tagged, and filtered by tag (issue #281).
+    await builtIn.getByTestId("template-tags").getByText("Audience").waitFor();
+    await tablet.getByTestId("templates-tags").locator('[data-value="chords"]').click();
+    await builtIn.waitFor({ state: "detached" });
+    await tablet.getByTestId("builtin-theme-band-chart").waitFor();
+    await tablet.getByTestId("templates-tags").locator('[data-value="chords"]').click();
     await builtIn.getByTestId("customize-theme").click();
     const editor = tablet.getByTestId("theme-editor");
     await editor.getByTestId("theme-preview").waitFor();
-    await editor.getByTestId("theme-background").locator('[data-value="particles"]').click();
+    // The background, customized into one of the user's own.
+    await editor.getByTestId("theme-part-background-open").click();
+    let part = tablet.getByTestId("part-editor");
+    await part.getByTestId("theme-background").locator('[data-value="particles"]').click();
+    await part.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor();
+    await part.locator("#theme-name").fill(`Starry sky ${stamp}`);
+    await part.getByTestId("theme-save").click();
+    await part.waitFor({ state: "detached" });
     await editor.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor();
-    await editor.getByTestId("theme-transition").locator('[data-value="zoom"]').click();
-    await editor.getByTestId("theme-reveal").locator('[data-value="letters"]').click();
-    // A step in the preview: the next slide comes in letter by letter.
-    await editor.getByTestId("theme-preview-next").click();
-    await editor.locator('[data-testid="theme-preview"] .sv-reveal-letters .sv-piece').first().waitFor();
+    // The words too.
+    await editor.getByTestId("theme-part-content-open").click();
+    part = tablet.getByTestId("part-editor");
+    await part.getByTestId("theme-transition").locator('[data-value="zoom"]').click();
+    await part.getByTestId("theme-reveal").locator('[data-value="letters"]').click();
+    // A step in the preview: the next slide comes in letter by letter, over the template's background.
+    await part.getByTestId("theme-preview-next").click();
+    await part.locator('[data-testid="theme-preview"] [data-background="particles"] .sv-reveal-letters .sv-piece').first().waitFor();
     // Unreadable colours are flagged.
-    await editor.getByTestId("theme-text-color").fill("#111111");
-    await editor.getByTestId("theme-contrast").getByText("Low contrast", { exact: false }).waitFor();
-    await editor.getByTestId("theme-text-color").fill("#fff7e6");
-    await editor.getByTestId("theme-contrast").getByText("Contrast", { exact: false }).waitFor();
+    await part.getByTestId("theme-text-color").fill("#111111");
+    await part.getByTestId("theme-contrast").getByText("Low contrast", { exact: false }).waitFor();
+    await part.getByTestId("theme-text-color").fill("#fff7e6");
+    await part.getByTestId("theme-contrast").getByText("Contrast", { exact: false }).waitFor();
     await tablet.screenshot({ path: `${SP}/screen-theme-editor.png` });
-    await editor.getByLabel("Name").fill(`Starry ${stamp}`);
+    await part.locator("#theme-name").fill(`Starry words ${stamp}`);
+    await part.getByTestId("theme-save").click();
+    await part.waitFor({ state: "detached" });
+    await editor.getByTestId("theme-tags").locator('[data-value="presentation"]').click();
+    await editor.locator("#theme-name").fill(`Starry ${stamp}`);
     await editor.getByTestId("theme-save").click();
     await tablet.getByTestId(`saved-theme-Starry ${stamp}`).waitFor();
     const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
-    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant") throw new Error(JSON.stringify(saved?.theme));
+    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant" || saved.parts.background.name !== `Starry sky ${stamp}` || !saved.template.tags.includes("presentation"))
+      throw new Error(JSON.stringify(saved));
   });
 
   await step("picked for the screen from its row: the screen changes at once", async () => {
@@ -112,9 +133,10 @@ try {
     await tv.locator(`[data-testid="screen-showing"][data-theme]`).waitFor();
   });
 
-  await step("the theme changed: the screen showing it follows", async () => {
+  await step("its background theme changed: the screen showing the template follows", async () => {
     const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
-    await api(leader, "PATCH", `/screen-themes/${saved.id}`, { theme: { ...saved.theme, background: { ...saved.theme.background, kind: "waves" } } });
+    const [background] = (await api(leader, "GET", "/screen-parts?kind=background")).filter((one) => one.id === saved.parts.background.id);
+    await api(leader, "PATCH", `/screen-parts/${background.id}`, { document: { ...background.document, background: { ...background.document.background, kind: "waves" } } });
     await tv.locator('[data-testid="screen-stage"][data-background="waves"]').waitFor();
   });
 
@@ -145,16 +167,23 @@ try {
     await tv.getByTestId("screen-lines").getByText("third line here").waitFor();
   });
 
-  await step("a picture for the background and an uploaded font, from the editor: on the screen", async () => {
+  await step("a picture for the background theme and a font for the content theme, from their own lists: on the screen", async () => {
     page = tablet;
     await tablet.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
     await tablet.goto(`${WEB}/screens?tab=templates`);
-    await tablet.getByTestId(`saved-theme-Starry ${stamp}`).getByTestId("edit-theme").click();
-    const editor = tablet.getByTestId("theme-editor");
+    await tablet.getByTestId("templates-view-background").click();
+    await tablet.getByTestId(`saved-part-Starry sky ${stamp}`).getByText("Used by 1 template").waitFor();
+    await tablet.getByTestId(`saved-part-Starry sky ${stamp}`).getByTestId("edit-part").click();
+    let editor = tablet.getByTestId("part-editor");
     await editor.getByTestId("theme-background").locator('[data-value="image"]').click();
     await editor.getByTestId("theme-upload-media").setInputFiles({ name: "stage.png", mimeType: "image/png", buffer: png(40, 90, 160) });
     await editor.getByTestId("theme-media").getByText("stage.png").waitFor();
     await editor.locator('[data-testid="theme-preview"] img[data-testid="screen-media"]').waitFor();
+    await editor.getByTestId("theme-save").click();
+    await editor.waitFor({ state: "detached" });
+    await tablet.getByTestId("templates-view-content").click();
+    await tablet.getByTestId(`saved-part-Starry words ${stamp}`).getByTestId("edit-part").click();
+    editor = tablet.getByTestId("part-editor");
     await editor.getByTestId("theme-upload-font").setInputFiles({ name: "bebas.woff2", mimeType: "font/woff2", buffer: readFileSync(FONT) });
     await editor.getByTestId("theme-custom-font").locator("option", { hasText: "bebas.woff2" }).waitFor({ state: "attached" });
     await editor.getByTestId("theme-save").click();
@@ -179,10 +208,14 @@ try {
     if (res.status !== 200 || res.headers.get("content-type") !== "application/octet-stream") throw new Error(`font: ${res.status} ${res.headers.get("content-type")}`);
     const form = new FormData();
     form.append("file", new Blob(["<script>alert(1)</script>"], { type: "text/html" }), "page.html");
-    res = await fetch(`${API}/screen-themes/${saved.id}/assets?kind=media`, { method: "POST", headers: { Authorization: `Bearer ${leader.bearer}` }, body: form });
+    const background = saved.parts.background.id;
+    res = await fetch(`${API}/screen-parts/${background}/assets?kind=media`, { method: "POST", headers: { Authorization: `Bearer ${leader.bearer}` }, body: form });
     if (res.status !== 400) throw new Error(`html: ${res.status}`);
-    res = await fetch(`${API}/screen-themes/${saved.id}/assets?kind=media`, { method: "POST", headers: { Authorization: `Bearer ${member.bearer}` }, body: form });
-    if (res.status !== 404) throw new Error(`someone else's theme: ${res.status}`);
+    res = await fetch(`${API}/screen-parts/${background}/assets?kind=media`, { method: "POST", headers: { Authorization: `Bearer ${member.bearer}` }, body: form });
+    if (res.status !== 404) throw new Error(`someone else's part: ${res.status}`);
+    // A font goes with words, a picture with a background.
+    res = await fetch(`${API}/screen-parts/${background}/assets?kind=font`, { method: "POST", headers: { Authorization: `Bearer ${leader.bearer}` }, body: form });
+    if (res.status !== 400) throw new Error(`a font on a background: ${res.status}`);
   });
 
   await step("?theme= pins a built-in theme on this device", async () => {

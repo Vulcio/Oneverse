@@ -195,8 +195,8 @@ export class TeamsService {
       );
     }
 
-    // Its screen themes go with it (issue #194, cascading), and their files with those.
-    const themeFiles = await this.prisma.client.screenThemeAsset.findMany({ where: { theme: { ownerTeamId: teamId } }, select: { storageKey: true } });
+    // Its screen templates and their parts go with it (issues #194, #281, cascading), and their files with those.
+    const themeFiles = await this.prisma.client.screenThemeAsset.findMany({ where: { OR: [{ theme: { ownerTeamId: teamId } }, { part: { ownerTeamId: teamId } }] }, select: { storageKey: true } });
     const { avatarStorageKey } = await this.prisma.client.team.delete({ where: { id: teamId }, select: { avatarStorageKey: true } }).catch((error: unknown) => {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
         throw new ConflictException("This team still has content referencing it - move or delete it first.");

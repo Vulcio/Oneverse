@@ -162,7 +162,7 @@ try {
       { id: "dial", kind: "analog-clock", x: 6, y: 4, w: 3, h: 4, options: { seconds: true } },
       { id: "late", kind: "countdown", x: 9, y: 4, w: 3, h: 4, options: { source: "until", until: "23:59", breakpoints: [{ at: 86400, color: "#ffffff", background: "#dc2626" }] } },
     ];
-    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: { ...saved.theme, grid: { ...saved.theme.grid, black: "all", widgets } } });
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { template: { ...saved.template, grid: { ...saved.template.grid, black: "all", widgets } } });
     page = tv;
     const section = tv.getByTestId("widget-current-section");
     await section.getByText("third line here").waitFor({ timeout: 10000 });
@@ -180,7 +180,7 @@ try {
     if (time !== `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}` && !time) throw new Error(`analog clock: ${time}`);
     await tv.locator('[data-testid="widget-countdown"] [data-color="#ffffff"]').waitFor();
     await tv.locator('[data-testid="widget-timer-background"][data-color="#dc2626"]').waitFor();
-    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: saved.theme });
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { template: saved.template });
     await tv.getByTestId("widget-song-structure").waitFor({ state: "detached", timeout: 10000 });
   });
 
@@ -192,7 +192,7 @@ try {
       { id: "set-count", kind: "slide-count", x: 0, y: 6, w: 6, h: 3, options: { scope: "set", progress: "thick" } },
       { id: "wifi", kind: "qr-code", x: 6, y: 0, w: 6, h: 9, options: { label: "Wi-Fi", qr: { kind: "wifi", ssid: "Guests", password: "pa;ss" } } },
     ];
-    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: { ...saved.theme, grid: { ...saved.theme.grid, widgets } } });
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { template: { ...saved.template, grid: { ...saved.template.grid, widgets } } });
     page = tv;
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -207,7 +207,7 @@ try {
     if ((await qr.getAttribute("data-payload")) !== "WIFI:T:WPA;S:Guests;P:pa\\;ss;;") throw new Error(await qr.getAttribute("data-payload"));
     await qr.locator("svg").waitFor();
     await qr.getByText("Wi-Fi").waitFor();
-    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { theme: saved.theme });
+    await api(leader, "PATCH", `/screen-themes/${theme.id}`, { template: saved.template });
     await tv.getByTestId("widget-qr-code").waitFor({ state: "detached", timeout: 10000 });
   });
 

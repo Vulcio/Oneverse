@@ -12,13 +12,13 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
    ![Un écran affichant son code](../../../assets/screenshots/fr/screen-code.jpg)
 
 2. Sur votre téléphone ou votre tablette, scannez le code QR, ou ouvrez **Écrans** - sous **Outils** dans la barre latérale, ou depuis le menu Synchro de Live (**Écrans…**) - et saisissez le code.
-3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche - une des vôtres, ou **La liste du jour (automatique)** (voir [plus bas](/fr/screens/#la-liste-du-jour)) - et ce qu'il **Affiche** : **Les paroles, pour l'assemblée** ou **La grille, pour le groupe**. Puis **Associer l'écran**.
+3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche - une des vôtres, ou **La liste du jour (automatique)** (voir [plus bas](/fr/screens/#la-liste-du-jour)) Puis **Associer l'écran**. Ce qu'il affiche - les paroles ou la grille des musiciens - vient de son [modèle](/fr/screens/#modèles).
 
    ![Associer un écran](../../../assets/screenshots/fr/screens-pair.jpg)
 
 L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
-**Écrans** a quatre onglets : **Écrans**, **Modèles**, **Widgets** et **Marques** (les [marques](/fr/brands/) de vos équipes et organisations). Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, paroles ou grille, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, le basculer entre paroles et grille, changer son modèle ou son propriétaire, et choisir les **Calques affichés** (voir [Calques](/fr/screens/#calques)), avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
+**Écrans** a quatre onglets : **Écrans**, **Modèles**, **Widgets** et **Marques** (les [marques](/fr/brands/) de vos équipes et organisations). Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, changer son modèle ou son propriétaire, activer ou non ses **Effets** (voir [Effets](/fr/screens/#effets)) et choisir les **Calques affichés** (voir [Calques](/fr/screens/#calques)), avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
 
 ### La liste du jour
 
@@ -64,21 +64,31 @@ La présentation passe par la [Synchro](/fr/sets/#jouer-synchronisé) : les écr
 
 ## Ce qu'affichent les écrans
 
-Avec **Les paroles, pour l'assemblée**, les deux lignes de chaque diapositive sont grandes et centrées. La ligne d'avant est estompée au-dessus, celle d'après en dessous, et chaque diapositive apparaît en fondu - avec l'apparence par défaut ; un [modèle](/fr/screens/#modèles) change tout cela. Une section sans paroles, comme un instrumental, est une diapositive vide : on avance dans le chant au rythme du groupe. La première diapositive d'un chant affiche son titre, et la première et la dernière ses crédits en bas : qui l'a écrit, son copyright et son numéro de chant CCLI, tirés des informations du chant.
+Avec un modèle pour l'assemblée, les deux lignes de chaque diapositive sont grandes et centrées. La ligne d'avant est estompée au-dessus, celle d'après en dessous, et chaque diapositive apparaît en fondu - avec l'apparence par défaut ; un [modèle](/fr/screens/#modèles) change tout cela. Une section sans paroles, comme un instrumental, est une diapositive vide : on avance dans le chant au rythme du groupe. La première diapositive d'un chant affiche son titre, et la première et la dernière ses crédits en bas : qui l'a écrit, son copyright et son numéro de chant CCLI, tirés des informations du chant.
 
 ![Des paroles sur un écran](../../../assets/screenshots/fr/screen-lyrics.jpg)
 
-Avec **La grille, pour le groupe**, l'écran affiche la grille du chant avec ses accords, dans la tonalité de la liste, et garde la section chantée en évidence et à l'écran.
+Avec un modèle pour les musiciens, comme **Grille du groupe**, l'écran affiche la grille du chant avec ses accords, dans la tonalité de la liste, et garde la section chantée en évidence et à l'écran.
 
 Les paroles sont celles de la version et de la tonalité que joue la liste. Les notes du chant et les accords ne sont jamais montrés à l'assemblée. Si l'écran perd sa connexion, il l'indique dans un coin et se reconnecte tout seul.
 
 ## Modèles
 
-Un modèle, c'est l'apparence d'un écran : sa police, ses couleurs et son fond, les lignes autour des lignes en cours, la place des paroles, et la façon dont les diapositives arrivent et partent. Chaque écran a le sien : un retour de scène peut afficher de grandes majuscules en haut pendant que l'écran de l'assemblée a un fond animé. Ils sont dans l'onglet **Modèles**. Un écran en choisit un dans **Modèle**, dans les **Réglages** de sa vignette ; l'écran change aussitôt. **Nouveau modèle** en commence un depuis l'apparence par défaut.
+Un modèle, c'est l'apparence d'un écran et ce à quoi il sert. Il est fait de trois parties, chacune enregistrée et modifiée à part, pour qu'un changement suive partout où elle sert :
+
+- un **thème de contenu** - l'apparence des paroles et leur façon d'arriver et de partir, ou la grille d'accords pour les musiciens ;
+- un **thème de fond** - la couleur, l'image, la vidéo ou la lumière en mouvement sous les paroles, et l'entrée vidéo ;
+- des **effets** - le lien entre les deux : le fond qui répond aux paroles, et le mouvement propre des paroles.
+
+Un modèle y ajoute ses **tags** et sa mise en page - des [widgets](/fr/screens/#widgets) sur une grille, et des [masques](/fr/screens/#calques). Chacun est fait pour un seul usage : il n'y a pas de bascule entre paroles et grille, un modèle pour les musiciens utilise un thème de contenu en grille d'accords. Un écran choisit un modèle dans **Modèle**, dans les **Réglages** de sa vignette ; l'écran change aussitôt.
 
 ![Les modèles sur la page Écrans](../../../assets/screenshots/fr/screen-themes.jpg)
 
-Les **Modèles intégrés** jouent chacun un chant d'exemple, pour voir comment ils bougent :
+L'onglet **Modèles** a quatre vues : **Modèles**, **Thèmes de contenu**, **Thèmes de fond** et **Effets**. Chaque élément joue un chant d'exemple, pour voir comment il bouge.
+
+### Les modèles et leurs tags
+
+Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentation**, **Paroles**, **Accords** et **Affichage**. Choisissez des tags au-dessus de la liste pour ne voir que les modèles qui les ont tous. **Nouveau modèle** en commence un avec les parties intégrées. Les **Modèles intégrés** :
 
 - **Classique** - paroles blanches sur noir, la ligne d'avant et d'après atténuées : l'apparence par défaut.
 - **Concert** - majuscules grasses sur une lumière colorée en mouvement, les mots révélés un à un.
@@ -90,20 +100,50 @@ Les **Modèles intégrés** jouent chacun un chant d'exemple, pour voir comment 
 - **Minimal** - aligné à gauche et discret, les lignes suivantes visibles, tapé.
 - **Affichage de scène** - pour la scène, sur une grille de [widgets](/fr/screens/#widgets) : la diapositive en cours et la suivante, l'heure, un compte à rebours, le chant et la suite, et les messages de l'opérateur.
 - **Retour de scène** - de grandes majuscules en haut et toute la partie, pour les musiciens.
+- **Grille du groupe** - la grille du chant avec ses accords, la partie chantée en vue, pour les musiciens.
 
-**Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3**, sur les paroles ou la grille des musiciens - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
+**Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3** - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
 
+![L'éditeur de modèle : son contenu, son fond et ses effets](../../../assets/screenshots/fr/screen-template-parts.jpg)
+
+- **Contenu, fond et effets** - les trois parties du modèle : intégrées, ou les vôtres et celles de vos équipes. **Personnaliser** à côté d'une partie intégrée en fait une copie à vous et l'ouvre ; **Modifier** ouvre une des vôtres. Une partie utilisée par plusieurs modèles le dit : la changer les change tous.
+- **Tags** - ce à quoi sert le modèle.
+- **Mise en page et widgets** - place des [widgets](/fr/screens/#widgets) sur une grille. Voir plus bas.
+- **Masques** - du noir sur une partie de l'image, ou une fenêtre sur l'entrée vidéo. Voir [Calques](/fr/screens/#calques).
+
+Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous administrez une équipe - à l'équipe, pour que chaque membre puisse le choisir pour ses écrans (seuls ses administrateurs le modifient). Le modèle d'une équipe utilise les parties de l'équipe. Un modèle que vous pouvez modifier a **Modifier** et **Supprimer** ; le supprimer remet ses écrans sur l'apparence par défaut, et ses parties restent.
+
+### Thèmes de contenu
+
+L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thème de contenu**, ou **Personnaliser** un thème intégré) ou depuis un modèle :
+
+- **Affiche** - **Les paroles, pour le public** ou **La grille d'accords, pour les musiciens**.
 - **Texte** - la police (ou une **Police envoyée** : un fichier WOFF2, WOFF, TTF ou OTF que vous avez le droit d'utiliser ainsi), sa taille (**Ajustée à la ligne**, ou fixe), sa graisse, sa couleur, **Majuscules**, **Lisibilité** (une ombre, un contour ou un halo, pour des paroles sur un fond animé), l'alignement, l'interligne et l'espacement des lettres.
 - **Lignes** - **La diapositive**, avec les lignes d'avant et d'après, ou **Toute la partie** avec les lignes de la diapositive mises en avant ; les lignes autour **Atténuées**, **Plus petites**, **Floues** ou **Masquées**.
 - **Mise en page** - en haut, au centre, en bas ou **Tiers inférieur**, et une **Marge de sécurité** pour les téléviseurs qui rognent les bords.
-- **Fond** - une **Couleur**, un **Dégradé**, de la lumière en mouvement (**Aurore**, **Vagues**, **Particules**, **Projecteurs**, jusqu'à quatre couleurs), ou votre propre **Image** (qui se rapproche lentement) ou **Vidéo** en boucle : **Envoyer…** un JPEG, PNG, WebP, AVIF ou GIF jusqu'à 15 Mo, ou un MP4 ou WebM jusqu'à 150 Mo. **Suit le chant** envoie une pulsation de lumière à chaque diapositive et l'avive dans un refrain. **Assombrir** garde les paroles lisibles sur n'importe quel fond.
 - **Mouvement** - **Entre les diapositives** : une coupe, un fondu, un glissement, une montée, une échelle, un flou ou un zoom, et sa durée (un nouveau chant prend deux fois plus de temps). **Apparition des mots** : d'un coup, ligne par ligne, mot par mot, lettre par lettre, tapés ou en lumière.
 - **Titre et crédits** - afficher ou non le titre du chant et ses crédits (auteurs, copyright, numéro CCLI), sur quelles diapositives et où.
-- **Accords** - pour **La grille, pour le groupe** : la couleur des accords et la taille de la grille.
-- **Mise en page et widgets** - place des [widgets](/fr/screens/#widgets) sur une grille. Voir plus bas.
-- **Calques** - la couleur de base, l'entrée vidéo et les masques. Voir plus bas.
+- **Accords** - pour la grille d'accords : la couleur des accords et la taille de la grille.
 
-L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1. Les images, vidéos et polices s'ajoutent à un modèle enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage. Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous administrez une équipe - à l'équipe, pour que chaque membre puisse le choisir pour ses écrans (seuls ses administrateurs le modifient). Un modèle que vous pouvez modifier a **Modifier** et **Supprimer** ; le supprimer remet ses écrans sur l'apparence par défaut.
+L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1.
+
+### Thèmes de fond
+
+Ce qu'il y a sous les paroles :
+
+- **Base et entrée vidéo** - la couleur de base et la caméra ou la carte de capture de l'écran. Voir [Calques](/fr/screens/#calques).
+- **Fond** - une **Couleur**, un **Dégradé**, de la lumière en mouvement (**Aurore**, **Vagues**, **Particules**, **Projecteurs**, jusqu'à quatre couleurs), ou votre propre **Image** (qui se rapproche lentement) ou **Vidéo** en boucle : **Envoyer…** un JPEG, PNG, WebP, AVIF ou GIF jusqu'à 15 Mo, ou un MP4 ou WebM jusqu'à 150 Mo. **Assombrir** garde les paroles lisibles sur n'importe quel fond.
+- **Sa réponse aux effets** - à quel point son **Mouvement**, son **Changement de couleur**, sa **Luminosité** et ses **Éléments** (taches, vagues, particules, faisceaux) bougent quand des effets les déclenchent.
+
+Les polices et les images s'ajoutent à un thème de contenu ou de fond enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage.
+
+### Effets
+
+Les effets relient les paroles au fond. **Réactions** : **Quand** une diapositive arrive, une ligne ou un mot apparaît, une nouvelle partie commence, ou dans un refrain (tant qu'il dure), **le fond** pulse de lumière, bouge plus vite, change de couleur, s'éclaire ou fait grossir ses éléments - chacun autant que vous le choisissez, fois la réponse du fond. **Le mouvement des paroles** : **Pulsation**, **Respiration**, **Lueur**, **Scintillement** ou **Flottement**, avec son intensité et sa vitesse. Un modèle peut n'avoir aucun effet.
+
+![Effets : réactions et mouvement des paroles](../../../assets/screenshots/fr/screen-effects.jpg)
+
+Un écran qui ne suit pas - une vieille télé, une petite clé HDMI - peut désactiver les **Effets** dans les **Réglages** de sa vignette : il affiche le même modèle, sans les réactions ni le mouvement des paroles.
 
 ### Calques
 

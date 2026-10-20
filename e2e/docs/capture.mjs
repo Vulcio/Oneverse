@@ -383,6 +383,33 @@ try {
     );
     await page.keyboard.press("Escape");
     await page.getByTestId("theme-editor").waitFor({ state: "detached" });
+    // A template's parts (issue #281): the Concert template in the editor, its content, background and effects.
+    await shoot(
+      "screen-template-parts",
+      "/screens?tab=templates",
+      async () => {
+        await page.getByTestId("builtin-theme-concert").getByTestId("customize-theme").click();
+        await page.getByTestId("theme-group-parts").waitFor();
+        await page.waitForTimeout(1200);
+      },
+      { element: page.getByTestId("theme-editor") },
+    );
+    await page.keyboard.press("Escape");
+    await page.getByTestId("theme-editor").waitFor({ state: "detached" });
+    // Effects (issue #281): the built-in Concert effects, customized.
+    await shoot(
+      "screen-effects",
+      "/screens?tab=templates",
+      async () => {
+        await page.getByTestId("templates-view-effects").click();
+        await page.getByTestId("builtin-part-concert").getByTestId("customize-part").click();
+        await page.getByTestId("theme-group-reactions").waitFor();
+        await page.waitForTimeout(1200);
+      },
+      { element: page.getByTestId("part-editor") },
+    );
+    await page.keyboard.press("Escape");
+    await page.getByTestId("part-editor").waitFor({ state: "detached" });
     await shoot("screens-pair", `/screens?code=${screenCode}&setlistId=${set.id}`, () => page.getByTestId("screen-pair-form").waitFor());
     await page.getByTestId("screen-pair-form").getByRole("button").first().click();
     await page.getByTestId("screen-paired").waitFor();

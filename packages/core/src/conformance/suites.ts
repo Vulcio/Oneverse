@@ -20,7 +20,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, placeScreenWidget, readScreenTimer, resolveScreenTheme, screenBaseColor, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
@@ -1203,6 +1203,66 @@ export const CONFORMANCE: ConformanceArea[] = [
               "2026-10-16",
             ],
           },
+        ],
+      },
+      composeScreenTheme: {
+        about:
+          "What a screen draws (issue #281): a template's content theme, background theme, effects and layout made into one screen theme; with effects off, none - the background doesn't answer the words. A part it can't read falls back to its defaults.",
+        params: ["parts", "options"],
+        run: composeScreenTheme,
+        cases: [
+          {
+            name: "elegant words over waves, a pulse with each slide, a clock",
+            args: [
+              {
+                content: { text: { font: "elegant" }, motion: { transition: "fade" } },
+                background: { background: { kind: "waves", colors: ["#1e1b4b", "#f97316"] }, reacts: { hue: 0.8 } },
+                effects: { reactions: [{ on: "slide", target: "pulse", amount: 0.7 }], text: { animation: "breathe" } },
+                template: { tags: ["audience", "lyrics"], grid: { widgets: [{ id: "c", kind: "clock", x: 9, y: 0, w: 3, h: 1 }] } },
+              },
+              {},
+            ],
+          },
+          { name: "the same, effects off on the screen", args: [{ content: {}, background: { background: { kind: "waves" } }, effects: { reactions: [{ on: "slide", target: "pulse" }] } }, { effects: false }] },
+          { name: "the chord chart, for the band", args: [{ content: { shows: "chart", chords: { color: "#facc15" } }, background: {} }, {}] },
+          { name: "parts that can't be read: their defaults", args: [{ content: { text: { color: "red" } }, background: "nothing", effects: null }, {}] },
+        ],
+      },
+      splitScreenTheme: {
+        about: "A screen theme made before parts (issue #281), split into its content theme, background theme, effects and layout; a background that moved with the song gets effects that pulse with each slide and brighten in a chorus. Composing them again gives the same look.",
+        params: ["theme"],
+        run: splitScreenTheme,
+        cases: [
+          { name: "the default look", args: [{}] },
+          { name: "a moving background that answers the song, and a grid", args: [{ text: { font: "rounded" }, background: { kind: "aurora", colors: ["#000000", "#6d28d9"], reactive: true }, grid: { widgets: [{ id: "s", kind: "stage", x: 0, y: 0, w: 12, h: 12 }] } }] },
+        ],
+      },
+      readScreenEffects: {
+        about: "Effects as a client reads them (issue #281): a reaction it can't read - a trigger or a target from a later version - is left out, the others stay.",
+        params: ["input"],
+        run: readScreenEffects,
+        cases: [
+          { name: "nothing: no reactions, the words still", args: [{}] },
+          { name: "a reaction to the beat (a later version): left out", args: [{ reactions: [{ on: "beat", target: "pulse" }, { on: "chorus", target: "hue", amount: 0.8 }], text: { animation: "glow", speed: 2 } }] },
+        ],
+      },
+      readScreenTemplate: {
+        about: "A template's layout as a client reads it (issue #281): its tags (one it doesn't know left out), its widget grid and masks.",
+        params: ["input"],
+        run: readScreenTemplate,
+        cases: [
+          { name: "tags, one from a later version", args: [{ tags: ["stage", "chords", "hologram", "stage"] }] },
+          { name: "a mask that can't be read: left out", args: [{ masks: [{ id: "a", shape: "ellipse", x: 10 }, { id: "b", shape: "star" }] }] },
+        ],
+      },
+      filterScreenTemplates: {
+        about: "Templates with all the tags picked (issue #281); none picked, all of them.",
+        params: ["templates", "tags"],
+        run: filterScreenTemplates,
+        cases: [
+          { name: "stage", args: [[{ id: "a", tags: ["audience", "lyrics"] }, { id: "b", tags: ["stage", "lyrics"] }, { id: "c", tags: ["stage", "chords"] }], ["stage"]] },
+          { name: "stage and chords", args: [[{ id: "a", tags: ["audience", "lyrics"] }, { id: "b", tags: ["stage", "lyrics"] }, { id: "c", tags: ["stage", "chords"] }], ["stage", "chords"]] },
+          { name: "none picked", args: [[{ id: "a", tags: ["audience"] }, { id: "b", tags: [] }], []] },
         ],
       },
       screenWidgetLayer: {

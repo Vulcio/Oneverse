@@ -172,6 +172,35 @@ its widgets are on their kind's layer.
   own `hiddenLayers`, worked out by `screenLayers` in core. The base always
   shows.
 
+## Templates and their parts
+
+Since issue #281 a saved template is made of parts, each its own document,
+saved and edited on its own (`POST/PATCH /screen-parts`), and a screen
+theme is what they compose to (`composeScreenTheme` in core):
+
+- **screen-content/v1** (`ScreenContentThemeSchema`): `shows` ("lyrics" or
+  "chart"), `text`, `lines`, `layout`, `title`, `credits`, `motion`,
+  `chords` - as above. Its fonts are its files.
+- **screen-background/v1** (`ScreenBackgroundThemeSchema`): `base`,
+  `video`, `background`, and `reacts` - how much its movement, hue,
+  brightness and elements answer effects (0-1). Its pictures and videos are
+  its files.
+- **screen-effects/v1** (`ScreenEffectsSchema`): `reactions` - `{ on: slide
+  | line | word | section | chorus, target: pulse | movement | hue |
+  brightness | elements, amount }` - and `text` (`animation`: none, pulse,
+  breathe, glow, shimmer, float; `amount`; `speed`).
+- **screen-template/v1** (`ScreenTemplateSchema`): `tags` (audience, stage,
+  presentation, lyrics, chords, signage), `grid`, `masks`; its parts are
+  referred to beside it, each a built-in id or a saved part.
+
+A composed theme carries `shows`, `reacts` and `effects` (null with none,
+or when the screen has effects turned off). A screen draws the chart when
+`shows` is "chart". A theme made before parts is split by
+`splitScreenTheme`, and composes to the same look: a background that moved
+with the song gets effects that pulse with each slide and brighten in a
+chorus. The built-in parts and templates are `SCREEN_CONTENT_THEMES`,
+`SCREEN_BACKGROUND_THEMES`, `SCREEN_EFFECTS` and `SCREEN_TEMPLATES`.
+
 ## A theme's files
 
 A saved theme can have files (`ScreenThemeAsset`): a background picture or

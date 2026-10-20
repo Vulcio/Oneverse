@@ -29,7 +29,7 @@ const SLIDE_MS = 3200;
  */
 export function ScreenThemePreview({
   theme,
-  mode = "LYRICS",
+  mode,
   aspect = "16/9",
   playing = true,
   slide: fixed,

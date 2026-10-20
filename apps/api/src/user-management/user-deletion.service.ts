@@ -189,8 +189,8 @@ export class UserDeletionService {
     await tx.versionContributor.updateMany({ where: { userId }, data: { userId: null } });
 
     await this.handOverTeamAdminRoles(tx, userId);
-    // Their own screen themes go with them (issue #194, cascading), and their files with those.
-    const themeFiles = await tx.screenThemeAsset.findMany({ where: { theme: { ownerUserId: userId } }, select: { storageKey: true } });
+    // Their own screen templates and parts go with them (issues #194, #281, cascading), and their files with those.
+    const themeFiles = await tx.screenThemeAsset.findMany({ where: { OR: [{ theme: { ownerUserId: userId } }, { part: { ownerUserId: userId } }] }, select: { storageKey: true } });
     // Sessions, accounts, passkeys, memberships, a pending ContentTransfer,
     // screens and screen themes and other per-user rows cascade;
     // Attachment.uploadedByUserId nulls.

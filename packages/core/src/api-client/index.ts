@@ -46,8 +46,9 @@ import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventR
 import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
-import type { ConfirmScreenPairingRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
+import type { ConfirmScreenPairingRequest, CreateScreenPartRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenPartRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
 import type { ScreenSwitchableLayer, ScreenTheme, ScreenWidgetKind, ScreenWidgetLook } from "../screens/theme.js";
+import type { ScreenBackgroundTheme, ScreenContentTheme, ScreenEffects, ScreenPartKind, ScreenTemplateLayout } from "../screens/parts.js";
 import type { ScreenMode } from "../screens/index.js";
 import type {
   CreateCatalogSchema,
@@ -696,6 +697,8 @@ export interface ScreenSummary {
   themeTemplate: string | null;
   /** The layers it never shows (issue #287); left out by an older API. */
   hiddenLayers?: ScreenSwitchableLayer[];
+  /** Effects shown (issue #281), or off on a screen that can't keep up; left out by an older API. */
+  effects?: boolean;
 }
 
 /** A screen theme's own file (issue #194): a background picture or video ("media"), or a font, at a signed address. */
@@ -743,10 +746,35 @@ export interface ScreenWidgetDefault {
 }
 
 /** A saved screen theme (issue #194): the user's own or a team's. */
+/** A template's part (issue #281): a built-in one by its id, or a saved one with its name. */
+export type ScreenPartRefView = { builtIn: string } | { id: string; name: string };
+
+/** A saved part (issue #281): a content theme, a background theme or effects. */
+export interface ScreenPartSummary {
+  id: string;
+  kind: ScreenPartKind;
+  name: string;
+  document: ScreenContentTheme | ScreenBackgroundTheme | ScreenEffects;
+  ownerUserId: string | null;
+  ownerTeamId: string | null;
+  teamName: string | null;
+  canEdit: boolean;
+  /** How many templates use it. */
+  templates: number;
+  /** A content theme's fonts, a background theme's pictures and videos. */
+  assets: ScreenThemeAsset[];
+  updatedAt: string;
+}
+
 export interface ScreenThemeSummary {
   id: string;
   name: string;
+  /** What screens using it draw: its parts and layout composed (issue #281). */
   theme: ScreenTheme;
+  /** Its tags, widget grid and masks. */
+  template: ScreenTemplateLayout;
+  /** Its parts (issue #281); effects null: none. */
+  parts: { content: ScreenPartRefView; background: ScreenPartRefView; effects: ScreenPartRefView | null };
   ownerUserId: string | null;
   ownerTeamId: string | null;
   teamName: string | null;
@@ -2831,13 +2859,18 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     listScreenWidgetDefaults: () => request<ScreenWidgetDefault[]>("/screen-widget-defaults"),
     saveScreenWidgetDefault: (kind: ScreenWidgetKind, data: SaveScreenWidgetDefaultRequest) => request<ScreenWidgetDefault>(`/screen-widget-defaults/${kind}`, { method: "PUT", body: JSON.stringify(data) }),
     deleteScreenWidgetDefault: (kind: ScreenWidgetKind, teamId?: string) => request<void>(`/screen-widget-defaults/${kind}${teamId ? `?teamId=${encodeURIComponent(teamId)}` : ""}`, { method: "DELETE" }),
-    /** A background picture or video ("media"), or a font, for a saved theme. */
-    uploadScreenThemeAsset: (themeId: string, kind: "media" | "font", file: Blob, filename: string) => {
+    /** Templates' parts (issue #281): content themes, background themes, effects - the user's own and their teams'. */
+    listScreenParts: (kind?: ScreenPartKind) => request<ScreenPartSummary[]>(`/screen-parts${kind ? `?kind=${kind}` : ""}`),
+    createScreenPart: (data: CreateScreenPartRequest) => request<ScreenPartSummary>("/screen-parts", { method: "POST", body: JSON.stringify(data) }),
+    updateScreenPart: (partId: string, data: UpdateScreenPartRequest) => request<ScreenPartSummary>(`/screen-parts/${partId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteScreenPart: (partId: string) => request<void>(`/screen-parts/${partId}`, { method: "DELETE" }),
+    /** A background theme's picture or video ("media"), or a content theme's font. */
+    uploadScreenPartAsset: (partId: string, kind: "media" | "font", file: Blob, filename: string) => {
       const form = new FormData();
       form.append("file", file, filename);
-      return request<ScreenThemeAsset>(`/screen-themes/${themeId}/assets?kind=${kind}`, { method: "POST", body: form });
+      return request<ScreenThemeAsset>(`/screen-parts/${partId}/assets?kind=${kind}`, { method: "POST", body: form });
     },
-    deleteScreenThemeAsset: (themeId: string, assetId: string) => request<void>(`/screen-themes/${themeId}/assets/${assetId}`, { method: "DELETE" }),
+    deleteScreenPartAsset: (partId: string, assetId: string) => request<void>(`/screen-parts/${partId}/assets/${assetId}`, { method: "DELETE" }),
     listBrands: (owner: { teamId?: string; organizationId?: string } = {}) => {
       const query = new URLSearchParams(Object.entries(owner).filter((entry): entry is [string, string] => !!entry[1]));
       return request<Brand[]>(`/brands${query.size ? `?${query}` : ""}`);

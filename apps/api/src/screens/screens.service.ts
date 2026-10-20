@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, GoneException, Injectable, NotFoundException } from "@nestjs/common";
-import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, normalizeScreenCode, resolveScreenTheme, screenThemeTemplate, type ScreenMode, type ScreenOwnerRequest, type ScreenTheme } from "@songverse/core";
+import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, type ScreenMode, type ScreenOwnerRequest } from "@songverse/core";
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
@@ -11,7 +11,7 @@ import { SetlistsService } from "../setlists/setlists.service.js";
 /** How long a pairing code waits to be confirmed. */
 export const PAIRING_TTL_S = 10 * 60;
 import { SCREEN_CHANNEL, screenOnlineKey } from "./screen-channel.js";
-import { presentScreenThemeAssets } from "./screen-theme-assets.js";
+import { templateLayout, templateLook, TEMPLATE_PARTS_SELECT, type TemplateParts } from "./screen-templates.js";
 import { ScreenThemesService } from "./screen-themes.service.js";
 
 export { SCREEN_CHANNEL };
@@ -36,6 +36,7 @@ const SCREEN_SELECT = {
   themeId: true,
   themeTemplate: true,
   hiddenLayers: true,
+  effects: true,
   ownerUserId: true,
   ownerTeamId: true,
   ownerOrganizationId: true,
@@ -50,17 +51,29 @@ const SCREEN_SELECT = {
   setlist: { select: { id: true, name: true, eventDate: true, eventDateOf: { select: { id: true } } } },
 } as const;
 
-/** A screen's look (issue #194), worked out: its theme, else its built-in one, else the default. */
-function screenLook(screen: { themeTemplate: string | null; theme: { document: unknown } | null }): ScreenTheme {
-  if (screen.theme) return resolveScreenTheme(screen.theme.document);
-  return screenThemeTemplate(screen.themeTemplate)?.theme ?? resolveScreenTheme(null);
+/**
+ * A screen's look (issues #194, #281), worked out: its template, else its
+ * built-in one, else the default - its effects on or off - and the files
+ * its parts refer to. A screen paired to show the chart before templates
+ * were built for one use (mode CHART) keeps showing it.
+ */
+function screenLook(screen: { themeTemplate: string | null; mode: ScreenMode; effects: boolean; theme: TemplateParts | null }) {
+  const options = { effects: screen.effects };
+  const look = screen.theme ? templateLook(screen.theme, options) : { theme: composeBuiltInTemplate(screen.themeTemplate, options) ?? composeBuiltInTemplate("classic", options)!, assets: [] };
+  return screen.mode === "CHART" ? { ...look, theme: { ...look.theme, shows: "chart" as const } } : look;
 }
 
-/** A screen's theme as asked for: one or the other (picking one clears the other); left out, as it was. */
-function lookChange(change: { themeId?: string | null; themeTemplate?: string | null }) {
-  if (change.themeId) return { themeId: change.themeId, themeTemplate: null };
-  if (change.themeTemplate) return { themeId: null, themeTemplate: change.themeTemplate };
-  return { ...(change.themeId === null && { themeId: null }), ...(change.themeTemplate === null && { themeTemplate: null }) };
+/**
+ * A screen's template as asked for: one or the other (picking one clears
+ * the other); left out, as it was. A template picked is built for its use:
+ * the screen shows what it shows, not the chart it was paired to show.
+ */
+function lookChange(change: { themeId?: string | null; themeTemplate?: string | null; mode?: ScreenMode }) {
+  const picked = change.themeId !== undefined || change.themeTemplate !== undefined;
+  const mode = change.mode === undefined && picked ? { mode: "LYRICS" as const } : {};
+  if (change.themeId) return { themeId: change.themeId, themeTemplate: null, ...mode };
+  if (change.themeTemplate) return { themeId: null, themeTemplate: change.themeTemplate, ...mode };
+  return { ...(change.themeId === null && { themeId: null }), ...(change.themeTemplate === null && { themeTemplate: null }), ...mode };
 }
 
 /**
@@ -107,14 +120,14 @@ export class ScreensService {
    * or (issue #222) a team's or an organisation's they run - its token
    * waiting for it to claim.
    */
-  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string; themeId?: string | null; themeTemplate?: string | null }) {
+  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string; themeId?: string | null; themeTemplate?: string | null }) {
     const { code, pairingId, pairing } = await this.waiting(input);
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
     const owner = await this.ownerFor(user, change.owner);
     const token = `scr_${randomBytes(32).toString("base64url")}`;
     const screen = await this.prisma.client.screen.create({
-      data: { name: change.name, mode: change.mode, setMode: change.setMode ?? "FIXED", setlistId: change.setlistId ?? null, setByUserId: user.id, ...owner, tokenHash: hash(token), ...lookChange(change) },
+      data: { name: change.name, mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: change.setlistId ?? null, setByUserId: user.id, ...owner, tokenHash: hash(token), ...lookChange(change) },
       select: SCREEN_SELECT,
     });
     const ttl = Math.max(30, await redis().ttl(pairingKey(pairingId)));
@@ -150,10 +163,10 @@ export class ScreensService {
     if (!screen) throw new NotFoundException("This screen was disconnected");
     // Its owner's set of the day (issue #274): worked out now, from the screen's own day and time.
     if (screen.setMode === "DAY" && day.today) screen = await this.followDay(screen, day.today, day.time ?? "12:00");
-    const { theme } = await this.prisma.client.screen.update({
+    const shown = await this.prisma.client.screen.update({
       where: { id: screen.id },
       data: { lastSeenAt: new Date() },
-      select: { theme: { select: { document: true, assets: { select: { id: true, kind: true, storageKey: true, mimeType: true, filename: true } } } } },
+      select: { mode: true, effects: true, theme: { select: TEMPLATE_PARTS_SELECT } },
     });
     let set = null;
     if (screen.setlistId) {
@@ -167,8 +180,9 @@ export class ScreensService {
         }
       }
     }
-    // Its theme's pictures, videos and fonts (issue #194), at addresses a screen can load without a session.
-    return { screen: present(screen), theme: screenLook({ themeTemplate: screen.themeTemplate, theme }), assets: presentScreenThemeAssets(theme?.assets ?? []), set };
+    // Its template's pictures, videos and fonts (issues #194, #281), at addresses a screen can load without a session.
+    const look = screenLook({ themeTemplate: screen.themeTemplate, ...shown });
+    return { screen: present(screen), theme: look.theme, assets: look.assets, set };
   }
 
   /**
@@ -211,7 +225,7 @@ export class ScreensService {
     const screen = await this.byToken(token);
     if (!screen) throw new NotFoundException("This screen was disconnected");
     const themes = await this.ownerThemes(screen);
-    return { themeId: screen.themeId, themeTemplate: screen.themeTemplate, themes: themes.map((one) => ({ id: one.id, name: one.name, teamName: one.team?.name ?? null })) };
+    return { themeId: screen.themeId, themeTemplate: screen.themeTemplate, themes: themes.map((one) => ({ id: one.id, name: one.name, teamName: one.team?.name ?? null, tags: templateLayout(one).tags })) };
   }
 
   /** A theme picked on the screen (issue #276): kept on it, as if set from Screens. */
@@ -221,7 +235,7 @@ export class ScreensService {
     if (pick.themeId && !(await this.ownerThemes(screen)).some((one) => one.id === pick.themeId)) throw new NotFoundException("Theme not found");
     const updated = await this.prisma.client.screen.update({
       where: { id: screen.id },
-      data: pick.themeId ? { themeId: pick.themeId, themeTemplate: null } : { themeId: null, themeTemplate: pick.themeTemplate },
+      data: lookChange(pick.themeId ? { themeId: pick.themeId } : { themeId: null, themeTemplate: pick.themeTemplate }),
       select: SCREEN_SELECT,
     });
     await redis().publish(SCREEN_CHANNEL, screen.id);
@@ -236,7 +250,7 @@ export class ScreensService {
         : [{ ownerUserId: screen.ownerUserId ?? "-" }];
     return this.prisma.client.screenTheme.findMany({
       where: { OR: [...owners, ...(screen.themeId ? [{ id: screen.themeId }] : [])] },
-      select: { id: true, name: true, team: { select: { name: true } } },
+      select: { id: true, name: true, document: true, team: { select: { name: true } } },
       orderBy: { name: "asc" },
       take: 100,
     });
@@ -313,7 +327,7 @@ export class ScreensService {
    * leads the set it shows, gives it another set (one they can edit) - it
    * then reads that set as them.
    */
-  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string | null; themeId?: string | null; themeTemplate?: string | null; hiddenLayers?: string[] }) {
+  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: "FIXED" | "DAY"; setlistId?: string | null; themeId?: string | null; themeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean }) {
     const { screen, canManage } = await this.changeable(user, screenId);
     const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode");
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
@@ -327,6 +341,7 @@ export class ScreensService {
         ...(change.name !== undefined && { name: change.name }),
         ...(change.mode !== undefined && { mode: change.mode }),
         ...(change.hiddenLayers !== undefined && { hiddenLayers: [...new Set(change.hiddenLayers)] }),
+        ...(change.effects !== undefined && { effects: change.effects }),
         ...(change.setlistId !== undefined && { setlistId: change.setlistId, setByUserId: change.setlistId ? user.id : null, setlistPickedOn: null }),
         // A set put on it is fixed; the day's set is worked out when it next loads (issue #274).
         ...(change.setMode !== undefined ? { setMode: change.setMode, ...(change.setMode === "DAY" && change.setlistId === undefined && { setlistPickedOn: null }) } : change.setlistId ? { setMode: "FIXED" as const } : {}),
@@ -468,6 +483,7 @@ function present(
     themeId: string | null;
     themeTemplate: string | null;
     hiddenLayers: string[];
+    effects: boolean;
     lastSeenAt: Date | null;
     setMode: "FIXED" | "DAY";
     createdAt: Date;
@@ -497,5 +513,6 @@ function present(
     themeId: screen.themeId,
     themeTemplate: screen.themeTemplate,
     hiddenLayers: SCREEN_SWITCHABLE_LAYERS.filter((layer) => screen.hiddenLayers.includes(layer)),
+    effects: screen.effects,
   };
 }

@@ -11,6 +11,7 @@ import { Video } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "#/components/screen-widgets";
+import { useScreenEffects } from "#/lib/screen-effects";
 import { SongChart } from "#/components/song-chart";
 import { cn } from "@songverse/ui/lib/utils";
 
@@ -42,7 +43,8 @@ const REVEAL_MAX_MS = 1600;
  */
 export function ScreenStage({
   theme,
-  mode = "LYRICS",
+  // What the template shows (issue #281): its words, or the chord chart.
+  mode = theme.shows === "chart" ? "CHART" : "LYRICS",
   song,
   slide,
   black = false,
@@ -70,6 +72,15 @@ export function ScreenStage({
   const index = song ? Math.max(0, Math.min(slide, song.slides.length - 1)) : 0;
   const current = song?.slides[index];
   const energy = theme.background.reactive ? ENERGY[sectionEnergy(current?.label)] : 0.5;
+  // Effects (issue #281): the background answering the slide, its lines and words, the section, a chorus.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const animation = theme.effects?.text.animation ?? "none";
+  useScreenEffects(stageRef, theme, {
+    viewKey: song ? `${song.key}:${index}` : "idle",
+    sectionKey: song && current ? `${song.key}:${current.passIndex}` : "idle",
+    chorus: !!current && sectionEnergy(current.label) === "high",
+    lines: current?.lines ?? [],
+  });
   const viewKey = song ? `${song.key}:${index}` : "idle";
   const colors = theme.background.colors;
 
@@ -144,13 +155,18 @@ export function ScreenStage({
     "--c2": colors[2] ?? colors[1] ?? colors[0],
     "--c3": colors[3] ?? colors[2] ?? colors[1] ?? colors[0],
     "--chord": theme.chords.color,
+    "--anim-amount": theme.effects?.text.amount ?? 0,
+    "--anim-speed": theme.effects?.text.speed ?? 1,
     fontFamily: customFont ? `"${customFont}", ${SCREEN_FONT_FAMILIES[theme.text.font]}` : SCREEN_FONT_FAMILIES[theme.text.font],
   } as CSSProperties;
 
   return (
     <div
+      ref={stageRef}
       className={cn("sv-stage", className)}
       style={style}
+      data-text-animation={animation}
+      data-effects={theme.effects && theme.effects.reactions.length > 0 ? "" : undefined}
       data-testid="screen-stage"
       data-background={theme.background.kind}
       data-layers={(["video", "media", "content", "overlays", "masks"] as const).filter((layer) => visible[layer]).join(" ") + (title ? " title" : "")}
@@ -168,7 +184,7 @@ export function ScreenStage({
         // A window mask cuts through it, down to the video input and the base.
         <div className="sv-layer" style={windowMask(windows)} data-layer="media">
           <Background theme={theme} media={media} />
-          {theme.background.reactive && song ? <div key={viewKey} className="sv-pulse" aria-hidden /> : null}
+          {theme.effects && theme.effects.reactions.length > 0 ? <div className="sv-react-pulse" aria-hidden /> : null}
           {theme.background.dim > 0 ? <div className="sv-bg-dim" style={{ opacity: theme.background.dim }} aria-hidden /> : null}
         </div>
       ) : null}

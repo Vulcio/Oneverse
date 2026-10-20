@@ -208,6 +208,61 @@ function screenGridSchema(strict: boolean) {
   });
 }
 
+/** What a template's words are (issue #281): the lyrics, for the audience, or the chord chart, for the band. */
+export const SCREEN_CONTENT_SHOWS = ["lyrics", "chart"] as const;
+/**
+ * Effects (issue #281), the glue between the words and the background: what
+ * sets a reaction off - a slide coming, a line or a word appearing, a new
+ * section, a chorus (while it lasts) - and what in the background answers:
+ * a pulse of light, its movement, its hue, its brightness, its elements
+ * (blobs, waves, particles, beams) swelling. Names in the locale files.
+ */
+export const SCREEN_EFFECT_TRIGGERS = ["slide", "line", "word", "section", "chorus"] as const;
+export const SCREEN_EFFECT_TARGETS = ["pulse", "movement", "hue", "brightness", "elements"] as const;
+/** What effects do to the words themselves, besides their readability. */
+export const SCREEN_TEXT_ANIMATIONS = ["none", "pulse", "breathe", "glow", "shimmer", "float"] as const;
+/** The most reactions effects have. */
+export const SCREEN_REACTIONS_MAX = 12;
+
+/** Effects (issue #281): reactions of the background to the words, and an animation of the words. */
+export function screenEffectsSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    reactions: z
+      .array(
+        object({
+          on: z.enum(SCREEN_EFFECT_TRIGGERS),
+          target: z.enum(SCREEN_EFFECT_TARGETS),
+          /** How strongly, 0 to 1. */
+          amount: z.number().min(0).max(1).default(0.5),
+        }),
+      )
+      .max(SCREEN_REACTIONS_MAX)
+      .default([]),
+    text: object({
+      animation: z.enum(SCREEN_TEXT_ANIMATIONS).default("none"),
+      amount: z.number().min(0).max(1).default(0.5),
+      /** Its pace: 1 is a breath every few seconds; 0.25 to 4. */
+      speed: z.number().min(0.25).max(4).default(1),
+    }).prefault({}),
+  });
+}
+
+/**
+ * How much each of a background's inputs answers effects (issue #281), 0 to
+ * 1: its movement, its hue, its brightness, its elements. Built into a
+ * background theme; effects decide when they're set off.
+ */
+export function screenReactsSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    movement: z.number().min(0).max(1).default(0.5),
+    hue: z.number().min(0).max(1).default(0.3),
+    brightness: z.number().min(0).max(1).default(0.5),
+    elements: z.number().min(0).max(1).default(0.5),
+  });
+}
+
 /** A mask (issue #280): a shape, in % of the screen, covered in black or cut through the media layer; inverted, everything but the shape. */
 function screenMaskSchema(strict: boolean) {
   const object = strict ? z.strictObject : z.object;
@@ -321,6 +376,12 @@ function screenThemeSchema(strict: boolean) {
   grid: screenGridSchema(strict).nullable().default(null),
   /** The masks layer (issue #280), drawn in order. */
   masks: z.array(screenMaskSchema(strict)).max(SCREEN_MASKS_MAX).default([]),
+  /** What the words are (issue #281): the lyrics, or the chord chart for the band. */
+  shows: z.enum(SCREEN_CONTENT_SHOWS).default("lyrics"),
+  /** How much the background answers effects (issue #281). */
+  reacts: screenReactsSchema(strict).prefault({}),
+  /** The template's effects (issue #281); null: none, or turned off on the screen. */
+  effects: screenEffectsSchema(strict).nullable().default(null),
   });
 }
 
@@ -353,6 +414,10 @@ export function resolveScreenTheme(input: unknown): ScreenTheme {
       theme.grid = resolveGrid(parts.grid);
       continue;
     }
+    if (key === "effects") {
+      theme.effects = parts.effects === null ? null : resolveEffects(parts.effects);
+      continue;
+    }
     // A mask it can't read is left out, the others stay.
     if (key === "masks") {
       theme.masks = Array.isArray(parts.masks) ? parts.masks.flatMap((one) => {
@@ -367,8 +432,25 @@ export function resolveScreenTheme(input: unknown): ScreenTheme {
   return ScreenThemeSchema.parse(theme);
 }
 
+/** Effects as a client reads them (issue #281): a reaction it can't read (a trigger from a later version) is left out, the others stay. Never throws. */
+export function resolveEffects(input: unknown): z.output<ReturnType<typeof screenEffectsSchema>> {
+  const schema = screenEffectsSchema(false);
+  const whole = schema.safeParse(input && typeof input === "object" ? input : {});
+  if (whole.success) return whole.data;
+  const raw = input as Record<string, unknown>;
+  const reaction = schema.shape.reactions.unwrap().element;
+  const reactions = Array.isArray(raw.reactions)
+    ? raw.reactions.flatMap((one) => {
+        const read = reaction.safeParse(one);
+        return read.success ? [read.data] : [];
+      })
+    : [];
+  const text = schema.shape.text.safeParse(raw.text);
+  return schema.parse({ reactions: reactions.slice(0, SCREEN_REACTIONS_MAX), ...(text.success ? { text: text.data } : {}) });
+}
+
 /** A grid as a client reads it: a widget it can't read (a kind from a newer client) leaves its cells empty, the rest stay. */
-function resolveGrid(input: unknown): ScreenTheme["grid"] {
+export function resolveGrid(input: unknown): ScreenTheme["grid"] {
   if (!input || typeof input !== "object") return null;
   const { widgets, ...rest } = input as Record<string, unknown>;
   const grid = screenGridSchema(false).safeParse({ ...rest, widgets: [] });

@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { SCREEN_MODES, SCREEN_SWITCHABLE_LAYERS, SCREEN_THEME_TEMPLATES, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
+import { SCREEN_MODES, SCREEN_PART_KINDS, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, ScreenBackgroundThemeRequestSchema, ScreenContentThemeRequestSchema, ScreenEffectsRequestSchema, ScreenTemplateRequestSchema, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
 import { optional } from "./fields.js";
 
 /** Screens (issue #186): a screen paired by its code, and changed later by whoever paired it. */
@@ -13,9 +13,11 @@ const screenFields = {
   /** A saved theme (issue #194); null for none. */
   themeId: z.string().min(1).max(40).nullable(),
   /** A built-in theme by its id ("concert"); null for none. A screen has one or the other, else the default look. */
-  themeTemplate: z.enum(SCREEN_THEME_TEMPLATES.map((one) => one.id) as [string, ...string[]]).nullable(),
+  themeTemplate: z.enum(SCREEN_TEMPLATES.map((one) => one.id) as [string, ...string[]]).nullable(),
   /** The layers it never shows (issue #287), whatever the operator does. */
   hiddenLayers: z.array(z.enum(SCREEN_SWITCHABLE_LAYERS)).max(SCREEN_SWITCHABLE_LAYERS.length),
+  /** Effects shown (issue #281), or off on a screen that can't keep up. */
+  effects: z.boolean(),
 };
 
 /**
@@ -35,7 +37,7 @@ export const ConfirmScreenPairingSchema = z
   .strictObject({
   owner: optional(ScreenOwnerSchema).describe("Left out: the person's own"),
   name: screenFields.name,
-  mode: screenFields.mode,
+  mode: optional(screenFields.mode).describe("Left out: LYRICS - what the screen shows comes from its template (issue #281); CHART is kept for screens paired before"),
   setMode: optional(screenFields.setMode).describe("FIXED (the default): the set given; DAY: its owner's set of the day (issue #274), setlistId left out"),
   setlistId: optional(screenFields.setlistId),
   themeId: screenFields.themeId.optional(),
@@ -59,25 +61,68 @@ export const UpdateScreenSchema = z.strictObject({
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
   hiddenLayers: optional(screenFields.hiddenLayers),
+  effects: optional(screenFields.effects),
 });
 export type UpdateScreenRequest = z.input<typeof UpdateScreenSchema>;
 
 const themeName = z.string().trim().min(1, "name must not be empty").max(60);
 
-/** POST /screen-themes: a theme of the user's own, or (`teamId`) their team's, which its admins change. */
-export const CreateScreenThemeSchema = z.strictObject({
-  name: themeName,
-  teamId: optional(z.string().min(1).max(40)),
-  theme: ScreenThemeRequestSchema,
-});
+/** A template's part (issue #281): a built-in one by its id, or a saved one. */
+export const ScreenPartRefSchema = z.union([z.strictObject({ builtIn: z.string().min(1).max(40) }), z.strictObject({ id: z.string().min(1).max(40) })]);
+export type ScreenPartRef = z.output<typeof ScreenPartRefSchema>;
+
+/**
+ * POST /screen-themes: a template (issue #281) of the user's own, or
+ * (`teamId`) their team's, which its admins change - its layout and its
+ * parts (left out: the built-in classic's), or a whole look (`theme`, as
+ * before parts), split into parts of its own.
+ */
+export const CreateScreenThemeSchema = z
+  .strictObject({
+    name: themeName,
+    teamId: optional(z.string().min(1).max(40)),
+    theme: optional(ScreenThemeRequestSchema),
+    template: optional(ScreenTemplateRequestSchema),
+    content: optional(ScreenPartRefSchema),
+    background: optional(ScreenPartRefSchema),
+    effects: ScreenPartRefSchema.nullable().optional(),
+  })
+  .refine((data) => !data.theme || (!data.template && !data.content && !data.background && data.effects === undefined), "Give a whole theme or a template's parts, not both");
 export type CreateScreenThemeRequest = z.input<typeof CreateScreenThemeSchema>;
 
-/** PATCH /screen-themes/:id: a field left out keeps its value. */
+/** PATCH /screen-themes/:id: a field left out keeps its value; effects null: none. */
 export const UpdateScreenThemeSchema = z.strictObject({
   name: optional(themeName),
-  theme: optional(ScreenThemeRequestSchema),
+  template: optional(ScreenTemplateRequestSchema),
+  content: optional(ScreenPartRefSchema),
+  background: optional(ScreenPartRefSchema),
+  effects: ScreenPartRefSchema.nullable().optional(),
 });
 export type UpdateScreenThemeRequest = z.input<typeof UpdateScreenThemeSchema>;
+
+/** A part's document, of its kind: checked again by kind when it's saved. */
+const partDocument = z.union([ScreenContentThemeRequestSchema, ScreenBackgroundThemeRequestSchema, ScreenEffectsRequestSchema]);
+
+/** POST /screen-parts (issue #281): a content theme, a background theme or effects, the user's own or (`teamId`) their team's. */
+export const CreateScreenPartSchema = z.strictObject({
+  kind: z.enum(SCREEN_PART_KINDS),
+  name: themeName,
+  teamId: optional(z.string().min(1).max(40)),
+  document: partDocument,
+});
+export type CreateScreenPartRequest = z.input<typeof CreateScreenPartSchema>;
+
+/** PATCH /screen-parts/:id: a field left out keeps its value. Every template using it changes. */
+export const UpdateScreenPartSchema = z.strictObject({
+  name: optional(themeName),
+  document: optional(partDocument),
+});
+export type UpdateScreenPartRequest = z.input<typeof UpdateScreenPartSchema>;
+
+/** GET /screen-parts?kind= */
+export const ScreenPartsQuerySchema = z.strictObject({
+  kind: optional(z.enum(SCREEN_PART_KINDS)),
+});
 
 /** PUT /screen-widget-defaults/:kind (issue #273): a widget's default look, the user's own or (`teamId`) their team's, which its admins set. */
 export const SaveScreenWidgetDefaultSchema = z.strictObject({

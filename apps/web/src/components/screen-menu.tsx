@@ -1,4 +1,4 @@
-import { SCREEN_THEME_TEMPLATES } from "@songverse/core";
+import { SCREEN_TEMPLATES } from "@songverse/core";
 import { Check, ChevronLeft, ListMusic, Palette, Video, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -130,7 +130,7 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
                 {t("screens.menu.back")}
               </button>
               {heading(t("screens.menu.builtIn"))}
-              {SCREEN_THEME_TEMPLATES.map((one) =>
+              {SCREEN_TEMPLATES.map((one) =>
                 themeRow(one.id, t(`screens.templates.${one.id}.name`), !!themes && !themes.themeId && (themes.themeTemplate ?? "classic") === one.id, { themeId: null, themeTemplate: one.id }),
               )}
               {themes && themes.themes.length > 0 ? (

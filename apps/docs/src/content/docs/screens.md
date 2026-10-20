@@ -12,13 +12,13 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
    ![A screen showing its code](../../assets/screenshots/en/screen-code.jpg)
 
 2. On your phone or tablet, scan the QR code, or open **Screens** - under **Tools** in the sidebar, or from the Sync menu in Live (**Screens…**) - and type the code.
-3. Give the screen a **Name** ("Church TV"), pick the **Set** it shows - one of yours, or **The day's set (automatic)** (see [below](/screens/#the-days-set)) - and what it **Shows**: **Lyrics, for the audience** or **The chart, for the band**. Then **Pair screen**.
+3. Give the screen a **Name** ("Church TV"), pick the **Set** it shows - one of yours, or **The day's set (automatic)** (see [below](/screens/#the-days-set)) Then **Pair screen**. What it shows - the lyrics or the band's chart - comes from its [template](/screens/#templates).
 
    ![Pairing a screen](../../assets/screenshots/en/screens-pair.jpg)
 
 The screen remembers it's paired: next time, open the same page and it reconnects by itself. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
-**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, lyrics or chart, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, switch it between lyrics and chart, change its template or its owner, and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
+**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, change its template or its owner, turn its **Effects** on or off (see [Effects](/screens/#effects)), and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
 
 ### The day's set
 
@@ -64,21 +64,31 @@ Presenting uses [Sync](/sets/#playing-in-sync): the screens are members of the s
 
 ## What the screens show
 
-With **Lyrics, for the audience**, each slide's two lines are big and centred. The line before is faint above, the line after faint below, and each slide fades in - in the default look; a [template](/screens/#templates) changes all of it. A section without words, like an instrumental, is an empty slide, so you step through the song as the band plays it. A song's first slide shows its title, and its first and last show its credits at the bottom: who wrote it, its copyright and its CCLI song number, from the song's details.
+With a template for the audience, each slide's two lines are big and centred. The line before is faint above, the line after faint below, and each slide fades in - in the default look; a [template](/screens/#templates) changes all of it. A section without words, like an instrumental, is an empty slide, so you step through the song as the band plays it. A song's first slide shows its title, and its first and last show its credits at the bottom: who wrote it, its copyright and its CCLI song number, from the song's details.
 
 ![Lyrics on a screen](../../assets/screenshots/en/screen-lyrics.jpg)
 
-With **The chart, for the band**, the screen shows the song's chart with chords, in the set's key, and keeps the section being sung highlighted and in view.
+With a template for the band, such as **Band chart**, the screen shows the song's chart with chords, in the set's key, and keeps the section being sung highlighted and in view.
 
 The words come from the version and key the set plays. Song notes and chords are never shown to the audience. If the screen loses its connection, it says so in a corner and reconnects by itself.
 
 ## Templates
 
-A template is how a screen looks: its font, colours and background, the lines around the current ones, where the words sit, and how slides come and go. Each screen has its own: a stage monitor can show big capitals at the top while the audience screen has a moving background. They're on the **Templates** tab. A screen picks one in **Template**, in its tile's **Settings**; the screen changes at once. **New template** starts one from the default look.
+A template is how a screen looks and what it's for. It's made of three parts, each saved and edited on its own, so one change follows everywhere it's used:
+
+- a **content theme** - how the words look and how they come and go, or the chord chart for the band;
+- a **background theme** - the colour, picture, video or moving light under the words, and the video input;
+- **effects** - the glue between the two: the background answering the words, and the words' own movement.
+
+A template adds its **tags** and its layout - [widgets](/screens/#widgets) on a grid, and [masks](/screens/#layers). Each one is built for a single use: there's no switch between lyrics and chart, a template for the band uses a chord-chart content theme. A screen picks a template in **Template**, in its tile's **Settings**; the screen changes at once.
 
 ![Templates on the Screens page](../../assets/screenshots/en/screen-themes.jpg)
 
-**Built-in templates** each play on a sample song, so you see how they move:
+The **Templates** tab has four views: **Templates**, **Content themes**, **Background themes** and **Effects**. Each plays on a sample song, so you see how it moves.
+
+### Templates and their tags
+
+Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Lyrics**, **Chords** and **Signage**. Pick tags above the list to see only the templates with all of them. **New template** starts one from the built-in parts. The **Built-in templates**:
 
 - **Classic** - white words on black, the line before and after dimmed: the default.
 - **Concert** - bold capitals over moving coloured light, words revealed one by one.
@@ -90,20 +100,50 @@ A template is how a screen looks: its font, colours and background, the lines ar
 - **Minimal** - left-aligned and quiet, the next lines in view, typed in.
 - **Stage display** - for the platform, on a grid of [widgets](/screens/#widgets): the slide now and the next one, the clock, a countdown, the song and what's next, and the operator's messages.
 - **Stage monitor** - big capitals at the top and the whole section, for the band.
+- **Band chart** - the song's chart with its chords, the section being sung in view, for the band.
 
-**Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3**, on the lyrics or the band's chart - changing as you change them. **⏵** plays the sample song, **‹ ›** go slide by slide.
+**Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3** - changing as you change them. **⏵** plays the sample song, **‹ ›** go slide by slide.
 
+![The template editor: its content, background and effects](../../assets/screenshots/en/screen-template-parts.jpg)
+
+- **Content, background and effects** - the template's three parts: built-in ones, or yours and your teams'. **Customize** beside a built-in part makes a copy of your own and opens it; **Edit** opens one of yours. A part used by several templates says so: changing it changes them all.
+- **Tags** - what the template is for.
+- **Layout and widgets** - places [widgets](/screens/#widgets) on a grid. Below.
+- **Masks** - black over part of the picture, or a window to the video input. See [Layers](/screens/#layers).
+
+Name the template and **Save template**: it's yours, or - if you're an admin of a team - the team's, for every member to pick for their screens (only its admins change it). A team's template uses the team's parts. A template you can change has **Edit** and **Delete**; deleting it puts its screens back to the default look, and its parts stay.
+
+### Content themes
+
+How the words look, edited from **Content themes** (**New content theme**, or **Customize** a built-in one) or from a template:
+
+- **Shows** - **Lyrics, for the audience** or **The chord chart, for the band**.
 - **Text** - the font (or an **Uploaded font**: a WOFF2, WOFF, TTF or OTF file you may use this way), its size (**Fit the line**, or fixed), weight, colour, **Capitals**, **Readability** (a shadow, an outline or a glow, for words over a moving background), alignment, line and letter spacing.
 - **Lines** - **The slide**, with the lines before and after it, or **The whole section** with the slide's lines picked out; the lines around them **Dimmed**, **Smaller**, **Blurred** or **Hidden**.
 - **Layout** - top, centre, bottom or **Lower third**, and a **Safe margin** for TVs that crop their edges.
-- **Background** - a **Colour**, a **Gradient**, moving light (**Aurora**, **Waves**, **Particles**, **Spotlight**, in up to four colours), or your own **Picture** (drifting slowly closer) or looping **Video**: **Upload…** a JPEG, PNG, WebP, AVIF or GIF up to 15 MB, or an MP4 or WebM up to 150 MB. **Moves with the song** sends a pulse of light with each slide and brightens it in a chorus. **Darken** keeps words readable over anything.
 - **Motion** - **Between slides**: a cut, a fade, a slide, rise, scale, blur or zoom, and how long it takes (a new song takes twice as long). **Words appear** all at once, line by line, word by word, letter by letter, typed or glowing.
 - **Title and credits** - whether to show the song's title and its credits (writers, copyright, CCLI number), on which slides and where.
-- **Chords** - for **The chart, for the band**: the chords' colour and the chart's size.
-- **Layout and widgets** - places [widgets](/screens/#widgets) on a grid. Below.
-- **Layers** - the base colour, the video input and masks. Below.
+- **Chords** - for the chord chart: the chords' colour and the chart's size.
 
-The editor checks the contrast between the words and the background and warns when it's under 4.5:1. Pictures, videos and fonts are added to a saved template, so save it first; they count toward your storage. Name the template and **Save template**: it's yours, or - if you're an admin of a team - the team's, for every member to pick for their screens (only its admins change it). A template you can change has **Edit** and **Delete**; deleting it puts its screens back to the default look.
+The editor checks the contrast between the words and the background and warns when it's under 4.5:1.
+
+### Background themes
+
+What's under the words:
+
+- **Base and video input** - the base colour and the screen's camera or capture card. See [Layers](/screens/#layers).
+- **Background** - a **Colour**, a **Gradient**, moving light (**Aurora**, **Waves**, **Particles**, **Spotlight**, in up to four colours), or your own **Picture** (drifting slowly closer) or looping **Video**: **Upload…** a JPEG, PNG, WebP, AVIF or GIF up to 15 MB, or an MP4 or WebM up to 150 MB. **Darken** keeps words readable over anything.
+- **How it answers effects** - how much its **Movement**, **Colour shift**, **Brightness** and **Elements** (blobs, waves, particles, beams) move when effects set them off.
+
+Fonts and pictures are added to a saved content or background theme, so save it first; they count toward your storage.
+
+### Effects
+
+Effects tie the words to the background. **Reactions**: **When** a slide comes, a line or a word appears, a new section starts, or in a chorus (while it lasts), **the background** pulses with light, moves faster, shifts colour, brightens or swells its elements - each by how much you choose, times how much the background answers. **The words' movement**: a **Pulse**, **Breathe**, **Glow**, **Shimmer** or **Float**, with how much and how fast. A template can have no effects.
+
+![Effects: reactions and the words' movement](../../assets/screenshots/en/screen-effects.jpg)
+
+A screen that can't keep up - an old TV, a small stick computer - can turn **Effects** off in its tile's **Settings**: it shows the same template, without the reactions and the words' movement.
 
 ### Layers
 

@@ -335,6 +335,7 @@ model User {
   screensSet                Screen[]                 @relation("ScreenSetBy")
   // Their own screen themes (issue #194).
   screenThemes              ScreenTheme[]
+  screenParts               ScreenPart[]
   // The people they invited to sign up (issue #198).
   signupInvitations         SignupInvitation[]
   ownedSongbooks            Songbook[]               @relation("SongbookOwnerUser")
@@ -504,6 +505,7 @@ model Team {
   roleAssignments      RoleAssignment[]
   // Its screens' looks (issue #194), for every member to pick.
   screenThemes         ScreenTheme[]
+  screenParts          ScreenPart[]
   // Its screens (issue #222), which outlive whoever paired them.
   screens              Screen[]
   // Its calendar (issue #235), and how many weeks ahead each date's set is made (1-52).
@@ -2774,6 +2776,8 @@ model Screen {
   // The layers it never shows (issue #287), whatever the operator does: a
   // stage monitor without the background, a lobby TV without the words.
   hiddenLayers        String[]      @default([])
+  // Effects (issue #281) shown, or off on a screen that can't keep up.
+  effects             Boolean       @default(true)
   lastSeenAt          DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -2798,17 +2802,60 @@ model Screen {
 model ScreenTheme {
   id          String   @id @default(cuid())
   name        String
+  // A template (issue #281): a screen-template/v1 document - its tags, its
+  // widget grid and masks - and its parts beside it, each a saved part or a
+  // built-in one by its id (a saved one deleted: the built-in classic). One
+  // made before parts holds a whole screen-theme/v1 document and no parts;
+  // it's split into parts the first time it's listed for editing.
   document    Json
   // A person's own, or a team's (its admins change it, its members pick it).
+  ownerUserId String?
+  ownerTeamId String?
+  contentPartId     String?
+  contentBuiltIn    String?
+  backgroundPartId  String?
+  backgroundBuiltIn String?
+  effectsPartId     String?
+  effectsBuiltIn    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner          User?              @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  team           Team?              @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
+  contentPart    ScreenPart?        @relation("TemplateContent", fields: [contentPartId], references: [id], onDelete: SetNull)
+  backgroundPart ScreenPart?        @relation("TemplateBackground", fields: [backgroundPartId], references: [id], onDelete: SetNull)
+  effectsPart    ScreenPart?        @relation("TemplateEffects", fields: [effectsPartId], references: [id], onDelete: SetNull)
+  screens        Screen[]
+  assets         ScreenThemeAsset[]
+
+  @@index([ownerUserId])
+  @@index([ownerTeamId])
+  @@index([contentPartId])
+  @@index([backgroundPartId])
+  @@index([effectsPartId])
+}
+
+// A template's part (issue #281), saved and edited on its own: a content
+// theme (screen-content/v1), a background theme (screen-background/v1) or
+// effects (screen-effects/v1). A person's own or a team's, as templates are;
+// a content theme's fonts and a background theme's pictures and videos are
+// its files.
+model ScreenPart {
+  id          String   @id @default(cuid())
+  kind        String
+  name        String
+  document    Json
   ownerUserId String?
   ownerTeamId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  owner   User?              @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
-  team    Team?              @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
-  screens Screen[]
-  assets  ScreenThemeAsset[]
+  owner               User?              @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  team                Team?              @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
+  assets              ScreenThemeAsset[]
+  contentTemplates    ScreenTheme[]      @relation("TemplateContent")
+  backgroundTemplates ScreenTheme[]      @relation("TemplateBackground")
+  effectsTemplates    ScreenTheme[]      @relation("TemplateEffects")
 
   @@index([ownerUserId])
   @@index([ownerTeamId])
@@ -2837,7 +2884,9 @@ model ScreenWidgetDefault {
 // the theme's document refers to it by id.
 model ScreenThemeAsset {
   id         String   @id @default(cuid())
-  themeId    String
+  // A part's (issue #281), or a template's made before parts.
+  themeId    String?
+  partId     String?
   kind       String
   storageKey String
   mimeType   String
@@ -2845,9 +2894,11 @@ model ScreenThemeAsset {
   sizeBytes  Int
   createdAt  DateTime @default(now())
 
-  theme ScreenTheme @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  theme ScreenTheme? @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  part  ScreenPart?  @relation(fields: [partId], references: [id], onDelete: Cascade)
 
   @@index([themeId])
+  @@index([partId])
   @@index([storageKey])
 }
 

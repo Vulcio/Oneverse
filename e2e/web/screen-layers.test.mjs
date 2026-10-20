@@ -206,29 +206,37 @@ try {
     await hall.waitForFunction(() => (document.querySelector('[data-testid="screen-video"]')?.videoWidth ?? 0) > 0, null, { timeout: 10000 });
   });
 
-  await step("the template editor: the base, the video input, a mask, a widget's layer", async () => {
+  await step("the editors: a background theme's base and video input; a template's mask and a widget's layer", async () => {
     page = desk;
     await desk.goto(`${WEB}/screens?tab=templates`);
     await desk.getByTestId("new-theme").click();
     const editor = desk.getByTestId("theme-editor");
-    await editor.getByTestId("theme-group-layers").locator("summary").click();
-    await editor.getByTestId("theme-base-same").uncheck();
-    await editor.getByTestId("theme-base-color").fill("#204060");
-    await editor.getByTestId("theme-video-source").locator('[data-value="camera"]').click();
+    // The base and the video input are the background theme's (issue #281).
+    await editor.getByTestId("theme-part-background-open").click();
+    const part = desk.getByTestId("part-editor");
+    await part.getByTestId("theme-group-layers").locator("summary").click();
+    await part.getByTestId("theme-base-same").uncheck();
+    await part.getByTestId("theme-base-color").fill("#204060");
+    await part.getByTestId("theme-video-source").locator('[data-value="camera"]').click();
     // A preview doesn't open a camera: a placeholder where it goes.
+    await part.getByTestId("screen-video-placeholder").waitFor();
+    await part.locator("#theme-name").fill(`Camera background ${stamp}`);
+    await part.getByTestId("theme-save").click();
+    await part.waitFor({ state: "detached" });
     await editor.getByTestId("screen-video-placeholder").waitFor();
+    await editor.getByTestId("theme-group-masks").locator("summary").click();
     await editor.getByTestId("theme-add-mask").click();
     await editor.getByTestId("theme-mask").getByTestId("theme-mask-kind").locator('[data-value="window"]').click();
     await editor.getByTestId("theme-group-widgets").locator("summary").click();
     await editor.getByTestId("theme-widget-add").selectOption("song");
     await editor.getByTestId("theme-widget-layer").selectOption("overlays");
     await editor.locator('[data-testid="theme-preview"] [data-layer="overlays"] [data-kind="song"]').waitFor();
-    await editor.getByLabel("Name").fill(`Edited layers ${stamp}`);
+    await editor.locator("#theme-name").fill(`Edited layers ${stamp}`);
     await editor.getByTestId("theme-save").click();
     await desk.getByTestId(`saved-theme-Edited layers ${stamp}`).waitFor();
     const saved = (await api(admin, "GET", "/screen-themes")).find((one) => one.name === `Edited layers ${stamp}`);
     const widget = saved?.theme.grid?.widgets.find((one) => one.kind === "song");
-    if (saved?.theme.base.color !== "#204060" || saved.theme.video.source !== "camera" || saved.theme.masks[0]?.kind !== "window" || widget?.layer !== "overlays") throw new Error(JSON.stringify(saved?.theme));
+    if (saved?.theme.base.color !== "#204060" || saved.theme.video.source !== "camera" || saved.theme.masks[0]?.kind !== "window" || widget?.layer !== "overlays" || saved.parts.background.name !== `Camera background ${stamp}`) throw new Error(JSON.stringify(saved));
   });
 
   await step("no page errors", async () => {
