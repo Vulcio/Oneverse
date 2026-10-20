@@ -12,7 +12,8 @@
     "dev": "vp dev --port 3000",
     "start": "node server.mjs",
     "lint": "vp lint src --deny-warnings",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "build:player-screen": "vp build --config vite.player.config.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
