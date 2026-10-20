@@ -32,8 +32,15 @@ export const SCREEN_FONT_FAMILIES: Record<ScreenFont, string> = {
 export const SCREEN_CONTEXT_STYLES = ["dim", "small", "blur", "hidden"] as const;
 /** Where the lines sit: a lower third leaves the picture above free, for a stream or a video. */
 export const SCREEN_POSITIONS = ["top", "center", "bottom", "lower-third"] as const;
-/** A still colour, a gradient, or a moving background that answers the words (see `reactive`). */
-export const SCREEN_BACKGROUNDS = ["color", "gradient", "aurora", "waves", "particles", "spotlight", "image", "video"] as const;
+/**
+ * A still colour, a gradient, or a moving background that answers the words.
+ * Flow, strings, grid and bokeh (issue #296) also follow where the words are
+ * on the screen: trails part around them, strings bend away, cells light up
+ * under each word, discs gather behind the line.
+ */
+export const SCREEN_BACKGROUNDS = ["color", "gradient", "aurora", "waves", "particles", "spotlight", "image", "video", "flow", "strings", "grid", "bokeh"] as const;
+/** The backgrounds drawn on a canvas, following the words (issue #296). */
+export const SCREEN_TEXT_BACKGROUNDS = ["flow", "strings", "grid", "bokeh"] as const;
 /** What a theme's own files are for (issue #194): a background picture or looping video, or a font. */
 export const SCREEN_THEME_ASSET_KINDS = ["media", "font"] as const;
 export type ScreenThemeAssetKind = (typeof SCREEN_THEME_ASSET_KINDS)[number];

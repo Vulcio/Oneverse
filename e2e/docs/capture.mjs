@@ -396,6 +396,22 @@ try {
     );
     await page.keyboard.press("Escape");
     await page.getByTestId("theme-editor").waitFor({ state: "detached" });
+    // Backgrounds that follow the words (issue #296), among the built-in background themes: the four of them.
+    {
+      await page.goto(`${WEB}/screens?tab=templates`);
+      await page.getByTestId("templates-view-background").click();
+      const cards = ["flow", "strings", "grid", "bokeh"].map((id) => page.getByTestId(`builtin-part-${id}`));
+      await cards[3].scrollIntoViewIfNeeded();
+      await page.evaluate(() => window.scrollBy(0, 400));
+      await page.waitForTimeout(2500);
+      const boxes = await Promise.all(cards.map((card) => card.boundingBox()));
+      const x = Math.min(...boxes.map((one) => one.x)) - 8;
+      const y = Math.min(...boxes.map((one) => one.y)) - 8;
+      const right = Math.max(...boxes.map((one) => one.x + one.width)) + 8;
+      const bottom = Math.max(...boxes.map((one) => one.y + one.height)) + 8;
+      await page.screenshot({ path: path.join(dir, "screen-backgrounds.jpg"), type: "jpeg", quality: 85, clip: { x, y, width: right - x, height: bottom - y } });
+      console.log("  screen-backgrounds");
+    }
     // Effects (issue #281): the built-in Concert effects, customized.
     await shoot(
       "screen-effects",

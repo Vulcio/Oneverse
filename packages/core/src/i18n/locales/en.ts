@@ -308,7 +308,7 @@ const en = {
       sharedBy_other: "Used by {{count}} templates: changing it changes them all.",
       builtIn: {
         content: { classic: "Classic", concert: "Concert", chapel: "Chapel", sunrise: "Sunrise", starlight: "Starlight", spotlight: "Spotlight", stream: "Stream", minimal: "Minimal", "stage-display": "Stage display", "stage-monitor": "Stage monitor", chart: "Chord chart" },
-        background: { classic: "Black", concert: "Aurora", chapel: "Warm gradient", sunrise: "Sunrise waves", starlight: "Starlight", spotlight: "Spotlights", stream: "Black (stream)", minimal: "Near black", "stage-display": "Black (stage)", "stage-monitor": "Black (monitor)" },
+        background: { classic: "Black", concert: "Aurora", chapel: "Warm gradient", sunrise: "Sunrise waves", starlight: "Starlight", spotlight: "Spotlights", stream: "Black (stream)", minimal: "Near black", "stage-display": "Black (stage)", "stage-monitor": "Black (monitor)", flow: "Flow", strings: "Strings", grid: "Neon grid", bokeh: "Bokeh" },
         effects: { pulse: "Pulse", concert: "Concert", sunrise: "Sunrise", starlight: "Starlight", spotlight: "Spotlight", breathe: "Breathe" },
       },
     },
@@ -698,7 +698,7 @@ const en = {
       positions: { top: "Top", center: "Centre", bottom: "Bottom", "lower-third": "Lower third" },
       margin: "Safe margin",
       backgroundKind: "Background",
-      backgrounds: { color: "Colour", gradient: "Gradient", aurora: "Aurora", waves: "Waves", particles: "Particles", spotlight: "Spotlight", image: "Picture", video: "Video" },
+      backgrounds: { color: "Colour", gradient: "Gradient", aurora: "Aurora", waves: "Waves", particles: "Particles", spotlight: "Spotlight", image: "Picture", video: "Video", flow: "Flow", strings: "Strings", grid: "Grid", bokeh: "Bokeh" },
       media: "Picture or video",
       mediaHint: "A picture (JPEG, PNG, WebP, AVIF, GIF, up to 15 MB) or a looping video (MP4, WebM, up to 150 MB). Darken it so the words stay readable.",
       noMedia: "None yet: upload one.",

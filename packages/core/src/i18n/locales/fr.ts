@@ -308,7 +308,7 @@ const fr: typeof en = {
       sharedBy_other: "Utilisé par {{count}} modèles : le changer les change tous.",
       builtIn: {
         content: { classic: "Classique", concert: "Concert", chapel: "Chapelle", sunrise: "Aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Diffusion", minimal: "Minimal", "stage-display": "Affichage de scène", "stage-monitor": "Retour de scène", chart: "Grille d'accords" },
-        background: { classic: "Noir", concert: "Aurore boréale", chapel: "Dégradé chaud", sunrise: "Vagues d'aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Noir (diffusion)", minimal: "Presque noir", "stage-display": "Noir (scène)", "stage-monitor": "Noir (retour)" },
+        background: { classic: "Noir", concert: "Aurore boréale", chapel: "Dégradé chaud", sunrise: "Vagues d'aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Noir (diffusion)", minimal: "Presque noir", "stage-display": "Noir (scène)", "stage-monitor": "Noir (retour)", flow: "Courants", strings: "Cordes", grid: "Grille néon", bokeh: "Bokeh" },
         effects: { pulse: "Pulsation", concert: "Concert", sunrise: "Aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", breathe: "Respiration" },
       },
     },
@@ -698,7 +698,7 @@ const fr: typeof en = {
       positions: { top: "En haut", center: "Au centre", bottom: "En bas", "lower-third": "Tiers inférieur" },
       margin: "Marge de sécurité",
       backgroundKind: "Fond",
-      backgrounds: { color: "Couleur", gradient: "Dégradé", aurora: "Aurore", waves: "Vagues", particles: "Particules", spotlight: "Projecteurs", image: "Image", video: "Vidéo" },
+      backgrounds: { color: "Couleur", gradient: "Dégradé", aurora: "Aurore", waves: "Vagues", particles: "Particules", spotlight: "Projecteurs", image: "Image", video: "Vidéo", flow: "Courants", strings: "Cordes", grid: "Grille", bokeh: "Bokeh" },
       media: "Image ou vidéo",
       mediaHint: "Une image (JPEG, PNG, WebP, AVIF, GIF, jusqu'à 15 Mo) ou une vidéo en boucle (MP4, WebM, jusqu'à 150 Mo). Assombrissez-la pour que les paroles restent lisibles.",
       noMedia: "Aucune pour l'instant : envoyez-en une.",

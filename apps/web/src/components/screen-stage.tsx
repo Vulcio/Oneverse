@@ -6,12 +6,13 @@ import "@fontsource-variable/nunito";
 import "@fontsource-variable/oswald";
 import "@fontsource/bebas-neue";
 import "#/styles/screen-stage.css";
-import { SCREEN_FONT_FAMILIES, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
+import { SCREEN_FONT_FAMILIES, SCREEN_TEXT_BACKGROUNDS, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@songverse/core";
 import { Video } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "#/components/screen-widgets";
-import { useScreenEffects } from "#/lib/screen-effects";
+import { useScreenEffects, type ScreenSignals } from "#/lib/screen-effects";
+import { TextBackground, type StageText } from "#/components/screen-text-background";
 import { SongChart } from "#/components/song-chart";
 import { cn } from "@songverse/ui/lib/utils";
 
@@ -75,7 +76,7 @@ export function ScreenStage({
   // Effects (issue #281): the background answering the slide, its lines and words, the section, a chorus.
   const stageRef = useRef<HTMLDivElement>(null);
   const animation = theme.effects?.text.animation ?? "none";
-  useScreenEffects(stageRef, theme, {
+  const signals = useScreenEffects(stageRef, theme, {
     viewKey: song ? `${song.key}:${index}` : "idle",
     sectionKey: song && current ? `${song.key}:${current.passIndex}` : "idle",
     chorus: !!current && sectionEnergy(current.label) === "high",
@@ -83,6 +84,8 @@ export function ScreenStage({
   });
   const viewKey = song ? `${song.key}:${index}` : "idle";
   const colors = theme.background.colors;
+  // Where the words are (issue #296), for a background that follows them.
+  const text = useStageText(stageRef, viewKey, theme, current?.lines ?? []);
 
   // The slide going out while the next comes in; a new song takes twice as long.
   const [outgoing, setOutgoing] = useState<{ key: string; song: StageSong | null; index: number; songChange: boolean } | null>(null);
@@ -183,7 +186,7 @@ export function ScreenStage({
       {visible.media ? (
         // A window mask cuts through it, down to the video input and the base.
         <div className="sv-layer" style={windowMask(windows)} data-layer="media">
-          <Background theme={theme} media={media} />
+          <Background theme={theme} media={media} text={text} signals={signals} />
           {theme.effects && theme.effects.reactions.length > 0 ? <div className="sv-react-pulse" aria-hidden /> : null}
           {theme.background.dim > 0 ? <div className="sv-bg-dim" style={{ opacity: theme.background.dim }} aria-hidden /> : null}
         </div>
@@ -307,8 +310,65 @@ function readVideoInput(): string | null {
   }
 }
 
+/**
+ * Where the words are on the stage (issue #296), measured when a slide comes
+ * and again once it has moved in: each current line's box, and each word's
+ * share of its line with when it appears - at once, or line by line, word
+ * by word or letter by letter as the theme reveals them. Fractions of the
+ * stage, read each frame by a background that follows the words.
+ */
+function useStageText(stage: RefObject<HTMLElement | null>, viewKey: string, theme: ScreenTheme, lines: string[]): RefObject<StageText> {
+  const text = useRef<StageText>({ lines: [], words: [], key: 0 });
+  useEffect(() => {
+    const started = performance.now();
+    const { reveal, stagger } = theme.motion;
+    const all = lines.join(" ");
+    const pieces = reveal === "lines" ? lines.length : reveal === "words" || reveal === "glow" ? all.split(/\s+/).length : all.replace(/\s/g, "").length;
+    const pace = reveal === "none" ? 0 : Math.min(stagger, REVEAL_MAX_MS / Math.max(1, pieces));
+    const measure = () => {
+      const box = stage.current?.getBoundingClientRect();
+      if (!box?.width) return;
+      const found = [...(stage.current?.querySelectorAll<HTMLElement>('.sv-words:not(.sv-out) [data-testid="screen-lines"] .sv-line') ?? [])];
+      const boxes = found.map((one) => {
+        const rect = one.getBoundingClientRect();
+        // The text's own width, not the line's: a centred line's words sit in its middle.
+        const range = document.createRange();
+        range.selectNodeContents(one);
+        const inner = range.getBoundingClientRect();
+        const r = inner.width ? inner : rect;
+        return { x: (r.left - box.left) / box.width, y: (r.top - box.top) / box.height, w: r.width / box.width, h: r.height / box.height };
+      });
+      let word = 0;
+      let letter = 0;
+      const words = boxes.flatMap((line, l) => {
+        const parts = (lines[l] ?? "").split(/\s+/).filter(Boolean);
+        const total = parts.reduce((sum, one) => sum + one.length + 1, 0) || 1;
+        let x = line.x;
+        return parts.map((part) => {
+          const w = (line.w * (part.length + 1)) / total;
+          const delay = reveal === "lines" ? l * pace : reveal === "words" || reveal === "glow" ? word * pace : letter * pace;
+          word += 1;
+          letter += part.length;
+          const one = { x, y: line.y, w, h: line.h, at: started + (reveal === "none" ? 0 : delay) };
+          x += w;
+          return one;
+        });
+      });
+      text.current = { lines: boxes, words, key: text.current.key + (boxes.length ? 1 : 0) };
+    };
+    const first = requestAnimationFrame(measure);
+    // Again once it has moved in (a rise or a zoom moves it).
+    const settled = setTimeout(measure, theme.motion.duration + 80);
+    return () => {
+      cancelAnimationFrame(first);
+      clearTimeout(settled);
+    };
+  }, [viewKey]);
+  return text;
+}
+
 /** The background: a colour, a gradient, or lights that move (and answer the song when reactive). */
-function Background({ theme, media }: { theme: ScreenTheme; media?: ScreenThemeAsset }) {
+function Background({ theme, media, text, signals }: { theme: ScreenTheme; media?: ScreenThemeAsset; text: RefObject<StageText>; signals: RefObject<ScreenSignals> }) {
   const particles = useMemo(() => {
     // The same field every time: a seeded spread, not Math.random on each render.
     let seed = 7;
@@ -325,6 +385,13 @@ function Background({ theme, media }: { theme: ScreenTheme; media?: ScreenThemeA
   const kind = (theme.background.kind === "image" || theme.background.kind === "video") && !media ? "gradient" : theme.background.kind;
   // Still: no motion asked for.
   const still = theme.background.motion === 0;
+  if ((SCREEN_TEXT_BACKGROUNDS as readonly string[]).includes(kind)) {
+    return (
+      <div className="sv-bg" aria-hidden>
+        <TextBackground kind={kind as (typeof SCREEN_TEXT_BACKGROUNDS)[number]} theme={theme} text={text} signals={signals} still={still} />
+      </div>
+    );
+  }
   return (
     <div className={cn("sv-bg", kind === "gradient" && "sv-bg-gradient", still && "[&_*]:[animation-play-state:paused]")} aria-hidden>
       {kind === "image" && media ? <img className="sv-media sv-media-image" src={media.url} alt="" draggable={false} data-testid="screen-media" /> : null}

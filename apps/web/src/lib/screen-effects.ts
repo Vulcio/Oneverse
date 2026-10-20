@@ -26,8 +26,10 @@ export function useScreenEffects(
   stage: RefObject<HTMLElement | null>,
   theme: ScreenTheme,
   now: { viewKey: string; sectionKey: string; chorus: boolean; lines: string[] },
-) {
+): RefObject<ScreenSignals> {
   const reactions = theme.effects?.reactions ?? [];
+  // The levels, for a background drawn on a canvas (issue #296) to read each frame too.
+  const signals = useRef<ScreenSignals>({ levels: { pulse: 0, movement: 0, hue: 0, brightness: 0, elements: 0 } });
   const kicks = useRef<{ target: Target; level: number; at: number }[]>([]);
   const sustained = useRef<Partial<Record<Target, number>>>({});
   const strength = (target: Target, amount: number) => amount * (target === "pulse" ? 1 : theme.reacts[target]);
@@ -64,7 +66,7 @@ export function useScreenEffects(
   useEffect(() => {
     const element = stage.current;
     if (!element || !active || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const levels: Record<Target, number> = { pulse: 0, movement: 0, hue: 0, brightness: 0, elements: 0 };
+    const levels = signals.current.levels;
     let frame = 0;
     const tick = () => {
       const time = performance.now();
@@ -85,7 +87,16 @@ export function useScreenEffects(
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
-      for (const target of SCREEN_EFFECT_TARGETS) element.style.removeProperty(`--react-${target}`);
+      for (const target of SCREEN_EFFECT_TARGETS) {
+        element.style.removeProperty(`--react-${target}`);
+        levels[target] = 0;
+      }
     };
   }, [active, stage]);
+  return signals;
+}
+
+/** What effects have set off, now, for a background to answer: each input's level, 0 to 1. */
+export interface ScreenSignals {
+  levels: Record<Target, number>;
 }

@@ -133,6 +133,15 @@ What's under the words:
 
 - **Base and video input** - the base colour and the screen's camera or capture card. See [Layers](/screens/#layers).
 - **Background** - a **Colour**, a **Gradient**, moving light (**Aurora**, **Waves**, **Particles**, **Spotlight**, in up to four colours), or your own **Picture** (drifting slowly closer) or looping **Video**: **Upload…** a JPEG, PNG, WebP, AVIF or GIF up to 15 MB, or an MP4 or WebM up to 150 MB. **Darken** keeps words readable over anything.
+- Four backgrounds follow the words on the screen, wherever the template puts them:
+  - **Flow** - trails drifting across the screen, parting around the words, with a burst where each word appears;
+  - **Strings** - glowing lines waving across the screen, bending round the words, ringing with each new slide;
+  - **Grid** - a faint grid whose cells light up under each word as it appears, then fade;
+  - **Bokeh** - big soft discs drifting and gathering behind the words.
+
+  ![Flow, Strings, Grid and Bokeh among the background themes](../../assets/screenshots/en/screen-backgrounds.jpg)
+
+  The first colour is the background, the others the trails, strings, cells or discs. With effects, they also move faster, change colour, brighten or swell, as **How it answers effects** says. With **Movement** at 0, they stand still.
 - **How it answers effects** - how much its **Movement**, **Colour shift**, **Brightness** and **Elements** (blobs, waves, particles, beams) move when effects set them off.
 
 Fonts and pictures are added to a saved content or background theme, so save it first; they count toward your storage.

@@ -133,6 +133,15 @@ Ce qu'il y a sous les paroles :
 
 - **Base et entrée vidéo** - la couleur de base et la caméra ou la carte de capture de l'écran. Voir [Calques](/fr/screens/#calques).
 - **Fond** - une **Couleur**, un **Dégradé**, de la lumière en mouvement (**Aurore**, **Vagues**, **Particules**, **Projecteurs**, jusqu'à quatre couleurs), ou votre propre **Image** (qui se rapproche lentement) ou **Vidéo** en boucle : **Envoyer…** un JPEG, PNG, WebP, AVIF ou GIF jusqu'à 15 Mo, ou un MP4 ou WebM jusqu'à 150 Mo. **Assombrir** garde les paroles lisibles sur n'importe quel fond.
+- Quatre fonds suivent les paroles à l'écran, où que le modèle les place :
+  - **Courants** - des traînées qui dérivent sur l'écran, s'écartent autour des paroles, et jaillissent là où chaque mot apparaît ;
+  - **Cordes** - des lignes lumineuses qui ondulent sur l'écran, contournent les paroles et vibrent à chaque nouvelle diapositive ;
+  - **Grille** - une grille discrète dont les cases s'allument sous chaque mot qui apparaît, puis s'éteignent ;
+  - **Bokeh** - de grands disques flous qui dérivent et se rassemblent derrière les paroles.
+
+  ![Courants, Cordes, Grille et Bokeh parmi les thèmes de fond](../../../assets/screenshots/fr/screen-backgrounds.jpg)
+
+  La première couleur est le fond, les autres celles des traînées, cordes, cases ou disques. Avec des effets, ils bougent aussi plus vite, changent de couleur, s'éclairent ou grossissent, selon **Sa réponse aux effets**. Avec un **Mouvement** à 0, ils restent immobiles.
 - **Sa réponse aux effets** - à quel point son **Mouvement**, son **Changement de couleur**, sa **Luminosité** et ses **Éléments** (taches, vagues, particules, faisceaux) bougent quand des effets les déclenchent.
 
 Les polices et les images s'ajoutent à un thème de contenu ou de fond enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage.

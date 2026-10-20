@@ -260,7 +260,14 @@ export const SCREEN_CONTENT_THEMES: ScreenBuiltInPart<ScreenContentTheme>[] = [
   { id: "chart", part: ScreenContentThemeSchema.parse({ ...chart.content, shows: "chart", chords: { color: "#facc15", scale: 1.1 } }) },
 ];
 /** The built-in background themes: each built-in template's. */
-export const SCREEN_BACKGROUND_THEMES: ScreenBuiltInPart<ScreenBackgroundTheme>[] = split.map((one) => ({ id: one.id, part: one.background }));
+export const SCREEN_BACKGROUND_THEMES: ScreenBuiltInPart<ScreenBackgroundTheme>[] = [
+  ...split.map((one) => ({ id: one.id, part: one.background })),
+  // The backgrounds that follow the words (issue #296).
+  { id: "flow", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "flow", colors: ["#050816", "#22d3ee", "#a855f7", "#f472b6"], motion: 0.5 }, reacts: { movement: 0.7, hue: 0.4, elements: 0.6 } }) },
+  { id: "strings", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "strings", colors: ["#03040a", "#38bdf8", "#f472b6", "#facc15"], motion: 0.5 }, reacts: { movement: 0.6, elements: 0.8, brightness: 0.6 } }) },
+  { id: "grid", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "grid", colors: ["#020617", "#2dd4bf", "#0ea5e9"], motion: 0.4 }, reacts: { elements: 0.8, brightness: 0.6, hue: 0.2 } }) },
+  { id: "bokeh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "bokeh", colors: ["#0b0a1f", "#4f46e5", "#7c3aed", "#db2777"], motion: 0.4 }, reacts: { elements: 0.7, movement: 0.5, hue: 0.3 } }) },
+];
 export const SCREEN_EFFECTS: ScreenBuiltInPart<ScreenEffects>[] = BUILT_IN_EFFECTS;
 
 /** The built-in templates (issue #281): the looks there were before parts, now made of them, each tagged for its use, and the band's chart. */
