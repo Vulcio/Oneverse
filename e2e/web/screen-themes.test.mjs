@@ -100,8 +100,13 @@ try {
     // From the Screens tab (issue #267): its tile's settings.
     await tablet.getByTestId("screens-tab-screens").click();
     const row = tablet.getByTestId(`screen-TV ${stamp}`);
+    // Its settings, in a dialog (issue #288).
     await row.getByTestId("screen-settings").click();
-    await row.getByLabel("Template").selectOption({ label: `Starry ${stamp}` });
+    const dialog = tablet.getByTestId("screen-dialog");
+    await dialog.getByLabel("Template").selectOption({ label: `Starry ${stamp}` });
+    await dialog.getByTestId("theme-preview").waitFor();
+    await dialog.getByTestId("screen-dialog-done").click();
+    await dialog.waitFor({ state: "detached" });
     page = tv;
     await tv.locator('[data-testid="screen-stage"][data-background="particles"]').waitFor();
     await tv.locator(`[data-testid="screen-showing"][data-theme]`).waitFor();

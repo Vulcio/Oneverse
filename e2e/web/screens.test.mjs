@@ -167,7 +167,7 @@ try {
     const row = tablet.getByTestId("screens-list").getByTestId("screen-Front TV");
     // Connected: its tile says so (issue #267).
     if ((await row.getAttribute("data-online")) !== "true") throw new Error(`not shown as connected: ${await row.getByTestId("screen-status").innerText()}`);
-    await row.getByTestId("screen-settings").click();
+    // Disconnect, on the tile itself (issue #288).
     await row.getByRole("button", { name: "Disconnect" }).click();
     await row.getByRole("button", { name: "Disconnect it" }).click();
     await row.waitFor({ state: "detached" });

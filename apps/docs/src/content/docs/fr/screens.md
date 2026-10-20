@@ -18,7 +18,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 
 L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
-**Écrans** a trois onglets : **Écrans**, **Modèles** et **Widgets**. Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, paroles ou grille, son modèle et à qui il est. **Réglages** ouvre une vignette pour renommer l'écran, le passer à une autre liste, le basculer entre paroles et grille ou changer son modèle ; l'écran change aussitôt. **Déconnecter** l'arrête : il revient à un nouveau code.
+**Écrans** a trois onglets : **Écrans**, **Modèles** et **Widgets**. Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, paroles ou grille, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, le basculer entre paroles et grille, changer son modèle ou son propriétaire, avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
 
 ### La liste du jour
 

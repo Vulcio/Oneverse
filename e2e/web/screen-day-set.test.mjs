@@ -98,7 +98,9 @@ try {
     const tile = desk.getByTestId(`screen-Hall ${stamp}`);
     await tile.getByTestId("screen-set").getByText("The day's set: none today").waitFor();
     await tile.getByTestId("screen-settings").click();
-    await tile.getByLabel("Set").selectOption({ label: `Tomorrow ${stamp}` });
+    await desk.getByTestId("screen-dialog").getByLabel("Set").selectOption({ label: `Tomorrow ${stamp}` });
+    await desk.keyboard.press("Escape");
+    await desk.getByTestId("screen-dialog").waitFor({ state: "detached" });
     await tile.getByTestId("screen-set").getByText(`Tomorrow ${stamp}`).waitFor();
     const [fixed] = (await api(admin, "GET", "/screens")).filter((one) => one.id === screen.id);
     if (fixed.setMode !== "FIXED") throw new Error(JSON.stringify(fixed));

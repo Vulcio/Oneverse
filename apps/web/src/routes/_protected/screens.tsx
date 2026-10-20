@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/componen
 import { cn } from "@songverse/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@songverse/ui/components/confirm-button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
 import { ScreenThemeEditor, type ThemeDraft } from "#/components/screen-theme-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { WidgetGallery } from "#/components/screen-widget-gallery";
@@ -513,10 +514,90 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
 function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; owners: ScreenOwnerChoice[]; onChanged: () => Promise<void> }) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(screen.name);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const saved = screen.themeId ? themes.find((one) => one.id === screen.themeId) : undefined;
+  const look = saved?.theme ?? screenThemeTemplate(screen.themeTemplate)?.theme ?? DEFAULT_SCREEN_THEME;
+  const lookName = saved?.name ?? (screen.themeTemplate ? t(`screens.templates.${screen.themeTemplate}.name`) : t("screens.themeDefault"));
+  const OwnerIcon = OWNER_ICONS[screen.owner.kind];
+
+  return (
+    <li className="flex flex-col gap-3 rounded-xl border bg-card p-3" data-testid={`screen-${screen.name}`} data-online={String(!!screen.online)}>
+      <ScreenThemePreview theme={look} mode={screen.mode} assets={saved?.assets} playing={false} slide={0} />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className={cn("size-2 shrink-0 rounded-full", screen.online ? "bg-emerald-500" : "bg-muted-foreground/40")} aria-hidden />
+          <p className="min-w-0 flex-1 truncate font-medium">{screen.name}</p>
+        </div>
+        <p className="text-xs text-muted-foreground" data-testid="screen-status">
+          {screen.online ? t("screens.online") : screen.lastSeenAt ? t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) }) : t("screens.offline")}
+        </p>
+        <p className="truncate text-sm" data-testid="screen-set">
+          {screen.setMode === "DAY"
+            ? screen.setlist
+              ? t("screens.daySetNow", { set: setlistTitle(screen.setlist, t, i18n.language) })
+              : t("screens.daySetNone")
+            : screen.setlist
+              ? setlistTitle(screen.setlist, t, i18n.language)
+              : t("screens.noSet")}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">
+          {t(`screens.modesShort.${screen.mode}`)} · {lookName}
+        </p>
+        <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+          <OwnerIcon className="size-3.5 shrink-0" aria-hidden />
+          {screen.owner.kind === "user" ? t("screens.forMe") : screen.owner.name}
+        </p>
+      </div>
+      <div className="mt-auto flex flex-wrap items-center gap-2">
+        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)} data-testid="screen-settings">
+          <Settings2 />
+          {t("screens.settings")}
+        </Button>
+        {screen.canManage ? (
+          <ConfirmButton
+            label={t("screens.disconnect")}
+            confirmLabel={t("screens.confirmDisconnect")}
+            busyLabel={t("screens.disconnecting")}
+            cancelLabel={t("admin.cancel")}
+            busy={busy}
+            onConfirm={async () => {
+              setBusy(true);
+              try {
+                await apiClient.deleteScreen(screen.id);
+                await onChanged();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : String(err));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
+        ) : null}
+      </div>
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {open ? <ScreenSettingsDialog screen={screen} sets={sets} themes={themes} owners={owners} onChanged={onChanged} onClose={() => setOpen(false)} /> : null}
+    </li>
+  );
+}
+
+/**
+ * A screen's settings (issue #288), in a dialog: its name, set, what it
+ * shows, its template and whose it is on the left, the screen as it looks
+ * on the right. Each change goes to the screen at once.
+ */
+function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; owners: ScreenOwnerChoice[]; onChanged: () => Promise<void>; onClose: () => void }) {
+  const { t, i18n } = useTranslation();
+  const [name, setName] = useState(screen.name);
+  const [error, setError] = useState<string | null>(null);
   const known = screen.setMode === "DAY" || !screen.setlistId || sets.some((set) => set.id === screen.setlistId);
+  const saved = screen.themeId ? themes.find((one) => one.id === screen.themeId) : undefined;
+  const look = saved?.theme ?? screenThemeTemplate(screen.themeTemplate)?.theme ?? DEFAULT_SCREEN_THEME;
 
   async function change(data: Parameters<typeof apiClient.updateScreen>[1]) {
     setError(null);
@@ -527,128 +608,81 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
       setError(err instanceof Error ? err.message : String(err));
     }
   }
-
-  const saved = screen.themeId ? themes.find((one) => one.id === screen.themeId) : undefined;
-  const look = saved?.theme ?? screenThemeTemplate(screen.themeTemplate)?.theme ?? DEFAULT_SCREEN_THEME;
-  const lookName = saved?.name ?? (screen.themeTemplate ? t(`screens.templates.${screen.themeTemplate}.name`) : t("screens.themeDefault"));
-  const OwnerIcon = OWNER_ICONS[screen.owner.kind];
+  const rename = () => name.trim() && name.trim() !== screen.name && void change({ name: name.trim() });
 
   return (
-    <li className={cn("flex flex-col gap-3 rounded-xl border bg-card p-3", open && "sm:col-span-2 xl:col-span-3")} data-testid={`screen-${screen.name}`} data-online={String(!!screen.online)}>
-      <div className={cn("flex flex-col gap-3", open && "sm:flex-row")}>
-        <ScreenThemePreview theme={look} mode={screen.mode} assets={saved?.assets} playing={false} slide={0} className={cn(open && "sm:w-64 sm:shrink-0")} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className={cn("size-2 shrink-0 rounded-full", screen.online ? "bg-emerald-500" : "bg-muted-foreground/40")} aria-hidden />
-            <p className="min-w-0 flex-1 truncate font-medium">{screen.name}</p>
-            <Button type="button" size="sm" variant={open ? "default" : "outline"} aria-expanded={open} onClick={() => setOpen((was) => !was)} data-testid="screen-settings">
-              <Settings2 />
-              {open ? t("screens.settingsDone") : t("screens.settings")}
-            </Button>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (open) return;
+        rename();
+        onClose();
+      }}
+    >
+      <DialogContent className="flex max-h-[94dvh] w-[min(96vw,52rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none" data-testid="screen-dialog">
+        <DialogHeader className="border-b px-4 py-3">
+          <DialogTitle>{t("screens.settingsOf", { name: screen.name })}</DialogTitle>
+          <DialogDescription>{t("screens.settingsDescription")}</DialogDescription>
+        </DialogHeader>
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <fieldset disabled={!screen.canManage} className="flex min-w-0 flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`screen-name-${screen.id}`}>{t("screens.name")}</Label>
+              <Input id={`screen-name-${screen.id}`} value={name} maxLength={60} onChange={(event) => setName(event.target.value)} onBlur={rename} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`screen-set-${screen.id}`}>{t("screens.set")}</Label>
+              {known ? (
+                <SetSelect
+                  id={`screen-set-${screen.id}`}
+                  sets={sets}
+                  value={screen.setMode === "DAY" ? DAY_SET : (screen.setlistId ?? "")}
+                  allowNone
+                  onChange={(id) => void change(id === DAY_SET ? { setMode: "DAY" } : { setMode: "FIXED", setlistId: id || null })}
+                />
+              ) : (
+                <p className="text-sm">{screen.setlist ? setlistTitle(screen.setlist, t, i18n.language) : t("screens.noSet")}</p>
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`screen-mode-${screen.id}`}>{t("screens.mode")}</Label>
+              <ModeSelect id={`screen-mode-${screen.id}`} value={screen.mode} onChange={(mode) => void change({ mode })} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`screen-theme-${screen.id}`}>{t("screens.theme")}</Label>
+              <ThemeSelect
+                id={`screen-theme-${screen.id}`}
+                value={themeValue(screen)}
+                themes={themes}
+                onChange={(value) =>
+                  void change(value.startsWith("s:") ? { themeId: value.slice(2) } : value.startsWith("t:") ? { themeTemplate: value.slice(2) } : { themeId: null, themeTemplate: null })
+                }
+              />
+            </div>
+            {screen.canManage && owners.length > 1 ? (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor={`screen-owner-${screen.id}`}>{t("screens.owner")}</Label>
+                <OwnerSelect id={`screen-owner-${screen.id}`} owners={owners} current={screen.owner} value={ownerValue(screen.owner)} onChange={(value) => void change({ owner: ownerFrom(value) })} />
+              </div>
+            ) : null}
+            {!screen.canManage ? <p className="text-xs text-muted-foreground">{t("screens.notYours")}</p> : null}
+          </fieldset>
+          <div className="flex min-w-0 flex-col gap-2">
+            <span className="text-sm font-medium">{t("screens.preview")}</span>
+            <ScreenThemePreview theme={look} mode={screen.mode} assets={saved?.assets} slide={0} />
           </div>
-          <p className="text-xs text-muted-foreground" data-testid="screen-status">
-            {screen.online ? t("screens.online") : screen.lastSeenAt ? t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) }) : t("screens.offline")}
-          </p>
-          <p className="truncate text-sm" data-testid="screen-set">
-            {screen.setMode === "DAY"
-              ? screen.setlist
-                ? t("screens.daySetNow", { set: setlistTitle(screen.setlist, t, i18n.language) })
-                : t("screens.daySetNone")
-              : screen.setlist
-                ? setlistTitle(screen.setlist, t, i18n.language)
-                : t("screens.noSet")}
-          </p>
-          <p className="truncate text-xs text-muted-foreground">
-            {t(`screens.modesShort.${screen.mode}`)} · {lookName}
-          </p>
-          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-            <OwnerIcon className="size-3.5 shrink-0" aria-hidden />
-            {screen.owner.kind === "user" ? t("screens.forMe") : screen.owner.name}
-          </p>
         </div>
-      </div>
-      {open ? (
-      <>
-      <div className="grid gap-3 sm:grid-cols-2 sm:items-end lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`screen-name-${screen.id}`}>{t("screens.name")}</Label>
-          <Input
-            id={`screen-name-${screen.id}`}
-            value={name}
-            disabled={!screen.canManage}
-            maxLength={60}
-            onChange={(event) => setName(event.target.value)}
-            onBlur={() => name.trim() && name.trim() !== screen.name && void change({ name: name.trim() })}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`screen-set-${screen.id}`}>{t("screens.set")}</Label>
-          {known ? (
-            <SetSelect
-              id={`screen-set-${screen.id}`}
-              sets={sets}
-              value={screen.setMode === "DAY" ? DAY_SET : (screen.setlistId ?? "")}
-              allowNone
-              onChange={(id) => void change(id === DAY_SET ? { setMode: "DAY" } : { setMode: "FIXED", setlistId: id || null })}
-            />
-          ) : (
-            <p className="text-sm">{screen.setlist ? setlistTitle(screen.setlist, t, i18n.language) : t("screens.noSet")}</p>
-          )}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`screen-mode-${screen.id}`}>{t("screens.mode")}</Label>
-          <fieldset disabled={!screen.canManage} className="contents">
-            <ModeSelect id={`screen-mode-${screen.id}`} value={screen.mode} onChange={(mode) => void change({ mode })} />
-          </fieldset>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`screen-theme-${screen.id}`}>{t("screens.theme")}</Label>
-          <fieldset disabled={!screen.canManage} className="contents">
-          <ThemeSelect
-            id={`screen-theme-${screen.id}`}
-            value={themeValue(screen)}
-            themes={themes}
-            onChange={(value) =>
-              void change(value.startsWith("s:") ? { themeId: value.slice(2) } : value.startsWith("t:") ? { themeTemplate: value.slice(2) } : { themeId: null, themeTemplate: null })
-            }
-          />
-          </fieldset>
-        </div>
-        {screen.canManage ? (
-        <ConfirmButton
-          label={t("screens.disconnect")}
-          confirmLabel={t("screens.confirmDisconnect")}
-          busyLabel={t("screens.disconnecting")}
-          cancelLabel={t("admin.cancel")}
-          busy={busy}
-          onConfirm={async () => {
-            setBusy(true);
-            try {
-              await apiClient.deleteScreen(screen.id);
-              await onChanged();
-            } catch (err) {
-              setError(err instanceof Error ? err.message : String(err));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        />
-        ) : null}
-      </div>
-      {screen.canManage && owners.length > 1 ? (
-        <div className="flex max-w-sm flex-col gap-1.5">
-          <Label htmlFor={`screen-owner-${screen.id}`}>{t("screens.owner")}</Label>
-          <OwnerSelect id={`screen-owner-${screen.id}`} owners={owners} current={screen.owner} value={ownerValue(screen.owner)} onChange={(value) => void change({ owner: ownerFrom(value) })} />
-        </div>
-      ) : null}
-      {!screen.canManage ? <p className="text-xs text-muted-foreground">{t("screens.notYours")}</p> : null}
-      </>
-      ) : null}
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </li>
+        <DialogFooter className="flex-row items-center border-t px-4 py-3">
+          {error ? (
+            <p className="mr-auto text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <DialogClose render={<Button className="ml-auto" />} data-testid="screen-dialog-done">
+            {t("screens.settingsDone")}
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

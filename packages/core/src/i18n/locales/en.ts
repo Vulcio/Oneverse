@@ -207,6 +207,8 @@ const en = {
     online: "Connected",
     offline: "Not connected",
     settings: "Settings",
+    settingsOf: "Screen settings: {{name}}",
+    settingsDescription: "What this screen shows. Each change goes to the screen at once.",
     settingsDone: "Done",
     modesShort: { LYRICS: "Lyrics", CHART: "Chart" },
     noneHere: "No screens here.",

@@ -207,6 +207,8 @@ const fr: typeof en = {
     online: "Connecté",
     offline: "Non connecté",
     settings: "Réglages",
+    settingsOf: "Réglages de l'écran : {{name}}",
+    settingsDescription: "Ce qu'affiche cet écran. Chaque changement arrive aussitôt sur l'écran.",
     settingsDone: "Terminé",
     modesShort: { LYRICS: "Paroles", CHART: "Grille" },
     noneHere: "Aucun écran ici.",
