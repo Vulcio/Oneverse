@@ -55,10 +55,13 @@ export function SeparateButton({
   file,
   busy,
   canReplace,
+  server = null,
   onStart,
 }: {
   file: Attachment;
   busy: boolean;
+  /** Whose Sonic server it goes to (issue #300): a team's or an organisation's; null for the instance's. */
+  server?: StemSeparations["server"];
   /** The recording already has separated stems on the song: the new ones can replace them (issue #175). */
   canReplace: boolean;
   onStart: (parts: StemSeparationParts, replace: boolean) => Promise<void>;
@@ -80,6 +83,11 @@ export function SeparateButton({
     <div className="flex flex-col gap-2 rounded-md border p-3 text-sm" data-testid="separate-options">
       <span className="font-medium">{t("separation.title")}</span>
       <span className="text-xs text-muted-foreground">{t("separation.description", { name: file.filename })}</span>
+      {server ? (
+        <span className="text-xs text-muted-foreground" data-testid="separate-server">
+          {t(`separation.onServer_${server.kind}`, { name: server.name })}
+        </span>
+      ) : null}
       <fieldset className="flex flex-col gap-1">
         <legend className="sr-only">{t("separation.parts")}</legend>
         {(["4", "6", "2"] as const).map((value) => (

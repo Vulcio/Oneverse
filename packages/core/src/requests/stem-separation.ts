@@ -32,5 +32,25 @@ export const SaveStemSeparationSettingsSchema = z.strictObject({
   hqModel: modelName.nullable().optional(),
   hqEnabled: z.boolean().nullable().optional(),
   monthlyLimit: z.number().int().min(1).max(10_000).nullable().optional(),
+  /** Teams and organisations may connect their own Songverse Sonic servers (issue #300), and those on private or local addresses. */
+  ownServers: z.boolean().nullable().optional(),
+  ownServersPrivate: z.boolean().nullable().optional(),
 });
 export type SaveStemSeparationSettingsRequest = z.input<typeof SaveStemSeparationSettingsSchema>;
+
+/**
+ * PUT /teams/:id/sonic-server and /organizations/:id/sonic-server (issue
+ * #300): a team's or an organisation's own Songverse Sonic server. The
+ * address and key are needed the first time; after that a field left out
+ * keeps its value, an empty key keeps the saved one, and null clears a
+ * model or the limit (back to the defaults, no limit).
+ */
+export const SaveSonicServerSchema = z.strictObject({
+  apiUrl: optional(z.url({ protocol: /^https?$/, message: "apiUrl must be the Sonic server's address, http:// or https://" }).max(500)),
+  apiKey: optional(z.string().max(500)),
+  fastModel: modelName.nullable().optional(),
+  hqModel: modelName.nullable().optional(),
+  hqEnabled: optional(z.boolean()),
+  monthlyLimit: z.number().int().min(1).max(10_000).nullable().optional(),
+});
+export type SaveSonicServerRequest = z.input<typeof SaveSonicServerSchema>;

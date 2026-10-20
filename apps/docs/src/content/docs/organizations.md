@@ -24,6 +24,7 @@ Its admins also:
 - choose who's an **Admin** or a **Member**, and **Remove** someone - who leaves its teams too (if they're the only admin of one, make someone else its admin first);
 - **Take out** a team: it carries on, on its own, with its members and songs;
 - make **Invite links**: with a role, an expiry and a number of uses, like a team's (see [Teams](/teams/#creating-a-team-and-inviting-people)). Whoever opens one joins the organisation, after signing in or creating an account - even on a server where only invited people can sign up;
+- connect its own Songverse Sonic server under **Stem separation**, when this Songverse allows it: its teams' songs are split into stems there, unless a team connects its own (see [Your own stem separation server](/sonic/));
 - **Delete organisation**: its teams stay, on their own.
 
 **Leave organisation** takes you out of it and its teams; its only admin makes someone else an admin first.

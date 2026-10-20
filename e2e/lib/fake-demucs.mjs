@@ -1,5 +1,7 @@
-// A stand-in for our Demucs API (issue #63; its API.md, v1.3), started by
-// the suites that split recordings into stems, in their own process: the
+// A stand-in for Songverse Sonic, our Demucs API (issue #63; its API.md,
+// v1.6), started by the suites that split recordings into stems, in their
+// own process - more than one when a suite needs a team's own server too
+// (issue #300: its own port and key): the
 // health check, the models, jobs uploaded as multipart, their status, the
 // stems to download (behind the X-API-Key), and signed webhooks. The fast
 // pass is done almost at once; the HQ pass waits for the suite to call
@@ -40,7 +42,8 @@ const STEMS = {
   htdemucs_6s: ["vocals", "drums", "bass", "guitar", "piano", "other"],
 };
 
-export async function startFakeDemucs() {
+export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMUCS_KEY } = {}) {
+  const base = `http://localhost:${port}`;
   const jobs = new Map();
   const received = [];
   const webhooks = [];
@@ -73,13 +76,13 @@ export async function startFakeDemucs() {
   };
 
   const server = createServer(async (req, res) => {
-    const url = new URL(req.url, FAKE_DEMUCS_URL);
+    const url = new URL(req.url, base);
     const json = (status, body) => {
       res.writeHead(status, { "Content-Type": "application/json" });
       res.end(JSON.stringify(body));
     };
-    if (url.pathname === "/api/v1/health") return json(200, { status: "ok", queue_depth: 0, default_model: "htdemucs", hq_default_model: "htdemucs_ft", allowed_devices: ["cpu"] });
-    if (req.headers["x-api-key"] !== FAKE_DEMUCS_KEY) return json(401, { detail: "Invalid API key" });
+    if (url.pathname === "/api/v1/health") return json(200, { status: "ok", service: "songverse-sonic", version: "1.6.0", queue_depth: 0, default_model: "htdemucs", hq_default_model: "htdemucs_ft", allowed_devices: ["cpu"] });
+    if (req.headers["x-api-key"] !== key) return json(401, { detail: "Invalid API key" });
     if (url.pathname === "/api/v1/models") return json(200, { models: Object.keys(STEMS), default: "htdemucs", hq_default: "htdemucs_ft", devices: ["cpu"], default_device: "cpu" });
     if (url.pathname === "/api/v1/jobs" && req.method === "POST") {
       const form = await new Request(url, { method: "POST", headers: req.headers, body: req, duplex: "half" }).formData();
@@ -125,8 +128,10 @@ export async function startFakeDemucs() {
     }
     json(404, { detail: "Not found" });
   });
-  await new Promise((resolve) => server.listen(FAKE_DEMUCS_PORT, resolve));
+  await new Promise((resolve) => server.listen(port, resolve));
   return {
+    url: base,
+    key,
     received,
     webhooks,
     analysis,

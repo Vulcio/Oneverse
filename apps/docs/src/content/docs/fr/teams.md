@@ -101,6 +101,10 @@ Sur un serveur qui a des organisations, une équipe peut faire partie de l'une d
 
 Les administrateurs d'une équipe lui donnent une **Couleur** et une image sur sa page, dans **Couleur et image** : l'image (**Ajouter une image**, recadrée en carré) ou les initiales de l'équipe sur sa couleur s'affichent à côté de son nom dans la barre latérale et les listes, pour tous ceux qui la voient. **D'après son nom** choisit une couleur à partir du nom de l'équipe.
 
+## Serveur de séparation en pistes
+
+Quand ce Songverse le permet, les admins d'une équipe peuvent connecter son propre serveur Songverse Sonic dans **Séparation en pistes** sur sa page : les chants de l'équipe y sont alors séparés en pistes, par ses membres. Voir [Votre propre serveur de séparation](/fr/sonic/).
+
 ## Quitter ou supprimer une équipe
 
 **Quitter l'équipe** vous en retire. Si vous en êtes le seul administrateur, nommez d'abord un autre membre administrateur. Un administrateur peut la **Renommer** - le crayon à côté de son nom ; un groupe d'organisation aussi - ou **Supprimer l'équipe**.

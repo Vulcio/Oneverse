@@ -101,6 +101,10 @@ On a server with organisations, a team can be part of one - its church or club: 
 
 A team's admins give it a **Colour** and a picture on its page, in **Colour and picture**: the picture (**Add a picture**, cropped square) or the team's initials on its colour show beside its name in the sidebar and in lists, for everyone who sees it. **From its name** picks a colour from the team's name.
 
+## Stem separation server
+
+When this Songverse allows it, a team's admins can connect the team's own Songverse Sonic server under **Stem separation** on its page: the team's songs are then split into stems there, by its members. See [Your own stem separation server](/sonic/).
+
 ## Leaving or deleting a team
 
 **Leave team** takes you out of it. If you're its only admin, promote another member first. An admin can **Rename** it - the pencil beside its name; an organisation's group too - or **Delete team**.

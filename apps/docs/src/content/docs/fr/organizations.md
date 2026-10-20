@@ -24,6 +24,7 @@ Ses administrateurs peuvent aussi :
 - choisir qui est **Administrateur** ou **Membre**, et **Retirer** quelqu'un - qui quitte aussi ses équipes (s'il est le seul administrateur de l'une d'elles, nommez d'abord quelqu'un d'autre) ;
 - **Retirer** une équipe : elle continue à part entière, avec ses membres et ses chants ;
 - créer des **liens d'invitation** : avec un rôle, une expiration et un nombre d'utilisations, comme ceux d'une équipe (voir [Équipes](/fr/teams/#créer-une-équipe-et-inviter)). Qui en ouvre un rejoint l'organisation, après s'être connecté ou avoir créé un compte - même sur un serveur où seules les personnes invitées peuvent s'inscrire ;
+- connecter son propre serveur Songverse Sonic dans **Séparation en pistes**, quand ce Songverse le permet : les chants de ses équipes y sont séparés en pistes, sauf si une équipe connecte le sien (voir [Votre propre serveur de séparation](/fr/sonic/)) ;
 - **Supprimer l'organisation** : ses équipes restent, à part entière.
 
 **Quitter l'organisation** vous retire d'elle et de ses équipes ; son seul administrateur nomme d'abord quelqu'un d'autre administrateur.

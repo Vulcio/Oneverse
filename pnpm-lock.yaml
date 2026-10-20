@@ -112,6 +112,9 @@ importers:
       sharp:
         specifier: ^0.35.4
         version: 0.35.4(@types/node@22.20.2)
+      undici:
+        specifier: 8.11.2
+        version: 8.11.2
       web-push:
         specifier: 3.6.7
         version: 3.6.7

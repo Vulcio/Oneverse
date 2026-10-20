@@ -43,7 +43,7 @@ import type { UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
 import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
-import type { SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
+import type { SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
 import type { ConfirmScreenPairingRequest, CreateScreenPartRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenPartRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
@@ -634,6 +634,8 @@ export interface StemSeparations {
   /** Whether the viewer may split this song's recordings; `refusal` says why not. */
   available: boolean;
   refusal: "not-configured" | "not-granted" | null;
+  /** Whose Sonic server it goes to (issue #300): the song's team's or its organisation's; null for the instance's. */
+  server: { kind: "team" | "organization"; name: string } | null;
   separations: StemSeparation[];
 }
 
@@ -648,11 +650,43 @@ export interface StemSeparationSummary {
   hqEnabled: boolean;
   monthlyLimit: number | null;
   signedCallbacks: boolean;
+  /** Whether the instance has its own server: optional, teams and organisations may run theirs (issue #300). */
+  configured: boolean;
+  /** Teams and organisations may connect their own Sonic servers, and on private or local addresses. */
+  ownServers: boolean;
+  ownServersPrivate: boolean;
 }
 
 export type StemSeparationTest =
-  | { ok: true; health: Record<string, unknown>; models: { models: string[]; default: string; hq_default: string; devices: string[]; default_device: string } }
+  | {
+      ok: true;
+      health: Record<string, unknown>;
+      models: { models: string[]; default: string; hq_default: string; devices: string[]; default_device: string };
+      /** Its API's version (Sonic 1.6 and later say it), and whether it finds beats and bars (1.5 and later); null when it doesn't say. */
+      version: string | null;
+      beats: boolean | null;
+    }
   | { ok: false; error: string };
+
+/** A team's or an organisation's own Sonic server (issue #300), as its admins see it: never its key. */
+export interface SonicServerSummary {
+  /** Whether Admin lets teams and organisations connect their own, and on private or local addresses. */
+  allowed: boolean;
+  allowPrivate: boolean;
+  server: { apiUrl: string; hasKey: boolean; fastModel: string | null; hqModel: string | null; hqEnabled: boolean; monthlyLimit: number | null; updatedAt: string } | null;
+}
+
+/** Admin > Stem separation's list of the servers teams and organisations connected. */
+export interface ConnectedSonicServer {
+  id: string;
+  owner: { kind: "team" | "organization"; id: string; name: string };
+  apiUrl: string;
+  separations: number;
+  updatedAt: string;
+}
+
+export type SonicServerOwnerRef = { teamId: string } | { organizationId: string };
+const sonicServerPath = (owner: SonicServerOwnerRef) => ("teamId" in owner ? `/teams/${owner.teamId}/sonic-server` : `/organizations/${owner.organizationId}/sonic-server`);
 
 
 /** Admin > Storage > File size limits (issue #163): each type's, in MB. */
@@ -2846,6 +2880,11 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminSaveStemSeparation: (data: SaveStemSeparationSettingsRequest) => request<void>("/admin/stem-separation", { method: "PUT", body: JSON.stringify(data) }),
     adminClearStemSeparation: () => request<void>("/admin/stem-separation", { method: "DELETE" }),
     adminTestStemSeparation: () => request<StemSeparationTest>("/admin/stem-separation/test", { method: "POST" }),
+    adminListSonicServers: () => request<ConnectedSonicServer[]>("/admin/stem-separation/servers"),
+    getSonicServer: (owner: SonicServerOwnerRef) => request<SonicServerSummary>(sonicServerPath(owner)),
+    saveSonicServer: (owner: SonicServerOwnerRef, data: SaveSonicServerRequest) => request<void>(sonicServerPath(owner), { method: "PUT", body: JSON.stringify(data) }),
+    removeSonicServer: (owner: SonicServerOwnerRef) => request<void>(sonicServerPath(owner), { method: "DELETE" }),
+    testSonicServer: (owner: SonicServerOwnerRef) => request<StemSeparationTest>(`${sonicServerPath(owner)}/test`, { method: "POST" }),
     adminListRoles: () => request<AdminRole[]>("/admin/roles"),
     /** The instruments an admin added (issue #166), for everyone's pickers and badges. */
     listCustomInstruments: () => request<CustomInstrument[]>("/instruments"),

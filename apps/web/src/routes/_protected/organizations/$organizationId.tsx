@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { loadOrganizationPage, OrganizationPage } from "@songverse/planning/pages/organization";
 import { BrandsCard } from "#/components/brands-card";
+import { SonicServerCard } from "#/components/sonic-server-card";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/organizations/$organizationId")({
@@ -11,7 +12,18 @@ export const Route = createFileRoute("/_protected/organizations/$organizationId"
   },
   component: function Page() {
     const { userId, data } = Route.useLoaderData();
-    // Its brands (issue #279), for its admins.
-    return <OrganizationPage userId={userId} data={data} adminCards={<BrandsCard owner={{ organizationId: data.organization.id }} />} />;
+    // Its brands (issue #279) and its own Sonic server (issue #300), for its admins.
+    return (
+      <OrganizationPage
+        userId={userId}
+        data={data}
+        adminCards={
+          <>
+            <BrandsCard owner={{ organizationId: data.organization.id }} />
+            <SonicServerCard owner={{ organizationId: data.organization.id }} />
+          </>
+        }
+      />
+    );
   },
 });

@@ -1,19 +1,25 @@
+import { fetch, FormData, type RequestInit, type Response } from "undici";
 import { PROVIDER_TIMEOUT_MS } from "../metadata/provider-timeout.js";
+import { checkOutsideUrl, OutsideAddressError, outsideDispatcher, type OutsideAddressRules } from "../security/outside-address.js";
 import type { EffectiveStemSeparationSettings } from "./stem-separation-settings.js";
 
 /**
- * Our Demucs API (issue #63; its API.md, v1.3): asynchronous jobs, a fast
- * pass then an HQ pass in its nightly window, signed webhooks. Only ever
- * the address an admin set: it's usually on a private network, so it isn't
- * held to the outside-download rules (fetchProviderImage) that keep
- * private addresses out; a file's download_url is read only for its path,
- * fetched from that same address. A call waits PROVIDER_TIMEOUT_MS; a
- * file going there or coming back, TRANSFER_TIMEOUT_MS.
+ * Songverse Sonic, our Demucs API (issue #63; its API.md): asynchronous
+ * jobs, a fast pass then an HQ pass in its nightly window, signed webhooks.
+ * The instance's server is the address its admin set, usually on a private
+ * network, so it isn't held to the outside-download rules; a team's or an
+ * organisation's own (issue #300) is (`guard`: HTTPS, no private address
+ * unless allowed, checked as it connects). Redirects are refused; a file's
+ * download_url is read only for its path, fetched from the server's own
+ * address. A call waits PROVIDER_TIMEOUT_MS; a file going there or coming
+ * back, TRANSFER_TIMEOUT_MS.
  */
 
 const TRANSFER_TIMEOUT_MS = 10 * 60 * 1000;
 /** A stem is a few minutes of WAV: this is well past any. */
 export const MAX_STEM_BYTES = 1024 * 1024 * 1024;
+/** A job's status, with its analysis's beats, is a few hundred kilobytes at most. */
+const MAX_ANSWER_BYTES = 8 * 1024 * 1024;
 
 export class DemucsError extends Error {
   constructor(
@@ -61,23 +67,46 @@ export interface DemucsJob {
   analysis?: DemucsAnalysis | null;
 }
 
-type Configured = Pick<EffectiveStemSeparationSettings, "apiUrl" | "apiKey">;
+type Configured = Pick<EffectiveStemSeparationSettings, "apiUrl" | "apiKey"> & {
+  /** A team's or an organisation's own server: its calls held to the outside-address rules. */
+  guard?: OutsideAddressRules | null;
+};
 
 function configured(settings: Configured): { apiUrl: string; apiKey: string } {
   if (!settings.apiUrl || !settings.apiKey) throw new DemucsError("Stem separation isn't set up: its API's address and key are in Admin > Stem separation");
   return { apiUrl: settings.apiUrl, apiKey: settings.apiKey };
 }
 
+/** A request to the server: never redirected, checked first when it's guarded, its failure said plainly. */
+async function send(settings: Configured, url: string, init: RequestInit, timeout: number): Promise<Response> {
+  try {
+    if (settings.guard) checkOutsideUrl(url, settings.guard);
+    return await fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(timeout), ...(settings.guard && { dispatcher: outsideDispatcher(settings.guard) }) });
+  } catch (error) {
+    const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error;
+    if (cause instanceof OutsideAddressError) throw new DemucsError(`The Sonic server's address isn't allowed: ${cause.message}`);
+    const name = error instanceof Error ? error.name : "";
+    throw new DemucsError(name === "TimeoutError" ? "The Demucs API didn't answer in time" : `The Demucs API couldn't be reached: ${cause instanceof Error ? cause.message : String(cause)}`);
+  }
+}
+
+/** Up to `max` bytes of a response, never more, whatever it says of its length. */
+async function readBody(response: Response, max: number, what: string): Promise<Buffer> {
+  if (Number(response.headers.get("content-length")) > max) throw new DemucsError(`${what} is larger than it can be`);
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for await (const chunk of (response.body ?? []) as AsyncIterable<Uint8Array>) {
+    total += chunk.byteLength;
+    if (total > max) throw new DemucsError(`${what} is larger than it can be`);
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 async function call<T>(settings: Configured, path: string, init: RequestInit = {}, timeout = PROVIDER_TIMEOUT_MS): Promise<T> {
   const { apiUrl, apiKey } = configured(settings);
-  let response: Response;
-  try {
-    response = await fetch(`${apiUrl}${path}`, { ...init, headers: { ...(init.headers as Record<string, string>), "X-API-Key": apiKey, Accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(timeout) });
-  } catch (error) {
-    const name = error instanceof Error ? error.name : "";
-    throw new DemucsError(name === "TimeoutError" ? "The Demucs API didn't answer in time" : `The Demucs API couldn't be reached: ${error instanceof Error ? error.message : String(error)}`);
-  }
-  const text = await response.text();
+  const response = await send(settings, `${apiUrl}${path}`, { ...init, headers: { ...(init.headers as Record<string, string>), "X-API-Key": apiKey, Accept: "application/json" } }, timeout);
+  const text = (await readBody(response, MAX_ANSWER_BYTES, "The Demucs API's answer")).toString("utf8");
   if (!response.ok) {
     let detail = text.slice(0, 300);
     try {
@@ -94,12 +123,12 @@ async function call<T>(settings: Configured, path: string, init: RequestInit = {
 /** Its health check (no key needed) and what it offers (the key checked): Admin's Test connection. */
 export async function testDemucs(settings: Configured) {
   const { apiUrl } = configured(settings);
+  const response = await send(settings, `${apiUrl}/api/v1/health`, {}, PROVIDER_TIMEOUT_MS);
   let health: Record<string, unknown>;
   try {
-    const response = await fetch(`${apiUrl}/api/v1/health`, { redirect: "error", signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
-    health = (await response.json()) as Record<string, unknown>;
-  } catch (error) {
-    throw new DemucsError(`The Demucs API couldn't be reached: ${error instanceof Error ? error.message : String(error)}`);
+    health = JSON.parse((await readBody(response, MAX_ANSWER_BYTES, "Its health check")).toString("utf8")) as Record<string, unknown>;
+  } catch {
+    throw new DemucsError("That address doesn't answer as a Sonic server would");
   }
   const models = await call<{ models: string[]; default: string; hq_default: string; devices: string[]; default_device: string }>(settings, "/api/v1/models");
   return { health, models };
@@ -140,21 +169,9 @@ export async function downloadDemucsFile(settings: Configured, file: DemucsFile)
     throw new DemucsError(`A file with an address that isn't one: ${file.download_url}`);
   }
   if (!path.startsWith("/api/v1/jobs/")) throw new DemucsError(`A file somewhere unexpected: ${path}`);
-  let response: Response;
-  try {
-    response = await fetch(`${apiUrl}${path}`, { headers: { "X-API-Key": apiKey }, redirect: "error", signal: AbortSignal.timeout(TRANSFER_TIMEOUT_MS) });
-  } catch (error) {
+  const response = await send(settings, `${apiUrl}${path}`, { headers: { "X-API-Key": apiKey } }, TRANSFER_TIMEOUT_MS).catch((error: unknown) => {
     throw new DemucsError(`${file.name} couldn't be downloaded: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  });
   if (!response.ok || !response.body) throw new DemucsError(`${file.name} couldn't be downloaded: ${response.status}`, response.status);
-  const length = Number(response.headers.get("content-length"));
-  if (length > MAX_STEM_BYTES) throw new DemucsError(`${file.name} is larger than a stem can be`);
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
-    total += chunk.byteLength;
-    if (total > MAX_STEM_BYTES) throw new DemucsError(`${file.name} is larger than a stem can be`);
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
+  return readBody(response, MAX_STEM_BYTES, file.name);
 }

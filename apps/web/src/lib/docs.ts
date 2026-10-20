@@ -48,3 +48,9 @@ export function docsUrl(pathname: string, language: string, view?: string): stri
   const locale = language.startsWith("fr") ? "/fr" : "";
   return `${DOCS_URL}${locale}/${page ? `${page}/` : ""}${view ? `?view=${view}` : ""}`;
 }
+
+/** A named docs page (`sonic`, `sonic#docker`), in their language. */
+export function docsPageUrl(page: string, language: string): string {
+  const [slug, anchor] = page.split("#");
+  return `${DOCS_URL}${language.startsWith("fr") ? "/fr" : ""}/${slug}/${anchor ? `#${anchor}` : ""}`;
+}

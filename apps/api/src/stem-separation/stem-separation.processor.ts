@@ -15,7 +15,7 @@ import en from "@songverse/core/i18n/locales/en";
 import fr from "@songverse/core/i18n/locales/fr";
 import { detailsWithAnalysis } from "./analysis.js";
 import { DemucsError, downloadDemucsFile, getDemucsJob, submitDemucsJob, type DemucsAnalysis, type DemucsFile, type DemucsJob } from "./demucs-client.js";
-import { getEffectiveStemSeparationSettings } from "./stem-separation-settings.js";
+import { serverOfSeparation, type SeparationServer } from "./sonic-servers.js";
 import { partOfStem, twoStemsOf } from "./stem-parts.js";
 
 export interface SubmitSeparationJob {
@@ -85,7 +85,9 @@ export class StemSeparationProcessor extends WorkerHost {
     if (!separation || separation.status !== "QUEUED") return { skipped: "gone or already sent" };
     const source = await this.prisma.client.attachment.findUnique({ where: { id: separation.sourceAttachmentId } });
     if (!source) return this.fail(separation.id, "The recording was deleted before it could be sent");
-    const settings = await getEffectiveStemSeparationSettings();
+    // The team's, the organisation's or the instance's (issue #300), chosen when it was started.
+    const settings = await serverOfSeparation(separation);
+    if (!settings) return this.fail(separation.id, separation.ownServer ? "Its Sonic server was disconnected" : "Stem separation is no longer set up");
     try {
       const parts = separation.parts;
       const fastModel = parts === "6" ? "htdemucs_6s" : settings.fastModel;
@@ -98,10 +100,10 @@ export class StemSeparationProcessor extends WorkerHost {
         callbackUrl: job.data.callbackUrl ?? undefined,
         callbackSecret: settings.callbackSecret ?? undefined,
       });
-      // A server started afresh can number its jobs again: an older separation holding the same ID lost its job with it.
+      // A server started afresh can number its jobs again: an older separation on it holding the same ID lost its job with it.
       await this.prisma.client.$transaction([
         this.prisma.client.stemSeparation.updateMany({
-          where: { jobId: submitted.id, id: { not: separation.id } },
+          where: { jobId: submitted.id, sonicServerId: separation.sonicServerId, ownServer: separation.ownServer, id: { not: separation.id } },
           data: { jobId: null, status: "FAILED", error: "The separation server forgot this job" },
         }),
         // The models it's sent with (issue #175): Admin's can change later.
@@ -119,9 +121,7 @@ export class StemSeparationProcessor extends WorkerHost {
   }
 
   private async pollAll() {
-    // Not set up (any more): nothing can be asked, so nothing's looked at - they carry on when it is again.
-    const settings = await getEffectiveStemSeparationSettings();
-    if (!settings.apiUrl || !settings.apiKey) return { polled: 0 };
+    // Each asked of its own server (issue #300); one whose server isn't set up (any more) waits, or fails if it was removed.
     const open = await this.prisma.client.stemSeparation.findMany({ where: { status: { in: ["SUBMITTED", "FAST_READY"] }, jobId: { not: null } }, select: { id: true } });
     for (const { id } of open) await this.queue.add("sync", { separationId: id }, { jobId: `sync-${id}-${Math.floor(Date.now() / POLL_EVERY_MS)}`, removeOnComplete: { count: 200 }, removeOnFail: { count: 200 } });
     return { polled: open.length };
@@ -130,7 +130,11 @@ export class StemSeparationProcessor extends WorkerHost {
   private async sync(separationId: string) {
     const separation = await this.prisma.client.stemSeparation.findUnique({ where: { id: separationId } });
     if (!separation?.jobId || (separation.status !== "SUBMITTED" && separation.status !== "FAST_READY")) return { skipped: "nothing to bring in" };
-    const settings = await getEffectiveStemSeparationSettings();
+    const settings = await serverOfSeparation(separation);
+    if (!settings) {
+      if (separation.ownServer) return this.fail(separation.id, "Its Sonic server was disconnected");
+      return { skipped: "stem separation isn't set up" };
+    }
     let job: DemucsJob;
     try {
       job = await getDemucsJob(settings, separation.jobId);
@@ -141,7 +145,7 @@ export class StemSeparationProcessor extends WorkerHost {
     }
     if (separation.status === "SUBMITTED") {
       if (job.fast?.status === "completed" && job.fast.files?.length) {
-        await this.importFast(separation.id, job.fast.files, job.analysis);
+        await this.importFast(separation.id, settings, job.fast.files, job.analysis);
       } else if (job.status === "failed" || job.fast?.status === "failed") {
         return this.fail(separation.id, job.error ? `Demucs: ${job.error}` : "The separation failed at the Demucs API");
       } else {
@@ -150,7 +154,7 @@ export class StemSeparationProcessor extends WorkerHost {
     }
     const now = await this.prisma.client.stemSeparation.findUnique({ where: { id: separation.id } });
     if (now?.status !== "FAST_READY") return { status: now?.status };
-    if (job.hq?.status === "completed" && job.hq.files?.length) return this.importHq(separation.id, job.hq.files);
+    if (job.hq?.status === "completed" && job.hq.files?.length) return this.importHq(separation.id, settings, job.hq.files);
     // The HQ pass failed: the fast stems stay, and it's done.
     if (job.status === "fast_completed" || job.hq?.status === "failed") {
       await this.prisma.client.stemSeparation.update({ where: { id: separation.id }, data: { status: "COMPLETED", error: job.error ? `The high-quality pass failed (${job.error}): the first stems stay` : "The high-quality pass failed: the first stems stay" } });
@@ -160,8 +164,7 @@ export class StemSeparationProcessor extends WorkerHost {
   }
 
   /** Each file downloaded, made Opus (as it is, if ffmpeg isn't here), with its part. */
-  private async fetchStems(files: DemucsFile[], parts: string) {
-    const settings = await getEffectiveStemSeparationSettings();
+  private async fetchStems(settings: SeparationServer, files: DemucsFile[], parts: string) {
     const dir = await mkdtemp(path.join(tmpdir(), "songverse-stems-"));
     try {
       const out: { part: ReturnType<typeof partOfStem>; body: Buffer; mimeType: string; extension: string }[] = [];
@@ -193,13 +196,13 @@ export class StemSeparationProcessor extends WorkerHost {
    * that multitrack's sections, who sees it, its set and a name someone gave
    * it; the recordings people made into it move over, its stems go.
    */
-  private async importFast(separationId: string, files: DemucsFile[], analysis: DemucsAnalysis | null | undefined) {
+  private async importFast(separationId: string, server: SeparationServer, files: DemucsFile[], analysis: DemucsAnalysis | null | undefined) {
     const separation = await this.prisma.client.stemSeparation.findUniqueOrThrow({
       where: { id: separationId },
       include: { requestedBy: { select: { locale: true } }, songVersion: { select: { documentJson: true } } },
     });
     const source = await this.prisma.client.attachment.findUnique({ where: { id: separation.sourceAttachmentId } });
-    const stems = await this.fetchStems(files, separation.parts);
+    const stems = await this.fetchStems(server, files, separation.parts);
     const bytes = stems.reduce((sum, stem) => sum + stem.body.length, 0);
     if (separation.requestedByUserId) {
       try {
@@ -300,11 +303,11 @@ export class StemSeparationProcessor extends WorkerHost {
    * (so devices keeping it offline fetch it again), with everything the
    * fast one had by then - its sections, name, lock, who sees it.
    */
-  private async importHq(separationId: string, files: DemucsFile[]) {
+  private async importHq(separationId: string, server: SeparationServer, files: DemucsFile[]) {
     const separation = await this.prisma.client.stemSeparation.findUniqueOrThrow({ where: { id: separationId } });
     // Only its own stems (issue #174): never a recording someone made into this multitrack.
     const current = await this.prisma.client.attachment.findMany({ where: { songVersionId: separation.songVersionId, multitrackId: separation.multitrackId ?? "-", origin: "SEPARATED" } });
-    const stems = await this.fetchStems(files, separation.parts);
+    const stems = await this.fetchStems(server, files, separation.parts);
     const replaced: string[] = [];
     for (const stem of stems) {
       const fast = current.find((file) => file.stemPart === stem.part.stemPart && (file.partName ?? null) === stem.part.partName && !replaced.includes(file.storageKey));

@@ -528,6 +528,8 @@ model Team {
   positions            TeamPosition[]
   screenWidgetDefaults ScreenWidgetDefault[]
   brands               Brand[]
+  // Its own Songverse Sonic server for its songs' stems (issue #300).
+  sonicServer          SonicServer?
 
   @@index([slug])
   @@index([organizationId])
@@ -568,6 +570,8 @@ model Organization {
   screens      Screen[]
   // Its brands (issue #279): logos, colours, fonts, backgrounds, links.
   brands       Brand[]
+  // Its own Songverse Sonic server for its teams' songs' stems (issue #300).
+  sonicServer  SonicServer?
 }
 
 model OrganizationMembership {
@@ -2418,7 +2422,35 @@ model StemSeparationSettings {
   hqModel           String?
   hqEnabled         Boolean?
   monthlyLimit      Int?
+  // Teams and organisations may connect their own Sonic servers (issue #300),
+  // and those may be on private or local addresses; null: the env var, else no.
+  ownServers        Boolean?
+  ownServersPrivate Boolean?
   updatedAt         DateTime @updatedAt
+}
+
+// A Songverse Sonic server a team or an organisation runs and connected
+// (issue #300): its team's songs - an organisation's, its teams' songs -
+// are split there rather than on the instance's. Its key and the secret
+// its webhooks are signed with are encrypted at rest.
+model SonicServer {
+  id                String   @id @default(cuid())
+  teamId            String?  @unique
+  organizationId    String?  @unique
+  apiUrl            String
+  apiKeyEnc         String
+  callbackSecretEnc String
+  fastModel         String?
+  hqModel           String?
+  hqEnabled         Boolean  @default(true)
+  // Separations each member may start in 30 days; null: no limit.
+  monthlyLimit      Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  team         Team?            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  separations  StemSeparation[]
 }
 
 enum StemSeparationStatus {
@@ -2441,7 +2473,12 @@ model StemSeparation {
   // "4" (htdemucs), "6" (htdemucs_6s) or "2" (vocals and the rest).
   parts                String
   status               StemSeparationStatus @default(QUEUED)
-  jobId                String?              @unique
+  // Its job at the server it went to: unique on that server only.
+  jobId                String?
+  // A team's or an organisation's own server (issue #300), else the instance's;
+  // `ownServer` stays when that server's removed, so it isn't asked of the instance's.
+  sonicServerId        String?
+  ownServer            Boolean              @default(false)
   multitrackId         String?
   hqRequested          Boolean              @default(false)
   hqDone               Boolean              @default(false)
@@ -2457,11 +2494,14 @@ model StemSeparation {
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
-  songVersion SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
-  requestedBy User?       @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  songVersion SongVersion  @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
+  requestedBy User?        @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  sonicServer SonicServer? @relation(fields: [sonicServerId], references: [id], onDelete: SetNull)
 
   @@index([songVersionId])
   @@index([requestedByUserId, createdAt])
+  @@index([jobId])
+  @@index([sonicServerId])
 }
 
 // Live collaboration (issue #27): typing in the same song together in the
@@ -2805,25 +2845,25 @@ model Screen {
 // (docs/screen-theme-v1.md), a person's own or shared with a team - a
 // venue or church matching its brand - picked per screen.
 model ScreenTheme {
-  id          String   @id @default(cuid())
-  name        String
+  id                String   @id @default(cuid())
+  name              String
   // A template (issue #281): a screen-template/v1 document - its tags, its
   // widget grid and masks - and its parts beside it, each a saved part or a
   // built-in one by its id (a saved one deleted: the built-in classic). One
   // made before parts holds a whole screen-theme/v1 document and no parts;
   // it's split into parts the first time it's listed for editing.
-  document    Json
+  document          Json
   // A person's own, or a team's (its admins change it, its members pick it).
-  ownerUserId String?
-  ownerTeamId String?
+  ownerUserId       String?
+  ownerTeamId       String?
   contentPartId     String?
   contentBuiltIn    String?
   backgroundPartId  String?
   backgroundBuiltIn String?
   effectsPartId     String?
   effectsBuiltIn    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   owner          User?              @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   team           Team?              @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)

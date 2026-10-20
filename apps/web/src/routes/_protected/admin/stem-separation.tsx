@@ -10,19 +10,24 @@ import { Label } from "@songverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/admin/stem-separation")({
-  loader: async () => ({ summary: await apiClient.adminGetStemSeparation() }),
+  loader: async () => {
+    const [summary, servers] = await Promise.all([apiClient.adminGetStemSeparation(), apiClient.adminListSonicServers()]);
+    return { summary, servers };
+  },
   component: AdminStemSeparationPage,
 });
 
 /**
- * Admin > Stem separation (issue #63): the Demucs server recordings are
- * split on - its address, key and models, a monthly limit - and who may
- * use it: whoever has a role that allows it (Admin > Roles, issue #160).
+ * Admin > Stem separation (issue #63): the instance's Songverse Sonic
+ * server recordings are split on - its address, key and models, a monthly
+ * limit - and who may use it: whoever has a role that allows it (Admin >
+ * Roles, issue #160). It's optional: teams and organisations may connect
+ * their own when allowed here (issue #300), listed below.
  */
 function AdminStemSeparationPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { summary } = Route.useLoaderData();
+  const { summary, servers } = Route.useLoaderData();
   const initial = () => ({
     apiUrl: summary.apiUrl ?? "",
     apiKey: "",
@@ -30,6 +35,8 @@ function AdminStemSeparationPage() {
     hqModel: summary.hqModel,
     hqEnabled: summary.hqEnabled,
     monthlyLimit: summary.monthlyLimit === null ? "" : String(summary.monthlyLimit),
+    ownServers: summary.ownServers,
+    ownServersPrivate: summary.ownServersPrivate,
   });
   const [form, setForm] = useState(initial);
   useEffect(() => setForm(initial()), [summary]);
@@ -64,6 +71,8 @@ function AdminStemSeparationPage() {
     if (form.hqEnabled !== summary.hqEnabled) change.hqEnabled = form.hqEnabled;
     const limit = form.monthlyLimit.trim() ? Number(form.monthlyLimit) : null;
     if (limit !== summary.monthlyLimit) change.monthlyLimit = limit;
+    if (form.ownServers !== summary.ownServers) change.ownServers = form.ownServers;
+    if (form.ownServersPrivate !== summary.ownServersPrivate) change.ownServersPrivate = form.ownServersPrivate;
     void run(() => apiClient.adminSaveStemSeparation(change), setSaving);
   }
 
@@ -95,6 +104,7 @@ function AdminStemSeparationPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">{t("admin.stemServer")}</CardTitle>
+          <p className="text-xs text-muted-foreground">{t("admin.stemServerOptional")}</p>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -148,6 +158,59 @@ function AdminStemSeparationPage() {
                 {test.ok ? t("admin.stemTestOk", { models: test.models.models.join(", ") }) : t("admin.stemTestFailed", { error: test.error })}
               </span>
             ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{t("admin.stemOwnTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <label className="flex items-start gap-3">
+            <input type="checkbox" className="mt-1 size-4" checked={form.ownServers} onChange={(event) => setForm({ ...form, ownServers: event.target.checked })} data-testid="stem-own-servers" />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">{t("admin.stemOwnServers")}</span>
+              <span className="text-xs text-muted-foreground">{t("admin.stemOwnServersHint")}</span>
+            </span>
+          </label>
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 size-4"
+              checked={form.ownServersPrivate}
+              disabled={!form.ownServers}
+              onChange={(event) => setForm({ ...form, ownServersPrivate: event.target.checked })}
+              data-testid="stem-own-private"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium">{t("admin.stemOwnPrivate")}</span>
+              <span className="text-xs text-muted-foreground">{t("admin.stemOwnPrivateHint")}</span>
+            </span>
+          </label>
+          <div className="flex flex-col gap-1.5" data-testid="stem-own-list">
+            <span className="text-sm font-medium">{t("admin.stemOwnList")}</span>
+            {servers.length === 0 ? (
+              <span className="text-sm text-muted-foreground">{t("admin.stemOwnNone")}</span>
+            ) : (
+              <ul className="flex flex-col gap-1 text-sm">
+                {servers.map((server) => (
+                  <li key={server.id} className="flex flex-wrap items-baseline gap-x-2">
+                    {server.owner.kind === "team" ? (
+                      <Link to="/teams/$teamId" params={{ teamId: server.owner.id }} className="font-medium hover:underline">
+                        {server.owner.name}
+                      </Link>
+                    ) : (
+                      <Link to="/organizations/$organizationId" params={{ organizationId: server.owner.id }} className="font-medium hover:underline">
+                        {server.owner.name}
+                      </Link>
+                    )}
+                    <span className="truncate text-muted-foreground">{server.apiUrl}</span>
+                    <span className="text-xs text-muted-foreground">{t("admin.stemOwnSeparations", { count: server.separations })}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </CardContent>
       </Card>

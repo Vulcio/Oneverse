@@ -746,7 +746,7 @@ export function AttachmentsTab({
       attachment.type === "AUDIO" &&
       !attachment.stemPart &&
       !separations.some((item) => item.sourceAttachmentId === attachment.id && (item.status === "QUEUED" || item.status === "SUBMITTED")) ? (
-        <SeparateButton file={attachment} busy={busyId !== null} canReplace={canReplace(attachment)} onStart={(parts, replace) => separate(attachment, parts, replace)} />
+        <SeparateButton file={attachment} busy={busyId !== null} canReplace={canReplace(attachment)} server={separation.state?.server} onStart={(parts, replace) => separate(attachment, parts, replace)} />
       ) : null}
     </li>
   );

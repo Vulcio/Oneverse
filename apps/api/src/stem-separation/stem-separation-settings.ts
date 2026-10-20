@@ -60,6 +60,8 @@ export async function getStemSeparationSummary() {
   const hasDatabaseKey = Boolean(row?.apiKeyEnc);
   return {
     source: (row?.apiUrl || hasDatabaseKey ? "database" : process.env.DEMUCS_API_URL ? "env" : "none") as StemSeparationSource,
+    /** The instance's own server is optional (issue #300): teams and organisations may run theirs. */
+    configured: Boolean(settings.apiUrl && settings.apiKey),
     apiUrl: settings.apiUrl,
     hasDatabaseKey,
     hasKey: Boolean(settings.apiKey),
@@ -69,6 +71,9 @@ export async function getStemSeparationSummary() {
     monthlyLimit: settings.monthlyLimit,
     /** Whether its webhooks can be checked (else the Worker only polls). */
     signedCallbacks: Boolean(settings.callbackSecret),
+    /** Teams and organisations may connect their own Sonic servers (issue #300), and on private or local addresses. */
+    ownServers: row?.ownServers ?? envBool("STEM_SEPARATION_OWN_SERVERS") ?? false,
+    ownServersPrivate: row?.ownServersPrivate ?? envBool("STEM_SEPARATION_OWN_SERVERS_PRIVATE") ?? false,
   };
 }
 
@@ -78,10 +83,10 @@ export async function saveStemSeparationSettings(input: SaveStemSeparationSettin
   const data: Record<string, unknown> = {};
   if (input.apiUrl !== undefined) data.apiUrl = input.apiUrl ? trimSlash(input.apiUrl) : null;
   if (input.apiKey) data.apiKeyEnc = encryptSecret(input.apiKey, passphrase);
-  for (const key of ["fastModel", "hqModel", "hqEnabled", "monthlyLimit"] as const) if (input[key] !== undefined) data[key] = input[key];
+  for (const key of ["fastModel", "hqModel", "hqEnabled", "monthlyLimit", "ownServers", "ownServersPrivate"] as const) if (input[key] !== undefined) data[key] = input[key];
   await prisma.stemSeparationSettings.upsert({ where: { id: SINGLETON_ID }, create: { id: SINGLETON_ID, ...data }, update: data });
-  // Its webhooks signed from the first separation on.
-  await callbackSecret();
+  // Its webhooks signed from the first separation on, once the instance has a server.
+  if ((await getEffectiveStemSeparationSettings()).apiUrl) await callbackSecret();
 }
 
 /** Back to the environment variables. */

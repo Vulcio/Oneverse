@@ -64,6 +64,7 @@ export default defineConfig({
             { slug: "songbooks" },
             { slug: "teams" },
             { slug: "organizations" },
+            { slug: "sonic" },
             { slug: "planiverse" },
             { slug: "people" },
             { slug: "offline" },

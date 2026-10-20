@@ -306,6 +306,12 @@ The code review (issue #112, `docs/code-review.md`) left one way for each:
   `fetchProviderImage` (`apps/api/src/images/provider-image.ts`: provider
   hosts only, every redirect checked before it's followed, size capped).
   A new kind of outside download gets the same checks, not a bare `fetch`.
+- An address someone other than the instance's admin entered (a team's or
+  an organisation's Sonic server, issue #300) is called only through
+  `apps/api/src/security/outside-address.ts`: `checkOutsideUrl` before
+  anything is sent (https, no private host) and `outsideDispatcher` for the
+  connection, which checks every address the name resolves to as it
+  connects; redirects refused, answers size capped.
 - A call to an outside service waits `PROVIDER_TIMEOUT_MS` at most.
 
 ## Where auth lives
