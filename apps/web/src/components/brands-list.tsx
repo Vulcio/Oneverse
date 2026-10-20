@@ -8,6 +8,7 @@ import { Input } from "@songverse/ui/components/input";
 import { Label } from "@songverse/ui/components/label";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 import { cn } from "@songverse/ui/lib/utils";
+import { BrandLogo } from "#/components/brand-logo";
 import { apiClient } from "#/lib/api-client";
 
 /** Who a new brand can be for: a team or an organisation the user runs. */
@@ -97,11 +98,7 @@ function BrandTile({ brand }: { brand: Brand }) {
 }
 
 function LogoPane({ asset, className }: { asset: BrandAsset | undefined; className: string }) {
-  return (
-    <div className={cn("flex items-center justify-center p-3", className)}>
-      {asset ? asset.mimeType.startsWith("video/") ? <video src={asset.url} muted autoPlay loop playsInline className="max-h-full max-w-full" /> : <img src={asset.url} alt="" className="max-h-full max-w-full object-contain" /> : null}
-    </div>
-  );
+  return <div className={cn("flex items-center justify-center p-3", className)}>{asset ? <BrandLogo asset={asset} /> : null}</div>;
 }
 
 /** New brand: its name and whose, then opened to fill in. */

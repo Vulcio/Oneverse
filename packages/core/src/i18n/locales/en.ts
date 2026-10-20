@@ -190,7 +190,7 @@ const en = {
     readOnly: "Only its admins change this brand.",
     details: "Name",
     logos: "Logos",
-    logosHint: "Each in its own slot: the main logo, versions for light and dark backgrounds, the logomark (the symbol alone), and their animated versions (a WebM or MP4 video, or an animated GIF, WebP or PNG). Uploading a new one replaces the one in its slot.",
+    logosHint: "Each in its own slot: the main logo, versions for light and dark backgrounds, the logomark (the symbol alone), and their animated versions (an animated SVG, a Lottie file - .json or .lottie - a WebM or MP4 video, or an animated GIF, WebP or PNG). Uploading a new one replaces the one in its slot.",
     assetKinds: {
       logo: "Logo",
       "logo-light": "Logo for light backgrounds",

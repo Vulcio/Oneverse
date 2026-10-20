@@ -14,25 +14,31 @@ const ANIMATED_PICTURE_TYPES = new Set(["image/gif", "image/webp", "image/png", 
 const BACKGROUND_PICTURE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 const VIDEO_TYPES = new Set(["video/mp4", "video/webm"]);
 const FONT_TYPES: Record<string, string> = { woff2: "font/woff2", woff: "font/woff", ttf: "font/ttf", otf: "font/otf" };
+const extension = (filename: string) => filename.split(".").pop()?.toLowerCase() ?? "";
+
+/** What a stored file has to go through before it's kept: an SVG cleaned, a Lottie animation checked (brand-files.ts). */
+export type BrandFileCheck = "svg" | "lottie" | null;
 
 /**
- * What an upload is, for a brand (issue #279): a still logo (a picture), an
- * animated one (a video, or an animated picture), a background (a picture or
- * a video), a font (by its name's extension); null when it's none of these.
- * Never an SVG: it couldn't be shown (send-file.ts sends it as a download,
- * so it can't run script) and the server doesn't render vector input
- * (image.service.ts) - the web app turns one into a PNG before sending it.
+ * What an upload is, for a brand (issues #279, #295): a still logo (a
+ * picture, or an SVG), an animated one (a video, an animated picture, an
+ * animated SVG or a Lottie animation), a background (a picture or a video), a
+ * font (by its name's extension); null when it's none of these. An SVG is
+ * cleaned and a Lottie animation checked before they're kept (`check`).
  */
-export function brandAssetType(kind: BrandAssetKind, mimeType: string, filename: string): { mimeType: string; limit: number } | null {
+export function brandAssetType(kind: BrandAssetKind, mimeType: string, filename: string): { mimeType: string; limit: number; check: BrandFileCheck } | null {
   const type = mimeType.split(";")[0]!.trim().toLowerCase();
   if (kind === "font") {
-    const font = FONT_TYPES[filename.split(".").pop()?.toLowerCase() ?? ""];
-    return font ? { mimeType: font, limit: BRAND_ASSET_LIMITS.font } : null;
+    const font = FONT_TYPES[extension(filename)];
+    return font ? { mimeType: font, limit: BRAND_ASSET_LIMITS.font, check: null } : null;
   }
-  if (VIDEO_TYPES.has(type) && (kind === "background" || kind.includes("animated"))) return { mimeType: type, limit: BRAND_ASSET_LIMITS.video };
-  if (kind === "background") return BACKGROUND_PICTURE_TYPES.has(type) ? { mimeType: type, limit: BRAND_ASSET_LIMITS.image } : null;
-  if (kind.includes("animated")) return ANIMATED_PICTURE_TYPES.has(type) ? { mimeType: type, limit: BRAND_ASSET_LIMITS.image } : null;
-  return STILL_TYPES.has(type) ? { mimeType: type, limit: BRAND_ASSET_LIMITS.image } : null;
+  const animated = kind.includes("animated");
+  if (kind !== "background" && (type === "image/svg+xml" || extension(filename) === "svg")) return { mimeType: "image/svg+xml", limit: BRAND_ASSET_LIMITS.image, check: "svg" };
+  if (animated && (type === "application/json" || extension(filename) === "json")) return { mimeType: "application/json", limit: BRAND_ASSET_LIMITS.image, check: "lottie" };
+  if (VIDEO_TYPES.has(type) && (kind === "background" || animated)) return { mimeType: type, limit: BRAND_ASSET_LIMITS.video, check: null };
+  if (kind === "background") return BACKGROUND_PICTURE_TYPES.has(type) ? { mimeType: type, limit: BRAND_ASSET_LIMITS.image, check: null } : null;
+  if (animated) return ANIMATED_PICTURE_TYPES.has(type) ? { mimeType: type, limit: BRAND_ASSET_LIMITS.image, check: null } : null;
+  return STILL_TYPES.has(type) ? { mimeType: type, limit: BRAND_ASSET_LIMITS.image, check: null } : null;
 }
 
 /** A brand file's address: signed and expiring, handed out with the brand to whoever may use it (and later to screens). */

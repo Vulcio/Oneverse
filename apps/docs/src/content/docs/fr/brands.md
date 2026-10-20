@@ -17,7 +17,14 @@ Les admins d'une équipe ajoutent et modifient les marques de l'équipe ; les ad
 
 ## Logos
 
-Chaque logo a sa place : le **Logo**, un **Logo pour fond clair** et un **Logo pour fond sombre**, le **Symbole** (seul, pour un coin de l'écran), et la version animée de chacun. Un logo fixe est une image - PNG, WebP, JPEG ou AVIF, 15 Mo au plus, ou un SVG, que votre navigateur transforme en PNG net (2048 pixels sur son plus grand côté) à l'envoi ; un logo animé est une vidéo (WebM, avec sa transparence, ou MP4, 150 Mo au plus) ou un GIF, WebP ou PNG animé. **Envoyer** remplit une place ; **Remplacer** y met un nouveau fichier, et l'ancien part.
+Chaque logo a sa place : le **Logo**, un **Logo pour fond clair** et un **Logo pour fond sombre**, le **Symbole** (seul, pour un coin de l'écran), et la version animée de chacun. Un logo fixe est une image : SVG, PNG, WebP, JPEG ou AVIF, 15 Mo au plus. Un logo animé peut être :
+
+- un SVG animé (animation CSS ou SMIL) ;
+- une animation Lottie, en fichier JSON Lottie ou en fichier .lottie ;
+- une vidéo (WebM, qui garde sa transparence, ou MP4, 150 Mo au plus) ;
+- un GIF, WebP ou PNG animé.
+
+Un SVG est nettoyé à l'envoi : tout ce qui pourrait lancer un script ou charger quelque chose d'ailleurs est retiré, ses formes, couleurs, dégradés et animations restent. Une animation Lottie garde les images qu'elle contient ; celles qu'elle chargerait d'ailleurs sont retirées. **Envoyer** remplit une place ; **Remplacer** y met un nouveau fichier, et l'ancien part.
 
 ## Couleurs
 

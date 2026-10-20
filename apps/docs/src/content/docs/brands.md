@@ -17,7 +17,14 @@ A team's admins add and change the team's brands; an organisation's admins, the 
 
 ## Logos
 
-Each logo has its own slot: the **Logo**, a **Logo for light backgrounds** and a **Logo for dark backgrounds**, the **Logomark** (the symbol alone, for a corner of the screen), and the animated version of each. A still logo is a picture - PNG, WebP, JPEG or AVIF, 15 MB at most, or an SVG, which your browser turns into a sharp PNG (2048 pixels on its longest side) as it's uploaded; an animated one is a video (WebM, with its transparency, or MP4, 150 MB at most) or an animated GIF, WebP or PNG. **Upload** fills a slot; **Replace** puts a new file in it, and the old one goes.
+Each logo has its own slot: the **Logo**, a **Logo for light backgrounds** and a **Logo for dark backgrounds**, the **Logomark** (the symbol alone, for a corner of the screen), and the animated version of each. A still logo is a picture: SVG, PNG, WebP, JPEG or AVIF, 15 MB at most. An animated one can be:
+
+- an animated SVG (with CSS or SMIL animation);
+- a Lottie animation, as a Lottie JSON file or a .lottie file;
+- a video (WebM, which keeps its transparency, or MP4, 150 MB at most);
+- an animated GIF, WebP or PNG.
+
+An SVG is cleaned as it's uploaded: anything that could run a script or load something from elsewhere is taken out, while its shapes, colours, gradients and animation stay. A Lottie animation keeps the pictures embedded in it; pictures it would load from elsewhere are removed. **Upload** fills a slot; **Replace** puts a new file in it, and the old one goes.
 
 ## Colours
 

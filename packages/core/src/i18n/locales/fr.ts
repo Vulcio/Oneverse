@@ -190,7 +190,7 @@ const fr: typeof en = {
     readOnly: "Seuls ses admins modifient cette marque.",
     details: "Nom",
     logos: "Logos",
-    logosHint: "Chacun à sa place : le logo principal, ses versions pour fond clair et fond sombre, le logotype réduit (le symbole seul), et leurs versions animées (une vidéo WebM ou MP4, ou un GIF, WebP ou PNG animé). En envoyer un nouveau remplace celui de sa place.",
+    logosHint: "Chacun à sa place : le logo principal, ses versions pour fond clair et fond sombre, le logotype réduit (le symbole seul), et leurs versions animées (un SVG animé, un fichier Lottie - .json ou .lottie - une vidéo WebM ou MP4, ou un GIF, WebP ou PNG animé). En envoyer un nouveau remplace celui de sa place.",
     assetKinds: {
       logo: "Logo",
       "logo-light": "Logo pour fond clair",

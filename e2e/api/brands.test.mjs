@@ -26,7 +26,6 @@ const upload = async (who, brandId, kind, blob, filename, name) => {
 };
 // A real 1x1 PNG, and a bigger one with other bytes.
 const png = (extra = 0) => new Blob([Buffer.concat([Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64"), Buffer.alloc(extra, 7)])], { type: "image/png" });
-const svg = new Blob([`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#4f46e5"/></svg>`], { type: "image/svg+xml" });
 
 // --- making them
 let r = await call(member, "POST", "/brands", { name: "Not mine", teamId: team.id });
@@ -91,12 +90,29 @@ r = await upload(lead, youth.id, "logo", png(64), "logo-2.png");
 let brand = await api(lead, "GET", `/brands/${youth.id}`);
 check("a new logo replaces the slot's", r.status === 201 && brand.assets.filter((one) => one.kind === "logo").map((one) => one.id).join() === r.body.id, JSON.stringify(brand.assets));
 check("…and the old file goes, nothing else using it", sql(`select count(*) from "BrandAsset" where "storageKey"='${firstKey}'`) === "0");
-r = await upload(lead, youth.id, "logomark", svg, "mark.svg");
-check("an SVG is refused: it couldn't be shown safely (the web app sends it as a PNG)", r.status === 400 && /SVG/.test(JSON.stringify(r.body)), JSON.stringify(r.body));
-r = await upload(lead, youth.id, "logomark", png(5), "mark.png");
-check("a logomark as a PNG", r.status === 201 && r.body.mimeType === "image/png", JSON.stringify(r.body));
-r = await upload(lead, youth.id, "logo-animated", svg, "anim.svg");
-check("an animated logo isn't an SVG", r.status === 400, JSON.stringify(r.body));
+// SVGs (issue #295): kept as SVG once cleaned - no script, handlers, HTML or outside references - and shown as pictures.
+const evil = new Blob([`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" onload="alert(1)"><script>alert(2)</script><a href="javascript:alert(3)"><circle cx="5" cy="5" r="4" fill="url(#g)"/></a><image href="https://tracker.example/p.png"/><foreignObject><div>hi</div></foreignObject><defs><linearGradient id="g"><stop offset="0" stop-color="red"/></linearGradient></defs></svg>`], { type: "image/svg+xml" });
+r = await upload(lead, youth.id, "logomark", evil, "mark.svg");
+check("an SVG logomark, kept as an SVG", r.status === 201 && r.body.mimeType === "image/svg+xml", JSON.stringify(r.body));
+res = await fetch(r.body.url);
+const markup = await res.text();
+check("…shown as a picture, still sandboxed", res.status === 200 && res.headers.get("content-type") === "image/svg+xml" && res.headers.get("content-security-policy") === "sandbox" && (res.headers.get("content-disposition") ?? "").startsWith("inline"), `${res.headers.get("content-type")} ${res.headers.get("content-security-policy")} ${res.headers.get("content-disposition")}`);
+check("…cleaned: no script, handler, javascript: link, outside picture or HTML; its gradient kept", !/script|onload|javascript:|tracker\.example|foreignObject|<div/i.test(markup) && markup.includes('id="g"') && markup.includes("<circle"), markup);
+r = await upload(lead, youth.id, "logo", new Blob(["<html><body>not a picture</body></html>"], { type: "image/svg+xml" }), "fake.svg");
+check("a file that isn't an SVG, though called one, is refused", r.status === 400, JSON.stringify(r.body));
+const spinning = new Blob([`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><style>@keyframes s{to{transform:rotate(1turn)}} rect{animation:s 2s linear infinite;transform-origin:center}</style><rect x="2" y="2" width="6" height="6"><animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite"/></rect></svg>`], { type: "image/svg+xml" });
+r = await upload(lead, youth.id, "logo-animated-dark", spinning, "spin.svg");
+const spun = r.status === 201 ? await (await fetch(r.body.url)).text() : "";
+check("an animated SVG: its CSS animation and SMIL kept", r.status === 201 && spun.includes("@keyframes") && spun.includes("<animate"), spun || JSON.stringify(r.body));
+// Lottie (issue #295): checked, pictures from elsewhere removed, embedded ones kept.
+const lottie = { v: "5.7.4", fr: 30, ip: 0, op: 60, w: 100, h: 100, layers: [], assets: [{ id: "far", w: 10, h: 10, u: "https://tracker.example/", p: "x.png" }, { id: "inside", w: 1, h: 1, e: 1, u: "", p: "data:image/png;base64,iVBORw0KGgo=" }] };
+r = await upload(lead, youth.id, "logomark-animated", new Blob([JSON.stringify(lottie)], { type: "application/json" }), "spin.json");
+const played = r.status === 201 ? await (await fetch(r.body.url)).json() : null;
+check("a Lottie animation, its outside picture removed, its embedded one kept", r.status === 201 && r.body.mimeType === "application/json" && played?.assets.map((one) => one.id).join() === "inside", JSON.stringify(played ?? r.body));
+r = await upload(lead, youth.id, "logomark-animated", new Blob([JSON.stringify({ hello: "world" })], { type: "application/json" }), "not.json");
+check("JSON that isn't a Lottie animation is refused", r.status === 400 && /Lottie/.test(JSON.stringify(r.body)), JSON.stringify(r.body));
+r = await upload(lead, youth.id, "logo", new Blob([JSON.stringify(lottie)], { type: "application/json" }), "still.json");
+check("…and a still logo isn't a Lottie animation", r.status === 400, String(r.status));
 r = await upload(lead, youth.id, "logo-animated", new Blob([Buffer.from("1a45dfa3", "hex")], { type: "video/webm" }), "intro.webm");
 check("…a WebM video is", r.status === 201 && r.body.kind === "logo-animated", JSON.stringify(r.body));
 r = await upload(lead, youth.id, "background", png(10), "stage.png", "Stage wash");

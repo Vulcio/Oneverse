@@ -2,6 +2,7 @@
 // makes one for a team one runs and opens it; logos go in their slots, the usual colours start the palette, a font
 // is uploaded and picked for the lyrics, a background added, the links filled in - saved with Save. The team's and
 // the organisation's pages show their brands to their admins; a member sees a brand read-only; Delete removes it.
+import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
 import { WEB, api, call, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -59,15 +60,27 @@ try {
     for (let i = 0; i < 20 && (await api(lead, "GET", `/brands/${brandId}`)).assets.find((one) => one.kind === "logo")?.id === before; i++) await desk.waitForTimeout(250);
     const logos = (await api(lead, "GET", `/brands/${brandId}`)).assets.filter((one) => one.kind === "logo");
     if (logos.length !== 1 || logos[0].id === before) throw new Error(JSON.stringify(logos));
-    // An SVG logomark: drawn into a PNG by the page, then sent.
+    // An SVG logomark (issue #295): kept as an SVG, shown as a picture.
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20"><rect width="40" height="20" rx="4" fill="#4f46e5"/></svg>`;
     await desk.getByTestId("brand-upload-logomark-input").setInputFiles({ name: "mark.svg", mimeType: "image/svg+xml", buffer: Buffer.from(svg) });
     await desk.locator('[data-testid="brand-logo-logomark"][data-filled]').locator("img").waitFor();
     const mark = (await api(lead, "GET", `/brands/${brandId}`)).assets.find((one) => one.kind === "logomark");
-    if (mark?.mimeType !== "image/png" || mark.filename !== "mark.png") throw new Error(JSON.stringify(mark));
-    // Drawn 2048 wide, keeping its 2:1 shape.
-    const size = await desk.locator('[data-testid="brand-logo-logomark"] img').evaluate((img) => `${img.naturalWidth}x${img.naturalHeight}`);
-    if (size !== "2048x1024") throw new Error(size);
+    if (mark?.mimeType !== "image/svg+xml") throw new Error(JSON.stringify(mark));
+    const width = await desk.locator('[data-testid="brand-logo-logomark"] img').evaluate((img) => img.complete && img.naturalWidth);
+    if (!width) throw new Error("the SVG doesn't show");
+  });
+
+  await step("animated logos (issue #295): a Lottie animation plays; a .lottie file, unpacked by the page, too", async () => {
+    // A square moving across, in Lottie's JSON.
+    const lottie = { v: "5.7.4", fr: 30, ip: 0, op: 60, w: 100, h: 100, nm: "move", ddd: 0, assets: [], layers: [{ ddd: 0, ind: 1, ty: 4, nm: "box", sr: 1, ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 1, k: [{ t: 0, s: [20, 50, 0], i: { x: [0.5], y: [0.5] }, o: { x: [0.5], y: [0.5] } }, { t: 60, s: [80, 50, 0] }] }, a: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] } }, ao: 0, shapes: [{ ty: "rc", d: 1, s: { a: 0, k: [30, 30] }, p: { a: 0, k: [0, 0] }, r: { a: 0, k: 4 }, nm: "rect" }, { ty: "fl", c: { a: 0, k: [0.31, 0.27, 0.9, 1] }, o: { a: 0, k: 100 }, r: 1, nm: "fill" }], ip: 0, op: 60, st: 0, bm: 0 }] };
+    await desk.getByTestId("brand-upload-logo-animated-input").setInputFiles({ name: "move.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(lottie)) });
+    await desk.locator('[data-testid="brand-logo-logo-animated"][data-filled]').getByTestId("brand-lottie").locator("svg").waitFor();
+    // A .lottie: the same animation zipped with its manifest.
+    const zipped = execFileSync("python3", ["-c", "import io,sys,zipfile;b=io.BytesIO();z=zipfile.ZipFile(b,'w');z.writestr('manifest.json',sys.argv[1]);z.writestr('animations/move.json',sys.stdin.read());z.close();sys.stdout.buffer.write(b.getvalue())", JSON.stringify({ animations: [{ id: "move" }] })], { input: JSON.stringify(lottie) });
+    await desk.getByTestId("brand-upload-logomark-animated-input").setInputFiles({ name: "move.lottie", mimeType: "application/zip", buffer: zipped });
+    await desk.locator('[data-testid="brand-logo-logomark-animated"][data-filled]').getByTestId("brand-lottie").locator("svg").waitFor();
+    const sent = (await api(lead, "GET", `/brands/${brandId}`)).assets.find((one) => one.kind === "logomark-animated");
+    if (sent?.mimeType !== "application/json" || sent.filename !== "move.json") throw new Error(JSON.stringify(sent));
   });
 
   await step("colours: the usual ones, one renamed, one added - saved", async () => {

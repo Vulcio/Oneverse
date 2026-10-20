@@ -18,6 +18,7 @@ import {
   type BrandWhatsAppGroup,
 } from "@songverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { strFromU8, unzipSync } from "fflate";
 import { ArrowLeft, ImagePlus, Plus, Star, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +29,7 @@ import { Input } from "@songverse/ui/components/input";
 import { Label } from "@songverse/ui/components/label";
 import { NativeSelect } from "@songverse/ui/components/native-select";
 import { cn } from "@songverse/ui/lib/utils";
+import { BrandLogo } from "#/components/brand-logo";
 import { apiClient } from "#/lib/api-client";
 
 /** What's saved with Save: everything but the files, which go up at once. */
@@ -95,8 +97,8 @@ export function BrandEditor({ initial }: { initial: Brand }) {
     });
   const upload = (kind: BrandAssetKind, file: File) =>
     run(async () => {
-      // An SVG logo, drawn here into a large PNG: the API takes no SVG (one couldn't be shown safely).
-      const sent = file.type === "image/svg+xml" ? await svgToPng(file) : file;
+      // A .lottie file, unpacked to the Lottie JSON the API takes.
+      const sent = /\.lottie$/i.test(file.name) ? await dotLottieToJson(file) : file;
       await apiClient.uploadBrandAsset(brand.id, kind, sent, sent.name);
       await refresh();
     });
@@ -211,35 +213,32 @@ function Section({ title, description, children }: { title: string; description?
   );
 }
 
-/** The longest side an SVG logo is drawn at. */
-const SVG_LOGO_SIZE = 2048;
-
 /**
- * An SVG drawn into a PNG in the browser (issue #279): loaded as a picture -
- * where an SVG can't run script - at SVG_LOGO_SIZE on its longest side, its
- * transparency kept.
+ * A dotLottie file (.lottie, a zip) unpacked to its first animation's JSON
+ * (issue #295), its pictures embedded in it: the API takes Lottie as JSON.
  */
-async function svgToPng(file: File): Promise<File> {
-  const address = URL.createObjectURL(file);
-  try {
-    const image = new Image();
-    image.src = address;
-    await image.decode();
-    // Its proportions from its viewBox (one without a width and height has no size of its own), else its size.
-    const box = /viewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(await file.text());
-    const ratio = box && Number(box[1]) > 0 && Number(box[2]) > 0 ? Number(box[1]) / Number(box[2]) : image.naturalWidth && image.naturalHeight ? image.naturalWidth / image.naturalHeight : 1;
-    const width = Math.round(ratio >= 1 ? SVG_LOGO_SIZE : SVG_LOGO_SIZE * ratio);
-    const height = Math.round(ratio >= 1 ? SVG_LOGO_SIZE / ratio : SVG_LOGO_SIZE);
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    canvas.getContext("2d")!.drawImage(image, 0, 0, width, height);
-    const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-    if (!png) throw new Error("This SVG couldn't be drawn");
-    return new File([png], file.name.replace(/\.svg$/i, "") + ".png", { type: "image/png" });
-  } finally {
-    URL.revokeObjectURL(address);
+async function dotLottieToJson(file: File): Promise<File> {
+  const files = unzipSync(new Uint8Array(await file.arrayBuffer()));
+  const text = (path: string) => (files[path] ? strFromU8(files[path]) : null);
+  const manifest = JSON.parse(text("manifest.json") ?? "{}") as { animations?: { id?: string }[] };
+  const id = manifest.animations?.[0]?.id;
+  const path = (id && Object.keys(files).find((one) => one === `animations/${id}.json` || one === `a/${id}.json`)) ?? Object.keys(files).find((one) => /^(animations|a)\/[^/]+\.json$/.test(one));
+  const json = path ? text(path) : null;
+  if (!json) throw new Error("This .lottie file has no animation");
+  const animation = JSON.parse(json) as { assets?: { p?: string; u?: string; e?: number }[] };
+  // Its pictures, from the archive into the animation.
+  for (const asset of animation.assets ?? []) {
+    if (!asset.p || asset.p.startsWith("data:")) continue;
+    const found = Object.keys(files).find((one) => one.endsWith(`/${asset.p}`));
+    if (!found) continue;
+    const type = asset.p.toLowerCase().endsWith(".png") ? "image/png" : asset.p.toLowerCase().endsWith(".webp") ? "image/webp" : "image/jpeg";
+    let binary = "";
+    for (const byte of files[found]!) binary += String.fromCharCode(byte);
+    asset.p = `data:${type};base64,${btoa(binary)}`;
+    asset.u = "";
+    asset.e = 1;
   }
+  return new File([JSON.stringify(animation)], file.name.replace(/\.lottie$/i, "") + ".json", { type: "application/json" });
 }
 
 /** A file picker as a button. */
@@ -267,7 +266,7 @@ function UploadButton({ accept, label, busy, onFile, testId, variant = "outline"
   );
 }
 
-/** A file shown as it is: a picture, or a looping video. */
+/** A background shown as it is: a picture, or a looping video. */
 function AssetPreview({ asset, className }: { asset: BrandAsset; className?: string }) {
   return asset.mimeType.startsWith("video/") ? (
     <video src={asset.url} muted autoPlay loop playsInline className={cn("max-h-full max-w-full", className)} />
@@ -284,12 +283,12 @@ function LogoSlot({ kind, asset, editable, busy, onUpload, onRemove }: { kind: (
   return (
     <div className="flex flex-col gap-2" data-testid={`brand-logo-${kind}`} data-filled={asset ? "" : undefined}>
       <div className={cn("flex h-24 items-center justify-center rounded-lg border p-3", dark ? "bg-neutral-950" : "bg-white")}>
-        {asset ? <AssetPreview asset={asset} /> : <ImagePlus className={cn("size-6", dark ? "text-neutral-600" : "text-neutral-300")} aria-hidden />}
+        {asset ? <BrandLogo asset={asset} /> : <ImagePlus className={cn("size-6", dark ? "text-neutral-600" : "text-neutral-300")} aria-hidden />}
       </div>
       <p className="text-xs font-medium">{t(`brands.assetKinds.${kind}`)}</p>
       {editable ? (
         <div className="flex flex-wrap gap-1">
-          <UploadButton accept={animated ? "video/webm,video/mp4,image/gif,image/webp,image/png,image/apng" : "image/svg+xml,image/png,image/webp,image/jpeg,image/avif"} label={asset ? t("brands.replace") : t("brands.upload")} busy={busy} onFile={onUpload} testId={`brand-upload-${kind}`} />
+          <UploadButton accept={animated ? "video/webm,video/mp4,image/gif,image/webp,image/png,image/apng,image/svg+xml,.svg,.json,.lottie" : "image/svg+xml,.svg,image/png,image/webp,image/jpeg,image/avif"} label={asset ? t("brands.replace") : t("brands.upload")} busy={busy} onFile={onUpload} testId={`brand-upload-${kind}`} />
           {asset ? (
             <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => onRemove(asset)} aria-label={t("brands.remove")} data-testid={`brand-remove-${kind}`}>
               <Trash2 />

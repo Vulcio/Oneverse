@@ -8,6 +8,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { brandAssetType, isValidBrandAssetSignature, presentBrandAssets } from "./brand-assets.js";
+import { cleanLottie, sanitizeSvg } from "./brand-files.js";
 
 const ASSET_SELECT = { id: true, kind: true, name: true, storageKey: true, mimeType: true, filename: true, sizeBytes: true } as const;
 const BRAND_SELECT = {
@@ -37,7 +38,7 @@ interface Scope {
 }
 
 /**
- * Brand kits (issue #279): an organisation's or a team's logos, colours,
+ * Brand kits (issues #279, #295): an organisation's or a team's logos, colours,
  * fonts, backgrounds and links. Its admins change it; its members, and an
  * organisation's teams' members, use it. Its files are content-addressed in
  * storage like the screen themes': a team's count against the team's pool,
@@ -133,20 +134,23 @@ export class BrandsService {
           : kind === "background"
             ? "A background is a picture (JPEG, PNG, WebP, AVIF, GIF) or a video (MP4, WebM)"
             : kind.includes("animated")
-              ? "An animated logo is a video (WebM, MP4) or an animated picture (GIF, WebP, APNG)"
-              : "A logo is a picture (PNG, WebP, JPEG, AVIF); turn an SVG into a PNG first",
+              ? "An animated logo is a video (WebM, MP4), an animated picture (GIF, WebP, APNG), an animated SVG or a Lottie animation (JSON)"
+              : "A logo is a picture (SVG, PNG, WebP, JPEG, AVIF)",
       );
     }
     if (file.size > type.limit) throw new PayloadTooLargeException(`This file is over ${Math.round(type.limit / 1024 / 1024)} MB`);
+    // An SVG kept only once cleaned, a Lottie animation once checked (issue #295).
+    const bytes = type.check === "svg" ? sanitizeSvg(file.buffer) : type.check === "lottie" ? cleanLottie(file.buffer) : file.buffer;
+    if (!bytes) throw new BadRequestException(type.check === "svg" ? "This file isn't an SVG picture" : "This file isn't a Lottie animation");
     const isLogo = (BRAND_LOGO_KINDS as readonly string[]).includes(kind);
     if (!isLogo) {
       const count = await this.prisma.client.brandAsset.count({ where: { brandId, kind } });
       const most = kind === "font" ? BRAND_LIMITS.fonts : BRAND_LIMITS.backgrounds;
       if (count >= most) throw new BadRequestException(kind === "font" ? `A brand holds ${most} fonts at most` : `A brand holds ${most} backgrounds at most`);
     }
-    if (brand.ownerTeamId) await this.quota.assertCanStoreForTeam(user.id, brand.ownerTeamId, file.size);
-    else await this.quota.assertCanStore(user.id, file.size);
-    const stored = await this.storage.put(file.buffer, type.mimeType);
+    if (brand.ownerTeamId) await this.quota.assertCanStoreForTeam(user.id, brand.ownerTeamId, bytes.length);
+    else await this.quota.assertCanStore(user.id, bytes.length);
+    const stored = await this.storage.put(bytes, type.mimeType);
     const replaced = isLogo ? await this.prisma.client.brandAsset.findMany({ where: { brandId, kind }, select: { id: true, storageKey: true } }) : [];
     const asset = await this.prisma.client.$transaction(async (tx) => {
       if (replaced.length) await tx.brandAsset.deleteMany({ where: { id: { in: replaced.map((one) => one.id) } } });
@@ -177,7 +181,8 @@ export class BrandsService {
   async sendAsset(assetId: string, expires: string | undefined, signature: string | undefined, req: Request, res: Response): Promise<void> {
     const asset = await this.prisma.client.brandAsset.findUnique({ where: { id: assetId }, select: { storageKey: true, mimeType: true, filename: true, sizeBytes: true } });
     if (!asset || !isValidBrandAssetSignature(assetId, asset.storageKey, expires, signature)) throw new ForbiddenException("This address has expired");
-    await sendFile(this.storage, asset, req, res, "inline");
+    // Its SVGs were cleaned when they came in: shown as pictures (issue #295).
+    await sendFile(this.storage, asset, req, res, "inline", { cleanSvg: asset.mimeType === "image/svg+xml" });
   }
 
   /** Its fonts are built-in ones, or its own uploaded fonts. */

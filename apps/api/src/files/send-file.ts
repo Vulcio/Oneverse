@@ -20,7 +20,9 @@ export interface StoredFile {
  * Its type is what the uploader's browser said: only one that can't carry
  * a script is shown inline, anything else is a download, and the response
  * is sandboxed either way (issue #112) - an uploaded HTML or SVG file
- * mustn't run on the API's origin as whoever opened it.
+ * mustn't run on the API's origin as whoever opened it. An SVG cleaned when
+ * it came in (`cleanSvg`: a brand's, issue #295) is shown as a picture,
+ * still sandboxed.
  */
 export async function sendFile(
   storage: StorageService,
@@ -28,10 +30,11 @@ export async function sendFile(
   req: Request,
   res: Response,
   disposition: "attachment" | "inline",
+  options: { cleanSvg?: boolean } = {},
 ): Promise<void> {
   const size = file.sizeBytes ?? (await storage.size(file.storageKey));
   const etag = `"${file.storageKey}"`;
-  const safe = inlineSafeType(file.mimeType);
+  const safe = options.cleanSvg && file.mimeType === "image/svg+xml" ? "image/svg+xml" : inlineSafeType(file.mimeType);
   res.set({
     "Content-Type": safe ?? "application/octet-stream",
     "Content-Disposition": `${safe ? disposition : "attachment"}; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
