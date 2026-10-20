@@ -71,6 +71,8 @@ export const DisplaySettingsSchema = z.strictObject({
   diagramsPosition: z.enum(DIAGRAM_POSITIONS).nullable().optional(),
   /** Lyrics only: the chords hidden, for a singer. */
   hideChords: z.boolean().nullable().optional(),
+  /** The bars row at the top (issue #238). */
+  bars: z.boolean().nullable().optional(),
   /** Live's controls (issue #224): where they are, which are hidden, and floating ones' opacity. */
   controls: z.enum(CONTROLS_LAYOUTS).nullable().optional(),
   controlsPosition: z.enum(CONTROLS_POSITIONS).nullable().optional(),

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PdfPages, ViewSwitch, type ReadingView } from "#/components/chart-or-pdf";
 import { CommandSearch } from "#/components/command-search";
 import { MetronomeSongButton } from "#/components/metronome";
+import { BarsRow } from "#/components/bars-row";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
 import { DisplayPanel } from "#/components/display-panel";
@@ -434,6 +435,8 @@ export function LiveView({
         <ModeSwitch />
       </header>
 
+      {/* The bars (issue #238): the chords in bars and beats, with the metronome, following the music. */}
+      {chart && !pdf && display.bars ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
       {steps.length > 0 && !pdf && shows("structure") ? <StructureBar steps={steps} current={current} onPick={goToPass} /> : null}
 
       <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>

@@ -158,7 +158,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -256,6 +256,17 @@ export function DisplayPanel({
                 />
               </Row>
               <SecondRowControls settings={settings} onChange={change} />
+              <Row label={t("display.bars")}>
+                <Choices
+                  value={settings.bars ? "shown" : "hidden"}
+                  onChange={(value) => change({ bars: value === "shown" })}
+                  name="bars"
+                  options={[
+                    { value: "shown", label: t("display.barsShown"), content: <Eye /> },
+                    { value: "hidden", label: t("display.barsHidden"), content: <EyeOff /> },
+                  ]}
+                />
+              </Row>
             </SectionBlock>
           ) : null}
           {shown("instrument") ? (

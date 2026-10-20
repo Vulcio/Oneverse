@@ -489,6 +489,8 @@ export interface DisplaySettings {
   /** Where the diagrams sit (issue #212). */
   diagramsPosition?: DiagramPositionValue;
   hideChords?: boolean;
+  /** The bars row at the top (issue #238): the chords in bars and beats, following the music. */
+  bars?: boolean;
   /** Live's controls (issue #224). */
   controls?: ControlsLayoutValue;
   controlsPosition?: ControlsPositionValue;

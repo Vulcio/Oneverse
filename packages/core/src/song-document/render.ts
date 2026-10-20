@@ -74,6 +74,8 @@ export interface RenderedPass {
   /** The key in effect on this pass, as sounding; null when the song has no key. */
   key: string | null;
   tempo: number | null;
+  /** The time signature in effect on this pass (its own, else carried on from an earlier one, else the song's); null when the song has none. */
+  timeSignature: SongDocumentV2["defaults"]["timeSignature"];
   lines: RenderedLine[];
   /** The arrangement changes something on this pass: the band should know it's not as usual. */
   differs: boolean;
@@ -135,11 +137,13 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
 
   let steps = baseSteps;
   let tempo = defaults?.tempo ?? song.defaults.tempo ?? null;
+  let timeSignature = defaults?.timeSignature ?? song.defaults.timeSignature ?? null;
   const passes: RenderedPass[] = [];
   for (const item of items) {
     const section = sections.get(item.sectionId);
     if (item.keyChange) steps += item.keyChange.steps;
     if (item.tempo) tempo = item.tempo;
+    if ("timeSignature" in item && item.timeSignature) timeSignature = item.timeSignature;
     if (!section) continue;
     // This pass only (issue #205): a few semitones up or down, after the key changes so far.
     const passSteps = steps + (item.transpose ?? 0);
@@ -235,6 +239,7 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
       keyChange: item.keyChange ? (key ?? item.keyChange.key) : null,
       key,
       tempo,
+      timeSignature,
       lines: lines.map((line) => ({
         id: line.id,
         kind: line.kind,

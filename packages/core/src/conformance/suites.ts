@@ -11,6 +11,7 @@ import { parseArrangementDocumentV2, findArrangementProblems } from "../schemas/
 import { chordPositionProblem } from "../schemas/song-document-v2.js";
 import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-document/fold.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
+import { barAt, chartBars } from "../song-document/bars.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
@@ -235,6 +236,37 @@ const REPEATS = {
     { id: "f4", sectionId: "sec_c3" },
     { id: "f5", sectionId: "sec_tag" },
     { id: "f6", sectionId: "sec_c4" },
+  ],
+};
+
+/** A song with bars of its own (issue #238): an intro of chords alone, a verse with a rhythm (a change on beat 3, a bar carrying it on), a chorus in 3/4. */
+const BARS_SONG = {
+  $schema: "song-document/v2",
+  revision: 1,
+  defaults: { key: "D", tempo: 120, timeSignature: { numerator: 4, denominator: 4 } },
+  sections: [
+    { id: "sec_intro", type: "intro", label: null, showLabel: true, lines: [{ id: "line_i1", kind: "lyric", text: "", chords: [{ id: "chd_i1", at: 0, raw: "D" }, { id: "chd_i2", at: 0, raw: "G" }] }] },
+    {
+      id: "sec_verse",
+      type: "verse",
+      label: null,
+      showLabel: true,
+      lines: [{ id: "line_v1", kind: "lyric", text: "Every song is like gold", chords: [{ id: "chd_v1", at: 0, raw: "D" }, { id: "chd_v2", at: 14, raw: "A" }, { id: "chd_v3", at: 19, raw: "Bm" }] }],
+      rhythm: {
+        beatsPerBar: null,
+        bars: [
+          { chords: [{ chordId: "chd_v1", beat: 1 }, { chordId: "chd_v2", beat: 3 }], lyricAnchor: { lineId: "line_v1", at: 0 } },
+          { chords: [] },
+          { chords: [{ chordId: "chd_v3", beat: 1 }] },
+        ],
+      },
+    },
+    { id: "sec_chorus", type: "chorus", label: null, showLabel: true, lines: [{ id: "line_c1", kind: "lyric", text: "Torn up town", chords: [{ id: "chd_c1", at: 0, raw: "G" }] }] },
+  ],
+  flow: [
+    { id: "p_intro", sectionId: "sec_intro" },
+    { id: "p_verse", sectionId: "sec_verse" },
+    { id: "p_chorus", sectionId: "sec_chorus", timeSignature: { numerator: 3, denominator: 4 } },
   ],
 };
 
@@ -785,6 +817,38 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "an arrangement with its capo, as shapes", args: [SONG, ARRANGEMENT, { capoDisplay: "shapes" }] },
         ],
       },
+      chartBars: {
+        about:
+          "A song's bars (issue #238), through its order, as a chord row or grid shows them: from a section's own rhythm, else filled in from the chart - a chord a bar, a sung line at least two bars, a line of chords alone a bar a chord, notes none. Each bar's beats come from its pass's time signature (carried on), each chord with the label the reader sees, and the chord carried on into a bar with no change on beat 1.",
+        params: ["song", "view"],
+        run: (song: unknown, view: Parameters<typeof renderChart>[2]) => {
+          const doc = read(song);
+          return chartBars(renderChart(doc, null, view), doc);
+        },
+        cases: [
+          { name: "filled in from the chart", args: [SONG, {}] },
+          { name: "transposed, in Nashville numbers", args: [SONG, { transposeSteps: 2, notation: "nashville" }] },
+          { name: "passes of their own: lines left out, their own chords", args: [SONG_WITH_PASSES, {}] },
+          { name: "a section's own rhythm, a 3/4 pass, an intro of chords alone", args: [BARS_SONG, {}] },
+        ],
+      },
+      barAt: {
+        about: "Where a position, in beats from the song's start, falls among its bars (issue #238): the bar, the beat in it (0-based), how far through it, and the chord sounding. Null before the start or past the end.",
+        params: ["song", "position"],
+        run: (song: unknown, position: number) => {
+          const doc = read(song);
+          return barAt(chartBars(renderChart(doc), doc), position);
+        },
+        cases: [
+          { name: "the first beat", args: [BARS_SONG, 0] },
+          { name: "the and of beat 2 in a bar changing on 3", args: [BARS_SONG, 9.5] },
+          { name: "on the change", args: [BARS_SONG, 10] },
+          { name: "a bar carrying the chord on", args: [BARS_SONG, 13] },
+          { name: "in the 3/4 pass", args: [BARS_SONG, 23.5] },
+          { name: "past the end", args: [BARS_SONG, 1000] },
+          { name: "before the start", args: [BARS_SONG, -1] },
+        ],
+      },
       effectiveDisplaySettings: {
         about: "A mode's display settings (issue #209): what the Display panel changed for that mode, else the account's chord settings, else a default (Live's text bigger).",
         params: ["account", "saved", "mode"],
@@ -801,6 +865,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "Live shows new notes at once, nothing marked (issue #263)", args: [null, { LIVE: { newNotes: "SHOW", noteMarks: false } }, "LIVE"] },
           { name: "notes in the margin, plain, large, in blue (issue #264)", args: [null, { PRACTICE: { notesPlacement: "margin", notesLook: "plain", notesSize: "L", notesColor: "blue" } }, "PRACTICE"] },
           { name: "diagrams docked at the bottom", args: [{ chordDiagrams: "GUITAR" }, { LIVE: { diagramsPosition: "bottom" } }, "LIVE"] },
+          { name: "the bars row turned off in Live (issue #238)", args: [null, { LIVE: { bars: false } }, "LIVE"] },
           { name: "Live's controls floating, some hidden", args: [null, { LIVE: { controls: "floating", controlsPosition: "right", hiddenControls: ["metronome", "transpose"], controlsOpacity: 0.4 } }, "LIVE"] },
           { name: "no account settings", args: [null, null, "EDIT"] },
         ],

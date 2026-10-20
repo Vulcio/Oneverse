@@ -15,6 +15,7 @@ export * from "./song-document/reconcile.js";
 export * from "./song-document/layout.js";
 export * from "./song-document/chord-line.js";
 export * from "./song-document/render.js";
+export * from "./song-document/bars.js";
 export * from "./song-document/structure.js";
 export * from "./schemas/midi.js";
 export * from "./schemas/musicbrainz.js";

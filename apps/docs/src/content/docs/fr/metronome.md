@@ -36,3 +36,18 @@ Utilisez un casque filaire ou le haut-parleur de l'appareil : un casque Bluetoot
 En [Live](/fr/sets/#jouer-une-liste-en-live), sur la page d'un chant dans une liste et sur la page d'un chant en mode Session, le bouton du métronome (sur la page d'un chant, il affiche son tempo : **76 BPM**) le démarre au tempo et à la mesure du chant (ceux de sa version, quand la liste en joue une) en une pression ; appuyez à nouveau pour l'arrêter. Il utilise votre motif, votre son et votre décompte de la page Métronome, et clignote avec le temps. Un chant sans tempo ne peut pas le démarrer : ajoutez-en un dans son onglet **Infos**.
 
 En jouant avec d'autres, le métronome du meneur peut être celui de chacun, en rythme : voir [Jouer synchronisé](/fr/sets/#jouer-synchronisé).
+
+## Mesures
+
+En haut d'un chant, en Session et en Live, la **ligne des mesures** place les accords du chant en mesures et en temps, avec le métronome :
+
+![La ligne des mesures en Session, le clic lancé](../../../assets/screenshots/fr/bars.jpg)
+
+- **Une case par temps.** Un trait marqué commence chaque mesure, et le nom d'un accord est sur le temps où il commence. Le nom de chaque section (S, R, P…) est sur sa première mesure, aux couleurs de la barre de structure.
+- **Le bouton du métronome**, à gauche, affiche le tempo du chant et lance ou arrête le clic à ce tempo.
+- **Pendant que la musique joue,** le temps joué se remplit et la ligne défile, pour que la suite reste visible. Elle suit les pistes ou l'enregistrement du chant quand ils jouent (d'après le tempo et le premier temps de l'enregistrement), sinon le métronome, y compris celui du meneur quand vous [jouez synchronisé](/fr/sets/#jouer-synchronisé). À l'arrêt, elle reste sur la première mesure et défile au doigt.
+- **Les accords se lisent comme sur la grille :** transposés, avec votre capodastre, vos noms et vos couleurs.
+
+Les mesures viennent de la grille : chaque accord a une mesure, et une ligne chantée en prend au moins deux (une ligne à un seul accord le garde une deuxième mesure). Les lignes d'accords seuls (une intro) prennent une mesure par accord, et les notes aucune. Chaque mesure a autant de temps que l'indique la mesure du chant, et une section peut avoir sa propre mesure dans l'ordre du chant.
+
+**Affichage** > **Accords** > **Mesures** la masque, séparément en Session et en Live (voir [Affichage](/fr/display/)).

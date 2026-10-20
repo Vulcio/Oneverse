@@ -501,6 +501,19 @@ try {
     await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
     // Practice: a library song is its chart (issue #67).
     await shoot("practice-song", `/library/${grace.id}`, () => page.getByTestId("practice-song").locator("[data-chord]").first().waitFor());
+    // The bars row (issue #238): the song's chords in bars and beats at the top, the click playing.
+    {
+      await page.goto(`${WEB}/library/${grace.id}`);
+      const row = page.getByTestId("bars-row");
+      await row.waitFor();
+      await row.getByTestId("bars-metronome").click();
+      await page.locator('[data-testid="bars-row"][data-source="click"]').waitFor();
+      await page.waitForTimeout(4200);
+      const box = await row.boundingBox();
+      await page.screenshot({ path: path.join(dir, "bars.jpg"), type: "jpeg", quality: 85, clip: { x: box.x, y: box.y, width: box.width, height: box.height + 220 } });
+      console.log("  bars");
+      await row.getByTestId("bars-metronome").click();
+    }
     // Chord diagrams (issue #207): the strip of the song's chords, and one chord's card.
     await api(me, "PATCH", "/users/me", { chordDiagrams: "GUITAR" });
     await shoot("chord-diagrams", `/library/${grace.id}`, async () => {

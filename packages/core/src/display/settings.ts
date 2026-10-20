@@ -38,6 +38,8 @@ export interface EffectiveDisplaySettings {
   /** Where the diagrams sit (issue #212): hidden, at the top, docked at the bottom, beside each section. */
   diagramsPosition: DiagramPositionValue;
   hideChords: boolean;
+  /** The bars row at the top (issue #238): the chords in bars and beats, following the metronome or the recording; on unless turned off. */
+  bars: boolean;
   /** Live's controls (issue #224): a footer, floating buttons or none; which are hidden; floating ones' opacity. */
   controls: ControlsLayoutValue;
   controlsPosition: ControlsPositionValue;
@@ -96,6 +98,7 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     chordDiagrams: own.chordDiagrams ?? account?.chordDiagrams ?? "OFF",
     diagramsPosition: own.diagramsPosition ?? "top",
     hideChords: own.hideChords ?? false,
+    bars: own.bars ?? true,
     controls: own.controls ?? "footer",
     controlsPosition: own.controlsPosition ?? "bottom-right",
     hiddenControls: own.hiddenControls ?? [],

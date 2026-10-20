@@ -207,6 +207,15 @@ An optional timing layer on a section; the lines stay the structure.
 - A bar with no chord changes carries the previous chord on.
 - `beat` is 1-based and may be fractional (2.5 is the "and" of 2).
 
+A section without a rhythm still has bars: `chartBars()` in `@songverse/core`
+(issue #238) fills them in from the chart. Each chord of a line gets a bar,
+a sung line takes at least two, a line of chords alone takes one bar per
+chord, and notes take none. The bars run through the order the song is
+played in, each with its pass's time signature (`timeSignature` on a pass
+carries on to the next ones) and the chord carried into a bar that doesn't
+change on beat 1. `barAt()` finds the bar, beat and chord at a position in
+beats. Both are conformance cases (`chart.json`).
+
 ## Anchors
 
 Anything that points into the lyrics uses a **lyric anchor**,

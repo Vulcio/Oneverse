@@ -201,7 +201,7 @@ export function SongChart({
 }
 
 /** Each chord family's colour, readable in light and dark (Live): the scheme issue #9 proposed. */
-const FAMILY_COLORS: Record<ChordFamily, string> = {
+export const FAMILY_COLORS: Record<ChordFamily, string> = {
   major: "text-emerald-700 dark:text-emerald-400",
   minor: "text-blue-600 dark:text-sky-400",
   suspended: "text-amber-600 dark:text-yellow-300",

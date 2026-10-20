@@ -1,0 +1,163 @@
+import type { ChordFamily } from "../chords/chord.js";
+import type { Rhythm, SongDocumentV2 } from "../schemas/song-document-v2.js";
+import type { RenderedChart, RenderedChord, RenderedPass } from "./render.js";
+
+/**
+ * Bars (issue #238): a song's chords in bars and beats, through the order
+ * it's played in - what a chord row or a chord grid shows, and what follows
+ * the metronome or a recording beat by beat.
+ *
+ * A section's own `rhythm` says its bars when it has one. Otherwise they're
+ * filled in from the chart: each chord of a line gets a bar, a sung line
+ * takes at least two (one chord and the bar it carries on), a line of
+ * chords alone one bar per chord, a pass with no lines two bars. Notes take
+ * none. The beats of a bar are its pass's time signature's top number (4
+ * without one), or the rhythm's own.
+ */
+
+export interface ChartBarChord {
+  /** The chord's ID in the song: the same as on the chart. */
+  id: string;
+  /** 1-based; fractional between beats (2.5 is the "and" of 2). */
+  beat: number;
+  /** As the chart shows it: transposed, capo, notation - everything applied. */
+  label: string;
+  sounding: string;
+  family: ChordFamily | null;
+}
+
+export interface ChartBar {
+  /** 0-based through the song. */
+  index: number;
+  /** The pass of the chart it's in, and its place there (0-based) of how many. */
+  passIndex: number;
+  passId: string;
+  sectionId: string;
+  barInPass: number;
+  barsInPass: number;
+  beats: number;
+  /** Where it starts, in beats from the song's start. */
+  start: number;
+  tempo: number | null;
+  /** Its chord changes, in order. */
+  chords: ChartBarChord[];
+  /** The chord sounding as it starts, carried on from before: null when one changes on beat 1, or before the first chord. */
+  carried: ChartBarChord | null;
+  /** The lyric line it's under; null for none (an intro without words). */
+  lineId: string | null;
+  /** Its section says it (`rhythm`), rather than worked out from the chart. */
+  fromRhythm: boolean;
+}
+
+/** Bars a sung line takes at least, filled in from the chart; as autoscroll paces a chart (chartSeconds). */
+const BARS_PER_LINE = 2;
+
+/** The bars of a rendered chart, in order; `song` gives the sections' own rhythm, where they have one. */
+export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">, song?: Pick<SongDocumentV2, "sections"> | null): ChartBar[] {
+  const rhythms = new Map((song?.sections ?? []).map((section) => [section.id, section.rhythm ?? null]));
+  const bars: ChartBar[] = [];
+  let start = 0;
+  let sounding: ChartBarChord | null = null;
+  chart.passes.forEach((pass, passIndex) => {
+    const beats = Math.max(1, (pass.timeSignature ?? chart.timeSignature)?.numerator ?? 4);
+    const rhythm = rhythms.get(pass.section.id);
+    const planned = rhythm && rhythm.bars.length > 0 ? fromRhythm(pass, rhythm, beats) : fromChart(pass);
+    planned.forEach((bar, barInPass) => {
+      const carried = bar.chords[0]?.beat === 1 ? null : sounding;
+      bars.push({
+        index: bars.length,
+        passIndex,
+        passId: pass.id,
+        sectionId: pass.section.id,
+        barInPass,
+        barsInPass: planned.length,
+        beats: bar.beats,
+        start,
+        tempo: pass.tempo,
+        chords: bar.chords,
+        carried,
+        lineId: bar.lineId,
+        fromRhythm: bar.fromRhythm,
+      });
+      start += bar.beats;
+      sounding = bar.chords.at(-1) ?? sounding;
+    });
+  });
+  return bars;
+
+  function fromChart(pass: RenderedPass) {
+    const beats = Math.max(1, (pass.timeSignature ?? chart.timeSignature)?.numerator ?? 4);
+    const planned: { beats: number; chords: ChartBarChord[]; lineId: string | null; fromRhythm: boolean }[] = [];
+    for (const line of pass.lines) {
+      if (line.kind === "note") continue;
+      // A line of chords alone (an intro, a turnaround): a bar each.
+      const sung = line.text.trim().length > 0;
+      const count = Math.max(line.chords.length, sung ? BARS_PER_LINE : 1);
+      for (let bar = 0; bar < count; bar++) {
+        const chord = line.chords[bar];
+        planned.push({ beats, chords: chord ? [barChord(chord, 1)] : [], lineId: line.id, fromRhythm: false });
+      }
+    }
+    if (planned.length === 0) for (let bar = 0; bar < BARS_PER_LINE; bar++) planned.push({ beats, chords: [], lineId: null, fromRhythm: false });
+    return planned;
+  }
+
+  function fromRhythm(pass: RenderedPass, rhythm: Rhythm, timeBeats: number) {
+    const beats = rhythm.beatsPerBar ?? timeBeats;
+    const chords = new Map(pass.lines.flatMap((line) => line.chords.map((chord) => [chord.id, chord] as const)));
+    const lines = new Set(pass.lines.map((line) => line.id));
+    let lineId: string | null = null;
+    return rhythm.bars.map((bar) => {
+      if (bar.lyricAnchor && lines.has(bar.lyricAnchor.lineId)) lineId = bar.lyricAnchor.lineId;
+      return {
+        beats,
+        // A chord left out on this pass (hidden, or not in its lines) isn't played.
+        chords: bar.chords
+          .filter((one) => one.beat < beats + 1 && chords.has(one.chordId))
+          .sort((a, b) => a.beat - b.beat)
+          .map((one) => barChord(chords.get(one.chordId)!, one.beat)),
+        lineId,
+        fromRhythm: true,
+      };
+    });
+  }
+}
+
+function barChord(chord: RenderedChord, beat: number): ChartBarChord {
+  return { id: chord.id, beat, label: chord.label, sounding: chord.sounding, family: chord.family };
+}
+
+/** The song's length, in beats. */
+export function barsLength(bars: readonly Pick<ChartBar, "start" | "beats">[]): number {
+  const last = bars.at(-1);
+  return last ? last.start + last.beats : 0;
+}
+
+export interface BarPosition {
+  /** The bar's index. */
+  bar: number;
+  /** 0-based beat of the bar. */
+  beat: number;
+  /** How far through the beat, 0 to 1. */
+  fraction: number;
+  /** The chord sounding there: the bar's last change at or before it, else the one carried on; null before the first. */
+  chord: ChartBarChord | null;
+}
+
+/** Where a position (in beats from the song's start) falls among the bars; null before the start or past the end. */
+export function barAt(bars: readonly ChartBar[], position: number): BarPosition | null {
+  if (!Number.isFinite(position) || position < 0 || position >= barsLength(bars)) return null;
+  // The last bar starting at or before it.
+  let low = 0;
+  let high = bars.length - 1;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (bars[middle]!.start <= position) low = middle;
+    else high = middle - 1;
+  }
+  const bar = bars[low]!;
+  const within = position - bar.start;
+  const beat = Math.floor(within);
+  const changes = bar.chords.filter((chord) => chord.beat - 1 <= within + 1e-9);
+  return { bar: bar.index, beat, fraction: within - beat, chord: changes.at(-1) ?? bar.carried };
+}

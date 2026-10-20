@@ -1258,6 +1258,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -1358,6 +1362,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -1409,6 +1417,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v3",
@@ -1460,6 +1472,10 @@
                   "keyChange": null,
                   "key": "A",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -1521,6 +1537,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -1650,6 +1670,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -1750,6 +1774,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -1801,6 +1829,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v3",
@@ -1852,6 +1884,10 @@
                   "keyChange": null,
                   "key": "A",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -1913,6 +1949,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -2042,6 +2082,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -2142,6 +2186,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -2193,6 +2241,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v3",
@@ -2244,6 +2296,10 @@
                   "keyChange": null,
                   "key": "A",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -2305,6 +2361,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -2435,6 +2495,10 @@
                   "keyChange": null,
                   "key": "F",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -2526,6 +2590,10 @@
                   "keyChange": null,
                   "key": "F",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -2577,6 +2645,10 @@
                   "keyChange": null,
                   "key": "F",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -2724,6 +2796,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_v1",
@@ -2824,6 +2900,10 @@
                   "keyChange": null,
                   "key": "G",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
@@ -2885,6 +2965,10 @@
                   "keyChange": "A",
                   "key": "A",
                   "tempo": 72,
+                  "timeSignature": {
+                    "numerator": 4,
+                    "denominator": 4
+                  },
                   "lines": [
                     {
                       "id": "line_c1",
