@@ -1,16 +1,25 @@
-# Songverse Player standalone renderer
+# Player screen
 
-This client-only entry point imports **the existing `ScreenStage`** from `apps/web/src/components/screen-stage.tsx` and the built-in theme from `@songverse/core`.
-
-Build from the Songverse workspace:
+A client-only build of the screens' stage for [songverse-player](https://github.com/bricedupuy/songverse-player),
+the Rust mini-PC player (issue #247). It renders with the **same** `ScreenStage`, themes, CSS and
+messages as `/screen`, so a screen looks the same on the player as in a browser. Nothing here is
+a second implementation of the stage.
 
 ```sh
-cd apps/web
-vp build --config vite.player.config.ts
+pnpm --filter @songverse/web build:player-screen   # apps/web/dist/player-screen
 ```
 
-The output directory is `apps/web/dist/player-screen`; its generated HTML entry is `player-screen.html` because the source is named that way. Rename the built HTML entry to `index.html` while packaging (see Songverse Player bundle script). Keep `assets/` at the same level.
+The output is a page (`player-screen.html`) and `assets/`; songverse-player's
+`tools/package-upstream-screen.sh` copies it into a bundle as `index.html` and checks it with a manifest.
+The web app's public files (its service worker and manifest) are left out (`publicDir: false`).
 
-The first screen uses the Rust player's `/api/state` mock data, translating the demo's lines into `ScreenSlide`. The arrows call local navigation endpoints. The stage, themes and CSS are **real Songverse components**.
+For now it reads the player's local API: `GET /api/state` (a set's title and slides, the slide shown)
+and `POST /api/next` / `/api/previous` from the arrow keys. Its language is the device's (English or
+French), or `?lang=`.
 
-This is **not** yet a complete disconnected version of the paired Songverse `/screen` route: no cloud pairing, actual cached set data, custom template assets, sync transport or signed bundle release metadata. Future versions should receive a versioned local stage snapshot and use actual offline set/chart data instead of translating the Rust demo.
+`e2e/web/player-screen.test.mjs` builds it as the player does, serves it with a stand-in for that API
+and checks it renders and moves: a change to `ScreenStage` that breaks the player fails there.
+
+Not yet: real sets, themes and their files from Songverse, pairing, and sync. That needs a versioned local
+snapshot of a screen's state (`ScreenCurrent`, `SyncPresenting`, `SyncStage` and the theme's files) agreed
+between the two repositories.

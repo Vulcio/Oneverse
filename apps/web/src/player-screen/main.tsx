@@ -2,8 +2,8 @@ import "../styles/app.css";
 import { composeBuiltInTemplate, type ScreenSlide } from "@songverse/core";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import i18next from "i18next";
 import { I18nextProvider } from "react-i18next";
+import { createI18n, loadLocale, supportedLocale } from "@songverse/app/i18n";
 import { ScreenStage, type StageSong } from "../components/screen-stage";
 
 /** Local Rust mock state; replace with a versioned local stage snapshot later. */
@@ -15,8 +15,6 @@ type Snapshot = {
 const builtIn = composeBuiltInTemplate("classic");
 if (!builtIn) throw new Error("Built-in classic screen theme is unavailable");
 const theme = builtIn;
-
-void i18next.init({ lng: "en", fallbackLng: "en", resources: { en: { translation: {} } }, initAsync: false });
 
 function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -76,4 +74,6 @@ function App() {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing player screen root");
-createRoot(root).render(<StrictMode><I18nextProvider i18n={i18next}><App /></I18nextProvider></StrictMode>);
+// The app's own messages, in the device's language (?lang= overrides it): the stage's words are translated as on /screen.
+const locale = await loadLocale(supportedLocale(new URLSearchParams(location.search).get("lang") ?? navigator.language.slice(0, 2)));
+createRoot(root).render(<StrictMode><I18nextProvider i18n={createI18n(locale)}><App /></I18nextProvider></StrictMode>);

@@ -11,6 +11,8 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   resolve: { tsconfigPaths: true },
   base: "/",
+  // Not the web app's public files: its service worker and manifest have no place in the player.
+  publicDir: false,
   plugins: [tailwindcss(), viteReact()],
   build: {
     outDir: "dist/player-screen",

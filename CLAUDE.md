@@ -147,6 +147,14 @@ only plans or an organisation's event - pass `teamId` (or `app`) to
 the devices turned on there (`PushSubscription.app`, from the page's origin).
 Both web apps run on the shared server (`packages/app/server/web-server.mjs`).
 
+## The player screen
+
+`apps/web/src/player-screen/` builds `ScreenStage` on its own, client-only (`vite.player.config.ts`,
+`pnpm --filter @songverse/web build:player-screen`), for songverse-player, the Rust mini-PC player
+(issue #247, its own repository). A change to `ScreenStage` or what it needs (providers, messages,
+CSS) must keep that build working: `e2e/web/player-screen.test.mjs` builds it and checks it renders.
+The player never gets a stage of its own; what it needs goes in here.
+
 ## Song content
 
 `SongVersion.documentJson` is a SongDocument v2 (`docs/song-document-v2.md`):
