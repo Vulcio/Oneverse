@@ -1,5 +1,5 @@
 import type { CreateInviteLinkInput, TeamInviteLink, TeamRole } from "@songverse/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
@@ -35,7 +35,10 @@ export function InviteLinksCard({
   const [maxUses, setMaxUses] = useState("");
   const [creating, setCreating] = useState(false);
   const [busyLinkId, setBusyLinkId] = useState<string | null>(null);
-  const url = (token: string) => `${window.location.origin}${path(token)}`;
+  // The page's address once in the browser: the server renders the path alone.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const url = (token: string) => `${origin}${path(token)}`;
 
   async function create() {
     setCreating(true);
