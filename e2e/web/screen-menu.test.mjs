@@ -90,9 +90,13 @@ try {
     await menu().waitFor({ state: "detached" });
   });
 
+  // The menu focuses a button once it's drawn: the remote's keys go there, not before.
+  const focused = () => menu().locator("button:focus").waitFor();
+
   await step("Choose a set, while presenting: the picker, then tomorrow's set", async () => {
     await showing().dblclick({ position: { x: 300, y: 300 } });
     await menu().waitFor();
+    await focused();
     await tv.keyboard.press("Enter");
     await picker().waitFor();
     await picker().getByTestId("screen-pick-set").filter({ hasText: `Tomorrow ${stamp}` }).focus();
@@ -103,6 +107,7 @@ try {
   await step("Theme: the built-in ones and the team's; the team's picked, and kept", async () => {
     await showing().dblclick({ position: { x: 300, y: 300 } });
     await menu().waitFor();
+    await focused();
     await tv.keyboard.press("ArrowDown");
     await tv.keyboard.press("Enter");
     await tv.locator('[data-testid="screen-menu"][data-view="themes"]').waitFor();
@@ -121,8 +126,6 @@ try {
   });
 
   await step("a built-in one, with the remote; Back steps out of the themes, then the menu", async () => {
-    // The menu focuses a button once it's drawn: the remote's keys go there, not before.
-    const focused = () => menu().locator("button:focus").waitFor();
     await showing().click({ button: "right", position: { x: 300, y: 300 } });
     await menu().waitFor();
     await focused();

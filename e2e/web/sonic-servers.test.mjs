@@ -44,7 +44,7 @@ try {
     page = adminPage;
     await page.goto(`${WEB}/admin/stem-separation`);
     await page.getByText("Optional: teams and organisations").waitFor();
-    await page.getByTestId("stem-own-list").getByText("Connected").waitFor();
+    await page.getByTestId("stem-own-list").getByText("Connected", { exact: true }).waitFor();
     await page.getByTestId("stem-own-servers").check();
     await page.getByTestId("stem-own-private").check();
     await page.getByTestId("stem-save").click();
