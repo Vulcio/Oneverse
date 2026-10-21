@@ -3,7 +3,8 @@
 // "screen"), for someone whose role runs the screens - they can't edit the
 // set. The singer presents from Songverse's Live while they do: both press
 // Next at once and the screens move one slide, both seeing where. The
-// console locks control; the singer's Live says who has it, and waits.
+// console locks control; the singer's Live says who has it, and waits. The
+// singer lets someone else in the set present too, from the Sync menu.
 import { chromium } from "playwright";
 import { ONEVERSE, SCREEN, WEB, api, call, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
@@ -14,6 +15,7 @@ const admin = await user("Console admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const singer = await user("Singer");
 const operator = await user("Desk");
+const helper = await user("Helper");
 const role = await api(admin, "POST", "/admin/roles", { name: `Console ${stamp}`, canOperateScreens: true });
 await api(admin, "PUT", `/admin/users/${operator.id}/roles`, { roleIds: [role.id, "role_audio_uploads"] });
 
@@ -22,7 +24,7 @@ const { items } = await api(singer, "POST", `/setlists/${set.id}/items`, { text:
 const itemId = items[0].id;
 // The operator opens the set through its link: they can't edit it.
 const token = (await api(singer, "POST", `/setlists/${set.id}/share-link`)).link.token;
-await call(operator, "POST", `/set-invites/${token}/join`);
+for (const who of [operator, helper]) await call(who, "POST", `/set-invites/${token}/join`);
 
 const browser = await chromium.launch();
 let watcher;
@@ -122,6 +124,27 @@ try {
     await tablet.getByTestId("present-next").click();
     page = desk;
     await desk.locator('[data-testid="operator-slide"][aria-current="true"]').getByText("Four").waitFor();
+  });
+
+  await step("the singer lets someone else in the set present, from the Sync menu, and stops them", async () => {
+    const side = await syncDevice(helper);
+    try {
+      side.send({ type: "join", setId: set.id });
+      const joined = await side.next((m) => m.type === "session");
+      if (joined?.canPresent !== false) throw new Error(`the helper could present: ${JSON.stringify(joined?.canPresent)}`);
+      page = tablet;
+      const control = tablet.getByTestId("sync-control").first();
+      await control.click();
+      const choice = tablet.getByTestId("sync-menu").getByTestId("sync-presenter").filter({ hasText: "Helper" });
+      await choice.click();
+      if (!(await side.next((m) => m.type === "session" && m.canPresent === true, 5000))) throw new Error("not let present");
+      await tablet.locator('[data-testid="sync-presenter"][aria-checked="true"]').filter({ hasText: "Helper" }).waitFor();
+      await choice.click();
+      if (!(await side.next((m) => m.type === "session" && m.canPresent === false, 5000))) throw new Error("still presenting");
+      await tablet.keyboard.press("Escape");
+    } finally {
+      side.close();
+    }
   });
 
   check("no page errors", errors.length === 0, errors.join(" | "));

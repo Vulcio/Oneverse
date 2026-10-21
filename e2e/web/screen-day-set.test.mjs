@@ -2,7 +2,7 @@
 // OK opens the team's sets to pick another with the arrows (a TV remote's D-pad) - today and upcoming, undated, then
 // the archive - and "Back to the day's set" returns; with no set today, the list shows by itself. A fixed screen doesn't.
 import { chromium } from "playwright";
-import { WEB, api, call, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, WEB, api, call, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -36,7 +36,7 @@ try {
 
   await step("paired on the day's set: the team's set dated today", async () => {
     page = tv;
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     screen = await api(admin, "POST", `/screens/pairings/${code}/confirm`, { name: `Hall ${stamp}`, mode: "LYRICS", setMode: "DAY", owner: { kind: "team", id: team.id } });
     if (screen.setMode !== "DAY" || screen.setlistId) throw new Error(JSON.stringify(screen));

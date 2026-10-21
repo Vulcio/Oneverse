@@ -3,7 +3,7 @@
 // operator, for every screen or one of them; a screen's own settings keep some off whatever the operator does; the
 // template editor sets the base, the video input, the masks and the layer a widget is on.
 import { chromium } from "playwright";
-import { WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -79,7 +79,7 @@ try {
       [foyer, "Foyer"],
     ]) {
       page = tv;
-      await tv.goto(`${WEB}/screen`);
+      await tv.goto(`${SCREEN}/`);
       const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
       screens[name] = await api(admin, "POST", `/screens/pairings/${code}/confirm`, { name: `${name} ${stamp}`, mode: "LYRICS", setlistId: set.id, themeId: theme.id, owner: { kind: "team", id: team.id } });
       await tv.getByTestId("screen-grid").first().waitFor({ timeout: 15000 });

@@ -7,7 +7,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 
 ## Associer un écran
 
-1. Sur l'écran, ouvrez **songverse.one/screen**. Personne ne s'y connecte : il affiche un code et un code QR. Le code change toutes les 10 minutes tant qu'il n'est pas utilisé.
+1. Sur l'écran, ouvrez **screen.oneverse.top**, l'application d'écran de Oneverse. Personne ne s'y connecte : il affiche un code et un code QR. Le code change toutes les 10 minutes tant qu'il n'est pas utilisé.
 
    ![Un écran affichant son code](../../../assets/screenshots/fr/screen-code.jpg)
 
@@ -16,7 +16,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 
    ![Associer un écran](../../../assets/screenshots/fr/screens-pair.jpg)
 
-L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
+L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Un écran associé avant l'application d'écran, sur **songverse.top/screen**, y est envoyé et reste associé. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
 **Écrans** a quatre onglets : **Écrans**, **Modèles**, **Widgets** et **Marques** (les [marques](/fr/brands/) de vos équipes et organisations). Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, changer son modèle ou son propriétaire, activer ou non ses **Effets** (voir [Effets](/fr/screens/#effets)) et choisir les **Calques affichés** (voir [Calques](/fr/screens/#calques)), avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
 
@@ -61,6 +61,8 @@ La présentation passe par la [Synchro](/fr/sets/#jouer-synchronisé) : les écr
 - **Écran noir** éteint tous les écrans, pour une prière, une prise de parole ou entre deux chants. Appuyez de nouveau pour faire revenir les paroles.
 - **Arrêter la présentation**, dans le menu Synchro, laisse les écrans afficher le nom de la liste.
 - Quand l'[opérateur média](/fr/screens/#qui-pilote-les-écrans) a pris les écrans seul, le panneau le dit et ses commandes attendent qu'il les rende.
+
+D'autres peuvent présenter à côté de vous. Dans le menu Synchro, quand vous menez, **Présentent aussi** liste les personnes de la liste : cochez quelqu'un pour qu'il présente aussi depuis son propre Live, pour cette session ; décochez-le pour arrêter. Qui peut modifier la liste, ou dont le rôle gère les écrans (voir [L'opérateur média](/fr/screens/#lopérateur-média)), présente sans qu'on le lui demande. Chaque **Diapositive suivante** fait avancer les écrans depuis ce qu'ils montrent : quand deux personnes appuient au même moment, les écrans avancent une fois, pas deux.
 
 ## Ce qu'affichent les écrans
 
@@ -178,7 +180,7 @@ Le **Calque** d'un widget, dans ses réglages sur la grille, le fait passer du *
 
 Tout ce qui bouge est dessiné par la puce graphique de l'écran : ça reste fluide sur le navigateur d'un téléviseur. Un appareil qui demande moins d'animations a des fonds immobiles et de simples fondus.
 
-Pour essayer un modèle intégré sur un écran, ou afficher les paroles dans un logiciel de diffusion (comme source navigateur), ajoutez `?theme=` et son nom à l'adresse de l'écran : **songverse.one/screen?theme=stream**. C'est pour cet appareil seulement, tant que l'adresse ne change pas.
+Pour essayer un modèle intégré sur un écran, ou afficher les paroles dans un logiciel de diffusion (comme source navigateur), ajoutez `?theme=` et son nom à l'adresse de l'écran : **screen.oneverse.top/?theme=stream**. C'est pour cet appareil seulement, tant que l'adresse ne change pas.
 
 ## Widgets
 
@@ -214,15 +216,17 @@ Chaque écran qui utilise le modèle affiche ses widgets, chacun dans ses cases.
 
 ## L'opérateur média
 
-Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live (elle s'ouvre dans un nouvel onglet, pour que Live continue). C'est une page de Live : l'application passe en mode Live. Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non ; elle ne joue ni le métronome ni les pistes.
+Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live (elle s'ouvre dans un nouvel onglet, pour que Live continue). C'est une page de Live : l'application passe en mode Live. Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non, ainsi que qui a un rôle qui permet de **Gérer les écrans** (voir [Rôles](/fr/admin/#rôles)), sur toutes les listes qu'il peut ouvrir ; elle ne joue ni le métronome ni les pistes.
+
+La même console est sur **screen.oneverse.top/operate**, sans Songverse : connectez-vous avec votre compte Oneverse, puis choisissez une liste sous **Gérer les écrans**. Elle pilote les écrans, leur minuteur, leurs messages et leurs calques, mais jamais le métronome ni les pistes.
 
 ![La vue opérateur : qui pilote les écrans, la liste, et les diapositives du chant](../../../assets/screenshots/fr/operator-view.jpg)
 
 ### Qui pilote les écrans
 
-Par défaut, c'est le Live de qui mène la liste qui pilote les écrans. La barre en haut de la vue opérateur dit qui les pilote, et vous permet de les prendre :
+Vous pouvez envoyer des diapositives dès que la vue opérateur s'ouvre, à côté du Live de qui mène : chaque diapositive envoyée fait avancer les écrans depuis ce qu'ils montrent, si bien qu'un « suivant » pressé ici et dans Live au même moment les fait avancer une fois. La barre en haut dit qui pilote les écrans, et vous permet de les prendre :
 
-- **Prendre les écrans** - vous envoyez des diapositives, le Live de qui mène aussi : le dernier qui bouge l'emporte.
+- **Prendre les écrans** - la barre montre à tous que vous les pilotez ; Live continue aussi de présenter.
 - **Les prendre seul** - vous seul envoyez des diapositives. Dans Live, le panneau de présentation dit qui pilote les écrans, et ses commandes attendent que vous les rendiez (**Les rendre**).
 - **Partager avec Live** et **Les piloter seul** passent de l'un à l'autre ; **Les rendre** redonne les écrans à qui mène.
 - **Prendre le contrôle complet** vous fait aussi mener la liste : le métronome, les pistes et le chant que tout le monde suit, comme dans Live.
@@ -233,7 +237,7 @@ Si vous fermez la vue opérateur, les écrans reviennent à qui mène.
 
 La barre latérale montre les chants de la liste, comme dans Live. Celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface). Choisissez-y un chant pour voir ses diapositives.
 
-L'onglet **Diapositives** montre chaque diapositive de ce chant en vignette, colorée selon sa section (couplet, refrain, pont…). Une fois les écrans pris, une vignette envoie sa diapositive à tous les écrans ; les flèches (**Diapositive suivante** et retour) les font défiler, et **Écran noir** et **Arrêter la présentation** marchent comme dans Live.
+L'onglet **Diapositives** montre chaque diapositive de ce chant en vignette, colorée selon sa section (couplet, refrain, pont…). Une vignette envoie sa diapositive à tous les écrans ; les flèches (**Diapositive suivante** et retour) les font défiler, et **Écran noir** et **Arrêter la présentation** marchent comme dans Live.
 
 Cochez **Notes** pour voir les notes du chant sous les diapositives où elles sont : **Toutes les notes**, ou seulement celles des personnes qui tiennent l'un des [postes](/fr/organizations/#postes) de l'équipe (*Notes de : Média*), pour les repères qui vous sont destinés.
 
@@ -263,7 +267,7 @@ Un calque qu'un écran écarte dans ses propres réglages reste masqué sur lui,
 
 ### Raccourcis clavier
 
-Le clavier pilote aussi les écrans, une fois que vous les avez pris. Le bouton clavier à côté de **Écrans et calques** liste les raccourcis :
+Le clavier pilote aussi les écrans. Le bouton clavier à côté de **Écrans et calques** liste les raccourcis :
 
 | Touches | Effet |
 | --- | --- |

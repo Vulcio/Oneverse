@@ -3,7 +3,7 @@
 // controls take the theme's values, its sv_ inputs the theme's colours; one that doesn't compile shows the colours
 // instead. In the editor: the shader picked, its controls built from its header. Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { API, SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SCREEN, SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -75,7 +75,7 @@ try {
   const drawing = () => tv.locator('[data-testid="screen-shader"][data-state="drawing"] canvas[data-ready]').waitFor({ timeout: 15000 });
 
   await step("a screen presenting a song over a shader", async () => {
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(admin, "POST", `/screens/pairings/${code}/confirm`, { name: `Shader TV ${stamp}`, setlistId: set.id, themeId: template.id });
     leading = await syncDevice(admin);

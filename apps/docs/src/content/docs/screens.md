@@ -7,7 +7,7 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
 
 ## Pairing a screen
 
-1. On the screen, open **songverse.one/screen**. Nobody signs in there: it shows a code and a QR code. The code changes every 10 minutes until it's used.
+1. On the screen, open **screen.oneverse.top**, Oneverse's screen app. Nobody signs in there: it shows a code and a QR code. The code changes every 10 minutes until it's used.
 
    ![A screen showing its code](../../assets/screenshots/en/screen-code.jpg)
 
@@ -16,7 +16,7 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
 
    ![Pairing a screen](../../assets/screenshots/en/screens-pair.jpg)
 
-The screen remembers it's paired: next time, open the same page and it reconnects by itself. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
+The screen remembers it's paired: next time, open the same page and it reconnects by itself. A screen paired before the screen app, at **songverse.top/screen**, is sent there and stays paired. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
 **Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, change its template or its owner, turn its **Effects** on or off (see [Effects](/screens/#effects)), and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
 
@@ -61,6 +61,8 @@ Presenting uses [Sync](/sets/#playing-in-sync): the screens are members of the s
 - **Black screen** blanks every screen, for prayer, talking or between songs. Press it again to bring the words back.
 - **Stop presenting**, in the Sync menu, leaves the screens showing the set's name.
 - When the [media operator](/screens/#who-runs-the-screens) has taken the screens alone, the panel says so and its controls wait until they give them back.
+
+Others can present beside you. In the Sync menu, while you lead, **Also presenting** lists the people in the set: tick someone to let them present from their own Live too, for this session; tick them again to stop. Anyone who can edit the set, or whose role runs the screens (see [The media operator](/screens/#the-media-operator)), presents without being asked. Each **Next slide** moves the screens on from what they show now: when two people press it at the same moment, the screens move once, not twice.
 
 ## What the screens show
 
@@ -178,7 +180,7 @@ A widget's **Layer**, in its settings on the grid, moves it between **Content** 
 
 Everything that moves is drawn by the screen's graphics chip, so it stays smooth on a TV's browser. A viewer whose device asks for reduced motion gets still backgrounds and simple fades.
 
-To try a built-in template on one screen, or to show the words in streaming software (as a browser source), add `?theme=` and its name to the screen's address: **songverse.one/screen?theme=stream**. It's for that device only, until the address changes.
+To try a built-in template on one screen, or to show the words in streaming software (as a browser source), add `?theme=` and its name to the screen's address: **screen.oneverse.top/?theme=stream**. It's for that device only, until the address changes.
 
 ## Widgets
 
@@ -214,15 +216,17 @@ Every screen using the template shows its widgets, each in its cells. Widgets th
 
 ## The media operator
 
-Whoever runs the screens during a service - the media operator - has a view of their own: **Operator view**, on the set's page, or in Live's Sync menu (it opens in a new tab, so Live carries on). It's a Live page: the app switches to Live mode. Anyone who can edit the set can use it, leading the set or not; it doesn't play the metronome or the stems.
+Whoever runs the screens during a service - the media operator - has a view of their own: **Operator view**, on the set's page, or in Live's Sync menu (it opens in a new tab, so Live carries on). It's a Live page: the app switches to Live mode. Anyone who can edit the set can use it, leading the set or not, and so can anyone whose role lets them **Run the screens** (see [Roles](/admin/#roles)), on every set they can open; it doesn't play the metronome or the stems.
+
+The same console is at **screen.oneverse.top/operate**, without Songverse: sign in with your Oneverse account, then pick a set under **Run the screens**. It runs the screens, their timer, messages and layers, but never the metronome or the stems.
 
 ![The operator view: who runs the screens, the set, and the song's slides](../../assets/screenshots/en/operator-view.jpg)
 
 ### Who runs the screens
 
-By default the leader's Live runs the screens. The bar at the top of the operator view says who does now, and lets you take them:
+You can send slides as soon as the operator view opens, beside the leader's Live: each slide sent moves the screens on from what they show now, so a Next pressed here and in Live at the same moment moves them once. The bar at the top says who runs the screens now, and lets you take them:
 
-- **Take the screens** - you send slides too, and so does the leader's Live: whoever moves last wins.
+- **Take the screens** - the bar shows everyone that you run them; Live keeps presenting too.
 - **Take them alone** - only you send slides. In Live, the present panel says who runs the screens, and its controls wait until you **Give them back**.
 - **Share with Live** and **Run them alone** switch between the two; **Give them back** returns the screens to the leader.
 - **Take full control** leads the set as well: the metronome, the stems and the song everyone follows, as in Live.
@@ -233,7 +237,7 @@ If you close the operator view, the screens go back to the leader.
 
 The sidebar lists the set's songs, as in Live. The one on the screens is marked **Now**, and the ones the screens have moved past are ticked as played (**Start from the top** clears them). Pick a song there to see its slides.
 
-The **Slides** tab shows every slide of that song as a tile, coloured by its section (verse, chorus, bridge…). Once you've taken the screens, a tile sends its slide to every screen; the arrows (**Next slide** and back) step through them, and **Black screen** and **Stop presenting** work as in Live.
+The **Slides** tab shows every slide of that song as a tile, coloured by its section (verse, chorus, bridge…). A tile sends its slide to every screen; the arrows (**Next slide** and back) step through them, and **Black screen** and **Stop presenting** work as in Live.
 
 Tick **Notes** to show the song's notes under the slides they're on: **All notes**, or only those of the people holding one of the team's [positions](/organizations/#positions) (*Media's notes*), for the cues meant for you.
 
@@ -263,7 +267,7 @@ A layer a screen leaves out in its own settings stays off there, whatever the pa
 
 ### Keyboard shortcuts
 
-The keyboard runs the screens too, once you've taken them. The keyboard button beside **Screens & layers** lists the shortcuts:
+The keyboard runs the screens too. The keyboard button beside **Screens & layers** lists the shortcuts:
 
 | Keys | What they do |
 | --- | --- |

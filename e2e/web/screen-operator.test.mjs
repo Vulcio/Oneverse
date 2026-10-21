@@ -2,7 +2,7 @@
 // edit the set - leading or not - and refused to anyone else; a set item's own timer, started when Live comes to it;
 // the operator's page: a countdown started, a minute more, a message sent and cleared, all on a stage display.
 import { chromium } from "playwright";
-import { WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -81,7 +81,7 @@ try {
 
   await step("a stage display on the set; the operator's view, from the set page", async () => {
     page = tv;
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Stage ${stamp}`, mode: "LYRICS", setlistId: set.id, themeTemplate: "stage-display" });
     await tv.getByTestId("screen-grid").first().waitFor({ timeout: 15000 });

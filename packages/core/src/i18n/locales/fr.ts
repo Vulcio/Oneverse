@@ -255,7 +255,7 @@ const fr: typeof en = {
   },
   screens: {
     title: "Écrans",
-    description: "Affichez les paroles d'une liste pour l'assemblée, ou sa grille pour le groupe, sur un grand écran : le navigateur d'une télé, un ordinateur sur un projecteur, une vieille tablette. Ouvrez songverse.one/screen dessus, puis associez-le ici avec le code qu'il affiche.",
+    description: "Affichez les paroles d'une liste pour l'assemblée, ou sa grille pour le groupe, sur un grand écran : le navigateur d'une télé, un ordinateur sur un projecteur, une vieille tablette. Ouvrez {{address}} dessus, puis associez-le ici avec le code qu'il affiche.",
     pairTitle: "Associer un écran",
     pairDescription: "Saisissez le code affiché par l'écran, ou scannez son code QR avec ce téléphone. Puis présentez la liste depuis Live : l'écran suit.",
     code: "Code affiché par l'écran",
@@ -426,7 +426,6 @@ const fr: typeof en = {
       takeAlone: "Les prendre seul",
       fullControl: "Prendre le contrôle complet",
       fullControlHint: "Mener la liste : le métronome, les pistes et le chant que tout le monde suit, en plus des écrans.",
-      takeFirst: "Prenez les écrans pour leur envoyer des diapositives.",
       keys: {
         heading: "Raccourcis clavier",
         next: "Diapositive suivante, jusque dans le chant suivant",
@@ -529,6 +528,7 @@ const fr: typeof en = {
     lastSeen: "Dernière connexion {{when}}",
     present: "Présenter sur les écrans",
     stopPresenting: "Arrêter la présentation",
+    letPresent: "Présentent aussi",
     addScreen: "Écrans…",
     manage: "Écrans",
     memberName: "{{name}} (écran)",

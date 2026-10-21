@@ -3,7 +3,7 @@
 // template draws each widget in its cells - the slide now and the next one, the clock, a countdown until a
 // time, the song and the next song, words of one's own - and Black hides only the words when it says so.
 import { chromium } from "playwright";
-import { WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -95,7 +95,7 @@ try {
 
   await step("a screen using it: each widget in its cells, the clock and the countdown ticking", async () => {
     page = tv;
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Stage ${stamp}`, mode: "LYRICS", setlistId: set.id, themeId: theme.id });
     await tv.getByTestId("screen-grid").first().waitFor({ timeout: 15000 });

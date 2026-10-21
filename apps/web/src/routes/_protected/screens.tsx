@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { publicEnvValue } from "@oneverse/app/public-env";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
 
@@ -90,7 +91,7 @@ function ScreensPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("screens.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("screens.description")}</p>
+        <p className="text-sm text-muted-foreground">{t("screens.description", { address: screenAddress() })}</p>
       </div>
       <Tabs value={tab} onValueChange={(value) => void navigate({ search: (prev) => ({ ...prev, tab: value === "screens" ? undefined : (value as ScreensSearch["tab"]) }) })}>
         <TabsList data-testid="screens-tabs">
@@ -692,4 +693,11 @@ function ScreenDevice({ report }: { report: NonNullable<ScreenSummary["report"]>
       <p className="text-xs text-muted-foreground">{t("screens.device.reportedAt", { when: new Date(report.at).toLocaleString(i18n.language) })}</p>
     </section>
   );
+}
+
+/** Where a big screen opens (issue #305): the screen app where it's deployed (SCREEN_URL), else Songverse's /screen. */
+function screenAddress(): string {
+  const app = publicEnvValue("SCREEN_URL");
+  if (app) return new URL(app).host;
+  return `${typeof window === "undefined" ? new URL(publicEnvValue("WEB_URL") ?? "http://localhost:3000").host : window.location.host}/screen`;
 }

@@ -413,7 +413,11 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
           ) : null}
         </div>
       </div>
-      {!canPresent ? <p className="text-xs text-muted-foreground">{t("screens.operator.takeFirst")}</p> : null}
+      {!canPresent && session?.screens?.exclusive ? (
+        <p className="text-xs text-muted-foreground" data-testid="operator-locked">
+          {t("screens.operator.lockedBy", { name: session.screens.name })}
+        </p>
+      ) : null}
       {songNotes.length > 0 ? <NotesList notes={songNotes} /> : null}
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-4">
         {slides.map((slide, index) => {

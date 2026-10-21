@@ -1,9 +1,12 @@
 import { screenBuiltInTemplate } from "@oneverse/core";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { LocaleProvider } from "@oneverse/app/components/locale-provider";
 import { ScreenDisplay } from "@oneverse/screen/components/screen-display";
 import { loadLocale } from "@oneverse/app/i18n";
 import { getVisitorLocale } from "@oneverse/app/server-auth";
+import { publicEnvValue } from "@oneverse/app/public-env";
+import { screenHandOff } from "@oneverse/screen/lib/screen-display";
 
 /**
  * A big screen (issue #186): open songverse.one/screen on whatever drives
@@ -14,6 +17,9 @@ import { getVisitorLocale } from "@oneverse/app/server-auth";
  * in the look its theme gives it (issue #194). `?theme=concert` shows a
  * built-in theme instead, on this device: to try one, or for a browser
  * source in streaming software.
+ *
+ * Screens have their own app now (issue #305, SCREEN_URL): where it's
+ * deployed, this sends the screen there, paired as it was.
  */
 export const Route = createFileRoute("/screen")({
   validateSearch: (search: Record<string, unknown>): { theme?: string } =>
@@ -26,6 +32,11 @@ export const Route = createFileRoute("/screen")({
 function ScreenPage() {
   const { locale } = Route.useRouteContext();
   const { theme } = Route.useSearch();
+  const moved = publicEnvValue("SCREEN_URL");
+  useEffect(() => {
+    if (moved) window.location.replace(screenHandOff(`${moved.replace(/\/$/, "")}/${theme ? `?${new URLSearchParams({ theme })}` : ""}`));
+  }, [moved, theme]);
+  if (moved) return <div className="min-h-screen bg-black" data-testid="screen-moving" />;
   return (
     <LocaleProvider locale={locale}>
       <ScreenDisplay pairUrl={typeof window === "undefined" ? "" : window.location.origin} pinnedTheme={theme} />

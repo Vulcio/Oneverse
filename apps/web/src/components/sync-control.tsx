@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { MonitorUp, Presentation, RadioTower, Timer, Volume2 } from "lucide-react";
+import { Check, MonitorUp, Presentation, RadioTower, Timer, Volume2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@oneverse/ui/components/dropdown-menu";
 import { useMetronome } from "#/lib/metronome-engine";
 import { useStems } from "#/lib/stem-engine";
-import { disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
+import { allowPresenter, disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /**
@@ -27,6 +27,8 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
   const on = sync.setId === setId && sync.status !== "off";
   const session = on ? sync.session : null;
   const following = on && !!session && !sync.leading;
+  // People in the set besides the leader, once each: who the leader may let present.
+  const presenterChoices = on ? [...new Map(sync.members.filter((member) => !member.screen && !member.leading).map((member) => [member.id, member])).values()] : [];
   const stems = useStems();
   const blocked = following && (metronome.audioBlocked || stems.audioBlocked);
   const label = !on
@@ -99,6 +101,21 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
                 <Presentation />
                 {session?.presenting ? t("screens.stopPresenting") : t("screens.present")}
               </DropdownMenuItem>
+            ) : null}
+            {/* Who else presents (issue #305): the leader lets someone in the set send slides too, for this session. */}
+            {sync.leading && presenterChoices.length ? (
+              <>
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t("screens.letPresent")}</DropdownMenuLabel>
+                {presenterChoices.map((member) => {
+                  const allowed = !!session?.presenters?.some((one) => one.id === member.id);
+                  return (
+                    <DropdownMenuItem key={member.id} closeOnClick={false} onClick={() => allowPresenter(member.id, !allowed)} role="menuitemcheckbox" aria-checked={allowed} data-testid="sync-presenter">
+                      <Check className={cn(!allowed && "invisible")} />
+                      {member.name}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </>
             ) : null}
             {sync.canLead ? (
               <DropdownMenuItem onClick={() => void navigate({ to: "/screens", search: { setlistId: setId } })} data-testid="sync-screens">

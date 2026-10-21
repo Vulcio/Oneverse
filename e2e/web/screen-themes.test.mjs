@@ -4,7 +4,7 @@
 // device. Every client reads the same documents.
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
-import { API, SP, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SCREEN, SP, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { png } from "../lib/fake-providers.mjs";
 
 const FONT = new URL("../../packages/screen/node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2", import.meta.url);
@@ -58,7 +58,7 @@ try {
 
   await step("paired with a built-in theme: the screen shows it, waiting for the set", async () => {
     page = tv;
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     screen = await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `TV ${stamp}`, mode: "LYRICS", setlistId: set.id, themeTemplate: "concert" });
     if (screen.themeTemplate !== "concert") throw new Error(JSON.stringify(screen));
@@ -219,9 +219,9 @@ try {
   });
 
   await step("?theme= pins a built-in theme on this device", async () => {
-    await tv.goto(`${WEB}/screen?theme=stream`);
+    await tv.goto(`${SCREEN}/?theme=stream`);
     await tv.locator('[data-testid="screen-stage"][data-background="color"][data-transition="slide"]').waitFor({ timeout: 15000 });
-    await tv.goto(`${WEB}/screen?theme=nonsense`);
+    await tv.goto(`${SCREEN}/?theme=nonsense`);
     await tv.locator('[data-testid="screen-stage"][data-background="image"]').waitFor({ timeout: 15000 });
   });
 

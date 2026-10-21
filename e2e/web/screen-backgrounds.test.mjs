@@ -2,7 +2,7 @@
 // theme's colours; each moves on its own, answers a slide coming, and is a still frame when the theme asks for no
 // motion. Screenshots of each go to e2e/.artifacts for a look.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, SP, WEB, api, finish, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -49,7 +49,7 @@ try {
     });
 
   await step("a screen presenting a song over a background that follows the words", async () => {
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(admin, "POST", `/screens/pairings/${code}/confirm`, { name: `Moving TV ${stamp}`, setlistId: set.id, themeId: template.id });
     leading = await syncDevice(admin);

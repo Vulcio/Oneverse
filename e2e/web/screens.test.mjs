@@ -5,7 +5,7 @@
 // (buttons, keys) across songs, goes black, switches to the chart, and goes
 // back to a new code when it's disconnected.
 import { chromium } from "playwright";
-import { WEB, api, call, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, WEB, api, call, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -38,7 +38,7 @@ try {
 
   await step("the screen, signed in nowhere, shows a code and a QR code to pair it", async () => {
     page = tv;
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     await tv.getByTestId("screen-pairing").waitFor();
     code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     if (!/^[A-Z2-9]{6}$/.test(code)) throw new Error(code);

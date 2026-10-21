@@ -51,6 +51,31 @@ function keepToken(token: string | null) {
   }
 }
 
+/** Where a screen's token travels to another address (issue #305): the fragment, never sent to a server. */
+const HAND_OFF = "screen";
+
+/**
+ * The address to open this screen at elsewhere, keeping its pairing (issue
+ * #305: Songverse's /screen moved to the screen app): `target` with the
+ * token in its fragment, or `target` alone when it isn't paired.
+ */
+export function screenHandOff(target: string): string {
+  const token = storedToken();
+  return token ? `${target}#${new URLSearchParams({ [HAND_OFF]: token })}` : target;
+}
+
+/** A token handed over in the address (screenHandOff): kept, and taken out of the address. */
+function adoptHandedToken() {
+  try {
+    const token = new URLSearchParams(window.location.hash.slice(1)).get(HAND_OFF);
+    if (!token) return;
+    keepToken(token);
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  } catch {
+    // Not one: nothing to keep.
+  }
+}
+
 const api = (path: string) => `${getApiUrl().replace(/\/$/, "")}${path}`;
 
 async function json<T>(response: Response): Promise<T> {
@@ -137,8 +162,11 @@ export function useScreenDisplay(): ScreenDisplayState {
   const stage = useRef<SyncStage | null>(null);
   const offset = useRef(0);
 
-  // The token kept from last time, once in the browser.
-  useEffect(() => setToken(storedToken()), []);
+  // The token kept from last time, or handed over from Songverse's /screen, once in the browser.
+  useEffect(() => {
+    adoptHandedToken();
+    setToken(storedToken());
+  }, []);
 
   // No token: a code to show, until someone confirms it.
   useEffect(() => {

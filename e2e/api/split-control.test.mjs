@@ -114,7 +114,7 @@ try {
   check("taken back: they may not", !!s && !s.session.presenters?.length);
   singer.send({ type: "presenter", userId: admin.id, allow: true });
   e = await singer.next((m) => m.type === "error");
-  check("only to someone in the set", e?.code === "not-found", JSON.stringify(e));
+  check("only to someone in the set", e?.code === "bad-request" && e.message === "They're not in the set", JSON.stringify(e));
 } finally {
   for (const device of devices) device.close();
   await call(admin, "DELETE", `/admin/roles/${role.id}`);

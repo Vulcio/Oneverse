@@ -767,7 +767,7 @@ export class SyncServer implements OnModuleDestroy {
         const member = Object.values(await redis().hgetall(membersKey(setId)))
           .map((raw) => JSON.parse(raw) as { id: string; name: string; screen?: boolean })
           .find((one) => one.id === message.userId && !one.screen);
-        if (!member) return this.send(connection, { type: "error", code: "not-found", message: "They're not in the set" });
+        if (!member) return this.send(connection, { type: "error", code: "bad-request", message: "They're not in the set" });
         if (presenters.length >= PRESENTERS_MAX) return this.send(connection, { type: "error", code: "bad-request", message: `Hand presenting to ${PRESENTERS_MAX} people at most` });
         presenters.push({ id: member.id, name: member.name });
       }

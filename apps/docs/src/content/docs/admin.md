@@ -63,6 +63,7 @@ The one place that says what people may do beyond their own and their teams' son
 - **Split recordings into stems**, with its own **Separations per person in 30 days** or, left empty, the one in **Stem separation**;
 - **Upload audio files** - recordings and stems. People who sign up don't have it, but can still record in Songverse; the built-in **Audio uploads** role allows it, and was given to everyone who had an account when it came in;
 - **Keep lossless originals** - a WAV, FLAC or AIFF they upload keeps its original, as FLAC (a WAV at its own sample rate and bit depth), beside the Opus copy that's played; without it, only the Opus copy is kept (see [Audio files](/library/#audio-files-and-their-originals));
+- **Run the screens** - control what's presented on the screens of any set they can open, beside its leader, and lock that control to themselves (see [The media operator](/screens/#the-media-operator));
 - **A storage tier** - how much a person may store, or a team's pool.
 
 **Reviewer**, **Stem separation** and **Audio uploads** are built in: they can be edited but not deleted. **New role** adds your own, such as "Storage 10 GB". Give roles to people in **Users** and to teams in **Teams**. Someone can do what any of their roles allows - their own and their teams' - and the largest limit wins; without a storage tier, the defaults in **Storage** apply. Global admins can do everything. Changes take effect straight away.

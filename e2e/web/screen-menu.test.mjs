@@ -2,7 +2,7 @@
 // double-click, a right-click - never by a short press or a passing click; "Choose a set" opens the set picker (a
 // screen with a fixed set keeps it); "Theme" lists the built-in themes and the owner's saved ones, and the pick is kept.
 import { chromium } from "playwright";
-import { API, WEB, api, call, check, finish, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SCREEN, WEB, api, call, check, finish, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -38,7 +38,7 @@ try {
 
   await step("a screen on the day's set, presenting it", async () => {
     page = tv;
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     screen = await api(admin, "POST", `/screens/pairings/${code}/confirm`, { name: `Hall ${stamp}`, mode: "LYRICS", setMode: "DAY", owner: { kind: "team", id: team.id } });
     await tv.getByTestId("screen-idle").getByText(`Today ${stamp}`).waitFor({ timeout: 15000 });

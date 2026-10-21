@@ -2,7 +2,7 @@
 // words - and used by a template; on a screen, a slide coming sets the background off (its levels written as CSS
 // variables, frame by frame) and the words move; a screen with effects off shows the same template without them.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -56,7 +56,7 @@ try {
   await step("a template with them, on a screen: a slide coming pulses the background, the words breathe", async () => {
     const template = await api(admin, "POST", "/screen-themes", { name: `Glued ${stamp}`, content: { builtIn: "classic" }, background: { builtIn: "concert" }, effects: { id: effects.id }, template: { tags: ["audience", "lyrics"] } });
     page = tv;
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     screen = await api(admin, "POST", `/screens/pairings/${code}/confirm`, { name: `Glue TV ${stamp}`, setlistId: set.id, themeId: template.id });
     leading = await syncDevice(admin);

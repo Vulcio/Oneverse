@@ -79,6 +79,8 @@ WEB_URL=https://songverse.top
 ONEVERSE_URL=https://account.oneverse.top
 # Only with Planiverse deployed (#241): trusted like WEB_URL - see below.
 PLANIVERSE_URL=https://planiverse.top
+# Only with the screen app deployed (#305): trusted like WEB_URL - see below.
+SCREEN_URL=https://screen.oneverse.top
 BETTER_AUTH_SECRET=<generate one — see below>
 BOOTSTRAP_ADMIN_EMAILS=<comma-separated emails to auto-promote on sign-up>
 
@@ -97,6 +99,8 @@ GOOGLE_CLIENT_SECRET=<Google OAuth client secret>
 **`AUTH_URL` vs `WEB_URL` vs `API_URL`, since it's easy to mix up:** `AUTH_URL` is this **API's own address** (BetterAuth is mounted here — see `apps/api/src/auth/`). `WEB_URL` is **Songverse's** address — needed here because it's an OAuth client the API registers, at `WEB_URL/auth/callback`, and because notifications link to it. `ONEVERSE_URL` is where people sign in (below). `API_URL` (set on the web apps only, below) is this same API's address again, from the web app's point of view, for its ordinary (non-auth) data calls.
 
 **`ONEVERSE_URL`** (#303, `docs/sign-in-with-oneverse.md`) is the Oneverse app's address (see "Oneverse app" below): people sign in, sign up and manage their account (email, password, passkeys) there, and Songverse and Planiverse are OAuth clients of this API that send them there and keep sessions of their own. The API registers them as clients when it starts, with `WEB_URL` and `PLANIVERSE_URL` as their addresses (`<address>/auth/callback`), so both must be the apps' exact public addresses. Only Oneverse and the API then share a cookie, so `ONEVERSE_URL` must share a parent domain with `AUTH_URL` (`oneverse.top` and `api.oneverse.top`), and the apps may be on any domain (`songverse.top`, `planiverse.top`). Unset, people sign in on Songverse's own page, which no longer exists once the apps are this version: set it.
+
+**`SCREEN_URL`** (#305) is the screen app's address, when it's deployed (see "Screen app" below): big screens call the API from it, and its console (`/operate`) signs in through Oneverse as the OAuth client `screen`, registered when the API starts. Unset, there's no screen app: screens open Songverse's own `/screen`.
 
 **`PLANIVERSE_URL`** (#241) is Planiverse's address, when it's deployed (see "Planiverse app" below): the API trusts it as it trusts `WEB_URL` - for its sign-ins and CORS - and sends notifications about planning-only groups and organisations' events there (their emails link to it; their pushes go to the devices turned on in Planiverse). Unset, there's no Planiverse and everything goes to Songverse. Admin > Organisations shows it.
 
@@ -239,6 +243,8 @@ API_URL=https://api.oneverse.top
 WEB_URL=https://songverse.top
 # Where people sign in (the API's ONEVERSE_URL).
 ONEVERSE_URL=https://account.oneverse.top
+# Only with the screen app (#305): its /screen sends screens there, still paired.
+SCREEN_URL=https://screen.oneverse.top
 PORT=3000
 ```
 
@@ -273,6 +279,32 @@ PORT=3000
 ```
 
 Then set `PLANIVERSE_URL=https://planiverse.top` on the **API** and redeploy it: until then the API refuses Planiverse's sign-ins. The Worker needs nothing new (the API passes the addresses with each job).
+
+### Screen app
+
+Optional (#305): what big screens open, at `screen.oneverse.top` - a code and a QR code until someone pairs the screen in Songverse, then the set's stage - and the operator's console at `/operate`, signed in through Oneverse. Without it, screens open Songverse's `/screen`, and the console is Songverse's operator view.
+
+**Application**, configured as:
+- Source: this repo, branch `main`
+- Build type: **Dockerfile**
+- Dockerfile path: `Dockerfile.screen`
+- Build context: `.`
+- Port: `3000`
+- Domain: `screen.oneverse.top` (any domain)
+- Watch paths (if you use auto-deploy): `apps/screen/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/screen/**`, `packages/operator/**`, `packages/tsconfig/**`, `Dockerfile.screen`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
+
+Environment variables:
+```
+API_URL=https://api.oneverse.top
+# Where a screen is paired (its QR code opens Songverse's Screens page).
+SONGVERSE_URL=https://songverse.top
+# Its own address (the API's SCREEN_URL), and where operators sign in.
+SCREEN_URL=https://screen.oneverse.top
+ONEVERSE_URL=https://account.oneverse.top
+PORT=3000
+```
+
+Then set `SCREEN_URL=https://screen.oneverse.top` on the **API** and redeploy it (until then the API refuses the screen app's calls and its console's sign-ins), and on **Songverse**, whose `/screen` then sends screens already paired there to the screen app, keeping their pairing.
 
 ### Site app
 
@@ -389,13 +421,14 @@ With auto-deploy on, Dokploy rebuilds an app only when a push changes a file mat
 | Oneverse | `apps/oneverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/tsconfig/**`, `Dockerfile.oneverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Songverse | `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/screen/**`, `packages/operator/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Planiverse | `apps/planiverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.planiverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
+| Screen | `apps/screen/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/screen/**`, `packages/operator/**`, `packages/tsconfig/**`, `Dockerfile.screen`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Site | `apps/site/**`, `Dockerfile.site`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Docs | `apps/docs/**`, `Dockerfile.docs`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 
 The root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` and `patches/**` are in every app's: every image installs its dependencies from them, so a dependency change rebuilds them all.
 
 - `packages/core` (shared types, translations, the API client) is in the API's and every web app's: a change there has to reach them all, or the web apps and the API disagree.
-- `packages/ui` and `packages/app` (#241: the UI, signing in) are in every web app's: a change there rebuilds Oneverse, Songverse and Planiverse; `packages/planning` (the planning screens) only Songverse and Planiverse; `packages/screen` (what a screen shows, #305) and `packages/operator` (the operator's console and Live's present controls) Songverse and the screen app.
+- `packages/ui` and `packages/app` (#241: the UI, signing in) are in every web app's: a change there rebuilds Oneverse, Songverse, Planiverse and the screen app; `packages/planning` (the planning screens) only Songverse and Planiverse; `packages/screen` (what a screen shows, #305) and `packages/operator` (the operator's console and Live's present controls) Songverse and the screen app.
 - `packages/db` holds the Prisma schema and migrations: a new migration rebuilds the API, which applies it as it starts (step 3).
 - `e2e/`, `docs/` and the `.md` files at the root aren't in any image, so changing them rebuilds nothing.
 

@@ -255,7 +255,7 @@ const en = {
   },
   screens: {
     title: "Screens",
-    description: "Show a set's lyrics to the audience, or its chart to the band, on a big screen: a TV's browser, a laptop on a projector, an old tablet. Open songverse.one/screen on it, then pair it here with the code it shows.",
+    description: "Show a set's lyrics to the audience, or its chart to the band, on a big screen: a TV's browser, a laptop on a projector, an old tablet. Open {{address}} on it, then pair it here with the code it shows.",
     pairTitle: "Pair a screen",
     pairDescription: "Type the code the screen shows, or scan its QR code with this phone. Then present the set from Live: the screen follows.",
     code: "Code on the screen",
@@ -426,7 +426,6 @@ const en = {
       takeAlone: "Take them alone",
       fullControl: "Take full control",
       fullControlHint: "Lead the set: the metronome, the stems and the song everyone follows, as well as the screens.",
-      takeFirst: "Take the screens to send slides to them.",
       keys: {
         heading: "Keyboard shortcuts",
         next: "Next slide, into the next song",
@@ -529,6 +528,7 @@ const en = {
     lastSeen: "Last connected {{when}}",
     present: "Present on screens",
     stopPresenting: "Stop presenting",
+    letPresent: "Also presenting",
     addScreen: "Screens…",
     manage: "Screens",
     memberName: "{{name}} (screen)",

@@ -2,7 +2,7 @@
 // its browser, GPU and WebGL, cores and memory, the frame rate of its moving background - and its owner sees it on
 // Screens: a tier on its tile, its device in its settings. Only a screen reports; someone else's screens show none.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SCREEN, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -24,7 +24,7 @@ try {
   let screen;
 
   await step("a screen drawing a shader reports its device and frame rate", async () => {
-    await tv.goto(`${WEB}/screen`);
+    await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(admin, "POST", `/screens/pairings/${code}/confirm`, { name, setlistId: set.id, themeId: template.id });
     await tv.locator('[data-testid="screen-shader"][data-state="drawing"]').waitFor({ timeout: 15000 });

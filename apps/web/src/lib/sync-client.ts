@@ -456,6 +456,11 @@ export function publishPresenting(presenting: SyncPresenting | null) {
 let presentRev = 0;
 let presentShown: SyncPresenting | null = null;
 
+/** Leading: lets someone in the set present beside the leader, or (false) no longer (issue #305). */
+export function allowPresenter(userId: string, allow: boolean) {
+  if (state.leading) send({ type: "presenter", userId, allow });
+}
+
 /** The media operator (issue #275) takes the screens, shared or alone, or (null) gives them back. */
 export function takeScreens(control: "shared" | "exclusive" | null) {
   if (state.canOperate || state.canPresent) send({ type: "screens", control });
