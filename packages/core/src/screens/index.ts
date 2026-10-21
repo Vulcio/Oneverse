@@ -70,7 +70,12 @@ export function textSlides(text: { title: string; body: string }): ScreenSlide[]
  * copyright line goes with its text wherever it's shown.
  */
 export interface SetItemPassage {
+  /** An imported Bible's id; "" for a YouVersion version's passage. */
   bibleId: string;
+  /** A YouVersion version's number (issue #310): its text read from YouVersion each time, never kept. Left out for an imported Bible. */
+  youversionId?: number;
+  /** YouVersion's page for the version, shown with its passages. */
+  link?: string | null;
   /** As people write it, with the Bible's own name for the book: "John 3:16-18". */
   reference: string;
   /** The book's name in that Bible, for each verse's label. */

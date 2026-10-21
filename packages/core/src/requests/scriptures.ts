@@ -7,6 +7,11 @@ export const YouVersionKeySchema = z.strictObject({
   appKey: z.string().trim().max(200),
 });
 
+/** A YouVersion version allowed on screens or not (issue #310), by an admin who read its licence. */
+export const YouVersionProjectionSchema = z.strictObject({
+  canProject: z.boolean().describe("Its passages in sets may be shown on screens"),
+});
+
 /** The YouVersion versions in a language (issue #304): a BCP 47 tag ("fr", "en-GB"). */
 export const YouVersionBiblesQuerySchema = z.strictObject({
   language: z

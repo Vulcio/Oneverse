@@ -3,6 +3,7 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { bibleBookName, formatBibleReference, parseBibleReference, passageVerses, readItemPassage, type BibleReference, type BibleSourceFormat, type PassageChapter, type SetItemPassage } from "@oneverse/core";
 import type { Bible as BibleRow, BibleStatus } from "@oneverse/db";
 import type { Queue } from "bullmq";
+import { YouVersionService } from "./youversion.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { SCRIPTURES_QUEUE, type BibleImportJobData, type ImportedBibleBook } from "./bibles.types.js";
@@ -86,6 +87,7 @@ export class BiblesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly youversion: YouVersionService,
     @InjectQueue(SCRIPTURES_QUEUE) private readonly queue: Queue<BibleImportJobData>,
   ) {}
 
@@ -152,6 +154,9 @@ export class BiblesService {
   async itemPassage(value: unknown, use: PassageUse): Promise<SetItemPassage | null> {
     const ref = readItemPassage(value);
     if (!ref) return null;
+    // A YouVersion version's (issue #310): read from YouVersion, never kept.
+    if (ref.youversionId !== undefined) return this.youversion.itemPassage(ref.youversionId, ref.reference, use);
+    if (!ref.bibleId) return null;
     const row = await this.prisma.client.bible.findFirst({ where: { id: ref.bibleId, status: "READY" } });
     const reference = parseBibleReference(ref.reference);
     const bible = row ? shown(row) : null;

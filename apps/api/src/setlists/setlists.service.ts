@@ -18,6 +18,7 @@ import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
 import { BiblesService, type PassageUse } from "../scriptures/bibles.service.js";
+import { YouVersionService } from "../scriptures/youversion.service.js";
 import { templateLayout } from "../screens/screen-templates.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -76,6 +77,7 @@ export class SetlistsService {
     private readonly policy: AccessPolicyService,
     private readonly notes: NotesService,
     private readonly bibles: BiblesService,
+    private readonly youversion: YouVersionService,
   ) {}
 
   async list(user: AuthenticatedUser) {
@@ -645,9 +647,14 @@ export class SetlistsService {
   }
 
   /** A passage to keep in a set (issue #301): its Bible imported, its reference read and found there, as that Bible names it. */
-  private async passageRef(passage: { bibleId: string; reference: string }): Promise<{ bibleId: string; reference: string }> {
-    const found = await this.bibles.passage(passage.bibleId, passage.reference);
-    return { bibleId: passage.bibleId, reference: found.reference };
+  private async passageRef(passage: { bibleId?: string; youversionId?: number; reference: string }): Promise<{ bibleId: string; reference: string } | { youversionId: number; reference: string }> {
+    // A YouVersion version's (issue #310): read there once to check it, as its language writes it; only the reference is kept.
+    if (passage.youversionId !== undefined) {
+      const found = await this.youversion.passage(passage.youversionId, passage.reference);
+      return { youversionId: passage.youversionId, reference: found.reference };
+    }
+    const found = await this.bibles.passage(passage.bibleId!, passage.reference);
+    return { bibleId: passage.bibleId!, reference: found.reference };
   }
 
   private async assertAddable(set: SetRow, songVersionId: string): Promise<void> {

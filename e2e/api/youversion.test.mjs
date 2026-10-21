@@ -1,8 +1,10 @@
 // YouVersion's Platform API as a Bible provider (issue #304): off without an
 // App Key, the key in Admin > Bibles (encrypted, never shown back, tested),
 // a language's versions, a passage with its version's copyright and no
-// rights beyond reading it, never cached - against the suites' stand-in
-// (lib/fake-providers.mjs), shaped as YouVersion's documentation describes.
+// rights beyond reading it, never cached; in a set, its reference only, read
+// live, on screens once an admin allows the version, never offline (issue
+// #310) - against the suites' stand-in (lib/fake-providers.mjs), shaped as
+// YouVersion's documentation describes.
 import { API, api, call, check, finish, sql, user } from "../lib/harness.mjs";
 import { startFakeProviders, youversionKey } from "../lib/fake-providers.mjs";
 
@@ -70,6 +72,38 @@ body = await (await passage(9001, "John 3:16")).json();
 check("a version without a copyright line: its title and info instead", body.bible?.copyright === null && body.bible.attribution === "No Copyright Version. Public domain." && body.parts?.[0]?.text === "NOC text of John 3:16.", JSON.stringify(body).slice(0, 400));
 res = await passage(4242, "John 3:16");
 check("a version YouVersion doesn't have: 404", res.status === 404, String(res.status));
+
+// --- in a set (issue #310): the reference and the version kept, the text read live
+const set = await api(reader, "POST", "/setlists", { name: `YouVersion set ${Date.now()}` });
+r = await call(reader, "POST", `/setlists/${set.id}/items`, { passage: { bibleId: "x", youversionId: 3034, reference: "John 3:16" } });
+check("one of bibleId or youversionId, not both", r.status === 400, JSON.stringify(r.body));
+r = await call(reader, "POST", `/setlists/${set.id}/items`, { passage: { youversionId: 4242, reference: "John 3:16" } });
+check("a version YouVersion doesn't have: refused", r.status === 404, `${r.status} ${JSON.stringify(r.body)}`);
+r = await call(reader, "POST", `/setlists/${set.id}/items`, { passage: { youversionId: 3034, reference: "Jn 3.16-17" } });
+const yvItem = r.body.items?.find((item) => item.kind === "PASSAGE");
+check("a YouVersion passage goes into a set", r.status === 201 && yvItem?.passage?.youversionId === 3034 && yvItem.passage.reference === "John 3:16-17", `${r.status} ${JSON.stringify(r.body).slice(0, 300)}`);
+check("…only the reference and the version stored", Object.entries(JSON.parse(sql(`select passage from "SetlistItem" where id='${yvItem?.id}'`))).sort().join() === "reference,John 3:16-17,youversionId,3034");
+const before = youversionKey.passages;
+r = await call(reader, "GET", `/setlists/${set.id}/items/${yvItem.id}/song`);
+check(
+  "opened in the set: read from YouVersion, with its attribution and link",
+  r.status === 200 && r.body.passage.chapters[0]?.verses.map((v) => v.text).join(" ") === "BSB text of John 3:16. BSB text of John 3:17." && /Berean/.test(r.body.passage.bible.copyright) && r.body.passage.link === "https://www.bible.com/versions/3034" && youversionKey.passages > before,
+  JSON.stringify(r.body.passage).slice(0, 400),
+);
+const yvVerses = async (query = "") => {
+  const copy = (await call(reader, "GET", `/setlists/${set.id}/offline${query}`)).body;
+  return copy.songs.find((view) => view.item.id === yvItem.id)?.passage?.chapters.length ?? -1;
+};
+check("not on screens until an admin allows the version", (await yvVerses("?for=screens")) === 0);
+check("only admins allow it", (await call(reader, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true })).status === 403);
+settings = await api(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true });
+check("an admin allows it on screens", settings.projection?.includes(3034), JSON.stringify(settings));
+check("…the screens' copy reads it", (await yvVerses("?for=screens")) === 1);
+check("…never the offline copy", (await yvVerses()) === 0);
+body = await (await passage(3034, "John 3:16")).json();
+check("the Bible page says it may be shown on screens", body.rights?.projection === true && !body.rights.offline, JSON.stringify(body.rights));
+settings = await api(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: false });
+check("taken back", !settings.projection?.includes(3034) && (await yvVerses("?for=screens")) === 0, JSON.stringify(settings));
 
 // --- a refused key, a spent one, then back to the environment (none here)
 await api(admin, "PUT", "/admin/scriptures/youversion", { appKey: "yvp-another-app-key-987654" });

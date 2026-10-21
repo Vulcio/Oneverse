@@ -1670,7 +1670,7 @@ model SetlistItem {
   songVersionId String?
   /// A text's (issue #305): {title, body}, the body's paragraphs its slides. Null for any other kind.
   text          Json?
-  /// A passage's (issue #301): {bibleId, reference} - an imported Bible and the verses, never their text. Null for any other kind.
+  /// A passage's (issue #301): {bibleId, reference} - an imported Bible and the verses - or {youversionId, reference}, a YouVersion version's (issue #310); never their text. Null for any other kind.
   passage       Json?
   arrangementId String?
   position      Int // Sort order (0-based)
@@ -2805,9 +2805,12 @@ model BibleVerse {
 // encrypted with SETTINGS_ENCRYPTION_KEY. None: YOUVERSION_APP_KEY; without
 // one, YouVersion isn't asked and nothing about it shows.
 model ScriptureSettings {
-  id                  String   @id @default("singleton")
-  youversionAppKeyEnc String?
-  updatedAt           DateTime @updatedAt
+  id                   String   @id @default("singleton")
+  youversionAppKeyEnc  String?
+  // The YouVersion versions an admin allows on screens (issue #310), by
+  // number, having read each one's licence. None by default.
+  youversionProjection Int[]    @default([])
+  updatedAt            DateTime @updatedAt
 }
 
 // An artist (issue #86): the name songs credit (VersionContributor.source,

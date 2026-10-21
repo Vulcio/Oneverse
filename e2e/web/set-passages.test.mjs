@@ -3,10 +3,12 @@
 // previewed), changes it, reads it in the set with its Bible's copyright; a
 // paired screen shows its verses when they're presented, the copyright under
 // them; the operator's page steps through them - until the admin says the
-// Bible may not be shown on screens.
+// Bible may not be shown on screens. A YouVersion passage (issue #310) is
+// picked the same way and read live, with its attribution and link.
 import { chromium } from "playwright";
 import { SCREEN, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { importBible } from "../lib/bibles.mjs";
+import { startFakeProviders, youversionKey } from "../lib/fake-providers.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -20,6 +22,8 @@ const set = await api(leader, "POST", "/setlists", { name: `Passages ${stamp}` }
 const song = await api(leader, "POST", "/song-versions", { title: `Opening ${stamp}`, language: "en", artists: ["Band"], content: "{start_of_verse}\nFirst song line\n{end_of_verse}\n", contentFormat: "CHORDPRO" });
 await api(leader, "POST", `/setlists/${set.id}/items`, { songVersionId: song.id });
 
+const fake = await startFakeProviders();
+youversionKey.key = "yvp-e2e-set-passages-0123456789";
 const browser = await chromium.launch();
 let leading;
 try {
@@ -37,11 +41,13 @@ try {
     await desk.getByTestId("set-add-passage").click();
     const dialog = desk.getByTestId("set-passage-dialog");
     await dialog.getByRole("heading", { name: "Add a passage" }).waitFor();
-    await dialog.locator("#set-passage-bible").selectOption({ label: `${abbreviation} - Web Passages ${stamp}` });
-    await dialog.locator("#set-passage-reference").fill("Jn 3:16-17");
-    await dialog.getByRole("button", { name: "Preview" }).click();
+    await desk.waitForLoadState("networkidle");
+    await dialog.getByTestId("bible-version").click();
+    await desk.getByRole("option", { name: new RegExp(`Web Passages ${stamp}`) }).click();
+    await dialog.locator("#bible-reference").fill("Jn 3:16-17");
+    await dialog.getByTestId("bible-read").click();
     await dialog.getByTestId("set-passage-preview").getByText("For God sent not his Son into the world to condemn the world.").waitFor();
-    await dialog.getByRole("button", { name: "Save" }).click();
+    await dialog.getByTestId("set-passage-save").click();
     await dialog.waitFor({ state: "detached" });
     await desk.getByTestId("set-passage-row").getByText(`John 3:16-17 (${abbreviation})`).waitFor();
     passageId = (await api(leader, "GET", `/setlists/${set.id}`)).items.find((item) => item.kind === "PASSAGE")?.id;
@@ -52,8 +58,8 @@ try {
     await desk.getByRole("button", { name: `Edit John 3:16-17 (${abbreviation})` }).click();
     const dialog = desk.getByTestId("set-passage-dialog");
     await dialog.getByRole("heading", { name: "Edit the passage" }).waitFor();
-    await dialog.locator("#set-passage-reference").fill("Psalm 23:1-2");
-    await dialog.getByRole("button", { name: "Save" }).click();
+    await dialog.locator("#bible-reference").fill("Psalm 23:1-2");
+    await dialog.getByTestId("set-passage-save").click();
     await desk.getByTestId("set-passage-row").getByText(`Psalms 23:1-2 (${abbreviation})`).waitFor();
   });
 
@@ -63,6 +69,28 @@ try {
     const reading = desk.getByTestId("set-passage-reading");
     await reading.getByText("He maketh me to lie down in green pastures.").waitFor();
     await reading.getByText("Public Domain").waitFor();
+  });
+
+  await step("a YouVersion passage: its versions in the picker, read live in the set with its attribution and link", async () => {
+    await api(admin, "PUT", "/admin/scriptures/youversion", { appKey: youversionKey.key });
+    await desk.goto(`${WEB}/sets/${set.id}`);
+    await desk.waitForLoadState("networkidle");
+    await desk.getByTestId("set-add-passage").click();
+    const dialog = desk.getByTestId("set-passage-dialog");
+    await desk.waitForLoadState("networkidle");
+    await dialog.getByTestId("bible-version").click();
+    await desk.getByRole("option", { name: /BSB/ }).click();
+    await dialog.locator("#bible-reference").fill("John 3:16");
+    await dialog.getByTestId("bible-read").click();
+    await dialog.getByTestId("set-passage-preview").getByText("BSB text of John 3:16.").waitFor();
+    await dialog.getByTestId("set-passage-not-projected").waitFor();
+    await dialog.getByTestId("set-passage-save").click();
+    await dialog.waitFor({ state: "detached" });
+    await desk.getByTestId("set-passage-row").getByRole("link", { name: "John 3:16 (BSB)" }).click();
+    const reading = desk.getByTestId("set-passage-reading");
+    await reading.getByText("BSB text of John 3:16.").waitFor();
+    await reading.getByText(/Berean/).waitFor();
+    if ((await reading.getByRole("link", { name: "Read on YouVersion" }).getAttribute("href")) !== "https://www.bible.com/versions/3034") throw new Error("no link to YouVersion");
   });
 
   await step("a screen on the set shows its verses when they're presented, the copyright under them", async () => {
@@ -95,7 +123,7 @@ try {
     await api(admin, "PATCH", `/admin/scriptures/bibles/${bible.id}`, { canProject: false });
     await desk.goto(`${WEB}/sets/${set.id}/operate?item=${passageId}`);
     await desk.getByTestId("operator-tab-slides").click();
-    await desk.getByTestId("operator-passage-hidden").getByText("This Bible may not be shown on screens").waitFor({ timeout: 10000 });
+    await desk.getByTestId("operator-passage-hidden").getByText("This version may not be shown on screens").waitFor({ timeout: 10000 });
   });
 
   await step("no page errors", async () => {
@@ -105,5 +133,7 @@ try {
   leading?.close();
   await browser.close();
   await api(admin, "DELETE", `/admin/scriptures/bibles/${bible.id}`);
+  await api(admin, "DELETE", "/admin/scriptures/youversion");
+  fake.close();
 }
 finish();

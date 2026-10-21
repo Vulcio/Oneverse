@@ -2,10 +2,12 @@
 // on the team's page; then its members find it under Tools, pick a version,
 // a book (in the Bible's order or A-Z), a chapter and verses - all named in
 // their own language - read the passage, and add it to one of their sets
-// with the screen template it's shown with, which the set's page names.
+// with the screen template it's shown with, which the set's page names - a
+// YouVersion version's passage too.
 import { chromium } from "playwright";
 import { SP, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { importBible } from "../lib/bibles.mjs";
+import { startFakeProviders, youversionKey } from "../lib/fake-providers.mjs";
 
 let page;
 // The Bible's link: in the full sidebar, or in the rail beside a team's page.
@@ -19,6 +21,8 @@ const leader = await user("Bible page leader");
 const team = await api(leader, "POST", "/teams", { name: `Bible band ${stamp}` });
 const set = await api(leader, "POST", "/setlists", { name: `Bible set ${stamp}`, teamId: team.id });
 
+const fake = await startFakeProviders();
+youversionKey.key = "yvp-e2e-bible-page-0123456789";
 const browser = await chromium.launch();
 try {
   page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -115,10 +119,29 @@ try {
     if ((await page.locator("#bible-template").inputValue()) !== "b:scripture") throw new Error("the template wasn't kept");
   });
 
+  await step("YouVersion's versions too: one read and added to the set, which says the screens leave it out", async () => {
+    await api(admin, "PUT", "/admin/scriptures/youversion", { appKey: youversionKey.key });
+    await page.goto(`${WEB}/bible`);
+    await page.waitForLoadState("networkidle");
+    await page.getByTestId("bible-version").click();
+    await page.getByRole("option", { name: /BSB/ }).click();
+    await page.locator("#bible-reference").fill("John 3:16");
+    await page.getByTestId("bible-read").click();
+    await page.getByTestId("bible-passage").getByText("BSB text of John 3:16.").waitFor();
+    const card = page.getByTestId("bible-add-to-set");
+    await card.getByTestId("bible-not-on-screens").waitFor();
+    await card.getByTestId("bible-add").click();
+    await card.getByTestId("bible-added").waitFor();
+    const items = (await api(leader, "GET", `/setlists/${set.id}`)).items.filter((one) => one.kind === "PASSAGE");
+    if (!items.some((one) => one.passage?.youversionId === 3034 && one.passage.reference === "John 3:16")) throw new Error(JSON.stringify(items.map((one) => one.passage)));
+  });
+
   await step("no page errors", async () => {
     if (errors.length) throw new Error(errors.join("\n"));
   });
 } finally {
   await browser.close();
+  await api(admin, "DELETE", "/admin/scriptures/youversion");
+  fake.close();
 }
 finish();

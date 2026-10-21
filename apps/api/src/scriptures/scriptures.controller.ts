@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Put, Query, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { BiblePassageQuerySchema, BibleUpdateSchema, YouVersionBiblesQuerySchema, YouVersionKeySchema, YouVersionPassageQuerySchema } from "@oneverse/core";
+import { BiblePassageQuerySchema, BibleUpdateSchema, YouVersionBiblesQuerySchema, YouVersionKeySchema, YouVersionPassageQuerySchema, YouVersionProjectionSchema } from "@oneverse/core";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { zodDto } from "../common/zod-validation.js";
@@ -11,6 +11,7 @@ import { BiblesService, MAX_BIBLE_FILE_BYTES } from "./bibles.service.js";
 import { YouVersionService } from "./youversion.service.js";
 
 export class YouVersionKeyDto extends zodDto(YouVersionKeySchema) {}
+export class YouVersionProjectionDto extends zodDto(YouVersionProjectionSchema) {}
 
 export class YouVersionBiblesQueryDto extends zodDto(YouVersionBiblesQuerySchema) {}
 
@@ -113,6 +114,14 @@ export class ScripturesController {
   @UseGuards(GlobalAdminGuard)
   resetKey() {
     return this.youversion.resetKey();
+  }
+
+  /** A version allowed on screens, or no longer (issue #310), once its licence is read. */
+  @Put("admin/scriptures/youversion/versions/:id")
+  @UseGuards(GlobalAdminGuard)
+  setProjection(@Param("id", ParseIntPipe) id: number, @Body() dto: YouVersionProjectionDto) {
+    if (id < 1) throw new BadRequestException(["id must be a YouVersion version's number"]);
+    return this.youversion.setProjection(id, dto.canProject);
   }
 
   @Post("admin/scriptures/youversion/test")

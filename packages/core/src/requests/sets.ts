@@ -44,14 +44,18 @@ export function readItemText(value: unknown): SetlistItemText | null {
 }
 
 /**
- * A passage item (issue #301): an imported Bible and the verses, as people
- * write them ("John 3:16-18", "Psaume 23,1-4") - never a copy of the text,
- * read from the Bible whenever the set is.
+ * A passage item (issue #301): an imported Bible, or a YouVersion version
+ * (issue #310), and the verses, as people write them ("John 3:16-18",
+ * "Psaume 23,1-4") - never a copy of the text, read from the Bible or from
+ * YouVersion whenever the set is.
  */
-export const SetlistItemPassageSchema = z.strictObject({
-  bibleId: z.string().min(1).max(40).describe("An imported Bible's id (GET /scriptures/bibles)"),
-  reference: z.string().trim().min(1).max(200).describe("Chapters or verses of one book, as people write them"),
-});
+export const SetlistItemPassageSchema = z
+  .strictObject({
+    bibleId: optional(z.string().min(1).max(40)).describe("An imported Bible's id (GET /scriptures/bibles); give this or youversionId"),
+    youversionId: optional(z.number().int().min(1).max(1_000_000)).describe("A YouVersion version's number (GET /scriptures/youversion/bibles); give this or bibleId"),
+    reference: z.string().trim().min(1).max(200).describe("Chapters or verses of one book, as people write them"),
+  })
+  .refine((passage) => (passage.bibleId === undefined) !== (passage.youversionId === undefined), "Give one of bibleId or youversionId");
 export type SetlistItemPassageRef = z.output<typeof SetlistItemPassageSchema>;
 
 /** A stored passage item's Bible and reference: null when it can't be read. */
