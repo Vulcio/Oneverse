@@ -3348,6 +3348,7 @@ const fr: typeof en = {
     delete: "Supprimer",
     deleting: "Suppression…",
     confirmDelete: "Supprimer cette Bible",
+    readOnYouVersion: "Lire sur YouVersion",
   },
   metadataProviders: {
     title: "Sources de métadonnées",

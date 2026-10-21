@@ -3345,6 +3345,7 @@ const en = {
     delete: "Delete",
     deleting: "Deleting…",
     confirmDelete: "Delete this Bible",
+    readOnYouVersion: "Read on YouVersion",
   },
   metadataProviders: {
     title: "Metadata providers",

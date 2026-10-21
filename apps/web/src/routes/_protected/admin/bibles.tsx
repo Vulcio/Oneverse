@@ -98,7 +98,7 @@ function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; o
   );
 }
 
-/** A passage read through the key, with the version's copyright as it must be shown. */
+/** A passage read through the key, with the version's attribution as it must be shown. */
 function TryPassageCard() {
   const { t } = useTranslation();
   const [language, setLanguage] = useState("en");
@@ -173,7 +173,12 @@ function TryPassageCard() {
               </p>
             ))}
             {/* YouVersion's attribution, as text: shown with every passage. */}
-            <p className="text-xs text-muted-foreground">{passage.bible.copyright}</p>
+            <p className="text-xs text-muted-foreground">{passage.bible.attribution}</p>
+            {passage.bible.link ? (
+              <a href={passage.bible.link} target="_blank" rel="noreferrer" className="text-xs underline">
+                {t("bibles.readOnYouVersion")}
+              </a>
+            ) : null}
           </figure>
         ) : null}
         {message?.text ? <Said message={message} /> : null}

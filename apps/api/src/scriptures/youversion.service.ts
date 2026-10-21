@@ -101,8 +101,8 @@ export class YouVersionService {
 
   /**
    * A passage in a version: the reference read as people write it, the
-   * version's copyright with it. A version without one is refused, as
-   * YouVersion's own SDK does, so its text is never shown unattributed.
+   * version's attribution with it (its copyright line, else its title and
+   * info - a version out of copyright has no line to show).
    */
   async passage(bibleId: number, text: string, locale: "en" | "fr" = "en"): Promise<YouVersionPassage> {
     const appKey = await this.requireKey();
@@ -110,10 +110,6 @@ export class YouVersionService {
     if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
     if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
     const bible = await this.asked(() => youVersionBibleById(bibleId, appKey, this.fetcher));
-    if (!bible.copyright) {
-      this.logger.warn(`YouVersion's version ${bibleId} (${bible.abbreviation}) has no copyright or promotional_content: its text isn't shown`);
-      throw new ServiceUnavailableException(`YouVersion gives no copyright line for ${bible.abbreviation}, which must be shown with its text, so it isn't used`);
-    }
     const parts = await this.asked(() => youVersionPassage(bibleId, reference, appKey, this.fetcher));
     return { reference: formatBibleReference(reference, { locale }), bible, parts, rights: { offline: false, projection: false, export: false } };
   }

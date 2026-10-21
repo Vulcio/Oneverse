@@ -112,7 +112,7 @@ Where Bible translations come from: files imported here, and YouVersion.
 
 **YouVersion** holds the App Key of YouVersion's Platform API: register an app on platform.youversion.com, and the versions it may use are the ones YouVersion licenses to that app. Enter it as **App Key** - kept encrypted and never shown again; leave it blank to keep the current one. Without a key (here or in the `YOUVERSION_APP_KEY` environment variable) YouVersion isn't asked and nothing about it shows. **Test connection** lists the key's English versions; **Revert to environment variables** goes back to `YOUVERSION_APP_KEY`, or to no YouVersion without it.
 
-**Try a passage** reads one through the key: **Find versions** in a language (a tag such as `en` or `fr`), pick a **Version**, write a **Passage** as people do ("John 3:16-18", "Jean 3.16"), and **Read**. Each version's copyright line is shown under its text, and a version without one isn't used. A version's licence decides whether its text may be stored, used offline or shown on screens; until those are read, Songverse asks YouVersion afresh every time and keeps nothing.
+**Try a passage** reads one through the key: **Find versions** in a language (a tag such as `en` or `fr`), pick a **Version**, write a **Passage** as people do ("John 3:16-18", "Jean 3.16"), and **Read**. Each version's copyright line is shown under its text, with a link to the version on YouVersion. A version whose publisher gives no copyright line, such as a public-domain text, shows its title and its description instead. A version's licence decides whether its text may be stored, used offline or shown on screens; until those are read, Songverse asks YouVersion afresh every time and keeps nothing.
 
 ### Server maintenance
 
