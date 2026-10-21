@@ -1,6 +1,6 @@
 # Deploying Oneverse
 
-This documents the working deployment of this repository (Oneverse: the shared API and Worker, Songverse, Planiverse, the docs and the website) to a self-hosted [Dokploy](https://dokploy.com) instance, with a domain for each app (#303): Oneverse, where people sign in, at `oneverse.top` and the API at `api.oneverse.top`; Songverse at `songverse.top`; Planiverse (the planning on its own, #241) at `planiverse.top` if you deploy it; the docs at `docs.songverse.one` and the website at `songverse.one` (#43). Before #303 everything was under `songverse.one` (the app at `app.songverse.one`, the API at `api.songverse.one`). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later. The repository was `Vulcio/Songverse` until it became `Vulcio/Oneverse` (#302): an existing deployment moves with [Renaming the repository](#renaming-the-repository-to-oneverse); the domains don't change.
+This documents the working deployment of this repository (Oneverse: the shared API and Worker, Songverse, Planiverse, the docs and the website) to a self-hosted [Dokploy](https://dokploy.com) instance, with a domain for each app (#303): Oneverse, where people sign in, at `oneverse.top` and the API at `api.oneverse.top`; Songverse at `songverse.top`; Planiverse (the planning on its own, #241) at `planiverse.top` if you deploy it; the docs at `docs.songverse.one` and the website at `songverse.one` (#43). Before #303 everything was under `songverse.one` (the app at `app.songverse.one`, the API at `api.songverse.one`). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later.
 
 ## Architecture
 
@@ -244,7 +244,7 @@ PORT=3000
 
 That's it — the web app no longer talks to Postgres or BetterAuth directly (see the "Where auth lives" note below), so it doesn't need `DATABASE_URL`, `AUTH_URL`, `BETTER_AUTH_SECRET`, `SETTINGS_ENCRYPTION_KEY`, or the Resend/Google vars at all anymore; those all live on the API app now (see above).
 
-**Old links keep working.** The web app lived at `songverse.one` until it moved to `app.songverse.one` (#42), and links already sent out still point there: verification and password-reset emails, set share links, claim links, bookmarks. The website now at `songverse.one` sends any path that isn't one of its pages to the same path on the app (see "Site app" below).
+**Old links keep working.** Links already sent out (emails, set share links, claim links, bookmarks) point at `app.songverse.one` or `songverse.one`. The website at `songverse.one` sends any path that isn't one of its pages to the same path on the app (see "Site app" below).
 
 Since #303 the app is at `songverse.top`, and links sent before point at `app.songverse.one`: keep that domain on the Songverse app too, and set `REDIRECT_HOSTS=app.songverse.one` on it. A request for a listed host is redirected to the same page on `WEB_URL` (see `apps/web/redirect-hosts.mjs`). The website's `APP_URL` (below) sends old `songverse.one` links straight to `songverse.top`.
 
@@ -273,25 +273,6 @@ PORT=3000
 ```
 
 Then set `PLANIVERSE_URL=https://planiverse.top` on the **API** and redeploy it: until then the API refuses Planiverse's sign-ins. The Worker needs nothing new (the API passes the addresses with each job).
-
-### Moving the web app from songverse.one to app.songverse.one
-
-A one-time change for a deployment that predates the move (#42). The API accepts sign-ins from one web address at a time (`WEB_URL`), so do steps 3 and 4 back to back, at a quiet time: in between, the app works at only one of the two addresses.
-1. **Site app:** create it (see "Site app" below), without a domain for now, and deploy it.
-2. **Songverse app:** add the domain `app.songverse.one`, keeping `songverse.one` for now.
-3. **API and Worker:** change `WEB_URL` to `https://app.songverse.one`, and redeploy both. The API now trusts, and sends links to, the new address.
-4. **Move `songverse.one`:** remove it from the web app's domains and add it to the site app's. The website now answers there, and sends app links on to `app.songverse.one`.
-5. **Check:**
-   - `https://songverse.one` shows the website, and `https://songverse.one/library` redirects to `https://app.songverse.one/library`;
-   - signing in with a password works, and you're still signed in after reloading;
-   - signing in with a passkey made before the move works (its relying-party ID was, and stays, `songverse.one`);
-   - Google sign-in works, if it's set up (its redirect URI is on the API, so nothing changes there).
-
-Sessions survive the move: the session cookie's domain is `songverse.one` before and after.
-
-Deploy the API and Worker first, then the Songverse app (its build doesn't strictly depend on the others being up, but it's a sane order).
-
-**Where auth lives:** BetterAuth is mounted in `apps/api`, not here — the web app is just another HTTP client of the API for auth, exactly like it already was for every other endpoint. This matters mainly if you're adding a mobile app later: it talks to the same API for both login and data, rather than needing to know about the web app's URL at all. See `apps/api/src/auth/` for the actual auth config, and `packages/app/src/session.ts`/`auth-client.ts` for how the web app calls it.
 
 ### Site app
 
@@ -342,17 +323,6 @@ This also moves everything from `songverse.one` to the apps' own domains (the do
 8. **Check** [Verify](#4-verify). Everyone signs in once more (the apps' sessions are new) and adds their passkeys again at Oneverse.
 
 The apps can move to other domains later: change their address on the API and on the app, together. Moving Oneverse and the API changes the passkeys' relying party: remove them again (`DELETE FROM "Passkey"`).
-
-### Renaming the repository to Oneverse
-
-The repository moved from `Vulcio/Songverse` to `Vulcio/Oneverse` (#302). GitHub redirects the old name, so clones, links and issues keep working, but don't count on Dokploy following the redirect. In this order:
-
-1. **GitHub:** rename the repository (Settings > General > Repository name: `Oneverse`). A GitHub App installed on it, Dokploy's included, should keep its access: it's given the repository, not its name.
-2. **Dokploy, every app** (API, Worker, Songverse, Planiverse, Site, Docs): in its source settings (the GitHub provider, where the repository and branch are picked), pick `Oneverse`, branch `main`, and save. The build settings stay.
-3. **Dokploy, the Songverse app (Web before):** set the Dockerfile path to `Dockerfile.songverse`, and in its watch paths, replace `Dockerfile.web` with `Dockerfile.songverse`. Do it before the push that renames the file deploys, or that build fails on a missing `Dockerfile.web` (the running container stays up).
-4. **Redeploy** each app once, and check [Verify](#4-verify).
-
-The domains, the environment variables, the database and the stored files don't change. A local clone can follow with `git remote set-url origin https://github.com/Vulcio/Oneverse.git`.
 
 ## 3. Database migrations (automatic)
 
