@@ -73,6 +73,13 @@ that screenshot on failure, `signIn()` for the web app's sign-in form - and
 end with `finish()`, which sets the exit code. Name the file
 `<name>.test.mjs` and `run.mjs` picks it up.
 
+CI runs the suites in four jobs at once (issue #308): `node e2e/run.mjs
+--shard 2/4` runs the second part, `--list` shows which suites that is. The
+parts are balanced by each suite's duration in `durations.json`, taken from
+CI's summary (`PASS  web/sets (42s)`); a new suite counts as an average one
+until the file is refreshed. Every suite still runs alone against its stack,
+so a suite never needs to know which part it's in.
+
 ## Docs screenshots
 
 `docs/screenshots.mjs` isn't a suite: it takes the screenshots for the user

@@ -107,8 +107,15 @@ jobs:
     # The API and browser suites in e2e/, against production builds of the
     # API and web app. Emails print to the API's output (no email provider
     # configured), which the suites read verification links from.
+    # In four jobs at once (issue #308), each with its own stack and database,
+    # running a quarter of the suites of about the same length (run.mjs --shard).
     needs: changes
     if: needs.changes.outputs.code == 'true'
+    name: e2e (${{ matrix.shard }}/4)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -212,13 +219,13 @@ jobs:
           echo "The API or a web app didn't start"; tail -50 /tmp/api.log /tmp/worker.log /tmp/web.log /tmp/planiverse.log /tmp/oneverse.log /tmp/screen.log; exit 1
 
       - name: Run the end-to-end suites
-        run: pnpm --filter @oneverse/e2e e2e
+        run: node e2e/run.mjs --shard ${{ matrix.shard }}/4
 
       - name: Keep screenshots and server logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-failures
+          name: e2e-failures-${{ matrix.shard }}
           path: |
             e2e/.artifacts/
             /tmp/api.log
