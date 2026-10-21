@@ -1,7 +1,6 @@
 import type { SignupInvitationPreview } from "@oneverse/core";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "@oneverse/app/components/auth-card";
 import { AuthPage } from "@oneverse/app/components/auth-page";
 import { SongverseBrand } from "#/components/brand";
 import { LocaleProvider } from "@oneverse/app/components/locale-provider";
@@ -10,8 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { apiClient } from "#/lib/api-client";
 import { loadLocale } from "@oneverse/app/i18n";
 import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
+import { signInFirst } from "@oneverse/app/join";
 
-/** An invitation to create an account (issue #198): its email filled in, the sign-up tab open. */
+/**
+ * An invitation to create an account (issue #198): off to Oneverse (issue
+ * #303), its email filled in, the sign-up tab open; or why it can't be used.
+ */
 export const Route = createFileRoute("/invite/$token")({
   beforeLoad: async ({ params }) => {
     const session = await getSession();
@@ -21,8 +24,8 @@ export const Route = createFileRoute("/invite/$token")({
     } catch {
       // Removed, or never was: said below.
     }
-    const { hasGoogleAuth } = session ? { hasGoogleAuth: false } : await apiClient.getAuthPublicConfig();
-    return { locale: await loadLocale(session?.locale ?? (await getVisitorLocale())), signedIn: !!session, invitation, hasGoogleAuth };
+    if (invitation?.status === "pending" && !session) throw signInFirst("/library", { kind: "signup", token: params.token }, invitation.email);
+    return { locale: await loadLocale(session?.locale ?? (await getVisitorLocale())), signedIn: !!session, invitation };
   },
   component: InvitePage,
 });
@@ -39,38 +42,27 @@ function InvitePage() {
 
 function InviteContent() {
   const { t } = useTranslation();
-  const { token } = Route.useParams();
-  const { signedIn, invitation, hasGoogleAuth } = Route.useRouteContext();
-  const usable = invitation?.status === "pending" && !signedIn;
+  const { signedIn, invitation } = Route.useRouteContext();
 
   return (
     <AuthPage brand={<SongverseBrand />}>
-      {usable ? (
-        <>
-          <p className="max-w-sm text-center text-sm text-muted-foreground" data-testid="invite-prompt">
-            {t("auth.invitePrompt", { email: invitation.email })}
-          </p>
-          <AuthCard hasGoogleAuth={hasGoogleAuth} signupInviteOnly invitePass={{ kind: "signup", token }} email={invitation.email} />
-        </>
-      ) : (
-        <Card className="w-full max-w-sm" data-testid="invite-unavailable">
-          <CardHeader>
-            <CardTitle>{signedIn ? t("auth.inviteSignedInTitle") : t("auth.inviteUnavailableTitle")}</CardTitle>
-            <CardDescription>
-              {signedIn
-                ? t("auth.inviteSignedIn")
-                : invitation?.status === "accepted"
-                  ? t("auth.inviteAccepted")
-                  : invitation?.status === "expired"
-                    ? t("auth.inviteExpired")
-                    : t("auth.inviteNotFound")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button render={<Link to={signedIn ? "/library" : "/"} />}>{signedIn ? t("auth.goToLibrary") : t("auth.backToSignIn")}</Button>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="w-full max-w-sm" data-testid="invite-unavailable">
+        <CardHeader>
+          <CardTitle>{signedIn ? t("auth.inviteSignedInTitle") : t("auth.inviteUnavailableTitle")}</CardTitle>
+          <CardDescription>
+            {signedIn
+              ? t("auth.inviteSignedIn")
+              : invitation?.status === "accepted"
+                ? t("auth.inviteAccepted")
+                : invitation?.status === "expired"
+                  ? t("auth.inviteExpired")
+                  : t("auth.inviteNotFound")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button render={<a href={signedIn ? "/library" : "/"} />}>{signedIn ? t("auth.goToLibrary") : t("auth.backToSignIn")}</Button>
+        </CardContent>
+      </Card>
     </AuthPage>
   );
 }

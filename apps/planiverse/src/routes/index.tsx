@@ -1,29 +1,13 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { AuthCard } from "@oneverse/app/components/auth-card";
-import { AuthPage } from "@oneverse/app/components/auth-page";
-import { LocaleProvider } from "@oneverse/app/components/locale-provider";
-import { loadLocale } from "@oneverse/app/i18n";
-import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
-import { PlaniverseBrand } from "#/components/brand";
-import { apiClient } from "#/lib/api-client";
+import { getSession } from "@oneverse/app/server-auth";
 
+/** The way in (issue #303): signed in, the calendar; signed out, Oneverse's sign-in, coming back to `next`. */
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
+  validateSearch: (search: Record<string, unknown>) => ({
+    next: typeof search.next === "string" ? search.next : undefined,
+  }),
+  beforeLoad: async ({ search }) => {
     if (await getSession()) throw redirect({ to: "/calendar" });
-    const [{ hasGoogleAuth, signupInviteOnly }, locale] = await Promise.all([apiClient.getAuthPublicConfig(), getVisitorLocale()]);
-    return { hasGoogleAuth, signupInviteOnly, locale: await loadLocale(locale) };
+    throw redirect({ href: `/auth/sign-in?${new URLSearchParams({ next: search.next ?? "/calendar" })}`, reloadDocument: true });
   },
-  component: Home,
 });
-
-/** Signing in to Planiverse (issue #241): the same account as Songverse's. */
-function Home() {
-  const { hasGoogleAuth, signupInviteOnly, locale } = Route.useRouteContext();
-  return (
-    <LocaleProvider locale={locale}>
-      <AuthPage brand={<PlaniverseBrand />}>
-        <AuthCard redirectTo="/calendar" hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} />
-      </AuthPage>
-    </LocaleProvider>
-  );
-}

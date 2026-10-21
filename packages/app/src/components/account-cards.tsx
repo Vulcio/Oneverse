@@ -13,10 +13,12 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 import { authClient } from "../auth-client";
+import { oneverseUrl } from "../public-env";
 
 // The account's own cards (issue #242): one's name and picture, email,
-// passkeys, language - in Songverse's dashboard and in Planiverse, each
-// with its app's API client.
+// passkeys, language - each with its app's API client. Email and passkeys
+// need BetterAuth's own session, so they're Oneverse's (issue #303); the
+// apps show OneverseAccountCard instead.
 
 // Only guards what the browser has to decode for cropping; what's uploaded
 // is the cropped result, at most 512x512.
@@ -141,6 +143,29 @@ export function ProfileCard({ api, profile }: { api: ApiClient; profile: UserPro
   );
 }
 
+/**
+ * In an app that signs in through Oneverse (issue #303): what's managed
+ * there - email, password, passkeys - since only Oneverse has its session.
+ */
+export function OneverseAccountCard({ email }: { email: string }) {
+  const { t } = useTranslation();
+  return (
+    <Card data-testid="oneverse-account">
+      <CardHeader>
+        <CardTitle className="text-sm">{t("account.oneverseTitle")}</CardTitle>
+        <CardDescription>
+          {email} · {t("account.oneverseDescription")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button variant="outline" render={<a href={`${oneverseUrl()}/account`} />}>
+          {t("account.openOneverse")}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function EmailCard({ email }: { email: string }) {
   const { t } = useTranslation();
   const [newEmail, setNewEmail] = useState("");
@@ -154,7 +179,7 @@ export function EmailCard({ email }: { email: string }) {
     const result = await authClient.changeEmail({
       newEmail: newEmail.trim(),
       // BetterAuth resolves a relative URL against the API's origin, not this app's.
-      callbackURL: `${window.location.origin}/dashboard`,
+      callbackURL: `${window.location.origin}/account`,
     });
     setPending(false);
     if (result.error) {

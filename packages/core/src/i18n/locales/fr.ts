@@ -1998,6 +1998,10 @@ const fr: typeof en = {
   },
   account: {
     title: "Paramètres du compte",
+    oneverseTitle: "Votre compte Oneverse",
+    oneverseDescription: "Votre adresse e-mail, votre mot de passe et vos clés d'accès se gèrent sur Oneverse, où vous vous connectez à toutes les applications.",
+    openOneverse: "Gérer sur Oneverse",
+    apps: "Vos applications",
     passkeys: "Clés d'accès (passkeys)",
     passkeysDescription:
       "Connectez-vous sans mot de passe grâce à l'empreinte digitale, au visage ou au verrouillage d'écran de votre appareil.",

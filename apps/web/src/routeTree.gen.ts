@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedRouteImport } from './routes/_protected'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ScreenRouteImport } from './routes/screen'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
 import { Route as ProtectedAdminRouteImport } from './routes/_protected/admin'
@@ -24,6 +23,9 @@ import { Route as ProtectedPeopleRouteImport } from './routes/_protected/people'
 import { Route as ProtectedReviewRouteImport } from './routes/_protected/review'
 import { Route as ProtectedScreensRouteImport } from './routes/_protected/screens'
 import { Route as ProtectedTunerRouteImport } from './routes/_protected/tuner'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as AuthSignOutRouteImport } from './routes/auth.sign-out'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as JoinOrganizationTokenRouteImport } from './routes/join-organization.$token'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
@@ -82,11 +84,6 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScreenRoute = ScreenRouteImport.update({
@@ -148,6 +145,21 @@ const ProtectedTunerRoute = ProtectedTunerRouteImport.update({
   id: '/tuner',
   path: '/tuner',
   getParentRoute: () => ProtectedRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/auth/sign-in',
+  path: '/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignOutRoute = AuthSignOutRouteImport.update({
+  id: '/auth/sign-out',
+  path: '/auth/sign-out',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -424,7 +436,6 @@ const ProtectedSetsSetlistIdSongsItemIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/screen': typeof ScreenRoute
   '/account': typeof ProtectedAccountRoute
   '/admin': typeof ProtectedAdminRouteWithChildren
@@ -437,6 +448,9 @@ export interface FileRoutesByFullPath {
   '/review': typeof ProtectedReviewRouteWithChildren
   '/screens': typeof ProtectedScreensRoute
   '/tuner': typeof ProtectedTunerRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
   '/invite/$token': typeof InviteTokenRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
@@ -490,7 +504,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/screen': typeof ScreenRoute
   '/account': typeof ProtectedAccountRoute
   '/calendar': typeof ProtectedCalendarRoute
@@ -501,6 +514,9 @@ export interface FileRoutesByTo {
   '/people': typeof ProtectedPeopleRoute
   '/screens': typeof ProtectedScreensRoute
   '/tuner': typeof ProtectedTunerRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
   '/invite/$token': typeof InviteTokenRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
@@ -556,7 +572,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteWithChildren
-  '/reset-password': typeof ResetPasswordRoute
   '/screen': typeof ScreenRoute
   '/_protected/account': typeof ProtectedAccountRoute
   '/_protected/admin': typeof ProtectedAdminRouteWithChildren
@@ -569,6 +584,9 @@ export interface FileRoutesById {
   '/_protected/review': typeof ProtectedReviewRouteWithChildren
   '/_protected/screens': typeof ProtectedScreensRoute
   '/_protected/tuner': typeof ProtectedTunerRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
   '/invite/$token': typeof InviteTokenRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
@@ -624,7 +642,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/reset-password'
     | '/screen'
     | '/account'
     | '/admin'
@@ -637,6 +654,9 @@ export interface FileRouteTypes {
     | '/review'
     | '/screens'
     | '/tuner'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
     | '/invite/$token'
     | '/join-organization/$token'
     | '/join/$token'
@@ -690,7 +710,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/reset-password'
     | '/screen'
     | '/account'
     | '/calendar'
@@ -701,6 +720,9 @@ export interface FileRouteTypes {
     | '/people'
     | '/screens'
     | '/tuner'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
     | '/invite/$token'
     | '/join-organization/$token'
     | '/join/$token'
@@ -755,7 +777,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_protected'
-    | '/reset-password'
     | '/screen'
     | '/_protected/account'
     | '/_protected/admin'
@@ -768,6 +789,9 @@ export interface FileRouteTypes {
     | '/_protected/review'
     | '/_protected/screens'
     | '/_protected/tuner'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
     | '/invite/$token'
     | '/join-organization/$token'
     | '/join/$token'
@@ -823,8 +847,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
-  ResetPasswordRoute: typeof ResetPasswordRoute
   ScreenRoute: typeof ScreenRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignOutRoute: typeof AuthSignOutRoute
   InviteTokenRoute: typeof InviteTokenRoute
   JoinOrganizationTokenRoute: typeof JoinOrganizationTokenRoute
   JoinTokenRoute: typeof JoinTokenRoute
@@ -846,13 +872,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof ProtectedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/screen': {
@@ -938,6 +957,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/tuner'
       preLoaderRoute: typeof ProtectedTunerRouteImport
       parentRoute: typeof ProtectedRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-out': {
+      id: '/auth/sign-out'
+      path: '/auth/sign-out'
+      fullPath: '/auth/sign-out'
+      preLoaderRoute: typeof AuthSignOutRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -1444,8 +1484,10 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
-  ResetPasswordRoute: ResetPasswordRoute,
   ScreenRoute: ScreenRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthSignInRoute: AuthSignInRoute,
+  AuthSignOutRoute: AuthSignOutRoute,
   InviteTokenRoute: InviteTokenRoute,
   JoinOrganizationTokenRoute: JoinOrganizationTokenRoute,
   JoinTokenRoute: JoinTokenRoute,

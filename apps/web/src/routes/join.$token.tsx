@@ -7,11 +7,11 @@ import { apiClient } from "#/lib/api-client";
 /** A team's invite link: joined once signed in (see JoinPage). */
 export const Route = createFileRoute("/join/$token")({
   beforeLoad: async ({ params }) => {
-    const opened = await openInviteLink(apiClient, () => apiClient.joinTeamByToken(params.token));
+    const opened = await openInviteLink({ kind: "team", token: params.token }, () => apiClient.joinTeamByToken(params.token));
     if ("joined" in opened) throw redirect({ to: "/teams/$teamId", params: { teamId: opened.joined.id } });
     return opened;
   },
   component: function Page() {
-    return <JoinPage kind="team" token={Route.useParams().token} brand={<SongverseBrand />} context={Route.useRouteContext()} home={{ href: "/dashboard", label: "auth.goToDashboard" }} />;
+    return <JoinPage kind="team" brand={<SongverseBrand />} context={Route.useRouteContext()} home={{ href: "/dashboard", label: "auth.goToDashboard" }} />;
   },
 });

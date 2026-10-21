@@ -10,9 +10,10 @@ import { planningHost } from "#/lib/planning-host";
 
 /** Every signed-in page (issue #241): signed out, back to signing in. */
 export const Route = createFileRoute("/_protected")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const session = await getSession();
-    if (!session) throw redirect({ to: "/" });
+    // Signed in again, back here (issue #303).
+    if (!session) throw redirect({ to: "/", search: { next: location.href } });
     await loadLocale(session.locale);
     return { session };
   },

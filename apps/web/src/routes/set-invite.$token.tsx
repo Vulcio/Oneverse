@@ -2,7 +2,6 @@ import type { SetInvitePreview } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "@oneverse/app/components/auth-card";
 import { AuthPage } from "@oneverse/app/components/auth-page";
 import { SongverseBrand } from "#/components/brand";
 import { LocaleProvider } from "@oneverse/app/components/locale-provider";
@@ -24,8 +23,7 @@ export const Route = createFileRoute("/set-invite/$token")({
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     }
-    const { hasGoogleAuth, signupInviteOnly } = session ? { hasGoogleAuth: false, signupInviteOnly: false } : await apiClient.getAuthPublicConfig();
-    return { locale: await loadLocale(session?.locale ?? (await getVisitorLocale())), signedIn: !!session, preview, error, hasGoogleAuth, signupInviteOnly };
+    return { locale: await loadLocale(session?.locale ?? (await getVisitorLocale())), signedIn: !!session, preview, error };
   },
   component: SetInvitePage,
 });
@@ -43,7 +41,7 @@ function SetInvitePage() {
 function SetInviteContent() {
   const { t } = useTranslation();
   const { token } = Route.useParams();
-  const { signedIn, preview, error, hasGoogleAuth, signupInviteOnly } = Route.useRouteContext();
+  const { signedIn, preview, error } = Route.useRouteContext();
 
   return (
     <AuthPage brand={<SongverseBrand />}>
@@ -65,8 +63,10 @@ function SetInviteContent() {
           {!signedIn ? (
             <>
               <p className="max-w-sm text-center text-sm text-muted-foreground">{t("sets.joinSignInPrompt")}</p>
-              {/* The set's share link lets them sign up, also by invitation only (issue #198). */}
-              <AuthCard redirectTo={`/set-invite/${token}`} hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} invitePass={{ kind: "set", token }} />
+              {/* At Oneverse (issue #303): the set's share link lets them sign up, also by invitation only (issue #198). */}
+              <Button render={<a href={`/auth/sign-in?${new URLSearchParams({ next: `/set-invite/${token}`, pass: `set:${token}` })}`} />} data-testid="set-invite-sign-in">
+                {t("auth.signIn")}
+              </Button>
             </>
           ) : null}
         </>

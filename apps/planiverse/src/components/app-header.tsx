@@ -1,5 +1,4 @@
 import type { AppSession } from "@oneverse/app/session";
-import { authClient } from "@oneverse/app/auth-client";
 import { Link } from "@tanstack/react-router";
 import { HelpCircle, LogOut, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -54,9 +53,8 @@ export function AppHeader({ session }: { session: AppSession }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                void authClient.signOut().then(() => {
-                  window.location.href = "/";
-                });
+                // This app's session, then Oneverse's (issue #303).
+                window.location.href = "/auth/sign-out";
               }}
               data-testid="sign-out"
             >

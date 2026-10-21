@@ -31,9 +31,10 @@ interface AuthCardProps {
 // the API's origin, now that auth lives there rather than in this app. So
 // what we hand it here has to be an absolute URL pointing back at *this*
 // app, or a signed-out browser ends up sent to the API's origin instead of
-// the web app after clicking the link.
+// the web app after clicking the link. Oneverse's sign-in page (issue #303)
+// hands it an address already: the app the person is signing in to.
 function toAbsoluteUrl(path: string) {
-  return `${window.location.origin}${path}`;
+  return /^https?:\/\//.test(path) ? path : `${window.location.origin}${path}`;
 }
 
 // BetterAuth's errors carry a code; the known ones are translated, others
@@ -157,7 +158,7 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
 
   async function signInWithGoogle() {
     resetMessages();
-    await authClient.signIn.social({ provider: "google", callbackURL: toAbsoluteUrl(redirectTo), errorCallbackURL: toAbsoluteUrl(window.location.pathname) });
+    await authClient.signIn.social({ provider: "google", callbackURL: toAbsoluteUrl(redirectTo), errorCallbackURL: toAbsoluteUrl(window.location.pathname + window.location.search) });
   }
 
   async function signInWithPasskey() {

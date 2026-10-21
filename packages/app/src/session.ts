@@ -1,6 +1,7 @@
-import { getRequest } from "@tanstack/react-start/server";
+import { getRequest, setCookie } from "@tanstack/react-start/server";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeFromAcceptLanguage, type LocaleValue } from "@oneverse/core";
 import { getApiUrl } from "./public-env";
+import { appOrigin, needsRefresh, oauthClient, readTokens, refreshTokens, refreshedSessionCookie, type OAuthClient } from "./oauth";
 
 export interface AppSession {
   userId: string;
@@ -47,6 +48,7 @@ function asLocale(value: string): LocaleValue {
  * `/users/me` just to get them.
  */
 export async function loadSession(): Promise<AppSession | null> {
+  if (oauthClient()) return loadClientSession();
   const cookie = getRequest().headers.get("cookie");
   const response = await fetch(`${getApiUrl()}/api/auth/get-session`, {
     headers: cookie ? { cookie } : undefined,
@@ -70,6 +72,45 @@ export async function loadSession(): Promise<AppSession | null> {
     canUploadAudio: Boolean(data.user.canUploadAudio),
     locale: asLocale(data.user.locale ?? DEFAULT_LOCALE),
     weekStartsOn: data.user.weekStartsOn === 0 || data.user.weekStartsOn === 1 || data.user.weekStartsOn === 6 ? data.user.weekStartsOn : null,
+  };
+}
+
+/** What `GET /users/me` answers that a session carries. */
+interface Me {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  isGlobalAdmin: boolean;
+  isReviewer: boolean;
+  canSeparateStems: boolean;
+  canUploadAudio: boolean;
+  locale: string;
+  weekStartsOn: number | null;
+}
+
+/**
+ * An app that signs in through Oneverse (issue #303): its session is its
+ * tokens, and who it is comes from the API with them.
+ */
+async function loadClientSession(): Promise<AppSession | null> {
+  const token = await requestApiToken();
+  if (!token) return null;
+  const response = await fetch(`${getApiUrl()}/users/me`, { headers: { authorization: `Bearer ${token}` } });
+  if (response.status >= 500) throw new Error(`The API failed (HTTP ${response.status})`);
+  if (!response.ok) return null;
+  const me = (await response.json()) as Me;
+  return {
+    userId: me.id,
+    email: me.email,
+    displayName: me.displayName,
+    avatarUrl: me.avatarUrl,
+    isGlobalAdmin: me.isGlobalAdmin,
+    isReviewer: me.isReviewer,
+    canSeparateStems: me.canSeparateStems,
+    canUploadAudio: me.canUploadAudio,
+    locale: asLocale(me.locale),
+    weekStartsOn: me.weekStartsOn === 0 || me.weekStartsOn === 1 || me.weekStartsOn === 6 ? me.weekStartsOn : null,
   };
 }
 
@@ -102,8 +143,24 @@ export function requestApiToken(): Promise<string | null> {
 
   let token = tokensByRequest.get(request);
   if (!token) {
-    token = mintApiToken(cookie);
+    const client = oauthClient();
+    token = client ? clientApiToken(request, cookie, client) : mintApiToken(cookie);
     tokensByRequest.set(request, token);
   }
   return token;
+}
+
+/**
+ * The app's access token (issue #303), refreshed shortly before it runs out:
+ * the new tokens go back in its cookie, with this answer. A refresh token
+ * that's no longer good (revoked, run out, the account banned) signs out.
+ */
+async function clientApiToken(request: Request, cookie: string, client: OAuthClient): Promise<string | null> {
+  const tokens = readTokens(cookie);
+  if (!tokens) return null;
+  if (!needsRefresh(tokens)) return tokens.accessToken;
+  const fresh = await refreshTokens(tokens);
+  const { name, value, maxAge, secure } = refreshedSessionCookie(fresh, appOrigin(request, client).startsWith("https:"));
+  setCookie(name, value, { path: "/", maxAge, httpOnly: true, sameSite: "lax", secure });
+  return fresh?.accessToken ?? null;
 }

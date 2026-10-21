@@ -15,11 +15,12 @@ import { planningHost } from "#/lib/planning-host";
  * during a soft navigation.
  */
 export const Route = createFileRoute("/_protected")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     // Runs on every navigation (and hover preload); cached between them in the browser.
     const data = await loadAppData();
     if (!data) {
-      throw redirect({ to: "/" });
+      // Signed in again, back here (issue #303).
+      throw redirect({ to: "/", search: { next: location.href } });
     }
     await loadLocale(data.session.locale);
     return data;

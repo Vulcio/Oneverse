@@ -46,7 +46,7 @@ function RootDocument({ children }: { children: ReactNode }) {
     // The mode script sets <html>'s theme before hydration, hence the warning suppressed.
     <html lang={lang} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: renderPublicEnvScript() }} />
+        <script dangerouslySetInnerHTML={{ __html: renderPublicEnvScript(["ONEVERSE_URL"]) }} />
         <script dangerouslySetInnerHTML={{ __html: MODE_SCRIPT }} />
         <HeadContent />
       </head>

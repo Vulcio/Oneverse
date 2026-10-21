@@ -42,7 +42,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { authClient } from "@oneverse/app/auth-client";
 import type { AppSession } from "@oneverse/app/server-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
@@ -213,8 +212,9 @@ export function AccountMenuContent({ session, side, align }: { session: AppSessi
           variant="destructive"
           onClick={() => {
             forgetSmartLists();
-            void Promise.all([authClient.signOut(), forgetOffline()]).then(() => {
-              window.location.href = "/";
+            // This app's session, then Oneverse's (issue #303).
+            void forgetOffline().then(() => {
+              window.location.href = "/auth/sign-out";
             });
           }}
         >

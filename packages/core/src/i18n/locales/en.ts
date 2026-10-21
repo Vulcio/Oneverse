@@ -1995,6 +1995,10 @@ const en = {
   },
   account: {
     title: "Account settings",
+    oneverseTitle: "Your Oneverse account",
+    oneverseDescription: "Your email address, password and passkeys are managed at Oneverse, where you sign in to every app.",
+    openOneverse: "Manage at Oneverse",
+    apps: "Your apps",
     passkeys: "Passkeys",
     passkeysDescription: "Sign in without a password using your device's fingerprint, face, or screen lock.",
     noPasskeysYet: "No passkeys added yet.",

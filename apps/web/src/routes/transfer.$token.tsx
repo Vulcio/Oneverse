@@ -2,7 +2,6 @@ import type { TransferPreview } from "@oneverse/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "@oneverse/app/components/auth-card";
 import { AuthPage } from "@oneverse/app/components/auth-page";
 import { SongverseBrand } from "#/components/brand";
 import { LocaleProvider } from "@oneverse/app/components/locale-provider";
@@ -10,17 +9,16 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
-import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
+import { getSession } from "@oneverse/app/server-auth";
+import { signInFirst } from "@oneverse/app/join";
 import { loadLocale } from "@oneverse/app/i18n";
 
 export const Route = createFileRoute("/transfer/$token")({
   beforeLoad: async ({ params }) => {
     const session = await getSession();
-    if (!session) {
-      const [{ hasGoogleAuth }, locale] = await Promise.all([apiClient.getAuthPublicConfig(), getVisitorLocale()]);
-      return { locale: await loadLocale(locale), email: null, preview: null, error: null, hasGoogleAuth };
-    }
-    const base = { locale: await loadLocale(session.locale), email: session.email, hasGoogleAuth: false };
+    // Signed in first, at Oneverse (issue #303), then back here.
+    if (!session) throw signInFirst(`/transfer/${params.token}`);
+    const base = { locale: await loadLocale(session.locale), email: session.email };
     try {
       return { ...base, preview: await apiClient.getTransfer(params.token), error: null };
     } catch (error) {
@@ -43,16 +41,11 @@ function TransferPage() {
 function TransferContent() {
   const { t } = useTranslation();
   const { token } = Route.useParams();
-  const { email, preview, error, hasGoogleAuth } = Route.useRouteContext();
+  const { email, preview, error } = Route.useRouteContext();
 
   return (
     <AuthPage brand={<SongverseBrand />}>
-      {!email ? (
-        <>
-          <p className="max-w-sm text-center text-sm text-muted-foreground">{t("transfer.signInPrompt")}</p>
-          <AuthCard redirectTo={`/transfer/${token}`} hasGoogleAuth={hasGoogleAuth} />
-        </>
-      ) : preview ? (
+      {preview ? (
         <ClaimCard token={token} email={email} preview={preview} />
       ) : (
         <Card className="w-full max-w-sm">

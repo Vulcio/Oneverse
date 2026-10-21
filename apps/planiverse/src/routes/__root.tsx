@@ -44,7 +44,7 @@ function RootDocument({ children }: { children: ReactNode }) {
     <html lang={lang} suppressHydrationWarning>
       <head>
         {/* Songverse's address too: a date's set opens there. */}
-        <script dangerouslySetInnerHTML={{ __html: renderPublicEnvScript(["SONGVERSE_URL"]) }} />
+        <script dangerouslySetInnerHTML={{ __html: renderPublicEnvScript(["SONGVERSE_URL", "ONEVERSE_URL"]) }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <HeadContent />
       </head>

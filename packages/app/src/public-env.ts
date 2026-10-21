@@ -48,3 +48,11 @@ export function publicEnvValue(name: string): string | undefined {
   if (typeof window !== "undefined") return window.__PUBLIC_ENV__?.[name] || undefined;
   return (typeof process !== "undefined" ? process.env[name] : undefined) || undefined;
 }
+
+/**
+ * Oneverse's address (issue #303): where people sign in and manage their
+ * account. Every app's root names ONEVERSE_URL in renderPublicEnvScript.
+ */
+export function oneverseUrl(): string {
+  return (publicEnvValue("ONEVERSE_URL") ?? "http://localhost:3003").replace(/\/+$/, "");
+}

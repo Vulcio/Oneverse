@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { EmailCard, LanguageCard, PasskeysCard, ProfileCard } from "@oneverse/app/components/account-cards";
+import { LanguageCard, OneverseAccountCard, ProfileCard } from "@oneverse/app/components/account-cards";
 import { NotificationSettingsCard } from "@oneverse/planning/components/notification-settings-card";
 import { apiClient } from "#/lib/api-client";
 
@@ -23,8 +23,7 @@ function AccountPage() {
       <div className="grid grid-cols-1 items-start gap-6 @4xl:grid-cols-2">
         <div className="flex flex-col gap-6">
           <ProfileCard api={apiClient} profile={profile} />
-          <EmailCard email={profile.email} />
-          <PasskeysCard />
+          <OneverseAccountCard email={profile.email} />
           <LanguageCard api={apiClient} locale={profile.locale} weekStartsOn={profile.weekStartsOn} />
         </div>
         <NotificationSettingsCard />

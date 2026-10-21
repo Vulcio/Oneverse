@@ -40,6 +40,9 @@ function pdfjsWasm(): Plugin {
 }
 
 export default defineConfig({
+  // An OAuth client of the API: people sign in at Oneverse (issue #303,
+  // packages/app/src/oauth.ts); its address from WEB_URL.
+  define: { __ONEVERSE_CLIENT__: JSON.stringify({ id: "songverse", addressEnv: "WEB_URL" }) },
   resolve: {
     tsconfigPaths: true,
   },

@@ -9,7 +9,7 @@ import { apiClient } from "#/lib/api-client";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 import { artistNames } from "#/lib/artists";
-import { EmailCard, LanguageCard, PasskeysCard, ProfileCard } from "@oneverse/app/components/account-cards";
+import { LanguageCard, OneverseAccountCard, ProfileCard } from "@oneverse/app/components/account-cards";
 import { ChartDisplayCard, StorageCard } from "./-dashboard/account-cards";
 import { NotificationSettingsCard } from "@oneverse/planning/components/notification-settings-card";
 import { OwnershipRequestsCard } from "./-dashboard/ownership-requests-card";
@@ -172,8 +172,7 @@ function Dashboard() {
         <div className="gap-6 lg:columns-2 @7xl:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
           <ProfileCard api={apiClient} profile={profile} />
           <RolesCard profile={profile} customInstruments={customInstruments} />
-          <EmailCard email={profile.email} />
-          <PasskeysCard />
+          <OneverseAccountCard email={profile.email} />
           <StorageCard storage={storage} />
           <LanguageCard api={apiClient} locale={profile.locale} weekStartsOn={profile.weekStartsOn} />
           <NotificationSettingsCard />

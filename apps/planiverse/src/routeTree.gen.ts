@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedRouteImport } from './routes/_protected'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
 import { Route as ProtectedCalendarRouteImport } from './routes/_protected/calendar'
 import { Route as ProtectedNotificationsRouteImport } from './routes/_protected/notifications'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as AuthSignOutRouteImport } from './routes/auth.sign-out'
 import { Route as JoinOrganizationTokenRouteImport } from './routes/join-organization.$token'
 import { Route as JoinTokenRouteImport } from './routes/join.$token'
 import { Route as ProtectedOrganizationsIndexRouteImport } from './routes/_protected/organizations/index'
@@ -32,11 +34,6 @@ const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -51,6 +48,21 @@ const ProtectedNotificationsRoute = ProtectedNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
   getParentRoute: () => ProtectedRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/auth/sign-in',
+  path: '/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignOutRoute = AuthSignOutRouteImport.update({
+  id: '/auth/sign-out',
+  path: '/auth/sign-out',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const JoinOrganizationTokenRoute = JoinOrganizationTokenRouteImport.update({
   id: '/join-organization/$token',
@@ -93,10 +105,12 @@ const ProtectedOrganizationsOrganizationIdEventsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/account': typeof ProtectedAccountRoute
   '/calendar': typeof ProtectedCalendarRoute
   '/notifications': typeof ProtectedNotificationsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
@@ -107,10 +121,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/account': typeof ProtectedAccountRoute
   '/calendar': typeof ProtectedCalendarRoute
   '/notifications': typeof ProtectedNotificationsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
@@ -123,10 +139,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteWithChildren
-  '/reset-password': typeof ResetPasswordRoute
   '/_protected/account': typeof ProtectedAccountRoute
   '/_protected/calendar': typeof ProtectedCalendarRoute
   '/_protected/notifications': typeof ProtectedNotificationsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
   '/join-organization/$token': typeof JoinOrganizationTokenRoute
   '/join/$token': typeof JoinTokenRoute
   '/_protected/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
@@ -139,10 +157,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/reset-password'
     | '/account'
     | '/calendar'
     | '/notifications'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
     | '/join-organization/$token'
     | '/join/$token'
     | '/organizations/$organizationId'
@@ -153,10 +173,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/reset-password'
     | '/account'
     | '/calendar'
     | '/notifications'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
     | '/join-organization/$token'
     | '/join/$token'
     | '/organizations/$organizationId'
@@ -168,10 +190,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_protected'
-    | '/reset-password'
     | '/_protected/account'
     | '/_protected/calendar'
     | '/_protected/notifications'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
     | '/join-organization/$token'
     | '/join/$token'
     | '/_protected/organizations/$organizationId'
@@ -184,7 +208,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
-  ResetPasswordRoute: typeof ResetPasswordRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignOutRoute: typeof AuthSignOutRoute
   JoinOrganizationTokenRoute: typeof JoinOrganizationTokenRoute
   JoinTokenRoute: typeof JoinTokenRoute
 }
@@ -203,13 +229,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof ProtectedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protected/account': {
@@ -232,6 +251,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/notifications'
       preLoaderRoute: typeof ProtectedNotificationsRouteImport
       parentRoute: typeof ProtectedRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-out': {
+      id: '/auth/sign-out'
+      path: '/auth/sign-out'
+      fullPath: '/auth/sign-out'
+      preLoaderRoute: typeof AuthSignOutRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/join-organization/$token': {
       id: '/join-organization/$token'
@@ -316,7 +356,9 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
-  ResetPasswordRoute: ResetPasswordRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthSignInRoute: AuthSignInRoute,
+  AuthSignOutRoute: AuthSignOutRoute,
   JoinOrganizationTokenRoute: JoinOrganizationTokenRoute,
   JoinTokenRoute: JoinTokenRoute,
 }

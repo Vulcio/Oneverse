@@ -1,39 +1,33 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { AuthCard } from "@oneverse/app/components/auth-card";
-import { AuthPage } from "@oneverse/app/components/auth-page";
-import { SongverseBrand } from "#/components/brand";
-import { LocaleProvider } from "@oneverse/app/components/locale-provider";
-import { SourceCodeLink } from "#/components/source-code-link";
-import { apiClient } from "#/lib/api-client";
 import { loadAppData } from "#/lib/app-data";
 import { forgetOffline } from "#/lib/offline-db";
-import { getVisitorLocale } from "@oneverse/app/server-auth";
-import { loadLocale } from "@oneverse/app/i18n";
 
+/**
+ * The way in: signed in, the library; signed out, Oneverse's sign-in (issue
+ * #303), coming back to `next` - once nothing of the last person's is left
+ * on the device (issue #49).
+ */
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    next: typeof search.next === "string" ? search.next : undefined,
+  }),
   beforeLoad: async () => {
     // Through the app data, which offline falls back to the session kept on the device.
     const session = (await loadAppData())?.session;
     if (session) {
       throw redirect({ to: "/library" });
     }
-    const [{ hasGoogleAuth, signupInviteOnly }, locale] = await Promise.all([apiClient.getAuthPublicConfig(), getVisitorLocale()]);
-    return { hasGoogleAuth, signupInviteOnly, locale: await loadLocale(locale) };
   },
   component: Home,
 });
 
 function Home() {
-  const { hasGoogleAuth, signupInviteOnly, locale } = Route.useRouteContext();
-  // Signed out: nothing of the last user's stays on the device (issue #49).
-  useEffect(() => void forgetOffline(), []);
-  return (
-    <LocaleProvider locale={locale}>
-      <AuthPage brand={<SongverseBrand />}>
-        <AuthCard hasGoogleAuth={hasGoogleAuth} signupInviteOnly={signupInviteOnly} />
-        <SourceCodeLink />
-      </AuthPage>
-    </LocaleProvider>
-  );
+  const { next } = Route.useSearch();
+  useEffect(() => {
+    void forgetOffline().then(() => {
+      window.location.replace(`/auth/sign-in?${new URLSearchParams({ next: next ?? "/library" })}`);
+    });
+  }, [next]);
+  return null;
 }
