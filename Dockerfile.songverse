@@ -1,5 +1,7 @@
-# Songverse's web app. Planiverse's (issue #241) is Dockerfile.planiverse,
-# built the same way.
+# Songverse's web app (apps/web). Planiverse's (issue #241) is
+# Dockerfile.planiverse, built the same way; the Oneverse API both use is
+# Dockerfile.api. (This file was Dockerfile.web until the repository became
+# Oneverse.)
 #
 # TanStack Start's default build output is a Fetch-API handler meant for a
 # platform adapter (Vercel/Cloudflare), not a plain Node entrypoint — so for

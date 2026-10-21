@@ -78,7 +78,7 @@ jobs:
           # A new branch has no "before" to compare with: treat it as code, every image built.
           if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
             echo "code=true" >> "$GITHUB_OUTPUT"
-            echo 'images=["api","web","planiverse","docs","site"]' >> "$GITHUB_OUTPUT"
+            echo 'images=["api","songverse","planiverse","docs","site"]' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           files=$(git diff --name-only "$BASE" "$GITHUB_SHA")
@@ -95,7 +95,7 @@ jobs:
           deps='^(pnpm-lock\.yaml|pnpm-workspace\.yaml|package\.json|vite\.config\.ts|\.dockerignore|packages/[^/]+/package\.json|packages/tsconfig/)'
           images=()
           echo "$files" | grep -qE "$deps|^Dockerfile\.api$|^apps/api/(package\.json|nest-cli\.json|tsconfig)|^packages/db/prisma/" && images+=('"api"')
-          echo "$files" | grep -qE "$deps|^Dockerfile\.web$|^apps/web/(package\.json|server\.mjs|vite\.config|tsconfig)" && images+=('"web"')
+          echo "$files" | grep -qE "$deps|^Dockerfile\.songverse$|^apps/web/(package\.json|server\.mjs|vite\.config|tsconfig)" && images+=('"songverse"')
           echo "$files" | grep -qE "$deps|^Dockerfile\.planiverse$|^apps/planiverse/(package\.json|server\.mjs|vite\.config|tsconfig)" && images+=('"planiverse"')
           echo "$files" | grep -qE "$deps|^Dockerfile\.docs$|^apps/docs/" && images+=('"docs"')
           echo "$files" | grep -qE "$deps|^Dockerfile\.site$|^apps/site/" && images+=('"site"')
@@ -140,7 +140,7 @@ jobs:
       # Test-only values; nothing real is protected by them.
       BETTER_AUTH_SECRET: "e2e-only-secret-not-for-production-use"
       SETTINGS_ENCRYPTION_KEY: "e2e-only-settings-key-not-for-production-use"
-      MUSICBRAINZ_CONTACT: "https://github.com/bricedupuy/Songverse"
+      MUSICBRAINZ_CONTACT: "https://github.com/Vulcio/Oneverse"
       # Song artwork (issue #85) and song info (issue #22) from the suites' stand-ins for
       # Apple Music (and its API), MusicBrainz, Deezer, Spotify, YouTube, Wikidata and Wikipedia (e2e/lib/fake-providers.mjs).
       ITUNES_SEARCH_URL: "http://localhost:3999"

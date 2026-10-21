@@ -1,12 +1,38 @@
-# Songverse
+# Oneverse
+
+Oneverse is a family of apps for churches, worship teams and musicians,
+built on one shared core: one account, the same teams and organisations,
+the same sets, screens and live sessions, whichever app you open.
+
+This repository holds the core and the web apps built on it:
+
+| Part | What it is | Where |
+| --- | --- | --- |
+| **Oneverse core** | Accounts, personal spaces, teams and organisations, roles, sets, scriptures, screens and their layers, live sessions and the operator, behind one API | `apps/api`, `packages/db`, `packages/core` |
+| **Songverse** | Songs and musicians: the library, charts and chords, arrangements, songbooks, practice and Live | `apps/web` (app.songverse.one) |
+| **Planiverse** | Planning: events, rotas, groups and calendars, with the same accounts | `apps/planiverse` (plan.songverse.one) |
+| Shared web parts | The UI, signing in and the account, the planning screens | `packages/ui`, `packages/app`, `packages/planning` |
+| Docs and website | The user documentation in English and French, and the website | `apps/docs` (docs.songverse.one), `apps/site` |
+
+Other parts live in their own repositories:
+[Songverse Sonic](https://github.com/Vulcio/songverse-sonic) (stem separation
+and music analysis, Python) and the on-site player
+[songverse-player](https://github.com/Vulcio/songverse-player) (Rust, to become
+Oneverse Player). Planned: Songverse's native apps, Slidevese
+(presentations) and Oneverse Screen (native display apps).
+
+Where it's going, and why: [the architecture blueprint](docs/oneverse-architecture.md).
+It's a direction, not a description of what's built. The code still uses
+Songverse's names (`@songverse/*` packages, the `songverse.one` domains), and
+the blueprint says what moves, and when.
+
+User documentation, in English and French: [docs.songverse.one](https://docs.songverse.one) (source in `apps/docs`).
+
+## Songverse
 
 A songbook and set-planning app for worship teams and musicians: keep your
 chord charts in one library, organise them into songbooks, plan what you're
 playing on Sunday, and share it with the people playing with you.
-
-User documentation, in English and French: [docs.songverse.one](https://docs.songverse.one) (source in `apps/docs`).
-
-## Features
 
 - **Song library** – personal, team and global songs, added and edited
   on one tabbed screen (Song info, Editor, Files, Audio, Links). Upload
@@ -62,23 +88,31 @@ User documentation, in English and French: [docs.songverse.one](https://docs.son
   variables.
 - **English and French**, and usable on a phone.
 
+## Planiverse
+
+The planning on its own (issue #241), for people who plan without playing:
+My calendar, organisations and their groups (sub-groups, positions of their
+own), events that need several groups, availability, line-ups and
+reminders, and notifications by email and push. The same accounts and API
+as Songverse; a date's set opens in Songverse.
+
 ## Tech stack
 
 | Area | Built with |
 | --- | --- |
 | Monorepo | pnpm workspaces, Vite+ (tasks, linting, tests), TypeScript |
-| Web app (`apps/web`) | TanStack Start and Router (React 19, SSR), Vite, Tailwind CSS 4, shadcn/ui, dnd-kit, react-i18next |
+| Web apps (`apps/web`, `apps/planiverse`) | TanStack Start and Router (React 19, SSR), Vite, Tailwind CSS 4, shadcn/ui, dnd-kit, react-i18next |
 | API (`apps/api`) | NestJS (ES modules), requests checked against the shared zod schemas, BetterAuth (sessions, passkeys, OAuth, JWTs for API calls), BullMQ workers on Redis, sharp for images, Resend for email |
 | Data (`packages/db`) | PostgreSQL with Prisma; migrations run when the API starts |
 | Shared (`packages/core`) | API client, zod schemas, ChordPro and chords-over-lyrics parsers, key transposition, translations, tested with Vitest |
 | Storage | Cloudflare R2 (S3-compatible) or local disk, content-addressed |
 | Docs (`apps/docs`) | Astro Starlight, English and French, screenshots taken by Playwright |
 | Website (`apps/site`) | A static Astro page at the root domain, English and French |
-| Deployment | Docker images for the API/worker, the web app, the docs and the website, run on Dokploy |
+| Deployment | Docker images for the API/worker, Songverse, Planiverse, the docs and the website, run on Dokploy |
 
 ## Credits
 
-Songverse stands on a lot of open-source work. Thank you to everyone behind:
+Oneverse stands on a lot of open-source work. Thank you to everyone behind:
 
 | Project | What it does here | Licence |
 | --- | --- | --- |
@@ -133,7 +167,7 @@ cp apps/api/.env.example apps/api/.env       # then fill in the values
 cp apps/web/.env.example apps/web/.env
 cp packages/db/.env.example packages/db/.env
 pnpm db:migrate
-pnpm dev                                     # web :3000, API :3001, docs :4321, website :4322
+pnpm dev                                     # Songverse :3000, API :3001, Planiverse :3002, docs :4321, website :4322
 ```
 
 `pnpm lint`, `pnpm type-check` and `pnpm test` run the checks across the
@@ -144,7 +178,7 @@ the running app - see [e2e/README.md](e2e/README.md). See [Deploy.md](Deploy.md)
 
 ## Licence
 
-Songverse is free software: you can use it, study it, share it and change
+Oneverse is free software: you can use it, study it, share it and change
 it under the terms of the [GNU Affero General Public License, version 3](LICENSE)
 (AGPL-3.0). If you run a modified copy that other people use over a
 network, the licence asks you to offer them its source: the app links to
@@ -152,5 +186,5 @@ it (**Source code**, in the account menu and on the sign-in page) through
 `SOURCE_CODE_URL` in `packages/core/src/constants/index.ts` - point it at
 your own.
 
-Songs, charts and recordings people add to a Songverse server are theirs,
+Songs, charts, recordings and anything else people add to a server are theirs,
 not covered by this licence.

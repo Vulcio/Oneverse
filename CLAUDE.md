@@ -1,4 +1,11 @@
-# Songverse — notes for Claude
+# Oneverse — notes for Claude
+
+This repository is Oneverse's monorepo (renamed from Songverse): the shared
+core - the API, the database, `@songverse/core` - and the apps built on it,
+Songverse (`apps/web`) and Planiverse (`apps/planiverse`). Where it's going:
+`docs/oneverse-architecture.md`, a direction rather than what's built. The
+code keeps Songverse's names (`@songverse/*`, `songverse.one`) until the
+blueprint moves them; the rules below are unchanged by the rename.
 
 ## Issues first
 
@@ -137,7 +144,7 @@ Generic parts (confirm button, date picker, avatars) are in `packages/ui`.
 
 Planiverse (`apps/planiverse`, issue #241) is the second web app: those
 screens on their own, same accounts and API, deployed where an admin wants it
-(`Dockerfile.planiverse`). The API trusts it when `PLANIVERSE_URL` is set
+(`Dockerfile.planiverse`; Songverse's is `Dockerfile.songverse`). The API trusts it when `PLANIVERSE_URL` is set
 (`common/utils/web-apps.ts`: CORS, BetterAuth's trusted origins, passkeys,
 one cookie domain for all). Its paths match Songverse's (`/calendar`,
 `/teams/$id`, `/organizations/…`) so a notification's `url` works in both; a

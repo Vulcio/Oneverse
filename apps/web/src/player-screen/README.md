@@ -1,6 +1,6 @@
 # Player screen
 
-A client-only build of the screens' stage for [songverse-player](https://github.com/bricedupuy/songverse-player),
+A client-only build of the screens' stage for [songverse-player](https://github.com/Vulcio/songverse-player),
 the Rust mini-PC player (issue #247). It renders with the **same** `ScreenStage`, themes, CSS and
 messages as `/screen`, so a screen looks the same on the player as in a browser. Nothing here is
 a second implementation of the stage.

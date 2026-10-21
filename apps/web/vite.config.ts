@@ -43,7 +43,7 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-  // `vite preview` (our production server — see Dockerfile.web) rejects
+  // `vite preview` (our production server — see Dockerfile.songverse) rejects
   // requests whose Host header it doesn't recognize, as a DNS-rebinding
   // defense meant for a developer's own machine. In production this
   // container only ever receives traffic that Dokploy's reverse proxy has

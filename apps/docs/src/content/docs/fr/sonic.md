@@ -26,7 +26,7 @@ docker run -d --name sonic --restart unless-stopped -p 8000:8000 \
 - **Docker Compose :** le dépôt contient un `docker-compose.yml` et un `.env.example` à copier.
 - **Mettre à jour :** `docker pull` l'image et recréer le conteneur ; les tâches et les modèles restent dans le volume `sonic-data`.
 
-Tous les réglages sont dans le [dépôt de Songverse Sonic](https://github.com/bricedupuy/songverse-sonic).
+Tous les réglages sont dans le [dépôt de Songverse Sonic](https://github.com/Vulcio/songverse-sonic).
 
 ## Sur Proxmox
 

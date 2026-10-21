@@ -245,7 +245,7 @@ export const SEED_TUNING_PRESETS = [
  * Where Songverse's source is (AGPL-3.0, section 13: whoever uses it over
  * the network is offered it). A modified copy points this at its own.
  */
-export const SOURCE_CODE_URL = "https://github.com/bricedupuy/Songverse";
+export const SOURCE_CODE_URL = "https://github.com/Vulcio/Oneverse";
 
 /**
  * The colours a team or a songbook can be given (issue #161): a key each,

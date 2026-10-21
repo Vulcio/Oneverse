@@ -1,7 +1,7 @@
 # Planiverse (issue #241): Songverse's planning on its own - its calendar,
 # organisations, groups and their events - signed in to with the same
 # account, through the same API. Built and served like Songverse's web app
-# (see Dockerfile.web for why it's a small Node server, and why this file
+# (see Dockerfile.songverse for why it's a small Node server, and why this file
 # sits at the repo root), by the web apps' shared server
 # (packages/app/server/web-server.mjs).
 #

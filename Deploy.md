@@ -1,6 +1,6 @@
-# Deploying Songverse
+# Deploying Oneverse
 
-This documents the working deployment of Songverse to a self-hosted [Dokploy](https://dokploy.com) instance, using `songverse.one` as the domain: the web app at `app.songverse.one`, Planiverse (the planning on its own, #241) at `plan.songverse.one` if you deploy it, the API at `api.songverse.one`, the docs at `docs.songverse.one`, and the root domain for the website (#43). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later.
+This documents the working deployment of this repository (Oneverse: the shared API and Worker, Songverse, Planiverse, the docs and the website) to a self-hosted [Dokploy](https://dokploy.com) instance, using `songverse.one` as the domain: the web app at `app.songverse.one`, Planiverse (the planning on its own, #241) at `plan.songverse.one` if you deploy it, the API at `api.songverse.one`, the docs at `docs.songverse.one`, and the root domain for the website (#43). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later. The repository was `Vulcio/Songverse` until it became `Vulcio/Oneverse` (#302): an existing deployment moves with [Renaming the repository](#renaming-the-repository-to-oneverse); the domains don't change.
 
 ## Architecture
 
@@ -8,11 +8,11 @@ Seven things get created in Dokploy, all in one Project (eight with Planiverse):
 
 | Resource | Type | Built from | Notes |
 |---|---|---|---|
-| Postgres | Database | Dokploy's built-in template | Shared by API, Worker, and Web |
+| Postgres | Database | Dokploy's built-in template | Shared by the API and the Worker |
 | Redis | Database | Dokploy's built-in template | Backs the background jobs' queues (BullMQ), the Worker's heartbeat, and rate limits shared by the API and the Worker |
-| API | Application | `Dockerfile.api` | Serves the NestJS API, listens on port 3001 |
+| API | Application | `Dockerfile.api` | Serves the NestJS API (Oneverse's, for every app), listens on port 3001 |
 | Worker | Application | `Dockerfile.api` (same as API) | Same image as API, different start command — runs the background jobs |
-| Web | Application | `Dockerfile.web` | The TanStack Start web app, listens on port 3000 |
+| Songverse | Application | `Dockerfile.songverse` | Songverse's web app (TanStack Start), listens on port 3000 |
 | Planiverse | Application | `Dockerfile.planiverse` | Optional (#241): the planning on its own, same accounts and API, listens on port 3000 |
 | Docs | Application | `Dockerfile.docs` | The user documentation, a static site on port 80 |
 | Site | Application | `Dockerfile.site` | The website at the root domain, a static page on port 80 |
@@ -185,16 +185,18 @@ It doesn't need `BETTER_AUTH_SECRET`, `AUTH_URL`, `WEB_URL`, the
 Resend/Google vars or `PORT`: it serves no HTTP traffic and signs nothing.
 Leave `JOBS_IN_API` unset (or `false`) on the API when you run a Worker.
 
-### Web app
+### Songverse app
+
+Songverse's web app (`apps/web`). Called the Web app in earlier versions of this guide, built from `Dockerfile.web`.
 
 **Application**, configured as:
 - Source: this repo, branch `main`
 - Build type: **Dockerfile**
-- Dockerfile path: `Dockerfile.web`
+- Dockerfile path: `Dockerfile.songverse`
 - Build context: `.`
 - Port: `3000`
 - Domain: `app.songverse.one`
-- Watch paths (if you use auto-deploy): `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.web`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`
+- Watch paths (if you use auto-deploy): `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`
 
 Environment variables:
 ```
@@ -235,7 +237,7 @@ Then set `PLANIVERSE_URL=https://plan.songverse.one` on the **API** and redeploy
 
 A one-time change for a deployment that predates the move (#42). The API accepts sign-ins from one web address at a time (`WEB_URL`), so do steps 3 and 4 back to back, at a quiet time: in between, the app works at only one of the two addresses.
 1. **Site app:** create it (see "Site app" below), without a domain for now, and deploy it.
-2. **Web app:** add the domain `app.songverse.one`, keeping `songverse.one` for now.
+2. **Songverse app:** add the domain `app.songverse.one`, keeping `songverse.one` for now.
 3. **API and Worker:** change `WEB_URL` to `https://app.songverse.one`, and redeploy both. The API now trusts, and sends links to, the new address.
 4. **Move `songverse.one`:** remove it from the web app's domains and add it to the site app's. The website now answers there, and sends app links on to `app.songverse.one`.
 5. **Check:**
@@ -246,7 +248,7 @@ A one-time change for a deployment that predates the move (#42). The API accepts
 
 Sessions survive the move: the session cookie's domain is `songverse.one` before and after.
 
-Deploy the API and Worker first, then the Web app (Web's build doesn't strictly depend on the others being up, but it's a sane order).
+Deploy the API and Worker first, then the Songverse app (its build doesn't strictly depend on the others being up, but it's a sane order).
 
 **Where auth lives:** BetterAuth is mounted in `apps/api`, not here — the web app is just another HTTP client of the API for auth, exactly like it already was for every other endpoint. This matters mainly if you're adding a mobile app later: it talks to the same API for both login and data, rather than needing to know about the web app's URL at all. See `apps/api/src/auth/` for the actual auth config, and `packages/app/src/session.ts`/`auth-client.ts` for how the web app calls it.
 
@@ -280,6 +282,22 @@ The user documentation (`apps/docs`), a static site served by nginx.
 
 No environment variables. The build fails if any page links to a page or heading that doesn't exist, so a broken docs change never deploys.
 
+### Other parts, deployed on their own
+
+- **Songverse Sonic** (stem separation and music analysis) is its own server, with its own repository and images: [Vulcio/songverse-sonic](https://github.com/Vulcio/songverse-sonic). Point the API at it in **Admin > Stem separation**; teams and organisations can bring their own (#300).
+- **The on-site player** (a mini PC driving the screens over HDMI, #247) is [Vulcio/songverse-player](https://github.com/Vulcio/songverse-player). It's a prototype: nothing in this deployment depends on it yet.
+
+### Renaming the repository to Oneverse
+
+The repository moved from `Vulcio/Songverse` to `Vulcio/Oneverse` (#302). GitHub redirects the old name, so clones, links and issues keep working, but don't count on Dokploy following the redirect. In this order:
+
+1. **GitHub:** rename the repository (Settings > General > Repository name: `Oneverse`). A GitHub App installed on it, Dokploy's included, should keep its access: it's given the repository, not its name.
+2. **Dokploy, every app** (API, Worker, Songverse, Planiverse, Site, Docs): in its source settings (the GitHub provider, where the repository and branch are picked), pick `Oneverse`, branch `main`, and save. The build settings stay.
+3. **Dokploy, the Songverse app (Web before):** set the Dockerfile path to `Dockerfile.songverse`, and in its watch paths, replace `Dockerfile.web` with `Dockerfile.songverse`. Do it before the push that renames the file deploys, or that build fails on a missing `Dockerfile.web` (the running container stays up).
+4. **Redeploy** each app once, and check [Verify](#4-verify).
+
+The domains, the environment variables, the database and the stored files don't change. A local clone can follow with `git remote set-url origin https://github.com/Vulcio/Oneverse.git`.
+
 ## 3. Database migrations (automatic)
 
 Nothing to run by hand. The API container applies any pending migrations each time it starts, before serving traffic (see the `CMD` in `Dockerfile.api`), so the first deploy creates the schema and later deploys pick up new migrations. Check the API's startup logs for Prisma's output: either the migrations it applied or `No pending migrations to apply.` If a migration fails, the API won't start and the error will be in those same logs.
@@ -302,14 +320,14 @@ Don't use `pnpm --filter @songverse/db exec ...` there: the image doesn't includ
 - Sign up for an account → should land on `/dashboard`, showing your name and the results of a live call to the API
 - On a set, **Sync** → **Turn sync on** → it says who's leading (or that no one is) rather than "Connecting…": the WebSocket gets through
 
-If all of those work, the deployment is healthy end to end: DNS → HTTPS → Web → Auth → API → Database.
+If all of those work, the deployment is healthy end to end: DNS → HTTPS → Songverse → Auth → API → Database.
 
 ## Gotchas already hit (and fixed in the repo)
 
 These were real failures during the first deploy. The fixes are already committed, but they're documented here in case a future change accidentally reintroduces one of them.
 
 #### 1. Docker build context
-Both Dockerfiles live at the **repo root** (`Dockerfile.api`, `Dockerfile.web`), not inside `apps/api/` or `apps/web/`. They need to reach sibling folders (`packages/*`) during the build, and some platforms — Dokploy included — default the build context to "the directory the Dockerfile is in," ignoring a separately configured context path. Keeping the Dockerfiles at the root sidesteps the ambiguity entirely: wherever the Dockerfile is *is* the context.
+Every Dockerfile lives at the **repo root** (`Dockerfile.api`, `Dockerfile.songverse`, `Dockerfile.planiverse`…), not inside `apps/api/` or `apps/web/`. They need to reach sibling folders (`packages/*`) during the build, and some platforms — Dokploy included — default the build context to "the directory the Dockerfile is in," ignoring a separately configured context path. Keeping the Dockerfiles at the root sidesteps the ambiguity entirely: wherever the Dockerfile is *is* the context.
 
 #### 2. pnpm version drift
 Both Dockerfiles pin pnpm explicitly with `corepack prepare pnpm@10.33.0 --activate` in the base stage, rather than letting corepack lazily resolve a version from `package.json` at first use. Without this, a newer base image's corepack silently fetched pnpm 12 instead of the pinned 10.33.0, and pnpm 12 resolves monorepo workspaces more strictly — breaking the (normal, standard) "copy `package.json` files first, then install" layer-caching pattern both Dockerfiles use.
@@ -318,10 +336,10 @@ Both Dockerfiles pin pnpm explicitly with `corepack prepare pnpm@10.33.0 --activ
 Both Dockerfiles now `apt-get install openssl` in the base stage. `node:22-slim` doesn't include it, and Prisma's query engine needs it to detect which binary variant to use — without it, Prisma falls back to a guess that happens to work on some hosts and might not on others.
 
 #### 4. `vite preview` blocking the production domain
-`apps/web/vite.config.ts` sets `preview.allowedHosts: true`. By default, `vite preview` (which is what serves the Web app in production here — see the comment at the top of `Dockerfile.web` for why) only trusts `localhost`, as a defense meant for a developer's own machine. Behind Dokploy's reverse proxy, that protection is redundant — the proxy already controls which domains reach the container.
+`apps/web/vite.config.ts` sets `preview.allowedHosts: true`. By default, `vite preview` (which is what serves the Songverse app in production here — see the comment at the top of `Dockerfile.songverse` for why) only trusts `localhost`, as a defense meant for a developer's own machine. Behind Dokploy's reverse proxy, that protection is redundant — the proxy already controls which domains reach the container.
 
 #### 5. The API URL must be a runtime value, not baked in at build time
-`packages/app/src/public-env.ts` reads `API_URL` from the container's environment at request time, rather than through Vite's `VITE_`-prefixed build-time env inlining. The build-time approach requires the hosting platform to correctly pass a value as a Docker *build argument* specifically (not just a regular env var), which didn't work reliably here. If `/users/me` or similar ever starts failing again with something like `Failed to parse URL from /users/me`, it means `API_URL` isn't set on the Web app's environment variables.
+`packages/app/src/public-env.ts` reads `API_URL` from the container's environment at request time, rather than through Vite's `VITE_`-prefixed build-time env inlining. The build-time approach requires the hosting platform to correctly pass a value as a Docker *build argument* specifically (not just a regular env var), which didn't work reliably here. If `/users/me` or similar ever starts failing again with something like `Failed to parse URL from /users/me`, it means `API_URL` isn't set on the Songverse (or Planiverse) app's environment variables.
 
 #### 6. Auth's session cookie and CORS have to agree on the exact origin
 Since BetterAuth moved into `apps/api`, its session cookie is set by `api.songverse.one` but needs to be usable by pages served from `app.songverse.one` — a genuinely cross-origin (though same-site) setup. Two things have to be configured together, in `apps/api/src/main.ts` / `auth/better-auth.ts`, or sign-in silently stops persisting:
@@ -341,14 +359,14 @@ With auto-deploy on, Dokploy rebuilds an app only when a push changes a file mat
 | App | Watch paths |
 |---|---|
 | API, Worker | `apps/api/**`, `packages/core/**`, `packages/db/**`, `packages/secret-crypto/**`, `packages/tsconfig/**`, `Dockerfile.api` |
-| Web | `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.web` |
+| Songverse | `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse` |
 | Planiverse | `apps/planiverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.planiverse` |
 | Site | `apps/site/**`, `Dockerfile.site` |
 | Docs | `apps/docs/**`, `Dockerfile.docs` |
 
 Every app also watches the root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`: every image installs its dependencies from them, so a dependency change rebuilds them all.
 
-- `packages/core` (shared types, translations, the API client) is in both the API's and the Web's: a change there has to reach both, or the web app and the API disagree.
+- `packages/core` (shared types, translations, the API client) is in the API's and both web apps': a change there has to reach them all, or the web apps and the API disagree.
 - `packages/ui`, `packages/app` and `packages/planning` (#241: the UI, signing in, the planning screens) are in both web apps': a change there rebuilds Songverse's and Planiverse's.
 - `packages/db` holds the Prisma schema and migrations: a new migration rebuilds the API, which applies it as it starts (step 3).
 - `e2e/`, `docs/` and the `.md` files at the root aren't in any image, so changing them rebuilds nothing.
