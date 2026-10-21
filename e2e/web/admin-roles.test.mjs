@@ -21,6 +21,7 @@ try {
 
   await step("Admin > Roles: the built-in roles, and a storage tier created", async () => {
     await page.goto(`${WEB}/admin/roles`);
+    await page.waitForLoadState("networkidle");
     await page.getByRole("heading", { name: "Roles" }).waitFor();
     await page.getByTestId("role-Reviewer").getByText("Built-in").waitFor();
     await page.getByTestId("role-new").click();
@@ -33,6 +34,7 @@ try {
 
   await step("Admin > Teams: the Reviewer role and the tier given to a team, its pool grown", async () => {
     await page.goto(`${WEB}/admin/teams`);
+    await page.waitForLoadState("networkidle");
     await page.getByPlaceholder("Search teams…").fill(team.name);
     const row = page.getByRole("row").filter({ hasText: team.name });
     await row.getByText(/\/ 50(\.0)? MB/).waitFor();
@@ -47,6 +49,7 @@ try {
 
   await step("Admin > Users: the member's roles, from the team", async () => {
     await page.goto(`${WEB}/admin/users`);
+    await page.waitForLoadState("networkidle");
     await page.getByPlaceholder("Search by name or email…").fill(member.email);
     const row = page.getByRole("row").filter({ hasText: member.email });
     await row.getByTestId("user-roles").getByText("Reviewer").waitFor();

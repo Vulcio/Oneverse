@@ -121,13 +121,18 @@ try {
   });
 
   await step("a built-in one, with the remote; Back steps out of the themes, then the menu", async () => {
+    // The menu focuses a button once it's drawn: the remote's keys go there, not before.
+    const focused = () => menu().locator("button:focus").waitFor();
     await showing().click({ button: "right", position: { x: 300, y: 300 } });
     await menu().waitFor();
+    await focused();
     await tv.keyboard.press("ArrowDown");
     await tv.keyboard.press("Enter");
     await tv.locator('[data-testid="screen-menu"][data-view="themes"]').waitFor();
+    await focused();
     await tv.keyboard.press("Escape");
     await tv.locator('[data-testid="screen-menu"][data-view="menu"]').waitFor();
+    await focused();
     await tv.keyboard.press("ArrowDown");
     await tv.keyboard.press("Enter");
     await menu().getByTestId("screen-menu-theme").filter({ hasText: "Concert" }).focus();
