@@ -124,7 +124,7 @@ export function PassageItemDialog({
 }
 
 /** A passage's verses, numbered, chapter by chapter. */
-function PassageVerses({ chapters, className }: { chapters: PassageChapter[]; className?: string }) {
+export function PassageVerses({ chapters, className }: { chapters: PassageChapter[]; className?: string }) {
   const many = chapters.length > 1;
   return (
     <div className={`flex flex-col gap-3 ${className ?? ""}`}>

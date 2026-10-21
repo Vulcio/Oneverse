@@ -105,6 +105,10 @@ A team's admins give it a **Colour** and a picture on its page, in **Colour and 
 
 When this Songverse allows it, a team's admins can connect the team's own Songverse Sonic server under **Stem separation** on its page: the team's songs are then split into stems there, by its members. See [Your own stem separation server](/sonic/).
 
+## Bible
+
+Under **Bible**, the team's admins tick **Show the Bible in the sidebar**: its members then find a [Bible](/bible/) in the sidebar's **Tools**, to read a passage and add it to a set. A team in an organisation that turned it on has it already.
+
 ## Leaving or deleting a team
 
 **Leave team** takes you out of it. If you're its only admin, promote another member first. An admin can **Rename** it - the pencil beside its name; an organisation's group too - or **Delete team**.

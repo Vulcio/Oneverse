@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { BIBLE_BOOKS, bibleBookByOsisId, bookKey, findBibleBook } from "../scriptures/books.js";
+import { BIBLE_BOOKS, bibleBookByOsisId, bibleBookChapters, bibleTestament, bookKey, findBibleBook } from "../scriptures/books.js";
 import { BibleSchema, bibleCounts, tidyBible, type Bible } from "../scriptures/bible.js";
 import { formatBibleReference, parseBibleReference, parseBibleReferences, passageVerses } from "../scriptures/references.js";
 import { bibleBookByUsfm, usfmBookId, usfmChapterParts, usfmPassageId } from "../scriptures/usfm.js";
@@ -197,5 +197,20 @@ describe("USFM (YouVersion's ids, issue #304)", () => {
     expect(usfmChapterParts(parseBibleReference("John")!)).toBeNull();
     expect(usfmPassageId("JHN", 3)).toBe("JHN.3");
     expect(usfmPassageId("JHN", 3, 16)).toBe("JHN.3.16");
+  });
+});
+
+describe("bibleBookChapters and bibleTestament (issue #310)", () => {
+  it("counts each book's chapters: 929 in the Old Testament, 260 in the New", () => {
+    const sum = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => bibleBookChapters(from + i) ?? 0).reduce((a, b) => a + b, 0);
+    expect(sum(1, 39)).toBe(929);
+    expect(sum(40, 66)).toBe(260);
+    expect(bibleBookChapters(19)).toBe(150);
+    expect(bibleBookChapters(70)).toBe(51);
+    expect(bibleBookChapters(99)).toBeUndefined();
+  });
+
+  it("puts each book in its testament", () => {
+    expect([1, 39, 40, 66, 67].map(bibleTestament)).toEqual(["old", "old", "new", "new", "deuterocanon"]);
   });
 });

@@ -105,6 +105,10 @@ Les administrateurs d'une équipe lui donnent une **Couleur** et une image sur s
 
 Quand ce Songverse le permet, les admins d'une équipe peuvent connecter son propre serveur Songverse Sonic dans **Séparation en pistes** sur sa page : les chants de l'équipe y sont alors séparés en pistes, par ses membres. Voir [Votre propre serveur de séparation](/fr/sonic/).
 
+## Bible
+
+Sous **Bible**, les administrateurs de l'équipe cochent **Montrer la Bible dans la barre latérale** : ses membres trouvent alors une [Bible](/fr/bible/) dans les **Outils** de la barre latérale, pour lire un passage et l'ajouter à une liste. Une équipe d'une organisation qui l'a activée l'a déjà.
+
 ## Quitter ou supprimer une équipe
 
 **Quitter l'équipe** vous en retire. Si vous en êtes le seul administrateur, nommez d'abord un autre membre administrateur. Un administrateur peut la **Renommer** - le crayon à côté de son nom ; un groupe d'organisation aussi - ou **Supprimer l'équipe**.

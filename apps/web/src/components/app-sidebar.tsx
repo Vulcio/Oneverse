@@ -40,6 +40,7 @@ import {
   Music,
   Building2,
   Monitor,
+  BookText,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -49,6 +50,7 @@ import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { docsUrl, docsView } from "#/lib/docs";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { SOURCE_CODE_URL, setListing } from "@oneverse/core";
+import { bibleTurnedOn } from "#/lib/bible";
 import { forgetOffline } from "#/lib/offline-db";
 import { setTheme, useMode } from "#/lib/mode";
 import { forgetSmartLists, smartListSearch, useSmartLists } from "#/lib/smart-lists";
@@ -470,6 +472,15 @@ function MainNav({
               <span>{t("nav.tuner")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {/* The Bible (issue #310), when one of one's teams or organisations turned it on. */}
+          {bibleTurnedOn(teams, organizations) ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton isActive={pathname === "/bible"} tooltip={t("nav.bible")} render={<Link to="/bible" />} data-testid="nav-bible">
+                <BookText />
+                <span>{t("nav.bible")}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ) : null}
           {/* Screens (issue #222): one's own, one's teams' and organisations'. */}
           <SidebarMenuItem>
             <SidebarMenuButton isActive={pathname === "/screens"} tooltip={t("nav.screens")} render={<Link to="/screens" />} data-testid="nav-screens">

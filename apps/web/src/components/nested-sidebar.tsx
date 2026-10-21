@@ -35,7 +35,9 @@ import {
   CalendarDays,
   Building2,
   Monitor,
+  BookText,
 } from "lucide-react";
+import { bibleTurnedOn } from "#/lib/bible";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AccountMenuContent } from "#/components/app-sidebar";
@@ -171,6 +173,15 @@ export function NestedSidebar({
           </TooltipTrigger>
           <TooltipContent side="right">{t("nav.tuner")}</TooltipContent>
         </Tooltip>
+        {/* The Bible (issue #310), when one of one's teams or organisations turned it on. */}
+        {bibleTurnedOn(teams, organizations) ? (
+          <Tooltip>
+            <TooltipTrigger render={<Link to="/bible" aria-label={t("nav.bible")} data-testid="sidebar-bible" className={cn("flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4", pathname === "/bible" && "bg-sidebar-accent text-sidebar-accent-foreground")} />}>
+              <BookText />
+            </TooltipTrigger>
+            <TooltipContent side="right">{t("nav.bible")}</TooltipContent>
+          </Tooltip>
+        ) : null}
         {/* Screens (issue #222). */}
         <Tooltip>
           <TooltipTrigger render={<Link to="/screens" aria-label={t("nav.screens")} className="flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4" />}>

@@ -1,5 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { loadOrganizationPage, OrganizationPage } from "@oneverse/planning/pages/organization";
+import { BibleCard } from "#/components/bible-card";
 import { BrandsCard } from "#/components/brands-card";
 import { SonicServerCard } from "#/components/sonic-server-card";
 import { apiClient } from "#/lib/api-client";
@@ -11,8 +12,9 @@ export const Route = createFileRoute("/_protected/organizations/$organizationId"
     return { userId: context.session.userId, data };
   },
   component: function Page() {
+    const router = useRouter();
     const { userId, data } = Route.useLoaderData();
-    // Its brands (issue #279) and its own Sonic server (issue #300), for its admins.
+    // Its brands (issue #279), its own Sonic server (issue #300) and the Bible in its teams' sidebar (issue #310), for its admins.
     return (
       <OrganizationPage
         userId={userId}
@@ -21,6 +23,13 @@ export const Route = createFileRoute("/_protected/organizations/$organizationId"
           <>
             <BrandsCard owner={{ organizationId: data.organization.id }} />
             <SonicServerCard owner={{ organizationId: data.organization.id }} />
+            <BibleCard
+              enabled={!!data.organization.bible}
+              onChange={async (bible) => {
+                await apiClient.updateOrganization(data.organization.id, { bible });
+                await router.invalidate();
+              }}
+            />
           </>
         }
       />

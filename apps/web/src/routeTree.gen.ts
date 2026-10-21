@@ -14,6 +14,7 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as ScreenRouteImport } from './routes/screen'
 import { Route as ProtectedAccountRouteImport } from './routes/_protected/account'
 import { Route as ProtectedAdminRouteImport } from './routes/_protected/admin'
+import { Route as ProtectedBibleRouteImport } from './routes/_protected/bible'
 import { Route as ProtectedCalendarRouteImport } from './routes/_protected/calendar'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ProtectedMetronomeRouteImport } from './routes/_protected/metronome'
@@ -100,6 +101,11 @@ const ProtectedAccountRoute = ProtectedAccountRouteImport.update({
 const ProtectedAdminRoute = ProtectedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedBibleRoute = ProtectedBibleRouteImport.update({
+  id: '/bible',
+  path: '/bible',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedCalendarRoute = ProtectedCalendarRouteImport.update({
@@ -445,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/screen': typeof ScreenRoute
   '/account': typeof ProtectedAccountRoute
   '/admin': typeof ProtectedAdminRouteWithChildren
+  '/bible': typeof ProtectedBibleRoute
   '/calendar': typeof ProtectedCalendarRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/metronome': typeof ProtectedMetronomeRoute
@@ -513,6 +520,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/screen': typeof ScreenRoute
   '/account': typeof ProtectedAccountRoute
+  '/bible': typeof ProtectedBibleRoute
   '/calendar': typeof ProtectedCalendarRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/metronome': typeof ProtectedMetronomeRoute
@@ -583,6 +591,7 @@ export interface FileRoutesById {
   '/screen': typeof ScreenRoute
   '/_protected/account': typeof ProtectedAccountRoute
   '/_protected/admin': typeof ProtectedAdminRouteWithChildren
+  '/_protected/bible': typeof ProtectedBibleRoute
   '/_protected/calendar': typeof ProtectedCalendarRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/metronome': typeof ProtectedMetronomeRoute
@@ -654,6 +663,7 @@ export interface FileRouteTypes {
     | '/screen'
     | '/account'
     | '/admin'
+    | '/bible'
     | '/calendar'
     | '/dashboard'
     | '/metronome'
@@ -722,6 +732,7 @@ export interface FileRouteTypes {
     | '/'
     | '/screen'
     | '/account'
+    | '/bible'
     | '/calendar'
     | '/dashboard'
     | '/metronome'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/screen'
     | '/_protected/account'
     | '/_protected/admin'
+    | '/_protected/bible'
     | '/_protected/calendar'
     | '/_protected/dashboard'
     | '/_protected/metronome'
@@ -905,6 +917,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof ProtectedAdminRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/bible': {
+      id: '/_protected/bible'
+      path: '/bible'
+      fullPath: '/bible'
+      preLoaderRoute: typeof ProtectedBibleRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/calendar': {
@@ -1411,6 +1430,7 @@ const ProtectedReviewRouteWithChildren = ProtectedReviewRoute._addFileChildren(
 interface ProtectedRouteChildren {
   ProtectedAccountRoute: typeof ProtectedAccountRoute
   ProtectedAdminRoute: typeof ProtectedAdminRouteWithChildren
+  ProtectedBibleRoute: typeof ProtectedBibleRoute
   ProtectedCalendarRoute: typeof ProtectedCalendarRoute
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedMetronomeRoute: typeof ProtectedMetronomeRoute
@@ -1453,6 +1473,7 @@ interface ProtectedRouteChildren {
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAccountRoute: ProtectedAccountRoute,
   ProtectedAdminRoute: ProtectedAdminRouteWithChildren,
+  ProtectedBibleRoute: ProtectedBibleRoute,
   ProtectedCalendarRoute: ProtectedCalendarRoute,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedMetronomeRoute: ProtectedMetronomeRoute,

@@ -192,6 +192,7 @@ export const UpdateTeamSchema = z.strictObject({
   name: optional(z.string().trim().min(2).max(100)),
   description: clearableText(500),
   color: z.enum(ENTITY_COLORS).nullable().optional().describe("Its colour (issue #161); null: one derived from its name"),
+  bible: optional(z.boolean().describe("A Bible in its members' sidebar (issue #310)")),
 });
 export type UpdateTeamRequest = z.input<typeof UpdateTeamSchema>;
 

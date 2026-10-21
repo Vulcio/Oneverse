@@ -29,6 +29,8 @@ Its admins also:
 
 **Leave organisation** takes you out of it and its teams; its only admin makes someone else an admin first.
 
+Under **Bible**, its admins tick **Show the Bible in the sidebar** for the members of all its teams (see [Bible](/bible/)).
+
 ## Putting a team in it
 
 On a team's page, its admins choose the organisation under **Organisation** - one they're an admin of - then **Save**. The team's members join the organisation, and so does anyone who joins the team later. The team's page then says **Part of** the organisation. **None (a team on its own)** takes it out.

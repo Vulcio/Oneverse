@@ -88,7 +88,7 @@ export class OrganizationsService {
     if ((await this.assertMember(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Organisation admin role required");
   }
 
-  private summary(organization: { id: string; name: string; slug: string; description: string | null; color: string | null; _count: { memberships: number; teams: number } }, role: TeamRoleValue) {
+  private summary(organization: { id: string; name: string; slug: string; description: string | null; color: string | null; bible: boolean; _count: { memberships: number; teams: number } }, role: TeamRoleValue) {
     return {
       id: organization.id,
       name: organization.name,
@@ -98,6 +98,7 @@ export class OrganizationsService {
       currentUserRole: role,
       memberCount: organization._count.memberships,
       teamCount: organization._count.teams,
+      bible: organization.bible,
     };
   }
 
@@ -184,6 +185,7 @@ export class OrganizationsService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.color !== undefined && { color: dto.color }),
+        ...(dto.bible !== undefined && { bible: dto.bible }),
       },
     });
     return this.findOne(viewer, organizationId);

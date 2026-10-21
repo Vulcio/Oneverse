@@ -985,8 +985,10 @@ export interface TeamSummary {
   color: string | null;
   /** Its picture, if it has one. */
   avatarUrl: string | null;
-  /** The organisation it's part of (issue #241), if any. */
-  organization?: { id: string; name: string; color: string | null } | null;
+  /** The organisation it's part of (issue #241), if any; `bible`: it turned the Bible on for its teams (issue #310). */
+  organization?: { id: string; name: string; color: string | null; bible?: boolean } | null;
+  /** A Bible in its members' sidebar (issue #310), turned on by its admins. */
+  bible?: boolean;
   /** A Songverse team (songs, songbooks, sets), or a group that only plans (issue #241). */
   usesSongverse?: boolean;
   /** The group it's under, in its organisation. */
@@ -1009,6 +1011,8 @@ export interface OrganizationSummary {
   currentUserRole: TeamRole;
   memberCount: number;
   teamCount: number;
+  /** A Bible in its teams' members' sidebar (issue #310), turned on by its admins. */
+  bible?: boolean;
 }
 
 /** GET /organizations: the instance's mode, whether one may create one, and one's own. */

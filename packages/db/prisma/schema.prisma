@@ -704,6 +704,8 @@ model Team {
   brands               Brand[]
   // Its own Songverse Sonic server for its songs' stems (issue #300).
   sonicServer          SonicServer?
+  // A Bible in its members' sidebar (issue #310), turned on by its admins.
+  bible                Boolean                @default(false)
 
   @@index([slug])
   @@index([organizationId])
@@ -746,6 +748,8 @@ model Organization {
   brands       Brand[]
   // Its own Songverse Sonic server for its teams' songs' stems (issue #300).
   sonicServer  SonicServer?
+  // A Bible in its teams' members' sidebar (issue #310), turned on by its admins.
+  bible        Boolean      @default(false)
 }
 
 model OrganizationMembership {

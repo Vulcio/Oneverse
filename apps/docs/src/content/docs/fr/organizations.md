@@ -29,6 +29,8 @@ Ses administrateurs peuvent aussi :
 
 **Quitter l'organisation** vous retire d'elle et de ses équipes ; son seul administrateur nomme d'abord quelqu'un d'autre administrateur.
 
+Sous **Bible**, ses administrateurs cochent **Montrer la Bible dans la barre latérale** pour les membres de toutes ses équipes (voir [Bible](/fr/bible/)).
+
 ## Y mettre une équipe
 
 Sur la page d'une équipe, ses administrateurs choisissent l'organisation sous **Organisation** - une dont ils sont administrateurs - puis **Enregistrer**. Les membres de l'équipe rejoignent l'organisation, comme quiconque rejoindra l'équipe plus tard. La page de l'équipe indique alors **Fait partie de** l'organisation. **Aucune (une équipe à part entière)** l'en retire.

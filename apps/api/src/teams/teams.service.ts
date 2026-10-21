@@ -11,7 +11,7 @@ import type { CreateTeamDto } from "./dto/create-team.dto.js";
 import type { UpdateTeamDto } from "./dto/update-team.dto.js";
 
 /** The organisation a team is part of (issue #241). */
-const withOrganization = { organization: { select: { id: true, name: true, color: true } } } as const;
+const withOrganization = { organization: { select: { id: true, name: true, color: true, bible: true } } } as const;
 
 @Injectable()
 export class TeamsService {
@@ -38,6 +38,7 @@ export class TeamsService {
       organization: m.team.organization,
       usesSongverse: m.team.usesSongverse,
       parentId: m.team.parentId,
+      bible: m.team.bible,
     }));
   }
 
@@ -58,6 +59,7 @@ export class TeamsService {
       organization: membership.team.organization,
       usesSongverse: membership.team.usesSongverse,
       parentId: membership.team.parentId,
+      bible: membership.team.bible,
     };
   }
 
@@ -99,6 +101,7 @@ export class TeamsService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.color !== undefined && { color: dto.color }),
+        ...(dto.bible !== undefined && { bible: dto.bible }),
       },
     });
     return this.findOne(userId, teamId);

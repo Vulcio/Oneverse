@@ -30,6 +30,7 @@ export const UpdateOrganizationSchema = z.strictObject({
   name: optional(z.string().trim().min(2).max(100)),
   description: clearableText(500),
   color: z.enum(ENTITY_COLORS).nullable().optional().describe("Its colour; null: one derived from its name"),
+  bible: optional(z.boolean().describe("A Bible in its teams' members' sidebar (issue #310)")),
 });
 export type UpdateOrganizationRequest = z.input<typeof UpdateOrganizationSchema>;
 

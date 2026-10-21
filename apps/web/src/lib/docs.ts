@@ -29,6 +29,7 @@ const PAGES: [RegExp, string][] = [
   [/^\/people/, "people"],
   [/^\/metronome/, "metronome"],
   [/^\/tuner/, "metronome"],
+  [/^\/bible/, "bible"],
 ];
 
 /**
