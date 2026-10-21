@@ -2930,6 +2930,9 @@ model Role {
   // Uploading audio files (issue #183). Without it, someone can still record
   // in Songverse (a take it processes) and have stems separated.
   canUploadAudio             Boolean  @default(false)
+  // Runs a set's screens (issue #305): controls what's presented on the sets
+  // its holders can open, beside the set's leader, and may lock the control.
+  canOperateScreens          Boolean  @default(false)
   // Separations a month for who has this role; null uses Admin > Stem separation's.
   stemSeparationMonthlyLimit Int?
   // A storage tier: the limit it gives a user, or a team's pool.

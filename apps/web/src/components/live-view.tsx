@@ -1,8 +1,9 @@
 import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText } from "@oneverse/core";
 import { TextItemSlides } from "#/components/set-text-item";
-import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
+import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type RefObject, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { PdfPages, ViewSwitch, type ReadingView } from "#/components/chart-or-pdf";
 import { CommandSearch } from "#/components/command-search";
 import { MetronomeSongButton } from "#/components/metronome";
@@ -11,7 +12,9 @@ import { ChordGrid } from "#/components/chord-grid";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
 import { DisplayPanel } from "#/components/display-panel";
-import { PresentPanel } from "#/components/present-panel";
+import { PresentControls } from "@oneverse/operator/components/present-controls";
+import { OperatorProvider } from "@oneverse/operator/host";
+import { songverseOperatorHost } from "#/lib/operator-host";
 import { TransitionChordsChooser, TransitionSymbol, TransitionVariations, transitionText } from "#/components/set-transition";
 import { CapoBadge } from "#/components/capo-badge";
 import { ChartWithDiagrams, ChordSteps, type ChordStep } from "#/components/chord-diagrams";
@@ -467,7 +470,24 @@ export function LiveView({
       </main>
 
       {/* Presenting on the set's screens (issue #186), leading its session. */}
-      {song.setId ? <PresentPanel setId={song.setId} itemId={song.id} chart={chart} text={song.text ?? null} next={next} previous={previous} onSlidePass={goToPass} /> : null}
+      {song.setId ? (
+        <OperatorProvider host={songverseOperatorHost(song.setId)}>
+          <PresentControls
+            itemId={song.id}
+            chart={chart}
+            text={song.text ?? null}
+            next={next}
+            previous={previous}
+            onSlidePass={goToPass}
+            manage={
+              <Link to="/screens" search={{ setlistId: song.setId }} className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground hover:underline" data-testid="present-add-screen">
+                <MonitorUp className="size-3.5" />
+                {t("screens.manage")}
+              </Link>
+            }
+          />
+        </OperatorProvider>
+      ) : null}
 
       {layout === "footer" ? (
         <footer className="flex shrink-0 items-center gap-1 border-t bg-card px-2 py-2 sm:gap-2 sm:px-4" data-testid="live-controls" data-layout="footer">

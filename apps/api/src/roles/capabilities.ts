@@ -13,6 +13,8 @@ export interface Capabilities {
   canKeepLosslessAudio: boolean;
   /** Uploads audio files (issue #183): without it, only what's recorded in Songverse. */
   canUploadAudio: boolean;
+  /** Controls what's presented on the screens of the sets they can open (issue #305), beside the set's leader. */
+  canOperateScreens: boolean;
   /** Each separating role's monthly limit; null: the one set in Admin > Stem separation. See monthlyLimitOf. */
   stemSeparationMonthlyLimits: (number | null)[];
   /** Their own storage limit; null: the default one. */
@@ -29,6 +31,7 @@ type RoleRow = {
   canSeparateStems: boolean;
   canKeepLosslessAudio: boolean;
   canUploadAudio: boolean;
+  canOperateScreens: boolean;
   stemSeparationMonthlyLimit: number | null;
   storageLimitMb: number | null;
   permissions: string[];
@@ -40,6 +43,7 @@ const ROLE_FIELDS = {
   canSeparateStems: true,
   canKeepLosslessAudio: true,
   canUploadAudio: true,
+  canOperateScreens: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,
   permissions: true,
@@ -58,6 +62,7 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canSeparateStems: separating.length > 0,
     canKeepLosslessAudio: roles.some((role) => role.canKeepLosslessAudio),
     canUploadAudio: roles.some((role) => role.canUploadAudio),
+    canOperateScreens: roles.some((role) => role.canOperateScreens),
     stemSeparationMonthlyLimits: separating.map((role) => role.stemSeparationMonthlyLimit),
     storageLimitMb: largest(roles.map((role) => role.storageLimitMb)),
     permissions: [...new Set(roles.flatMap((role) => role.permissions))].sort(),

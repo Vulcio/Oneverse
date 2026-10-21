@@ -177,6 +177,15 @@ What a screen shows - `ScreenStage`, its widgets, backgrounds and effects, and t
 `pnpm --filter @oneverse/web build:player-screen`), for songverse-player, the Rust mini-PC player
 (issue #247, its own repository). A change to `ScreenStage` or what it needs (providers, messages,
 CSS) must keep that build working: `e2e/web/player-screen.test.mjs` builds it and checks it renders.
+The screen app (`apps/screen`, `Dockerfile.screen`, `SCREEN_URL`) is what big screens open, paired
+without signing in; its `/operate` is the operator's console, signed in through Oneverse as the OAuth
+client `screen`. The console and Live's present controls live in `packages/operator`
+(`@oneverse/operator`), reaching the app's live connection through `OperatorProvider` (`host.tsx`):
+Songverse's sync client (`apps/web/src/lib/operator-host.ts`), or the console-only
+`lib/live-client.ts`. Presenting has many controllers, tempo one leader (issue #305): a `present`
+command carries the revision it was decided from (`basedOn`) and a stale one is refused; who may
+present is the set's editors, a role's `canOperateScreens`, and whoever the leader hands it to
+(`presenter`); the session is changed under a per-set Redis lock in `sync.server.ts`.
 The player never gets a stage of its own; what it needs goes in here.
 
 ## Song content

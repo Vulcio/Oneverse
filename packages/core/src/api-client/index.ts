@@ -854,6 +854,8 @@ export interface AdminRole {
   canKeepLosslessAudio: boolean;
   /** Uploads audio files (issue #183); recording in Songverse needs no role. */
   canUploadAudio: boolean;
+  /** Controls what's presented on the screens of the sets they can open (issue #305). */
+  canOperateScreens: boolean;
   /** Null: Admin > Stem separation's. */
   stemSeparationMonthlyLimit: number | null;
   /** A storage tier (MB). */

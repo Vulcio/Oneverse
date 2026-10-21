@@ -74,9 +74,13 @@ export interface SyncState {
   stage: SyncStage | null;
   /** This device runs the screens (issue #275). */
   screensMine: boolean;
+  /** This user may present now (issue #305): leads, runs screens, or was handed it - and control isn't locked to someone else. */
+  canPresent: boolean;
+  /** This user runs screens (issue #305): can edit the set, or has a role that runs screens. */
+  canOperate: boolean;
 }
 
-let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false };
+let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false, canPresent: false, canOperate: false };
 /** Plays what the leader plays (the metronome, the stems); an operator's page (issue #269) only watches. */
 let following = true;
 const listeners = new Set<() => void>();
@@ -205,7 +209,22 @@ function receive(message: SyncServerMessage) {
         wantLead = true;
         keep();
       }
-      emit({ status: "on", error: null, session: message.session, members: message.members, leading: message.leading, canLead: message.canLead, stage: message.stage ?? null, screensMine: !!message.screensMine });
+      // What the screens show, as the server has it (issue #305): what this device's next command is based on.
+      presentRev = message.session?.presentingRev ?? 0;
+      presentShown = message.session?.presenting ?? null;
+      emit({
+        status: "on",
+        error: null,
+        session: message.session,
+        members: message.members,
+        leading: message.leading,
+        canLead: message.canLead,
+        stage: message.stage ?? null,
+        screensMine: !!message.screensMine,
+        // An older server doesn't say: the leader, unless locked out, and who runs the screens.
+        canOperate: message.canOperate ?? message.canLead,
+        canPresent: message.canPresent ?? (!!message.screensMine || (message.leading && !(message.session?.screens?.exclusive && !message.screensMine))),
+      });
       setMetronomeStartDelay(message.leading ? LEADER_START_DELAY : 0.08);
       // Just took the lead: the metronome carries on as it was (followed, or the session's), and goes out.
       if (message.leading && !wasLeading) {
@@ -222,6 +241,8 @@ function receive(message: SyncServerMessage) {
     case "error": {
       if (message.code === "unauthorized") forgetApiToken();
       if (message.code === "not-found") return disableSync();
+      // Someone else moved the screens first (issue #305): the session that follows has where they are.
+      if (message.code === "stale") return;
       emit({ error: message.message });
       return;
     }
@@ -375,7 +396,7 @@ export function enableSync(setId: string, lead = false, { follow = true }: { fol
   samples = [];
   wantLead = lead;
   setStemsDirectOutput(true);
-  emit({ setId, status: "connecting", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false });
+  emit({ setId, status: "connecting", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false, canPresent: false, canOperate: false });
   keep();
   connect();
 }
@@ -397,7 +418,7 @@ export function disableSync() {
   setMetronomeStartDelay(0.08);
   lastSent = null;
   lastStemsSent = null;
-  emit({ setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false });
+  emit({ setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false, canPresent: false, canOperate: false });
   following = true;
   keep();
 }
@@ -417,32 +438,45 @@ export function endSync() {
 }
 
 /**
- * Leading: what the set's screens show (issue #186) - a slide of a song,
- * black, or nothing (null: not presenting).
+ * What the set's screens show (issues #186, #305) - a slide of an item,
+ * black, or nothing (null: not presenting) - from Live, for whoever may
+ * present.
  */
 export function publishPresenting(presenting: SyncPresenting | null) {
-  if (!state.leading || screensLocked()) return;
-  send({ type: "update", presenting });
+  presentScreens(presenting);
 }
 
-/** Someone else runs the screens alone (issue #275): this device's Live doesn't present. */
-export function screensLocked(sync: Pick<SyncState, "session" | "screensMine"> = state): boolean {
-  return !!sync.session?.screens?.exclusive && !sync.screensMine;
-}
+/**
+ * What the screens show, as this device last had it (issue #305): its
+ * revision and slide - the session's, then each command it sends, taken to
+ * succeed - so a command says what it's based on and two quick ones from
+ * here aren't refused as stale. A refusal is followed by the session, which
+ * puts them back.
+ */
+let presentRev = 0;
+let presentShown: SyncPresenting | null = null;
 
 /** The media operator (issue #275) takes the screens, shared or alone, or (null) gives them back. */
 export function takeScreens(control: "shared" | "exclusive" | null) {
-  if (state.canLead) send({ type: "screens", control });
+  if (state.canOperate || state.canPresent) send({ type: "screens", control });
 }
 
-/** What the screens show, from the operator running them (issue #275). */
+/** What the screens show (issues #275, #305), based on what they showed: from anyone who may present. */
 export function presentScreens(presenting: SyncPresenting | null) {
-  if (state.screensMine || (state.leading && !screensLocked())) send({ type: "present", presenting });
+  if (!state.canPresent || samePresenting(presenting, presentShown)) return;
+  send({ type: "present", presenting, basedOn: presentRev });
+  presentRev += 1;
+  presentShown = presenting;
+}
+
+function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
+  if (!a || !b) return a === b;
+  return a.itemId === b.itemId && a.slide === b.slide && a.black === b.black;
 }
 
 /** The media operator (issue #269): the set's timer and message for its screens; anyone who can lead the set, leading or not. */
 export function sendStage(command: SyncStageCommand) {
-  if (state.canLead) send({ type: "stage", ...command });
+  if (state.canOperate) send({ type: "stage", ...command });
 }
 
 /** Leading: the set's song the leader has open, for the others to follow. */

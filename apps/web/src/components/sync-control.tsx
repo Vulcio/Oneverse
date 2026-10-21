@@ -12,7 +12,7 @@ import {
 } from "@oneverse/ui/components/dropdown-menu";
 import { useMetronome } from "#/lib/metronome-engine";
 import { useStems } from "#/lib/stem-engine";
-import { disableSync, enableSync, endSync, leadSync, publishPresenting, screensLocked, unlockSyncAudio, useSync } from "#/lib/sync-client";
+import { disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /**
@@ -90,9 +90,9 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
               <DropdownMenuItem onClick={leadSync}>{session ? t("sync.leadInstead") : t("sync.lead")}</DropdownMenuItem>
             ) : null}
             {/* Screens (issue #186): presenting the set on them, from Live, and adding one. */}
-            {sync.leading && itemId ? (
+            {(sync.leading || sync.canPresent) && itemId ? (
               <DropdownMenuItem
-                disabled={screensLocked(sync)}
+                disabled={!sync.canPresent}
                 onClick={() => publishPresenting(session?.presenting ? null : { itemId, slide: 0, black: false })}
                 data-testid="sync-present"
               >

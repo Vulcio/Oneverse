@@ -5,6 +5,7 @@
 @source "../../../../packages/app/src";
 @source "../../../../packages/planning/src";
 @source "../../../../packages/screen/src";
+@source "../../../../packages/operator/src";
 
 /* Each mode (lib/mode.ts) has its own look, so it's clear which one you're
    in. Edit is neutral; its dark theme is a plain dark grey. */

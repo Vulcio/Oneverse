@@ -8,6 +8,10 @@ import { defineConfig } from "vite-plus";
 // Served like Songverse's web app (see apps/web/vite.config.ts for
 // preview's settings).
 export default defineConfig({
+  // Its console (/operate) is an OAuth client of the API: operators sign in at
+  // Oneverse (issue #303, packages/app/src/oauth.ts); its address from SCREEN_URL.
+  // The screens themselves never sign in: they're paired.
+  define: { __ONEVERSE_CLIENT__: JSON.stringify({ id: "screen", addressEnv: "SCREEN_URL" }) },
   resolve: {
     tsconfigPaths: true,
   },

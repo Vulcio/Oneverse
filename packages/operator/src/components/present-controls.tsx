@@ -1,33 +1,33 @@
 import { setItemSlides, stepSlide, structureOf, type RenderedChart, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
-import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, MonitorOff, MonitorUp } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, MonitorOff } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
-import { publishPresenting, screensLocked, useSync } from "#/lib/sync-client";
 import { cn } from "@oneverse/ui/lib/utils";
+import { useLive, useOperatorHost } from "../host";
 
 /** After a step back past a song's first slide: the previous song opens on its last. */
 let openOnLastSlide = false;
 
 /**
- * Presenting a set on its screens (issue #186), at the bottom of Live for
- * the device leading its sync session: the slide the screens show, Previous
- * and Next (and the down and up arrows, or a pedal's Page Down and Up),
- * which go on to the next or previous song at either end, and Black. The
- * screens cut the song into the same slides (lyricSlides), so only "this
- * song, slide N" is sent.
+ * Presenting a set on its screens (issues #186, #305), the compact controls
+ * at the bottom of a singer's Live, for whoever may present (see host.tsx):
+ * the slide the screens show, Previous and Next (and the down and up arrows,
+ * or a pedal's Page Down and Up), which go on to the next or previous song
+ * at either end, and Black. The screens cut the song into the same slides
+ * (setItemSlides), so only "this song, slide N" is sent. Control locked to an
+ * operator, they show who has it, and wait. `manage` ends the row (the app's
+ * link to its screens).
  */
-export function PresentPanel({
-  setId,
+export function PresentControls({
   itemId,
   chart,
   text,
   next,
   previous,
   onSlidePass,
+  manage,
 }: {
-  setId: string;
   itemId: string;
   chart: RenderedChart | null;
   /** A text item's (issue #305): its slides, when there's no chart. */
@@ -36,10 +36,12 @@ export function PresentPanel({
   previous: (() => void) | null;
   /** The chart scrolled to the pass a slide's from. */
   onSlidePass: (passId: string) => void;
+  manage?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const sync = useSync();
-  const confirmed = sync.setId === setId && sync.leading ? (sync.session?.presenting ?? null) : null;
+  const sync = useLive();
+  const { present } = useOperatorHost();
+  const confirmed = sync.ready && (sync.leading || sync.canPresent) ? (sync.session?.presenting ?? null) : null;
   // What was last sent, until the session says so (or otherwise): a pedal pressed twice quickly goes two slides on.
   const [sent, setSent] = useState<SyncPresenting | null>(null);
   useEffect(() => {
@@ -49,13 +51,13 @@ export function PresentPanel({
   const presenting = confirmed ? (sent ?? confirmed) : null;
   const show = (next: SyncPresenting) => {
     setSent(next);
-    publishPresenting(next);
+    present(next);
   };
   const slides = useMemo(() => setItemSlides({ chart, text }), [chart, text]);
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
-  const screens = sync.setId === setId ? sync.members.filter((member) => member.screen) : [];
-  // A media operator running the screens alone (issue #275): this Live shows what's on them, and waits.
-  const locked = screensLocked(sync);
+  const screens = sync.ready ? sync.members.filter((member) => member.screen) : [];
+  // An operator running the screens alone (issues #275, #305): this Live shows what's on them, and waits.
+  const locked = !!sync.session?.screens?.exclusive && !sync.screensMine;
 
   // Another song opened while presenting: its first slide (its last, stepping back), as black or not as it was.
   useEffect(() => {
@@ -178,10 +180,7 @@ export function PresentPanel({
             </button>
           );
         })}
-        <Link to="/screens" search={{ setlistId: setId }} className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground hover:underline" data-testid="present-add-screen">
-          <MonitorUp className="size-3.5" />
-          {t("screens.manage")}
-        </Link>
+        {manage}
       </div>
     </section>
   );

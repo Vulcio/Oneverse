@@ -17,6 +17,7 @@
   "dependencies": {
     "@oneverse/app": "workspace:*",
     "@oneverse/core": "workspace:*",
+    "@oneverse/operator": "workspace:*",
     "@oneverse/screen": "workspace:*",
     "@oneverse/ui": "workspace:*",
     "@tanstack/react-router": "^1.170.36",

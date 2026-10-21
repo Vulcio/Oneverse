@@ -9,7 +9,7 @@ import { formatBytes } from "#/lib/format-bytes";
 /** A role's short account of what it allows, for a list or a badge's title. */
 export function useRoleSummary() {
   const { t } = useTranslation();
-  return (role: Pick<AdminRole, "canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "stemSeparationMonthlyLimit" | "storageLimitMb">) =>
+  return (role: Pick<AdminRole, "canReview" | "canSeparateStems" | "canKeepLosslessAudio" | "canUploadAudio" | "canOperateScreens" | "stemSeparationMonthlyLimit" | "storageLimitMb">) =>
     [
       role.canReview ? t("admin.roleAllowsReview") : null,
       role.canSeparateStems
@@ -19,6 +19,7 @@ export function useRoleSummary() {
         : null,
       role.canUploadAudio ? t("admin.roleAllowsAudioUploads") : null,
       role.canKeepLosslessAudio ? t("admin.roleAllowsLossless") : null,
+      role.canOperateScreens ? t("admin.roleAllowsOperateScreens") : null,
       role.storageLimitMb === null ? null : t("admin.roleStorage", { size: formatBytes(role.storageLimitMb * 1024 * 1024) }),
     ]
       .filter(Boolean)

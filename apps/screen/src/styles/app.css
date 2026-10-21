@@ -3,4 +3,5 @@
 @import "@oneverse/ui/theme.css";
 /* The screen's classes (packages/screen), and the shared pages' (packages/app). */
 @source "../../../../packages/screen/src";
+@source "../../../../packages/operator/src";
 @source "../../../../packages/app/src";

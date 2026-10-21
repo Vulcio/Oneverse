@@ -7,6 +7,7 @@ const role = (overrides: Partial<Parameters<typeof combineRoles>[0][number]> = {
   canSeparateStems: false,
   canKeepLosslessAudio: false,
   canUploadAudio: false,
+  canOperateScreens: false,
   stemSeparationMonthlyLimit: null,
   storageLimitMb: null,
   permissions: [],

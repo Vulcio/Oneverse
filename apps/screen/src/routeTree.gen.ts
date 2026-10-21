@@ -10,33 +10,111 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OperateRouteImport } from './routes/operate'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
+import { Route as AuthSignOutRouteImport } from './routes/auth.sign-out'
+import { Route as OperateIndexRouteImport } from './routes/operate.index'
+import { Route as OperateSetlistIdRouteImport } from './routes/operate.$setlistId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OperateRoute = OperateRouteImport.update({
+  id: '/operate',
+  path: '/operate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/auth/sign-in',
+  path: '/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignOutRoute = AuthSignOutRouteImport.update({
+  id: '/auth/sign-out',
+  path: '/auth/sign-out',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OperateIndexRoute = OperateIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OperateRoute,
+} as any)
+const OperateSetlistIdRoute = OperateSetlistIdRouteImport.update({
+  id: '/$setlistId',
+  path: '/$setlistId',
+  getParentRoute: () => OperateRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/operate': typeof OperateRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
+  '/operate/$setlistId': typeof OperateSetlistIdRoute
+  '/operate/': typeof OperateIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
+  '/operate/$setlistId': typeof OperateSetlistIdRoute
+  '/operate': typeof OperateIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/operate': typeof OperateRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-out': typeof AuthSignOutRoute
+  '/operate/$setlistId': typeof OperateSetlistIdRoute
+  '/operate/': typeof OperateIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/operate'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
+    | '/operate/$setlistId'
+    | '/operate/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
+    | '/operate/$setlistId'
+    | '/operate'
+  id:
+    | '__root__'
+    | '/'
+    | '/operate'
+    | '/auth/callback'
+    | '/auth/sign-in'
+    | '/auth/sign-out'
+    | '/operate/$setlistId'
+    | '/operate/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OperateRoute: typeof OperateRouteWithChildren
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignOutRoute: typeof AuthSignOutRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +126,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/operate': {
+      id: '/operate'
+      path: '/operate'
+      fullPath: '/operate'
+      preLoaderRoute: typeof OperateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-out': {
+      id: '/auth/sign-out'
+      path: '/auth/sign-out'
+      fullPath: '/auth/sign-out'
+      preLoaderRoute: typeof AuthSignOutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/operate/': {
+      id: '/operate/'
+      path: '/'
+      fullPath: '/operate/'
+      preLoaderRoute: typeof OperateIndexRouteImport
+      parentRoute: typeof OperateRoute
+    }
+    '/operate/$setlistId': {
+      id: '/operate/$setlistId'
+      path: '/$setlistId'
+      fullPath: '/operate/$setlistId'
+      preLoaderRoute: typeof OperateSetlistIdRouteImport
+      parentRoute: typeof OperateRoute
+    }
   }
 }
 
+interface OperateRouteChildren {
+  OperateSetlistIdRoute: typeof OperateSetlistIdRoute
+  OperateIndexRoute: typeof OperateIndexRoute
+}
+
+const OperateRouteChildren: OperateRouteChildren = {
+  OperateSetlistIdRoute: OperateSetlistIdRoute,
+  OperateIndexRoute: OperateIndexRoute,
+}
+
+const OperateRouteWithChildren =
+  OperateRoute._addFileChildren(OperateRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OperateRoute: OperateRouteWithChildren,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthSignInRoute: AuthSignInRoute,
+  AuthSignOutRoute: AuthSignOutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

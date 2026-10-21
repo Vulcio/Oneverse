@@ -38,6 +38,7 @@ COPY packages/core/package.json packages/core/
 COPY packages/ui/package.json packages/ui/
 COPY packages/app/package.json packages/app/
 COPY packages/planning/package.json packages/planning/
+COPY packages/operator/package.json packages/operator/
 COPY packages/screen/package.json packages/screen/
 COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile
@@ -48,6 +49,7 @@ COPY packages/core packages/core
 COPY packages/ui packages/ui
 COPY packages/app packages/app
 COPY packages/planning packages/planning
+COPY packages/operator packages/operator
 COPY packages/screen packages/screen
 COPY apps/web apps/web
 RUN pnpm --filter @oneverse/core build \

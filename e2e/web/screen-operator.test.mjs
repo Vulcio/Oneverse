@@ -154,12 +154,13 @@ try {
     await tv.getByTestId("widget-message").waitFor({ state: "detached", timeout: 5000 });
   });
 
-  await step("the slides (issue #275): the screens taken, shared; a tile sends its slide", async () => {
+  await step("the slides (issue #275): sent without taking the screens (issue #305), then taken, shared; a tile sends its slide", async () => {
     page = desk;
     await desk.getByTestId("operator-tab-slides").click();
     const tiles = desk.getByTestId("operator-slide");
     await tiles.first().waitFor();
-    if (!(await tiles.first().isDisabled())) throw new Error("slides could be sent before taking the screens");
+    // Split control (issue #305): whoever can edit the set presents beside the leader, no need to take the screens first.
+    if (await tiles.first().isDisabled()) throw new Error("slides couldn't be sent before taking the screens");
     await desk.getByTestId("operator-take-shared").click();
     await desk.locator('[data-testid="operator-control"][data-control="shared"]').waitFor();
     await tiles.first().click();

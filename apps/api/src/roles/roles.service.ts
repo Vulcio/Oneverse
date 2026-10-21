@@ -15,6 +15,7 @@ const ROLE_SELECT = {
   canSeparateStems: true,
   canKeepLosslessAudio: true,
   canUploadAudio: true,
+  canOperateScreens: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,
   permissions: true,

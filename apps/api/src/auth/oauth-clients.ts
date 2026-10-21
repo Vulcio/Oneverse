@@ -1,5 +1,5 @@
 import { prisma } from "@oneverse/db";
-import { planiverseUrl, songverseUrl } from "../common/utils/web-apps.js";
+import { planiverseUrl, screenUrl, songverseUrl } from "../common/utils/web-apps.js";
 
 /**
  * Sign in with Oneverse (issue #303, docs/sign-in-with-oneverse.md): the
@@ -28,17 +28,19 @@ export interface OAuthAppClient {
   redirectUri: string;
 }
 
-/** The web apps that sign in through Oneverse: Songverse, and Planiverse when it's deployed. */
+/** The web apps that sign in through Oneverse: Songverse, and Planiverse and the screen app's console (issue #305) when they're deployed. */
 export function oauthAppClients(): OAuthAppClient[] {
   const planiverse = planiverseUrl();
+  const screen = screenUrl();
   return [
     { clientId: "songverse", name: "Songverse", uri: songverseUrl() },
     ...(planiverse ? [{ clientId: "planiverse", name: "Planiverse", uri: planiverse }] : []),
+    ...(screen ? [{ clientId: "screen", name: "Oneverse screen", uri: screen }] : []),
   ].map((client) => ({ ...client, redirectUri: `${client.uri}/auth/callback` }));
 }
 
 /**
- * Writes the apps' clients from WEB_URL and PLANIVERSE_URL, when the API
+ * Writes the apps' clients from WEB_URL, PLANIVERSE_URL and SCREEN_URL, when the API
  * starts: an address that changed is the clients' new one at the next start.
  * A client whose app is no longer deployed is turned off, not deleted (its
  * tokens are refused).
@@ -64,7 +66,7 @@ export async function registerOAuthClients(): Promise<void> {
     await prisma.oauthClient.upsert({ where: { clientId: client.clientId }, create: { clientId: client.clientId, ...fields }, update: fields });
   }
   await prisma.oauthClient.updateMany({
-    where: { clientId: { in: ["songverse", "planiverse"], notIn: clients.map((client) => client.clientId) } },
+    where: { clientId: { in: ["songverse", "planiverse", "screen"], notIn: clients.map((client) => client.clientId) } },
     data: { disabled: true },
   });
 }

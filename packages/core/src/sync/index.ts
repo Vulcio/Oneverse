@@ -74,9 +74,19 @@ export interface SyncSession {
   /** What the set's screens show (issue #186); null or left out when nobody's presenting. */
   presenting?: SyncPresenting | null;
   /**
+   * Goes up with each change of what's presented (issue #305), and only
+   * then: a command says which it was based on (`basedOn`), and one based on
+   * an older one is refused - two people pressing Next together move the
+   * screens once. Left out: 0.
+   */
+  presentingRev?: number;
+  /** Who the leader handed presenting to, live (issue #305), besides who may anyway. */
+  presenters?: { id: string; name: string }[];
+  /**
    * Who runs the screens besides the leader (issue #275): a media operator,
-   * sharing them with the leader's Live, or alone (exclusive: Live's present
-   * controls wait). Null or left out: the leader runs them.
+   * sharing them, or alone (exclusive: control is locked to them, issue #305 -
+   * everyone else's present commands are refused, and Live says so). Null or
+   * left out: whoever may present presents.
    */
   screens?: { id: string; name: string; exclusive: boolean } | null;
 }
@@ -313,9 +323,16 @@ export type SyncClientMessage =
    * no session yet, it starts one, led by them.
    */
   | { type: "screens"; control: "shared" | "exclusive" | null }
-  /** What the screens show, from whoever runs them: the leader (unless an operator has them alone) or the operator. */
-  | { type: "present"; presenting: SyncPresenting | null }
-  | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null }
+  /**
+   * What the screens show (issue #305), from anyone who may present - the
+   * leader, a screens operator (a role), someone the leader handed it to -
+   * unless control is locked to someone else. `basedOn`: the presentingRev it
+   * was decided from; refused ("stale") when the screens have moved on since.
+   */
+  | { type: "present"; presenting: SyncPresenting | null; basedOn?: number }
+  | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null; presentingBasedOn?: number }
+  /** The leader hands presenting to someone in the set, live, or takes it back (issue #305). */
+  | { type: "presenter"; userId: string; allow: boolean }
   | { type: "end" }
   /**
    * The media operator (issue #269), anyone who can lead the set: its timer
@@ -386,6 +403,10 @@ export type SyncServerMessage =
       stage?: SyncStage | null;
       /** This device runs the screens (issue #275): it's session.screens. */
       screensMine?: boolean;
+      /** This user may present now (issue #305): leads, operates screens, or was handed it - and control isn't locked to someone else. */
+      canPresent?: boolean;
+      /** This user runs screens (issue #305): can edit the set, or has a role that runs screens - the operator's console is theirs, locked or not. */
+      canOperate?: boolean;
     }
   /** The songs it now watches: those it may see (issue #27). */
   | { type: "watching"; songVersionIds: string[] }
@@ -409,7 +430,8 @@ export type SyncServerMessage =
   | { type: "notifications" }
   /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */
   | { type: "notes"; songVersionId: string }
-  | { type: "error"; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected"; message: string };
+  /** `stale` (issue #305): a present command based on what the screens no longer show; the session that follows has what they show now. */
+  | { type: "error"; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected" | "stale"; message: string };
 
 /** One ping's round trip: sent and received on the device's clock, `at` on the server's (all ms). */
 export interface ClockSample {

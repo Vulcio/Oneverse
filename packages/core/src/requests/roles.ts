@@ -13,6 +13,7 @@ const roleFields = {
   canSeparateStems: z.boolean(),
   canKeepLosslessAudio: z.boolean().describe("Lossless audio uploads keep their original, as FLAC"),
   canUploadAudio: z.boolean().describe("Uploads audio files (recording in Songverse needs no role)"),
+  canOperateScreens: z.boolean().describe("Controls what's presented on the screens of the sets they can open, beside the set's leader"),
   stemSeparationMonthlyLimit: z.number().int().min(1).max(10_000).nullable().describe("Null uses Admin > Stem separation's"),
   storageLimitMb: z.number().int().min(0).max(1_000_000).nullable().describe("A storage tier (MB); null gives none"),
 };
@@ -25,6 +26,7 @@ export const CreateRoleSchema = z.strictObject({
   canSeparateStems: optional(roleFields.canSeparateStems),
   canKeepLosslessAudio: optional(roleFields.canKeepLosslessAudio),
   canUploadAudio: optional(roleFields.canUploadAudio),
+  canOperateScreens: optional(roleFields.canOperateScreens),
   stemSeparationMonthlyLimit: roleFields.stemSeparationMonthlyLimit.optional(),
   storageLimitMb: roleFields.storageLimitMb.optional(),
 });
@@ -39,6 +41,7 @@ export const UpdateRoleSchema = z.strictObject({
   canSeparateStems: optional(roleFields.canSeparateStems),
   canKeepLosslessAudio: optional(roleFields.canKeepLosslessAudio),
   canUploadAudio: optional(roleFields.canUploadAudio),
+  canOperateScreens: optional(roleFields.canOperateScreens),
   stemSeparationMonthlyLimit: roleFields.stemSeparationMonthlyLimit.optional(),
   storageLimitMb: roleFields.storageLimitMb.optional(),
 });
