@@ -5,8 +5,9 @@ core - the API, the database, `@oneverse/core` - and the apps built on it,
 Songverse (`apps/web`) and Planiverse (`apps/planiverse`), and Oneverse
 (`apps/oneverse`), where people sign in. Where it's going:
 `docs/oneverse-architecture.md`, a direction rather than what's built. The
-workspace packages are `@oneverse/*` (`@songverse/*` before); the deployed
-addresses are still `songverse.one`'s. The rules below are unchanged by the
+workspace packages are `@oneverse/*` (`@songverse/*` before); each app has its own
+domain since #303 (`oneverse.top` and `api.oneverse.top`, `songverse.top`,
+`planiverse.top`; the docs and the website stay on `songverse.one`). The rules below are unchanged by the
 rename.
 
 ## Issues first

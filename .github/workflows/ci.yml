@@ -254,7 +254,7 @@ jobs:
           for i in $(seq 1 20); do curl -sf http://localhost:8080/ > /dev/null && break; sleep 1; done
           curl -sf http://localhost:8080/ | grep -q 'ready to play'
           curl -sf http://localhost:8080/fr/ | grep -q 'prêts à jouer'
-          test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' 'http://localhost:8080/sets/abc?share=x')" = "301 https://app.songverse.one/sets/abc?share=x"
+          test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' 'http://localhost:8080/sets/abc?share=x')" = "301 https://songverse.top/sets/abc?share=x"
 
   deploy-api:
     needs: [build-test, e2e, docker]

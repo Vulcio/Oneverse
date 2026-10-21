@@ -5,7 +5,7 @@ description: Create your account, sign in, and find your way around Songverse.
 
 ## Create your account
 
-1. Open [Songverse](https://app.songverse.one). It takes you to **Oneverse**, where you sign in to every app (Songverse, [Planiverse](/planiverse/)). Choose **Sign up**.
+1. Open [Songverse](https://songverse.top). It takes you to **Oneverse**, where you sign in to every app (Songverse, [Planiverse](/planiverse/)). Choose **Sign up**.
 2. Enter your display name, email and a password, then **Create account**.
 3. Open the link in the verification email we send you. You can sign in once your email is verified.
 

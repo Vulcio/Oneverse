@@ -1,5 +1,5 @@
 // The page's words, in each language. The app and the docs are in the same two.
-export const APP_URL = import.meta.env.PUBLIC_APP_URL ?? "https://app.songverse.one";
+export const APP_URL = import.meta.env.PUBLIC_APP_URL ?? "https://songverse.top";
 export const DOCS_URL = "https://docs.songverse.one";
 
 export const text = {

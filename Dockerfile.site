@@ -17,7 +17,7 @@ RUN pnpm --filter @oneverse/site build
 
 FROM nginx:1.27-alpine
 # Where the app lives; links the site doesn't serve are redirected there.
-ENV APP_URL=https://app.songverse.one
+ENV APP_URL=https://songverse.top
 COPY apps/site/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /repo/apps/site/dist /usr/share/nginx/html
 EXPOSE 80
