@@ -147,6 +147,8 @@ function SetLiveView({ views, readings }: { views: SetlistSongView[]; readings: 
       title: setItemTitle(view, t),
       // Slides of text (issue #305).
       text: view.text ?? null,
+      // A Bible passage (issue #301).
+      passage: view.passage ?? null,
       artist: song?.artists?.join(", ") || null,
       setName: setlistTitle(set, t, i18n.language),
       setId: set.id,

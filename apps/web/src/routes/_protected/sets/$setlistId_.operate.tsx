@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_protected/sets/$setlistId_/operate")({
   // The item looked at (issue #277), picked in the sidebar's set list.
   validateSearch: (search: Record<string, unknown>): { item?: string } => (typeof search.item === "string" && search.item ? { item: search.item } : {}),
   loader: async ({ params }) => {
-    const copy = await apiClient.getSetlistOffline(params.setlistId);
+    // As the screens may show it: its passages where their Bible may be projected (issue #301).
+    const copy = await apiClient.getSetlistOffline(params.setlistId, { forScreens: true });
     // A team set's positions and who holds them (issue #275): its notes filtered by them.
     const teamId = copy.set.teamId;
     const [members, positions] = teamId ? await Promise.all([apiClient.listTeamMembers(teamId).catch(() => [] as TeamMember[]), apiClient.listTeamPositions(teamId).catch(() => [] as TeamPosition[])]) : [[], []];

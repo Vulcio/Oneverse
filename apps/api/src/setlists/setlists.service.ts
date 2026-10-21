@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { type SavedDisplaySettings, chartEdgeChords, readItemText, readItemTimer, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
+import { type SavedDisplaySettings, type SetItemPassage, chartEdgeChords, readItemPassage, readItemText, readItemTimer, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -17,6 +17,7 @@ import { NotesService } from "../notes/notes.service.js";
 import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./setlist-access.service.js";
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
+import { BiblesService, type PassageUse } from "../scriptures/bibles.service.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -73,6 +74,7 @@ export class SetlistsService {
     private readonly arrangements: ArrangementsService,
     private readonly policy: AccessPolicyService,
     private readonly notes: NotesService,
+    private readonly bibles: BiblesService,
   ) {}
 
   async list(user: AuthenticatedUser) {
@@ -183,6 +185,9 @@ export class SetlistsService {
 
     // Where each song is in the viewer's numbered songbooks: "JEM 855 · JEM3" (issue #55).
     const referencesBySong = await this.songbookReferences(user, songIdsOf(set.items));
+    // Passages (issue #301), by their Bible and reference: their verses are the song view's.
+    const passages = new Map<string, SetItemPassage | null>();
+    for (const item of set.items) if (item.kind === "PASSAGE") passages.set(item.id, await this.bibles.itemPassage(item.passage, "list"));
 
     return {
       ...summarize(set),
@@ -190,7 +195,7 @@ export class SetlistsService {
       canEdit: access.canEdit,
       isGuest: access.isGuest,
       items: set.items.map((item) => {
-        if (!hasSong(item)) return otherItem(item);
+        if (!hasSong(item)) return otherItem(item, passages.get(item.id) ?? null);
         const song = item.songVersion;
         const shown = readable.has(item.id) || inViewersLibrary(song);
         const sharedPersonalSong = !!set.ownerTeamId && song.ownerScope === "USER" && !!song.ownerUserId;
@@ -199,6 +204,7 @@ export class SetlistsService {
           id: item.id,
           kind: item.kind,
           text: null,
+          passage: null,
           position: item.position,
           transposeSteps: item.transposeSteps,
           notes: item.notes,
@@ -312,6 +318,7 @@ export class SetlistsService {
   async addItem(user: AuthenticatedUser, setlistId: string, dto: AddSetlistItemDto) {
     const set = await this.sets.findEditable(user, setlistId);
     if (dto.songVersionId) await this.assertAddable(set, dto.songVersionId);
+    const passage = dto.passage ? await this.passageRef(dto.passage) : null;
     await this.prisma.client.$transaction(async (tx) => {
       let position = await tx.setlistItem.count({ where: { setlistId } });
       // Right after a song of the set (issue #199, "Play next" in Live): the ones after it move down one.
@@ -320,6 +327,11 @@ export class SetlistsService {
         if (!after) throw new NotFoundException("That item isn't in this set any more.");
         position = after.position + 1;
         await tx.setlistItem.updateMany({ where: { setlistId, position: { gte: position } }, data: { position: { increment: 1 } } });
+      }
+      // A Bible passage (issue #301): its Bible and reference, as that Bible names the book.
+      if (passage) {
+        await tx.setlistItem.create({ data: { setlistId, kind: "PASSAGE", passage, position } });
+        return;
       }
       // Slides of text (issue #305): nothing of a song's.
       if (dto.text) {
@@ -339,15 +351,19 @@ export class SetlistsService {
   async updateItem(user: AuthenticatedUser, setlistId: string, itemId: string, dto: UpdateSetlistItemDto) {
     const set = await this.sets.findEditable(user, setlistId);
     const item = await this.findItem(setlistId, itemId);
-    // Not a song (issue #305): only what every item has, and a text's text.
+    // Not a song (issue #305): only what every item has, a text's text and a passage's passage (issue #301).
     if (!item.songVersionId) {
       if (dto.songVersionId !== undefined || dto.arrangementId !== undefined || dto.transposeSteps !== undefined || dto.transitionChords !== undefined) {
         throw new BadRequestException("Only a song has a version, an arrangement, a key or transition chords");
       }
+      if (dto.text !== undefined && item.kind !== "TEXT") throw new BadRequestException("Only a text item has a text");
+      if (dto.passage !== undefined && item.kind !== "PASSAGE") throw new BadRequestException("Only a passage item has a passage");
+      const passage = dto.passage ? await this.passageRef(dto.passage) : undefined;
       await this.prisma.client.setlistItem.update({
         where: { id: itemId },
         data: {
           ...(dto.text !== undefined && { text: dto.text }),
+          ...(passage && { passage }),
           ...(dto.notes !== undefined && { notes: dto.notes || null }),
           ...(dto.transition !== undefined && { transition: dto.transition }),
           ...(dto.transitionNote !== undefined && { transitionNote: dto.transitionNote }),
@@ -357,6 +373,7 @@ export class SetlistsService {
       return this.findOne(user, setlistId);
     }
     if (dto.text !== undefined) throw new BadRequestException("Only a text item has a text");
+    if (dto.passage !== undefined) throw new BadRequestException("Only a passage item has a passage");
     const itemSongId = item.songVersionId;
     if (dto.songVersionId !== undefined && dto.songVersionId !== itemSongId) {
       const [current, next] = await Promise.all([
@@ -442,7 +459,7 @@ export class SetlistsService {
    * guests, and songs that aren't in the viewer's own library - with the
    * viewer's private notes on it and its neighbours in the set.
    */
-  async songView(user: AuthenticatedUser, setlistId: string, itemId: string) {
+  async songView(user: AuthenticatedUser, setlistId: string, itemId: string, passages: PassageUse = "read") {
     const { access } = await this.sets.findViewable(user, setlistId);
     const set = await this.prisma.client.setlist.findUniqueOrThrow({
       where: { id: setlistId },
@@ -470,13 +487,21 @@ export class SetlistsService {
     const arrangement = document && item.arrangementId ? await this.arrangements.forChart(item.arrangementId, document) : null;
     const preferences = shown ? await this.arrangements.preferences(user.id, song.id, arrangement?.id ?? null) : null;
     // The next item's title: a song's, as the viewer may read it, or a text's (issue #305).
-    const nextTitle = !next ? null : hasSong(next) ? (readable.has(next.id) || inViewersLibrary(next.songVersion) ? next.songVersion.title : null) : (readItemText(next.text)?.title ?? null);
+    const nextTitle = !next
+      ? null
+      : hasSong(next)
+        ? readable.has(next.id) || inViewersLibrary(next.songVersion)
+          ? next.songVersion.title
+          : null
+        : (readItemText(next.text)?.title ?? readItemPassage(next.passage)?.reference ?? null);
 
     return {
       set: { ...summarize(set), itemCount: set.items.length, canEdit: access.canEdit, isGuest: access.isGuest },
       item: { id: item.id, position: item.position, transposeSteps: item.transposeSteps, notes: item.notes, arrangementId: arrangement?.id ?? null, kind: item.kind },
       // A text item's (issue #305).
       text: song ? null : readItemText(item.text),
+      // A passage's (issue #301), with its verses as `passages` may have them.
+      passage: item.kind === "PASSAGE" ? await this.bibles.itemPassage(item.passage, passages) : null,
       // What happens after it (issue #199), with the key and tempo it goes from and to.
       transition: item.transition
         ? this.transitionView({ ...item, songVersion: song }, next && hasSong(next) && (readable.has(next.id) || inViewersLibrary(next.songVersion)) ? next : null, shown)
@@ -550,12 +575,14 @@ export class SetlistsService {
    * The set and each of its songs' views, to keep offline (issue #50), and
    * a version: a hash of all of it, which changes whenever anything the
    * device shows would (a song edited, an item moved, access lost...).
+   * Passages' verses only where their Bible allows `passages` (issue #301):
+   * kept on a device by default, shown on screens for the screens.
    */
-  async offlineCopy(user: AuthenticatedUser, setlistId: string, { withNotes = true } = {}) {
+  async offlineCopy(user: AuthenticatedUser, setlistId: string, { withNotes = true, passages = "offline" as PassageUse } = {}) {
     const set = await this.findOne(user, setlistId);
     const songs = [];
     // One at a time: a set is a handful of songs, and each view checks access itself.
-    for (const item of set.items) songs.push(await this.songView(user, setlistId, item.id));
+    for (const item of set.items) songs.push(await this.songView(user, setlistId, item.id, passages));
     // The notes one sees on each song in this set (issue #256), by song.
     const notes: Record<string, SongNotes> = {};
     if (withNotes) for (const view of songs) if (view.song && !notes[view.song.id]) notes[view.song.id] = await this.notes.list(user, view.song.id, { setlistId });
@@ -575,6 +602,12 @@ export class SetlistsService {
     const item = await this.prisma.client.setlistItem.findUnique({ where: { id: itemId } });
     if (!item || item.setlistId !== setlistId) throw new NotFoundException("Item not found");
     return item;
+  }
+
+  /** A passage to keep in a set (issue #301): its Bible imported, its reference read and found there, as that Bible names it. */
+  private async passageRef(passage: { bibleId: string; reference: string }): Promise<{ bibleId: string; reference: string }> {
+    const found = await this.bibles.passage(passage.bibleId, passage.reference);
+    return { bibleId: passage.bibleId, reference: found.reference };
   }
 
   private async assertAddable(set: SetRow, songVersionId: string): Promise<void> {
@@ -620,14 +653,16 @@ function edgeChords(item: { transposeSteps: number; songVersion: SongRow; arrang
 }
 
 /**
- * An item that isn't a song (issue #305): a text, with its title and body,
- * and none of a song's parts. Shown the same to everyone who opens the set.
+ * An item that isn't a song (issue #305): a text, with its title and body, or
+ * a passage (issue #301), named by its Bible and reference - and none of a
+ * song's parts. Shown the same to everyone who opens the set.
  */
-function otherItem(item: { id: string; kind: "SONG" | "TEXT"; text: unknown; position: number; notes: string | null; transition: SetTransitionValue | null; transitionNote: string | null; timer: unknown }) {
+function otherItem(item: { id: string; kind: "SONG" | "TEXT" | "PASSAGE"; text: unknown; position: number; notes: string | null; transition: SetTransitionValue | null; transitionNote: string | null; timer: unknown }, passage: SetItemPassage | null) {
   return {
     id: item.id,
     kind: item.kind,
     text: readItemText(item.text),
+    passage,
     position: item.position,
     transposeSteps: 0,
     notes: item.notes,

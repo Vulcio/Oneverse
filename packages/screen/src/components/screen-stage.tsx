@@ -24,6 +24,8 @@ export interface StageSong {
   title: string;
   slides: ScreenSlide[];
   credits?: { writers: string[]; copyright: string | null; ccli: string | null };
+  /** A line shown under every slide whatever the theme says (issue #301): a passage's copyright, which must go with its text. */
+  attribution?: string | null;
   /** The chart, for a screen showing it to the band. */
   chart?: RenderedChart | null;
 }
@@ -489,11 +491,14 @@ function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageS
   const showTitle = theme.title.show && (theme.title.when === "every" || first);
   const credits = song.credits;
   const creditsWhen = theme.credits.when;
+  // A passage's copyright goes with its words on every slide (issue #301), whatever the theme says of credits.
+  const attribution = song.attribution ?? null;
   const showCredits =
-    theme.credits.show &&
+    !!attribution ||
+    (theme.credits.show &&
     !!credits &&
-    (creditsWhen === "every" || (creditsWhen === "first" && first) || (creditsWhen === "last" && last) || (creditsWhen === "first-and-last" && (first || last)));
-  const creditLine = credits ? [credits.writers.join(", "), credits.copyright, credits.ccli ? t("screens.ccliSong", { number: credits.ccli }) : null].filter(Boolean).join(" · ") : "";
+      (creditsWhen === "every" || (creditsWhen === "first" && first) || (creditsWhen === "last" && last) || (creditsWhen === "first-and-last" && (first || last))));
+  const creditLine = attribution ? attribution : credits ? [credits.writers.join(", "), credits.copyright, credits.ccli ? t("screens.ccliSong", { number: credits.ccli }) : null].filter(Boolean).join(" · ") : "";
 
   // However many pieces a slide has, its words are all in within REVEAL_MAX_MS: a long line typed letter by letter doesn't crawl.
   const pieces = motion.reveal === "lines" ? current.lines.length : motion.reveal === "words" || motion.reveal === "glow" ? current.lines.join(" ").split(/\s+/).length : current.lines.join("").replace(/\s/g, "").length;

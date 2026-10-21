@@ -16,7 +16,7 @@ import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setMode, useMode } from "#/lib/mode";
 import { clearSetProgress, resumeItemOf, setProgressOf, useSetProgress } from "#/lib/set-progress";
 import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
-import { AddSongs, AddText } from "./-add-songs";
+import { AddPassage, AddSongs, AddText } from "./-add-songs";
 import { SetSongList } from "./-set-song-list";
 import { ShareCard } from "./-share-card";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
@@ -201,6 +201,9 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
               <AddSongs set={set} onAdded={setSet} />
               <div className="mt-4 border-t pt-4">
                 <AddText set={set} onAdded={setSet} />
+              </div>
+              <div className="mt-4 border-t pt-4">
+                <AddPassage set={set} onAdded={setSet} />
               </div>
             </CardContent>
           </Card>

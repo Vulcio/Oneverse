@@ -5,6 +5,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Input } from "@oneverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
 import { TextItemDialog } from "#/components/set-text-item";
+import { PassageItemDialog } from "#/components/set-passage-item";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -92,6 +93,21 @@ export function AddText({ set, onAdded }: { set: SetlistDetail; onAdded: (set: S
         {t("sets.text.add")}
       </Button>
       {open ? <TextItemDialog open={open} onOpenChange={setOpen} text={null} onSave={async (text) => onAdded(await apiClient.addSetlistItem(set.id, { text }))} /> : null}
+    </div>
+  );
+}
+
+/** A Bible passage for the screens (issue #301): an imported Bible and a reference. */
+export function AddPassage({ set, onAdded }: { set: SetlistDetail; onAdded: (set: SetlistDetail) => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <p className="text-xs text-muted-foreground">{t("sets.passage.addHint")}</p>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)} data-testid="set-add-passage">
+        {t("sets.passage.add")}
+      </Button>
+      {open ? <PassageItemDialog open={open} onOpenChange={setOpen} passage={null} onSave={async (passage) => onAdded(await apiClient.addSetlistItem(set.id, { passage }))} /> : null}
     </div>
   );
 }

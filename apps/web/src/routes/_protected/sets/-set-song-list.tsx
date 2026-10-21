@@ -11,7 +11,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { degreeChords, formatTimer, SET_TRANSITIONS, TRANSPOSE_STEP_OPTIONS, transposeKey, type SetlistItem, type SetlistSongRef, type UpdateSetlistItemRequest } from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Check, GripVertical, Pencil, Text as TextIcon, Timer, X } from "lucide-react";
+import { BookOpen, Check, GripVertical, Pencil, Text as TextIcon, Timer, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -21,6 +21,7 @@ import { useMode } from "#/lib/mode";
 import type { SetProgress } from "#/lib/set-progress";
 import { setItemTitle, transposeLabel } from "#/lib/setlists";
 import { TextItemDialog } from "#/components/set-text-item";
+import { PassageItemDialog } from "#/components/set-passage-item";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Input } from "@oneverse/ui/components/input";
 import { TransitionChordsPicker, TransitionSymbol, TransitionVariations } from "#/components/set-transition";
@@ -144,6 +145,9 @@ function SongRow({
   // Slides of text (issue #305): its title, opened to change.
   const text = item.text ?? null;
   const [editingText, setEditingText] = useState(false);
+  // A Bible passage (issue #301): its reference, opened to change.
+  const passage = item.passage ?? null;
+  const [editingPassage, setEditingPassage] = useState(false);
 
   // Its own arrangement for this set, opened to change.
   async function customize() {
@@ -215,9 +219,24 @@ function SongRow({
               </Button>
             ) : null}
           </span>
+        ) : passage ? (
+          <span className="flex items-center gap-1.5" data-testid="set-passage-row">
+            <BookOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <Link to={mode === "live" ? "/sets/$setlistId/live/$itemId" : "/sets/$setlistId/songs/$itemId"} params={{ setlistId, itemId: item.id }} className="font-medium hover:underline">
+              {title}
+            </Link>
+            {canEdit ? (
+              <Button variant="ghost" size="icon" className="size-7" aria-label={t("sets.passage.edit", { title })} onClick={() => setEditingPassage(true)}>
+                <Pencil />
+              </Button>
+            ) : null}
+          </span>
         ) : (
           <span className="text-sm italic text-muted-foreground">{title}</span>
         )}
+        {passage && editingPassage ? (
+          <PassageItemDialog open={editingPassage} onOpenChange={setEditingPassage} passage={passage} onSave={async (changed) => onChange({ passage: changed })} />
+        ) : null}
         {text && editingText ? (
           <TextItemDialog open={editingText} onOpenChange={setEditingText} text={text} onSave={async (changed) => onChange({ text: changed })} />
         ) : null}

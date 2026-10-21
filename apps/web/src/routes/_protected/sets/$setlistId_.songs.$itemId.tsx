@@ -19,6 +19,7 @@ import { useMode } from "#/lib/mode";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setItemTitle, setlistTitle, transposeLabel } from "#/lib/setlists";
 import { TextItemSlides } from "#/components/set-text-item";
+import { PassageReading } from "#/components/set-passage-item";
 import { useSongView } from "#/lib/song-views";
 import { useSyncSong } from "#/lib/sync-client";
 
@@ -162,6 +163,13 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
         <Card>
           <CardContent>
             <TextItemSlides text={view.text} />
+          </CardContent>
+        </Card>
+      ) : view.passage ? (
+        // A Bible passage (issue #301), with its copyright beneath.
+        <Card>
+          <CardContent>
+            <PassageReading passage={view.passage} />
           </CardContent>
         </Card>
       ) : null}

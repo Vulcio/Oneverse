@@ -22,7 +22,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
 import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
@@ -1310,6 +1310,30 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "an empty body", args: [{ title: "Pause", body: "  " }] },
         ],
       },
+      passageSlides: {
+        about:
+          "A passage item's slides (issue #301): each verse on slides of its own, its words on lines of at most 44 characters, 4 lines a slide, labelled with its place; none when its Bible may not be shown on screens.",
+        params: ["passage"],
+        run: passageSlides,
+        cases: [
+          {
+            name: "verses across two chapters, one printed with the next",
+            args: [
+              {
+                bookName: "John",
+                projection: true,
+                chapters: [
+                  { book: 43, chapter: 3, verses: [{ number: 16, text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." }, { number: 17, endNumber: 18, text: "For God sent not his Son." }] },
+                  { book: 43, chapter: 4, verses: [{ number: 1, text: "When therefore the Lord knew" }] },
+                ],
+              },
+            ],
+          },
+          { name: "a word longer than a line", args: [{ bookName: "Psalms", projection: true, chapters: [{ book: 19, chapter: 1, verses: [{ number: 1, text: "Blessed supercalifragilisticexpialidociousandsomewhatlonger man" }] }] }] },
+          { name: "its Bible may not be projected", args: [{ bookName: "John", projection: false, chapters: [{ book: 43, chapter: 3, verses: [{ number: 16, text: "For God so loved the world" }] }] }] },
+          { name: "no verses", args: [{ bookName: "John", projection: true, chapters: [] }] },
+        ],
+      },
       resolveScreenTheme: {
         about:
           "A screen theme as every client reads it (issue #194, docs/screen-theme-v1.md): what it says over the defaults; a part it can't read falls back to that part's defaults, a field it doesn't know is ignored, and anything that isn't a theme is the default look.",
@@ -2292,6 +2316,9 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a song", args: [{ songVersionId: "song_1" }] },
           { name: "a text (issue #305)", args: [{ text: { title: " Welcome ", body: "Coffee after the service" } }] },
           { name: "a song and a text", args: [{ songVersionId: "song_1", text: { title: "", body: "x" } }] },
+          { name: "a passage (issue #301)", args: [{ passage: { bibleId: "bible_1", reference: " John 3:16-18 " } }] },
+          { name: "a passage and a text", args: [{ passage: { bibleId: "bible_1", reference: "John 3:16" }, text: { title: "", body: "x" } }] },
+          { name: "a passage without a reference", args: [{ passage: { bibleId: "bible_1", reference: "  " } }] },
           { name: "nothing", args: [{}] },
         ],
       },

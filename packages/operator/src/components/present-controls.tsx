@@ -1,4 +1,4 @@
-import { setItemSlides, stepSlide, structureOf, type RenderedChart, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
+import { setItemSlides, stepSlide, structureOf, type RenderedChart, type SetItemPassage, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
 import { ChevronLeft, ChevronRight, MonitorOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,6 +23,7 @@ export function PresentControls({
   itemId,
   chart,
   text,
+  passage,
   next,
   previous,
   onSlidePass,
@@ -32,6 +33,8 @@ export function PresentControls({
   chart: RenderedChart | null;
   /** A text item's (issue #305): its slides, when there's no chart. */
   text?: SetlistItemText | null;
+  /** A passage item's (issue #301): its verses' slides, where its Bible may be shown on screens. */
+  passage?: SetItemPassage | null;
   next: (() => void) | null;
   previous: (() => void) | null;
   /** The chart scrolled to the pass a slide's from. */
@@ -53,7 +56,7 @@ export function PresentControls({
     setSent(next);
     present(next);
   };
-  const slides = useMemo(() => setItemSlides({ chart, text }), [chart, text]);
+  const slides = useMemo(() => setItemSlides({ chart, text, passage }), [chart, text, passage]);
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const screens = sync.ready ? sync.members.filter((member) => member.screen) : [];
   // An operator running the screens alone (issues #275, #305): this Live shows what's on them, and waits.

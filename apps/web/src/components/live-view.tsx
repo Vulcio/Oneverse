@@ -1,5 +1,6 @@
-import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText } from "@oneverse/core";
+import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
 import { TextItemSlides } from "#/components/set-text-item";
+import { PassageReading } from "#/components/set-passage-item";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type RefObject, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -71,6 +72,8 @@ export interface LiveSong {
   notes?: { context: NotesContext; document: SongDocumentV2 };
   /** A set's text item (issue #305): its slides, in place of a chart. */
   text?: SetlistItemText | null;
+  /** A set's passage item (issue #301): its verses, in place of a chart. */
+  passage?: SetItemPassage | null;
 }
 
 /** How far down a chart is scrolled for its song to count as played (issue #153). */
@@ -476,6 +479,7 @@ export function LiveView({
             itemId={song.id}
             chart={chart}
             text={song.text ?? null}
+            passage={song.passage ?? null}
             next={next}
             previous={previous}
             onSlidePass={goToPass}
@@ -667,6 +671,8 @@ function LiveSongSection({
           <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={song.player} songVersionId={song.songVersionId} />
         ) : song.text ? (
           <TextItemSlides text={song.text} />
+        ) : song.passage ? (
+          <PassageReading passage={song.passage} />
         ) : (
           <p className="text-muted-foreground">{t("sets.hiddenSong")}</p>
         )}

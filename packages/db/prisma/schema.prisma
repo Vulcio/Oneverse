@@ -1658,12 +1658,14 @@ model SongOwnershipRequest {
 model SetlistItem {
   id            String          @id @default(cuid())
   setlistId     String
-  /// What it is (issue #305): a song, or slides of text. Each kind has its own fields: a song's songVersionId, a text's text.
+  /// What it is (issue #305): a song, slides of text, or a Bible passage (issue #301). Each kind has its own fields: a song's songVersionId, a text's text, a passage's passage.
   kind          SetlistItemKind @default(SONG)
   /// A song's; null for any other kind.
   songVersionId String?
   /// A text's (issue #305): {title, body}, the body's paragraphs its slides. Null for any other kind.
   text          Json?
+  /// A passage's (issue #301): {bibleId, reference} - an imported Bible and the verses, never their text. Null for any other kind.
+  passage       Json?
   arrangementId String?
   position      Int // Sort order (0-based)
   createdAt     DateTime @default(now())
@@ -3217,6 +3219,7 @@ model SignupInvitation {
 enum SetlistItemKind {
   SONG
   TEXT
+  PASSAGE
 }
 
 enum SetTransition {

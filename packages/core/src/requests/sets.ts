@@ -43,14 +43,32 @@ export function readItemText(value: unknown): SetlistItemText | null {
   return text.success ? text.data : null;
 }
 
+/**
+ * A passage item (issue #301): an imported Bible and the verses, as people
+ * write them ("John 3:16-18", "Psaume 23,1-4") - never a copy of the text,
+ * read from the Bible whenever the set is.
+ */
+export const SetlistItemPassageSchema = z.strictObject({
+  bibleId: z.string().min(1).max(40).describe("An imported Bible's id (GET /scriptures/bibles)"),
+  reference: z.string().trim().min(1).max(200).describe("Chapters or verses of one book, as people write them"),
+});
+export type SetlistItemPassageRef = z.output<typeof SetlistItemPassageSchema>;
+
+/** A stored passage item's Bible and reference: null when it can't be read. */
+export function readItemPassage(value: unknown): SetlistItemPassageRef | null {
+  const passage = SetlistItemPassageSchema.safeParse(value);
+  return passage.success ? passage.data : null;
+}
+
 export const AddSetlistItemSchema = z
   .strictObject({
-    songVersionId: optional(z.string()).describe("A song (an item of kind SONG); give this or text"),
-    text: optional(SetlistItemTextSchema).describe("Slides of text (an item of kind TEXT, issue #305); give this or songVersionId"),
+    songVersionId: optional(z.string()).describe("A song (an item of kind SONG); give this, text or passage"),
+    text: optional(SetlistItemTextSchema).describe("Slides of text (an item of kind TEXT, issue #305); give this, songVersionId or passage"),
+    passage: optional(SetlistItemPassageSchema).describe("A Bible passage (an item of kind PASSAGE, issue #301); give this, songVersionId or text"),
     transposeSteps: optional(transposeSteps).describe("Semitones relative to the song's own key"),
     afterItemId: optional(z.string().min(1).max(40)).describe("Played right after this item of the set (issue #199); at the end when left out"),
   })
-  .refine((item) => (item.songVersionId === undefined) !== (item.text === undefined), "Give either songVersionId or text");
+  .refine((item) => [item.songVersionId, item.text, item.passage].filter((one) => one !== undefined).length === 1, "Give one of songVersionId, text or passage");
 
 /** A set item's own timer (issue #269): started on the screens' stage when Live comes to it. */
 export const SetlistItemTimerSchema = z.strictObject({
@@ -79,8 +97,14 @@ export const UpdateSetlistItemSchema = z.strictObject({
     .describe('For a transition (issue #10): the chords played into the next song, as degrees of its key ("2m7", "57"); [] for none'),
   timer: SetlistItemTimerSchema.nullable().optional().describe("Its own timer (issue #269), started on the screens when Live comes to it; null: none"),
   text: optional(SetlistItemTextSchema).describe("A text item's title and body (issue #305); refused for a song"),
+  passage: optional(SetlistItemPassageSchema).describe("A passage item's Bible and reference (issue #301); refused for any other kind"),
 });
 export type UpdateSetlistItemRequest = z.input<typeof UpdateSetlistItemSchema>;
+
+/** A set's offline copy (issue #301): to keep on a device, or `for=screens`, as the screens may show it (the operator's console). */
+export const SetlistOfflineQuerySchema = z.strictObject({
+  for: optional(z.enum(["screens"])).describe("screens: its passages' verses where their Bible may be shown on screens, rather than kept offline"),
+});
 
 export const SetArrangementSchema = z.strictObject({
   name: requiredText(100).describe('Its name, e.g. "For Sunday 12 October"'),

@@ -37,6 +37,7 @@ import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
 import type { z } from "zod";
 import type { BibleUpdateSchema } from "../requests/scriptures.js";
+import type { SetItemPassage } from "../screens/index.js";
 import type { BibleSourceFormat } from "../scriptures/bible.js";
 import type { PassageChapter } from "../scriptures/references.js";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
@@ -194,6 +195,8 @@ export interface SetlistItem {
   kind?: SetlistItemKind;
   /** A text item's title and body, its paragraphs its slides (textSlides); null or left out for a song. */
   text?: SetlistItemText | null;
+  /** A passage item's Bible, reference and verses (issue #301); null or left out for any other kind. */
+  passage?: SetItemPassage | null;
   position: number;
   /** Semitones relative to the song's own key. */
   transposeSteps: number;
@@ -252,6 +255,8 @@ export interface SetlistSongView {
   item: { id: string; position: number; transposeSteps: number; notes: string | null; arrangementId: string | null; kind?: SetlistItemKind };
   /** A text item's title and body (issue #305); null or left out for a song. */
   text?: SetlistItemText | null;
+  /** A passage item's Bible, reference and verses (issue #301); null or left out for any other kind. */
+  passage?: SetItemPassage | null;
   /** What happens after it (issue #199), with the keys and tempos either side as played; null: nothing said. */
   transition?: SetTransitionView | null;
   song:
@@ -2725,7 +2730,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     removeSetlistItem: (setlistId: string, itemId: string) =>
       request<SetlistDetail>(`/setlists/${setlistId}/items/${itemId}`, { method: "DELETE" }),
     getSetlistSong: (setlistId: string, itemId: string) => request<SetlistSongView>(`/setlists/${setlistId}/items/${itemId}/song`),
-    getSetlistOffline: (setlistId: string) => request<SetlistOfflineCopy>(`/setlists/${setlistId}/offline`),
+    /** A set to keep on the device; `forScreens`, as the screens may show it (the operator's console, issue #301). */
+    getSetlistOffline: (setlistId: string, { forScreens = false } = {}) => request<SetlistOfflineCopy>(`/setlists/${setlistId}/offline${forScreens ? "?for=screens" : ""}`),
     syncOffline: (body: {
       days?: number;
       known: { id: string; version: string }[];

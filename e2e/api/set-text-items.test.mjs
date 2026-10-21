@@ -15,7 +15,7 @@ check("add a text item after the song", r.status === 201 && text?.kind === "TEXT
 check("the song item says it's a song", r.body.items?.[0]?.kind === "SONG" && r.body.items[0].song?.id === song.id);
 
 r = await call(leader, "POST", `/setlists/${set.id}/items`, {});
-check("an item needs a song or a text", r.status === 400 && /songVersionId or text/.test(String(r.body?.message)), `${r.status} ${r.body?.message}`);
+check("an item needs a song, a text or a passage", r.status === 400 && /one of songVersionId, text or passage/.test(String(r.body?.message)), `${r.status} ${r.body?.message}`);
 r = await call(leader, "POST", `/setlists/${set.id}/items`, { songVersionId: song.id, text: { title: "", body: "Both" } });
 check("not both", r.status === 400, `${r.status} ${r.body?.message}`);
 r = await call(leader, "POST", `/setlists/${set.id}/items`, { text: { title: "", body: "x".repeat(5001) } });

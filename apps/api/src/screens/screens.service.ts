@@ -172,7 +172,7 @@ export class ScreensService {
     if (screen.setlistId) {
       for (const reader of await this.readersFor(screen, screen.setlistId)) {
         try {
-          const copy = await this.setlists.offlineCopy(reader, screen.setlistId, { withNotes: false });
+          const copy = await this.setlists.offlineCopy(reader, screen.setlistId, { withNotes: false, passages: "screen" });
           set = { ...copy, credits: await this.credits(copy.songs.flatMap((song) => (song.song ? [song.song.id] : []))) };
           break;
         } catch {

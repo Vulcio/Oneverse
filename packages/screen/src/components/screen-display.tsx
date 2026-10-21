@@ -8,7 +8,7 @@ import { ScreenSetPicker } from "./screen-set-picker";
 import { ScreenStage, type StageSong } from "./screen-stage";
 import type { StageLive } from "./screen-widgets";
 import { useScreenDisplay } from "../lib/screen-display";
-import { setItemTitle, setItemView, setlistTitle } from "../lib/set-items";
+import { passageCredit, setItemTitle, setItemView, setlistTitle } from "../lib/set-items";
 
 /**
  * A big screen (issues #186, #305): whatever drives it - a TV's browser, a
@@ -69,9 +69,9 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
   // A copy kept before themes (issue #194) has none: the default look.
   const look = theme ?? composeBuiltInTemplate("classic")!;
   const song = useMemo<StageSong | null>(() => {
-    if (!view || (!view.song && !view.text)) return null;
+    if (!view || (!view.song && !view.text && !view.passage)) return null;
     const { chart, slides } = setItemView(view);
-    return { key: view.item.id, title: setItemTitle(view, t), slides, credits: view.song ? set?.credits[view.song.id] : undefined, chart };
+    return { key: view.item.id, title: setItemTitle(view, t), slides, credits: view.song ? set?.credits[view.song.id] : undefined, attribution: view.passage ? passageCredit(view.passage) : null, chart };
   }, [view, set, t]);
 
   // Each item's slides, counted once per set (issue #289): the Slide count widget's set.

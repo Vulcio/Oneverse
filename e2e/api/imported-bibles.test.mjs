@@ -2,7 +2,8 @@
 // converts it, and its passages are read by reference by anyone signed in;
 // what it may be used for is off until the admin says. A file that isn't a
 // Bible fails, with why; deleting one removes its verses.
-import { API, api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
+import { api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
+import { importedBible, uploadBible } from "../lib/bibles.mjs";
 
 const admin = await user("Bible importer");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
@@ -23,19 +24,8 @@ const ZEFANIA = `<?xml version="1.0" encoding="utf-8"?>
   </BIBLEBOOK>
 </XMLBIBLE>`;
 
-const upload = (who, body, filename) => {
-  const form = new FormData();
-  form.append("file", new Blob([body], { type: "application/xml" }), filename);
-  return fetch(`${API}/admin/scriptures/bibles`, { method: "POST", headers: { Authorization: `Bearer ${who.bearer}` }, body: form });
-};
-async function imported(id) {
-  for (let i = 0; i < 60; i++) {
-    const found = (await api(admin, "GET", "/admin/scriptures/bibles")).find((bible) => bible.id === id);
-    if (found?.status !== "IMPORTING") return found;
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-  throw new Error("still importing");
-}
+const upload = uploadBible;
+const imported = (id) => importedBible(admin, id);
 
 check("only an admin imports a Bible", (await upload(reader, ZEFANIA, "bible.xml")).status === 403);
 

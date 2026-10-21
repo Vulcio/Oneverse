@@ -356,9 +356,10 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
   const presenting = session?.presenting ?? null;
   const [notesShown, setNotesShown] = useState(false);
   const [position, setPosition] = useState("");
-  // A song's chart and lyrics, or a text's paragraphs (issue #305).
+  // A song's chart and lyrics, a text's paragraphs (issue #305), or a passage's verses (issue #301).
   const { chart, slides } = useMemo(() => (view ? setItemView(view) : { chart: null, slides: [] }), [view]);
-  if (!view || (!view.song && !view.text)) return <p className="text-sm text-muted-foreground">{t("screens.operator.noSong")}</p>;
+  if (!view || (!view.song && !view.text && !view.passage)) return <p className="text-sm text-muted-foreground">{t("screens.operator.noSong")}</p>;
+  if (view.passage && slides.length === 0) return <p className="text-sm text-muted-foreground" data-testid="operator-passage-hidden">{t(view.passage.projection ? "sets.passage.missing" : "sets.passage.notProjected")}</p>;
   const itemId = view.item.id;
   const here = presenting?.itemId === itemId ? presenting.slide : null;
   const send = (slide: number) => presentScreens({ itemId, slide, black: false });
@@ -614,7 +615,7 @@ function OnScreens({ copy }: { copy: SetlistOfflineCopy }) {
         <CardTitle className="text-base">{t("screens.operator.onScreens")}</CardTitle>
       </CardHeader>
       <CardContent>
-        {!presenting || !view || (!view.song && !view.text) ? (
+        {!presenting || !view || (!view.song && !view.text && !view.passage) ? (
           <p className="text-sm text-muted-foreground">{t("screens.operator.notPresenting")}</p>
         ) : (
           <div className="flex flex-col gap-1">

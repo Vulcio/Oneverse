@@ -379,7 +379,65 @@
           "expected": {
             "ok": false,
             "messages": [
-              "Give either songVersionId or text"
+              "Give one of songVersionId, text or passage"
+            ]
+          }
+        },
+        {
+          "name": "a passage (issue #301)",
+          "args": [
+            {
+              "passage": {
+                "bibleId": "bible_1",
+                "reference": " John 3:16-18 "
+              }
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "value": {
+              "passage": {
+                "bibleId": "bible_1",
+                "reference": "John 3:16-18"
+              }
+            }
+          }
+        },
+        {
+          "name": "a passage and a text",
+          "args": [
+            {
+              "passage": {
+                "bibleId": "bible_1",
+                "reference": "John 3:16"
+              },
+              "text": {
+                "title": "",
+                "body": "x"
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "Give one of songVersionId, text or passage"
+            ]
+          }
+        },
+        {
+          "name": "a passage without a reference",
+          "args": [
+            {
+              "passage": {
+                "bibleId": "bible_1",
+                "reference": "  "
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "passage.reference should not be empty"
             ]
           }
         },
@@ -391,7 +449,7 @@
           "expected": {
             "ok": false,
             "messages": [
-              "Give either songVersionId or text"
+              "Give one of songVersionId, text or passage"
             ]
           }
         }

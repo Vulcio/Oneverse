@@ -7,6 +7,7 @@ import {
   CreateSetlistDto,
   ReorderSetlistItemsDto,
   SetArrangementDto,
+  SetlistOfflineQueryDto,
   UpdateSetlistDto,
   UpdateSetlistItemDto,
 } from "./dto/setlist.dto.js";
@@ -116,10 +117,10 @@ export class SetlistsController {
   @ApiOperation({
     summary: "A set to keep offline",
     description:
-      "The set (as GET /setlists/:id returns it) and, for every item, its song view (as GET /setlists/:id/items/:itemId/song returns it): arrangement, the set's key, the viewer's chart preferences and notes. Only what the viewer can already read.",
+      "The set (as GET /setlists/:id returns it) and, for every item, its song view (as GET /setlists/:id/items/:itemId/song returns it): arrangement, the set's key, the viewer's chart preferences and notes. Only what the viewer can already read. A passage's verses only where its Bible may be kept offline - or, with for=screens, shown on screens.",
   })
-  offlineCopy(@CurrentUser() user: AuthenticatedUser | undefined, @Param("setlistId") setlistId: string) {
-    return this.setlists.offlineCopy(requireUser(user), setlistId);
+  offlineCopy(@CurrentUser() user: AuthenticatedUser | undefined, @Param("setlistId") setlistId: string, @Query() query: SetlistOfflineQueryDto) {
+    return this.setlists.offlineCopy(requireUser(user), setlistId, { passages: query.for === "screens" ? "screen" : "offline" });
   }
 
   /** One song of the set, readable by anyone who can open the set (guests included), with the viewer's private note. */
