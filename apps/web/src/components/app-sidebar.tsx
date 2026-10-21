@@ -7,6 +7,7 @@ import {
   Bell,
   Guitar,
   Handshake,
+  BookMarked,
   BookOpen,
   ChevronRight,
   ChevronsUpDown,
@@ -534,6 +535,7 @@ function AdminNav({ pathname }: { pathname: string }) {
     { to: "/admin/stem-separation" as const, label: t("nav.adminStemSeparation"), icon: AudioWaveform },
     { to: "/admin/catalogs" as const, label: t("nav.adminCatalogs"), icon: FileStack },
     { to: "/admin/metadata" as const, label: t("nav.adminMetadata"), icon: LayoutDashboard },
+    { to: "/admin/bibles" as const, label: t("nav.adminBibles"), icon: BookMarked },
   ];
 
   return (

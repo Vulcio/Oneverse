@@ -14,7 +14,7 @@ type Provider = MetadataSettings["providers"][number];
 type Message = { kind: "ok" | "error"; text: string } | null;
 
 /** Runs an admin action, keeping what it says (or its error) to show. */
-function useAction() {
+export function useAction() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message>(null);
   async function run(action: () => Promise<string>) {
@@ -31,7 +31,7 @@ function useAction() {
   return { busy, message, run };
 }
 
-function Said({ message }: { message: Message }) {
+export function Said({ message }: { message: Message }) {
   if (!message) return null;
   return (
     <p className={`text-sm ${message.kind === "error" ? "text-destructive" : "text-muted-foreground"}`} role={message.kind === "error" ? "alert" : "status"}>
@@ -186,7 +186,7 @@ export function MetadataProvidersCard() {
 }
 
 /** Save configuration, Test connection (where there's something to test) and Revert, for one provider's settings. */
-function Actions({
+export function Actions({
   busy,
   onSave,
   onTest,
@@ -222,7 +222,7 @@ function Actions({
   );
 }
 
-function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: ReactNode }) {
+export function Field({ id, label, hint, children }: { id: string; label: string; hint?: string; children: ReactNode }) {
   return (
     <div className="flex max-w-xl flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>

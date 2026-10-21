@@ -104,6 +104,12 @@ This Songverse's own server for splitting recordings into stems (a Songverse Son
 
 Manages the published songbook catalogs (see [Songbooks](/songbooks/#from-a-published-songbooks-catalog)): add one, edit its entries in a table, import or export them as CSV or JSON.
 
+### Bibles
+
+Where Bible translations come from. **YouVersion** holds the App Key of YouVersion's Platform API: register an app on platform.youversion.com, and the versions it may use are the ones YouVersion licenses to that app. Enter it as **App Key** - kept encrypted and never shown again; leave it blank to keep the current one. Without a key (here or in the `YOUVERSION_APP_KEY` environment variable) YouVersion isn't asked and nothing about it shows. **Test connection** lists the key's English versions; **Revert to environment variables** goes back to `YOUVERSION_APP_KEY`, or to no YouVersion without it.
+
+**Try a passage** reads one through the key: **Find versions** in a language (a tag such as `en` or `fr`), pick a **Version**, write a **Passage** as people do ("John 3:16-18", "Jean 3.16"), and **Read**. Each version's copyright line is shown under its text, and a version without one isn't used. A version's licence decides whether its text may be stored, used offline or shown on screens; until those are read, Songverse asks YouVersion afresh every time and keeps nothing.
+
 ### Server maintenance
 
 The **Metadata** page has two maintenance tasks: **Check status** compares the database migrations on the server with what's applied, and **Run seed script** re-applies the built-in data (tag categories, tags, tuning presets). It's safe to re-run.

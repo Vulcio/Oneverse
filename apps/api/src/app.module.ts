@@ -36,6 +36,7 @@ import { PublishingModule } from "./publishing/publishing.module.js";
 import { SuggestionsModule } from "./suggestions/suggestions.module.js";
 import { SyncModule } from "./sync/sync.module.js";
 import { ScreensModule } from "./screens/screens.module.js";
+import { ScripturesModule } from "./scriptures/scriptures.module.js";
 import { BrandsModule } from "./brands/brands.module.js";
 import { InvitationsModule } from "./invitations/invitations.module.js";
 import { PeopleModule } from "./people/people.module.js";
@@ -80,6 +81,7 @@ import { LookupsModule } from "./lookups/lookups.module.js";
     PeopleModule,
     SyncModule,
     ScreensModule,
+    ScripturesModule,
     BrandsModule,
     InvitationsModule,
     LibraryHomeModule,

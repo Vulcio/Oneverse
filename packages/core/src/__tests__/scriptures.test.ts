@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { BIBLE_BOOKS, bibleBookByOsisId, bookKey, findBibleBook } from "../scriptures/books.js";
 import { BibleSchema, bibleCounts, tidyBible, type Bible } from "../scriptures/bible.js";
 import { formatBibleReference, parseBibleReference, parseBibleReferences, passageVerses } from "../scriptures/references.js";
+import { bibleBookByUsfm, usfmBookId, usfmChapterParts, usfmPassageId } from "../scriptures/usfm.js";
 
 describe("books", () => {
   it("every name and abbreviation means one book", () => {
@@ -162,5 +163,39 @@ describe("passageVerses", () => {
   it("nothing the translation doesn't have", () => {
     expect(verses("John 5")).toEqual([]);
     expect(verses("Romans 1:1")).toEqual([]);
+  });
+});
+
+describe("USFM (YouVersion's ids, issue #304)", () => {
+  it("names every book of the list, and finds it again", () => {
+    for (const info of BIBLE_BOOKS) {
+      const id = usfmBookId(info.number);
+      expect(id, info.osisId).toMatch(/^[1-4A-Z][A-Z0-9]{2}$/);
+      expect(bibleBookByUsfm(id!)).toBe(info.number);
+    }
+    expect(usfmBookId(43)).toBe("JHN");
+    expect(usfmBookId(22)).toBe("SNG");
+    expect(usfmBookId(70)).toBe("SIR");
+    expect(usfmBookId(200)).toBeUndefined();
+    expect(bibleBookByUsfm("jhn")).toBe(43);
+  });
+
+  it("cuts a reference into its chapters", () => {
+    expect(usfmChapterParts(parseBibleReference("John 3:16")!)).toEqual([{ book: "JHN", chapter: 3, from: 16, to: 16 }]);
+    expect(usfmChapterParts(parseBibleReference("John 3")!)).toEqual([{ book: "JHN", chapter: 3, from: null, to: null }]);
+    expect(usfmChapterParts(parseBibleReference("John 3:16-4:2")!)).toEqual([
+      { book: "JHN", chapter: 3, from: 16, to: null },
+      { book: "JHN", chapter: 4, from: null, to: 2 },
+    ]);
+    expect(usfmChapterParts(parseBibleReference("Jn 3:16, 18; 5-6")!)).toEqual([
+      { book: "JHN", chapter: 3, from: 16, to: 16 },
+      { book: "JHN", chapter: 3, from: 18, to: 18 },
+      { book: "JHN", chapter: 5, from: null, to: null },
+      { book: "JHN", chapter: 6, from: null, to: null },
+    ]);
+    expect(usfmChapterParts(parseBibleReference("Jude 3")!)).toEqual([{ book: "JUD", chapter: 1, from: 3, to: 3 }]);
+    expect(usfmChapterParts(parseBibleReference("John")!)).toBeNull();
+    expect(usfmPassageId("JHN", 3)).toBe("JHN.3");
+    expect(usfmPassageId("JHN", 3, 16)).toBe("JHN.3.16");
   });
 });
