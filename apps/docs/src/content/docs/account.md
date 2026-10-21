@@ -5,6 +5,8 @@ description: Your profile, picture, email, passkeys, roles, language and how cha
 
 Everything about your account is under **Account settings**: choose your name at the bottom of the sidebar, then **Account settings** (it opens the Settings part of the Dashboard).
 
+Your email, password and passkeys belong to your **Oneverse** account, the one you sign in to every app with: on the **Your Oneverse account** card, **Manage at Oneverse** opens it. Your name, picture and language are there too, and the same in every app.
+
 ## Profile and picture
 
 - **Display name** - how you appear to others: in teams, in sets you share, on songs you submit.
@@ -12,13 +14,13 @@ Everything about your account is under **Account settings**: choose your name at
 
 ## Email
 
-To change it, enter the **New email** and choose **Change email**. We first ask your current address to approve the change, then send a confirmation link to the new one. Your email changes once you open it.
+At Oneverse, to change it, enter the **New email** and choose **Change email**. We first ask your current address to approve the change, then send a confirmation link to the new one. Your email changes once you open it.
 
 ## Passkeys
 
 A passkey lets you sign in without a password, with your device's fingerprint, face or screen lock.
 
-1. Under **Passkeys**, give it a name if you like ("My laptop").
+1. At Oneverse, under **Passkeys**, give it a name if you like ("My laptop").
 2. Choose **Add a passkey** and follow your device's prompt.
 
 Add one on each device you use. You can remove a passkey at any time.

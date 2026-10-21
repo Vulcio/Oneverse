@@ -879,7 +879,7 @@ const fr: typeof en = {
     admin: "Administration",
     help: "Aide",
     sourceCode: "Code source",
-    freeSoftware: "Songverse est un logiciel libre (AGPL-3.0).",
+    freeSoftware: "Oneverse est un logiciel libre (AGPL-3.0).",
     signOut: "Se déconnecter",
     teams: "Équipes",
     people: "Personnes",

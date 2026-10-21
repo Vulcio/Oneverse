@@ -642,7 +642,7 @@ try {
       ],
     });
     await shoot("organization-events", `/organizations/${organization.id}/events`, () => page.locator("[data-org-event-date]").first().waitFor(), { fullPage: true });
-    // Planiverse (issue #241): the same account, signed in on its own address too (one session cookie on localhost).
+    // Planiverse (issue #241): the same account, signed in through Oneverse without asking again (issue #303).
     await page.goto(`${PLANIVERSE}/calendar`);
     await page.waitForLoadState("networkidle");
     await page.locator("[data-event-date]").first().waitFor();

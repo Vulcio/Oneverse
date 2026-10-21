@@ -28,11 +28,14 @@ seed`) - some suites use the built-in global tags.
    export PUSH_TEST_ORIGINS=http://localhost:3997
    # Planiverse (issue #241) beside Songverse: the API trusts it, and it opens sets in Songverse.
    export PLANIVERSE_URL=http://localhost:3002 SONGVERSE_URL=http://localhost:3000
+   # People sign in at Oneverse (issue #303); the apps send them there.
+   export ONEVERSE_URL=http://localhost:3003
    # As in production (#92): the API only adds background jobs, the Worker runs them.
    JOBS_IN_API=false pnpm --filter @oneverse/api dev > /tmp/api-dev.log 2>&1 &
    pnpm --filter @oneverse/api build && (cd apps/api && node dist/worker.js > /tmp/worker.log 2>&1 &)
    pnpm --filter @oneverse/web dev &
    pnpm --filter @oneverse/planiverse dev &
+   pnpm --filter @oneverse/oneverse dev &
    ```
 
 2. Run everything, or pick suites:
@@ -54,6 +57,7 @@ Screenshots of failed browser steps go to `e2e/.artifacts/`.
 | `E2E_API_URL` | `http://localhost:3001` |
 | `E2E_WEB_URL` | `http://localhost:3000` |
 | `E2E_PLANIVERSE_URL` | `http://localhost:3002` |
+| `E2E_ONEVERSE_URL` | `http://localhost:3003` |
 | `E2E_API_LOG` | `/tmp/api-dev.log` |
 | `E2E_DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/songverse_dev` |
 

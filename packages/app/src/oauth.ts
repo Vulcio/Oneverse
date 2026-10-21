@@ -23,8 +23,10 @@ export function oauthClient(): OAuthClient | null {
   return typeof __ONEVERSE_CLIENT__ === "undefined" ? null : __ONEVERSE_CLIENT__;
 }
 
-const SESSION_COOKIE = "oneverse_session";
-const PENDING_COOKIE = "oneverse_sign_in";
+// Named after the app: on one host (localhost, in development) each app's
+// cookies are the others' too.
+const sessionCookieName = (client: OAuthClient) => `oneverse_session_${client.id}`;
+const pendingCookieName = (client: OAuthClient) => `oneverse_sign_in_${client.id}`;
 /** As long as a refresh token lasts: 30 days without opening the app signs one out. */
 const SESSION_MAX_AGE_S = 30 * 24 * 60 * 60;
 /** Long enough to sign in, or up and verify an email. */
@@ -144,7 +146,7 @@ export async function startSignIn(request: Request): Promise<Response> {
     code_challenge_method: "S256",
     resource: apiResource(),
   });
-  return redirect(`${getApiUrl()}/api/auth/oauth2/authorize?${authorize}`, [cookieHeader(PENDING_COOKIE, encode(pending), PENDING_MAX_AGE_S, secure)]);
+  return redirect(`${getApiUrl()}/api/auth/oauth2/authorize?${authorize}`, [cookieHeader(pendingCookieName(client), encode(pending), PENDING_MAX_AGE_S, secure)]);
 }
 
 /** The API as the tokens' audience: its own address (the API's apiResource()). */
@@ -158,8 +160,8 @@ export async function finishSignIn(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const origin = appOrigin(request, client);
   const secure = origin.startsWith("https:");
-  const pending = decode<PendingSignIn>(readCookie(request.headers.get("cookie"), PENDING_COOKIE));
-  const clearPending = cookieHeader(PENDING_COOKIE, "", 0, secure);
+  const pending = decode<PendingSignIn>(readCookie(request.headers.get("cookie"), pendingCookieName(client)));
+  const clearPending = cookieHeader(pendingCookieName(client), "", 0, secure);
   const code = url.searchParams.get("code");
   // Not this browser's sign-in (or it took over an hour): start again.
   if (!pending || !code || url.searchParams.get("state") !== pending.state) {
@@ -174,7 +176,7 @@ export async function finishSignIn(request: Request): Promise<Response> {
     resource: apiResource(),
   });
   if (!tokens) return redirect(`${origin}/auth/sign-in?${new URLSearchParams({ next: pending.next })}`, [clearPending]);
-  return redirect(`${origin}${pending.next}`, [clearPending, sessionCookie(tokens, secure)]);
+  return redirect(`${origin}${pending.next}`, [clearPending, sessionCookie(client, tokens, secure)]);
 }
 
 /**
@@ -184,7 +186,7 @@ export async function finishSignIn(request: Request): Promise<Response> {
 export async function signOut(request: Request): Promise<Response> {
   const client = requireClient();
   const origin = appOrigin(request, client);
-  const tokens = readTokens(request.headers.get("cookie"));
+  const tokens = readTokens(request.headers.get("cookie"), client);
   if (tokens) {
     await fetch(`${getApiUrl()}/api/auth/oauth2/revoke`, {
       method: "POST",
@@ -192,22 +194,22 @@ export async function signOut(request: Request): Promise<Response> {
       body: new URLSearchParams({ token: tokens.refreshToken, token_type_hint: "refresh_token", client_id: client.id }),
     }).catch(() => undefined);
   }
-  return redirect(`${oneverseUrl()}/sign-out?${new URLSearchParams({ return: `${origin}/` })}`, [cookieHeader(SESSION_COOKIE, "", 0, origin.startsWith("https:"))]);
+  return redirect(`${oneverseUrl()}/sign-out?${new URLSearchParams({ return: `${origin}/` })}`, [cookieHeader(sessionCookieName(client), "", 0, origin.startsWith("https:"))]);
 }
 
 /** The tokens in a request's cookies, if any. */
-export function readTokens(cookies: string | null): AppTokens | null {
-  const tokens = decode<AppTokens>(readCookie(cookies, SESSION_COOKIE));
+export function readTokens(cookies: string | null, client: OAuthClient): AppTokens | null {
+  const tokens = decode<AppTokens>(readCookie(cookies, sessionCookieName(client)));
   return tokens && typeof tokens.accessToken === "string" && typeof tokens.refreshToken === "string" ? tokens : null;
 }
 
-function sessionCookie(tokens: AppTokens, secure: boolean): string {
-  return cookieHeader(SESSION_COOKIE, encode(tokens), SESSION_MAX_AGE_S, secure);
+function sessionCookie(client: OAuthClient, tokens: AppTokens, secure: boolean): string {
+  return cookieHeader(sessionCookieName(client), encode(tokens), SESSION_MAX_AGE_S, secure);
 }
 
 /** The session cookie as it's set again after a refresh (null: cleared, signed out). */
-export function refreshedSessionCookie(tokens: AppTokens | null, secure: boolean): { name: string; value: string; maxAge: number; secure: boolean } {
-  return { name: SESSION_COOKIE, value: tokens ? encode(tokens) : "", maxAge: tokens ? SESSION_MAX_AGE_S : 0, secure };
+export function refreshedSessionCookie(client: OAuthClient, tokens: AppTokens | null, secure: boolean): { name: string; value: string; maxAge: number; secure: boolean } {
+  return { name: sessionCookieName(client), value: tokens ? encode(tokens) : "", maxAge: tokens ? SESSION_MAX_AGE_S : 0, secure };
 }
 
 /** Whether the access token runs out soon. */

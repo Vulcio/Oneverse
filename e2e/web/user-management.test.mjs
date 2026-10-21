@@ -1,7 +1,7 @@
 // Browser end-to-end test for user management (admin table/dialogs, transfer claim, storage limits, account profile).
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync } from "node:fs";
-import { API, WEB, LOG, SP, stamp, tag, sql, stepper, user, finish } from "../lib/harness.mjs";
+import { API, LOG, ONEVERSE, SP, WEB, finish, sql, stamp, stepper, tag, user } from "../lib/harness.mjs";
 
 
 async function signUpVerified(tag, name) {
@@ -41,7 +41,9 @@ async function createSong(email, title) {
 }
 
 async function signInUi(page, email) {
+  // At Oneverse (issue #303).
   await page.goto(WEB);
+  await page.waitForURL(`${ONEVERSE}/sign-in**`);
   await page.waitForLoadState("networkidle");
   await page.fill("#signin-email", email);
   await page.fill("#signin-password", "hunter2pass");
@@ -137,9 +139,10 @@ await step("admin deletes a user keeping content behind a transfer link", async 
 await step("signed-out visitor signs in from the link and claims the content", async () => {
   const page = await (await browser.newContext()).newPage();
   current = page;
+  // Off to sign in at Oneverse (issue #303), and back.
   await page.goto(transferUrl);
+  await page.waitForURL(`${ONEVERSE}/sign-in**`);
   await page.waitForLoadState("networkidle");
-  await page.getByText("Sign in or create an account to receive this content.").waitFor();
   await page.fill("#signin-email", claimant.email);
   await page.fill("#signin-password", "hunter2pass");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -221,7 +224,10 @@ await step("storage card shows usage against the limit", async () => {
   await userPage.getByText("of 50.0 MB used").waitFor();
 });
 
-await step("email change sends an approval to the current address", async () => {
+await step("email change, at Oneverse, sends an approval to the current address", async () => {
+  // Email and passkeys are Oneverse's (issue #303): signed in there already.
+  await userPage.goto(`${ONEVERSE}/account`);
+  await userPage.waitForLoadState("networkidle");
   const offset = readFileSync(LOG, "utf8").length;
   await userPage.getByLabel("New email").fill(`ui-claimant-new-${stamp}@example.com`);
   await userPage.getByRole("button", { name: "Change email" }).click();

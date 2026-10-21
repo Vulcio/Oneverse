@@ -156,11 +156,11 @@ export function requestApiToken(): Promise<string | null> {
  * that's no longer good (revoked, run out, the account banned) signs out.
  */
 async function clientApiToken(request: Request, cookie: string, client: OAuthClient): Promise<string | null> {
-  const tokens = readTokens(cookie);
+  const tokens = readTokens(cookie, client);
   if (!tokens) return null;
   if (!needsRefresh(tokens)) return tokens.accessToken;
   const fresh = await refreshTokens(tokens);
-  const { name, value, maxAge, secure } = refreshedSessionCookie(fresh, appOrigin(request, client).startsWith("https:"));
+  const { name, value, maxAge, secure } = refreshedSessionCookie(client, fresh, appOrigin(request, client).startsWith("https:"));
   setCookie(name, value, { path: "/", maxAge, httpOnly: true, sameSite: "lax", secure });
   return fresh?.accessToken ?? null;
 }

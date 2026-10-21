@@ -5,7 +5,7 @@ description: Create your account, sign in, and find your way around Songverse.
 
 ## Create your account
 
-1. Open [Songverse](https://app.songverse.one) and choose **Sign up**.
+1. Open [Songverse](https://app.songverse.one). It takes you to **Oneverse**, where you sign in to every app (Songverse, [Planiverse](/planiverse/)). Choose **Sign up**.
 2. Enter your display name, email and a password, then **Create account**.
 3. Open the link in the verification email we send you. You can sign in once your email is verified.
 
@@ -14,6 +14,8 @@ If your Songverse offers it, you can also use **Continue with Google** instead o
 Some servers only let invited people sign up: **Sign up** then says so. Open the invitation link you were sent (it fills in your email), or a team's invite link or a set's share link someone gave you, and create your account from there.
 
 ## Signing in
+
+You sign in at Oneverse, then come back to the app you opened. Once you're signed in there, the other apps sign you in without asking again. **Sign out** in an app signs you out of it and of Oneverse.
 
 - With your **email and password**. Forgot it? **Forgot password?** sends you a link to set a new one.
 - With a **passkey**, once you've added one (your device's fingerprint, face or screen lock - see [Your account](/account/#passkeys)).

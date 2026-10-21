@@ -12,6 +12,8 @@ export const WEB = process.env.E2E_WEB_URL ?? "http://localhost:3000";
 export const ORIGIN = WEB;
 /** Planiverse (issue #241): the planning on its own, signed in to with the same account. */
 export const PLANIVERSE = process.env.E2E_PLANIVERSE_URL ?? "http://localhost:3002";
+/** Where everyone signs in (issue #303): the apps send people there and back. */
+export const ONEVERSE = process.env.E2E_ONEVERSE_URL ?? "http://localhost:3003";
 /** The API's console output: with no email provider configured, it prints the emails it would send (verification links etc.). */
 export const LOG = process.env.E2E_API_LOG ?? "/tmp/api-dev.log";
 export const DB = (process.env.E2E_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/songverse_dev").replace(/\?.*$/, "");
@@ -110,9 +112,10 @@ export async function call(who, method, path, body) {
 /** An API call as `who`; returns just the parsed body. */
 export const api = async (who, method, path, body) => (await call(who, method, path, body ?? undefined)).body;
 
-/** Signs `who` in through the web app's sign-in form. */
+/** Signs `who` in through Oneverse's sign-in form, where the web app sends them (issue #303). */
 export async function signIn(p, who) {
   await p.goto(WEB);
+  await p.waitForURL(`${ONEVERSE}/sign-in**`);
   await p.waitForLoadState("networkidle");
   await p.fill("#signin-email", who.email);
   await p.fill("#signin-password", "hunter2pass");

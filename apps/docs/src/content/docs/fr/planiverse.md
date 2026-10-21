@@ -9,7 +9,7 @@ Planiverse, c'est la planification de Songverse à part : [Mon calendrier](/fr/t
 
 ## Se connecter
 
-C'est le même compte que celui de Songverse : la même adresse e-mail et le même mot de passe, clé d'accès ou connexion Google, à l'adresse de Planiverse. S'y inscrire crée un compte qui marche dans les deux : le lien de l'e-mail vous ramène dans Planiverse. **Paramètres du compte**, dans le menu sous votre photo, change votre nom et votre photo, votre adresse e-mail, vos clés d'accès et votre langue, comme [votre compte](/fr/account/) dans Songverse ; **Aide** ouvre cette page.
+C'est le même compte que celui de Songverse, votre compte Oneverse : Planiverse vous envoie sur Oneverse pour vous connecter (voir [Se connecter](/fr/getting-started/#se-connecter)), puis vous ramène. S'inscrire depuis là crée un compte qui marche dans les deux : le lien de l'e-mail vous ramène dans Planiverse. **Paramètres du compte**, dans le menu sous votre photo, change votre nom, votre photo et votre langue, et **Gérer sur Oneverse** votre adresse e-mail, votre mot de passe et vos clés d'accès, comme [votre compte](/fr/account/) dans Songverse ; **Aide** ouvre cette page.
 
 ## Ce qu'on y trouve
 

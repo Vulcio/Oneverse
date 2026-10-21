@@ -2,7 +2,7 @@
 import { chromium } from "playwright";
 import sharp from "sharp";
 import { readFileSync, writeFileSync } from "node:fs";
-import { API, WEB, LOG, SP, stamp, stepper, finish } from "../lib/harness.mjs";
+import { API, LOG, ONEVERSE, SP, WEB, finish, stamp, stepper } from "../lib/harness.mjs";
 
 
 let page;
@@ -42,6 +42,7 @@ page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } 
 
 await step("sign in and open account settings", async () => {
   await page.goto(WEB);
+  await page.waitForURL(`${ONEVERSE}/sign-in**`);
   await page.waitForLoadState("networkidle");
   await page.fill("#signin-email", email);
   await page.fill("#signin-password", "hunter2pass");

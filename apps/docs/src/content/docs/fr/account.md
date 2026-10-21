@@ -5,6 +5,8 @@ description: Votre profil, votre photo, votre adresse, vos clés d'accès, vos r
 
 Tout ce qui concerne votre compte se trouve dans **Paramètres du compte** : choisissez votre nom en bas de la barre latérale, puis **Paramètres du compte** (la partie Paramètres du tableau de bord s'ouvre).
 
+Votre adresse e-mail, votre mot de passe et vos clés d'accès appartiennent à votre compte **Oneverse**, celui avec lequel vous vous connectez à toutes les applications : sur la carte **Votre compte Oneverse**, **Gérer sur Oneverse** l'ouvre. Votre nom, votre photo et votre langue y sont aussi, les mêmes dans toutes les applications.
+
 ## Profil et photo
 
 - **Nom affiché** - la façon dont les autres vous voient : dans les équipes, dans les listes que vous partagez, sur les chants que vous proposez.
@@ -12,13 +14,13 @@ Tout ce qui concerne votre compte se trouve dans **Paramètres du compte** : cho
 
 ## E-mail
 
-Pour en changer, saisissez la **Nouvelle adresse** et choisissez **Changer d'adresse**. Nous demandons d'abord à votre adresse actuelle d'approuver le changement, puis nous envoyons un lien de confirmation à la nouvelle. Votre adresse change quand vous l'ouvrez.
+Sur Oneverse, pour en changer, saisissez la **Nouvelle adresse** et choisissez **Changer d'adresse**. Nous demandons d'abord à votre adresse actuelle d'approuver le changement, puis nous envoyons un lien de confirmation à la nouvelle. Votre adresse change quand vous l'ouvrez.
 
 ## Clés d'accès (passkeys)
 
 Une clé d'accès vous permet de vous connecter sans mot de passe, avec l'empreinte, le visage ou le verrouillage d'écran de votre appareil.
 
-1. Sous **Clés d'accès (passkeys)**, donnez-lui un nom si vous voulez (« Mon ordinateur »).
+1. Sur Oneverse, sous **Clés d'accès (passkeys)**, donnez-lui un nom si vous voulez (« Mon ordinateur »).
 2. Choisissez **Ajouter une clé d'accès** et suivez les indications de votre appareil.
 
 Ajoutez-en une sur chaque appareil que vous utilisez. Vous pouvez supprimer une clé d'accès à tout moment.

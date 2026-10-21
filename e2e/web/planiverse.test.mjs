@@ -4,7 +4,7 @@
 // only plans and a Songverse team, without Songverse's set tools; joining
 // an organisation by its link; signing out.
 import { chromium } from "playwright";
-import { LOG, PLANIVERSE, WEB, api, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { LOG, ONEVERSE, PLANIVERSE, WEB, api, finish, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { readFileSync } from "node:fs";
 
 let page;
@@ -30,7 +30,10 @@ const parking = await api(alice, "POST", `/organizations/${org.id}/groups`, { na
 sql(`insert into "TeamMembership" (id, "teamId", "userId", role, "joinedAt", "updatedAt") values ('tmpvp${stamp}', '${parking.id}', '${bob.id}', 'MEMBER', now(), now())`);
 
 async function signInHere(who) {
+  // At Oneverse (issue #303), and back.
   await page.goto(PLANIVERSE);
+  await page.waitForURL(`${ONEVERSE}/sign-in**`);
+  await page.waitForLoadState("networkidle");
   await page.fill("#signin-email", who.email);
   await page.fill("#signin-password", "hunter2pass");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -41,11 +44,11 @@ const browser = await chromium.launch();
 try {
   page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, timezoneId: "UTC" });
 
-  await step("signed out: Planiverse's own sign-in page", async () => {
+  await step("signed out: off to sign in at Oneverse (issue #303), to come back to the calendar", async () => {
     await page.goto(`${PLANIVERSE}/calendar`);
-    await page.waitForURL(`${PLANIVERSE}/`);
-    await page.getByText("Planiverse", { exact: true }).first().waitFor();
-    if ((await page.title()) !== "Planiverse") throw new Error(`title: ${await page.title()}`);
+    await page.waitForURL(`${ONEVERSE}/sign-in**`);
+    if (!decodeURIComponent(page.url()).includes(`redirect_uri=${PLANIVERSE}/auth/callback`)) throw new Error(page.url());
+    await page.locator("#signin-email").waitFor();
   });
 
   await step("signed in with the Songverse account: My calendar, the set opening in Songverse", async () => {
@@ -99,13 +102,16 @@ try {
   await step("signs out from the menu", async () => {
     await page.getByTestId("user-menu").click();
     await page.getByTestId("sign-out").click();
-    await page.waitForURL(`${PLANIVERSE}/`);
+    // Out of Planiverse and Oneverse: back at Oneverse's sign-in.
+    await page.waitForURL(`${ONEVERSE}/sign-in**`);
     await page.goto(`${PLANIVERSE}/calendar`);
-    await page.waitForURL(`${PLANIVERSE}/`);
+    await page.waitForURL(`${ONEVERSE}/sign-in**`);
   });
-  await step("signing up here: the email's link comes back to Planiverse", async () => {
+  await step("signing up from Planiverse: the email's link comes back to it, through the provider", async () => {
     await page.context().clearCookies();
     await page.goto(PLANIVERSE);
+    await page.waitForURL(`${ONEVERSE}/sign-in**`);
+    await page.waitForLoadState("networkidle");
     await page.getByRole("tab", { name: "Sign up" }).click();
     const email = `e2e-planiverse-new-${stamp}@example.com`;
     await page.fill("#signup-name", "New planner");
@@ -115,7 +121,8 @@ try {
     const sent = async () => readFileSync(LOG, "utf8").split("To: ").find((mail) => mail.startsWith(email)) ?? "";
     for (let i = 0; i < 40 && !(await sent()); i++) await new Promise((resolve) => setTimeout(resolve, 250));
     const link = /http\S+verify-email\S+/.exec(await sent())?.[0] ?? "";
-    if (!decodeURIComponent(link).includes(`callbackURL=${PLANIVERSE}/calendar`)) throw new Error(`the link: ${link}`);
+    const callback = new URL(new URL(link.replace(/&amp;/g, "&")).searchParams.get("callbackURL") ?? "");
+    if (callback.pathname !== "/api/auth/oauth2/authorize" || !callback.searchParams.get("redirect_uri")?.startsWith(`${PLANIVERSE}/auth/callback`)) throw new Error(`the link: ${link}`);
   });
 } finally {
   await browser.close();

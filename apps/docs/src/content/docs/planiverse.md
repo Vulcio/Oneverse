@@ -9,7 +9,7 @@ Planiverse is Songverse's planning on its own: [My calendar](/teams/#calendar), 
 
 ## Signing in
 
-It's the same account as Songverse's: the same email and password, passkey or Google sign-in, signed in to on Planiverse's own address. Signing up there makes an account that works in both: the email's link brings you back to Planiverse. **Account settings**, in the menu under your picture, changes your name and picture, email, passkeys and language, as in [your account](/account/) in Songverse; **Help** opens this page.
+It's the same account as Songverse's, your Oneverse account: Planiverse sends you to Oneverse to sign in (see [Signing in](/getting-started/#signing-in)), and back. Signing up from there makes an account that works in both: the email's link brings you back to Planiverse. **Account settings**, in the menu under your picture, changes your name, picture and language, and **Manage at Oneverse** your email, password and passkeys, as in [your account](/account/) in Songverse; **Help** opens this page.
 
 ## What's there
 

@@ -1,7 +1,7 @@
 // Offline, step 1 (issue #49): after one online visit, Songverse opens with
 // no network - signed in, read-only, with its sidebar and an offline banner -
 // a page it has nothing for says so, and signing out deletes what was kept.
-import { sidebarEntry, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { ONEVERSE, WEB, api, finish, sidebarEntry, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
 // Playwright's offline mode doesn't reach a service worker's own requests;
 // with this, routing does, so "offline" below cuts the service worker off too.
@@ -79,7 +79,9 @@ await step("signing out deletes what was kept", async () => {
   await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: "Offline player" }).first().click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
-  await page.waitForURL(`${WEB}/`);
+  // Out of Songverse and Oneverse (issue #303); then a page of Songverse's own that's there signed out.
+  await page.waitForURL(`${ONEVERSE}/sign-in**`);
+  await page.goto(`${WEB}/invite/none`);
   await page.waitForLoadState("networkidle");
   await page.waitForFunction(async () => !(await indexedDB.databases()).some((db) => db.name?.startsWith("songverse-offline-")));
   await goOffline();

@@ -2,7 +2,8 @@
 
 This repository is Oneverse's monorepo (renamed from Songverse): the shared
 core - the API, the database, `@oneverse/core` - and the apps built on it,
-Songverse (`apps/web`) and Planiverse (`apps/planiverse`). Where it's going:
+Songverse (`apps/web`) and Planiverse (`apps/planiverse`), and Oneverse
+(`apps/oneverse`), where people sign in. Where it's going:
 `docs/oneverse-architecture.md`, a direction rather than what's built. The
 workspace packages are `@oneverse/*` (`@songverse/*` before); the deployed
 addresses are still `songverse.one`'s. The rules below are unchanged by the
@@ -134,6 +135,16 @@ client (`createAppApiClient`, one per app), the languages (`i18n`,
 in, invite links' `JoinPage` with `openInviteLink`), and the account's own
 cards (`account-cards`: name and picture, email, passkeys, language). An app
 keeps its routes; a change to signing in or the account goes there, once.
+
+People sign in at Oneverse (`apps/oneverse`, issue #303,
+`docs/sign-in-with-oneverse.md`): accounts, passkeys and BetterAuth's cookie
+live there. Songverse and Planiverse are OAuth clients of the API
+(`apps/api/src/auth/oauth-clients.ts`), each with its own session: its
+`/auth/sign-in`, `/auth/callback` and `/auth/sign-out` routes and its tokens
+in a cookie of its own (`packages/app/src/oauth.ts`, the client fixed by its
+`vite.config.ts`). A page that needs someone signed in sends them to the app's
+`/auth/sign-in?next=…`, never to a sign-in page of the app's own; an account
+setting goes on Oneverse's account page.
 
 The planning screens - a team's calendar, line-up, answers, My calendar,
 organisations, groups, positions, their events - live in `packages/planning`

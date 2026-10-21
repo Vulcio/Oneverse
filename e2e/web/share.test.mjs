@@ -1,6 +1,6 @@
 // Browser test for set sharing (issue #7).
 import { chromium } from "playwright";
-import { sidebarEntry, WEB, SP, stamp, tag, sql, stepper, user, api, signIn, finish } from "../lib/harness.mjs";
+import { ONEVERSE, SP, WEB, api, finish, sidebarEntry, signIn, sql, stamp, stepper, tag, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -46,20 +46,23 @@ await step("owner creates a share link", async () => {
 });
 
 page = guestPage;
-await step("signed-out guest sees what's shared and a sign-in form", async () => {
+await step("signed-out guest sees what's shared and a way to sign in", async () => {
   await guestPage.goto(inviteUrl);
   await guestPage.waitForLoadState("networkidle");
   await guestPage.getByText(`Sunday ${tag}`).waitFor();
   await guestPage.getByText("Olivia Owner is sharing a set with you. 2 songs").waitFor();
-  await guestPage.locator("#signin-email").waitFor();
+  await guestPage.getByTestId("set-invite-sign-in").waitFor();
 });
 
 await step("guest signs in, opens the set and lands on it as a guest", async () => {
+  // At Oneverse (issue #303), and back.
+  await guestPage.getByTestId("set-invite-sign-in").click();
+  await guestPage.waitForURL(`${ONEVERSE}/sign-in**`);
+  await guestPage.waitForLoadState("networkidle");
   await guestPage.fill("#signin-email", guest.email);
   await guestPage.fill("#signin-password", "hunter2pass");
   await guestPage.getByRole("button", { name: /Sign in/ }).first().click();
-  // Signing in reloads this same page; wait for the reloaded one to settle.
-  await guestPage.locator("#signin-email").waitFor({ state: "detached" });
+  await guestPage.waitForURL(inviteUrl);
   await guestPage.waitForLoadState("networkidle");
   await guestPage.getByRole("button", { name: "Open set" }).click();
   await guestPage.waitForURL(`**/sets/${set.id}`);

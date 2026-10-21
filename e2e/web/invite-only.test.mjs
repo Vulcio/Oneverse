@@ -94,7 +94,8 @@ try {
     offset = logOffset();
     const created = await api(admin, "POST", "/admin/invitations", { email: email("browser") });
     await page.goto(created.link);
-    await page.getByTestId("invite-prompt").waitFor();
+    // At Oneverse (issue #303), the invitation kept for the account.
+    await page.getByTestId("sign-in-prompt").waitFor();
     if ((await page.inputValue("#signup-email")) !== email("browser")) throw new Error(await page.inputValue("#signup-email"));
     await page.fill("#signup-name", "Browser invitee");
     await page.fill("#signup-password", "hunter2pass");

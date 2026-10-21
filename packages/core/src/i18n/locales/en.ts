@@ -879,7 +879,7 @@ const en = {
     admin: "Admin",
     help: "Help",
     sourceCode: "Source code",
-    freeSoftware: "Songverse is free software (AGPL-3.0).",
+    freeSoftware: "Oneverse is free software (AGPL-3.0).",
     signOut: "Sign out",
     teams: "Teams",
     people: "People",

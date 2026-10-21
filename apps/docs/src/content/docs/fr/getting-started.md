@@ -5,7 +5,7 @@ description: Créez votre compte, connectez-vous et repérez-vous dans Songverse
 
 ## Créer votre compte
 
-1. Ouvrez [Songverse](https://app.songverse.one) et choisissez **S'inscrire**.
+1. Ouvrez [Songverse](https://app.songverse.one). Il vous emmène sur **Oneverse**, où vous vous connectez à toutes les applications (Songverse, [Planiverse](/fr/planiverse/)). Choisissez **S'inscrire**.
 2. Indiquez votre nom, votre adresse e-mail et un mot de passe, puis **Créer un compte**.
 3. Ouvrez le lien de l'e-mail de vérification que nous vous envoyons. Vous pouvez vous connecter une fois votre adresse vérifiée.
 
@@ -14,6 +14,8 @@ Si votre Songverse le propose, vous pouvez aussi utiliser **Continuer avec Googl
 Certains serveurs n'acceptent que les personnes invitées : **S'inscrire** l'indique alors. Ouvrez le lien d'invitation reçu (il remplit votre adresse e-mail), ou le lien d'invitation d'une équipe ou le lien de partage d'une liste de chants qu'on vous a donné, et créez votre compte depuis là.
 
 ## Se connecter
+
+Vous vous connectez sur Oneverse, puis revenez dans l'application ouverte. Une fois connecté là-bas, les autres applications vous connectent sans redemander. **Se déconnecter** dans une application vous déconnecte d'elle et d'Oneverse.
 
 - Avec votre **adresse e-mail et votre mot de passe**. Oublié ? **Mot de passe oublié ?** vous envoie un lien pour en choisir un nouveau.
 - Avec une **clé d'accès (passkey)**, une fois ajoutée (l'empreinte, le visage ou le verrouillage d'écran de votre appareil - voir [Votre compte](/fr/account/#clés-daccès-passkeys)).

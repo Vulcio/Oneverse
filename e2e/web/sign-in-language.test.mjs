@@ -1,7 +1,7 @@
 // Signed-out pages speak the browser's language (Accept-Language), and chart
 // section headings follow the reader's language.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { ONEVERSE, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -44,7 +44,7 @@ await step("a French browser gets the sign-in card in French", async () => {
   // Free software (AGPL-3.0): its source offered to whoever uses it, on the sign-in page too.
   const source = page.getByTestId("source-code").getByRole("link", { name: "Code source" });
   if ((await source.getAttribute("href")) !== "https://github.com/Vulcio/Oneverse") throw new Error(await source.getAttribute("href"));
-  await page.getByText("Songverse est un logiciel libre (AGPL-3.0).").waitFor();
+  await page.getByText("Oneverse est un logiciel libre (AGPL-3.0).").waitFor();
   await page.getByRole("button", { name: "Se connecter avec une clé d'accès" }).waitFor();
 });
 
@@ -58,7 +58,7 @@ await step("a wrong password is explained in French", async () => {
 await step("forgot password and reset pages are in French too", async () => {
   await page.getByRole("button", { name: "Mot de passe oublié ?" }).click();
   await page.getByText("Réinitialiser votre mot de passe", { exact: true }).waitFor();
-  await page.goto(`${WEB}/reset-password`);
+  await page.goto(`${ONEVERSE}/reset-password`);
   await page.getByText("Lien invalide").waitFor();
   await page.context().close();
 });

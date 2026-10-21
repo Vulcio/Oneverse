@@ -9,6 +9,7 @@ This repository holds the core and the web apps built on it:
 | Part | What it is | Where |
 | --- | --- | --- |
 | **Oneverse core** | Accounts, personal spaces, teams and organisations, roles, sets, scriptures, screens and their layers, live sessions and the operator, behind one API | `apps/api`, `packages/db`, `packages/core` |
+| **Oneverse** | Where people sign in, and their account, for every app ("Sign in with Oneverse") | `apps/oneverse` |
 | **Songverse** | Songs and musicians: the library, charts and chords, arrangements, songbooks, practice and Live | `apps/web` (app.songverse.one) |
 | **Planiverse** | Planning: events, rotas, groups and calendars, with the same accounts | `apps/planiverse` (plan.songverse.one) |
 | Shared web parts | The UI, signing in and the account, the planning screens | `packages/ui`, `packages/app`, `packages/planning` |
@@ -101,7 +102,7 @@ as Songverse; a date's set opens in Songverse.
 | Area | Built with |
 | --- | --- |
 | Monorepo | pnpm workspaces, Vite+ (tasks, linting, tests), TypeScript |
-| Web apps (`apps/web`, `apps/planiverse`) | TanStack Start and Router (React 19, SSR), Vite, Tailwind CSS 4, shadcn/ui, dnd-kit, react-i18next |
+| Web apps (`apps/oneverse`, `apps/web`, `apps/planiverse`) | TanStack Start and Router (React 19, SSR), Vite, Tailwind CSS 4, shadcn/ui, dnd-kit, react-i18next |
 | API (`apps/api`) | NestJS (ES modules), requests checked against the shared zod schemas, BetterAuth (sessions, passkeys, OAuth, JWTs for API calls), BullMQ workers on Redis, sharp for images, Resend for email |
 | Data (`packages/db`) | PostgreSQL with Prisma; migrations run when the API starts |
 | Shared (`packages/core`) | API client, zod schemas, ChordPro and chords-over-lyrics parsers, key transposition, translations, tested with Vitest |
@@ -167,7 +168,7 @@ cp apps/api/.env.example apps/api/.env       # then fill in the values
 cp apps/web/.env.example apps/web/.env
 cp packages/db/.env.example packages/db/.env
 pnpm db:migrate
-pnpm dev                                     # Songverse :3000, API :3001, Planiverse :3002, docs :4321, website :4322
+pnpm dev                                     # Songverse :3000, API :3001, Planiverse :3002, Oneverse :3003 (sign-in), docs :4321, website :4322
 ```
 
 `pnpm lint`, `pnpm type-check` and `pnpm test` run the checks across the
