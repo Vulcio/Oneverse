@@ -6,8 +6,9 @@ Songverse (`apps/web`) and Planiverse (`apps/planiverse`), and Oneverse
 (`apps/oneverse`), where people sign in. Where it's going:
 `docs/oneverse-architecture.md`, a direction rather than what's built. The
 workspace packages are `@oneverse/*` (`@songverse/*` before); each app has its own
-domain since #303 (`oneverse.top` and `api.oneverse.top`, `songverse.top`,
-`planiverse.top`, the docs at `docs.oneverse.top`; Songverse's website stays on `songverse.one`). The rules below are unchanged by the
+domain since #303 (sign-in at `account.oneverse.top`, the API at
+`api.oneverse.top`, `songverse.top`, `planiverse.top`, the docs at
+`docs.oneverse.top`, and Oneverse's website at `oneverse.top`). The rules below are unchanged by the
 rename.
 
 ## Issues first

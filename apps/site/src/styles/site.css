@@ -104,3 +104,17 @@ section h2 { margin: 0; font-size: clamp(1.7rem, 3.6vw, 2.4rem); font-weight: 60
 @media (prefers-reduced-motion: reduce) {
   .button { transition: none; }
 }
+
+/* The apps: two side by side. */
+.features.apps ul { grid-template-columns: repeat(2, 1fr); }
+.features.apps h3 { font-size: 1.2rem; }
+.features.apps .app-name { display: block; color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.3rem; }
+.features.apps .actions { margin-top: 1.2rem; }
+@media (max-width: 860px) {
+  .features.apps ul { grid-template-columns: 1fr; }
+}
+.bottom nav { flex-wrap: wrap; row-gap: 0.6rem; }
+@media (max-width: 640px) {
+  .top { flex-wrap: wrap; row-gap: 0.8rem; }
+  .bottom nav { gap: 0.6rem 1.2rem; }
+}

@@ -1,8 +1,8 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 
-// The website at the root of songverse.one (#43): one static page, in
-// English (/) and French (/fr/), pointing to the app and the docs.
+// Oneverse's website at the root of oneverse.top (#43, #303): one static
+// page, in English (/) and French (/fr/), pointing to the apps and the docs.
 export default defineConfig({
-  site: "https://songverse.one",
+  site: "https://oneverse.top",
 });

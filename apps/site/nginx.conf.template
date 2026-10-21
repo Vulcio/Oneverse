@@ -1,7 +1,7 @@
-# The website at songverse.one (#43). Its own pages are served; any other
-# path - a link to the app from before it moved to its own subdomain (#42):
-# /library, /sets/..., emailed verification and reset links - goes to the
-# same path on the app. APP_URL is filled in when the container starts.
+# Oneverse's website at oneverse.top, and songverse.one's (#43, #303). Its own
+# pages are served; any other path - a link to Songverse from before it moved
+# to its own domain: /library, /sets/..., emailed links - goes to the same
+# path on Songverse. APP_URL is filled in when the container starts.
 server {
   listen 80;
   root /usr/share/nginx/html;

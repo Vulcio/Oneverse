@@ -1,6 +1,6 @@
 # Deploying Oneverse
 
-This documents the working deployment of this repository (Oneverse: the shared API and Worker, Songverse, Planiverse, the docs and the website) to a self-hosted [Dokploy](https://dokploy.com) instance, with a domain for each app (#303): Oneverse, where people sign in, at `oneverse.top` and the API at `api.oneverse.top`; Songverse at `songverse.top`; Planiverse (the planning on its own, #241) at `planiverse.top` if you deploy it; the docs at `docs.oneverse.top`, and Songverse's website at `songverse.one` (#43). Before #303 everything was under `songverse.one` (the app at `app.songverse.one`, the API at `api.songverse.one`). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later.
+This documents the working deployment of this repository (Oneverse: the shared API and Worker, Songverse, Planiverse, the docs and the website) to a self-hosted [Dokploy](https://dokploy.com) instance, with a domain for each app (#303): Oneverse's website at `oneverse.top` (#43), where people sign in at `account.oneverse.top`, and the API at `api.oneverse.top`; Songverse at `songverse.top`; Planiverse (the planning on its own, #241) at `planiverse.top` if you deploy it; the docs at `docs.oneverse.top`. Before #303 everything was under `songverse.one` (the app at `app.songverse.one`, the API at `api.songverse.one`). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later.
 
 ## Architecture
 
@@ -16,7 +16,7 @@ Eight things get created in Dokploy, all in one Project (nine with Planiverse):
 | Songverse | Application | `Dockerfile.songverse` | Songverse's web app (TanStack Start), listens on port 3000 |
 | Planiverse | Application | `Dockerfile.planiverse` | Optional (#241): the planning on its own, same accounts and API, listens on port 3000 |
 | Docs | Application | `Dockerfile.docs` | The user documentation, a static site on port 80 |
-| Site | Application | `Dockerfile.site` | The website at the root domain, a static page on port 80 |
+| Site | Application | `Dockerfile.site` | Oneverse's website at `oneverse.top` (and `songverse.one`), a static page on port 80 |
 
 The API and Worker share one Docker image because they're the same codebase — only the command that starts the container differs.
 
@@ -76,7 +76,7 @@ PORT=3001
 AUTH_URL=https://api.oneverse.top
 WEB_URL=https://songverse.top
 # Where people sign in (#303) - see below.
-ONEVERSE_URL=https://oneverse.top
+ONEVERSE_URL=https://account.oneverse.top
 # Only with Planiverse deployed (#241): trusted like WEB_URL - see below.
 PLANIVERSE_URL=https://planiverse.top
 BETTER_AUTH_SECRET=<generate one — see below>
@@ -112,7 +112,7 @@ Keep this stable once set — BetterAuth encrypts its signing key with it in the
 
 **Passkeys** (`@better-auth/passkey`) need no extra configuration. They're added and used at Oneverse; their relying-party ID is the parent domain `AUTH_URL` and `ONEVERSE_URL` share (`oneverse.top`, see `apps/api/src/auth/auth-domains.ts`), not Oneverse's own hostname. A passkey works only for the ID it was made for, so the passkeys made before #303 are removed by its migration, and everyone adds theirs again at Oneverse. Moving Oneverse and the API to another domain later does the same: remove them (`DELETE FROM "Passkey"`), as they no longer work.
 
-**The session cookie is cross-subdomain by design** (`advanced.crossSubDomainCookies` in `better-auth.ts`): Oneverse (`oneverse.top`) and this API (`api.oneverse.top`) are different origins but the same *site* (same registrable domain), so a cookie scoped to `oneverse.top` reaches both. That parent domain is derived automatically from `AUTH_URL` and `ONEVERSE_URL` (their shared suffix; `WEB_URL` and `PLANIVERSE_URL` instead, without Oneverse), so they must be subdomains of one domain you own — the API refuses to start otherwise. The apps don't use it: each keeps its tokens in a cookie of its own (`oneverse_session_songverse`, `…_planiverse`), on its own domain. Two subdomains of a shared hosting domain (e.g. two different `*.up.railway.app` hosts) won't work either: browsers refuse cookies scoped to a public suffix. This is also why the API's CORS config (`main.ts`) names the web app's exact origin with `credentials: true` rather than using a wildcard — browsers refuse to combine a wildcard `Access-Control-Allow-Origin` with credentialed (cookie-bearing) requests.
+**The session cookie is cross-subdomain by design** (`advanced.crossSubDomainCookies` in `better-auth.ts`): Oneverse (`account.oneverse.top`) and this API (`api.oneverse.top`) are different origins but the same *site* (same registrable domain), so a cookie scoped to `oneverse.top` reaches both. That parent domain is derived automatically from `AUTH_URL` and `ONEVERSE_URL` (their shared suffix; `WEB_URL` and `PLANIVERSE_URL` instead, without Oneverse), so they must be subdomains of one domain you own — the API refuses to start otherwise. The apps don't use it: each keeps its tokens in a cookie of its own (`oneverse_session_songverse`, `…_planiverse`), on its own domain. Two subdomains of a shared hosting domain (e.g. two different `*.up.railway.app` hosts) won't work either: browsers refuse cookies scoped to a public suffix. This is also why the API's CORS config (`main.ts`) names the web app's exact origin with `credentials: true` rather than using a wildcard — browsers refuse to combine a wildcard `Access-Control-Allow-Origin` with credentialed (cookie-bearing) requests.
 
 **Rate limits and the API docs** (issue #113) are set at **Admin > Security**; these optional env vars are the fallback: `RATE_LIMIT_ENABLED` (default `true` in production), `RATE_LIMIT_PER_MINUTE` (per signed-in user, default 600), `RATE_LIMIT_ANONYMOUS_PER_MINUTE` (per address before sign-in, default 120), `RATE_LIMIT_HEAVY_PER_MINUTE` (uploads, lookups and joins by link, default 30), `TRUSTED_PROXIES` (proxies in front of the API whose `X-Forwarded-For` is trusted; default 1 in production - Traefik) `API_DOCS_PUBLIC` (default `false` in production: `/api/docs` for global admins only) and `CONTENT_SECURITY_POLICY` (`enforce`, `report-only` or `off`, default `enforce`: the web app's Content-Security-Policy, issue #114 - the web server asks the API for it every 15 seconds, and reports what it refuses to its own log as `CSP: …`). The counts live in Redis, so they hold across the API's instances.
 
@@ -205,7 +205,7 @@ Where people sign in, sign up, reset a password and manage their account (#303, 
 - Dockerfile path: `Dockerfile.oneverse`
 - Build context: `.`
 - Port: `3000`
-- Domain: `oneverse.top` (the API is a subdomain of it, `api.oneverse.top`: see `ONEVERSE_URL` above)
+- Domain: `account.oneverse.top` (it and the API, `api.oneverse.top`, share `oneverse.top`: see `ONEVERSE_URL` above)
 - Watch paths (if you use auto-deploy): `apps/oneverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/tsconfig/**`, `Dockerfile.oneverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
 
 Environment variables:
@@ -238,7 +238,7 @@ API_URL=https://api.oneverse.top
 # Its own address: where Oneverse sends people back to (must match the API's WEB_URL).
 WEB_URL=https://songverse.top
 # Where people sign in (the API's ONEVERSE_URL).
-ONEVERSE_URL=https://oneverse.top
+ONEVERSE_URL=https://account.oneverse.top
 PORT=3000
 ```
 
@@ -268,7 +268,7 @@ API_URL=https://api.oneverse.top
 SONGVERSE_URL=https://songverse.top
 # Its own address (the API's PLANIVERSE_URL), and where people sign in.
 PLANIVERSE_URL=https://planiverse.top
-ONEVERSE_URL=https://oneverse.top
+ONEVERSE_URL=https://account.oneverse.top
 PORT=3000
 ```
 
@@ -276,7 +276,7 @@ Then set `PLANIVERSE_URL=https://planiverse.top` on the **API** and redeploy it:
 
 ### Site app
 
-The website at the root domain (`apps/site`, #43): one static page in English and French, served by nginx, which sends any other path on to the app.
+Oneverse's website (`apps/site`, #43): one static page in English and French presenting the apps, served by nginx, which sends any other path on to Songverse. It also answers at `songverse.one`, Songverse's address before #303, so old links (`songverse.one/library`, emailed links) still reach the app.
 
 **Application**, configured as:
 - Source: this repo, branch `main`
@@ -284,10 +284,10 @@ The website at the root domain (`apps/site`, #43): one static page in English an
 - Dockerfile path: `Dockerfile.site`
 - Build context: `.`
 - Port: `80`
-- Domain: `songverse.one`
+- Domains: `oneverse.top` and `songverse.one`
 - Watch paths (if you use auto-deploy): `apps/site/**`, `Dockerfile.site`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
 
-Environment variables: none needed. `APP_URL` (default `https://songverse.top`; `https://app.songverse.one` before #303) is where paths that aren't website pages are redirected.
+Environment variables: none needed. `APP_URL` (default `https://songverse.top`; `https://app.songverse.one` before #303) is where paths that aren't website pages are redirected. Its links to Planiverse and to the account are built in (`apps/site/src/i18n.ts`).
 
 ### Docs app
 
@@ -312,12 +312,12 @@ No environment variables. The build fails if any page links to a page or heading
 ### Signing in at Oneverse
 
 A one-time change for a deployment that predates #303, where people signed in on Songverse's own pages. Once the apps are this version they have no sign-in page of their own, so do it with the same deploy, at a quiet time:
-This also moves everything from `songverse.one` to the apps' own domains (only the website stays).
-1. **Oneverse app:** create it (see "Oneverse app" above) at `oneverse.top`, and deploy it.
-2. **API:** add the domain `api.oneverse.top` (keep `api.songverse.one` for now: the Sonic servers and anything else calling the old address keep working), and set `AUTH_URL=https://api.oneverse.top`, `ONEVERSE_URL=https://oneverse.top`, `WEB_URL=https://songverse.top`, `PLANIVERSE_URL=https://planiverse.top`. Redeploy it and the Worker. The new migrations add the OAuth tables and remove the old passkeys; the API registers Songverse and Planiverse as its clients as it starts.
-3. **Songverse:** add `songverse.top` (keep `app.songverse.one`, with `REDIRECT_HOSTS=app.songverse.one`), set `API_URL=https://api.oneverse.top`, `WEB_URL=https://songverse.top`, `ONEVERSE_URL=https://oneverse.top`, and redeploy.
+This also moves everything from `songverse.one` to the apps' own domains.
+1. **Oneverse app:** create it (see "Oneverse app" above) at `account.oneverse.top`, and deploy it.
+2. **API:** add the domain `api.oneverse.top` (keep `api.songverse.one` for now: the Sonic servers and anything else calling the old address keep working), and set `AUTH_URL=https://api.oneverse.top`, `ONEVERSE_URL=https://account.oneverse.top`, `WEB_URL=https://songverse.top`, `PLANIVERSE_URL=https://planiverse.top`. Redeploy it and the Worker. The new migrations add the OAuth tables and remove the old passkeys; the API registers Songverse and Planiverse as its clients as it starts.
+3. **Songverse:** add `songverse.top` (keep `app.songverse.one`, with `REDIRECT_HOSTS=app.songverse.one`), set `API_URL=https://api.oneverse.top`, `WEB_URL=https://songverse.top`, `ONEVERSE_URL=https://account.oneverse.top`, and redeploy.
 4. **Planiverse**, if deployed: domain `planiverse.top`, `API_URL`, `PLANIVERSE_URL=https://planiverse.top`, `ONEVERSE_URL`, `SONGVERSE_URL=https://songverse.top`, and redeploy.
-5. **Site:** set `APP_URL=https://songverse.top` and redeploy. **Docs:** add the domain `docs.oneverse.top`, keeping `docs.songverse.one`.
+5. **Site:** add the domain `oneverse.top` (keep `songverse.one`), set `APP_URL=https://songverse.top`, and redeploy. **Docs:** add the domain `docs.oneverse.top`, keeping `docs.songverse.one`.
 6. **Google sign-in**, if set up: add `https://api.oneverse.top/api/auth/callback/google` to the OAuth client's authorized redirect URIs in the Google Cloud Console.
 7. **Stem separation:** the Sonic server's webhooks go to `AUTH_URL`, so it must be able to reach `api.oneverse.top`.
 8. **Check** [Verify](#4-verify). Everyone signs in once more (the apps' sessions are new) and adds their passkeys again at Oneverse.
@@ -340,8 +340,8 @@ Don't use `pnpm --filter @oneverse/db exec ...` there: the image doesn't include
 
 - `https://api.oneverse.top/health` → `{"status":"ok"}`
 - `https://api.oneverse.top/api/docs` → interactive API documentation
-- `https://songverse.one` → the website, in English (`/fr/` in French)
-- `https://songverse.top` → Oneverse's sign-in page, at `https://oneverse.top/sign-in` (and `https://songverse.one/library` redirects to the app)
+- `https://oneverse.top` → the website, in English (`/fr/` in French); `https://songverse.one` too
+- `https://songverse.top` → Oneverse's sign-in page, at `https://account.oneverse.top/sign-in` (and `https://songverse.one/library` redirects to the app)
 - `https://docs.oneverse.top` → the documentation, with a language menu (English, Français)
 - Sign up for an account → back in Songverse, on `/library`; Planiverse, if deployed, then signs you in without asking
 - Sign out in Songverse → back at Oneverse's sign-in page
@@ -369,7 +369,7 @@ Both Dockerfiles now `apt-get install openssl` in the base stage. `node:22-slim`
 `packages/app/src/public-env.ts` reads `API_URL` from the container's environment at request time, rather than through Vite's `VITE_`-prefixed build-time env inlining. The build-time approach requires the hosting platform to correctly pass a value as a Docker *build argument* specifically (not just a regular env var), which didn't work reliably here. If `/users/me` or similar ever starts failing again with something like `Failed to parse URL from /users/me`, it means `API_URL` isn't set on the Songverse (or Planiverse) app's environment variables.
 
 #### 6. Auth's session cookie and CORS have to agree on the exact origin
-Since BetterAuth moved into `apps/api`, its session cookie is set by `api.oneverse.top` but needs to be usable by pages served from Oneverse (`oneverse.top`; the web app's, before #303) — a genuinely cross-origin (though same-site) setup. Two things have to be configured together, in `apps/api/src/main.ts` / `auth/better-auth.ts`, or sign-in silently stops persisting:
+Since BetterAuth moved into `apps/api`, its session cookie is set by `api.oneverse.top` but needs to be usable by pages served from Oneverse (`account.oneverse.top`; the web app's, before #303) — a genuinely cross-origin (though same-site) setup. Two things have to be configured together, in `apps/api/src/main.ts` / `auth/better-auth.ts`, or sign-in silently stops persisting:
 - CORS must name the web apps' **exact** origins (`ONEVERSE_URL`, `WEB_URL`, `PLANIVERSE_URL`) with `credentials: true` — `cors: true` (reflecting any origin) or a wildcard origin cannot be combined with credentialed requests; the browser will drop the cookie.
 - BetterAuth's `advanced.crossSubDomainCookies` must be enabled **with an explicit `domain`** of the shared parent (`oneverse.top`). Enabling it without one doesn't help: BetterAuth then defaults the domain to `AUTH_URL`'s own hostname (`api.oneverse.top`), which the web app still never sees. `better-auth.ts` derives this domain from `AUTH_URL`/`ONEVERSE_URL`, so in practice this means those two env vars must be right.
 

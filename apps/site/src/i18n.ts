@@ -1,75 +1,107 @@
-// The page's words, in each language. The app and the docs are in the same two.
-export const APP_URL = import.meta.env.PUBLIC_APP_URL ?? "https://songverse.top";
+// The page's words, in each language. The apps and the docs are in the same two.
+export const SONGVERSE_URL = import.meta.env.PUBLIC_APP_URL ?? "https://songverse.top";
+export const PLANIVERSE_URL = import.meta.env.PUBLIC_PLANIVERSE_URL ?? "https://planiverse.top";
+export const ACCOUNT_URL = import.meta.env.PUBLIC_ONEVERSE_URL ?? "https://account.oneverse.top";
 export const DOCS_URL = "https://docs.oneverse.top";
 
 export const text = {
   en: {
     lang: "en",
-    title: "Songverse — your songs, ready to play",
-    description: "Charts, arrangements and set lists for musicians, bands and teams. Chords right above the words, in the key you're playing, on any screen.",
+    title: "Oneverse — songs, plans and screens for teams who play together",
+    description: "Oneverse brings together Songverse, for musicians and their charts, and Planiverse, for planning who serves when. One account, the same sets, on any screen.",
     docs: "Docs",
     signIn: "Sign in",
     openApp: "Open Songverse",
     otherLanguage: { label: "Français", href: "/fr/" },
-    heroTitle: ["Your songs,", "ready to play."],
-    heroText: "Charts, arrangements and set lists in one place — chords right above the words, in the key you're playing, on any screen.",
+    heroTitle: ["One account,", "every part of the service."],
+    heroText: "Songs and charts for the musicians, plans and rotas for everyone else, the same sets on every screen — with one account at Oneverse.",
     getStarted: "Get started",
     readDocs: "Read the docs",
     pictureAlt: "A keyboard player on stage, a chord chart on a tablet above the keys, the band behind in the lights",
-    featuresTitle: "Made for playing, not paperwork",
-    features: [
+    appsTitle: "The apps",
+    apps: [
       {
-        title: "Charts that read well",
-        text: "Chords sit over the syllable they're played on. Transpose in a tap, read capo shapes or solfège, and the chart keeps its shape.",
+        name: "Songverse",
+        title: "Songs, ready to play",
+        text: "Charts with chords over the words, in the key you're playing; arrangements for each band; set lists, practice and Live for musicians.",
+        open: "Open Songverse",
       },
       {
-        title: "One song, every arrangement",
-        text: "Change a song's order, key, capo or chords for your band without touching the song. Each player can hide what isn't for them.",
-      },
-      {
-        title: "Set lists that travel",
-        text: "Plan a set, pick each song's key and arrangement, and share it with a link: guest musicians can read every chart in it.",
+        name: "Planiverse",
+        title: "Who's on, and when",
+        text: "Events, rotas and calendars for an organisation's groups, with answers and line-ups — for everyone who plans without playing.",
+        open: "Open Planiverse",
       },
     ],
-    forWhoTitle: "For anyone who plays with others",
-    forWhoText: "Bands, choirs, worship teams, session players, the friend who always brings a guitar. In English and French, in any browser.",
+    featuresTitle: "Shared by every app",
+    features: [
+      {
+        title: "One account",
+        text: "Sign in once at Oneverse, with a password, Google or a passkey, and every app knows you.",
+      },
+      {
+        title: "Teams and organisations",
+        text: "Teams, groups and their roles are the same everywhere: plan a date in Planiverse, play its set in Songverse.",
+      },
+      {
+        title: "Sets on every screen",
+        text: "A set's songs on the musicians' tablets and the room's screens, in step with the one leading it.",
+      },
+    ],
+    forWhoTitle: "For churches, bands and anyone who serves together",
+    forWhoText: "Worship teams, choirs, bands and the people who plan around them. In English and French, in any browser. Free software (AGPL-3.0).",
     ctaTitle: "Ready when you are.",
     footerDocs: "Documentation",
-    footerApp: "The app",
+    footerAccount: "Your account",
   },
   fr: {
     lang: "fr",
-    title: "Songverse — vos chants, prêts à jouer",
-    description: "Grilles, arrangements et listes de chants pour les musiciens, les groupes et les équipes. Les accords juste au-dessus des paroles, dans la tonalité jouée, sur tous les écrans.",
+    title: "Oneverse — chants, plannings et écrans pour les équipes qui jouent ensemble",
+    description: "Oneverse réunit Songverse, pour les musiciens et leurs grilles, et Planiverse, pour planifier qui sert quand. Un seul compte, les mêmes listes, sur tous les écrans.",
     docs: "Documentation",
     signIn: "Se connecter",
     openApp: "Ouvrir Songverse",
     otherLanguage: { label: "English", href: "/" },
-    heroTitle: ["Vos chants,", "prêts à jouer."],
-    heroText: "Grilles, arrangements et listes de chants au même endroit — les accords juste au-dessus des paroles, dans la tonalité jouée, sur tous les écrans.",
+    heroTitle: ["Un seul compte,", "pour tout le service."],
+    heroText: "Les chants et les grilles pour les musiciens, les plannings pour tous les autres, les mêmes listes sur tous les écrans — avec un seul compte Oneverse.",
     getStarted: "Commencer",
     readDocs: "Lire la documentation",
     pictureAlt: "Un claviériste sur scène, une grille d'accords sur une tablette au-dessus du clavier, le groupe derrière dans les lumières",
-    featuresTitle: "Fait pour jouer, pas pour la paperasse",
-    features: [
+    appsTitle: "Les applications",
+    apps: [
       {
-        title: "Des grilles lisibles",
-        text: "Les accords se placent sur la syllabe où ils se jouent. Transposez d'un geste, lisez les formes de capo ou le solfège, et la grille garde sa forme.",
+        name: "Songverse",
+        title: "Des chants prêts à jouer",
+        text: "Des grilles avec les accords au-dessus des paroles, dans la tonalité jouée ; des arrangements pour chaque groupe ; listes, répétition et Live pour les musiciens.",
+        open: "Ouvrir Songverse",
       },
       {
-        title: "Un chant, tous ses arrangements",
-        text: "Changez l'ordre, la tonalité, le capo ou des accords pour votre groupe sans toucher au chant. Chaque musicien masque ce qui ne le concerne pas.",
-      },
-      {
-        title: "Des listes qui voyagent",
-        text: "Préparez une liste, choisissez la tonalité et l'arrangement de chaque chant, et partagez-la par lien : les musiciens invités lisent chaque grille.",
+        name: "Planiverse",
+        title: "Qui est là, et quand",
+        text: "Événements, plannings et calendriers pour les groupes d'une organisation, avec les réponses et les équipes — pour tous ceux qui planifient sans jouer.",
+        open: "Ouvrir Planiverse",
       },
     ],
-    forWhoTitle: "Pour tous ceux qui jouent ensemble",
-    forWhoText: "Groupes, chorales, équipes de louange, musiciens de studio, l'ami qui vient toujours avec sa guitare. En français et en anglais, dans tous les navigateurs.",
+    featuresTitle: "Commun à toutes les applications",
+    features: [
+      {
+        title: "Un seul compte",
+        text: "Connectez-vous une fois sur Oneverse, avec un mot de passe, Google ou une clé d'accès, et chaque application vous reconnaît.",
+      },
+      {
+        title: "Équipes et organisations",
+        text: "Les équipes, les groupes et leurs rôles sont les mêmes partout : planifiez une date dans Planiverse, jouez sa liste dans Songverse.",
+      },
+      {
+        title: "Les listes sur tous les écrans",
+        text: "Les chants d'une liste sur les tablettes des musiciens et les écrans de la salle, au rythme de celui qui la mène.",
+      },
+    ],
+    forWhoTitle: "Pour les églises, les groupes et tous ceux qui servent ensemble",
+    forWhoText: "Équipes de louange, chorales, groupes et ceux qui s'organisent autour d'eux. En français et en anglais, dans tous les navigateurs. Logiciel libre (AGPL-3.0).",
     ctaTitle: "Prêt quand vous l'êtes.",
     footerDocs: "Documentation",
-    footerApp: "L'application",
+    footerAccount: "Votre compte",
   },
 } as const;
 

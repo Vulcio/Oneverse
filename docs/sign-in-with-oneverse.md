@@ -7,7 +7,7 @@ Issue #303. How people sign in once the apps live on their own domains
 
 | Part | Address (production) | Does |
 | --- | --- | --- |
-| Oneverse (`apps/oneverse`) | `oneverse.top` | The account: sign in, sign up, verify, reset, passkeys, the account's settings. Later Oneverse's home and the operator console |
+| Oneverse (`apps/oneverse`) | `account.oneverse.top` | The account: sign in, sign up, verify, reset, passkeys, the account's settings. Later Oneverse's home and the operator console |
 | API (`apps/api`) | `api.oneverse.top` | BetterAuth, and an OAuth 2.1 / OpenID Connect provider (`@better-auth/oauth-provider`); every other endpoint, as today |
 | Songverse (`apps/web`), Planiverse (`apps/planiverse`) | `songverse.top`, `planiverse.top` | OAuth clients: they send people to Oneverse to sign in and keep a session of their own |
 
@@ -24,7 +24,7 @@ session cookie works between them as it does today
    `api.oneverse.top/api/auth/oauth2/authorize` (client `songverse`, scopes
    `openid profile email offline_access`, `resource` = the API).
 3. Not signed in at Oneverse: the provider sends them to its login page,
-   `oneverse.top/sign-in`, which is today's `AuthCard`. Once a session is
+   `account.oneverse.top/sign-in`, which is today's `AuthCard`. Once a session is
    made, the provider carries on by itself. Already signed in: nothing shows.
 4. The provider redirects to `songverse.top/auth/callback?code=…&state=…`.
    Songverse's server checks `state`, exchanges the code (with the verifier)
@@ -89,7 +89,7 @@ already ends their sessions; their refresh tokens are refused from then on.
 ## Passkeys
 
 Their relying party becomes `oneverse.top`, and they're only ever used on
-`oneverse.top`'s pages. Passkeys made on `songverse.one` don't work there:
+`account.oneverse.top`'s pages (the website has `oneverse.top` itself). Passkeys made on `songverse.one` don't work there:
 after the move, people sign in with their password, Google or an emailed link
 once, and add a passkey again (the account page says so).
 

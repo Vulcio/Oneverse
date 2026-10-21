@@ -1,6 +1,6 @@
-# The website at the root of songverse.one (apps/site): a static Astro page,
+# Oneverse's website at the root of oneverse.top (apps/site): a static Astro page,
 # built here and served by nginx, which sends anything that isn't one of
-# its pages on to the app (APP_URL, see apps/site/nginx.conf.template).
+# its pages on to Songverse (APP_URL, see apps/site/nginx.conf.template).
 #
 # Like the other Dockerfiles, it lives at the repo root and is built with
 # the root as context, since the install needs the workspace's lockfile.

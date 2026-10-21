@@ -4,7 +4,7 @@ import "@fontsource/instrument-serif/400-italic.css";
 import { Image } from "astro:assets";
 import "../styles/site.css";
 import stage from "../assets/stage.webp";
-import { APP_URL, DOCS_URL, type Text } from "../i18n";
+import { ACCOUNT_URL, DOCS_URL, PLANIVERSE_URL, SONGVERSE_URL, type Text } from "../i18n";
 import Logo from "./Logo.astro";
 
 interface Props {
@@ -12,13 +12,14 @@ interface Props {
 }
 const { t } = Astro.props;
 const docs = t.lang === "fr" ? `${DOCS_URL}/fr/` : `${DOCS_URL}/`;
+const appUrls = [SONGVERSE_URL, PLANIVERSE_URL];
 const icons = [
-  // A note over a line of words.
-  '<path d="M4 20h16"/><path d="M11 14V4l6 3"/><circle cx="8.5" cy="14" r="2.5"/>',
-  // Layers: arrangements of one song.
+  // A person: one account.
+  '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  // Layers: teams within organisations.
   '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>',
-  // A list with a link.
-  '<path d="M8 6h12M8 12h12M8 18h7"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  // A screen.
+  '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
 ];
 ---
 
@@ -41,25 +42,38 @@ const icons = [
     <div class="hero">
       <Image class="hero-photo" src={stage} alt={t.pictureAlt} widths={[800, 1280, 1672]} sizes="100vw" loading="eager" fetchpriority="high" />
       <header class="wrap top">
-        <a href={t.lang === "fr" ? "/fr/" : "/"} aria-label="Songverse"><Logo /></a>
+        <a href={t.lang === "fr" ? "/fr/" : "/"} aria-label="Oneverse"><Logo /></a>
         <nav>
           <a href={docs}>{t.docs}</a>
           <a href={t.otherLanguage.href} lang={t.lang === "fr" ? "en" : "fr"}>{t.otherLanguage.label}</a>
-          <a href={APP_URL}>{t.signIn}</a>
-          <a class="button small" href={APP_URL}>{t.openApp}</a>
+          <a href={ACCOUNT_URL}>{t.signIn}</a>
+          <a class="button small" href={SONGVERSE_URL}>{t.openApp}</a>
         </nav>
       </header>
       <section class="wrap hero-text">
         <h1>{t.heroTitle[0]}<br /><em>{t.heroTitle[1]}</em></h1>
         <p class="lead">{t.heroText}</p>
         <p class="actions">
-          <a class="button" href={APP_URL}>{t.getStarted} <span aria-hidden="true">→</span></a>
+          <a class="button" href="#apps">{t.getStarted} <span aria-hidden="true">→</span></a>
           <a class="button ghost" href={docs}>{t.readDocs}</a>
         </p>
       </section>
     </div>
 
     <main>
+      <section class="wrap features apps" id="apps">
+        <h2>{t.appsTitle}</h2>
+        <ul>
+          {t.apps.map((app, i) => (
+            <li>
+              <h3><span class="app-name">{app.name}</span> {app.title}</h3>
+              <p>{app.text}</p>
+              <p class="actions"><a class="button small" href={appUrls[i]}>{app.open} <span aria-hidden="true">→</span></a></p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section class="wrap features">
         <h2>{t.featuresTitle}</h2>
         <ul>
@@ -78,7 +92,7 @@ const icons = [
         <p>{t.forWhoText}</p>
         <p class="cta"><em>{t.ctaTitle}</em></p>
         <p class="actions center">
-          <a class="button" href={APP_URL}>{t.getStarted} <span aria-hidden="true">→</span></a>
+          <a class="button" href="#apps">{t.getStarted} <span aria-hidden="true">→</span></a>
         </p>
       </section>
     </main>
@@ -86,11 +100,13 @@ const icons = [
     <footer class="wrap bottom">
       <Logo />
       <nav>
-        <a href={APP_URL}>{t.footerApp}</a>
+        <a href={SONGVERSE_URL}>Songverse</a>
+        <a href={PLANIVERSE_URL}>Planiverse</a>
+        <a href={ACCOUNT_URL}>{t.footerAccount}</a>
         <a href={docs}>{t.footerDocs}</a>
         <a href={t.otherLanguage.href} lang={t.lang === "fr" ? "en" : "fr"}>{t.otherLanguage.label}</a>
       </nav>
-      <small>© {new Date().getFullYear()} Songverse</small>
+      <small>© {new Date().getFullYear()} Oneverse</small>
     </footer>
   </body>
 </html>

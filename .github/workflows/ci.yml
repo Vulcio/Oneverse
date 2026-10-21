@@ -252,8 +252,8 @@ jobs:
         run: |
           docker run -d --name site -p 8080:80 songverse-site:ci
           for i in $(seq 1 20); do curl -sf http://localhost:8080/ > /dev/null && break; sleep 1; done
-          curl -sf http://localhost:8080/ | grep -q 'ready to play'
-          curl -sf http://localhost:8080/fr/ | grep -q 'prêts à jouer'
+          curl -sf http://localhost:8080/ | grep -q 'every part of the service'
+          curl -sf http://localhost:8080/fr/ | grep -q 'pour tout le service'
           test "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' 'http://localhost:8080/sets/abc?share=x')" = "301 https://songverse.top/sets/abc?share=x"
 
   deploy-api:

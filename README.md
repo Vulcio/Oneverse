@@ -9,11 +9,11 @@ This repository holds the core and the web apps built on it:
 | Part | What it is | Where |
 | --- | --- | --- |
 | **Oneverse core** | Accounts, personal spaces, teams and organisations, roles, sets, scriptures, screens and their layers, live sessions and the operator, behind one API | `apps/api`, `packages/db`, `packages/core` |
-| **Oneverse** | Where people sign in, and their account, for every app ("Sign in with Oneverse") | `apps/oneverse` (oneverse.top) |
+| **Oneverse** | Where people sign in, and their account, for every app ("Sign in with Oneverse") | `apps/oneverse` (account.oneverse.top) |
 | **Songverse** | Songs and musicians: the library, charts and chords, arrangements, songbooks, practice and Live | `apps/web` (songverse.top) |
 | **Planiverse** | Planning: events, rotas, groups and calendars, with the same accounts | `apps/planiverse` (planiverse.top) |
 | Shared web parts | The UI, signing in and the account, the planning screens | `packages/ui`, `packages/app`, `packages/planning` |
-| Docs and website | The user documentation in English and French, and the website | `apps/docs` (docs.oneverse.top), `apps/site` |
+| Docs and website | The user documentation in English and French, and Oneverse's website | `apps/docs` (docs.oneverse.top), `apps/site` (oneverse.top) |
 
 Other parts live in their own repositories:
 [Songverse Sonic](https://github.com/Vulcio/songverse-sonic) (stem separation
