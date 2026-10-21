@@ -58,7 +58,7 @@ export interface YouVersionBible {
   abbreviation: string;
   title: string;
   languageTag: string;
-  /** The publisher's short copyright line, shown with every passage. */
+  /** The publisher's copyright line (the short one, else the long one), shown with every passage. */
   copyright: string | null;
   /** More about the text, YouVersion's reader shows it below a chapter. */
   info: string | null;
@@ -73,13 +73,26 @@ export interface YouVersionPassagePart {
   text: string;
 }
 
+/** A publisher's text as plain text: YouVersion's attribution is shown as text, never as HTML. */
+function plainText(value: string | null | undefined): string {
+  return (value ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(amp|quot|lt|gt|apos|nbsp|#\d+);/g, (entity, code: string) =>
+      code.startsWith("#") ? String.fromCodePoint(Number(code.slice(1))) : ({ amp: "&", quot: '"', lt: "<", gt: ">", apos: "'", nbsp: "\u00a0" }[code] ?? entity),
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function youVersionBible(json: YouVersionBibleJson): YouVersionBible {
   return {
     id: json.id,
     abbreviation: json.localized_abbreviation || json.abbreviation,
     title: json.localized_title || json.title || json.abbreviation,
     languageTag: json.language_tag,
-    copyright: json.copyright?.trim() || null,
+    // As YouVersion's own example does: the short copyright, else the longer
+    // one (`promotional_content`), which some versions have alone.
+    copyright: plainText(json.copyright) || plainText(json.promotional_content) || null,
     info: json.info?.trim() || null,
     link: json.youversion_deep_link || null,
   };
