@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { AssignRolesSchema, CreateRoleSchema, UpdateRoleSchema } from "@songverse/core";
+import { AssignRolesSchema, CreateRoleSchema, UpdateRoleSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import { RolesService } from "./roles.service.js";

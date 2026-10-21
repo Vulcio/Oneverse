@@ -1,5 +1,5 @@
 {
-  "name": "@songverse/core",
+  "name": "@oneverse/core",
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -25,7 +25,7 @@
     "nanoid": "^5.0.9"
   },
   "devDependencies": {
-    "@songverse/tsconfig": "workspace:*",
+    "@oneverse/tsconfig": "workspace:*",
     "typescript": "^5.7.3",
     "vite-plus": "1.0.0"
   }

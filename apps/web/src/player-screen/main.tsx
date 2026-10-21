@@ -1,9 +1,9 @@
 import "../styles/app.css";
-import { composeBuiltInTemplate, type ScreenSlide } from "@songverse/core";
+import { composeBuiltInTemplate, type ScreenSlide } from "@oneverse/core";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
-import { createI18n, loadLocale, supportedLocale } from "@songverse/app/i18n";
+import { createI18n, loadLocale, supportedLocale } from "@oneverse/app/i18n";
 import { ScreenStage, type StageSong } from "../components/screen-stage";
 
 /** Local Rust mock state; replace with a versioned local stage snapshot later. */

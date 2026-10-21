@@ -1,4 +1,4 @@
-import type { NoteAnchor, NotePlacement } from "@songverse/core";
+import type { NoteAnchor, NotePlacement } from "@oneverse/core";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 /**

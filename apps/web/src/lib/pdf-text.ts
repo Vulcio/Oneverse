@@ -1,4 +1,4 @@
-import type { PdfTextItem } from "@songverse/core";
+import type { PdfTextItem } from "@oneverse/core";
 import { loadPdfjs, pdfjsWasmUrl } from "#/lib/pdfjs";
 
 /**

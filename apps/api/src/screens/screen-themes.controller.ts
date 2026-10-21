@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { CreateScreenThemeSchema, UpdateScreenThemeSchema } from "@songverse/core";
+import { CreateScreenThemeSchema, UpdateScreenThemeSchema } from "@oneverse/core";
 import type { Request, Response } from "express";
 import { Public } from "../common/decorators/public.decorator.js";
 import { RateLimit } from "../security/rate-limit.decorator.js";

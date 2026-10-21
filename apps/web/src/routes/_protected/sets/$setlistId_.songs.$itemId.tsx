@@ -1,4 +1,4 @@
-import { ApiError, cueSectionsOf, keptSetSong, onlineOrKept, transposeKey, type Attachment, type SetlistSongView } from "@songverse/core";
+import { ApiError, cueSectionsOf, keptSetSong, onlineOrKept, transposeKey, type Attachment, type SetlistSongView } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,9 +11,9 @@ import { YouTubeDock } from "#/components/youtube-dock";
 import { fileLoader, songFiles } from "#/lib/song-files";
 import { ChartOrPdf, setSongViewStore } from "#/components/chart-or-pdf";
 import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";

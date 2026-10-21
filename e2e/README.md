@@ -7,7 +7,7 @@ its own users, so they can run against a database that already has data.
 ## Running them locally
 
 The database needs its migrations and seed applied (`pnpm --filter
-@songverse/db exec prisma migrate deploy`, then `pnpm --filter @songverse/db
+@oneverse/db exec prisma migrate deploy`, then `pnpm --filter @oneverse/db
 seed`) - some suites use the built-in global tags.
 
 1. Start Postgres and Redis, then the API, the Worker and the web apps, with the API's output
@@ -29,21 +29,21 @@ seed`) - some suites use the built-in global tags.
    # Planiverse (issue #241) beside Songverse: the API trusts it, and it opens sets in Songverse.
    export PLANIVERSE_URL=http://localhost:3002 SONGVERSE_URL=http://localhost:3000
    # As in production (#92): the API only adds background jobs, the Worker runs them.
-   JOBS_IN_API=false pnpm --filter @songverse/api dev > /tmp/api-dev.log 2>&1 &
-   pnpm --filter @songverse/api build && (cd apps/api && node dist/worker.js > /tmp/worker.log 2>&1 &)
-   pnpm --filter @songverse/web dev &
-   pnpm --filter @songverse/planiverse dev &
+   JOBS_IN_API=false pnpm --filter @oneverse/api dev > /tmp/api-dev.log 2>&1 &
+   pnpm --filter @oneverse/api build && (cd apps/api && node dist/worker.js > /tmp/worker.log 2>&1 &)
+   pnpm --filter @oneverse/web dev &
+   pnpm --filter @oneverse/planiverse dev &
    ```
 
 2. Run everything, or pick suites:
 
    ```sh
-   pnpm --filter @songverse/e2e e2e              # all
-   pnpm --filter @songverse/e2e e2e api          # the API suites
-   pnpm --filter @songverse/e2e e2e sets web/share
+   pnpm --filter @oneverse/e2e e2e              # all
+   pnpm --filter @oneverse/e2e e2e api          # the API suites
+   pnpm --filter @oneverse/e2e e2e sets web/share
    ```
 
-The first time, install the browser: `pnpm --filter @songverse/e2e exec playwright install chromium`.
+The first time, install the browser: `pnpm --filter @oneverse/e2e exec playwright install chromium`.
 
 Screenshots of failed browser steps go to `e2e/.artifacts/`.
 

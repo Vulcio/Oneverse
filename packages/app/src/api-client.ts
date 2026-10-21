@@ -1,4 +1,4 @@
-import { createApiClient } from "@songverse/core";
+import { createApiClient } from "@oneverse/core";
 import { pageMessage } from "./i18n";
 import { getApiUrl } from "./public-env";
 import { getApiToken } from "./server-auth";

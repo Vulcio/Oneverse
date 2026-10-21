@@ -1,8 +1,8 @@
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { runSeed } from "@songverse/db";
-import { MissingEncryptionKeyError } from "@songverse/secret-crypto";
+import { runSeed } from "@oneverse/db";
+import { MissingEncryptionKeyError } from "@oneverse/secret-crypto";
 import {
   clearEmailAuthConfig as clearEmailAuthConfigSetting,
   clearGoogleAuthConfig as clearGoogleAuthConfigSetting,

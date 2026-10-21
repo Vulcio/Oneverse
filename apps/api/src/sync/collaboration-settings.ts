@@ -1,5 +1,5 @@
-import { prisma } from "@songverse/db";
-import type { SaveCollaborationSettingsRequest } from "@songverse/core";
+import { prisma } from "@oneverse/db";
+import type { SaveCollaborationSettingsRequest } from "@oneverse/core";
 
 const SINGLETON_ID = "singleton";
 const ENV = "LIVE_CO_EDITING";

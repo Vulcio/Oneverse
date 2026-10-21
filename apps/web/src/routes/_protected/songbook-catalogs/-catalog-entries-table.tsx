@@ -1,14 +1,14 @@
-import { CATALOG_ENTRY_FIELDS, compareEntryCodes, foldForSearch, formatDuration, type CatalogEntryFieldKey, type SongbookCatalogEntry } from "@songverse/core";
+import { CATALOG_ENTRY_FIELDS, compareEntryCodes, foldForSearch, formatDuration, type CatalogEntryFieldKey, type SongbookCatalogEntry } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Columns3, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { Input } from "@songverse/ui/components/input";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { Input } from "@oneverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const PAGE_SIZE = 100;
 const COLUMNS_STORAGE_KEY = "songverse.catalog.columns";

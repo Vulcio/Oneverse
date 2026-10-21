@@ -1,9 +1,9 @@
-import type { SectionProgression, SongVersionSummary } from "@songverse/core";
+import type { SectionProgression, SongVersionSummary } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { Waypoints } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { artistNames } from "#/lib/artists";
 

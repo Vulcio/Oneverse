@@ -1,6 +1,6 @@
-import { prisma } from "@songverse/db";
-import type { SaveStemSeparationSettingsRequest } from "@songverse/core";
-import { decryptSecret, encryptSecret } from "@songverse/secret-crypto";
+import { prisma } from "@oneverse/db";
+import type { SaveStemSeparationSettingsRequest } from "@oneverse/core";
+import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import { randomBytes } from "node:crypto";
 
 const SINGLETON_ID = "singleton";

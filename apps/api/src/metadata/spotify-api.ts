@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { ProviderMatch } from "@songverse/core";
+import type { ProviderMatch } from "@oneverse/core";
 import { PROVIDER_TIMEOUT_MS } from "./provider-timeout.js";
 
 /** The most results a search asks for: Spotify refuses more than 10 from an app in development mode (issue #90). */

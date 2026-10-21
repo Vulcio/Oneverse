@@ -100,7 +100,7 @@ Sets (#50):
 - **`GET /setlists/:id/offline`** returns the set and each item's song view,
   exactly what the set's song page and Live render. So offline they render
   the same way; no second renderer.
-- **`@songverse/core`'s `offline/`** holds the logic over an `OfflineStorage`
+- **`@oneverse/core`'s `offline/`** holds the logic over an `OfflineStorage`
   interface: `keepSet`, `keptSetDetail`, `keptSetSong`, `searchKeptSongs`,
   `findKeptSong`. The web app's adapter is `deviceStorage()` in
   `apps/web/src/lib/offline-data.ts`, over `offline-db.ts`.
@@ -156,7 +156,7 @@ Songs, songbooks, pins and files (#52):
   storage, the days-ahead setting (kept on the device, sent as `days`),
   and what's kept with a way to remove it. Removing a pinned item unpins
   it on the server too.
-- **Shared with the mobile app** in `@songverse/core`: the network helpers
+- **Shared with the mobile app** in `@oneverse/core`: the network helpers
   and the offline session rule (`offline/network.ts`), and all the keep,
   read, search and sync functions over `OfflineStorage`.
 
@@ -390,7 +390,7 @@ What the choice changes:
 
 | | React Native (Expo) | Native (Swift + Kotlin) |
 |---|---|---|
-| Reuses from `@songverse/core` | Everything in TypeScript: song and arrangement schemas, chord reading and transposition, chart layout (`layoutChordLine`), text import/export, i18n, the API client, and the web app's offline store logic | Nothing: all of it written twice more, and kept in step |
+| Reuses from `@oneverse/core` | Everything in TypeScript: song and arrangement schemas, chord reading and transposition, chart layout (`layoutChordLine`), text import/export, i18n, the API client, and the web app's offline store logic | Nothing: all of it written twice more, and kept in step |
 | Offline storage | SQLite (expo-sqlite), files via expo-file-system | Core Data / Room, and the platforms' file APIs |
 | Chart rendering | Its own components, same layout data as the web | Its own, per platform |
 | Feel, platform APIs | Very good; native modules where needed | Best |

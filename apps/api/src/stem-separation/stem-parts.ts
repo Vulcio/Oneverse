@@ -1,4 +1,4 @@
-import type { StemPart } from "@songverse/core";
+import type { StemPart } from "@oneverse/core";
 
 /** Demucs's `two_stems` for a 2-part separation: the vocals, and the rest. */
 export function twoStemsOf(parts: string): string | undefined {

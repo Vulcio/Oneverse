@@ -1,10 +1,10 @@
-import { SECTION_TYPES, type SectionType } from "@songverse/core";
+import { SECTION_TYPES, type SectionType } from "@oneverse/core";
 import type { Editor } from "@tiptap/react";
 import { Link2, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { cn } from "@songverse/ui/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { cn } from "@oneverse/ui/lib/utils";
 import { insertLinked, insertSection } from "./extensions";
 
 /** The song's sections, by name, for "Sing … again". */

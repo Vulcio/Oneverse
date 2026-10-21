@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { SaveStorageLimitsSchema } from "@songverse/core";
+import { SaveStorageLimitsSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class StorageLimitsResponseDto {

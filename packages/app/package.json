@@ -1,5 +1,5 @@
 {
-  "name": "@songverse/app",
+  "name": "@oneverse/app",
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.5",
-    "@songverse/core": "workspace:*",
-    "@songverse/ui": "workspace:*",
+    "@oneverse/core": "workspace:*",
+    "@oneverse/ui": "workspace:*",
     "@whatwg-node/server": "^0.11.0",
     "better-auth": "^1.7.5",
     "lucide-react": "^1.46.0",
@@ -30,7 +30,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@songverse/tsconfig": "workspace:*",
+    "@oneverse/tsconfig": "workspace:*",
     "@tanstack/react-router": "^1.170.36",
     "@tanstack/react-start": "^1.168.54",
     "@types/node": "^22.10.5",

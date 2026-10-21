@@ -48,8 +48,8 @@ COPY packages/ui packages/ui
 COPY packages/app packages/app
 COPY packages/planning packages/planning
 COPY apps/web apps/web
-RUN pnpm --filter @songverse/core build \
- && pnpm --filter @songverse/web build
+RUN pnpm --filter @oneverse/core build \
+ && pnpm --filter @oneverse/web build
 
 FROM base AS runtime
 ENV NODE_ENV=production

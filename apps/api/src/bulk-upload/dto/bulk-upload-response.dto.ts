@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import type { BulkUploadMatchStatus } from "@songverse/core";
+import type { BulkUploadMatchStatus } from "@oneverse/core";
 
 const BULK_UPLOAD_MATCH_STATUSES: BulkUploadMatchStatus[] = ["MATCHED", "UNMATCHED", "DUPLICATE", "IGNORED"];
 

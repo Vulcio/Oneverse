@@ -1,7 +1,7 @@
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { StartClient } from "@tanstack/react-start/client";
-import { loadLocale, supportedLocale } from "@songverse/app/i18n";
+import { loadLocale, supportedLocale } from "@oneverse/app/i18n";
 
 // TanStack Start's own client entry, plus one step: the page's messages are
 // loaded before hydrating (only the reader's language is downloaded, as its

@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { DEFAULT_TRANSFER_RETENTION_DAYS } from "@songverse/core";
+import { DEFAULT_TRANSFER_RETENTION_DAYS } from "@oneverse/core";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";

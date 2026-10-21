@@ -2,7 +2,7 @@
 // (packages/app/server/web-server.mjs), with what's Songverse's own.
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { serveWebApp } from "@songverse/app/server";
+import { serveWebApp } from "@oneverse/app/server";
 import { redirectToWebUrl } from "./redirect-hosts.mjs";
 
 await serveWebApp({

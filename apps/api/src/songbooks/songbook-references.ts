@@ -1,5 +1,5 @@
-import { computeSectionLabel, formatSongbookReference, type SongbookSection } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { computeSectionLabel, formatSongbookReference, type SongbookSection } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import type { PrismaService } from "../prisma/prisma.service.js";
 
 /**

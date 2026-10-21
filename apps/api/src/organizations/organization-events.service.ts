@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { eventFallsOn, type EventPart } from "@songverse/core";
-import { Prisma } from "@songverse/db";
+import { eventFallsOn, type EventPart } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";

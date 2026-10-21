@@ -1,22 +1,22 @@
-import type { ApiClient, OrganizationTeam, TeamRole } from "@songverse/core";
+import type { ApiClient, OrganizationTeam, TeamRole } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { InviteLinksCard } from "../components/invite-links-card";
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { HostLink, usePlanning } from "../host";
-import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
-import { initials } from "@songverse/ui/lib/initials";
+import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
+import { initials } from "@oneverse/ui/lib/initials";
 import { forgetMyOrganizations, groupTree } from "../organizations";
 
 /**

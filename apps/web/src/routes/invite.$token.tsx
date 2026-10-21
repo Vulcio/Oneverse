@@ -1,15 +1,15 @@
-import type { SignupInvitationPreview } from "@songverse/core";
+import type { SignupInvitationPreview } from "@oneverse/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { AuthCard } from "@songverse/app/components/auth-card";
-import { AuthPage } from "@songverse/app/components/auth-page";
+import { AuthCard } from "@oneverse/app/components/auth-card";
+import { AuthPage } from "@oneverse/app/components/auth-page";
 import { SongverseBrand } from "#/components/brand";
-import { LocaleProvider } from "@songverse/app/components/locale-provider";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { LocaleProvider } from "@oneverse/app/components/locale-provider";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { loadLocale } from "@songverse/app/i18n";
-import { getSession, getVisitorLocale } from "@songverse/app/server-auth";
+import { loadLocale } from "@oneverse/app/i18n";
+import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
 
 /** An invitation to create an account (issue #198): its email filled in, the sign-up tab open. */
 export const Route = createFileRoute("/invite/$token")({

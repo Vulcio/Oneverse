@@ -1,4 +1,4 @@
-import type { PlanningHost } from "@songverse/planning/host";
+import type { PlanningHost } from "@oneverse/planning/host";
 import { apiClient } from "#/lib/api-client";
 import { watchNotifications } from "#/lib/live-notes";
 

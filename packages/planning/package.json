@@ -1,5 +1,5 @@
 {
-  "name": "@songverse/planning",
+  "name": "@oneverse/planning",
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -15,8 +15,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@songverse/core": "workspace:*",
-    "@songverse/ui": "workspace:*",
+    "@oneverse/core": "workspace:*",
+    "@oneverse/ui": "workspace:*",
     "lucide-react": "^1.46.0",
     "react-day-picker": "^9.14.0",
     "react-i18next": "^17.0.14"
@@ -28,7 +28,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@songverse/tsconfig": "workspace:*",
+    "@oneverse/tsconfig": "workspace:*",
     "@tanstack/react-router": "^1.170.36",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

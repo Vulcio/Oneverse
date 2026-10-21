@@ -1,10 +1,10 @@
-import type { Brand } from "@songverse/core";
+import type { Brand } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { Palette } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 
 /** A team's or an organisation's brands (issue #279), on its page for its admins: how many, and where to change them. */

@@ -1,8 +1,8 @@
-import { partKind, type Attachment } from "@songverse/core";
+import { partKind, type Attachment } from "@oneverse/core";
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 
 type Step = "voice" | "level" | "noise";
 

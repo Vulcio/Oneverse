@@ -1,4 +1,4 @@
-import type { ApiClient } from "@songverse/core";
+import type { ApiClient } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { createContext, useContext, type ComponentProps, type ReactNode } from "react";
 

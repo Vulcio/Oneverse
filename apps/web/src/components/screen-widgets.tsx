@@ -1,8 +1,8 @@
-import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type ScreenLayersShown, type SyncTimer } from "@songverse/core";
+import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type ScreenLayersShown, type SyncTimer } from "@oneverse/core";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { renderSVG } from "uqr";
 import { useTranslation } from "react-i18next";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * What a screen's widgets read besides its song (issue #268): the set's next

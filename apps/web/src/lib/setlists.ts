@@ -1,9 +1,9 @@
-import { transposeKey, type SetlistSummary } from "@songverse/core";
+import { transposeKey, type SetlistSummary } from "@oneverse/core";
 import type { TFunction } from "i18next";
 
-import { formatSetDate, formatSetDay } from "@songverse/ui/lib/dates";
+import { formatSetDate, formatSetDay } from "@oneverse/ui/lib/dates";
 
-export { formatSetDate, formatSetDay } from "@songverse/ui/lib/dates";
+export { formatSetDate, formatSetDay } from "@oneverse/ui/lib/dates";
 
 /**
  * A set's custom name, else its date written out, else "Untitled set". A

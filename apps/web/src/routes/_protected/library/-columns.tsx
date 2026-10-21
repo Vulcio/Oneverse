@@ -1,11 +1,11 @@
-import { resolveTranslation, type LocaleValue, type SongVersionSummary } from "@songverse/core";
+import { resolveTranslation, type LocaleValue, type SongVersionSummary } from "@oneverse/core";
 import { SongCover } from "#/components/library-home";
 import type { Column, ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { useMemo, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { artistNames } from "#/lib/artists";
 
 function tagLabel(tags: SongVersionSummary["tags"], locale: LocaleValue): string {

@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, Res, UnauthorizedException, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiExcludeEndpoint, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { BrandsQuerySchema, CreateBrandSchema, UpdateBrandSchema, UploadBrandAssetSchema } from "@songverse/core";
+import { BrandsQuerySchema, CreateBrandSchema, UpdateBrandSchema, UploadBrandAssetSchema } from "@oneverse/core";
 import type { Request, Response } from "express";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";

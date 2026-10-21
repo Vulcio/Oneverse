@@ -30,8 +30,8 @@ COPY packages/ui packages/ui
 COPY packages/app packages/app
 COPY packages/planning packages/planning
 COPY apps/planiverse apps/planiverse
-RUN pnpm --filter @songverse/core build \
- && pnpm --filter @songverse/planiverse build
+RUN pnpm --filter @oneverse/core build \
+ && pnpm --filter @oneverse/planiverse build
 
 FROM base AS runtime
 ENV NODE_ENV=production

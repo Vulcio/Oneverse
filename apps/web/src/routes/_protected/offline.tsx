@@ -7,15 +7,15 @@ import {
   offlinePins,
   type OfflinePin,
   type OfflineSyncResult,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { timeAgo } from "#/components/offline-banner";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
 import { deleteOffline, forgetOffline, keysOffline } from "#/lib/offline-db";

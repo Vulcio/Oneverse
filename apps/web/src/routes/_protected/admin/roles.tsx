@@ -1,16 +1,16 @@
-import type { AdminRole, CreateRoleRequest } from "@songverse/core";
+import type { AdminRole, CreateRoleRequest } from "@oneverse/core";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 import { useRoleSummary } from "./-roles-dialog";
 

@@ -1,4 +1,4 @@
-import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2 } from "@songverse/core";
+import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2 } from "@oneverse/core";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type RefObject, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,11 +16,11 @@ import { CapoBadge } from "#/components/capo-badge";
 import { ChartWithDiagrams, ChordSteps, type ChordStep } from "#/components/chord-diagrams";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes, type NotesContext } from "#/lib/notes";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { SyncControl } from "#/components/sync-control";
-import { SidebarTrigger } from "@songverse/ui/components/sidebar";
+import { SidebarTrigger } from "@oneverse/ui/components/sidebar";
 import { chartDisplayProps, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const SPEEDS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
 

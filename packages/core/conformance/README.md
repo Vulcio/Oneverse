@@ -1,6 +1,6 @@
 # Shared test cases
 
-What `@songverse/core` does, written down as cases every implementation must
+What `@oneverse/core` does, written down as cases every implementation must
 pass (issue #170): the web app and API (TypeScript, this package), and the
 native apps (Swift, Kotlin - #165). Each case is a function's arguments and
 the answer it must give. Three implementations, one behaviour.
@@ -9,7 +9,7 @@ The cases are chosen in `src/conformance/suites.ts`; the answers are this
 implementation's, written here by
 
 ```sh
-pnpm --filter @songverse/core conformance
+pnpm --filter @oneverse/core conformance
 ```
 
 A change in core that alters an answer fails core's unit tests

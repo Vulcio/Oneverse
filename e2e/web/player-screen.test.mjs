@@ -44,7 +44,7 @@ const server = http.createServer((req, res) => {
 let browser;
 try {
   await step("built as songverse-player builds it: a page and its assets, nothing else", async () => {
-    execFileSync("pnpm", ["--filter", "@songverse/web", "build:player-screen"], { cwd: repo, stdio: "pipe" });
+    execFileSync("pnpm", ["--filter", "@oneverse/web", "build:player-screen"], { cwd: repo, stdio: "pipe" });
     const files = fs.readdirSync(built).sort();
     if (files.join(" ") !== "assets player-screen.html") throw new Error(`the build has ${files.join(", ")}`);
     const html = fs.readFileSync(path.join(built, "player-screen.html"), "utf8");

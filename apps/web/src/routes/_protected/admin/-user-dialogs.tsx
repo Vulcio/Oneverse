@@ -1,11 +1,11 @@
-import type { AdminUserSummary, TransferLink } from "@songverse/core";
+import type { AdminUserSummary, TransferLink } from "@oneverse/core";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Button } from "@oneverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 
 const DEFAULT_RETENTION_DAYS = 30;

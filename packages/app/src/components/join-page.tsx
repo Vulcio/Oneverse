@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import type { JoinPageContext } from "../join";
 import { AuthCard } from "./auth-card";
 import { AuthPage } from "./auth-page";

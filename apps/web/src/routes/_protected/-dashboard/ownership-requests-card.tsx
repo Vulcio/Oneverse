@@ -1,9 +1,9 @@
-import type { SongOwnershipRequest } from "@songverse/core";
+import type { SongOwnershipRequest } from "@oneverse/core";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 
 /** Teams asking for songs of yours shared into their sets. Hidden when there are none. */

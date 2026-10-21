@@ -1,13 +1,13 @@
-import { INSTRUMENTS, TECH_ROLES, type CustomInstrument, type UserProfile } from "@songverse/core";
+import { INSTRUMENTS, TECH_ROLES, type CustomInstrument, type UserProfile } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { useInstrumentLabel } from "@songverse/planning/instruments";
-import { cn } from "@songverse/ui/lib/utils";
+import { useInstrumentLabel } from "@oneverse/planning/instruments";
+import { cn } from "@oneverse/ui/lib/utils";
 
 function sameSet(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((value) => b.includes(value));

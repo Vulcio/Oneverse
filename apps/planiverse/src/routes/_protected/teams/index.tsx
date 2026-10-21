@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@songverse/ui/components/card";
-import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
-import { groupTree } from "@songverse/planning/organizations";
+import { Card, CardContent } from "@oneverse/ui/components/card";
+import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { groupTree } from "@oneverse/planning/organizations";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/teams/")({

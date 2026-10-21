@@ -1,8 +1,8 @@
-import { sessionOnlineOrSaved, type SavedSession, type SetlistSummary, type SongbookSummary, type TeamSummary } from "@songverse/core";
+import { sessionOnlineOrSaved, type SavedSession, type SetlistSummary, type SongbookSummary, type TeamSummary } from "@oneverse/core";
 import { apiClient } from "#/lib/api-client";
 import { appDataVersion } from "#/lib/app-data-version";
 import { forgetOffline, getOffline, putOffline } from "#/lib/offline-db";
-import { getSession, type AppSession } from "@songverse/app/server-auth";
+import { getSession, type AppSession } from "@oneverse/app/server-auth";
 
 export interface AppData {
   session: AppSession;
@@ -43,7 +43,7 @@ async function loadOnline(): Promise<AppData | null> {
  */
 async function load(): Promise<AppData | null> {
   if (typeof window === "undefined") return loadOnline();
-  // The same rule as the mobile app's (@songverse/core): see sessionOnlineOrSaved.
+  // The same rule as the mobile app's (@oneverse/core): see sessionOnlineOrSaved.
   const result = await sessionOnlineOrSaved<AppData>({
     online: loadOnline,
     saved: () => getOffline<SavedAppData>("session", "current"),

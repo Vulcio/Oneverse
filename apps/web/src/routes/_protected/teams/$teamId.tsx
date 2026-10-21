@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { loadTeamPage, TeamPage } from "@songverse/planning/pages/team";
+import { loadTeamPage, TeamPage } from "@oneverse/planning/pages/team";
 import { AppearanceCard } from "#/components/appearance-card";
 import { BrandsCard } from "#/components/brands-card";
 import { SonicServerCard } from "#/components/sonic-server-card";

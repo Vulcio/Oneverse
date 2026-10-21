@@ -3,7 +3,7 @@ import { WifiOff } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { markAppDataStale } from "#/lib/app-data-version";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** "3 hours ago", in the reader's language. */
 export function timeAgo(iso: string, language: string): string {

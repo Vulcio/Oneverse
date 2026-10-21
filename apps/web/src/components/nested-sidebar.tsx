@@ -1,8 +1,8 @@
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { SET_LIST_DETAILS, setListing, type SetListDetailValue, type SetTransitionValue } from "@songverse/core";
-import { keptSetDetail, keptSongbook, onlineOrKept, transposeKey, type ListSongVersionsQuery, type PeopleOverview, type SetlistDetail, type SetlistSummary, type SongbookDetail, type SongbookSummary, type SongVersionSummary, type TeamSummary } from "@songverse/core";
+import { SET_LIST_DETAILS, setListing, type SetListDetailValue, type SetTransitionValue } from "@oneverse/core";
+import { keptSetDetail, keptSongbook, onlineOrKept, transposeKey, type ListSongVersionsQuery, type PeopleOverview, type SetlistDetail, type SetlistSummary, type SongbookDetail, type SongbookSummary, type SongVersionSummary, type TeamSummary } from "@oneverse/core";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -38,29 +38,29 @@ import {
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AccountMenuContent } from "#/components/app-sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { TransitionPicker, TransitionSymbol } from "#/components/set-transition";
 import { setDetailValue, toggleSetDetail, useSetDetails } from "#/lib/set-details";
-import { Input } from "@songverse/ui/components/input";
-import { SidebarRail, useSidebar } from "@songverse/ui/components/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@songverse/ui/components/tooltip";
+import { Input } from "@oneverse/ui/components/input";
+import { SidebarRail, useSidebar } from "@oneverse/ui/components/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@oneverse/ui/components/tooltip";
 import { apiClient } from "#/lib/api-client";
-import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
+import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { docsUrl, docsView } from "#/lib/docs";
-import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
-import { initials } from "@songverse/ui/lib/initials";
+import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { initials } from "@oneverse/ui/lib/initials";
 import { useMode } from "#/lib/mode";
 import { clearSetProgress, useSetProgress } from "#/lib/set-progress";
 import { setStackSegues, useStackSegues } from "#/lib/live-stack";
 import { useSync } from "#/lib/sync-client";
-import type { AppSession } from "@songverse/app/server-auth";
+import type { AppSession } from "@oneverse/app/server-auth";
 import { deviceStorage } from "#/lib/offline-data";
 import { setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
 import { useSmartLists } from "#/lib/smart-lists";
 import { filtersOf, parseLibrarySearch } from "#/routes/_protected/library/-library-search";
-import { useMyOrganizations } from "@songverse/planning/organizations";
-import { cn } from "@songverse/ui/lib/utils";
+import { useMyOrganizations } from "@oneverse/planning/organizations";
+import { cn } from "@oneverse/ui/lib/utils";
 
 type Section = "library" | "sets" | "songbooks" | "teams" | "people" | "review" | "admin";
 const SECTIONS: Section[] = ["library", "sets", "songbooks", "teams", "people", "review", "admin"];

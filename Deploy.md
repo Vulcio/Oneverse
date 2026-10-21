@@ -308,7 +308,7 @@ To run migrations manually anyway (e.g. to retry after fixing a failure), open a
 ```
 /repo/packages/db/node_modules/.bin/prisma migrate deploy --schema /repo/packages/db/prisma/schema.prisma
 ```
-Don't use `pnpm --filter @songverse/db exec ...` there: the image doesn't include the pnpm workspace files, so pnpm finds no matching project and silently does nothing.
+Don't use `pnpm --filter @oneverse/db exec ...` there: the image doesn't include the pnpm workspace files, so pnpm finds no matching project and silently does nothing.
 
 ## 4. Verify
 

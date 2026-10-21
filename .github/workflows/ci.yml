@@ -47,7 +47,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply database migrations
-        run: pnpm --filter @songverse/db exec prisma migrate deploy
+        run: pnpm --filter @oneverse/db exec prisma migrate deploy
 
       - name: Lint
         run: pnpm lint
@@ -169,22 +169,22 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Chromium for Playwright
-        run: pnpm --filter @songverse/e2e exec playwright install --with-deps chromium
+        run: pnpm --filter @oneverse/e2e exec playwright install --with-deps chromium
 
       # The Worker turns recorded takes into Opus with it (issue #127), as in the API/Worker image.
       - name: Install ffmpeg
         run: command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg)
 
       - name: Apply database migrations
-        run: pnpm --filter @songverse/db exec prisma migrate deploy
+        run: pnpm --filter @oneverse/db exec prisma migrate deploy
 
       - name: Build the API and the web apps
-        run: pnpm exec vp run --filter "@songverse/api..." --filter "@songverse/web..." --filter "@songverse/planiverse..." build
+        run: pnpm exec vp run --filter "@oneverse/api..." --filter "@oneverse/web..." --filter "@oneverse/planiverse..." build
 
       # The suites use the built-in tags and other metadata the seed adds.
-      # It runs after the build, which builds @songverse/core for it.
+      # It runs after the build, which builds @oneverse/core for it.
       - name: Seed the database
-        run: pnpm --filter @songverse/db seed
+        run: pnpm --filter @oneverse/db seed
 
       # As in production (issue #92): the Worker runs the background jobs, the API only adds them.
       - name: Start the API, the Worker and the web apps
@@ -203,7 +203,7 @@ jobs:
           echo "The API or a web app didn't start"; tail -50 /tmp/api.log /tmp/worker.log /tmp/web.log /tmp/planiverse.log; exit 1
 
       - name: Run the end-to-end suites
-        run: pnpm --filter @songverse/e2e e2e
+        run: pnpm --filter @oneverse/e2e e2e
 
       - name: Keep screenshots and server logs
         if: failure()

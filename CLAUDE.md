@@ -1,11 +1,12 @@
 # Oneverse — notes for Claude
 
 This repository is Oneverse's monorepo (renamed from Songverse): the shared
-core - the API, the database, `@songverse/core` - and the apps built on it,
+core - the API, the database, `@oneverse/core` - and the apps built on it,
 Songverse (`apps/web`) and Planiverse (`apps/planiverse`). Where it's going:
 `docs/oneverse-architecture.md`, a direction rather than what's built. The
-code keeps Songverse's names (`@songverse/*`, `songverse.one`) until the
-blueprint moves them; the rules below are unchanged by the rename.
+workspace packages are `@oneverse/*` (`@songverse/*` before); the deployed
+addresses are still `songverse.one`'s. The rules below are unchanged by the
+rename.
 
 ## Issues first
 
@@ -62,7 +63,7 @@ singleton row (see `packages/db/prisma/schema.prisma`'s `StorageSettings`
 and `AuthSettings` models):
 - A singleton Prisma model, `id` fixed to the literal string `"singleton"`.
 - Non-secret fields stored directly; secrets encrypted at rest via
-  `@songverse/secret-crypto` (`encryptSecret`/`decryptSecret`), keyed by
+  `@oneverse/secret-crypto` (`encryptSecret`/`decryptSecret`), keyed by
   the `SETTINGS_ENCRYPTION_KEY` env var. Never decrypt a secret just to
   display it in a summary — only report whether the database holds one
   (`hasDatabaseXxx: boolean`), and let the UI say "leave blank to keep the
@@ -116,15 +117,15 @@ works for it unchanged.
 
 The UI primitives (button, dialog, sidebar…), `cn`, and the shared theme
 (colour tokens, `@theme`, base styles) live in `packages/ui`
-(`@songverse/ui`, issue #241), for Songverse's web app and Planiverse's.
-It's source only: the apps compile it (`@songverse/ui/components/button`,
-`@songverse/ui/lib/utils`), and an app's CSS imports
-`@songverse/ui/theme.css` after Tailwind, then sets its own looks by
+(`@oneverse/ui`, issue #241), for Songverse's web app and Planiverse's.
+It's source only: the apps compile it (`@oneverse/ui/components/button`,
+`@oneverse/ui/lib/utils`), and an app's CSS imports
+`@oneverse/ui/theme.css` after Tailwind, then sets its own looks by
 overriding the tokens (Songverse's modes in `apps/web/src/styles/app.css`).
 Add a new primitive there, not in an app.
 
 What every web app needs to sign people in and reach the API lives in
-`packages/app` (`@songverse/app`, also source only): the API's address
+`packages/app` (`@oneverse/app`, also source only): the API's address
 (`public-env`), the session and API token forwarded to the API
 (`session`, with the server functions alone in `server-auth`), the API
 client (`createAppApiClient`, one per app), the languages (`i18n`,
@@ -136,7 +137,7 @@ keeps its routes; a change to signing in or the account goes there, once.
 
 The planning screens - a team's calendar, line-up, answers, My calendar,
 organisations, groups, positions, their events - live in `packages/planning`
-(`@songverse/planning`), for both apps. They reach the app through
+(`@oneverse/planning`), for both apps. They reach the app through
 `PlanningProvider` (`host.tsx`): its API client, its pages' addresses
 (`links`), and its sets (`sets`: Songverse's, null in an app without). Never
 link to a Songverse page from there by its path: add it to the host.
@@ -157,7 +158,7 @@ Both web apps run on the shared server (`packages/app/server/web-server.mjs`).
 ## The player screen
 
 `apps/web/src/player-screen/` builds `ScreenStage` on its own, client-only (`vite.player.config.ts`,
-`pnpm --filter @songverse/web build:player-screen`), for songverse-player, the Rust mini-PC player
+`pnpm --filter @oneverse/web build:player-screen`), for songverse-player, the Rust mini-PC player
 (issue #247, its own repository). A change to `ScreenStage` or what it needs (providers, messages,
 CSS) must keep that build working: `e2e/web/player-screen.test.mjs` builds it and checks it renders.
 The player never gets a stage of its own; what it needs goes in here.
@@ -168,7 +169,7 @@ The player never gets a stage of its own; what it needs goes in here.
 the music only - sections, lines with chords pinned to characters, the
 order it's sung in (`flow`) and a `revision`. Title, credits, rights and
 the capo are columns; never copy them into the document.
-- Read it with `readSongDocument()` from `@songverse/core`, never by
+- Read it with `readSongDocument()` from `@oneverse/core`, never by
   casting the JSON. (Every stored song is v2; v1 was migrated and its code
   removed, issue #60.)
 - Section, line and chord IDs must survive edits. The structured editor
@@ -187,7 +188,7 @@ the capo are columns; never copy them into the document.
 - A song is never copied into another (issue #75). A duplicate goes into
   the song it duplicates through `SongFoldService.fold`
   (`apps/api/src/publishing/`): arrangements are pointed at the other
-  song's IDs (`mapChartIds`/`remapArrangement` in `@songverse/core`), and how
+  song's IDs (`mapChartIds`/`remapArrangement` in `@oneverse/core`), and how
   its owner had it becomes their arrangement (`arrangementFromChart`). A new
   model with a foreign key to `SongVersion` that should follow the song
   needs handling there too.
@@ -215,7 +216,7 @@ Sync play (issue #13) shares a set's metronome and song between devices:
 a WebSocket on the API at `/sync` (`apps/api/src/sync/sync.server.ts`,
 attached in `main.ts` - not in the Worker), its session and who's there
 in Redis, announced across the API's instances on a Redis channel. The
-messages and the clock maths are in `@songverse/core` (`sync/`), kept
+messages and the clock maths are in `@oneverse/core` (`sync/`), kept
 small and JSON for a headless device (#62). Only the timeline crosses the
 network - "beat N at server time T" - never the beat: each device plays
 it on its own clock (`apps/web/src/lib/sync-client.ts` and the metronome
@@ -249,11 +250,11 @@ rules in the root `vite.config.ts`), `pnpm type-check` and `pnpm test`, through
 `vp run`, which replays a package's result when nothing it reads changed. Unit
 tests import from `vite-plus/test`, not `vitest`.
 
-What `@songverse/core` does - the song format, chords, the chart, the
+What `@oneverse/core` does - the song format, chords, the chart, the
 timeline, what the API accepts - is also written down as shared test cases
 (`packages/core/conformance/`, issue #170) that the native apps (#165) will
 run too. A change to that behaviour fails core's tests until
-`pnpm --filter @songverse/core conformance` writes the answers again: review
+`pnpm --filter @oneverse/core conformance` writes the answers again: review
 the diff, it's the behaviour every client must follow. Add a case to
 `src/conformance/suites.ts` for new behaviour every client needs. The API's
 request messages are worded in core (`requests/messages.ts`) for the same
@@ -281,7 +282,7 @@ them - a new kind of stored file needs adding there too.
 
 ## Requests
 
-What the API takes is described once, as zod schemas in `@songverse/core`
+What the API takes is described once, as zod schemas in `@oneverse/core`
 (`packages/core/src/requests/`, issue #118): the API validates with them
 and clients take their types from them (`z.input<typeof XSchema>`).
 - A request DTO is `class XDto extends zodDto(XSchema) {}`
@@ -303,7 +304,7 @@ and clients take their types from them (`z.input<typeof XSchema>`).
 The code review (issue #112, `docs/code-review.md`) left one way for each:
 - A user's file is sent through `apps/api/src/files/send-file.ts`, which
   shows only types that can't run script (`inlineSafeType` in
-  `@songverse/core`) and sandboxes the rest. The web app opens a file
+  `@oneverse/core`) and sandboxes the rest. The web app opens a file
   (a blob, offline) the same way, or downloads it. Never serve or open an
   upload with the type it came with.
 - An address that works without the Bearer token (`<audio src>`,
@@ -332,12 +333,12 @@ the API already serves, rather than the web app's own server being a
 second, unrelated auth surface.
 
 Consequences worth knowing before touching auth-adjacent code:
-- **The web app has zero direct Prisma/`@songverse/db` access.** It talks
+- **The web app has zero direct Prisma/`@oneverse/db` access.** It talks
   to the API over HTTP for everything, auth included -
   `packages/app/src/session.ts` forwards the incoming request's
   session cookie to `${API_URL}/api/auth/get-session` /
   `/api/auth/token`, rather than calling `auth.api.getSession()`
-  in-process. If you find yourself wanting to import `@songverse/db` in
+  in-process. If you find yourself wanting to import `@oneverse/db` in
   `apps/web`, that's a sign the logic belongs in `apps/api` instead.
 - **`AUTH_URL` is the API's own address; `WEB_URL` is the web app's** -
   easy to get backwards. `WEB_URL` matters because a WebAuthn passkey is

@@ -1,13 +1,13 @@
-import { degreeChords, SET_TRANSITIONS, transitionDegrees, transitionProgressions, type TransitionForm, type ChordDiagramsValue, type ChordNotationValue, type DiagramPlayer, type SetTransitionValue, type SetTransitionView } from "@songverse/core";
+import { degreeChords, SET_TRANSITIONS, transitionDegrees, transitionProgressions, type TransitionForm, type ChordDiagramsValue, type ChordNotationValue, type DiagramPlayer, type SetTransitionValue, type SetTransitionView } from "@oneverse/core";
 import { ArrowDown, ArrowRight, ArrowRightLeft, ChevronLeft, ChevronRight, ChevronsDown, Music, Square, Zap, type LucideIcon } from "lucide-react";
 import { useMemo, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { ChordRow, ChordSteps } from "#/components/chord-diagrams";
-import { Button } from "@songverse/ui/components/button";
-import { Input } from "@songverse/ui/components/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { Input } from "@oneverse/ui/components/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * What happens after a song of a set (issue #199), as a symbol: a square

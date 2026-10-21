@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { addDays, calendarFeed, callAt, eventDates, localDate, localTime, type CalendarFeedEntry } from "@songverse/core";
-import en from "@songverse/core/i18n/locales/en";
-import fr from "@songverse/core/i18n/locales/fr";
+import { addDays, calendarFeed, callAt, eventDates, localDate, localTime, type CalendarFeedEntry } from "@oneverse/core";
+import en from "@oneverse/core/i18n/locales/en";
+import fr from "@oneverse/core/i18n/locales/fr";
 import { createHash, randomBytes } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";

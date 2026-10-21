@@ -1,17 +1,17 @@
-import { clampTempo, MAX_BEATS_PER_BAR, MAX_TEMPO, METRONOME_DENOMINATORS, METRONOME_SOUNDS, MIN_TEMPO, tapTempo, type MetronomeSound, type Subdivision } from "@songverse/core";
+import { clampTempo, MAX_BEATS_PER_BAR, MAX_TEMPO, METRONOME_DENOMINATORS, METRONOME_SOUNDS, MIN_TEMPO, tapTempo, type MetronomeSound, type Subdivision } from "@oneverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Minus, Play, Plus, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BeatLights } from "#/components/metronome";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { startMetronome, stopMetronome, updateMetronome, useMetronome, useMetronomeBeat } from "#/lib/metronome-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/metronome")({
   component: MetronomePage,

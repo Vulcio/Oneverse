@@ -1,17 +1,17 @@
-import { composeBuiltInTemplate, formatScreenCode, lyricSlides, renderChart, screenBuiltInTemplate, screenLayers, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@songverse/core";
+import { composeBuiltInTemplate, formatScreenCode, lyricSlides, renderChart, screenBuiltInTemplate, screenLayers, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { renderSVG } from "uqr";
-import { LocaleProvider } from "@songverse/app/components/locale-provider";
+import { LocaleProvider } from "@oneverse/app/components/locale-provider";
 import { ScreenMenu } from "#/components/screen-menu";
 import { ScreenSetPicker } from "#/components/screen-set-picker";
 import { ScreenStage, type StageSong } from "#/components/screen-stage";
 import type { StageLive } from "#/components/screen-widgets";
-import { loadLocale } from "@songverse/app/i18n";
+import { loadLocale } from "@oneverse/app/i18n";
 import { useScreenDisplay } from "#/lib/screen-display";
-import { getVisitorLocale } from "@songverse/app/server-auth";
+import { getVisitorLocale } from "@oneverse/app/server-auth";
 import { setlistTitle } from "#/lib/setlists";
 
 /**

@@ -11,9 +11,9 @@ WORKDIR /repo
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY patches ./patches
 COPY apps/site/package.json apps/site/
-RUN pnpm install --frozen-lockfile --filter @songverse/site
+RUN pnpm install --frozen-lockfile --filter @oneverse/site
 COPY apps/site apps/site
-RUN pnpm --filter @songverse/site build
+RUN pnpm --filter @oneverse/site build
 
 FROM nginx:1.27-alpine
 # Where the app lives; links the site doesn't serve are redirected there.

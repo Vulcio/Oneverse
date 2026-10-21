@@ -1,8 +1,8 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnsupportedMediaTypeException } from "@nestjs/common";
 import type { Queue } from "bullmq";
-import { parseKey, type StemPart } from "@songverse/core";
-import { Prisma } from "@songverse/db";
+import { parseKey, type StemPart } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import type { AttachmentVisibilityValue, UpdateAttachmentDto } from "./dto/upload-attachment.dto.js";
 import { ImageService, type ProcessedImage } from "../images/image.service.js";

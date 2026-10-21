@@ -1,5 +1,5 @@
 {
-  "name": "@songverse/api",
+  "name": "@oneverse/api",
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -23,9 +23,9 @@
     "@nestjs/core": "^10.4.15",
     "@nestjs/platform-express": "^10.4.15",
     "@nestjs/swagger": "^8.1.1",
-    "@songverse/core": "workspace:*",
-    "@songverse/db": "workspace:*",
-    "@songverse/secret-crypto": "workspace:*",
+    "@oneverse/core": "workspace:*",
+    "@oneverse/db": "workspace:*",
+    "@oneverse/secret-crypto": "workspace:*",
     "better-auth": "^1.7.5",
     "bullmq": "^5.34.6",
     "compression": "^1.8.2",
@@ -49,7 +49,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
-    "@songverse/tsconfig": "workspace:*",
+    "@oneverse/tsconfig": "workspace:*",
     "@types/compression": "^1.8.1",
     "@types/express": "^5.0.0",
     "@types/jsdom": "21.1.7",

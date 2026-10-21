@@ -1,9 +1,9 @@
-import type { AdminUserSummary, TransferLink } from "@songverse/core";
+import type { AdminUserSummary, TransferLink } from "@oneverse/core";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card } from "@songverse/ui/components/card";
-import { DataTable } from "@songverse/ui/components/data-table";
+import { Card } from "@oneverse/ui/components/card";
+import { DataTable } from "@oneverse/ui/components/data-table";
 import { apiClient } from "#/lib/api-client";
 import { InvitationsCard } from "./-invitations-card";
 import { RolesDialog } from "./-roles-dialog";

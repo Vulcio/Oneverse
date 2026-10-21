@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { OWNERSHIP_SCOPES, SONGBOOK_KINDS, type SongbookSection } from "@songverse/core";
+import { OWNERSHIP_SCOPES, SONGBOOK_KINDS, type SongbookSection } from "@oneverse/core";
 
 export class SongbookEntryResponseDto {
   @ApiProperty() id!: string;

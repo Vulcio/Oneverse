@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { DeleteUserSchema, UpdateUserByAdminSchema } from "@songverse/core";
+import { DeleteUserSchema, UpdateUserByAdminSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 /** Each field is optional; omitted fields are left unchanged. */

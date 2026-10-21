@@ -1,13 +1,13 @@
-import type { Brand, BrandAsset } from "@songverse/core";
+import type { Brand, BrandAsset } from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Building2, Plus, Star, Users } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { cn } from "@oneverse/ui/lib/utils";
 import { BrandLogo } from "#/components/brand-logo";
 import { apiClient } from "#/lib/api-client";
 

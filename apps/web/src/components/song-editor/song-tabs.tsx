@@ -16,7 +16,7 @@ import {
   type StorageUsage,
   type StreamingLinkType,
   type TeamSummary,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Download, FileAudio, Lock, LockOpen, Mic, Play, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -24,16 +24,16 @@ import { useTranslation } from "react-i18next";
 import { AttachmentThumbnail } from "#/components/attachment-thumbnail";
 import { MusicBrainzMatchPanel } from "#/components/musicbrainz-match-panel";
 import { StreamingLinkRow } from "#/components/streaming-link-row";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 import { attachmentTypeFor } from "./attachment-types";
 import { downloadBlob } from "#/lib/download";
 import { formatBytes } from "#/lib/format-bytes";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Input } from "@songverse/ui/components/input";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Input } from "@oneverse/ui/components/input";
 import { KeySelect } from "#/components/key-select";
 import { setMode, useMode } from "#/lib/mode";
 import { stemsOf } from "#/lib/stem-engine";

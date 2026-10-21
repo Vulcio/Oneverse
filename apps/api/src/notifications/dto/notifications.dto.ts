@@ -1,4 +1,4 @@
-import { MarkNotificationsReadSchema, NotificationsQuerySchema, UpdateNotificationPreferencesSchema } from "@songverse/core";
+import { MarkNotificationsReadSchema, NotificationsQuerySchema, UpdateNotificationPreferencesSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class NotificationsQueryDto extends zodDto(NotificationsQuerySchema) {}

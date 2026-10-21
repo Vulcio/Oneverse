@@ -1,5 +1,5 @@
 import { getRequest } from "@tanstack/react-start/server";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeFromAcceptLanguage, type LocaleValue } from "@songverse/core";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeFromAcceptLanguage, type LocaleValue } from "@oneverse/core";
 import { getApiUrl } from "./public-env";
 
 export interface AppSession {

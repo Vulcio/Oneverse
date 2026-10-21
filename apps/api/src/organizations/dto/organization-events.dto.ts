@@ -1,4 +1,4 @@
-import { CreateOrganizationEventSchema, OrganizationEventPresetSchema, UpdateOrganizationEventDateSchema, UpdateOrganizationEventSchema } from "@songverse/core";
+import { CreateOrganizationEventSchema, OrganizationEventPresetSchema, UpdateOrganizationEventDateSchema, UpdateOrganizationEventSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class CreateOrganizationEventDto extends zodDto(CreateOrganizationEventSchema) {}

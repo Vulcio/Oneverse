@@ -1,15 +1,15 @@
-import type { AwayDays } from "@songverse/core";
+import type { AwayDays } from "@oneverse/core";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Calendar } from "@songverse/ui/components/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { calendarLocale, fromDayKey, toDayKey } from "@songverse/ui/lib/dates";
-import { formatSetDate } from "@songverse/ui/lib/dates";
+import { Button } from "@oneverse/ui/components/button";
+import { Calendar } from "@oneverse/ui/components/calendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { calendarLocale, fromDayKey, toDayKey } from "@oneverse/ui/lib/dates";
+import { formatSetDate } from "@oneverse/ui/lib/dates";
 
 type Range = { from: string; to: string; note: string | null };
 

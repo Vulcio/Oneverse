@@ -1,18 +1,18 @@
-import { addDays, localDate, type AwayDays, type CustomInstrument, type MyEventDate } from "@songverse/core";
+import { addDays, localDate, type AwayDays, type CustomInstrument, type MyEventDate } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { MapPin, Repeat } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AwayDaysCard } from "../components/away-days-card";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
-import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
+import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { EventAnswer } from "../components/event-answer";
 import { LineupLine, usePartLabel } from "../components/lineup";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
 import { HostLink, usePlanning } from "../host";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** How far the page shows, then how much more each "Show more" adds. */
 const SHOWN_WEEKS = 8;

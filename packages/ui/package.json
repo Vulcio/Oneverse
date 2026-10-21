@@ -1,5 +1,5 @@
 {
-  "name": "@songverse/ui",
+  "name": "@oneverse/ui",
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
-    "@songverse/core": "workspace:*",
+    "@oneverse/core": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -32,7 +32,7 @@
     "i18next": "^26.4.2"
   },
   "devDependencies": {
-    "@songverse/tsconfig": "workspace:*",
+    "@oneverse/tsconfig": "workspace:*",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "i18next": "^26.4.2",

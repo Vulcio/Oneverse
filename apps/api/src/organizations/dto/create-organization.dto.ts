@@ -1,4 +1,4 @@
-import { CreateOrganizationSchema } from "@songverse/core";
+import { CreateOrganizationSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class CreateOrganizationDto extends zodDto(CreateOrganizationSchema) {}

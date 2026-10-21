@@ -1,6 +1,6 @@
 import { NodeSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 import { insertBarLine, insertChord, moveChord, setDropTarget } from "./extensions";
 
 /** What's being dragged: a chord already in the song, or a new one from the palette; a bar line (issue #238) there or new. */

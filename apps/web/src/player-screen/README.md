@@ -6,7 +6,7 @@ messages as `/screen`, so a screen looks the same on the player as in a browser.
 a second implementation of the stage.
 
 ```sh
-pnpm --filter @songverse/web build:player-screen   # apps/web/dist/player-screen
+pnpm --filter @oneverse/web build:player-screen   # apps/web/dist/player-screen
 ```
 
 The output is a page (`player-screen.html`) and `assets/`; songverse-player's

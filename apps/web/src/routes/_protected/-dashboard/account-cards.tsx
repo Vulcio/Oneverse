@@ -6,15 +6,15 @@ import {
   type LiveViewValue,
   type StorageUsage,
   type UserProfile,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 
 
 export function StorageCard({ storage }: { storage: StorageUsage }) {

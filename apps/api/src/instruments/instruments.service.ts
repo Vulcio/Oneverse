@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import type { CreateInstrumentRequest, CustomInstrument, UpdateInstrumentRequest } from "@songverse/core";
-import { Prisma, type PrismaClient } from "@songverse/db";
+import type { CreateInstrumentRequest, CustomInstrument, UpdateInstrumentRequest } from "@oneverse/core";
+import { Prisma, type PrismaClient } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 const SELECT = { id: true, label: true, translations: true } as const;
@@ -22,7 +22,7 @@ function translationsFrom(labelFr: string | undefined): Prisma.InputJsonValue | 
 
 /**
  * Admin > Instruments (issue #166): instruments added to the built-in list
- * (INSTRUMENTS in @songverse/core), for anyone to pick what they play.
+ * (INSTRUMENTS in @oneverse/core), for anyone to pick what they play.
  */
 @Injectable()
 export class InstrumentsService {

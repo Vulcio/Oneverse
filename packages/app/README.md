@@ -1,4 +1,4 @@
-# @songverse/app
+# @oneverse/app
 
 What Songverse's web app and Planiverse (issue #241) each need to sign
 people in and reach the API, kept once:
@@ -22,6 +22,6 @@ Source only, no build: an app imports the files and compiles them, so
 TanStack Start turns the server functions into calls to its own server.
 
 ```tsx
-import { createAppApiClient } from "@songverse/app/api-client";
-import { AuthCard } from "@songverse/app/components/auth-card";
+import { createAppApiClient } from "@oneverse/app/api-client";
+import { AuthCard } from "@oneverse/app/components/auth-card";
 ```

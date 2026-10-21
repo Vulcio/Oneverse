@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { SCREEN_PART_KINDS, ScreenTemplateSchema, screenBuiltInPart, splitScreenTheme, type CreateScreenThemeRequest, type ScreenPartKind, type ScreenPartRef, type UpdateScreenThemeRequest } from "@songverse/core";
+import { SCREEN_PART_KINDS, ScreenTemplateSchema, screenBuiltInPart, splitScreenTheme, type CreateScreenThemeRequest, type ScreenPartKind, type ScreenPartRef, type UpdateScreenThemeRequest } from "@oneverse/core";
 import type { Request, Response } from "express";
-import type { Prisma } from "@songverse/db";
+import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
 import { sendFile } from "../files/send-file.js";

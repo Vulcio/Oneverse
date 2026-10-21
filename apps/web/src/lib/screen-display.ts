@@ -1,6 +1,6 @@
-import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@songverse/core";
+import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
 import { useEffect, useRef, useState } from "react";
-import { getApiUrl } from "@songverse/app/public-env";
+import { getApiUrl } from "@oneverse/app/public-env";
 import { screenReport } from "#/lib/screen-report";
 
 /**

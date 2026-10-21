@@ -1,11 +1,11 @@
-import { beatAt, clicksBetween, normalizeMetronome, secondsPerBeat, sharedMetronomeSettings, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@songverse/core";
+import { beatAt, clicksBetween, normalizeMetronome, secondsPerBeat, sharedMetronomeSettings, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
 /**
  * The metronome's sound (issue #2), kept outside any page like the stem
  * player, so it keeps time while the user moves around the app: one per
- * tab. It plays the timeline `@songverse/core` gives (clicksBetween), which a
+ * tab. It plays the timeline `@oneverse/core` gives (clicksBetween), which a
  * MIDI renderer (#98) or Sync play (#13) read the same way.
  *
  * Clicks are scheduled a little ahead on the audio clock, never fired by

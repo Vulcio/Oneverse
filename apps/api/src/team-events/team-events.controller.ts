@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { isCalendarDate } from "@songverse/core";
+import { isCalendarDate } from "@oneverse/core";
 import { BadRequestException } from "@nestjs/common";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";

@@ -1,4 +1,4 @@
-import { CreateNoteSchema, ListNotesQuerySchema, NoteReplySchema, UpdateNoteSchema } from "@songverse/core";
+import { CreateNoteSchema, ListNotesQuerySchema, NoteReplySchema, UpdateNoteSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 
 export class CreateNoteDto extends zodDto(CreateNoteSchema) {}

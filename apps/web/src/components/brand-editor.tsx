@@ -16,19 +16,19 @@ import {
   type BrandFonts,
   type BrandSocial,
   type BrandWhatsAppGroup,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { strFromU8, unzipSync } from "fflate";
 import { ArrowLeft, ImagePlus, Plus, Star, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { cn } from "@oneverse/ui/lib/utils";
 import { BrandLogo } from "#/components/brand-logo";
 import { apiClient } from "#/lib/api-client";
 

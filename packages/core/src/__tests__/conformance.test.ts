@@ -7,7 +7,7 @@ import { CONFORMANCE, THROWS, answer, differs, normalizeIds, type ConformanceFil
 // The shared test cases (issue #170): this implementation against the
 // files every implementation runs, and the files against the cases.
 const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../conformance");
-const REGENERATE = "run pnpm --filter @songverse/core conformance and review the diff";
+const REGENERATE = "run pnpm --filter @oneverse/core conformance and review the diff";
 
 describe("the conformance files", () => {
   it("are one per area, no more", () => {

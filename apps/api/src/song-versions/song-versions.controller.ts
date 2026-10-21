@@ -15,7 +15,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import type { StreamingIdentifierType } from "@songverse/core";
+import type { StreamingIdentifierType } from "@oneverse/core";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { SongVersionEditorGuard } from "../common/guards/song-version-editor.guard.js";

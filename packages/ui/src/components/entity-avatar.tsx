@@ -1,4 +1,4 @@
-import { entityColor, type EntityColor } from "@songverse/core";
+import { entityColor, type EntityColor } from "@oneverse/core";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import { sizedAvatarUrl } from "../lib/avatar-url";
 import { initials } from "../lib/initials";

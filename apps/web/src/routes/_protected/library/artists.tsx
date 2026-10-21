@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
+import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
 import { ArtistPicture } from "#/components/artist-picture";
 import { apiClient } from "#/lib/api-client";
 

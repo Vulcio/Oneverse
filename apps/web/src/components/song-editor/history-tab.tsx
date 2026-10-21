@@ -8,16 +8,16 @@ import {
   type SongRevisionDetail,
   type SongRevisionEntry,
   type SongSnapshot,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { History, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { chartOfSections, SongChart } from "#/components/song-chart";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * The song's history (issue #71): each save, newest first, with who and

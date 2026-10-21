@@ -1,5 +1,5 @@
-import { prisma } from "@songverse/db";
-import { ORGANIZATION_MODES, type OrganizationMode, type SaveOrganizationSettingsRequest } from "@songverse/core";
+import { prisma } from "@oneverse/db";
+import { ORGANIZATION_MODES, type OrganizationMode, type SaveOrganizationSettingsRequest } from "@oneverse/core";
 
 const SINGLETON_ID = "singleton";
 

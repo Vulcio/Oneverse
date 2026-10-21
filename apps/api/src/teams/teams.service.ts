@@ -1,7 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { customInstrumentIds } from "../instruments/instruments.service.js";
-import { orderInstruments, orderTechRoles, slugify, type TeamRoleValue } from "@songverse/core";
-import { Prisma } from "@songverse/db";
+import { orderInstruments, orderTechRoles, slugify, type TeamRoleValue } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { joinTeamOrganization } from "../organizations/organizations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";

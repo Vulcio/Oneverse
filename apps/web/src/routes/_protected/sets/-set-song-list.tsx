@@ -9,19 +9,19 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { degreeChords, formatTimer, SET_TRANSITIONS, TRANSPOSE_STEP_OPTIONS, transposeKey, type SetlistItem, type SetlistSongRef, type UpdateSetlistItemRequest } from "@songverse/core";
+import { degreeChords, formatTimer, SET_TRANSITIONS, TRANSPOSE_STEP_OPTIONS, transposeKey, type SetlistItem, type SetlistSongRef, type UpdateSetlistItemRequest } from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, GripVertical, Pencil, Timer, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import type { SetProgress } from "#/lib/set-progress";
 import { transposeLabel } from "#/lib/setlists";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Input } from "@songverse/ui/components/input";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Input } from "@oneverse/ui/components/input";
 import { TransitionChordsPicker, TransitionSymbol, TransitionVariations } from "#/components/set-transition";
 
 /** The key a song of the set is played in: its own, moved by its arrangement, then by the set. */

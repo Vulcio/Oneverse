@@ -1,6 +1,6 @@
-import { BulkUploadCommitSchema } from "@songverse/core";
+import { BulkUploadCommitSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
-export type { BulkUploadTypeValue } from "@songverse/core";
+export type { BulkUploadTypeValue } from "@oneverse/core";
 
 export class BulkUploadCommitDto extends zodDto(BulkUploadCommitSchema) {}

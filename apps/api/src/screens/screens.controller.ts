@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, UpdateScreenSchema } from "@songverse/core";
+import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, UpdateScreenSchema } from "@oneverse/core";
 import type { Response } from "express";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";

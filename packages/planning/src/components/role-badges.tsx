@@ -1,8 +1,8 @@
-import type { CustomInstrument, TechRoleValue } from "@songverse/core";
+import type { CustomInstrument, TechRoleValue } from "@oneverse/core";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@songverse/ui/components/badge";
+import { Badge } from "@oneverse/ui/components/badge";
 import { useInstrumentLabel } from "../instruments";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** A user's instruments and other roles (dashboard > Roles), instruments first. */
 export function RoleBadges({

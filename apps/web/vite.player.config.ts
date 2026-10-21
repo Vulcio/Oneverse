@@ -5,7 +5,7 @@ import { defineConfig } from "vite-plus";
 
 /**
  * Standalone, client-only screen bundle for the Rust mini-PC player.
- * Uses the exact same ScreenStage and @songverse/core sources as the web app.
+ * Uses the exact same ScreenStage and @oneverse/core sources as the web app.
  * Output is intentionally flat (index.html and assets/) for the Rust bundle server.
  */
 export default defineConfig({

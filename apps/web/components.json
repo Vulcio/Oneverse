@@ -12,10 +12,10 @@
   },
   "aliases": {
     "components": "#/components",
-    "utils": "@songverse/ui/lib/utils",
-    "ui": "@songverse/ui/components",
+    "utils": "@oneverse/ui/lib/utils",
+    "ui": "@oneverse/ui/components",
     "lib": "#/lib",
-    "hooks": "@songverse/ui/hooks"
+    "hooks": "@oneverse/ui/hooks"
   },
   "iconLibrary": "lucide"
 }

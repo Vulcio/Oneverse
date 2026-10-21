@@ -1,4 +1,4 @@
-import type { DisplayColumnsValue } from "@songverse/core";
+import type { DisplayColumnsValue } from "@oneverse/core";
 
 /**
  * How many columns a chart flows into (issue #177): as many as fit (auto),

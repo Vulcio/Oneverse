@@ -1,4 +1,4 @@
-import type { ScreenReport } from "@songverse/core";
+import type { ScreenReport } from "@oneverse/core";
 import { screenDrawStats } from "#/lib/screen-draw-stats";
 
 const loadedAt = performance.now();

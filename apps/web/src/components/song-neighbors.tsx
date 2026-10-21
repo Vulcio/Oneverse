@@ -1,4 +1,4 @@
-import { keptSongbook, onlineOrKept } from "@songverse/core";
+import { keptSongbook, onlineOrKept } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";

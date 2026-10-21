@@ -1,4 +1,4 @@
-import type { ScreenTheme } from "@songverse/core";
+import type { ScreenTheme } from "@oneverse/core";
 import { useEffect, useRef, type RefObject } from "react";
 import { frameMeter, screenDrawStats } from "#/lib/screen-draw-stats";
 import type { ScreenSignals } from "#/lib/screen-effects";

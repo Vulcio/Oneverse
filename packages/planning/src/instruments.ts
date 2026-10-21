@@ -1,4 +1,4 @@
-import { resolveTranslation, type CustomInstrument, type LocaleValue } from "@songverse/core";
+import { resolveTranslation, type CustomInstrument, type LocaleValue } from "@oneverse/core";
 import { useTranslation } from "react-i18next";
 
 /**

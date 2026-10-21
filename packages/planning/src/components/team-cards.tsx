@@ -1,14 +1,14 @@
-import type { OrganizationDetail, OrganizationSummary, TeamPosition, TeamSummary } from "@songverse/core";
+import type { OrganizationDetail, OrganizationSummary, TeamPosition, TeamSummary } from "@oneverse/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePlanning } from "../host";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Input } from "@songverse/ui/components/input";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Input } from "@oneverse/ui/components/input";
 import { X } from "lucide-react";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 import { groupTree, withSubgroups } from "../organizations";
 
 /** A team's organisation (issue #241), for its admins: one of those they run, or none. */

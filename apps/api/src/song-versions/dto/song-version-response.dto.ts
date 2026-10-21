@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { OWNERSHIP_SCOPES, PUBLICATION_STATES } from "@songverse/core";
+import { OWNERSHIP_SCOPES, PUBLICATION_STATES } from "@oneverse/core";
 
 export class SongVersionResponseDto {
   @ApiProperty() id!: string;

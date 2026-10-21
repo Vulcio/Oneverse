@@ -1,4 +1,4 @@
-import type { SetlistSummary, SongbookSummary, TeamSummary } from "@songverse/core";
+import type { SetlistSummary, SongbookSummary, TeamSummary } from "@oneverse/core";
 import { useMatches, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { AppSidebar } from "#/components/app-sidebar";
@@ -12,10 +12,10 @@ import { stopMetronome } from "#/lib/metronome-engine";
 import { useRecordingClickBridge } from "#/lib/recording-click";
 import { useSyncBridge } from "#/lib/sync-client";
 import { unloadStems } from "#/lib/stem-engine";
-import type { AppSession } from "@songverse/app/server-auth";
+import type { AppSession } from "@oneverse/app/server-auth";
 import { nestedSidebarFor } from "#/lib/sidebar-kind";
 import { ItemPanel, NestedSidebar } from "#/components/nested-sidebar";
-import { SidebarInset, SidebarProvider, useSidebar } from "@songverse/ui/components/sidebar";
+import { SidebarInset, SidebarProvider, useSidebar } from "@oneverse/ui/components/sidebar";
 
 export function AppShell({
   session,

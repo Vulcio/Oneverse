@@ -1,4 +1,4 @@
-import { isPushEndpoint } from "@songverse/core";
+import { isPushEndpoint } from "@oneverse/core";
 import webpush from "web-push";
 import { PROVIDER_TIMEOUT_MS } from "../metadata/provider-timeout.js";
 import { pushTestOrigins, type PushConfig } from "./notification-settings.js";

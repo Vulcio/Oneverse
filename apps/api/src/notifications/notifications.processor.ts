@@ -1,8 +1,8 @@
 import { InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { NOTIFICATIONS_KEPT_DAYS, notificationEmail, notificationPreferences, notificationPush, quietHoursEnd, quietHoursOf, type Messages, type NotificationData, type NotificationKind } from "@songverse/core";
-import en from "@songverse/core/i18n/locales/en";
-import fr from "@songverse/core/i18n/locales/fr";
+import { NOTIFICATIONS_KEPT_DAYS, notificationEmail, notificationPreferences, notificationPush, quietHoursEnd, quietHoursOf, type Messages, type NotificationData, type NotificationKind } from "@oneverse/core";
+import en from "@oneverse/core/i18n/locales/en";
+import fr from "@oneverse/core/i18n/locales/fr";
 import type { Job, Queue } from "bullmq";
 import { sendNotificationEmail } from "../auth/email.js";
 import { JOB_WORKER_OPTIONS, NOTIFICATIONS_QUEUE } from "../jobs/jobs.constants.js";

@@ -1,5 +1,5 @@
 import { createHash, createPrivateKey, sign } from "node:crypto";
-import type { ProviderMatch } from "@songverse/core";
+import type { ProviderMatch } from "@oneverse/core";
 import { PROVIDER_TIMEOUT_MS } from "./provider-timeout.js";
 
 /** Where the Apple Music API is; pointed elsewhere only by the e2e suites. */

@@ -10,7 +10,7 @@ import { check, finish } from "../lib/harness.mjs";
 
 const web = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../apps/web");
 if (!existsSync(path.join(web, "dist/server/server.js"))) {
-  console.log("SKIP the web app isn't built (pnpm --filter @songverse/web build)");
+  console.log("SKIP the web app isn't built (pnpm --filter @oneverse/web build)");
   process.exit(0);
 }
 

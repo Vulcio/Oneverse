@@ -1,21 +1,21 @@
-import { slugify, type LanguageCode, type SongbookCatalogImportResult } from "@songverse/core";
+import { slugify, type LanguageCode, type SongbookCatalogImportResult } from "@oneverse/core";
 import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { Download, Upload } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { LanguageSelect } from "#/components/language-select";
-import { Button } from "@songverse/ui/components/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Button } from "@oneverse/ui/components/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { downloadBlob } from "#/lib/download";
 import { CatalogEntriesTable } from "./-catalog-entries-table";
 import { CatalogImportDialog } from "./-catalog-import-dialog";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { SectionsEditor } from "#/components/sections-editor";
 
 export const Route = createFileRoute("/_protected/songbook-catalogs/$catalogId")({

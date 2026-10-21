@@ -1,14 +1,14 @@
-import { ATTACHMENT_TYPES, MAX_FILE_SIZE_LIMIT_MB, type FileSizeLimits, type SaveFileSizeLimitsRequest, type StorageLimits } from "@songverse/core";
+import { ATTACHMENT_TYPES, MAX_FILE_SIZE_LIMIT_MB, type FileSizeLimits, type SaveFileSizeLimitsRequest, type StorageLimits } from "@oneverse/core";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 
 export const Route = createFileRoute("/_protected/admin/storage")({
   loader: async () => {

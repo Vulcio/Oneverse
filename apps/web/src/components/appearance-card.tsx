@@ -1,12 +1,12 @@
-import { ENTITY_COLORS, entityColor, type EntityColor } from "@songverse/core";
+import { ENTITY_COLORS, entityColor, type EntityColor } from "@oneverse/core";
 import { Check } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ENTITY_COLOR_CLASSES, EntityAvatar } from "@songverse/ui/components/entity-avatar";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { ENTITY_COLOR_CLASSES, EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const MAX_PICTURE_BYTES = 5 * 1024 * 1024;
 

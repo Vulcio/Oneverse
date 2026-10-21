@@ -1,17 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListMusic, Mic2, Music2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { RoleBadges } from "@songverse/planning/components/role-badges";
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { RoleBadges } from "@oneverse/planning/components/role-badges";
+import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
-import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
-import { initials } from "@songverse/ui/lib/initials";
+import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
+import { initials } from "@oneverse/ui/lib/initials";
 import { artistNames } from "#/lib/artists";
-import { EmailCard, LanguageCard, PasskeysCard, ProfileCard } from "@songverse/app/components/account-cards";
+import { EmailCard, LanguageCard, PasskeysCard, ProfileCard } from "@oneverse/app/components/account-cards";
 import { ChartDisplayCard, StorageCard } from "./-dashboard/account-cards";
-import { NotificationSettingsCard } from "@songverse/planning/components/notification-settings-card";
+import { NotificationSettingsCard } from "@oneverse/planning/components/notification-settings-card";
 import { OwnershipRequestsCard } from "./-dashboard/ownership-requests-card";
 import { RolesCard } from "./-dashboard/roles-card";
 

@@ -1,10 +1,10 @@
-import type { LibraryHome, SongVersionSummary } from "@songverse/core";
+import type { LibraryHome, SongVersionSummary } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** A song as a card shows it; `imageUrl` for when songs have images of their own. */
 type CardSong = Pick<SongVersionSummary, "id" | "title" | "artists"> & { workId?: string; imageUrl?: string | null };

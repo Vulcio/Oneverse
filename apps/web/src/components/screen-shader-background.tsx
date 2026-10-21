@@ -1,4 +1,4 @@
-import { readIsf, readIsfValues, type IsfInput, type IsfShader, type IsfValue, type ScreenTheme } from "@songverse/core";
+import { readIsf, readIsfValues, type IsfInput, type IsfShader, type IsfValue, type ScreenTheme } from "@oneverse/core";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { StageText } from "#/components/screen-text-background";
 import { frameMeter, screenDrawStats } from "#/lib/screen-draw-stats";

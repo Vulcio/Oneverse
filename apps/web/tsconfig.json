@@ -1,5 +1,5 @@
 {
-  "extends": "@songverse/tsconfig/react-library.json",
+  "extends": "@oneverse/tsconfig/react-library.json",
   "include": ["**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "target": "ES2022",

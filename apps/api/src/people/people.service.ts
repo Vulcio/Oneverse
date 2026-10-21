@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import type { Prisma } from "@songverse/db";
+import type { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { sendConnectionRequestEmail } from "../auth/email.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";

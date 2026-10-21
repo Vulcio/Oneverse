@@ -193,7 +193,7 @@ enum AttachmentType {
 
 // Which part of the song an AUDIO attachment is (issue #64), for the stem
 // player; null for a full mix. The order the player lists them in is
-// STEM_PARTS in @songverse/core.
+// STEM_PARTS in @oneverse/core.
 enum StemPart {
   VOCALS
   // Sung harmonies (issue #131), from the top.
@@ -302,7 +302,7 @@ model User {
   pianoHands        String            @default("both")
   pianoNoteNames    String            @default("card")
   /// What the Display panel changed for each mode (issue #209): { EDIT, PRACTICE, LIVE } each a partial
-  /// DisplaySettings (@songverse/core), over the account settings above.
+  /// DisplaySettings (@oneverse/core), over the account settings above.
   displaySettings   Json              @default("{}")
   voicingPreference VoicingPreference @default(AUTO)
   pedalMappingJson  Json? // UserPedalMapping — null = use defaults
@@ -480,7 +480,7 @@ model Team {
   description      String?
   // Its picture (issue #161): served by the API at avatarUrl, the stored
   // object at avatarStorageKey; and its colour, a key of ENTITY_COLORS in
-  // @songverse/core (null: one derived from the name).
+  // @oneverse/core (null: one derived from the name).
   avatarUrl        String?
   avatarStorageKey String?
   color            String?
@@ -557,7 +557,7 @@ model Organization {
   name        String
   slug        String   @unique
   description String?
-  // A key of ENTITY_COLORS in @songverse/core (null: one derived from the name).
+  // A key of ENTITY_COLORS in @oneverse/core (null: one derived from the name).
   color       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -854,7 +854,7 @@ model SongVersion {
   searchText String @default("")
 
   // The sung lines, folded as a lyrics search compares them, one per line
-  // (issue #221, lyricsSearchText in @songverse/core): written by the API
+  // (issue #221, lyricsSearchText in @oneverse/core): written by the API
   // with each save of the chart; null until worked out (the Worker's
   // lyrics backfill fills older songs).
   lyricsText String?
@@ -1150,7 +1150,7 @@ model Setlist {
 // A team's event (issue #235): a one-off, or every n weeks on its first
 // date's weekday until a date or for ever. Its time is a wall-clock time in
 // its time zone (the same across daylight saving); its dates are worked out
-// by eventDates() in @songverse/core. Managed by the team's admins.
+// by eventDates() in @oneverse/core. Managed by the team's admins.
 model TeamEvent {
   id                  String    @id @default(cuid())
   teamId              String
@@ -1291,7 +1291,7 @@ model CalendarFeed {
 
 // Something Songverse tells someone (issue #236): its kind and details,
 // put into words in the reader's language when shown (notificationText in
-// @songverse/core), never stored as text; where it leads (url, in the web
+// @oneverse/core), never stored as text; where it leads (url, in the web
 // app); read or not. Sent by push and email too, as the person chooses.
 model Notification {
   id        String    @id @default(cuid())
@@ -1355,7 +1355,7 @@ model TeamEventDate {
 
 // Someone scheduled on a part for one date of an event (issue #235, phase
 // 7): asked (PENDING), then ACCEPTED or DECLINED. `partKey` is the part's
-// key in the event's parts (partKey in @songverse/core). Once a date has a
+// key in the event's parts (partKey in @oneverse/core). Once a date has a
 // line-up, the people on it - not declining - are who signed up for it.
 enum AssignmentStatus {
   PENDING
@@ -1844,7 +1844,7 @@ model OfflinePin {
 }
 
 // A note on a song (issues #104, #256): one person writes it, pins it
-// somewhere in the song (`anchor`, a NoteAnchor from @songverse/core, by the
+// somewhere in the song (`anchor`, a NoteAnchor from @oneverse/core, by the
 // chart's IDs) and saves it in a place, which decides who sees it: ME (its
 // author; with setlistId, only in that set), TEAM, SONGBOOK, SET, or SONG
 // (everyone who sees the song, written by its editors).
@@ -2637,7 +2637,7 @@ enum SongRevisionKind {
 }
 
 /// A song version as it was after one save: the chart, its details and
-/// credits (see SongSnapshot in @songverse/core). Tags, files, links and
+/// credits (see SongSnapshot in @oneverse/core). Tags, files, links and
 /// arrangements aren't in it - they have owners and lives of their own.
 /// Saves by the same person a few minutes apart update one entry
 /// (`updatedAt` moves on), so a working session is one step. Restoring an

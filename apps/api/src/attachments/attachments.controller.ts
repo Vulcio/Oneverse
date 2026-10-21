@@ -1,4 +1,4 @@
-import type { AttachmentTypeValue } from "@songverse/core";
+import type { AttachmentTypeValue } from "@oneverse/core";
 import {
   BadRequestException,
   Body,

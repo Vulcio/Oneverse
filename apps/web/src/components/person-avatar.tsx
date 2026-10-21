@@ -1,5 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
-import { cn } from "@songverse/ui/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** Someone's small round picture, or their initials. */
 export function PersonAvatar({ name, avatarUrl, size = 20, className }: { name: string; avatarUrl: string | null; size?: number; className?: string }) {

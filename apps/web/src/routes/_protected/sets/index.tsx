@@ -1,12 +1,12 @@
-import { setListing, type SetlistSummary } from "@songverse/core";
+import { setListing, type SetlistSummary } from "@oneverse/core";
 import type { ColumnDef } from "@tanstack/react-table";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
-import { DataTable } from "@songverse/ui/components/data-table";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
+import { DataTable } from "@oneverse/ui/components/data-table";
 import { apiClient } from "#/lib/api-client";
 import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
 

@@ -42,19 +42,19 @@ import {
   type ScreenThemeSummary,
   type ScreenWidgetDefault,
   type TeamSummary,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { ChevronLeft, ChevronRight, Copy, Pause, Pencil, Play, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
-import { Button } from "@songverse/ui/components/button";
-import { Dialog, DialogContent, DialogTitle } from "@songverse/ui/components/dialog";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Button } from "@oneverse/ui/components/button";
+import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 type Part = Exclude<keyof ScreenTheme, "$schema" | "shows" | "grid" | "masks" | "effects">;
 

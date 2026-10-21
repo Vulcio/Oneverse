@@ -1,4 +1,4 @@
-import { formatDuration, SET_LIST_DETAILS, type SetListDetailValue, type SetlistItem } from "@songverse/core";
+import { formatDuration, SET_LIST_DETAILS, type SetListDetailValue, type SetlistItem } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 
 /**

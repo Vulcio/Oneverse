@@ -13,7 +13,7 @@ and out (export). None of them is how a song is stored.
 
 | Part | State |
 |---|---|
-| Schemas, chord reader, Morning Light examples | Done, in `@songverse/core`, with tests |
+| Schemas, chord reader, Morning Light examples | Done, in `@oneverse/core`, with tests |
 | Songs stored as v2: saving with `revision`, IDs kept through text edits, ChordPro export from the columns, chords-above-lyrics rendering | Done |
 | Structured editor (the rules below), with text mode and paste | Done: `apps/web/src/components/song-editor/structured/`, covered by `e2e/web/structured-editor.test.mjs` |
 | ChordPro `{comment}` as note lines; every section type as a `{start_of_x}` environment | Done |
@@ -140,7 +140,7 @@ worked out after them.
 ### Chord symbols
 
 `raw` is the symbol exactly as written ("F#m7b5/C#", "Cadd9", "(G)",
-"N.C."), and it's the only thing stored. `@songverse/core` reads it:
+"N.C."), and it's the only thing stored. `@oneverse/core` reads it:
 
 | Function | Use |
 |---|---|
@@ -207,7 +207,7 @@ An optional timing layer on a section; the lines stay the structure.
 - A bar with no chord changes carries the previous chord on.
 - `beat` is 1-based and may be fractional (2.5 is the "and" of 2).
 
-A section without a rhythm still has bars: `chartBars()` in `@songverse/core`
+A section without a rhythm still has bars: `chartBars()` in `@oneverse/core`
 (issue #238) fills them in from the chart. Each chord of a line gets a bar,
 a sung line takes at least two, a line of chords alone takes one bar per
 chord, and notes take none. The bars run through the order the song is

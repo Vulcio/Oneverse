@@ -1,4 +1,4 @@
-import { findRepeats, readSongDocument } from "@songverse/core";
+import { findRepeats, readSongDocument } from "@oneverse/core";
 import type { PrismaService } from "../prisma/prisma.service.js";
 import { SongHistoryService } from "./song-history.service.js";
 import { SongRepeatsService } from "./song-repeats.service.js";

@@ -1,5 +1,5 @@
-import { ATTACHMENT_TYPES, BUILT_IN_FILE_SIZE_LIMITS_MB, MAX_FILE_SIZE_LIMIT_MB, type AttachmentTypeValue } from "@songverse/core";
-import { prisma, Prisma } from "@songverse/db";
+import { ATTACHMENT_TYPES, BUILT_IN_FILE_SIZE_LIMITS_MB, MAX_FILE_SIZE_LIMIT_MB, type AttachmentTypeValue } from "@oneverse/core";
+import { prisma, Prisma } from "@oneverse/db";
 
 const SINGLETON_ID = "singleton";
 export const BYTES_PER_MB = 1024 * 1024;

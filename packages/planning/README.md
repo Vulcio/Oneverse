@@ -1,4 +1,4 @@
-# @songverse/planning
+# @oneverse/planning
 
 The planning screens shared by Songverse's web app and Planiverse (issue
 #241): a team's calendar (events, answers, line-up, reminders), My
@@ -8,7 +8,7 @@ Source only, no build. The app showing them wraps its pages in a
 `PlanningProvider` that says what it has:
 
 ```tsx
-import { PlanningProvider, type PlanningHost } from "@songverse/planning/host";
+import { PlanningProvider, type PlanningHost } from "@oneverse/planning/host";
 
 const host: PlanningHost = {
   api: apiClient, // the app's own (createAppApiClient)
@@ -28,6 +28,6 @@ const host: PlanningHost = {
 
 The app keeps its routes: each loads with the page's loader
 (`loadOrganizationPage(api, id)`, `loadTeamPage`…) and renders the page
-(`@songverse/planning/pages/organization`, `pages/team` with the app's own
-admin cards…), the parts in `@songverse/planning/components/*` - the
+(`@oneverse/planning/pages/organization`, `pages/team` with the app's own
+admin cards…), the parts in `@oneverse/planning/components/*` - the
 notification settings and this device's push among them.

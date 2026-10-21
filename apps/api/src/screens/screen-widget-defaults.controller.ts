@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Put, Query, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { SaveScreenWidgetDefaultSchema, SCREEN_WIDGET_KINDS, ScreenWidgetDefaultQuerySchema, type ScreenWidgetKind } from "@songverse/core";
+import { SaveScreenWidgetDefaultSchema, SCREEN_WIDGET_KINDS, ScreenWidgetDefaultQuerySchema, type ScreenWidgetKind } from "@oneverse/core";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { zodDto } from "../common/zod-validation.js";

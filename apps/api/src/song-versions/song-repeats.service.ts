@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { findRepeats, linkRepeatInArrangement, linkRepeats, lyricsSearchText, readSongDocument, safeParseArrangementDocumentV2, type FoundRepeat } from "@songverse/core";
-import { Prisma } from "@songverse/db";
+import { findRepeats, linkRepeatInArrangement, linkRepeats, lyricsSearchText, readSongDocument, safeParseArrangementDocumentV2, type FoundRepeat } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { SongHistoryService } from "./song-history.service.js";
 

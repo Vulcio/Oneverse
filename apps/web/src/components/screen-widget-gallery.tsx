@@ -8,14 +8,14 @@ import {
   type ScreenWidgetDefault,
   type ScreenWidgetKind,
   type TeamSummary,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { Palette, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Dialog, DialogContent, DialogTitle } from "@songverse/ui/components/dialog";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Button } from "@oneverse/ui/components/button";
+import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { WidgetSettings } from "#/components/screen-layout-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { apiClient } from "#/lib/api-client";

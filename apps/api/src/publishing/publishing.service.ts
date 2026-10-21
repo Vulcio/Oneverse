@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { foldForSearch } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { foldForSearch } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import { AccessPolicyService, OPEN_SUBMISSION_STATES } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { NotificationsService } from "../notifications/notifications.service.js";

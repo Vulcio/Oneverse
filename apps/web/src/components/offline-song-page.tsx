@@ -1,4 +1,4 @@
-import { chartNotation, cueSectionsOf, findKeptSong, inlineSafeType, keptFile, keptSongCopy, offlineViewer, renderChart, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type FoundSong, type SavedDisplaySettings } from "@songverse/core";
+import { chartNotation, cueSectionsOf, findKeptSong, inlineSafeType, keptFile, keptSongCopy, offlineViewer, renderChart, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type FoundSong, type SavedDisplaySettings } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { FileText, Mic } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -11,8 +11,8 @@ import { useSongNotes } from "#/lib/notes";
 import { StemDock } from "#/components/stem-dock";
 import { downloadBlob } from "#/lib/download";
 import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { formatBytes } from "#/lib/format-bytes";
 import { setMode, useMode } from "#/lib/mode";
 import { keysOffline } from "#/lib/offline-db";

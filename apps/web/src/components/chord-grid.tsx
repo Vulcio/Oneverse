@@ -1,10 +1,10 @@
-import { barAt, barLyrics, chartBars, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2 } from "@songverse/core";
+import { barAt, barLyrics, chartBars, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { GROUP_COLORS } from "#/components/bars-row";
 import { FAMILY_COLORS, passLabel } from "#/components/song-chart";
 import { useBarsClock } from "#/lib/bars-clock";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * The chord grid (issue #238), a way to read a song as Chart and PDF are:

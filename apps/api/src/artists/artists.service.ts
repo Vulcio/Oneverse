@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { BIO_LANGUAGES, foldForSearch } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { BIO_LANGUAGES, foldForSearch } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { artistImageUrl } from "../artwork/song-image-url.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";

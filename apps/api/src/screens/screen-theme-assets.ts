@@ -1,4 +1,4 @@
-import { ISF_MAX_SOURCE, type ScreenThemeAssetKind } from "@songverse/core";
+import { ISF_MAX_SOURCE, type ScreenThemeAssetKind } from "@oneverse/core";
 import { isValidAddress, signAddress } from "../common/utils/signed-address.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;

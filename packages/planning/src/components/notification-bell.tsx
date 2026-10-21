@@ -1,9 +1,9 @@
-import type { AppNotification } from "@songverse/core";
+import type { AppNotification } from "@oneverse/core";
 import { Bell, CheckCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
+import { Button } from "@oneverse/ui/components/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { HostLink, usePlanning } from "../host";
 import { NotificationList } from "./notification-list";
 

@@ -15,13 +15,13 @@ import {
   type SectionInstance,
   type SectionV2,
   type NoteAnchor,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { AlertTriangle } from "lucide-react";
 import { Fragment, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChartColumns } from "#/lib/chart-columns";
-import type { DisplayFontValue, DisplaySpacingValue } from "@songverse/core";
-import { cn } from "@songverse/ui/lib/utils";
+import type { DisplayFontValue, DisplaySpacingValue } from "@oneverse/core";
+import { cn } from "@oneverse/ui/lib/utils";
 
 // Section types with a heading of their own; "other" has none.
 const LABELLED_SECTIONS = new Set(["intro", "verse", "pre-chorus", "chorus", "post-chorus", "bridge", "vamp", "breakdown", "instrumental", "interlude", "outro", "tag"]);

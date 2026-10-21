@@ -1,4 +1,4 @@
-import { inlineSafeType } from "@songverse/core";
+import { inlineSafeType } from "@oneverse/core";
 import type { Request, Response } from "express";
 import { pipeline } from "node:stream/promises";
 import type { StorageService } from "../storage/storage.service.js";

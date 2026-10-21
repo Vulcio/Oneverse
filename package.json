@@ -13,11 +13,11 @@
     "lint": "vp run -r lint",
     "type-check": "vp run --filter \"./packages/*\" build && vp run -r type-check",
     "test": "vp run --filter \"./packages/*\" build && vp run -r test",
-    "db:migrate": "pnpm --filter @songverse/db exec prisma migrate dev",
-    "db:generate": "pnpm --filter @songverse/db exec prisma generate",
-    "db:seed": "pnpm --filter @songverse/db exec prisma db seed",
+    "db:migrate": "pnpm --filter @oneverse/db exec prisma migrate dev",
+    "db:generate": "pnpm --filter @oneverse/db exec prisma generate",
+    "db:seed": "pnpm --filter @oneverse/db exec prisma db seed",
     "clean": "vp cache clean && rm -rf node_modules",
-    "e2e": "pnpm --filter @songverse/e2e e2e"
+    "e2e": "pnpm --filter @oneverse/e2e e2e"
   },
   "devDependencies": {
     "prettier": "^3.4.2",

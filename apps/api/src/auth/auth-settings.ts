@@ -1,5 +1,5 @@
-import { prisma } from "@songverse/db";
-import { decryptSecret, encryptSecret } from "@songverse/secret-crypto";
+import { prisma } from "@oneverse/db";
+import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 
 const SINGLETON_ID = "singleton";
 const DEFAULT_EMAIL_FROM = "Songverse <onboarding@resend.dev>";

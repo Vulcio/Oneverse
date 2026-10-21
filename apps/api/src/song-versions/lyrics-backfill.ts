@@ -1,4 +1,4 @@
-import { lyricsSearchText, readSongDocument } from "@songverse/core";
+import { lyricsSearchText, readSongDocument } from "@oneverse/core";
 import type { PrismaService } from "../prisma/prisma.service.js";
 
 const BATCH = 200;

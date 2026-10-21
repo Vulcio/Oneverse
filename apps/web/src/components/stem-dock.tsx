@@ -1,5 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import { formatDuration, type StemPart } from "@songverse/core";
+import { formatDuration, type StemPart } from "@oneverse/core";
 import {
   ArrowUpDown,
   AudioLines,
@@ -33,13 +33,13 @@ import {
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { cueAt, sortedCues, type CuePoint, multitracksOf, semitonesBetween, transposeKey, transposesPart } from "@songverse/core";
+import { cueAt, sortedCues, type CuePoint, multitracksOf, semitonesBetween, transposeKey, transposesPart } from "@oneverse/core";
 import { NEW_TARGET, RecorderDialog } from "#/components/recorder-dialog";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
 import { StemRecordPanel } from "#/components/stem-record-panel";
 import { CueEditor, SectionLane, sectionsGradient, useCueNames } from "#/components/stem-cues";
 import { StemTrackActions } from "#/components/stem-track-actions";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { setMode } from "#/lib/mode";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { setRecordingClick, useRecordingClick } from "#/lib/recording-click";
@@ -75,8 +75,8 @@ import {
   type StemSong,
   type StemTrack,
 } from "#/lib/stem-engine";
-import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
-import { cn } from "@songverse/ui/lib/utils";
+import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const NO_PARTS: Record<string, boolean> = {};
 const COMBINED_KEY = "songverse.stems.combined";

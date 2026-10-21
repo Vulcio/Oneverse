@@ -1,4 +1,4 @@
-import { CatalogFileSchema, ImportCatalogEntriesSchema } from "@songverse/core";
+import { CatalogFileSchema, ImportCatalogEntriesSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 /** A catalogue file (see docs/songbook-catalog-format.md), sent as text. */

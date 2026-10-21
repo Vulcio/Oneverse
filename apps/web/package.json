@@ -1,5 +1,5 @@
 {
-  "name": "@songverse/web",
+  "name": "@oneverse/web",
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -28,10 +28,10 @@
     "@fontsource-variable/oswald": "^5.3.0",
     "@fontsource-variable/playfair-display": "^5.3.0",
     "@fontsource/bebas-neue": "^5.3.0",
-    "@songverse/app": "workspace:*",
-    "@songverse/core": "workspace:*",
-    "@songverse/planning": "workspace:*",
-    "@songverse/ui": "workspace:*",
+    "@oneverse/app": "workspace:*",
+    "@oneverse/core": "workspace:*",
+    "@oneverse/planning": "workspace:*",
+    "@oneverse/ui": "workspace:*",
     "@tanstack/react-router": "^1.170.36",
     "@tanstack/react-start": "^1.168.54",
     "@tanstack/react-table": "^8.21.3",
@@ -62,7 +62,7 @@
     "yjs": "^13.6.33"
   },
   "devDependencies": {
-    "@songverse/tsconfig": "workspace:*",
+    "@oneverse/tsconfig": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^22.10.5",
     "@types/react": "^19.2.0",

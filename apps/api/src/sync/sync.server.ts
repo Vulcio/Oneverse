@@ -1,5 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy } from "@nestjs/common";
-import { applyStageCommand, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_DOC_UPDATE_MAX, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStage, type SyncStageCommand, type SyncStems } from "@songverse/core";
+import { applyStageCommand, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, STEM_SPEED_MAX, STEM_SPEED_MIN, SYNC_DOC_UPDATE_MAX, SYNC_PATH, SYNC_WATCH_MAX, type SongActivity, type SongPresence, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncScreenInfo, type SyncServerMessage, type SyncSession, type SyncStage, type SyncStageCommand, type SyncStems } from "@oneverse/core";
 import type { Redis } from "ioredis";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, Server } from "node:http";

@@ -1,6 +1,6 @@
-import { prisma, type Prisma } from "@songverse/db";
-import type { SaveSonicServerRequest } from "@songverse/core";
-import { decryptSecret, encryptSecret } from "@songverse/secret-crypto";
+import { prisma, type Prisma } from "@oneverse/db";
+import type { SaveSonicServerRequest } from "@oneverse/core";
+import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import { randomBytes } from "node:crypto";
 import { checkOutsideUrl, OutsideAddressError, type OutsideAddressRules } from "../security/outside-address.js";
 import { getEffectiveStemSeparationSettings, type EffectiveStemSeparationSettings } from "./stem-separation-settings.js";

@@ -1,11 +1,11 @@
-import { metronomeForSong, type BeatLevel, type MetronomeSettings } from "@songverse/core";
+import { metronomeForSong, type BeatLevel, type MetronomeSettings } from "@oneverse/core";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Metronome, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { startMetronome, stopMetronome, useMetronome, useMetronomeBeat, type MetronomeBeat } from "#/lib/metronome-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const NEXT_LEVEL: Record<BeatLevel, BeatLevel> = { accent: "normal", normal: "mute", mute: "accent" };
 

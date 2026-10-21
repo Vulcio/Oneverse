@@ -1,11 +1,11 @@
-import { generateId, ID_PREFIXES, passChanged, passEdited, transposeKey, type SectionInstance, type SectionV2 } from "@songverse/core";
+import { generateId, ID_PREFIXES, passChanged, passEdited, transposeKey, type SectionInstance, type SectionV2 } from "@oneverse/core";
 import { ArrowLeft, ArrowRight, Copy, GripVertical, KeyRound, Link2, ListMinus, ListRestart, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const KEY_STEPS = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6];
 /** How long a finger rests on a pass before it can be dragged (a quicker swipe scrolls). */

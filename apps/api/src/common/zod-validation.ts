@@ -2,11 +2,11 @@ import { ArgumentMetadata, BadRequestException, Injectable, InternalServerErrorE
 import type { OpenAPIObject } from "@nestjs/swagger";
 import type { ParameterObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface.js";
 import { cleanupOpenApiDoc, createZodDto } from "nestjs-zod";
-import { describeRequestIssue } from "@songverse/core";
+import { describeRequestIssue } from "@oneverse/core";
 import { z, type ZodError } from "zod";
 
 /**
- * Requests are validated with the zod schemas in @songverse/core (issue
+ * Requests are validated with the zod schemas in @oneverse/core (issue
  * #118), through nestjs-zod's DTOs: `class XDto extends zodDto(XSchema) {}`.
  *
  * A failed request answers 400 with `message: string[]`, one per problem,

@@ -1,11 +1,11 @@
-import { chordProFromPdfText, detectImportFormatDetails, SUPPORTED_IMPORT_FORMATS, type SupportedImportFormat } from "@songverse/core";
+import { chordProFromPdfText, detectImportFormatDetails, SUPPORTED_IMPORT_FORMATS, type SupportedImportFormat } from "@oneverse/core";
 import { ClipboardPaste, FileText, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
+import { cn } from "@oneverse/ui/lib/utils";
 import { formatBytes } from "#/lib/format-bytes";
 import { pdfTextItems } from "#/lib/pdf-text";
 import { isPdf } from "./attachment-types";

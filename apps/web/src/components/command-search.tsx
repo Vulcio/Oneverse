@@ -1,4 +1,4 @@
-import { foldForSearch, formatSongbookReference, keptSongReferences, onlineOrKept, parseLyricsQuery, partialEntryDigits, searchKeptEntries, searchKeptLyrics, searchKeptSongs, SONGBOOK_HIT_LIMITS, songbookReferences, type LyricsMatch, type SongbookEntryHit } from "@songverse/core";
+import { foldForSearch, formatSongbookReference, keptSongReferences, onlineOrKept, parseLyricsQuery, partialEntryDigits, searchKeptEntries, searchKeptLyrics, searchKeptSongs, SONGBOOK_HIT_LIMITS, songbookReferences, type LyricsMatch, type SongbookEntryHit } from "@oneverse/core";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useNavigate, useRouteContext, useRouter, useRouterState } from "@tanstack/react-router";
 import { BookOpen, Hash, ListEnd, ListMusic, ListPlus, Music, Quote, Search, Users, type LucideIcon } from "lucide-react";
@@ -11,7 +11,7 @@ import { LyricsSnippet } from "#/components/lyrics-snippet";
 import { useMode } from "#/lib/mode";
 import { deviceStorage } from "#/lib/offline-data";
 import { formatSetDate, setlistTitle } from "#/lib/setlists";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const SONG_LIMIT = 8;
 

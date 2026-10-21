@@ -9,8 +9,8 @@ import {
   type SongDocumentV2,
   type SongNote,
   type SongNotes,
-} from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+} from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";

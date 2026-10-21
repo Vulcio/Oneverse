@@ -1,15 +1,15 @@
-import type { SignupPassRequest } from "@songverse/core";
+import type { SignupPassRequest } from "@oneverse/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound } from "lucide-react";
 import { authClient } from "../auth-client";
 import { getApiUrl } from "../public-env";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { Separator } from "@songverse/ui/components/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { Separator } from "@oneverse/ui/components/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 
 type View = "auth" | "forgot-password" | "forgot-password-sent" | "signup-check-email";
 

@@ -12,4 +12,4 @@ whatever its name. In short:
 - **Tests and docs with the change:** an e2e suite in `e2e/`, the user docs in English and French
   (`apps/docs`), conformance cases for behaviour every client shares (`packages/core/conformance`).
 - **Reuse, don't fork:** another app or repository that needs Songverse's screens, chords or songs uses
-  `@songverse/core` and the existing components (see "The player screen" in CLAUDE.md).
+  `@oneverse/core` and the existing components (see "The player screen" in CLAUDE.md).

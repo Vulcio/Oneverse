@@ -1,14 +1,14 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { DatePicker } from "@songverse/ui/components/date-picker";
+import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 import { formatSetDate, todayIso } from "#/lib/setlists";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 
 export const Route = createFileRoute("/_protected/sets/new")({
   component: NewSet,

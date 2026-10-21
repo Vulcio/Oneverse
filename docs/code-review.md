@@ -41,7 +41,7 @@ linked below.
 
 | What | Risk | Fix |
 | --- | --- | --- |
-| Uploaded files served with the type they were uploaded with, shown in place (`/files/:id` links, `…/download`) | **High.** An `.html` or `.svg` attachment runs script on the API's origin. There, `fetch("/api/auth/token", { credentials: "include" })` returns the viewer's API token. The link needs no sign-in, so sending it to someone was enough. | Only types that can't run script are shown in place: PDF, raster images, audio, video and plain text. The list is `inlineSafeType` in `@songverse/core`. Anything else is sent as `application/octet-stream` with `Content-Disposition: attachment`. Every attachment response also carries `Content-Security-Policy: sandbox` and `nosniff`. Song images, artist pictures and avatars are re-encoded to WebP by `sharp`, so they can't carry script. Signed links are only given out for audio, the one thing that needs them (`<audio src>`). |
+| Uploaded files served with the type they were uploaded with, shown in place (`/files/:id` links, `…/download`) | **High.** An `.html` or `.svg` attachment runs script on the API's origin. There, `fetch("/api/auth/token", { credentials: "include" })` returns the viewer's API token. The link needs no sign-in, so sending it to someone was enough. | Only types that can't run script are shown in place: PDF, raster images, audio, video and plain text. The list is `inlineSafeType` in `@oneverse/core`. Anything else is sent as `application/octet-stream` with `Content-Disposition: attachment`. Every attachment response also carries `Content-Security-Policy: sandbox` and `nosniff`. Song images, artist pictures and avatars are re-encoded to WebP by `sharp`, so they can't carry script. Signed links are only given out for audio, the one thing that needs them (`<audio src>`). |
 | The offline song page opened a kept file with `window.open(URL.createObjectURL(blob))` | **High.** The same attack, but on the web app's origin. | The page uses the same `inlineSafeType` check. Anything else is downloaded, not opened. |
 | No security headers | Medium: clickjacking, MIME sniffing, and the referrer leaking signed addresses. | The API sends `nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`, and no `X-Powered-By`. The web app's server (`server.mjs`) sends `nosniff`, `SAMEORIGIN` and `strict-origin-when-cross-origin`. |
 | Sync play's WebSocket took any number of messages | Medium: one client could keep the API and Redis busy. | Each connection gets a burst of 60 messages, refilled at 20 per second. Going over closes the connection with 1008. |
@@ -143,7 +143,7 @@ e2e coverage:
 | Signing file links (`file-links.service.ts`) and song and artist image addresses (`song-image-url.ts`) with two copies of the HMAC code | `common/utils/signed-address.ts`: `signAddress`/`isValidAddress` with a purpose. The keys and messages are the same, so existing addresses keep working. |
 | Provider timeouts written out separately in six files | `PROVIDER_TIMEOUT_MS` (`metadata/provider-timeout.ts`). The metadata search's own overall wait is now named `SEARCH_WAIT_MS`. |
 | Artwork and artist-picture downloads, each with its own allowlist, timeout and size check | `fetchProviderImage` (above). |
-| `formatTime` in the YouTube dock and the stem dock, and duration formatting in the history tab | `formatDuration` in `@songverse/core`. It rounds down, never goes below 0, and handles `NaN`. |
+| `formatTime` in the YouTube dock and the stem dock, and duration formatting in the history tab | `formatDuration` in `@oneverse/core`. It rounds down, never goes below 0, and handles `NaN`. |
 | Loading a song's stems from the API or from the device, in the set's song page and in Sync play | `apps/web/src/lib/song-files.ts` (`songFiles`, `fileLoader`). |
 
 ### Left as they are, with a plan
@@ -312,7 +312,7 @@ code is written. The rules that apply to every new model come first.
 
 - **Data.** Use the `ChordVoicing` table, with `TuningPreset` for
   alternate tunings. Chord names on the chart go through `parseChord`
-  (`@songverse/core`). Look diagrams up by its normalised root and
+  (`@oneverse/core`). Look diagrams up by its normalised root and
   suffix, not by the raw text. That covers "Bbm7" versus "A#m7" and slash
   chords (show the shape, and the bass as the lowest note).
 - **Seeding.** Seed diagrams from an open chord database. Check its

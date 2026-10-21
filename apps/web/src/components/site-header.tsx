@@ -1,9 +1,9 @@
 import { CommandSearch } from "#/components/command-search";
 import { ModeSwitch } from "#/components/mode-switch";
-import { NotificationBell } from "@songverse/planning/components/notification-bell";
-import { SidebarTrigger } from "@songverse/ui/components/sidebar";
+import { NotificationBell } from "@oneverse/planning/components/notification-bell";
+import { SidebarTrigger } from "@oneverse/ui/components/sidebar";
 import { useMode } from "#/lib/mode";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * The top of every page: the sidebar's toggle, search, notifications and

@@ -13,7 +13,7 @@ import {
   transposeKey,
   type SectionInstance,
   type SectionV2,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { getSchema } from "@tiptap/core";
 import { Collaboration } from "@tiptap/extension-collaboration";
 import { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
@@ -28,10 +28,10 @@ import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
 import { chartOfSections, SongChart } from "#/components/song-chart";
 import { useDisplaySettings } from "#/lib/display-settings";
-import { Button } from "@songverse/ui/components/button";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Textarea } from "@songverse/ui/components/textarea";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Textarea } from "@oneverse/ui/components/textarea";
+import { cn } from "@oneverse/ui/lib/utils";
 import { CAPO_OPTIONS, KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from "../song-form";
 import { editorToSections, editorToSong, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { startChordDrag } from "./drag";

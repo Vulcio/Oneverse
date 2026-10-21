@@ -1,5 +1,5 @@
-import { publicEnvValue } from "@songverse/app/public-env";
-import type { PlanningHost } from "@songverse/planning/host";
+import { publicEnvValue } from "@oneverse/app/public-env";
+import type { PlanningHost } from "@oneverse/planning/host";
 import { apiClient } from "#/lib/api-client";
 
 /** Songverse's address, where a date's set opens (SONGVERSE_URL); unset, sets aren't shown. */

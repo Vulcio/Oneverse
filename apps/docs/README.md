@@ -4,8 +4,8 @@ The user documentation, published at [docs.songverse.one](https://docs.songverse
 Built with [Starlight](https://starlight.astro.build) (Astro).
 
 ```sh
-pnpm --filter @songverse/docs dev     # http://localhost:4321
-pnpm --filter @songverse/docs build   # into dist/, checking every internal link
+pnpm --filter @oneverse/docs dev     # http://localhost:4321
+pnpm --filter @oneverse/docs build   # into dist/, checking every internal link
 ```
 
 ## Writing pages

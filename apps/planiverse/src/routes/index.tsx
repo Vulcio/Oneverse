@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { AuthCard } from "@songverse/app/components/auth-card";
-import { AuthPage } from "@songverse/app/components/auth-page";
-import { LocaleProvider } from "@songverse/app/components/locale-provider";
-import { loadLocale } from "@songverse/app/i18n";
-import { getSession, getVisitorLocale } from "@songverse/app/server-auth";
+import { AuthCard } from "@oneverse/app/components/auth-card";
+import { AuthPage } from "@oneverse/app/components/auth-page";
+import { LocaleProvider } from "@oneverse/app/components/locale-provider";
+import { loadLocale } from "@oneverse/app/i18n";
+import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
 import { PlaniverseBrand } from "#/components/brand";
 import { apiClient } from "#/lib/api-client";
 

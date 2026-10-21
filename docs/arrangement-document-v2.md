@@ -143,7 +143,7 @@ chords or chords in this item's inserted lines.
 
 ### Rendering a pass
 
-`renderChart(song, arrangement, view)` in `@songverse/core` does all of
+`renderChart(song, arrangement, view)` in `@oneverse/core` does all of
 this, so the web chart, perform mode and a mobile app draw the same thing.
 It returns every pass with its lines and chords as shown, the key in
 effect, whether the pass differs from the song, and any problems.

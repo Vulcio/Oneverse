@@ -1,4 +1,4 @@
-import { barAt, chartBars, metronomeForSong, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2, type StructureGroup } from "@songverse/core";
+import { barAt, chartBars, metronomeForSong, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2, type StructureGroup } from "@oneverse/core";
 import { Metronome, Square } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,7 @@ import { FAMILY_COLORS } from "#/components/song-chart";
 import { useBarsClock } from "#/lib/bars-clock";
 import { startMetronome, stopMetronome, useMetronome } from "#/lib/metronome-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** A section's colour on its first bar, as the structure bar's. */
 export const GROUP_COLORS: Record<StructureGroup, string> = {

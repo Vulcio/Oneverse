@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { AppleMusicKeySchema, LinkSearchTypeSchema, MetadataSearchQuerySchema, MetadataSettingsSchema, MusicBrainzContactSchema, SpotifyAppSchema, YouTubeKeySchema } from "@songverse/core";
+import { AppleMusicKeySchema, LinkSearchTypeSchema, MetadataSearchQuerySchema, MetadataSettingsSchema, MusicBrainzContactSchema, SpotifyAppSchema, YouTubeKeySchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";

@@ -1,6 +1,6 @@
-import type { BrandAsset } from "@songverse/core";
+import type { BrandAsset } from "@oneverse/core";
 import { useEffect, useRef } from "react";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * A brand's logo as it is (issues #279, #295): a picture - an SVG, animated

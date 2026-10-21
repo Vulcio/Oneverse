@@ -1,15 +1,15 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { AuthCard } from "@songverse/app/components/auth-card";
-import { AuthPage } from "@songverse/app/components/auth-page";
+import { AuthCard } from "@oneverse/app/components/auth-card";
+import { AuthPage } from "@oneverse/app/components/auth-page";
 import { SongverseBrand } from "#/components/brand";
-import { LocaleProvider } from "@songverse/app/components/locale-provider";
+import { LocaleProvider } from "@oneverse/app/components/locale-provider";
 import { SourceCodeLink } from "#/components/source-code-link";
 import { apiClient } from "#/lib/api-client";
 import { loadAppData } from "#/lib/app-data";
 import { forgetOffline } from "#/lib/offline-db";
-import { getVisitorLocale } from "@songverse/app/server-auth";
-import { loadLocale } from "@songverse/app/i18n";
+import { getVisitorLocale } from "@oneverse/app/server-auth";
+import { loadLocale } from "@oneverse/app/i18n";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {

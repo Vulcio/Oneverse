@@ -12,14 +12,14 @@ import {
   type Attachment,
   type Multitrack,
   type RecordingDetails,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { Circle, Hand, Headphones, Loader2, Mic, Play, RotateCcw, Square, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { Input } from "@songverse/ui/components/input";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Button } from "@oneverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Input } from "@oneverse/ui/components/input";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { InputLevel } from "#/components/input-level";
 import { PartPicker, usePartLabel, type PartChoice } from "#/components/part-picker";
 import { apiClient } from "#/lib/api-client";

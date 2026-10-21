@@ -38,10 +38,10 @@ COPY packages/core packages/core
 COPY packages/db packages/db
 COPY packages/secret-crypto packages/secret-crypto
 COPY apps/api apps/api
-RUN pnpm --filter @songverse/core build \
- && pnpm --filter @songverse/db build \
- && pnpm --filter @songverse/secret-crypto build \
- && pnpm --filter @songverse/api build
+RUN pnpm --filter @oneverse/core build \
+ && pnpm --filter @oneverse/db build \
+ && pnpm --filter @oneverse/secret-crypto build \
+ && pnpm --filter @oneverse/api build
 
 FROM base AS runtime
 ENV NODE_ENV=production

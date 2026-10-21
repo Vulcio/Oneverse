@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Headers, HttpCode, HttpStatus, NotFoundException, Param, Post, Put, Req, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { SaveSonicServerSchema, SaveStemSeparationSettingsSchema, StartStemSeparationSchema } from "@songverse/core";
-import { decryptSecret } from "@songverse/secret-crypto";
+import { SaveSonicServerSchema, SaveStemSeparationSettingsSchema, StartStemSeparationSchema } from "@oneverse/core";
+import { decryptSecret } from "@oneverse/secret-crypto";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { Request } from "express";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";

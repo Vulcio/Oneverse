@@ -1,4 +1,4 @@
-import { chartNotation, cueSectionsOf, getLanguageDisplayName, renderChart, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type LiveViewValue, type SavedDisplaySettings, type SongVersionDetail } from "@songverse/core";
+import { chartNotation, cueSectionsOf, getLanguageDisplayName, renderChart, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type LiveViewValue, type SavedDisplaySettings, type SongVersionDetail } from "@oneverse/core";
 import { CapoBadge } from "#/components/capo-badge";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PresenceChip } from "#/components/presence";
@@ -14,8 +14,8 @@ import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChartOrPdf, songViewStore } from "#/components/chart-or-pdf";
 import { ChordGrid } from "#/components/chord-grid";
 import { StemDock } from "#/components/stem-dock";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
 import { YouTubeDock } from "#/components/youtube-dock";
 import { apiClient } from "#/lib/api-client";
 import { artistNames } from "#/lib/artists";

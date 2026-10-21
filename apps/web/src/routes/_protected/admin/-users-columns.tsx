@@ -1,22 +1,22 @@
-import type { AdminUserSummary } from "@songverse/core";
+import type { AdminUserSummary } from "@oneverse/core";
 import type { Column, ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@songverse/ui/components/dropdown-menu";
-import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
+} from "@oneverse/ui/components/dropdown-menu";
+import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { formatBytes } from "#/lib/format-bytes";
-import { initials } from "@songverse/ui/lib/initials";
-import { cn } from "@songverse/ui/lib/utils";
+import { initials } from "@oneverse/ui/lib/initials";
+import { cn } from "@oneverse/ui/lib/utils";
 
 export type UserAction = "roles" | "ban" | "unban" | "delete" | "newTransferLink" | "deleteNow";
 

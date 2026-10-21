@@ -1,4 +1,4 @@
-import type { BrandAssetKind } from "@songverse/core";
+import type { BrandAssetKind } from "@oneverse/core";
 import { isValidAddress, signAddress } from "../common/utils/signed-address.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;

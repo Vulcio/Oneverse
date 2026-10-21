@@ -1,4 +1,4 @@
-import type { MyOrganizations } from "@songverse/core";
+import type { MyOrganizations } from "@oneverse/core";
 import { useEffect, useState } from "react";
 import { usePlanning } from "./host";
 

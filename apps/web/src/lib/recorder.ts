@@ -1,5 +1,5 @@
 import { decodeAudio } from "#/lib/decode-audio";
-import { alignTake, clapDelayFrom, clickTimes, roundTripFrom } from "@songverse/core";
+import { alignTake, clapDelayFrom, clickTimes, roundTripFrom } from "@oneverse/core";
 import { endStemsRecording } from "#/lib/stem-engine";
 
 /**

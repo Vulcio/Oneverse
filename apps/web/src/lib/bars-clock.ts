@@ -1,4 +1,4 @@
-import { recordingBeatPosition, type ChartBar } from "@songverse/core";
+import { recordingBeatPosition, type ChartBar } from "@oneverse/core";
 import { useMemo } from "react";
 import { useMetronome } from "#/lib/metronome-engine";
 import { deviceNow } from "#/lib/output-clock";

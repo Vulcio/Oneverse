@@ -1,5 +1,5 @@
 {
-  "extends": "@songverse/tsconfig/base.json",
+  "extends": "@oneverse/tsconfig/base.json",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",

@@ -75,7 +75,7 @@ async function bootstrap() {
       .catch(next);
   });
 
-  // Requests are checked against @songverse/core's zod schemas (issue #118).
+  // Requests are checked against @oneverse/core's zod schemas (issue #118).
   app.useGlobalPipes(new ZodValidationPipe());
 
   const config = new DocumentBuilder()

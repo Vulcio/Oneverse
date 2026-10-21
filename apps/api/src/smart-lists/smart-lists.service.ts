@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import type { Prisma } from "@songverse/db";
+import type { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { CreateSmartListDto, UpdateSmartListDto } from "./smart-list.dto.js";
 

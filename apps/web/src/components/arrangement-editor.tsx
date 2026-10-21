@@ -17,24 +17,24 @@ import {
   type SongDocumentV2,
   type SetlistSummary,
   type SongVersionDetail,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Eye, EyeOff, MessageSquare, MoveHorizontal, Pencil, Plus, RotateCcw, Star, Trash2 } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { nameKeyChanges } from "#/components/song-editor/song-form";
 import { SongOrder } from "#/components/song-editor/structured/song-order";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle, transposeLabel } from "#/lib/setlists";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 type Item = ArrangementItemV2;
 const CAPOS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

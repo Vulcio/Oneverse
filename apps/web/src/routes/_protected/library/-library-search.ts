@@ -1,4 +1,4 @@
-import type { SmartListFilters, SongSort } from "@songverse/core";
+import type { SmartListFilters, SongSort } from "@oneverse/core";
 
 export const SORTS: SongSort[] = ["title", "updatedAt", "createdAt", "language", "publicationState"];
 

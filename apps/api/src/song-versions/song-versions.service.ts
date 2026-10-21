@@ -39,8 +39,8 @@ import {
   progressionSimilarity,
   songProgressions,
   type SectionProgression,
-} from "@songverse/core";
-import type { ContributorRole, Prisma, VersionRelationshipType } from "@songverse/db";
+} from "@oneverse/core";
+import type { ContributorRole, Prisma, VersionRelationshipType } from "@oneverse/db";
 import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";

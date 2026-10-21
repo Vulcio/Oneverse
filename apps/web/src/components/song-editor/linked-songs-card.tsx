@@ -1,10 +1,10 @@
-import { getLanguageDisplayName, type SongVersionDetail, type WorkDetail } from "@songverse/core";
+import { getLanguageDisplayName, type SongVersionDetail, type WorkDetail } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { Languages, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 
 /** How a linked song relates: "translation", "adaptation", or just "linked". */

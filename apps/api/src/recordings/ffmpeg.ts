@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { encodeWav } from "@songverse/core";
+import { encodeWav } from "@oneverse/core";
 
 /**
  * ffmpeg, for a recorded take (issue #127): run in the Worker, on files

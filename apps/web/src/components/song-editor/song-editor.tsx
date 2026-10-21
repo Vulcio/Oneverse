@@ -12,7 +12,7 @@ import {
   type SongVersionDetail,
   type SongVersionSongbookMembership,
   type Tag,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { useBlocker, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PresenceChip, SavedElsewhere, StartedOver } from "#/components/presence";
 import { sendDoc, usePresence, useSongPresence, watchSong } from "#/lib/live-notes";
@@ -23,11 +23,11 @@ import { FileText, History, Info, Layers, Link2, MoreHorizontal, Music, PenLine,
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { OfflinePinButton } from "#/components/offline-pin-button";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { apiClient } from "#/lib/api-client";
 import { attachmentTypeFor, isPdf } from "./attachment-types";
 import { RepeatsCard } from "./repeats-card";
@@ -51,7 +51,7 @@ import { PublishCard } from "./publish-card";
 import { MySuggestionsCard } from "./my-suggestions-card";
 import { LinkedSongsCard, relationKind } from "./linked-songs-card";
 import { ProgressionsCard } from "./progressions-card";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { ArrangementsTab } from "./arrangements-tab";
 import { HistoryTab } from "./history-tab";
 import { ShareDialog } from "./share-dialog";

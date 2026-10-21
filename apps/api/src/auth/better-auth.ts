@@ -4,7 +4,7 @@ import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { jwt } from "better-auth/plugins/jwt";
 import { customSession } from "better-auth/plugins/custom-session";
 import { passkey } from "@better-auth/passkey";
-import { prisma } from "@songverse/db";
+import { prisma } from "@oneverse/db";
 import { getEffectiveAuthSettings, type EffectiveAuthSettings } from "./auth-settings.js";
 import { webOrigins } from "../common/utils/web-apps.js";
 import { passkeyRpId, sharedCookieDomain } from "./auth-domains.js";

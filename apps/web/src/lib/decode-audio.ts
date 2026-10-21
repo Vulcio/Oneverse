@@ -7,7 +7,7 @@
  * and given to it again. Only on WebKit: any other browser refusing a file
  * has the error as it is.
  */
-import { oggOpusToWebm } from "@songverse/core";
+import { oggOpusToWebm } from "@oneverse/core";
 
 /** Ogg Opus: an Ogg page whose first packet is Opus's header. */
 export function isOggOpus(bytes: Uint8Array): boolean {

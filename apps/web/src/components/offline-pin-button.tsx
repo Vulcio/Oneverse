@@ -1,9 +1,9 @@
-import { offlinePins, type OfflinePin, type OfflinePinKind } from "@songverse/core";
+import { offlinePins, type OfflinePin, type OfflinePinKind } from "@oneverse/core";
 import { useRouteContext } from "@tanstack/react-router";
 import { CircleCheck, CloudDownload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage, onOfflineSync, syncOffline } from "#/lib/offline-data";
 

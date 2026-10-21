@@ -1,4 +1,4 @@
-import { isNetworkError, onlineOrKept } from "@songverse/core";
+import { isNetworkError, onlineOrKept } from "@oneverse/core";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { loadOfflineSong, OfflineSongPage, type OfflineSong } from "#/components/offline-song-page";

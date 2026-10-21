@@ -1,6 +1,6 @@
-import { formatChord, parseChord, type ChordNotationValue, type PianoVoicing } from "@songverse/core";
+import { formatChord, parseChord, type ChordNotationValue, type PianoVoicing } from "@oneverse/core";
 import { useTranslation } from "react-i18next";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * A piano voicing drawn (issue #207 phase 4, docs/chord-diagrams.md): the

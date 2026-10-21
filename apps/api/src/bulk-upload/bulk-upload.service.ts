@@ -1,6 +1,6 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { matchFilenamesToEntryCodes, type BulkUploadFileMatch } from "@songverse/core";
+import { matchFilenamesToEntryCodes, type BulkUploadFileMatch } from "@oneverse/core";
 import type { Queue } from "bullmq";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { SongbooksService } from "../songbooks/songbooks.service.js";

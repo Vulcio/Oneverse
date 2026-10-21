@@ -1,9 +1,9 @@
-import { encodeWav, type RecordingDetails } from "@songverse/core";
+import { encodeWav, type RecordingDetails } from "@oneverse/core";
 import { Combine, Loader2, Mic, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Button } from "@oneverse/ui/components/button";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { pauseStems, stemMono, stemsAudioContext, TAKE_ID, type StemSong, type StemTrack } from "#/lib/stem-engine";
 

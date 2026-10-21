@@ -13,8 +13,8 @@ import {
   safeParseArrangementDocumentV2,
   snapshotChanges,
   type SongSnapshot,
-} from "@songverse/core";
-import { Prisma } from "@songverse/db";
+} from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { SongHistoryService } from "../song-versions/song-history.service.js";
 

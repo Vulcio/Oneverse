@@ -1,13 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
-import type { MyOrganizations } from "@songverse/core";
+import type { MyOrganizations } from "@oneverse/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { HostLink, usePlanning } from "../host";
 import { forgetMyOrganizations } from "../organizations";
 

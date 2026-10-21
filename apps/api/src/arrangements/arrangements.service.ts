@@ -12,8 +12,8 @@ import {
   type ArrangementDocumentV2,
   type ChartPreferences,
   type SongDocumentV2,
-} from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+} from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";

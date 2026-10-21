@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { INSTRUMENTS, mergeDisplaySettings, orderInstruments, orderTechRoles, type SavedDisplaySettings } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { INSTRUMENTS, mergeDisplaySettings, orderInstruments, orderTechRoles, type SavedDisplaySettings } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { ImageService } from "../images/image.service.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";

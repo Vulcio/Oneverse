@@ -1,9 +1,9 @@
-import type { SongbookSection } from "@songverse/core";
+import type { SongbookSection } from "@oneverse/core";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
 
 /**
  * A numbered book's printed volumes: number ranges with a label ("JEM1":

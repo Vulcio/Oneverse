@@ -42,10 +42,10 @@ import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
 
 /**
- * The shared test cases (issue #170): what @songverse/core does, by area,
+ * The shared test cases (issue #170): what @oneverse/core does, by area,
  * each function with the arguments it's tried with. The answers aren't
  * written here - they're this implementation's, written out by
- * `pnpm --filter @songverse/core conformance` to conformance/*.json, so a
+ * `pnpm --filter @oneverse/core conformance` to conformance/*.json, so a
  * change that alters one shows in the diff, for review. Add a case where
  * the behaviour matters to every client (the web app and the native apps,
  * #165): the song format, chords, the timeline, what the API accepts.

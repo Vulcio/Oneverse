@@ -2,9 +2,9 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, Minus, Plus, Trash2 } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
+import { cn } from "@oneverse/ui/lib/utils";
 import { startChordDrag } from "./drag";
 import { clearBarLines, currentSection, deleteBar, fillBarLines, hasBarLines, insertBarLine, nudgeBar, selectedBar, setBarCount } from "./extensions";
 

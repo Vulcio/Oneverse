@@ -1,4 +1,4 @@
-import { keptFile, keptSongCopy, type Attachment } from "@songverse/core";
+import { keptFile, keptSongCopy, type Attachment } from "@oneverse/core";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage } from "#/lib/offline-data";
 

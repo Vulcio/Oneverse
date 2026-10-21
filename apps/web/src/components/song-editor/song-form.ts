@@ -14,7 +14,7 @@ import {
   type SupportedImportFormat,
   type UpdateSongVersionInput,
   type LanguageCode,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { sameFlow, sameSections } from "./structured/document";
 
 /** The credit lists the editor edits, and the role each one is. */

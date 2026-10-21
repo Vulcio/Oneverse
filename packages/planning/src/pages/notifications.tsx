@@ -1,9 +1,9 @@
-import type { AppNotification } from "@songverse/core";
+import type { AppNotification } from "@oneverse/core";
 import { CheckCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
 import { NotificationList } from "../components/notification-list";
 import { usePlanning } from "../host";
 

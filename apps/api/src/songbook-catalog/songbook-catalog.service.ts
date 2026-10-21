@@ -14,8 +14,8 @@ import {
   type CatalogEntryPatch,
   type CatalogFileProblem,
   type SongbookSection,
-} from "@songverse/core";
-import { Prisma } from "@songverse/db";
+} from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { CatalogEntryInputDto } from "./dto/catalog-entry-input.dto.js";
 import type { CreateCatalogDto } from "./dto/create-catalog.dto.js";
@@ -62,7 +62,7 @@ const BULK_TRANSACTION = { timeout: 120_000, maxWait: 10_000 };
  * Songbook catalogues: the facts (numbers, titles, credits...) about the
  * songs of published songbooks, read by everyone signed in and edited by
  * global admins. Import and export use the file format in
- * @songverse/core's songbook-catalog-format (docs/songbook-catalog-format.md).
+ * @oneverse/core's songbook-catalog-format (docs/songbook-catalog-format.md).
  */
 @Injectable()
 export class SongbookCatalogService {

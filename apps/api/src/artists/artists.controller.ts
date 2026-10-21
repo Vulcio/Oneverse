@@ -18,7 +18,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
-import { ArtistBioSchema, ArtistQuerySchema, ArtistSettingsSchema, LookUpArtistSchema } from "@songverse/core";
+import { ArtistBioSchema, ArtistQuerySchema, ArtistSettingsSchema, LookUpArtistSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";

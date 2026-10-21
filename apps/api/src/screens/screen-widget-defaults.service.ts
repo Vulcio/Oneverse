@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { ScreenWidgetLookSchema, type ScreenWidgetKind } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { ScreenWidgetLookSchema, type ScreenWidgetKind } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 

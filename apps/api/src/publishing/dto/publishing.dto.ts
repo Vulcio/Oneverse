@@ -1,4 +1,4 @@
-import { SubmitSongSchema, PublishSongSchema, ResubmitSchema, ApproveSubmissionSchema, MergeSubmissionSchema, ReviewNotesSchema, ListSubmissionsQuerySchema } from "@songverse/core";
+import { SubmitSongSchema, PublishSongSchema, ResubmitSchema, ApproveSubmissionSchema, MergeSubmissionSchema, ReviewNotesSchema, ListSubmissionsQuerySchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class SubmitSongDto extends zodDto(SubmitSongSchema) {}

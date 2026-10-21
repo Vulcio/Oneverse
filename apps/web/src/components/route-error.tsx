@@ -1,8 +1,8 @@
-import { isNetworkError } from "@songverse/core";
+import { isNetworkError } from "@oneverse/core";
 import { Link, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 
 /**
  * A page that couldn't load. Offline, that's a page not kept on this

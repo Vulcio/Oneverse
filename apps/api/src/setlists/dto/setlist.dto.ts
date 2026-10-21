@@ -1,4 +1,4 @@
-import { CreateSetlistSchema, UpdateSetlistSchema, AddSetlistItemSchema, UpdateSetlistItemSchema, SetArrangementSchema, ReorderSetlistItemsSchema } from "@songverse/core";
+import { CreateSetlistSchema, UpdateSetlistSchema, AddSetlistItemSchema, UpdateSetlistItemSchema, SetArrangementSchema, ReorderSetlistItemsSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class CreateSetlistDto extends zodDto(CreateSetlistSchema) {}

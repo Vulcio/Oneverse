@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { mergeSnapshots, snapshotChanges, type SongSnapshot } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { mergeSnapshots, snapshotChanges, type SongSnapshot } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { NotificationsService } from "../notifications/notifications.service.js";

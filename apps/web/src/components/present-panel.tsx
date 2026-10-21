@@ -1,11 +1,11 @@
-import { lyricSlides, stepSlide, structureOf, type RenderedChart, type SyncPresenting } from "@songverse/core";
+import { lyricSlides, stepSlide, structureOf, type RenderedChart, type SyncPresenting } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, MonitorOff, MonitorUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { publishPresenting, screensLocked, useSync } from "#/lib/sync-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** After a step back past a song's first slide: the previous song opens on its last. */
 let openOnLastSlide = false;

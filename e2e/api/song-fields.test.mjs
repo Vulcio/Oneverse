@@ -53,7 +53,7 @@ for (const [field, value, pattern] of [
 r = await call(admin, "PATCH", `/song-versions/${s1.id}`, { title: "" });
 check("the title can't be cleared", r.status === 400);
 
-// --- requests are checked against @songverse/core's schemas (issue #118)
+// --- requests are checked against @oneverse/core's schemas (issue #118)
 const titleBefore = (await call(admin, "GET", `/song-versions/${s1.id}`)).body.title;
 r = await call(admin, "PATCH", `/song-versions/${s1.id}`, { colour: "red" });
 check("a field the API doesn't know is refused, by name", r.status === 400 && r.body.message.includes("property colour should not exist"), JSON.stringify(r.body));

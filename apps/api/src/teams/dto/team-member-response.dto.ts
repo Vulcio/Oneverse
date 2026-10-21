@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { TEAM_ROLES, TECH_ROLES } from "@songverse/core";
+import { TEAM_ROLES, TECH_ROLES } from "@oneverse/core";
 
 export class TeamMemberResponseDto {
   @ApiProperty() userId!: string;

@@ -1,10 +1,10 @@
-import { ApiError, notificationText, type AppNotification, type Messages } from "@songverse/core";
+import { ApiError, notificationText, type AppNotification, type Messages } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Check, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { cn } from "@oneverse/ui/lib/utils";
 import { usePlanning } from "../host";
 
 /** "5 min ago", "yesterday": how long ago, in the reader's language. */

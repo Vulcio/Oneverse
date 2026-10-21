@@ -1,7 +1,7 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { isPushEndpoint, notificationPreferences, quietHoursOf, withNotificationChanges, type CreatePushSubscriptionRequest, type NotificationData, type NotificationKind, type UpdateNotificationPreferencesRequest } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { isPushEndpoint, notificationPreferences, quietHoursOf, withNotificationChanges, type CreatePushSubscriptionRequest, type NotificationData, type NotificationKind, type UpdateNotificationPreferencesRequest } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import type { Queue } from "bullmq";
 import { NOTIFICATIONS_QUEUE } from "../jobs/jobs.constants.js";
 import { planiverseUrl, songverseUrl } from "../common/utils/web-apps.js";
@@ -45,7 +45,7 @@ export interface NotificationInput {
 /**
  * What Songverse tells people (issue #236). A notification is stored as its
  * kind and details; each client puts it into words in the reader's language
- * (`notificationText` in @songverse/core). Each person reads theirs, newest
+ * (`notificationText` in @oneverse/core). Each person reads theirs, newest
  * first, and marks them read. Each batch made together is then sent by
  * email, as each person chooses, by the notifications job - never inside
  * the request.

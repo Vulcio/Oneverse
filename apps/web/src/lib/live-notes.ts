@@ -1,5 +1,5 @@
-import { deviceOffline, SYNC_PATH, type SongActivity, type SongPresence, type SyncClientMessage, type SyncServerMessage } from "@songverse/core";
-import { getApiUrl } from "@songverse/app/public-env";
+import { deviceOffline, SYNC_PATH, type SongActivity, type SongPresence, type SyncClientMessage, type SyncServerMessage } from "@oneverse/core";
+import { getApiUrl } from "@oneverse/app/public-env";
 import { useEffect, useState } from "react";
 import { apiToken } from "#/lib/api-client";
 

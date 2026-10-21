@@ -11,8 +11,8 @@ import {
   songbookReferences,
   validateSongbookSections,
   type SongbookSection,
-} from "@songverse/core";
-import { Prisma } from "@songverse/db";
+} from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -67,7 +67,7 @@ export class SongbooksService {
    * Songbook entries a search reads as a reference - "HY 42", "Hymns 42",
    * "42" (issue #48) - in songbooks the user can see, whose songs they can
    * see too: exactly that number, then numbers starting with it, then
-   * containing it (issue #213), ranked by @songverse/core's
+   * containing it (issue #213), ranked by @oneverse/core's
    * rankSongbookHits() as offline search ranks them; `more` for Show more.
    */
   async searchEntries(user: AuthenticatedUser, query: string, more = false) {

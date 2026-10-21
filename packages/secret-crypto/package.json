@@ -1,5 +1,5 @@
 {
-  "name": "@songverse/secret-crypto",
+  "name": "@oneverse/secret-crypto",
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -12,7 +12,7 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@songverse/tsconfig": "workspace:*",
+    "@oneverse/tsconfig": "workspace:*",
     "@types/node": "^22.10.5",
     "typescript": "^5.7.3",
     "vite-plus": "1.0.0"

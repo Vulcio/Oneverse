@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { slugify, type CreateOrganizationRequest, type TeamRoleValue } from "@songverse/core";
-import type { Prisma, PrismaClient } from "@songverse/db";
+import { slugify, type CreateOrganizationRequest, type TeamRoleValue } from "@oneverse/core";
+import type { Prisma, PrismaClient } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { CreateInviteLinkDto } from "../teams/dto/create-invite-link.dto.js";

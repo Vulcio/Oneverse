@@ -1,4 +1,4 @@
-import { signedUpPeople } from "@songverse/core";
+import { signedUpPeople } from "@oneverse/core";
 import type { PrismaService } from "../prisma/prisma.service.js";
 import { dateText, day } from "./team-events.service.js";
 
@@ -10,7 +10,7 @@ export const signupKey = (eventId: string, date: string) => `${eventId}|${date}`
 /**
  * Who signed up for each of these event dates (issue #235): the people
  * scheduled on it once it has a line-up, else those who answered Available
- * (signedUpPeople in @songverse/core). The one rule for the sidebar, the
+ * (signedUpPeople in @oneverse/core). The one rule for the sidebar, the
  * calendar link, the reminders and the notifications.
  */
 export async function signedUpFor(prisma: Client, dates: { eventId: string; date: string }[]): Promise<Map<string, string[]>> {

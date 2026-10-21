@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { SaveFileSizeLimitsSchema } from "@songverse/core";
+import { SaveFileSizeLimitsSchema } from "@oneverse/core";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import { zodDto } from "../common/zod-validation.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";

@@ -1,11 +1,11 @@
 import i18next, { type i18n } from "i18next";
 import { initReactI18next } from "react-i18next";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type LocaleValue, type Messages } from "@songverse/core";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type LocaleValue, type Messages } from "@oneverse/core";
 
 // Each language is its own chunk, so a reader downloads only theirs.
 const LOADERS: Record<LocaleValue, () => Promise<{ default: Messages }>> = {
-  en: () => import("@songverse/core/i18n/locales/en"),
-  fr: () => import("@songverse/core/i18n/locales/fr"),
+  en: () => import("@oneverse/core/i18n/locales/en"),
+  fr: () => import("@oneverse/core/i18n/locales/fr"),
 };
 const loaded = new Map<LocaleValue, Messages>();
 

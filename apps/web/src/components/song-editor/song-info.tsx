@@ -8,24 +8,24 @@ import {
   type SongMatch,
   type SongVersionSongbookMembership,
   type Tag,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { Check, ChevronDown, Copy, ExternalLink, Library, Sparkles } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSelect } from "#/components/language-select";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@songverse/ui/components/collapsible";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@oneverse/ui/components/collapsible";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 import { ChipInput, type ChipSuggestion } from "./chip-input";
 import { CAPO_OPTIONS, TIME_SIGNATURE_OPTIONS, type CreditField, type FormError, type SongForm, type TextField } from "./song-form";
 import { KeySelect } from "#/components/key-select";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 
 
 export type FieldErrors = Partial<Record<TextField | "artists", FormError>>;

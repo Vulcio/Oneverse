@@ -1,4 +1,4 @@
-import { CreateSmartListSchema, UpdateSmartListSchema } from "@songverse/core";
+import { CreateSmartListSchema, UpdateSmartListSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 
 export class CreateSmartListDto extends zodDto(CreateSmartListSchema) {}

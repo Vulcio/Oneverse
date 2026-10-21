@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { slugify } from "@songverse/core";
-import { Prisma } from "@songverse/db";
+import { slugify } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { partsOf } from "../team-events/team-events.service.js";

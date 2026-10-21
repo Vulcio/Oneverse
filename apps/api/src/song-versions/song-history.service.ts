@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { snapshotChanges, songSnapshot, readSongDocument, type SongChange, type SongSnapshot } from "@songverse/core";
-import type { Prisma, SongRevisionKind } from "@songverse/db";
+import { snapshotChanges, songSnapshot, readSongDocument, type SongChange, type SongSnapshot } from "@oneverse/core";
+import type { Prisma, SongRevisionKind } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { announceSongSaved } from "./song-announce.js";
 

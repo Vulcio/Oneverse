@@ -1,8 +1,8 @@
-import type { SetlistDetail, SetlistSongRef } from "@songverse/core";
+import type { SetlistDetail, SetlistSongRef } from "@oneverse/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Input } from "@songverse/ui/components/input";
+import { Button } from "@oneverse/ui/components/button";
+import { Input } from "@oneverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
 
 const SEARCH_DEBOUNCE_MS = 250;

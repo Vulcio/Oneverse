@@ -2,7 +2,7 @@
 
 How a big screen shows a set (issue #194): a small JSON document, the same
 for the web screen (`/screen`), the Google TV app (#187) and the native apps
-(#165). It's described by `ScreenThemeSchema` in `@songverse/core`
+(#165). It's described by `ScreenThemeSchema` in `@oneverse/core`
 (`packages/core/src/screens/theme.ts`); the shared test cases in
 `packages/core/conformance/screens.json` say how a client reads one.
 

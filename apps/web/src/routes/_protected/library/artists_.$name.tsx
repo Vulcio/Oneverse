@@ -1,14 +1,14 @@
-import { METADATA_PROVIDER_NAMES, type ArtistDetail, type MetadataProviderKey } from "@songverse/core";
+import { METADATA_PROVIDER_NAMES, type ArtistDetail, type MetadataProviderKey } from "@oneverse/core";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { ChevronLeft, ExternalLink, ImageUp, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArtistPicture } from "#/components/artist-picture";
-import { ImageCropDialog } from "@songverse/ui/components/image-crop-dialog";
+import { ImageCropDialog } from "@oneverse/ui/components/image-crop-dialog";
 import { SongCover } from "#/components/library-home";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent } from "@songverse/ui/components/card";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 
 /**

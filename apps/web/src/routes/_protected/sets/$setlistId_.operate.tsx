@@ -14,26 +14,26 @@ import {
   type SyncStageCommand,
   type TeamMember,
   type TeamPosition,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronLeft, ChevronRight, Crown, Keyboard, Layers, Minus, MonitorOff, MonitorUp, Pause, Play, Plus, RotateCcw, Send, Square, Timer, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { useMediaQuery } from "@songverse/ui/hooks/use-media-query";
-import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
-import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@songverse/ui/components/drawer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { useMediaQuery } from "@oneverse/ui/hooks/use-media-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@oneverse/ui/components/drawer";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { apiClient } from "#/lib/api-client";
 import { setMode } from "#/lib/mode";
 import { useSidePanelRoom } from "#/lib/side-panel";
 import { markCurrent, markPlayed } from "#/lib/set-progress";
 import { disableSync, enableSync, leadSync, presentScreens, screensLocked, sendStage, syncState, takeScreens, useSync } from "#/lib/sync-client";
 import { setlistTitle } from "#/lib/setlists";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId_/operate")({
   // The item looked at (issue #277), picked in the sidebar's set list.

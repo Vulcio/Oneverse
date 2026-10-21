@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UnauthorizedException, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { CreateScreenPartSchema, SCREEN_THEME_ASSET_KINDS, ScreenPartsQuerySchema, UpdateScreenPartSchema, type ScreenThemeAssetKind } from "@songverse/core";
+import { CreateScreenPartSchema, SCREEN_THEME_ASSET_KINDS, ScreenPartsQuerySchema, UpdateScreenPartSchema, type ScreenThemeAssetKind } from "@oneverse/core";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { UPLOAD_OPTIONS } from "../common/uploads.js";

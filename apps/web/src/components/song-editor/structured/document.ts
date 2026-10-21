@@ -11,7 +11,7 @@ import {
   type SectionInstance,
   type SectionType,
   type SectionV2,
-} from "@songverse/core";
+} from "@oneverse/core";
 import type { JSONContent } from "@tiptap/core";
 import type { Node as PMNode } from "@tiptap/pm/model";
 

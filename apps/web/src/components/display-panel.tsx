@@ -1,4 +1,4 @@
-import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, TUNINGS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings } from "@songverse/core";
+import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, TUNINGS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings } from "@oneverse/core";
 import {
   ArrowDown,
   Superscript,
@@ -46,16 +46,16 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { ButtonGroup } from "@songverse/ui/components/button-group";
-import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from "@songverse/ui/components/drawer";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@songverse/ui/components/select";
-import { useMediaQuery } from "@songverse/ui/hooks/use-media-query";
+import { Button } from "@oneverse/ui/components/button";
+import { ButtonGroup } from "@oneverse/ui/components/button-group";
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from "@oneverse/ui/components/drawer";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@oneverse/ui/components/select";
+import { useMediaQuery } from "@oneverse/ui/hooks/use-media-query";
 import { useSidePanelRoom } from "#/lib/side-panel";
 import { changeDiagramPlayer, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
 import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const SECTIONS = ["text", "chords", "instrument", "layout", "notes", "controls"] as const;
 type Section = (typeof SECTIONS)[number];

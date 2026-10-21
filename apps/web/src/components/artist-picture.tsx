@@ -1,4 +1,4 @@
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 // Soft colours that read in light and dark themes alike, one per artist.
 const HUES = [15, 45, 90, 150, 190, 220, 265, 310, 340];

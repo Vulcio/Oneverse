@@ -7,7 +7,7 @@ import {
   parseMidiItemTriggers,
   parseSongDocumentV2,
   slugify,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { prisma } from "./index.js";
 
 // Fixtures live under seeds/, one level up from this file (both in src/

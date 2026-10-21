@@ -13,9 +13,9 @@ import {
   type LinkSearchServices,
   type ProviderMatch,
   type StreamingLinkType,
-} from "@songverse/core";
-import { Prisma } from "@songverse/db";
-import { decryptSecret, encryptSecret } from "@songverse/secret-crypto";
+} from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
+import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import { artworkAtSize, itunesLookup, itunesSearch, type ITunesSong } from "../artwork/itunes.js";
 import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";

@@ -1,13 +1,13 @@
-import { METADATA_CAPABILITIES, type MetadataCapability, type MetadataSettings } from "@songverse/core";
+import { METADATA_CAPABILITIES, type MetadataCapability, type MetadataSettings } from "@oneverse/core";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 
 type Provider = MetadataSettings["providers"][number];

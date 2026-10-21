@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import type { StorageSettings } from "@songverse/db";
-import { decryptSecret, encryptSecret, maskSecret } from "@songverse/secret-crypto";
+import type { StorageSettings } from "@oneverse/db";
+import { decryptSecret, encryptSecret, maskSecret } from "@oneverse/secret-crypto";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { PrismaService } from "../prisma/prisma.service.js";

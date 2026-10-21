@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { CreateInstrumentSchema, UpdateInstrumentSchema } from "@songverse/core";
+import { CreateInstrumentSchema, UpdateInstrumentSchema } from "@oneverse/core";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import { zodDto } from "../common/zod-validation.js";
 import { InstrumentsService } from "./instruments.service.js";

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import type { CreateSignupInvitationRequest, SignupInvitationPreview, SignupInvitationSummary } from "@songverse/core";
+import type { CreateSignupInvitationRequest, SignupInvitationPreview, SignupInvitationSummary } from "@oneverse/core";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { sendSignupInvitation } from "../auth/email.js";
 import { INVITATION_DAYS } from "./signup-gate.js";

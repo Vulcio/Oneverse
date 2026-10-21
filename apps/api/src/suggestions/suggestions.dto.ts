@@ -1,4 +1,4 @@
-import { CreateSuggestionSchema, ReviewSuggestionSchema, ListSuggestionsQuerySchema } from "@songverse/core";
+import { CreateSuggestionSchema, ReviewSuggestionSchema, ListSuggestionsQuerySchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 
 export class CreateSuggestionDto extends zodDto(CreateSuggestionSchema) {}

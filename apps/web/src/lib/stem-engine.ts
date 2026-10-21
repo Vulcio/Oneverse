@@ -1,5 +1,5 @@
 import { decodeAudio } from "#/lib/decode-audio";
-import { multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type CueSection, type StemPart, type BeatMap } from "@songverse/core";
+import { multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 

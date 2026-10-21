@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { STEM_PARTS, type StemPart } from "@songverse/core";
+import { STEM_PARTS, type StemPart } from "@oneverse/core";
 
 const ATTACHMENT_TYPES = ["PDF", "CHORDPRO", "MUSICXML", "ABC_NOTATION", "TEXT", "IMAGE", "AUDIO", "OTHER"] as const;
 

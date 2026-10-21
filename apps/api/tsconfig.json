@@ -1,5 +1,5 @@
 {
-  "extends": "@songverse/tsconfig/nestjs.json",
+  "extends": "@oneverse/tsconfig/nestjs.json",
   "compilerOptions": {
     "baseUrl": "./",
     "incremental": true,

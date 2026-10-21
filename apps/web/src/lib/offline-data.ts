@@ -1,4 +1,4 @@
-import { deviceOffline, keepSet, syncKeptFiles, syncKeptSets, type OfflineStorage } from "@songverse/core";
+import { deviceOffline, keepSet, syncKeptFiles, syncKeptSets, type OfflineStorage } from "@oneverse/core";
 import { useRouteContext } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { apiClient } from "#/lib/api-client";
@@ -8,10 +8,10 @@ import { deleteOffline, getOffline, keysOffline, putOffline } from "#/lib/offlin
  * Between the route loaders and the API (docs/offline.md, "Loading pages";
  * issue #50): online, pages load from the API as always, and sets are kept
  * on the device as they're opened; offline, pages read what's kept -
- * through @songverse/core's onlineOrKept().
+ * through @oneverse/core's onlineOrKept().
  */
 
-/** The device's store, as @songverse/core's offline functions see it. Writes need the signed-in user. */
+/** The device's store, as @oneverse/core's offline functions see it. Writes need the signed-in user. */
 export function deviceStorage(userId?: string): OfflineStorage {
   return {
     get: (store, key) => getOffline(store, key),

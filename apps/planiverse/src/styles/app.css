@@ -1,6 +1,6 @@
 @import "tailwindcss";
 /* The shared tokens, theme and base styles (packages/ui); dark follows the device (__root.tsx). */
-@import "@songverse/ui/theme.css";
+@import "@oneverse/ui/theme.css";
 /* The shared pages' classes: signing in (packages/app), planning (packages/planning). */
 @source "../../../../packages/app/src";
 @source "../../../../packages/planning/src";

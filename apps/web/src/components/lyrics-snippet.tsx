@@ -1,4 +1,4 @@
-import type { LyricsMatch } from "@songverse/core";
+import type { LyricsMatch } from "@oneverse/core";
 import { Fragment } from "react";
 
 /** The line a lyrics search found (issue #221), the words found in bold. */

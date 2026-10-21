@@ -1,5 +1,5 @@
 // Writes the shared test cases (issue #170) to conformance/*.json, their
-// answers this implementation's: `pnpm --filter @songverse/core conformance`
+// answers this implementation's: `pnpm --filter @oneverse/core conformance`
 // after changing a case, or a behaviour on purpose - then review the diff.
 // `--check` only says whether the files are up to date (as the unit tests do).
 import { readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -26,7 +26,7 @@ for (const name of readdirSync(dir).filter((name) => name.endsWith(".json") && !
   if (!check) rmSync(path.join(dir, name));
 }
 if (check && stale.length) {
-  console.error(`Out of date: ${stale.join(", ")}. Run pnpm --filter @songverse/core conformance and review the diff.`);
+  console.error(`Out of date: ${stale.join(", ")}. Run pnpm --filter @oneverse/core conformance and review the diff.`);
   process.exit(1);
 }
 const cases = Object.values(files).reduce((n, file) => n + Object.values(file.functions).reduce((m, fn) => m + fn.cases.length, 0), 0);

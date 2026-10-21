@@ -12,15 +12,15 @@ import {
   type ScreenTemplateTag,
   type ScreenThemeSummary,
   type ScreenWidgetDefault,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { useRouteContext, useRouter } from "@tanstack/react-router";
 import { Copy, Palette, Pencil, Plus, Users } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@songverse/ui/components/tabs";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { partDocument, ScreenThemeEditor, TagPicker, type ThemeDraft } from "#/components/screen-theme-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { apiClient } from "#/lib/api-client";

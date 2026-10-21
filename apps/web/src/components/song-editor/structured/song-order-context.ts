@@ -1,4 +1,4 @@
-import type { SectionInstance } from "@songverse/core";
+import type { SectionInstance } from "@oneverse/core";
 import { createContext, useContext } from "react";
 
 /**

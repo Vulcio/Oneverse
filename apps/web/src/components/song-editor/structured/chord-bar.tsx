@@ -1,10 +1,10 @@
-import { diatonicChords } from "@songverse/core";
+import { diatonicChords } from "@oneverse/core";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
+import { Button } from "@oneverse/ui/components/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { deleteChord, insertChord, nudgeChord, selectedChord, setChordSymbol } from "./extensions";
 import { BarLineTools, NewBarLine, useSelectedBar } from "./bar-tools";
 

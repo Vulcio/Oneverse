@@ -1,7 +1,7 @@
-import type { SongActivity, SongPresence } from "@songverse/core";
+import type { SongActivity, SongPresence } from "@oneverse/core";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { cn } from "@oneverse/ui/lib/utils";
 import { PersonAvatar } from "#/components/person-avatar";
 
 /** Names in a sentence, in the reader's language: "Sam", "Sam and Ana", "Sam, Ana and Jo". */

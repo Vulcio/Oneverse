@@ -1,7 +1,7 @@
 // Deletes the end-to-end suites' users (emails starting "e2e-", plus the
 // older "um-"/"ui-" test prefixes) and everything they own, through the
 // API's own UserDeletionService so foreign keys are handled as in the app.
-// Needs a built API (`pnpm --filter @songverse/api build`); reads
+// Needs a built API (`pnpm --filter @oneverse/api build`); reads
 // apps/api/.env when there is one.
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";

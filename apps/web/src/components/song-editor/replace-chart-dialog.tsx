@@ -1,8 +1,8 @@
-import type { SupportedImportFormat } from "@songverse/core";
+import type { SupportedImportFormat } from "@oneverse/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
+import { Button } from "@oneverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { SongContentCard, type SourceFile } from "./song-content";
 
 /**

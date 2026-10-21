@@ -1,17 +1,17 @@
-import { SUPPORTED_LOCALES, type ApiClient, type LocaleValue, type UserProfile } from "@songverse/core";
+import { SUPPORTED_LOCALES, type ApiClient, type LocaleValue, type UserProfile } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Trash2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { ImageCropDialog } from "@songverse/ui/components/image-crop-dialog";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
-import { initials } from "@songverse/ui/lib/initials";
+import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { ImageCropDialog } from "@oneverse/ui/components/image-crop-dialog";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
+import { initials } from "@oneverse/ui/lib/initials";
 import { authClient } from "../auth-client";
 
 // The account's own cards (issue #242): one's name and picture, email,

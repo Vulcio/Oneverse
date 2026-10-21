@@ -14,16 +14,16 @@ import {
   type RenderedPass,
   type SongDocumentV2,
   type SongNote,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { CheckCheck, CloudOff, MessageSquare, MessageSquarePlus, MoveUp, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@songverse/ui/components/sheet";
-import { Textarea } from "@songverse/ui/components/textarea";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@oneverse/ui/components/sheet";
+import { Textarea } from "@oneverse/ui/components/textarea";
+import { cn } from "@oneverse/ui/lib/utils";
 import type { ChartNotesLayer, PassMarks } from "#/components/song-chart";
 import { MARGIN_GAP, NotesOverlay, type OverlayLayout, type OverlayNote } from "#/components/notes-overlay";
 import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";

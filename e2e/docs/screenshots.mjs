@@ -24,9 +24,9 @@ const run = (cmd, env = {}) => execSync(cmd, { cwd: root, stdio: "inherit", env:
 
 console.log("Fresh database songverse_docs");
 run(`psql ${PG}/postgres -c "drop database if exists songverse_docs" -c "create database songverse_docs"`);
-run("pnpm --filter @songverse/db exec prisma migrate deploy", { DATABASE_URL });
-if (!process.argv.includes("--no-build")) run("pnpm vp run --filter @songverse/api --filter @songverse/web --filter @songverse/planiverse build");
-run("pnpm --filter @songverse/db seed", { DATABASE_URL });
+run("pnpm --filter @oneverse/db exec prisma migrate deploy", { DATABASE_URL });
+if (!process.argv.includes("--no-build")) run("pnpm vp run --filter @oneverse/api --filter @oneverse/web --filter @oneverse/planiverse build");
+run("pnpm --filter @oneverse/db seed", { DATABASE_URL });
 
 const env = {
   ...process.env,

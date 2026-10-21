@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AuthPage } from "@songverse/app/components/auth-page";
+import { AuthPage } from "@oneverse/app/components/auth-page";
 import { PlaniverseBrand } from "#/components/brand";
-import { ResetPasswordCard } from "@songverse/app/components/reset-password-card";
-import { LocaleProvider } from "@songverse/app/components/locale-provider";
-import { getSession, getVisitorLocale } from "@songverse/app/server-auth";
-import { loadLocale } from "@songverse/app/i18n";
+import { ResetPasswordCard } from "@oneverse/app/components/reset-password-card";
+import { LocaleProvider } from "@oneverse/app/components/locale-provider";
+import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
+import { loadLocale } from "@oneverse/app/i18n";
 
 export const Route = createFileRoute("/reset-password")({
   validateSearch: (search: Record<string, unknown>) => ({

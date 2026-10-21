@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import type { Prisma } from "@songverse/db";
-import { MusicBrainzWorkMatchSchema, type MusicBrainzWorkMatch } from "@songverse/core";
+import type { Prisma } from "@oneverse/db";
+import { MusicBrainzWorkMatchSchema, type MusicBrainzWorkMatch } from "@oneverse/core";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";

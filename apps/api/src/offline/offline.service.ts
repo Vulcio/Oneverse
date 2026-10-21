@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { type SavedDisplaySettings, type SongNotes, offlineFingerprint, setListing } from "@songverse/core";
+import { type SavedDisplaySettings, type SongNotes, offlineFingerprint, setListing } from "@oneverse/core";
 import { NotesService } from "../notes/notes.service.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AttachmentsService } from "../attachments/attachments.service.js";

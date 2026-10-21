@@ -1,12 +1,12 @@
-import type { AppSession } from "@songverse/app/session";
-import { authClient } from "@songverse/app/auth-client";
+import type { AppSession } from "@oneverse/app/session";
+import { authClient } from "@oneverse/app/auth-client";
 import { Link } from "@tanstack/react-router";
 import { HelpCircle, LogOut, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { NotificationBell } from "@songverse/planning/components/notification-bell";
+import { Button } from "@oneverse/ui/components/button";
+import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { NotificationBell } from "@oneverse/planning/components/notification-bell";
 import { PlaniverseBrand } from "#/components/brand";
 
 /** Planiverse's header (issue #241): its name, its pages, and who's signed in. */

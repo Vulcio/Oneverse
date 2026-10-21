@@ -1,7 +1,7 @@
 # Chord diagrams
 
 How Songverse shows a chord's shape (issue #207, phase 1 of #111). The
-shapes are worked out once, in `@songverse/core`. Each client draws them
+shapes are worked out once, in `@oneverse/core`. Each client draws them
 natively from this spec: SVG on the web, SwiftUI and Compose `Canvas` in the
 native apps (#165). The drawings can differ in style, but never in what they
 say.

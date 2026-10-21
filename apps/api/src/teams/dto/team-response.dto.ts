@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { TEAM_ROLES } from "@songverse/core";
+import { TEAM_ROLES } from "@oneverse/core";
 
 export class TeamResponseDto {
   @ApiProperty() id!: string;

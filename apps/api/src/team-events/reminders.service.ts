@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { addDays, callAt, dayBeforeReminderDue, deadlineReminderDue, eventDates, localDate, localTime, type CreateAnswerRequestRequest } from "@songverse/core";
-import { Prisma } from "@songverse/db";
+import { addDays, callAt, dayBeforeReminderDue, deadlineReminderDue, eventDates, localDate, localTime, type CreateAnswerRequestRequest } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";

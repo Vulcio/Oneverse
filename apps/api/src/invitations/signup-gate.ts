@@ -1,5 +1,5 @@
-import { prisma } from "@songverse/db";
-import { SIGNUP_PASS_KINDS, type SignupPassKind } from "@songverse/core";
+import { prisma } from "@oneverse/db";
+import { SIGNUP_PASS_KINDS, type SignupPassKind } from "@oneverse/core";
 import { getEffectiveSecuritySettings } from "../security/security-settings.js";
 
 /**

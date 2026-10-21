@@ -1,10 +1,10 @@
-import type { JobSummary, JobsStatus } from "@songverse/core";
+import type { JobSummary, JobsStatus } from "@oneverse/core";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 
 /** How long ago, for a heartbeat: seconds, then minutes. */

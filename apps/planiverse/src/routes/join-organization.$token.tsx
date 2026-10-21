@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { JoinPage } from "@songverse/app/components/join-page";
-import { openInviteLink } from "@songverse/app/join";
+import { JoinPage } from "@oneverse/app/components/join-page";
+import { openInviteLink } from "@oneverse/app/join";
 import { PlaniverseBrand } from "#/components/brand";
 import { apiClient } from "#/lib/api-client";
 

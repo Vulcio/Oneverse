@@ -22,9 +22,9 @@ Oneverse Player). Planned: Songverse's native apps, Slidevese
 (presentations) and Oneverse Screen (native display apps).
 
 Where it's going, and why: [the architecture blueprint](docs/oneverse-architecture.md).
-It's a direction, not a description of what's built. The code still uses
-Songverse's names (`@songverse/*` packages, the `songverse.one` domains), and
-the blueprint says what moves, and when.
+It's a direction, not a description of what's built. The shared packages are
+`@oneverse/*`; the apps still run at the `songverse.one` addresses until they
+move to their own domains.
 
 User documentation, in English and French: [docs.songverse.one](https://docs.songverse.one) (source in `apps/docs`).
 

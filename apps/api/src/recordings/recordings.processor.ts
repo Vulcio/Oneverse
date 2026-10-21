@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
-import { Prisma } from "@songverse/db";
+import { Prisma } from "@oneverse/db";
 import { UnrecoverableError, type Job } from "bullmq";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";

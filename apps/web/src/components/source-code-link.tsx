@@ -1,4 +1,4 @@
-import { SOURCE_CODE_URL } from "@songverse/core";
+import { SOURCE_CODE_URL } from "@oneverse/core";
 import { useTranslation } from "react-i18next";
 
 /**

@@ -3,7 +3,7 @@
  * Beblia XML, OSIS XML or a json-bible file, told apart by their content.
  * Notes, cross-references and headings are left out: a verse is its text.
  */
-import { BibleSchema, bibleBook, bibleBookByOsisId, tidyBible, type Bible, type BibleBook, type BibleMetadata, type BibleSourceFormat } from "@songverse/core";
+import { BibleSchema, bibleBook, bibleBookByOsisId, tidyBible, type Bible, type BibleBook, type BibleMetadata, type BibleSourceFormat } from "@oneverse/core";
 import { readXml, XmlError, type XmlHandler } from "./xml-reader.js";
 
 export class BibleImportError extends Error {}

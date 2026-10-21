@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import type { CreateRoleInput, UpdateRoleInput } from "@songverse/core";
-import { Prisma } from "@songverse/db";
+import type { CreateRoleInput, UpdateRoleInput } from "@oneverse/core";
+import { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 

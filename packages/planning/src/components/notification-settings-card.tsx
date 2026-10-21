@@ -1,13 +1,13 @@
-import { NOTIFICATION_KINDS, type MyNotificationPreferences, type NotificationChannel, type NotificationKind, type PushDevice } from "@songverse/core";
+import { NOTIFICATION_KINDS, type MyNotificationPreferences, type NotificationChannel, type NotificationKind, type PushDevice } from "@oneverse/core";
 import { BellOff, BellRing, Send, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Input } from "@songverse/ui/components/input";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Input } from "@oneverse/ui/components/input";
 import { usePlanning } from "../host";
 import { currentSubscription, deviceLabel, pushSupported, subscribe } from "../push";
-import { formatSetDate } from "@songverse/ui/lib/dates";
+import { formatSetDate } from "@oneverse/ui/lib/dates";
 
 /**
  * How notifications reach one besides the bell (issue #236): each kind by

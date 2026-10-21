@@ -1,6 +1,6 @@
 import { HeadContent, Scripts, createRootRoute, useMatches } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { renderPublicEnvScript } from "@songverse/app/public-env";
+import { renderPublicEnvScript } from "@oneverse/app/public-env";
 import appCss from "#/styles/app.css?url";
 
 export const Route = createRootRoute({

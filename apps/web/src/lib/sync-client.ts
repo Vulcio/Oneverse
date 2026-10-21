@@ -10,7 +10,7 @@ import {
   type SyncSession,
   type SyncStage,
   type SyncStageCommand,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { apiToken, forgetApiToken } from "#/lib/api-client";
 import {
@@ -26,7 +26,7 @@ import {
   type FollowedTimeline,
   type MetronomeState,
 } from "#/lib/metronome-engine";
-import { getApiUrl } from "@songverse/app/public-env";
+import { getApiUrl } from "@oneverse/app/public-env";
 import { fileLoader, songFiles } from "#/lib/song-files";
 import { followStems, getStemState, playableOf, realignStems, setStemsDirectOutput, setStemsSpeed, setStemsTranspose, unfollowStems, unlockStemsAudio, useStems, type StemSong, type StemState } from "#/lib/stem-engine";
 

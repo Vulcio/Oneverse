@@ -1,9 +1,9 @@
-import type { SectionV2, SongRepeat } from "@songverse/core";
+import type { SectionV2, SongRepeat } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 
 /**

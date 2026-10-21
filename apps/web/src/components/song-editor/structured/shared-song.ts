@@ -1,4 +1,4 @@
-import { type SectionInstance, type SectionV2 } from "@songverse/core";
+import { type SectionInstance, type SectionV2 } from "@oneverse/core";
 import type { Schema } from "@tiptap/pm/model";
 import { defaultDeleteFilter, defaultProtectedNodes, prosemirrorJSONToYXmlFragment, ySyncPluginKey } from "@tiptap/y-tiptap";
 import { useEffect, useRef, useState } from "react";

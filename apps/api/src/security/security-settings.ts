@@ -1,5 +1,5 @@
-import { prisma } from "@songverse/db";
-import type { SaveSecuritySettingsRequest } from "@songverse/core";
+import { prisma } from "@oneverse/db";
+import type { SaveSecuritySettingsRequest } from "@oneverse/core";
 
 const SINGLETON_ID = "singleton";
 

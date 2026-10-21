@@ -17,7 +17,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
-import { ArtworkSettingsSchema, SetArtworkSchema } from "@songverse/core";
+import { ArtworkSettingsSchema, SetArtworkSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";

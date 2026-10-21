@@ -1,16 +1,16 @@
-import { ApiError, keptSetDetail, onlineOrKept, type SetlistDetail, type SetlistItem, type TeamSummary } from "@songverse/core";
-import { DatePicker } from "@songverse/ui/components/date-picker";
+import { ApiError, keptSetDetail, onlineOrKept, type SetlistDetail, type SetlistItem, type TeamSummary } from "@oneverse/core";
+import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { Mic, RotateCcw, Timer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@songverse/ui/components/badge";
+import { Badge } from "@oneverse/ui/components/badge";
 import { SyncControl } from "#/components/sync-control";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setMode, useMode } from "#/lib/mode";
@@ -19,7 +19,7 @@ import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
 import { AddSongs } from "./-add-songs";
 import { SetSongList } from "./-set-song-list";
 import { ShareCard } from "./-share-card";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId")({

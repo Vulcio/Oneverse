@@ -13,15 +13,15 @@ import {
   type ScreenWidget,
   type ScreenWidgetKind,
   type ScreenWidgetLook,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Input } from "@songverse/ui/components/input";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Textarea } from "@songverse/ui/components/textarea";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { Input } from "@oneverse/ui/components/input";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Textarea } from "@oneverse/ui/components/textarea";
+import { cn } from "@oneverse/ui/lib/utils";
 
 export type Grid = NonNullable<ScreenTheme["grid"]>;
 

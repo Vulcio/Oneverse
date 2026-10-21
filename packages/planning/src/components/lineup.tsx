@@ -1,15 +1,15 @@
-import { coversPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@songverse/core";
+import { coversPart, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type LineupPlace, type MemberEventAnswer, type Person } from "@oneverse/core";
 import { AlertTriangle, ArrowLeftRight, Check, Clock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Input } from "@songverse/ui/components/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Input } from "@oneverse/ui/components/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { usePlanning } from "../host";
 import { useInstrumentLabel } from "../instruments";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** A part's name (issue #235, phase 7): its instrument or role in the reader's language, or the team's own name for it. */
 export function usePartLabel(customInstruments: readonly CustomInstrument[]): (part: EventPart) => string {

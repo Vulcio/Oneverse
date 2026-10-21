@@ -10,13 +10,13 @@ import {
   type SectionInstance,
   type SectionType,
   type SectionV2,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from "@tiptap/react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Copy, Eye, EyeOff, Link2, Lock, LockOpen, Minus, MoreHorizontal, Plus, RotateCcw, Trash2, Unlink2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { cn } from "@songverse/ui/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { cn } from "@oneverse/ui/lib/utils";
 import { editorToSections } from "./document";
 import { BlockTools, ToolButton } from "./block-tools";
 import { deleteLinked, moveBlock } from "./extensions";

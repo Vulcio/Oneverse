@@ -1,6 +1,6 @@
-import { prisma } from "@songverse/db";
-import type { SaveNotificationServerSettingsRequest } from "@songverse/core";
-import { decryptSecret, encryptSecret } from "@songverse/secret-crypto";
+import { prisma } from "@oneverse/db";
+import type { SaveNotificationServerSettingsRequest } from "@oneverse/core";
+import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import webpush from "web-push";
 
 const SINGLETON_ID = "singleton";

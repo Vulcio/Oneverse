@@ -1,4 +1,4 @@
-import { composeScreenTheme, readScreenTemplate, SCREEN_TEMPLATE_SCHEMA, screenBuiltInPart, splitScreenTheme, type ScreenPartKind, type ScreenTheme } from "@songverse/core";
+import { composeScreenTheme, readScreenTemplate, SCREEN_TEMPLATE_SCHEMA, screenBuiltInPart, splitScreenTheme, type ScreenPartKind, type ScreenTheme } from "@oneverse/core";
 import { presentScreenThemeAssets } from "./screen-theme-assets.js";
 
 export const ASSET_SELECT = { id: true, kind: true, storageKey: true, mimeType: true, filename: true } as const;

@@ -1,5 +1,5 @@
 import { Body, Controller, NotFoundException, Post, UseGuards } from "@nestjs/common";
-import { RepeatsBackfillSchema } from "@songverse/core";
+import { RepeatsBackfillSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ArtistsService } from "../artists/artists.service.js";

@@ -1,8 +1,8 @@
-import { STEM_SPEED_MAX, STEM_SPEED_MIN, STEM_SPEED_STEP } from "@songverse/core";
+import { STEM_SPEED_MAX, STEM_SPEED_MIN, STEM_SPEED_STEP } from "@oneverse/core";
 import { Gauge, Minus, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { cn } from "@songverse/ui/lib/utils";
+import { Button } from "@oneverse/ui/components/button";
+import { cn } from "@oneverse/ui/lib/utils";
 
 export const speedPercent = (speed: number) => `${Math.round(speed * 100)}%`;
 

@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
-import { CreateSignupInvitationSchema, SignupPassSchema } from "@songverse/core";
+import { CreateSignupInvitationSchema, SignupPassSchema } from "@oneverse/core";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";

@@ -21,17 +21,17 @@ import {
   type InstrumentId,
   type RenderedChart,
   type RenderedChord,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { SongChart } from "#/components/song-chart";
-import { Popover, PopoverContent } from "@songverse/ui/components/popover";
+import { Popover, PopoverContent } from "@oneverse/ui/components/popover";
 import { apiClient } from "#/lib/api-client";
 import { playPiano, strum } from "#/lib/chord-sound";
 import { KeyboardDiagram } from "#/components/keyboard-diagram";
-import { ButtonGroup } from "@songverse/ui/components/button-group";
-import { cn } from "@songverse/ui/lib/utils";
+import { ButtonGroup } from "@oneverse/ui/components/button-group";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * Chord diagrams beside a chart (issue #207): off unless the player chose an

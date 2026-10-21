@@ -1,9 +1,9 @@
-import type { Attachment, StemSeparationParts, StemSeparations } from "@songverse/core";
+import type { Attachment, StemSeparationParts, StemSeparations } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { AudioWaveform } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 
 /** Still to come from the server: the quick stems, or the finer ones that replace them. */

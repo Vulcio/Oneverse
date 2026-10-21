@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { fetchScreenSets, pickScreenSet, type ScreenSetOption, type ScreenSets } from "#/lib/screen-display";
 import { useRemoteList } from "#/lib/screen-remote";
 import { setlistTitle } from "#/lib/setlists";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /**
  * A screen's sets to pick from (issue #274), with a TV remote - the D-pad

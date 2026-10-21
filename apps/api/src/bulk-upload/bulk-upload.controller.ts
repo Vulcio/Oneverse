@@ -1,6 +1,6 @@
 import { Body, Controller, Param, PayloadTooLargeException, Post, UnauthorizedException, UseGuards, UseInterceptors, UploadedFiles } from "@nestjs/common";
 import { ApiBearerAuth, ApiConsumes, ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { BULK_UPLOAD_MAX_FILES_PER_REQUEST } from "@songverse/core";
+import { BULK_UPLOAD_MAX_FILES_PER_REQUEST } from "@oneverse/core";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { SongbookManagerGuard } from "../common/guards/songbook-manager.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";

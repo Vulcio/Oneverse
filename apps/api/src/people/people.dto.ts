@@ -1,4 +1,4 @@
-import { ConnectionRequestSchema, ShareSchema } from "@songverse/core";
+import { ConnectionRequestSchema, ShareSchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 
 export class ConnectionRequestDto extends zodDto(ConnectionRequestSchema) {}

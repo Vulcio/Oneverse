@@ -1,4 +1,4 @@
-import { metronomeForSong, type MetronomeSettings } from "@songverse/core";
+import { metronomeForSong, type MetronomeSettings } from "@oneverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { getMetronomeState, ownMetronomeSettings, playMetronomeOn, stopMetronome, useMetronome } from "#/lib/metronome-engine";
 import { isAudible, useStems } from "#/lib/stem-engine";

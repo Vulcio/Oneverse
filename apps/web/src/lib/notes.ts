@@ -1,4 +1,4 @@
-import { deviceOffline, isNetworkError, keptSongNotes, type CreateNoteRequest, type NoteAnchor, type NotePlaceChoice, type SongNote, type SongNotes, type UpdateNoteRequest } from "@songverse/core";
+import { deviceOffline, isNetworkError, keptSongNotes, type CreateNoteRequest, type NoteAnchor, type NotePlaceChoice, type SongNote, type SongNotes, type UpdateNoteRequest } from "@oneverse/core";
 import { useRouteContext } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient } from "#/lib/api-client";

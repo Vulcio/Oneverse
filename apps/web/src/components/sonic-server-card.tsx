@@ -1,12 +1,12 @@
-import type { SaveSonicServerRequest, SonicServerOwnerRef, SonicServerSummary, StemSeparationTest } from "@songverse/core";
+import type { SaveSonicServerRequest, SonicServerOwnerRef, SonicServerSummary, StemSeparationTest } from "@oneverse/core";
 import { AudioLines } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 import { docsPageUrl } from "#/lib/docs";
 

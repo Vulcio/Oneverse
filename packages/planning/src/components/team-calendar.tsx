@@ -1,24 +1,24 @@
-import { addDays, coversPart, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamPosition } from "@songverse/core";
+import { addDays, coversPart, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { Ban, CalendarPlus, CircleCheck, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ConfirmButton } from "@songverse/ui/components/confirm-button";
-import { DatePicker } from "@songverse/ui/components/date-picker";
+import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { EventAnswer } from "./event-answer";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@songverse/ui/components/dropdown-menu";
-import { Input } from "@songverse/ui/components/input";
-import { Label } from "@songverse/ui/components/label";
-import { NativeSelect } from "@songverse/ui/components/native-select";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { LineupDialog, LineupLine, usePartLabel } from "./lineup";
 import { HostLink, usePlanning } from "../host";
-import { formatSetDate } from "@songverse/ui/lib/dates";
-import { cn } from "@songverse/ui/lib/utils";
+import { formatSetDate } from "@oneverse/ui/lib/dates";
+import { cn } from "@oneverse/ui/lib/utils";
 
 /** How far the calendar shows, then how much more each "Show more" adds. */
 const SHOWN_WEEKS = 8;

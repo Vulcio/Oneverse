@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@songverse/db";
+import type { PrismaClient } from "@oneverse/db";
 
 /**
  * What someone may do beyond their own and their teams' songs (issue #160),

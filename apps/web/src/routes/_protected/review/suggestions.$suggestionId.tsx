@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SnapshotDiff } from "#/components/song-editor/history-tab";
 import { isOpenSuggestion, suggestionVariant } from "#/components/song-editor/my-suggestions-card";
-import { Badge } from "@songverse/ui/components/badge";
-import { Button } from "@songverse/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@songverse/ui/components/card";
-import { Label } from "@songverse/ui/components/label";
-import { Textarea } from "@songverse/ui/components/textarea";
+import { Badge } from "@oneverse/ui/components/badge";
+import { Button } from "@oneverse/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { Label } from "@oneverse/ui/components/label";
+import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/review/suggestions/$suggestionId")({

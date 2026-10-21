@@ -1,4 +1,4 @@
-import type { SmartList, SmartListFilters } from "@songverse/core";
+import type { SmartList, SmartListFilters } from "@oneverse/core";
 import { useEffect, useSyncExternalStore } from "react";
 import { apiClient } from "#/lib/api-client";
 

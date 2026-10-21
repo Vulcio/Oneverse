@@ -1,11 +1,11 @@
-import type { PeopleOverview, SongbookShare, TeamSummary } from "@songverse/core";
+import type { PeopleOverview, SongbookShare, TeamSummary } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@songverse/ui/components/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@songverse/ui/components/dialog";
-import { NativeSelect } from "@songverse/ui/components/native-select";
+import { Button } from "@oneverse/ui/components/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 
 /**

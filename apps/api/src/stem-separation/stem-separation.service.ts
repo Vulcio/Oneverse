@@ -1,6 +1,6 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
-import type { StemSeparationParts } from "@songverse/core";
+import type { StemSeparationParts } from "@oneverse/core";
 import type { Queue } from "bullmq";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";

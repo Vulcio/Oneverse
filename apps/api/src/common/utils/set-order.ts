@@ -1,4 +1,4 @@
-import { Prisma } from "@songverse/db";
+import { Prisma } from "@oneverse/db";
 
 // The tables whose rows carry a sort order, and that column.
 const ORDERED = {

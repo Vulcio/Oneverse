@@ -1,10 +1,10 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { I18nextProvider } from "react-i18next";
-import { createI18n, loadLocale } from "@songverse/app/i18n";
-import { getSession } from "@songverse/app/server-auth";
-import { PlanningProvider } from "@songverse/planning/host";
-import { WeekStartContext } from "@songverse/ui/lib/dates";
+import { createI18n, loadLocale } from "@oneverse/app/i18n";
+import { getSession } from "@oneverse/app/server-auth";
+import { PlanningProvider } from "@oneverse/planning/host";
+import { WeekStartContext } from "@oneverse/ui/lib/dates";
 import { AppHeader } from "#/components/app-header";
 import { planningHost } from "#/lib/planning-host";
 

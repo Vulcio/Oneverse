@@ -6,7 +6,7 @@ import {
   sectionsFromText,
   suggestedBarLines,
   type SectionType,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { Extension, InputRule, Node } from "@tiptap/core";
 import { isHistoryTransaction } from "@tiptap/pm/history";
 import { ySyncPluginKey } from "@tiptap/y-tiptap";
@@ -562,7 +562,7 @@ export function remeasureChords(view: EditorView) {
  * Room for chords close together, as the chart draws them: when a chord is
  * wider than the text before the next one, a gap is added before that next
  * chord (with a hyphen when it splits a word), so each stays over its own
- * character. See layoutChordLine in @songverse/core. Widths are measured in
+ * character. See layoutChordLine in @oneverse/core. Widths are measured in
  * the editor's own lettering (issue #249); before it can measure, in `ch`.
  */
 function spacingDecorations(doc: PMNode, measure: TextMeasure | null): DecorationSet {

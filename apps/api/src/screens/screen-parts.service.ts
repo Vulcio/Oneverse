@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, PayloadTooLargeException } from "@nestjs/common";
-import { readIsf, readScreenBackgroundTheme, readScreenContentTheme, readScreenEffects, SCREEN_PART_REQUEST_SCHEMAS, type CreateScreenPartRequest, type ScreenPartKind, type ScreenThemeAssetKind, type UpdateScreenPartRequest } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { readIsf, readScreenBackgroundTheme, readScreenContentTheme, readScreenEffects, SCREEN_PART_REQUEST_SCHEMAS, type CreateScreenPartRequest, type ScreenPartKind, type ScreenThemeAssetKind, type UpdateScreenPartRequest } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";

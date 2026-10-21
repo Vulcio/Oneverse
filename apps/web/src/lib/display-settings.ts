@@ -8,7 +8,7 @@ import {
   type DisplaySettings,
   type EffectiveDisplaySettings,
   type SavedDisplaySettings,
-} from "@songverse/core";
+} from "@oneverse/core";
 import { useEffect, useSyncExternalStore } from "react";
 import { apiClient } from "#/lib/api-client";
 

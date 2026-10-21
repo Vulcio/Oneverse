@@ -1,4 +1,4 @@
-import { cuesFromSections, parseKey, type CuePoint, type DetectedDetail, type SongDocumentV2 } from "@songverse/core";
+import { cuesFromSections, parseKey, type CuePoint, type DetectedDetail, type SongDocumentV2 } from "@oneverse/core";
 import type { DemucsAnalysis } from "./demucs-client.js";
 
 /** Below this, what the analysis says is left out (issue #175). */

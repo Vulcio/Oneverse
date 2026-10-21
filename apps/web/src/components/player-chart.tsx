@@ -1,4 +1,4 @@
-import { chartNotation, renderChart, type ChartPreferences, type RenderedChart, type ChordNotationValue, type CapoDisplayModeValue, type SetlistSongView } from "@songverse/core";
+import { chartNotation, renderChart, type ChartPreferences, type RenderedChart, type ChordNotationValue, type CapoDisplayModeValue, type SetlistSongView } from "@oneverse/core";
 import { EyeOff, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import { ChordGrid } from "#/components/chord-grid";
 import { apiClient } from "#/lib/api-client";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 
 const EMPTY: ChartPreferences = { $schema: "chart-preferences/v1", hiddenChordIds: [], simplifyChords: false, hideBassNotes: false };
 

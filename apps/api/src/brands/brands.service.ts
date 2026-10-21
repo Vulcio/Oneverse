@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, PayloadTooLargeException } from "@nestjs/common";
-import { BRAND_LIMITS, BRAND_LOGO_KINDS, readBrand, type BrandAssetKind, type BrandFonts, type UpdateBrandRequest } from "@songverse/core";
-import type { Prisma } from "@songverse/db";
+import { BRAND_LIMITS, BRAND_LOGO_KINDS, readBrand, type BrandAssetKind, type BrandFonts, type UpdateBrandRequest } from "@oneverse/core";
+import type { Prisma } from "@oneverse/db";
 import type { Request, Response } from "express";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { sendFile } from "../files/send-file.js";

@@ -1,4 +1,4 @@
-import type { SetlistSummary, SongbookSummary, TeamSummary } from "@songverse/core";
+import type { SetlistSummary, SongbookSummary, TeamSummary } from "@oneverse/core";
 import { Link, useRouterState, type LinkProps } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -42,18 +42,18 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { authClient } from "@songverse/app/auth-client";
-import type { AppSession } from "@songverse/app/server-auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@songverse/ui/components/avatar";
-import { sizedAvatarUrl } from "@songverse/ui/lib/avatar-url";
+import { authClient } from "@oneverse/app/auth-client";
+import type { AppSession } from "@oneverse/app/server-auth";
+import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
+import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { docsUrl, docsView } from "#/lib/docs";
-import { EntityAvatar } from "@songverse/ui/components/entity-avatar";
-import { SOURCE_CODE_URL, setListing } from "@songverse/core";
+import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
+import { SOURCE_CODE_URL, setListing } from "@oneverse/core";
 import { forgetOffline } from "#/lib/offline-db";
 import { setTheme, useMode } from "#/lib/mode";
 import { forgetSmartLists, smartListSearch, useSmartLists } from "#/lib/smart-lists";
 import { setlistTitle } from "#/lib/setlists";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@songverse/ui/components/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@oneverse/ui/components/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,7 +62,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@songverse/ui/components/dropdown-menu";
+} from "@oneverse/ui/components/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -78,10 +78,10 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from "@songverse/ui/components/sidebar";
-import { initials } from "@songverse/ui/lib/initials";
-import { useMyOrganizations } from "@songverse/planning/organizations";
-import { cn } from "@songverse/ui/lib/utils";
+} from "@oneverse/ui/components/sidebar";
+import { initials } from "@oneverse/ui/lib/initials";
+import { useMyOrganizations } from "@oneverse/planning/organizations";
+import { cn } from "@oneverse/ui/lib/utils";
 
 export function AppSidebar({
   session,

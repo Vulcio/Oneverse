@@ -1,4 +1,4 @@
-import type { AttachmentType } from "@songverse/core";
+import type { AttachmentType } from "@oneverse/core";
 
 /** What kind of attachment a file is, going by its type and name. */
 export function attachmentTypeFor(file: File): AttachmentType {

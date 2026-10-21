@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { EmailCard, LanguageCard, PasskeysCard, ProfileCard } from "@songverse/app/components/account-cards";
-import { NotificationSettingsCard } from "@songverse/planning/components/notification-settings-card";
+import { EmailCard, LanguageCard, PasskeysCard, ProfileCard } from "@oneverse/app/components/account-cards";
+import { NotificationSettingsCard } from "@oneverse/planning/components/notification-settings-card";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/account")({

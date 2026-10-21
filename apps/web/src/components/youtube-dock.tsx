@@ -1,4 +1,4 @@
-import { formatDuration } from "@songverse/core";
+import { formatDuration } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp, Loader2, Pause, Play, TvMinimalPlay } from "lucide-react";
 import { useContext, useEffect, useRef, useState, type CSSProperties } from "react";
@@ -6,10 +6,10 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
 import { StemDockSlot } from "#/components/stem-dock";
-import { Button } from "@songverse/ui/components/button";
+import { Button } from "@oneverse/ui/components/button";
 import { setMode } from "#/lib/mode";
 import { chooseStemSpeed, useChosenSpeed } from "#/lib/stem-engine";
-import { cn } from "@songverse/ui/lib/utils";
+import { cn } from "@oneverse/ui/lib/utils";
 import {
   dockYouTube,
   pauseYouTube,
