@@ -1,6 +1,6 @@
-// The user documentation (apps/docs), published at docs.songverse.one in
+// The user documentation (apps/docs), published at docs.oneverse.top in
 // English (at the root) and French (under /fr/).
-const DOCS_URL = "https://docs.songverse.one";
+const DOCS_URL = "https://docs.oneverse.top";
 
 // The docs page for each part of the app, by the path it starts with.
 const PAGES: [RegExp, string][] = [

@@ -1,4 +1,4 @@
-# The user documentation (apps/docs, docs.songverse.one): a static Astro /
+# The user documentation (apps/docs, docs.oneverse.top): a static Astro /
 # Starlight site, built here and served by nginx. No runtime configuration.
 #
 # Like Dockerfile.api and Dockerfile.songverse, it lives at the repo root and is

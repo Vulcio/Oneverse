@@ -4,12 +4,12 @@ import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
 import starlightLinksValidator from "starlight-links-validator";
 
-// Songverse's user documentation (docs.songverse.one), in the app's
+// Songverse's user documentation (docs.oneverse.top), in the app's
 // languages: English at the root, French under /fr/. Each page's French
 // version lives at the same path under src/content/docs/fr/; a page not
 // translated yet shows the English one with a notice.
 export default defineConfig({
-  site: "https://docs.songverse.one",
+  site: "https://docs.oneverse.top",
   // Arrangements are called versions since #78: old links still land.
   redirects: { "/arrangements/": "/versions/", "/fr/arrangements/": "/fr/versions/" },
   integrations: [

@@ -1,6 +1,6 @@
 # Deploying Oneverse
 
-This documents the working deployment of this repository (Oneverse: the shared API and Worker, Songverse, Planiverse, the docs and the website) to a self-hosted [Dokploy](https://dokploy.com) instance, with a domain for each app (#303): Oneverse, where people sign in, at `oneverse.top` and the API at `api.oneverse.top`; Songverse at `songverse.top`; Planiverse (the planning on its own, #241) at `planiverse.top` if you deploy it; the docs at `docs.songverse.one` and the website at `songverse.one` (#43). Before #303 everything was under `songverse.one` (the app at `app.songverse.one`, the API at `api.songverse.one`). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later.
+This documents the working deployment of this repository (Oneverse: the shared API and Worker, Songverse, Planiverse, the docs and the website) to a self-hosted [Dokploy](https://dokploy.com) instance, with a domain for each app (#303): Oneverse, where people sign in, at `oneverse.top` and the API at `api.oneverse.top`; Songverse at `songverse.top`; Planiverse (the planning on its own, #241) at `planiverse.top` if you deploy it; the docs at `docs.oneverse.top`, and Songverse's website at `songverse.one` (#43). Before #303 everything was under `songverse.one` (the app at `app.songverse.one`, the API at `api.songverse.one`). Follow this in order if you're setting it up from scratch, or use it as a reference if something needs fixing later.
 
 ## Architecture
 
@@ -31,7 +31,7 @@ For each domain (`oneverse.top`, `songverse.top`, `planiverse.top`, `songverse.o
 - **A record**, subname `@` (apex/root) → your server's IP
 - **A record**, subname `*` (wildcard) → your server's IP
 
-That covers each domain and every subdomain (`api.oneverse.top`, `docs.songverse.one`, etc.) with two records per domain.
+That covers each domain and every subdomain (`api.oneverse.top`, `docs.oneverse.top`, etc.) with two records per domain.
 
 Verify it resolves before touching Dokploy — cert issuance fails silently if DNS hasn't propagated:
 ```
@@ -299,7 +299,7 @@ The user documentation (`apps/docs`), a static site served by nginx.
 - Dockerfile path: `Dockerfile.docs`
 - Build context: `.`
 - Port: `80`
-- Domain: `docs.songverse.one`
+- Domain: `docs.oneverse.top` (it was `docs.songverse.one` before #303: keep that domain on the app too, so old links still open)
 - Watch paths (under the app's advanced settings, if you use auto-deploy): `apps/docs/**`, `Dockerfile.docs`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`, so only docs changes rebuild it.
 
 No environment variables. The build fails if any page links to a page or heading that doesn't exist, so a broken docs change never deploys.
@@ -312,12 +312,12 @@ No environment variables. The build fails if any page links to a page or heading
 ### Signing in at Oneverse
 
 A one-time change for a deployment that predates #303, where people signed in on Songverse's own pages. Once the apps are this version they have no sign-in page of their own, so do it with the same deploy, at a quiet time:
-This also moves everything from `songverse.one` to the apps' own domains (the docs and the website stay).
+This also moves everything from `songverse.one` to the apps' own domains (only the website stays).
 1. **Oneverse app:** create it (see "Oneverse app" above) at `oneverse.top`, and deploy it.
 2. **API:** add the domain `api.oneverse.top` (keep `api.songverse.one` for now: the Sonic servers and anything else calling the old address keep working), and set `AUTH_URL=https://api.oneverse.top`, `ONEVERSE_URL=https://oneverse.top`, `WEB_URL=https://songverse.top`, `PLANIVERSE_URL=https://planiverse.top`. Redeploy it and the Worker. The new migrations add the OAuth tables and remove the old passkeys; the API registers Songverse and Planiverse as its clients as it starts.
 3. **Songverse:** add `songverse.top` (keep `app.songverse.one`, with `REDIRECT_HOSTS=app.songverse.one`), set `API_URL=https://api.oneverse.top`, `WEB_URL=https://songverse.top`, `ONEVERSE_URL=https://oneverse.top`, and redeploy.
 4. **Planiverse**, if deployed: domain `planiverse.top`, `API_URL`, `PLANIVERSE_URL=https://planiverse.top`, `ONEVERSE_URL`, `SONGVERSE_URL=https://songverse.top`, and redeploy.
-5. **Site:** set `APP_URL=https://songverse.top` and redeploy.
+5. **Site:** set `APP_URL=https://songverse.top` and redeploy. **Docs:** add the domain `docs.oneverse.top`, keeping `docs.songverse.one`.
 6. **Google sign-in**, if set up: add `https://api.oneverse.top/api/auth/callback/google` to the OAuth client's authorized redirect URIs in the Google Cloud Console.
 7. **Stem separation:** the Sonic server's webhooks go to `AUTH_URL`, so it must be able to reach `api.oneverse.top`.
 8. **Check** [Verify](#4-verify). Everyone signs in once more (the apps' sessions are new) and adds their passkeys again at Oneverse.
@@ -342,7 +342,7 @@ Don't use `pnpm --filter @oneverse/db exec ...` there: the image doesn't include
 - `https://api.oneverse.top/api/docs` → interactive API documentation
 - `https://songverse.one` → the website, in English (`/fr/` in French)
 - `https://songverse.top` → Oneverse's sign-in page, at `https://oneverse.top/sign-in` (and `https://songverse.one/library` redirects to the app)
-- `https://docs.songverse.one` → the documentation, with a language menu (English, Français)
+- `https://docs.oneverse.top` → the documentation, with a language menu (English, Français)
 - Sign up for an account → back in Songverse, on `/library`; Planiverse, if deployed, then signs you in without asking
 - Sign out in Songverse → back at Oneverse's sign-in page
 - On a set, **Sync** → **Turn sync on** → it says who's leading (or that no one is) rather than "Connecting…": the WebSocket gets through

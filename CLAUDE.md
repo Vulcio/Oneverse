@@ -7,7 +7,7 @@ Songverse (`apps/web`) and Planiverse (`apps/planiverse`), and Oneverse
 `docs/oneverse-architecture.md`, a direction rather than what's built. The
 workspace packages are `@oneverse/*` (`@songverse/*` before); each app has its own
 domain since #303 (`oneverse.top` and `api.oneverse.top`, `songverse.top`,
-`planiverse.top`; the docs and the website stay on `songverse.one`). The rules below are unchanged by the
+`planiverse.top`, the docs at `docs.oneverse.top`; Songverse's website stays on `songverse.one`). The rules below are unchanged by the
 rename.
 
 ## Issues first
@@ -23,7 +23,7 @@ agreed in a conversation lives only there.
 ## Keep the user docs current
 
 The user documentation lives in `apps/docs` (Starlight, published at
-docs.songverse.one), in English (`src/content/docs/`) and French
+docs.oneverse.top), in English (`src/content/docs/`) and French
 (`src/content/docs/fr/`, same file names). A feature or fix that changes
 what users see updates its page, in both languages, in the same change:
 - name buttons and menus exactly as the app's locale files do

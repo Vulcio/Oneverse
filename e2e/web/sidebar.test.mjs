@@ -161,7 +161,7 @@ await step("sub-items have icons (a team's or a songbook's avatar, issue #161); 
   const tuner = await sidebar.getByRole("link", { name: "Tuner" }).boundingBox();
   const account = await sidebar.getByTestId("account-menu").boundingBox();
   if (!(docs.y > tuner.y && docs.y < account.y)) throw new Error(`docs at ${docs.y}, tuner ${tuner.y}, account ${account.y}`);
-  if (!(await sidebar.getByTestId("sidebar-docs").getAttribute("href")).startsWith("https://docs.songverse.one/")) throw new Error("not the docs");
+  if (!(await sidebar.getByTestId("sidebar-docs").getAttribute("href")).startsWith("https://docs.oneverse.top/")) throw new Error("not the docs");
 });
 
 await browser.close();

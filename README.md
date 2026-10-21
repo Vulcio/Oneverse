@@ -13,7 +13,7 @@ This repository holds the core and the web apps built on it:
 | **Songverse** | Songs and musicians: the library, charts and chords, arrangements, songbooks, practice and Live | `apps/web` (songverse.top) |
 | **Planiverse** | Planning: events, rotas, groups and calendars, with the same accounts | `apps/planiverse` (planiverse.top) |
 | Shared web parts | The UI, signing in and the account, the planning screens | `packages/ui`, `packages/app`, `packages/planning` |
-| Docs and website | The user documentation in English and French, and the website | `apps/docs` (docs.songverse.one), `apps/site` |
+| Docs and website | The user documentation in English and French, and the website | `apps/docs` (docs.oneverse.top), `apps/site` |
 
 Other parts live in their own repositories:
 [Songverse Sonic](https://github.com/Vulcio/songverse-sonic) (stem separation
@@ -27,7 +27,7 @@ It's a direction, not a description of what's built. The shared packages are
 `@oneverse/*`; the apps still run at the `songverse.one` addresses until they
 move to their own domains.
 
-User documentation, in English and French: [docs.songverse.one](https://docs.songverse.one) (source in `apps/docs`).
+User documentation, in English and French: [docs.oneverse.top](https://docs.oneverse.top) (source in `apps/docs`).
 
 ## Songverse
 

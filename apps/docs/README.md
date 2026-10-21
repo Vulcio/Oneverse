@@ -1,6 +1,6 @@
 # Songverse docs
 
-The user documentation, published at [docs.songverse.one](https://docs.songverse.one).
+The user documentation, published at [docs.oneverse.top](https://docs.oneverse.top).
 Built with [Starlight](https://starlight.astro.build) (Astro).
 
 ```sh

@@ -46,7 +46,7 @@ export function AppHeader({ session }: { session: AppSession }) {
               {t("nav.account")}
             </DropdownMenuItem>
             {/* Its page in the docs (issue #242), in the reader's language. */}
-            <DropdownMenuItem render={<a href={`https://docs.songverse.one${i18n.language.startsWith("fr") ? "/fr" : ""}/planiverse/`} target="_blank" rel="noopener" />}>
+            <DropdownMenuItem render={<a href={`https://docs.oneverse.top${i18n.language.startsWith("fr") ? "/fr" : ""}/planiverse/`} target="_blank" rel="noopener" />}>
               <HelpCircle />
               {t("nav.help")}
             </DropdownMenuItem>
