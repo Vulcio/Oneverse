@@ -45,6 +45,8 @@ export interface ChartBar {
   carried: ChartBarChord | null;
   /** The lyric line it's under; null for none (an intro without words). */
   lineId: string | null;
+  /** Where it starts in that line's text, when its section's rhythm places it there (a bar line in the lyrics); null otherwise. */
+  lyricAt: number | null;
   /** Its section says it (`rhythm`), rather than worked out from the chart. */
   fromRhythm: boolean;
 }
@@ -77,6 +79,7 @@ export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">
         chords: bar.chords,
         carried,
         lineId: bar.lineId,
+        lyricAt: bar.lyricAt,
         fromRhythm: bar.fromRhythm,
       });
       start += bar.beats;
@@ -87,7 +90,7 @@ export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">
 
   function fromChart(pass: RenderedPass) {
     const beats = Math.max(1, (pass.timeSignature ?? chart.timeSignature)?.numerator ?? 4);
-    const planned: { beats: number; chords: ChartBarChord[]; lineId: string | null; fromRhythm: boolean }[] = [];
+    const planned: { beats: number; chords: ChartBarChord[]; lineId: string | null; lyricAt: number | null; fromRhythm: boolean }[] = [];
     for (const line of pass.lines) {
       if (line.kind === "note") continue;
       // A line of chords alone (an intro, a turnaround): a bar each.
@@ -95,10 +98,10 @@ export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">
       const count = Math.max(line.chords.length, sung ? BARS_PER_LINE : 1);
       for (let bar = 0; bar < count; bar++) {
         const chord = line.chords[bar];
-        planned.push({ beats, chords: chord ? [barChord(chord, 1)] : [], lineId: line.id, fromRhythm: false });
+        planned.push({ beats, chords: chord ? [barChord(chord, 1)] : [], lineId: line.id, lyricAt: null, fromRhythm: false });
       }
     }
-    if (planned.length === 0) for (let bar = 0; bar < BARS_PER_LINE; bar++) planned.push({ beats, chords: [], lineId: null, fromRhythm: false });
+    if (planned.length === 0) for (let bar = 0; bar < BARS_PER_LINE; bar++) planned.push({ beats, chords: [], lineId: null, lyricAt: null, fromRhythm: false });
     return planned;
   }
 
@@ -108,8 +111,10 @@ export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">
     const lines = new Set(pass.lines.map((line) => line.id));
     let lineId: string | null = null;
     return rhythm.bars.map((bar) => {
-      if (bar.lyricAnchor && lines.has(bar.lyricAnchor.lineId)) lineId = bar.lyricAnchor.lineId;
+      const anchored = !!bar.lyricAnchor && lines.has(bar.lyricAnchor.lineId);
+      if (anchored) lineId = bar.lyricAnchor!.lineId;
       return {
+        lyricAt: anchored ? bar.lyricAnchor!.at : null,
         beats,
         // A chord left out on this pass (hidden, or not in its lines) isn't played.
         chords: bar.chords
@@ -222,7 +227,9 @@ export function recordingBeatPosition(map: BeatMap, seconds: number, bars: reado
  * first chord to its first bar. A chord pinned inside a word cuts before
  * the word: a grid reads words, not syllables. A bar with no change of the
  * line's chords gets "" (the words carry on); one with no words to sing (an
- * intro, a line of chords alone) null.
+ * intro, a line of chords alone) null. A bar placed in the lyrics (a bar
+ * line, `lyricAt`) is cut there instead, and words before a line's first
+ * bar line go to the bar before.
  */
 export function barLyrics(chart: Pick<RenderedChart, "passes">, bars: readonly ChartBar[]): (string | null)[] {
   const words: (string | null)[] = bars.map((bar) => (bar.lineId === null ? null : ""));
@@ -243,14 +250,18 @@ export function barLyrics(chart: Pick<RenderedChart, "passes">, bars: readonly C
       const at = new Map(line.chords.map((chord) => [chord.id, wordStart(chord.at)]));
       const cuts: { bar: number; at: number }[] = [];
       for (let index = run; index < end; index++) {
-        const pinned = bars[index]!.chords.flatMap((chord) => (at.has(chord.id) ? [at.get(chord.id)!] : []));
-        const cut = index === run ? 0 : pinned.length > 0 ? Math.min(...pinned) : null;
+        const bar = bars[index]!;
+        const pinned = bar.chords.flatMap((chord) => (at.has(chord.id) ? [at.get(chord.id)!] : []));
+        const cut = bar.lyricAt !== null ? Math.min(bar.lyricAt, line.text.length) : index === run ? 0 : pinned.length > 0 ? Math.min(...pinned) : null;
         // A cut never goes back: a chord pinned earlier in the line than the bar before's.
         if (cut !== null && cut > (cuts.at(-1)?.at ?? -1)) cuts.push({ bar: index, at: cut });
       }
       cuts.forEach((cut, i) => {
         words[cut.bar] = line.text.slice(cut.at, cuts[i + 1]?.at ?? line.text.length).trim();
       });
+      // Words before the line's first bar line: the end of the bar before (sung on from the line above).
+      const before = line.text.slice(0, cuts[0]?.at ?? 0).trim();
+      if (before && run > 0) words[run - 1] = [words[run - 1], before].filter(Boolean).join(" ");
     }
     run = end;
   }

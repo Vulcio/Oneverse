@@ -1,9 +1,10 @@
 import { NodeSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
-import { insertChord, moveChord, setDropTarget } from "./extensions";
+import { cn } from "@songverse/ui/lib/utils";
+import { insertBarLine, insertChord, moveChord, setDropTarget } from "./extensions";
 
-/** What's being dragged: a chord already in the song, or a new one from the palette. */
-export type DragSource = { kind: "move"; pos: number; raw: string } | { kind: "new"; raw: string };
+/** What's being dragged: a chord already in the song, or a new one from the palette; a bar line (issue #238) there or new. */
+export type DragSource = { kind: "move"; pos: number; raw: string } | { kind: "new"; raw: string } | { kind: "moveBar"; pos: number } | { kind: "newBar" };
 
 const THRESHOLD = 5;
 const EDGE = 48;
@@ -18,6 +19,8 @@ const HOLD_SLOP = 8;
  * is highlighted, and letting go pins it there. A press without a drag is a
  * click (`onClick`). With a mouse or a pen it starts as it moves; a finger
  * holds it a moment first - the chip lifts - so a swipe still scrolls.
+ * A bar line is dragged the same way, by its knob under the words: it lands
+ * between the two characters nearest the pointer.
  */
 export function startChordDrag(view: EditorView, event: PointerEvent, source: DragSource, onClick: () => void, pressed?: HTMLElement) {
   if (event.button !== 0 || !view.editable) return;
@@ -26,8 +29,10 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
   const rect = handle.getBoundingClientRect();
   const grab = { x: event.clientX - rect.left, y: event.clientY - rect.top };
   const start = { x: event.clientX, y: event.clientY };
+  const bar = source.kind === "moveBar" || source.kind === "newBar";
+  const moving = source.kind === "move" || source.kind === "moveBar";
   // A chip's own press is ours: no text selection, no focus change.
-  if (source.kind === "move") event.preventDefault();
+  if (moving) event.preventDefault();
   handle.setPointerCapture(event.pointerId);
 
   let ghost: HTMLElement | null = null;
@@ -52,8 +57,15 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
   const fontSize = parseFloat(getComputedStyle(view.dom).fontSize) || 16;
 
   function targetAt(x: number, y: number): number | null {
-    // The ghost's left edge, over the middle of the lyric row below it.
-    const found = view.posAtCoords({ left: x - grab.x + 1, top: y - grab.y + rect.height + fontSize * 0.6 });
+    // A chord: the ghost's left edge, over the middle of the lyric row below it. A bar line moved: the words it's in, followed
+    // as the pointer goes (held by its knob, under the words, it stays on its line); a new one: the words just over the pointer.
+    const found = view.posAtCoords(
+      source.kind === "moveBar"
+        ? { left: x, top: y - grab.y + rect.height / 2 }
+        : bar
+          ? { left: x, top: y - (touch ? fontSize * 3 : fontSize * 0.9) }
+          : { left: x - grab.x + 1, top: y - grab.y + rect.height + fontSize * 0.6 },
+    );
     if (!found) return null;
     const $pos = view.state.doc.resolve(found.pos);
     return $pos.parent.type.name === "line" && $pos.parent.attrs.kind !== "note" ? found.pos : null;
@@ -72,17 +84,23 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
   function lift(x: number, y: number) {
     if (ghost) return;
     ghost = document.createElement("div");
-    ghost.className = touch ? "sv-drag-ghost sv-drag-ghost-lifted" : "sv-drag-ghost";
-    ghost.textContent = source.raw;
+    ghost.className = cn("sv-drag-ghost", touch && !bar && "sv-drag-ghost-lifted", bar && "sv-drag-ghost-bar");
+    ghost.textContent = bar ? "" : source.raw;
     document.body.append(ghost);
     document.body.classList.add("sv-dragging");
-    if (source.kind === "move") view.dom.querySelector(`[data-id="${CSS.escape(String(view.state.doc.nodeAt(source.pos)?.attrs.id))}"]`)?.classList.add("sv-chord-moving");
+    if (moving) (view.nodeDOM(source.pos) as HTMLElement | null)?.classList.add("sv-chord-moving");
     follow(x, y);
   }
 
   function follow(x: number, y: number) {
     if (!ghost) return;
-    ghost.style.transform = `translate(${x - grab.x}px, ${y - grab.y}px)`;
+    // A bar line's ghost stands where it would land, over the words: as the one moved stood, or its foot just above the pointer.
+    ghost.style.transform =
+      source.kind === "moveBar"
+        ? `translate(${x - 2}px, ${y - grab.y - fontSize * 1.15}px)`
+        : bar
+          ? `translate(${x - 2}px, ${y - (touch ? fontSize * 4.2 : fontSize * 2.1)}px)`
+          : `translate(${x - grab.x}px, ${y - grab.y}px)`;
     target = targetAt(x, y);
     setDropTarget(view, target);
     autoScroll(y);
@@ -121,8 +139,10 @@ export function startChordDrag(view: EditorView, event: PointerEvent, source: Dr
       return;
     }
     if (target === null) return;
-    if (source.kind === "move") {
+    if (source.kind === "move" || source.kind === "moveBar") {
       if (!moveChord(view, source.pos, target)) view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, source.pos)));
+    } else if (source.kind === "newBar") {
+      insertBarLine(view, target);
     } else {
       insertChord(view, source.raw, target);
     }

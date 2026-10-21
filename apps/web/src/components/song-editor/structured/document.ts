@@ -1,5 +1,9 @@
 import {
+  barLinesFromRhythm,
   characterBoundaries,
+  rhythmFromBarLines,
+  type BarLine,
+  type SectionBarLines,
   flowItemId,
   generateId,
   ID_PREFIXES,
@@ -15,7 +19,8 @@ import type { Node as PMNode } from "@tiptap/pm/model";
  * The song's sections as the structured editor holds them, and back
  * (docs/song-document-v2.md, "Editor rules"): a section is a block, a line a
  * paragraph in it, and a chord an inline item sitting just before the
- * character it's pinned to. IDs travel both ways untouched.
+ * character it's pinned to - a bar line too (issue #238), from the section's
+ * rhythm and back. IDs travel both ways untouched.
  */
 
 export function newSectionJSON(type: SectionType, lines: JSONContent[] = [newLineJSON()]): JSONContent {
@@ -26,22 +31,35 @@ export function newLineJSON(): JSONContent {
   return { type: "line", attrs: { id: generateId(ID_PREFIXES.line), kind: "lyric" } };
 }
 
-function lineJSON(line: LineV2): JSONContent {
+function lineJSON(line: LineV2, marks: BarLine[] = []): JSONContent {
   const content: JSONContent[] = [];
   let cursor = 0;
   const text = (to: number) => {
     if (to > cursor) content.push({ type: "text", text: line.text.slice(cursor, to) });
     cursor = Math.max(cursor, to);
   };
-  for (const chord of line.chords) {
+  const bars = [...marks].sort((a, b) => a.at - b.at || a.chordsBefore - b.chordsBefore);
+  let next = 0;
+  // The bar lines before the chord `index` pinned at `at`: before it in the line, or among chords on its character.
+  const barsBefore = (index: number, at: number) => {
+    while (next < bars.length && (bars[next]!.at < at || (bars[next]!.at === at && bars[next]!.chordsBefore <= index))) {
+      const bar = bars[next++]!;
+      text(Math.min(bar.at, line.text.length));
+      content.push({ type: "barLine", attrs: { bars: bar.bars, cues: bar.cues ?? null } });
+    }
+  };
+  line.chords.forEach((chord, index) => {
+    barsBefore(index, Math.min(chord.at, line.text.length));
     text(Math.min(chord.at, line.text.length));
     content.push({ type: "chord", attrs: { id: chord.id, raw: chord.raw } });
-  }
+  });
+  barsBefore(line.chords.length, Number.POSITIVE_INFINITY);
   text(line.text.length);
   return { type: "line", attrs: { id: line.id, kind: line.kind }, ...(content.length > 0 && { content }) };
 }
 
 function sectionJSON(section: SectionV2, extra: { passId?: string | null; sung?: boolean } = {}): JSONContent {
+  const marks = barLinesFromRhythm(section);
   return {
     type: "section",
     attrs: {
@@ -54,7 +72,7 @@ function sectionJSON(section: SectionV2, extra: { passId?: string | null; sung?:
       passId: extra.passId ?? null,
       sung: extra.sung ?? true,
     },
-    content: section.lines.length > 0 ? section.lines.map(lineJSON) : [newLineJSON()],
+    content: section.lines.length > 0 ? section.lines.map((line) => lineJSON(line, marks[line.id])) : [newLineJSON()],
   };
 }
 
@@ -118,7 +136,7 @@ export function sameOrder(a: SectionInstance[], b: SectionInstance[]): boolean {
   return a.length === b.length && a.every((item, i) => item.id === b[i]!.id && item.sectionId === b[i]!.sectionId);
 }
 
-function lineFromNode(node: PMNode): LineV2 {
+export function lineFromNode(node: PMNode): LineV2 {
   let text = "";
   const chords: LineV2["chords"] = [];
   node.forEach((child) => {
@@ -134,6 +152,43 @@ function lineFromNode(node: PMNode): LineV2 {
   return { id: node.attrs.id as string, kind, text, chords };
 }
 
+/** A line's bar lines (issue #238): where each stands in its text, among its chords. */
+function barLinesOf(node: PMNode): BarLine[] {
+  const marks: BarLine[] = [];
+  let at = 0;
+  let chords = 0;
+  node.forEach((child) => {
+    if (child.isText) at += child.text!.length;
+    else if (child.type.name === "chord") chords++;
+    else if (child.type.name === "barLine") marks.push({ at, chordsBefore: chords, bars: (child.attrs.bars as number) ?? 1, ...(child.attrs.cues ? { cues: child.attrs.cues as (string | null)[] } : {}) });
+  });
+  return marks;
+}
+
+/**
+ * Where a bar line at character `at`, after `chordsBefore` of its chords,
+ * goes in the line `node` (at `linePos`): a document position.
+ */
+export function linePosition(node: PMNode, linePos: number, at: number, chordsBefore: number): number {
+  let text = 0;
+  let chords = 0;
+  let found: number | null = null;
+  node.forEach((child, offset) => {
+    if (found !== null) return;
+    const pos = linePos + 1 + offset;
+    if (child.isText) {
+      const length = child.text!.length;
+      if (text === at && chords >= chordsBefore) found = pos;
+      else if (at > text && at < text + length) found = pos + (at - text);
+      text += length;
+    } else if (child.type.name === "chord") {
+      if (text === at && chords >= chordsBefore) found = pos;
+      else chords++;
+    }
+  });
+  return found ?? linePos + node.nodeSize - 1;
+}
+
 const isBlank = (line: LineV2) => !line.text.trim() && line.chords.length === 0;
 
 /**
@@ -145,16 +200,27 @@ export function editorToSections(doc: PMNode): SectionV2[] {
   doc.forEach((node) => {
     if (node.type.name !== "section") return;
     const lines: LineV2[] = [];
-    node.forEach((child) => lines.push(lineFromNode(child)));
-    while (lines.length > 0 && isBlank(lines.at(-1)!)) lines.pop();
+    const marks: SectionBarLines = {};
+    node.forEach((child) => {
+      const line = lineFromNode(child);
+      lines.push(line);
+      const bars = barLinesOf(child);
+      if (bars.length > 0 && line.kind !== "note") marks[line.id] = bars;
+    });
+    while (lines.length > 0 && isBlank(lines.at(-1)!) && !marks[lines.at(-1)!.id]) lines.pop();
     if (lines.length === 0 && !node.attrs.label) return;
+    // Its rhythm from its bar lines (issue #238): as loaded while they're where they were (its own beats kept), else worked out again.
+    const loaded = (node.attrs.rhythm as SectionV2["rhythm"]) ?? null;
+    const before = loaded ? barLinesFromRhythm({ lines, rhythm: loaded }) : null;
+    const unchanged = !!before && lines.every((line) => JSON.stringify(before[line.id] ?? []) === JSON.stringify(marks[line.id] ?? []));
+    const rhythm = unchanged ? loaded : rhythmFromBarLines({ lines }, marks, (doc.attrs.beats as number | undefined) ?? 4);
     sections.push({
       id: node.attrs.id as string,
       type: node.attrs.type as SectionType,
       label: (node.attrs.label as string | null)?.trim() || null,
       showLabel: node.attrs.showLabel !== false,
       lines,
-      rhythm: node.attrs.rhythm ?? null,
+      rhythm,
       groove: node.attrs.groove ?? null,
     });
   });

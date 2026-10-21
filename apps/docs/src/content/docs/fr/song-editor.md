@@ -28,6 +28,17 @@ Les trois modes :
 
 Modifier les paroles garde les accords avec elles : taper avant un accord l'emmène, et supprimer des mots qui portent des accords laisse les accords à l'endroit des mots, pour que vous les replaciez. Entrée coupe une ligne, et ses accords suivent leurs mots.
 
+## Les barres de mesure
+
+Les barres de mesure marquent le début de chaque mesure, dans les paroles, comme sur une grille de jazz : `|Amazing |grace how |sweet the |sound`. La [ligne des mesures et la grille en mesures](/fr/metronome/#grille-en-mesures) les suivent, le clic aussi. Sans elles, les mesures viennent des accords (voir [Mesures](/fr/metronome/#mesures)).
+
+- **Barres de mesure**, dans la barre d'outils, les remplit d'après les accords - **Remplir cette section d'après ses accords** ou **Remplir tout le chant d'après ses accords** - pour partir de là, et les retire (**Retirer les barres de mesure de cette section**, **Retirer toutes les barres de mesure**).
+- **Tapez `|`** dans les paroles pour en ajouter une au curseur, ou faites glisser **Barre de mesure** depuis le panneau des accords (sous **Mesures**) sur les paroles, là où commence une mesure.
+- **Faites glisser une barre de mesure par sa poignée** - le point sous les paroles - sur une autre lettre. Sur un écran tactile, appuyez longuement d'abord : elle se soulève et suit votre doigt le long de sa ligne.
+- **Cliquez sur une barre de mesure** (touchez-la sur un écran tactile) pour la sélectionner. Ses outils s'affichent dessous, ou dans la barre en bas de l'écran sur un téléphone ou une tablette : **Déplacer la barre de mesure à gauche** et **Déplacer la barre de mesure à droite** d'une lettre (les flèches ← → aussi), **Une mesure de moins** et **Une mesure de plus** pour des mesures sans paroles à elles - un mot tenu, une mesure instrumentale - affichées **×2** sous la poignée, et **Supprimer la barre de mesure**.
+
+Les accords entre deux barres de mesure tombent dans leur mesure sur les temps qu'atteignent leurs paroles : un accord à la moitié des paroles d'une mesure est sur son troisième temps en 4/4.
+
 ## Les sections
 
 Chaque bloc est une section : intro, couplet, pré-refrain, refrain, post-refrain, pont, vamp (une phrase répétée autant qu'il faut), break, instrumental, interlude, outro ou tag.

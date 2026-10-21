@@ -3922,6 +3922,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -3945,6 +3946,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -3968,6 +3970,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -3991,6 +3994,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4014,6 +4018,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4037,6 +4042,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4060,6 +4066,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4083,6 +4090,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4106,6 +4114,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4129,6 +4138,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4152,6 +4162,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             }
           ]
@@ -4303,6 +4314,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4326,6 +4338,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4349,6 +4362,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4372,6 +4386,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4395,6 +4410,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4418,6 +4434,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4441,6 +4458,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4464,6 +4482,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4487,6 +4506,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4510,6 +4530,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4533,6 +4554,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             }
           ]
@@ -4720,6 +4742,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4743,6 +4766,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4766,6 +4790,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4789,6 +4814,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4812,6 +4838,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4835,6 +4862,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4858,6 +4886,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4881,6 +4910,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4904,6 +4934,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4927,6 +4958,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4950,6 +4982,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4973,6 +5006,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -4996,6 +5030,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -5019,6 +5054,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -5042,6 +5078,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -5065,6 +5102,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -5088,6 +5126,7 @@
               ],
               "carried": null,
               "lineId": "line_v3",
+              "lyricAt": null,
               "fromRhythm": false
             }
           ]
@@ -5258,6 +5297,7 @@
               ],
               "carried": null,
               "lineId": "line_i1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -5281,6 +5321,7 @@
               ],
               "carried": null,
               "lineId": "line_i1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -5311,6 +5352,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": 0,
               "fromRhythm": true
             },
             {
@@ -5332,6 +5374,7 @@
                 "family": "major"
               },
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": true
             },
             {
@@ -5355,6 +5398,7 @@
               ],
               "carried": null,
               "lineId": "line_v1",
+              "lyricAt": null,
               "fromRhythm": true
             },
             {
@@ -5378,6 +5422,7 @@
               ],
               "carried": null,
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             },
             {
@@ -5399,6 +5444,7 @@
                 "family": "major"
               },
               "lineId": "line_c1",
+              "lyricAt": null,
               "fromRhythm": false
             }
           ]
@@ -6784,6 +6830,1130 @@
             "Torn up town",
             ""
           ]
+        },
+        {
+          "name": "bar lines in the words: cut where they stand, the words before a line's first one in the bar before",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ],
+                  "rhythm": {
+                    "beatsPerBar": null,
+                    "bars": [
+                      {
+                        "chords": [
+                          {
+                            "chordId": "chd_v1",
+                            "beat": 1
+                          }
+                        ],
+                        "lyricAnchor": {
+                          "lineId": "line_v1",
+                          "at": 0
+                        }
+                      },
+                      {
+                        "chords": [
+                          {
+                            "chordId": "chd_v2",
+                            "beat": 2
+                          },
+                          {
+                            "chordId": "chd_v3",
+                            "beat": 3
+                          },
+                          {
+                            "chordId": "chd_v4",
+                            "beat": 3.5
+                          }
+                        ],
+                        "lyricAnchor": {
+                          "lineId": "line_v1",
+                          "at": 14
+                        }
+                      },
+                      {
+                        "chords": [],
+                        "lyricAnchor": {
+                          "lineId": "line_v3",
+                          "at": 13
+                        }
+                      },
+                      {
+                        "chords": [
+                          {
+                            "chordId": "chd_v5",
+                            "beat": 1
+                          }
+                        ],
+                        "lyricAnchor": null
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            }
+          ],
+          "expected": [
+            "Amazing grace",
+            "how sweet the sound That saved a",
+            "wretch",
+            "like me",
+            "I once was lost",
+            "but now",
+            "am found",
+            "I once was lost",
+            "but now",
+            "am found"
+          ]
+        }
+      ]
+    },
+    "rhythmFromBarLines": {
+      "about": "A section's rhythm from bar lines placed in its lyrics (issue #238), as the editor saves them: each bar line starts a bar where it stands (its lyricAnchor), more bars after it when it says so, and the chords up to the next bar line fall in them on the beats their words reach, rounded to the beat and half a beat apart at least; between chords with no words, evenly. Words or chords before the first bar line get a bar of their own. Null without bar lines.",
+      "params": [
+        "section",
+        "barLines",
+        "beatsPerBar"
+      ],
+      "cases": [
+        {
+          "name": "a bar line before each chord, the last word held two bars",
+          "args": [
+            {
+              "lines": [
+                {
+                  "id": "line_a",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    {
+                      "id": "chd_a1",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a2",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_a3",
+                      "at": 18,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a4",
+                      "at": 28,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_n",
+                  "kind": "note",
+                  "text": "softly",
+                  "chords": []
+                },
+                {
+                  "id": "line_b",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_b1",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_b2",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_b3",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "line_a": [
+                {
+                  "at": 0,
+                  "chordsBefore": 0,
+                  "bars": 1
+                },
+                {
+                  "at": 8,
+                  "chordsBefore": 1,
+                  "bars": 1
+                },
+                {
+                  "at": 18,
+                  "chordsBefore": 2,
+                  "bars": 1
+                },
+                {
+                  "at": 28,
+                  "chordsBefore": 3,
+                  "bars": 2
+                }
+              ],
+              "line_b": [
+                {
+                  "at": 0,
+                  "chordsBefore": 0,
+                  "bars": 1
+                }
+              ]
+            },
+            4
+          ],
+          "expected": {
+            "beatsPerBar": null,
+            "bars": [
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a1",
+                    "beat": 1
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 0
+                }
+              },
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a2",
+                    "beat": 1
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 8
+                }
+              },
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a3",
+                    "beat": 1
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 18
+                }
+              },
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a4",
+                    "beat": 1
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 28
+                }
+              },
+              {
+                "chords": [],
+                "lyricAnchor": null
+              },
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_b1",
+                    "beat": 1
+                  },
+                  {
+                    "chordId": "chd_b2",
+                    "beat": 2
+                  },
+                  {
+                    "chordId": "chd_b3",
+                    "beat": 4
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_b",
+                  "at": 0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "two chords in a bar: the second on the beat its words reach",
+          "args": [
+            {
+              "lines": [
+                {
+                  "id": "line_a",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    {
+                      "id": "chd_a1",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a2",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_a3",
+                      "at": 18,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a4",
+                      "at": 28,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_n",
+                  "kind": "note",
+                  "text": "softly",
+                  "chords": []
+                },
+                {
+                  "id": "line_b",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_b1",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_b2",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_b3",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "line_a": [
+                {
+                  "at": 0,
+                  "chordsBefore": 0,
+                  "bars": 1
+                },
+                {
+                  "at": 18,
+                  "chordsBefore": 2,
+                  "bars": 1
+                }
+              ]
+            },
+            4
+          ],
+          "expected": {
+            "beatsPerBar": null,
+            "bars": [
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a1",
+                    "beat": 1
+                  },
+                  {
+                    "chordId": "chd_a2",
+                    "beat": 3
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 0
+                }
+              },
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a3",
+                    "beat": 1
+                  },
+                  {
+                    "chordId": "chd_a4",
+                    "beat": 2
+                  },
+                  {
+                    "chordId": "chd_b1",
+                    "beat": 3
+                  },
+                  {
+                    "chordId": "chd_b2",
+                    "beat": 3.5
+                  },
+                  {
+                    "chordId": "chd_b3",
+                    "beat": 4
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 18
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "words before the first bar line: a bar of their own; three chords alone in one bar, evenly, in 3/4",
+          "args": [
+            {
+              "lines": [
+                {
+                  "id": "line_a",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    {
+                      "id": "chd_a1",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a2",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_a3",
+                      "at": 18,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a4",
+                      "at": 28,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_n",
+                  "kind": "note",
+                  "text": "softly",
+                  "chords": []
+                },
+                {
+                  "id": "line_b",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_b1",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_b2",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_b3",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "line_a": [
+                {
+                  "at": 8,
+                  "chordsBefore": 1,
+                  "bars": 1
+                }
+              ],
+              "line_b": [
+                {
+                  "at": 0,
+                  "chordsBefore": 0,
+                  "bars": 1
+                }
+              ]
+            },
+            3
+          ],
+          "expected": {
+            "beatsPerBar": null,
+            "bars": [
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a1",
+                    "beat": 1
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 0
+                }
+              },
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_a2",
+                    "beat": 1
+                  },
+                  {
+                    "chordId": "chd_a3",
+                    "beat": 2
+                  },
+                  {
+                    "chordId": "chd_a4",
+                    "beat": 3
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_a",
+                  "at": 8
+                }
+              },
+              {
+                "chords": [
+                  {
+                    "chordId": "chd_b1",
+                    "beat": 1
+                  },
+                  {
+                    "chordId": "chd_b2",
+                    "beat": 2
+                  },
+                  {
+                    "chordId": "chd_b3",
+                    "beat": 3
+                  }
+                ],
+                "lyricAnchor": {
+                  "lineId": "line_b",
+                  "at": 0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "no bar lines",
+          "args": [
+            {
+              "lines": [
+                {
+                  "id": "line_a",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    {
+                      "id": "chd_a1",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a2",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_a3",
+                      "at": 18,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a4",
+                      "at": 28,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_n",
+                  "kind": "note",
+                  "text": "softly",
+                  "chords": []
+                },
+                {
+                  "id": "line_b",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_b1",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_b2",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_b3",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ]
+            },
+            {},
+            4
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "barLinesFromRhythm": {
+      "about": "A section's bar lines from its rhythm (issue #238), to show and move them in the editor: a bar with a place in the lyrics starts one, the bars after it with none add to its count, and a bar line is placed among chords on the same character by the chords in the bars before it.",
+      "params": [
+        "section"
+      ],
+      "cases": [
+        {
+          "name": "a rhythm with a bar carrying the chord on",
+          "args": [
+            {
+              "id": "sec_verse",
+              "type": "verse",
+              "label": null,
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_v1",
+                  "kind": "lyric",
+                  "text": "Every song is like gold",
+                  "chords": [
+                    {
+                      "id": "chd_v1",
+                      "at": 0,
+                      "raw": "D"
+                    },
+                    {
+                      "id": "chd_v2",
+                      "at": 14,
+                      "raw": "A"
+                    },
+                    {
+                      "id": "chd_v3",
+                      "at": 19,
+                      "raw": "Bm"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_v1",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_v2",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_v1",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": []
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_v3",
+                        "beat": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "line_v1": [
+              {
+                "at": 0,
+                "chordsBefore": 0,
+                "bars": 3
+              }
+            ]
+          }
+        },
+        {
+          "name": "from rhythmFromBarLines: the same bar lines back",
+          "args": [
+            {
+              "lines": [
+                {
+                  "id": "line_a",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    {
+                      "id": "chd_a1",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a2",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_a3",
+                      "at": 18,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a4",
+                      "at": 28,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_n",
+                  "kind": "note",
+                  "text": "softly",
+                  "chords": []
+                },
+                {
+                  "id": "line_b",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_b1",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_b2",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_b3",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_a1",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_a2",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_a",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_a3",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_a4",
+                        "beat": 4
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_a",
+                      "at": 18
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_b1",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_b2",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_b",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_b3",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_b",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [],
+                    "lyricAnchor": null
+                  }
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "line_a": [
+              {
+                "at": 0,
+                "chordsBefore": 0,
+                "bars": 1
+              },
+              {
+                "at": 18,
+                "chordsBefore": 2,
+                "bars": 1
+              }
+            ],
+            "line_b": [
+              {
+                "at": 0,
+                "chordsBefore": 0,
+                "bars": 1
+              },
+              {
+                "at": 0,
+                "chordsBefore": 2,
+                "bars": 2
+              }
+            ]
+          }
+        },
+        {
+          "name": "no rhythm",
+          "args": [
+            {
+              "lines": [
+                {
+                  "id": "line_a",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    {
+                      "id": "chd_a1",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a2",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_a3",
+                      "at": 18,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a4",
+                      "at": 28,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_n",
+                  "kind": "note",
+                  "text": "softly",
+                  "chords": []
+                },
+                {
+                  "id": "line_b",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_b1",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_b2",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_b3",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {}
+        }
+      ]
+    },
+    "suggestedBarLines": {
+      "about": "Bar lines where the chart's own bars would be (issue #238), a start to move them from: one before each chord, a sung line with one chord or none taking two bars, a line of chords alone a bar a chord, notes none.",
+      "params": [
+        "section"
+      ],
+      "cases": [
+        {
+          "name": "a sung line and a line of chords alone",
+          "args": [
+            {
+              "lines": [
+                {
+                  "id": "line_a",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    {
+                      "id": "chd_a1",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a2",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_a3",
+                      "at": 18,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_a4",
+                      "at": 28,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_n",
+                  "kind": "note",
+                  "text": "softly",
+                  "chords": []
+                },
+                {
+                  "id": "line_b",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_b1",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_b2",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_b3",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "line_a": [
+              {
+                "at": 0,
+                "chordsBefore": 0,
+                "bars": 1
+              },
+              {
+                "at": 8,
+                "chordsBefore": 1,
+                "bars": 1
+              },
+              {
+                "at": 18,
+                "chordsBefore": 2,
+                "bars": 1
+              },
+              {
+                "at": 28,
+                "chordsBefore": 3,
+                "bars": 1
+              }
+            ],
+            "line_b": [
+              {
+                "at": 0,
+                "chordsBefore": 0,
+                "bars": 1
+              },
+              {
+                "at": 0,
+                "chordsBefore": 1,
+                "bars": 1
+              },
+              {
+                "at": 0,
+                "chordsBefore": 2,
+                "bars": 1
+              }
+            ]
+          }
         }
       ]
     },

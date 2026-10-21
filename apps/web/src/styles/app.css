@@ -265,6 +265,75 @@
   font-size: 1.125rem;
   padding: 0.125rem 0.5rem;
 }
+/* A bar line (issue #238): a rule through the chord row and the words, where a bar starts, with a knob under the words to drag it by. */
+.sv-bar {
+  position: relative;
+  display: inline-block;
+  width: 1ch;
+  height: 1em;
+  vertical-align: baseline;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.sv-bar::before {
+  content: "";
+  position: absolute;
+  left: calc(50% - 1px);
+  top: -1.15em;
+  bottom: -0.2em;
+  width: 2px;
+  border-radius: 1px;
+  background: color-mix(in oklab, var(--color-foreground) 55%, transparent);
+}
+/* A finger-sized place to press, beyond what's drawn. */
+.sv-bar::after {
+  content: "";
+  position: absolute;
+  inset: -1.2em -0.6em -0.9em;
+}
+.sv-bar-knob {
+  position: absolute;
+  left: 50%;
+  bottom: -0.75em;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background: color-mix(in oklab, var(--color-foreground) 55%, transparent);
+}
+.sv-bar-count {
+  position: absolute;
+  left: calc(50% + 0.25em);
+  bottom: -0.95em;
+  font-family: var(--font-sans);
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-muted-foreground);
+  white-space: nowrap;
+}
+.sv-bar:hover::before,
+.sv-bar:hover .sv-bar-knob,
+.sv-bar-selected::before,
+.sv-bar-selected .sv-bar-knob {
+  background: var(--color-primary);
+}
+.sv-bar-selected .sv-bar-count {
+  color: var(--color-primary);
+}
+.sv-bar.sv-chord-moving {
+  opacity: 0.3;
+}
+.sv-drag-ghost-bar {
+  width: 4px;
+  height: 2.4em;
+  padding: 0;
+  border-radius: 2px;
+  font-size: 1rem;
+}
 body.sv-dragging {
   cursor: grabbing;
   user-select: none;

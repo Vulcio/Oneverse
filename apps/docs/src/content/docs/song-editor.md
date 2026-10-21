@@ -28,6 +28,17 @@ The three modes:
 
 Editing the words keeps the chords with them: typing before a chord carries it along, and deleting words that carry chords leaves the chords where the words were, so you can place them again. Enter splits a line and its chords go with their words.
 
+## Bar lines
+
+Bar lines mark where each bar starts, in the words, as on a lead sheet: `|Amazing |grace how |sweet the |sound`. The [bars row and the chord grid](/metronome/#chord-grid) follow them, the click too. Without any, the bars come from the chords (see [Bars](/metronome/#bars)).
+
+- **Bar lines** in the toolbar fills them in from the chords - **Fill in this section from its chords** or **Fill in the whole song from its chords** - to start from, and takes them away again (**Remove this section's bar lines**, **Remove all bar lines**).
+- **Type `|`** in the words to add one at the cursor, or drag **Bar line** from the chords panel (under **Bars**) onto the words where a bar starts.
+- **Drag a bar line by its knob** - the dot under the words - onto another letter. On a touch screen, press and hold it a moment first: it lifts, and follows your finger along its line.
+- **Click a bar line** (tap it on a touch screen) to select it. Its tools show under it, or in the bar along the bottom on a phone or a tablet: **Move the bar line left** and **Move the bar line right** a letter at a time (the ← → arrow keys too), **One bar fewer** and **One more bar** for bars with no words of their own - a word held, an instrumental bar - shown as **×2** under the knob, and **Delete the bar line**.
+
+The chords between two bar lines fall in their bar on the beats their words reach: a chord halfway through a bar's words is on its third beat in 4/4.
+
 ## Sections
 
 Each block is a section: intro, verse, pre-chorus, chorus, post-chorus, bridge, vamp (a phrase repeated as long as needed), breakdown, instrumental, interlude, outro or tag.

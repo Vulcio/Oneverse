@@ -22,7 +22,7 @@ import { UndoRedo } from "@tiptap/extensions";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { NodeSelection, type EditorState } from "@tiptap/pm/state";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
-import { ChevronLeft, ChevronRight, FileUp, Minus, Plus, Redo2, StickyNote, Trash2, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileUp, Minus, Plus, Redo2, StickyNote, SeparatorVertical, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
@@ -36,6 +36,7 @@ import { CAPO_OPTIONS, KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from "../song-form"
 import { editorToSections, editorToSong, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { startChordDrag } from "./drag";
 import { ChordBar } from "./chord-bar";
+import { BarPopover, BarsMenu, NewBarLine } from "./bar-tools";
 import { SectionInserter } from "./section-inserter";
 import { SongOrder } from "./song-order";
 import { SongOrderActionsContext, type SongOrderActions } from "./song-order-context";
@@ -49,6 +50,7 @@ import {
   remeasureChords,
   withFreshIds,
   replaceDocument,
+  setDocumentBeats,
   setDocumentKey,
   duplicateLinked,
   replaceLinked,
@@ -101,7 +103,10 @@ export interface SharedEditing {
 }
 
 /** The editor's schema, for the shared document's start (made before the editor). */
-const editorSchema = getSchema(songEditorExtensions({ onChordPointerDown: () => {}, onEditChord: () => {} }));
+const editorSchema = getSchema(songEditorExtensions({ onChordPointerDown: () => {}, onBarPointerDown: () => {}, onEditChord: () => {} }));
+
+/** A bar's beats from a time signature as Song info has it ("6/8"): its top number, 4 without one. */
+const beatsOf = (timeSignature: string) => Number(/^(\d+)\//.exec(timeSignature.trim())?.[1]) || 4;
 
 /**
  * The song editor's Editor tab: the chart edited as it looks - chords above
@@ -180,11 +185,12 @@ function EditorBody({
   const emitted = useRef(sections);
   const emittedFlow = useRef(flow);
 
-  const events = useRef<ChordViewEvents>({ onChordPointerDown: () => {}, onEditChord: () => {} });
+  const events = useRef<ChordViewEvents>({ onChordPointerDown: () => {}, onBarPointerDown: () => {}, onEditChord: () => {} });
   const extensions = useMemo(
     () => [
       ...songEditorExtensions({
         onChordPointerDown: (event, pos) => events.current.onChordPointerDown(event, pos),
+        onBarPointerDown: (event, pos) => events.current.onBarPointerDown(event, pos),
         onEditChord: () => events.current.onEditChord(),
       }),
       // Together (issue #27): the chart is the room's document; undo takes back one's own changes only; the others' carets show.
@@ -201,7 +207,7 @@ function EditorBody({
   const editor = useEditor({
     extensions,
     // In the order it's sung, linked copies and all (issue #205). In a room, the room's document.
-    ...(!room && { content: { ...songToEditorJSON(sections, flow), attrs: { key: songKey || null } } }),
+    ...(!room && { content: { ...songToEditorJSON(sections, flow), attrs: { key: songKey || null, beats: beatsOf(facts.timeSignature) } } }),
     editable: !readOnly,
     immediatelyRender: false,
     shouldRerenderOnTransaction: false,
@@ -235,8 +241,21 @@ function EditorBody({
         else editor.view.focus();
       });
     },
+    onBarPointerDown: (event, pos) => {
+      if (!editor) return;
+      startChordDrag(editor.view, event, { kind: "moveBar", pos }, () => {
+        editor.view.dispatch(editor.state.tr.setSelection(NodeSelection.create(editor.state.doc, pos)));
+        if (event.pointerType === "touch") (editor.view.dom as HTMLElement).blur();
+        else editor.view.focus();
+      });
+    },
     onEditChord: () => setEditTick((tick) => tick + 1),
   };
+
+  // A bar's beats, for the chords in bar lines' bars (issue #238).
+  useEffect(() => {
+    if (editor) setDocumentBeats(editor.view, beatsOf(facts.timeSignature));
+  }, [editor, facts.timeSignature]);
 
   useEffect(() => {
     if (editor) setDocumentKey(editor.view, songKey || null);
@@ -411,6 +430,7 @@ function EditorBody({
           {/* A section at the end; between two, the "+" in the gap (issue #250). */}
           {editor ? <SectionInserter editor={editor} at={() => endOfOrder(editor)} testId="section-insert-end" /> : null}
           {editor ? <ChordPopover editor={editor} songKey={songKey} editTick={editTick} /> : null}
+          {editor ? <BarPopover editor={editor} /> : null}
           <p className="mt-4 text-xs text-muted-foreground">{t("structuredEditor.hints")}</p>
         </div>
         {mode === "visual" && editor ? <Palette editor={editor} songKey={songKey} sections={sections} /> : null}
@@ -552,6 +572,9 @@ function Toolbar({
         <ToolButton label={t("structuredEditor.noteLine")} disabled={!visual} onClick={() => editor && toggleNoteLine(editor.view)}>
           <StickyNote />
         </ToolButton>
+        <BarsMenu editor={editor} disabled={!visual}>
+          <SeparatorVertical />
+        </BarsMenu>
         {onReplaceChart ? (
           <ToolButton label={t("structuredEditor.replace")} onClick={onReplaceChart} testId="editor-replace">
             <FileUp />
@@ -733,6 +756,13 @@ function Palette({ editor, songKey, sections }: { editor: Editor; songKey: strin
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">{t("structuredEditor.chordHint")}</p>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <h3 className={heading}>{t("structuredEditor.bars.title")}</h3>
+        <div className={row}>
+          <NewBarLine editor={editor} />
+        </div>
+        <p className="text-xs text-muted-foreground">{t("structuredEditor.bars.paletteHint")}</p>
       </div>
     </aside>
   );

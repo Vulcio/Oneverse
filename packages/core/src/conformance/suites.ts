@@ -12,6 +12,7 @@ import { chordPositionProblem } from "../schemas/song-document-v2.js";
 import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-document/fold.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
 import { barAt, barLyrics, chartBars, recordingBeatPosition } from "../song-document/bars.js";
+import { barLinesFromRhythm, rhythmFromBarLines, suggestedBarLines } from "../song-document/bar-lines.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
@@ -267,6 +268,15 @@ const BARS_SONG = {
     { id: "p_intro", sectionId: "sec_intro" },
     { id: "p_verse", sectionId: "sec_verse" },
     { id: "p_chorus", sectionId: "sec_chorus", timeSignature: { numerator: 3, denominator: 4 } },
+  ],
+};
+
+/** A verse to place bar lines in (issue #238): four chords over a sung line, then a line of chords alone. */
+const BAR_LINES_SECTION = {
+  lines: [
+    { id: "line_a", kind: "lyric", text: "Amazing grace how sweet the sound", chords: [{ id: "chd_a1", at: 0, raw: "G" }, { id: "chd_a2", at: 8, raw: "C" }, { id: "chd_a3", at: 18, raw: "G" }, { id: "chd_a4", at: 28, raw: "D" }] },
+    { id: "line_n", kind: "note", text: "softly", chords: [] },
+    { id: "line_b", kind: "lyric", text: "", chords: [{ id: "chd_b1", at: 0, raw: "Em" }, { id: "chd_b2", at: 0, raw: "C" }, { id: "chd_b3", at: 0, raw: "D" }] },
   ],
 };
 
@@ -867,7 +877,49 @@ export const CONFORMANCE: ConformanceArea[] = [
         cases: [
           { name: "filled in from the chart", args: [SONG] },
           { name: "a section's own rhythm, a 3/4 pass, an intro of chords alone", args: [BARS_SONG] },
+          {
+            name: "bar lines in the words: cut where they stand, the words before a line's first one in the bar before",
+            args: [
+              {
+                ...SONG,
+                sections: SONG.sections.map((section, index) =>
+                  index === 0 ? { ...section, rhythm: rhythmFromBarLines(section as never, { line_v1: [{ at: 0, chordsBefore: 0, bars: 1 }, { at: 14, chordsBefore: 1, bars: 1 }], line_v3: [{ at: 13, chordsBefore: 0, bars: 2 }] }) } : section,
+                ),
+              },
+            ],
+          },
         ],
+      },
+      rhythmFromBarLines: {
+        about:
+          "A section's rhythm from bar lines placed in its lyrics (issue #238), as the editor saves them: each bar line starts a bar where it stands (its lyricAnchor), more bars after it when it says so, and the chords up to the next bar line fall in them on the beats their words reach, rounded to the beat and half a beat apart at least; between chords with no words, evenly. Words or chords before the first bar line get a bar of their own. Null without bar lines.",
+        params: ["section", "barLines", "beatsPerBar"],
+        run: rhythmFromBarLines,
+        cases: [
+          { name: "a bar line before each chord, the last word held two bars", args: [BAR_LINES_SECTION, { line_a: [{ at: 0, chordsBefore: 0, bars: 1 }, { at: 8, chordsBefore: 1, bars: 1 }, { at: 18, chordsBefore: 2, bars: 1 }, { at: 28, chordsBefore: 3, bars: 2 }], line_b: [{ at: 0, chordsBefore: 0, bars: 1 }] }, 4] },
+          { name: "two chords in a bar: the second on the beat its words reach", args: [BAR_LINES_SECTION, { line_a: [{ at: 0, chordsBefore: 0, bars: 1 }, { at: 18, chordsBefore: 2, bars: 1 }] }, 4] },
+          { name: "words before the first bar line: a bar of their own; three chords alone in one bar, evenly, in 3/4", args: [BAR_LINES_SECTION, { line_a: [{ at: 8, chordsBefore: 1, bars: 1 }], line_b: [{ at: 0, chordsBefore: 0, bars: 1 }] }, 3] },
+          { name: "no bar lines", args: [BAR_LINES_SECTION, {}, 4] },
+        ],
+      },
+      barLinesFromRhythm: {
+        about: "A section's bar lines from its rhythm (issue #238), to show and move them in the editor: a bar with a place in the lyrics starts one, the bars after it with none add to its count, and a bar line is placed among chords on the same character by the chords in the bars before it.",
+        params: ["section"],
+        run: barLinesFromRhythm,
+        cases: [
+          { name: "a rhythm with a bar carrying the chord on", args: [BARS_SONG.sections[1]] },
+          {
+            name: "from rhythmFromBarLines: the same bar lines back",
+            args: [{ ...BAR_LINES_SECTION, rhythm: rhythmFromBarLines(BAR_LINES_SECTION as never, { line_a: [{ at: 0, chordsBefore: 0, bars: 1 }, { at: 18, chordsBefore: 2, bars: 1 }], line_b: [{ at: 0, chordsBefore: 0, bars: 1 }, { at: 0, chordsBefore: 2, bars: 2 }] }) }],
+          },
+          { name: "no rhythm", args: [BAR_LINES_SECTION] },
+        ],
+      },
+      suggestedBarLines: {
+        about: "Bar lines where the chart's own bars would be (issue #238), a start to move them from: one before each chord, a sung line with one chord or none taking two bars, a line of chords alone a bar a chord, notes none.",
+        params: ["section"],
+        run: suggestedBarLines,
+        cases: [{ name: "a sung line and a line of chords alone", args: [BAR_LINES_SECTION] }],
       },
       recordingBeatPosition: {
         about:

@@ -4,6 +4,7 @@ import {
   ID_PREFIXES,
   parseChord,
   sectionsFromText,
+  suggestedBarLines,
   type SectionType,
 } from "@songverse/core";
 import { Extension, InputRule, Node } from "@tiptap/core";
@@ -15,7 +16,7 @@ import { Mapping } from "@tiptap/pm/transform";
 import { Decoration, DecorationSet, type EditorView, type NodeView } from "@tiptap/pm/view";
 import { joinBackward, joinForward } from "@tiptap/pm/commands";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import { sectionsToEditorJSON } from "./document";
+import { lineFromNode, linePosition, sectionsToEditorJSON } from "./document";
 import { SectionView } from "./section-view";
 import { LinkedView } from "./linked-view";
 
@@ -43,6 +44,8 @@ export function focusUnlessTouch(view: EditorView) {
 export interface ChordViewEvents {
   /** A pointer went down on a chord's chip: the drag (or click) starts there. */
   onChordPointerDown: (event: PointerEvent, pos: number) => void;
+  /** A pointer went down on a bar line (issue #238): the drag (or click) starts there. */
+  onBarPointerDown: (event: PointerEvent, pos: number) => void;
   /** Enter on a selected chord: edit its symbol. */
   onEditChord: () => void;
 }
@@ -56,7 +59,8 @@ const SongDoc = Node.create({
   topNode: true,
   content: "section (section | linked)*",
   addAttributes() {
-    return { key: { default: null, rendered: false } };
+    // `beats`: a bar's beats (the time signature's top number), for placing chords in bar lines' bars (issue #238).
+    return { key: { default: null, rendered: false }, beats: { default: 4, rendered: false } };
   },
 });
 
@@ -87,7 +91,7 @@ const SectionNode = Node.create({
         parseHTML: (el) => el.getAttribute("data-show-label") !== "false",
         renderHTML: (attrs) => (attrs.showLabel === false ? { "data-show-label": "false" } : {}),
       },
-      // Kept as they are through an edit; not edited here yet.
+      // The rhythm as loaded: kept as it is while its bar lines (issue #238) stay where they were.
       rhythm: { default: null, rendered: false },
       groove: { default: null, rendered: false },
       // Its first pass in the song's order, and whether it's sung at all (issue #205).
@@ -266,9 +270,110 @@ function chordNode(events: ChordViewEvents) {
   });
 }
 
+/**
+ * A bar line (issue #238): where a bar starts in the lyrics, between two
+ * characters, as a lead sheet marks it - a thin rule through the chord row
+ * and the words, with a knob under them to drag it by (a finger holds it a
+ * moment first, as a chord), and "×2" when bars with no words of their own
+ * follow it. A press without a drag selects it.
+ */
+class BarView implements NodeView {
+  dom: HTMLElement;
+  private count: HTMLElement;
+
+  constructor(
+    private node: PMNode,
+    getPos: () => number | undefined,
+    events: ChordViewEvents,
+  ) {
+    this.dom = document.createElement("span");
+    this.dom.className = "sv-bar";
+    this.dom.contentEditable = "false";
+    this.dom.dataset.svBar = "";
+    const knob = document.createElement("span");
+    knob.className = "sv-bar-knob";
+    this.count = document.createElement("span");
+    this.count.className = "sv-bar-count";
+    this.dom.append(knob, this.count);
+    this.render();
+    this.dom.addEventListener("pointerdown", (event) => {
+      const pos = getPos();
+      if (pos !== undefined) events.onBarPointerDown(event, pos);
+    });
+    this.dom.addEventListener("touchend", (event) => event.preventDefault(), { passive: false });
+  }
+
+  private render() {
+    const bars = (this.node.attrs.bars as number) ?? 1;
+    this.dom.dataset.bars = String(bars);
+    this.count.textContent = bars > 1 ? `×${bars}` : "";
+  }
+
+  update(node: PMNode) {
+    if (node.type !== this.node.type) return false;
+    this.node = node;
+    this.render();
+    return true;
+  }
+
+  selectNode() {
+    this.dom.classList.add("sv-bar-selected");
+  }
+
+  deselectNode() {
+    this.dom.classList.remove("sv-bar-selected");
+  }
+
+  stopEvent(event: Event) {
+    return /^(pointer|mouse|touch|click|contextmenu)/.test(event.type);
+  }
+
+  ignoreMutation() {
+    return true;
+  }
+}
+
+function barNode(events: ChordViewEvents) {
+  return Node.create({
+    name: "barLine",
+    inline: true,
+    group: "inline",
+    atom: true,
+    selectable: true,
+    draggable: false,
+    addAttributes() {
+      return {
+        bars: {
+          default: 1,
+          parseHTML: (el) => Math.max(1, Number(el.getAttribute("data-bars")) || 1),
+          renderHTML: (attrs) => ({ "data-bars": attrs.bars }),
+        },
+        // Its bars' cues as the rhythm had them ("hold"), kept.
+        cues: { default: null, rendered: false },
+      };
+    },
+    parseHTML() {
+      return [{ tag: "span[data-sv-bar]" }];
+    },
+    renderHTML({ HTMLAttributes }) {
+      return ["span", { "data-sv-bar": "", ...HTMLAttributes }, "|"];
+    },
+    renderText() {
+      return "|";
+    },
+    extendNodeSchema() {
+      return { leafText: () => "|" };
+    },
+    addNodeView() {
+      return ({ node, getPos }) => new BarView(node, getPos, events);
+    },
+  });
+}
+
 // --- helpers
 
 const isChord = (node: PMNode | null | undefined) => node?.type.name === "chord";
+const isBar = (node: PMNode | null | undefined) => node?.type.name === "barLine";
 
 /** Every chord in the document, in order, with its position and its line's. */
 function chordsIn(doc: PMNode) {
@@ -603,10 +708,10 @@ export function selectedChord(state: EditorState): { pos: number; node: PMNode }
   return selection instanceof NodeSelection && isChord(selection.node) ? { pos: selection.from, node: selection.node } : null;
 }
 
-/** Moves the chord at `pos` to `target` (a position in any line), keeping it selected. */
+/** Moves the chord (or bar line) at `pos` to `target` (a position in any line), keeping it selected. */
 export function moveChord(view: EditorView, pos: number, target: number): boolean {
   const node = view.state.doc.nodeAt(pos);
-  if (!isChord(node) || target === pos || target === pos + 1) return false;
+  if (!(isChord(node) || isBar(node)) || target === pos || target === pos + 1) return false;
   const $target = view.state.doc.resolve(target);
   if ($target.parent.type.name !== "line" || $target.parent.attrs.kind === "note") return false;
   const tr = view.state.tr.delete(pos, pos + 1);
@@ -655,6 +760,118 @@ export function insertChord(view: EditorView, raw: string, at?: number): boolean
   view.dispatch(tr);
   focusUnlessTouch(view);
   return true;
+}
+
+// --- commands on bar lines (issue #238)
+
+export function selectedBar(state: EditorState): { pos: number; node: PMNode } | null {
+  const selection = state.selection;
+  return selection instanceof NodeSelection && isBar(selection.node) ? { pos: selection.from, node: selection.node } : null;
+}
+
+/** Moves the bar line at `pos` a letter left or right (before the chords on that letter); on a line of chords alone, past a chord. */
+export function nudgeBar(view: EditorView, pos: number, direction: -1 | 1): boolean {
+  const { doc } = view.state;
+  const $pos = doc.resolve(direction === 1 ? pos + 1 : pos);
+  // A line with words: a letter at a time, before the chords on the letter it lands at.
+  if ($pos.parent.textContent.length > 0) {
+    const character = direction === 1 ? nextCharacter($pos) : previousCharacter($pos);
+    if (!character) return false;
+    if (direction === 1) return moveChord(view, pos, character.to);
+    let target = character.from;
+    for (let before = doc.resolve(target).nodeBefore; before && (isChord(before) || isBar(before)); before = doc.resolve(target).nodeBefore) target -= before.nodeSize;
+    return moveChord(view, pos, target);
+  }
+  // A line of chords alone: over the next chord.
+  const beside = direction === 1 ? $pos.nodeAfter : $pos.nodeBefore;
+  if (!beside || !(isChord(beside) || isBar(beside))) return false;
+  return moveChord(view, pos, direction === 1 ? pos + 1 + beside.nodeSize : pos - beside.nodeSize);
+}
+
+export function deleteBar(view: EditorView, pos: number) {
+  if (!isBar(view.state.doc.nodeAt(pos))) return;
+  const tr = view.state.tr.delete(pos, pos + 1);
+  tr.setSelection(TextSelection.create(tr.doc, pos));
+  view.dispatch(tr);
+  focusUnlessTouch(view);
+}
+
+/** How many bars start at the bar line at `pos`: 1, or more for bars with no words after it (1 to 16). */
+export function setBarCount(view: EditorView, pos: number, bars: number) {
+  const node = view.state.doc.nodeAt(pos);
+  const count = Math.min(16, Math.max(1, Math.round(bars)));
+  if (!isBar(node) || node!.attrs.bars === count) return;
+  const tr = view.state.tr.setNodeMarkup(pos, undefined, { ...node!.attrs, bars: count, cues: null });
+  tr.setSelection(NodeSelection.create(tr.doc, pos));
+  view.dispatch(tr);
+}
+
+/** Adds a bar line at `at` (default: the cursor), selected. */
+export function insertBarLine(view: EditorView, at?: number): boolean {
+  const { state } = view;
+  const pos = at ?? state.selection.from;
+  const $pos = state.doc.resolve(pos);
+  if ($pos.parent.type.name !== "line" || $pos.parent.attrs.kind === "note") return false;
+  const tr = state.tr.insert(pos, state.schema.nodes.barLine!.create({ bars: 1 }));
+  tr.setSelection(NodeSelection.create(tr.doc, pos)).scrollIntoView();
+  view.dispatch(tr);
+  focusUnlessTouch(view);
+  return true;
+}
+
+/** The sections (one, at `sectionPos`, or all) and their bar lines' positions. */
+function sectionsIn(doc: PMNode, sectionPos: number | null): { pos: number; node: PMNode }[] {
+  const found: { pos: number; node: PMNode }[] = [];
+  doc.forEach((node, pos) => {
+    if (node.type.name === "section" && (sectionPos === null || pos === sectionPos)) found.push({ pos, node });
+  });
+  return found;
+}
+
+function barsIn(node: PMNode, from: number): number[] {
+  const positions: number[] = [];
+  node.descendants((child, pos) => {
+    if (isBar(child)) positions.push(from + 1 + pos);
+  });
+  return positions;
+}
+
+/** Whether a section (at `sectionPos`, or any) has bar lines. */
+export function hasBarLines(doc: PMNode, sectionPos: number | null = null): boolean {
+  return sectionsIn(doc, sectionPos).some((section) => barsIn(section.node, section.pos).length > 0);
+}
+
+/** Removes the bar lines of a section (at `sectionPos`) or of the whole song: its bars filled in from the chart again. One step to undo. */
+export function clearBarLines(view: EditorView, sectionPos: number | null = null) {
+  const tr = view.state.tr;
+  const positions = sectionsIn(view.state.doc, sectionPos).flatMap((section) => barsIn(section.node, section.pos));
+  for (const pos of positions.sort((a, b) => b - a)) tr.delete(pos, pos + 1);
+  if (tr.docChanged) view.dispatch(tr);
+}
+
+/**
+ * Bar lines where the chart's own bars are (a bar line before each chord,
+ * a sung line two bars at least) in a section (at `sectionPos`) or the
+ * whole song, in place of any there - a start to move them from. One step
+ * to undo.
+ */
+export function fillBarLines(view: EditorView, sectionPos: number | null = null) {
+  const sections = sectionsIn(view.state.doc, sectionPos);
+  const tr = view.state.tr;
+  for (const pos of sections.flatMap((section) => barsIn(section.node, section.pos)).sort((a, b) => b - a)) tr.delete(pos, pos + 1);
+  const inserts: { pos: number; bars: number }[] = [];
+  tr.doc.forEach((section, sectionAt) => {
+    if (section.type.name !== "section" || !sections.some((one) => one.node.attrs.id === section.attrs.id)) return;
+    const lines = new Map<string, { node: PMNode; pos: number }>();
+    section.forEach((line, offset) => lines.set(line.attrs.id as string, { node: line, pos: sectionAt + 1 + offset }));
+    const marks = suggestedBarLines({ lines: [...lines.values()].map((line) => lineFromNode(line.node)) });
+    for (const [lineId, list] of Object.entries(marks)) {
+      const line = lines.get(lineId);
+      if (line) for (const mark of list) inserts.push({ pos: linePosition(line.node, line.pos, mark.at, mark.chordsBefore), bars: mark.bars });
+    }
+  });
+  for (const insert of inserts.sort((a, b) => b.pos - a.pos)) tr.insert(insert.pos, view.state.schema.nodes.barLine!.create({ bars: insert.bars }));
+  if (tr.docChanged) view.dispatch(tr);
 }
 
 /** Replaces the whole document (loading, text mode) without chord keeping. */
@@ -750,6 +967,12 @@ export function setDocumentKey(view: EditorView, key: string | null) {
   view.dispatch(view.state.tr.setDocAttribute("key", key).setMeta("addToHistory", false).setMeta(REPLACE_META, true));
 }
 
+/** A bar's beats (the time signature's top number) as the document has it, set from Song info: not a step to undo. */
+export function setDocumentBeats(view: EditorView, beats: number) {
+  if (view.state.doc.attrs.beats === beats) return;
+  view.dispatch(view.state.tr.setDocAttribute("beats", beats).setMeta("addToHistory", false).setMeta(REPLACE_META, true));
+}
+
 /** Toggles the lines in the selection between lyrics and a note for the band (a line with chords stays lyrics). */
 export function toggleNoteLine(view: EditorView) {
   const { state } = view;
@@ -762,7 +985,7 @@ export function toggleNoteLine(view: EditorView) {
   const toNote = lines.some((line) => line.node.attrs.kind !== "note");
   for (const line of lines) {
     let hasChords = false;
-    line.node.forEach((child) => (hasChords ||= isChord(child)));
+    line.node.forEach((child) => (hasChords ||= isChord(child) || isBar(child)));
     if (toNote && hasChords) continue;
     tr.setNodeAttribute(line.pos, "kind", toNote ? "note" : "lyric");
   }
@@ -774,6 +997,26 @@ export function toggleNoteLine(view: EditorView) {
 function handleKeyDown(view: EditorView, event: KeyboardEvent, events: ChordViewEvents): boolean {
   const { state } = view;
   const plain = !event.metaKey && !event.ctrlKey && !event.altKey;
+  const bar = selectedBar(state);
+  if (bar) {
+    if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && plain && !event.shiftKey) {
+      nudgeBar(view, bar.pos, event.key === "ArrowLeft" ? -1 : 1);
+      return true;
+    }
+    if (event.key === "Backspace" || event.key === "Delete") {
+      deleteBar(view, bar.pos);
+      return true;
+    }
+    if ((event.key === "+" || event.key === "=" || event.key === "-") && !event.metaKey && !event.ctrlKey) {
+      setBarCount(view, bar.pos, ((bar.node.attrs.bars as number) ?? 1) + (event.key === "-" ? -1 : 1));
+      return true;
+    }
+    if (event.key === "Escape") {
+      view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, bar.pos + 1)));
+      return true;
+    }
+    return false;
+  }
   const chord = selectedChord(state);
   if (chord) {
     if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && plain && !event.shiftKey) {
@@ -881,12 +1124,21 @@ export function songEditorExtensions(events: ChordViewEvents) {
           props: {
             handleKeyDown: (view, event) => handleKeyDown(view, event, events),
             handlePaste: (view, event) => handlePaste(view, event),
+            // "|" typed in the lyrics is a bar line (issue #238).
+            handleTextInput: (view, from, to, text) => {
+              if (text !== "|") return false;
+              const $from = view.state.doc.resolve(from);
+              if ($from.parent.type.name !== "line" || $from.parent.attrs.kind === "note") return false;
+              const tr = view.state.tr.replaceWith(from, to, view.state.schema.nodes.barLine!.create({ bars: 1 }));
+              view.dispatch(tr.setSelection(TextSelection.create(tr.doc, from + 1)).scrollIntoView());
+              return true;
+            },
           },
         }),
       ];
     },
   });
-  return [SongDoc, Text, SectionNode, LinkedNode, LineNode, chordNode(events), behaviour];
+  return [SongDoc, Text, SectionNode, LinkedNode, LineNode, chordNode(events), barNode(events), behaviour];
 }
 
 export function setDropTarget(view: EditorView, target: number | null) {

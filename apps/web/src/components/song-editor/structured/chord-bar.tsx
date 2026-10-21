@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@songverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@songverse/ui/components/popover";
 import { deleteChord, insertChord, nudgeChord, selectedChord, setChordSymbol } from "./extensions";
+import { BarLineTools, NewBarLine, useSelectedBar } from "./bar-tools";
 
 const VARIATIONS = ["", "m", "7", "maj7", "m7", "sus2", "sus4", "add9"];
 
@@ -45,6 +46,8 @@ const keepFocus = (event: SyntheticEvent) => event.preventDefault();
  * gets its tools at the start of the bar - moved a letter left or right,
  * deleted - and its variations after the key's chords (here, not in a
  * popover over the chart). It scrolls sideways; every chord is a finger wide.
+ * A bar line (issue #238) is added from its end, and one selected gets its
+ * tools there instead of the chords.
  */
 export function ChordBar({ editor, songKey, used }: { editor: Editor; songKey: string; used: string[] }) {
   const { t } = useTranslation();
@@ -52,6 +55,7 @@ export function ChordBar({ editor, songKey, used }: { editor: Editor; songKey: s
   const [other, setOther] = useState("");
   const [otherOpen, setOtherOpen] = useState(false);
   const selected = useEditorState({ editor, selector: ({ editor: current }) => (current ? ((selectedChord(current.state)?.node.attrs.raw as string | undefined) ?? null) : null) });
+  const bar = useSelectedBar(editor);
   const inKey = diatonicChords(songKey);
   const others = used.filter((raw) => !inKey.some((chord) => chord.chord === raw));
   const root = selected ? /^\(?([A-G][#b]?)/.exec(selected)?.[1] : undefined;
@@ -100,9 +104,14 @@ export function ChordBar({ editor, songKey, used }: { editor: Editor; songKey: s
       style={{ bottom: inset > 0 ? inset : "var(--save-bar-h, 0px)" }}
     >
       <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground">
-        <span className="truncate">{selected ? t("structuredEditor.barReplace", { chord: selected }) : t("structuredEditor.barHint")}</span>
+        <span className="truncate">{bar ? t("structuredEditor.bars.toolsHint") : selected ? t("structuredEditor.barReplace", { chord: selected }) : t("structuredEditor.barHint")}</span>
         {songKey && inKey.length ? <span className="shrink-0">{t("structuredEditor.inKey", { key: songKey })}</span> : null}
       </div>
+      {bar ? (
+        <div className="flex touch-pan-x gap-1.5 overflow-x-auto" data-testid="bar-tools">
+          <BarLineTools editor={editor} bar={bar} large />
+        </div>
+      ) : (
       <div className="flex touch-pan-x gap-1.5 overflow-x-auto">
         {selected ? (
           <>
@@ -153,7 +162,10 @@ export function ChordBar({ editor, songKey, used }: { editor: Editor; songKey: s
             </Button>
           </PopoverContent>
         </Popover>
+        <span className="mx-0.5 w-px shrink-0 self-stretch bg-border" aria-hidden />
+        <NewBarLine editor={editor} large />
       </div>
+      )}
     </div>
   );
 }

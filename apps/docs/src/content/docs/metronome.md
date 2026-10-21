@@ -48,7 +48,7 @@ At the top of a song in Practice and in Live, the **bars row** puts the song's c
 - **While the music plays,** the beat being played fills and the row slides along, so what's coming stays in view. It follows the song's stems or recording when they're playing - beat by beat when the [stem separation found its beats and bars](/library/#separating-a-recording-into-stems), else from its tempo and first beat - else the metronome, including the leader's when you [play in sync](/sets/#playing-in-sync). Stopped, it stands at the first bar and you can scroll it.
 - **The chords read as on the chart:** transposed, with your capo, names and colours.
 
-The bars come from the chart: each chord gets a bar, and a sung line takes at least two (a line with one chord holds it for a second bar). Lines of chords alone (an intro) take a bar per chord, and notes take none. Each bar has as many beats as the song's time signature says, and a section can have a time signature of its own in the song's order.
+The bars come from the chart's [bar lines](/song-editor/#bar-lines) when it has them. Otherwise from its chords: each chord gets a bar, and a sung line takes at least two (a line with one chord holds it for a second bar). Lines of chords alone (an intro) take a bar per chord, and notes take none. Each bar has as many beats as the song's time signature says, and a section can have a time signature of its own in the song's order.
 
 **Display** > **Chords** > **Bars** hides it, separately in Practice and in Live (see [Display](/display/)).
 
@@ -59,7 +59,7 @@ The bars come from the chart: each chord gets a bar, and a sung line takes at le
 ![The chord grid in Practice, the click playing](../../assets/screenshots/en/chord-grid.jpg)
 
 - **Four bars to a row** (two on a phone), each section under its name, with its time signature where it changes.
-- **Each bar** has its number, a slash for each beat and the chord on the beat it changes on. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord they start on to the next one).
+- **Each bar** has its number, a slash for each beat and the chord on the beat it changes on. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord or the bar line they start at to the next one).
 - **While the music plays,** the bar and the beat being played light up, and the grid scrolls to keep that bar in view. It follows the same things as the bars row: the stems, the metronome, or the leader's.
 - **The chords read as on the chart:** transposed, with your capo, names and colours, and on a set's song page your **Simpler chords** and **No bass notes** too.
 

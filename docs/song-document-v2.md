@@ -216,6 +216,17 @@ carries on to the next ones) and the chord carried into a bar that doesn't
 change on beat 1. `barAt()` finds the bar, beat and chord at a position in
 beats. Both are conformance cases (`chart.json`).
 
+The editor shows a rhythm as bar lines in the lyrics (`bar-lines.ts`): a bar
+with a `lyricAnchor` starts a bar line there, and the bars after it without
+one add to its count ("×2": a held word, an instrumental bar).
+`barLinesFromRhythm()` reads them, `rhythmFromBarLines()` writes them back -
+a bar line before the section's first words or chords adds a bar from its
+start, and the chords between two bar lines get the beats their words
+reach, rounded, half a beat apart at least - and `suggestedBarLines()` puts
+them where `chartBars()` would have its bars. A rhythm that was loaded is
+saved unchanged while its bar lines are. `chartBars()` gives each bar its
+`lyricAt`, so `barLyrics()` cuts the words at the bar lines.
+
 ## Anchors
 
 Anything that points into the lyrics uses a **lyric anchor**,
