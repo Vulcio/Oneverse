@@ -1,0 +1,542 @@
+{
+  "$schema": "songverse-conformance/v1",
+  "area": "scriptures",
+  "about": "Bible references (issue #301): the book a name means, how a reference reads into a book and its ranges, and how it's written back.",
+  "functions": {
+    "findBibleBook": {
+      "about": "The number of the book a name means - a name or abbreviation in English or French, an OSIS id, or the start of one name only (three letters at least); null when none or several.",
+      "params": [
+        "name"
+      ],
+      "cases": [
+        {
+          "name": "\"John\"",
+          "args": [
+            "John"
+          ],
+          "expected": 43
+        },
+        {
+          "name": "\"Jean\"",
+          "args": [
+            "Jean"
+          ],
+          "expected": 43
+        },
+        {
+          "name": "\"Jn.\"",
+          "args": [
+            "Jn."
+          ],
+          "expected": 43
+        },
+        {
+          "name": "\"1 John\"",
+          "args": [
+            "1 John"
+          ],
+          "expected": 62
+        },
+        {
+          "name": "\"I John\"",
+          "args": [
+            "I John"
+          ],
+          "expected": 62
+        },
+        {
+          "name": "\"1er Jean\"",
+          "args": [
+            "1er Jean"
+          ],
+          "expected": 62
+        },
+        {
+          "name": "\"Ésaïe\"",
+          "args": [
+            "Ésaïe"
+          ],
+          "expected": 23
+        },
+        {
+          "name": "\"Song of Solomon\"",
+          "args": [
+            "Song of Solomon"
+          ],
+          "expected": 22
+        },
+        {
+          "name": "\"Philipp\"",
+          "args": [
+            "Philipp"
+          ],
+          "expected": 50
+        },
+        {
+          "name": "\"Phile\"",
+          "args": [
+            "Phile"
+          ],
+          "expected": 57
+        },
+        {
+          "name": "\"Jo\"",
+          "args": [
+            "Jo"
+          ],
+          "expected": null
+        },
+        {
+          "name": "\"Hezekiah\"",
+          "args": [
+            "Hezekiah"
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "parseBibleReferences": {
+      "about": "The passages a text names, book by book: a semicolon starts another chapter or book, a comma another verse of the same chapter, \"23,1\" without a colon or dot is chapter 23 verse 1; a book of one chapter's number is a verse; a verse of null is the whole chapter; null when any part can't be read.",
+      "params": [
+        "text"
+      ],
+      "cases": [
+        {
+          "name": "\"John 3:16\"",
+          "args": [
+            "John 3:16"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 16
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"John 3:16-18\"",
+          "args": [
+            "John 3:16-18"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 18
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"John 3\"",
+          "args": [
+            "John 3"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": null
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"John 3-4\"",
+          "args": [
+            "John 3-4"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": null
+                  },
+                  "end": {
+                    "chapter": 4,
+                    "verse": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"John 3:16-4:2\"",
+          "args": [
+            "John 3:16-4:2"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 4,
+                    "verse": 2
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"Jn 3:16, 18; 4:1-3\"",
+          "args": [
+            "Jn 3:16, 18; 4:1-3"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 16
+                  }
+                },
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 18
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 18
+                  }
+                },
+                {
+                  "start": {
+                    "chapter": 4,
+                    "verse": 1
+                  },
+                  "end": {
+                    "chapter": 4,
+                    "verse": 3
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"Jean 3.16\"",
+          "args": [
+            "Jean 3.16"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 16
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"Psaume 23,1-4\"",
+          "args": [
+            "Psaume 23,1-4"
+          ],
+          "expected": [
+            {
+              "book": 19,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 23,
+                    "verse": 1
+                  },
+                  "end": {
+                    "chapter": 23,
+                    "verse": 4
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"Jude 3\"",
+          "args": [
+            "Jude 3"
+          ],
+          "expected": [
+            {
+              "book": 65,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 1,
+                    "verse": 3
+                  },
+                  "end": {
+                    "chapter": 1,
+                    "verse": 3
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"John 3:16; Rom 5:8\"",
+          "args": [
+            "John 3:16; Rom 5:8"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 16
+                  }
+                }
+              ]
+            },
+            {
+              "book": 45,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 5,
+                    "verse": 8
+                  },
+                  "end": {
+                    "chapter": 5,
+                    "verse": 8
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "\"John\"",
+          "args": [
+            "John"
+          ],
+          "expected": [
+            {
+              "book": 43,
+              "ranges": []
+            }
+          ]
+        },
+        {
+          "name": "\"John 3:18-16\"",
+          "args": [
+            "John 3:18-16"
+          ],
+          "expected": null
+        },
+        {
+          "name": "\"3:16\"",
+          "args": [
+            "3:16"
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "formatBibleReference": {
+      "about": "A reference written as people write it, in English or French, with a colon or a dot between a chapter and its verse.",
+      "params": [
+        "reference",
+        "options"
+      ],
+      "cases": [
+        {
+          "name": "verses in two chapters",
+          "args": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 16
+                  }
+                },
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 18
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 18
+                  }
+                },
+                {
+                  "start": {
+                    "chapter": 4,
+                    "verse": 1
+                  },
+                  "end": {
+                    "chapter": 4,
+                    "verse": 3
+                  }
+                }
+              ]
+            },
+            {}
+          ],
+          "expected": "John 3:16, 18; 4:1-3"
+        },
+        {
+          "name": "across chapters",
+          "args": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 4,
+                    "verse": 2
+                  }
+                }
+              ]
+            },
+            {}
+          ],
+          "expected": "John 3:16-4:2"
+        },
+        {
+          "name": "in French with a dot",
+          "args": [
+            {
+              "book": 43,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 3,
+                    "verse": 16
+                  },
+                  "end": {
+                    "chapter": 3,
+                    "verse": 16
+                  }
+                }
+              ]
+            },
+            {
+              "locale": "fr",
+              "separator": "."
+            }
+          ],
+          "expected": "Jean 3.16"
+        },
+        {
+          "name": "a book of one chapter",
+          "args": [
+            {
+              "book": 65,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 1,
+                    "verse": 3
+                  },
+                  "end": {
+                    "chapter": 1,
+                    "verse": 5
+                  }
+                }
+              ]
+            },
+            {}
+          ],
+          "expected": "Jude 3-5"
+        },
+        {
+          "name": "chapters",
+          "args": [
+            {
+              "book": 19,
+              "ranges": [
+                {
+                  "start": {
+                    "chapter": 23,
+                    "verse": null
+                  },
+                  "end": {
+                    "chapter": 24,
+                    "verse": null
+                  }
+                }
+              ]
+            },
+            {
+              "locale": "fr"
+            }
+          ],
+          "expected": "Psaumes 23-24"
+        }
+      ]
+    }
+  }
+}

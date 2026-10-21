@@ -43,6 +43,7 @@ export * from "./songbook-catalog-format/index.js";
 export * from "./api-client/index.js";
 export * from "./offline/index.js";
 export * from "./songbook-references/index.js";
+export * from "./scriptures/index.js";
 export * from "./search-text/index.js";
 export * from "./search-text/lyrics.js";
 export * from "./song-document/pass.js";

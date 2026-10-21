@@ -24,6 +24,8 @@ import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, scr
 import { cuesFromSections } from "../recording/cues.js";
 import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
+import { findBibleBook } from "../scriptures/books.js";
+import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
 import { CreateSongVersionSchema, UpdateSongVersionSchema } from "../requests/songs.js";
 import { AddSetlistItemSchema, CreateSetlistSchema } from "../requests/sets.js";
@@ -1769,6 +1771,37 @@ export const CONFORMANCE: ConformanceArea[] = [
             { name: "one digit: only itself", args: ["5", entries] },
           ];
         })(),
+      },
+    },
+  },
+  {
+    area: "scriptures",
+    about: "Bible references (issue #301): the book a name means, how a reference reads into a book and its ranges, and how it's written back.",
+    functions: {
+      findBibleBook: {
+        about: "The number of the book a name means - a name or abbreviation in English or French, an OSIS id, or the start of one name only (three letters at least); null when none or several.",
+        params: ["name"],
+        run: (name: string) => findBibleBook(name)?.number ?? null,
+        cases: ["John", "Jean", "Jn.", "1 John", "I John", "1er Jean", "Ésaïe", "Song of Solomon", "Philipp", "Phile", "Jo", "Hezekiah"].map((name) => ({ name: JSON.stringify(name), args: [name] })),
+      },
+      parseBibleReferences: {
+        about:
+          "The passages a text names, book by book: a semicolon starts another chapter or book, a comma another verse of the same chapter, \"23,1\" without a colon or dot is chapter 23 verse 1; a book of one chapter's number is a verse; a verse of null is the whole chapter; null when any part can't be read.",
+        params: ["text"],
+        run: parseBibleReferences,
+        cases: ["John 3:16", "John 3:16-18", "John 3", "John 3-4", "John 3:16-4:2", "Jn 3:16, 18; 4:1-3", "Jean 3.16", "Psaume 23,1-4", "Jude 3", "John 3:16; Rom 5:8", "John", "John 3:18-16", "3:16"].map((text) => ({ name: JSON.stringify(text), args: [text] })),
+      },
+      formatBibleReference: {
+        about: "A reference written as people write it, in English or French, with a colon or a dot between a chapter and its verse.",
+        params: ["reference", "options"],
+        run: (reference: BibleReference, options: { locale?: "en" | "fr"; separator?: ":" | "." }) => formatBibleReference(reference, options),
+        cases: [
+          { name: "verses in two chapters", args: [{ book: 43, ranges: [{ start: { chapter: 3, verse: 16 }, end: { chapter: 3, verse: 16 } }, { start: { chapter: 3, verse: 18 }, end: { chapter: 3, verse: 18 } }, { start: { chapter: 4, verse: 1 }, end: { chapter: 4, verse: 3 } }] }, {}] },
+          { name: "across chapters", args: [{ book: 43, ranges: [{ start: { chapter: 3, verse: 16 }, end: { chapter: 4, verse: 2 } }] }, {}] },
+          { name: "in French with a dot", args: [{ book: 43, ranges: [{ start: { chapter: 3, verse: 16 }, end: { chapter: 3, verse: 16 } }] }, { locale: "fr", separator: "." }] },
+          { name: "a book of one chapter", args: [{ book: 65, ranges: [{ start: { chapter: 1, verse: 3 }, end: { chapter: 1, verse: 5 } }] }, {}] },
+          { name: "chapters", args: [{ book: 19, ranges: [{ start: { chapter: 23, verse: null }, end: { chapter: 24, verse: null } }] }, { locale: "fr" }] },
+        ],
       },
     },
   },
