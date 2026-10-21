@@ -94,7 +94,8 @@ check("gone when the device goes", r !== null);
 // --- a song saved, heard by who watches it: by whom, and its revision now
 await call(owner, "PATCH", `/song-versions/${song.id}`, { contentFormat: "CHORDPRO", content: "[G]Saved live\n" });
 const revision = JSON.parse(sql(`select "documentJson" from "SongVersion" where id='${song.id}'`)).revision;
-r = await memberDevice.next((m) => m.type === "song" && m.songVersionId === song.id);
+// The save's own announcement: one from before (the song's creation) can come late on a busy server.
+r = await memberDevice.next((m) => m.type === "song" && m.songVersionId === song.id && m.revision === revision);
 check("a save is heard: by whom, at which revision", r?.revision === revision && r.by === "Notes owner" && r.byId === owner.id, JSON.stringify(r));
 check("…not by a stranger", (await strangerDevice.next((m) => m.type === "song", 800)) === null);
 
