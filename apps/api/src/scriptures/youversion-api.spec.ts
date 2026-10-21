@@ -62,6 +62,14 @@ describe("YouVersion's Platform API", () => {
     expect(await youVersionBibles("fr", "test-key", api.fetcher)).toEqual([]);
   });
 
+  it("takes the long copyright when there's no short one, as plain text", async () => {
+    const answer = (body: unknown): Fetcher => async () => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    const long = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: "", promotional_content: "<p>Scripture taken from the <b>BSB</b> &amp; used by permission.</p>" }));
+    expect(long.copyright).toBe("Scripture taken from the BSB & used by permission.");
+    const none = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: " ", promotional_content: null }));
+    expect(none.copyright).toBeNull();
+  });
+
   it("asks for a verse, a chapter, and verses one by one", async () => {
     const api = fakeApi();
     const verse = await youVersionPassage(3034, parseBibleReference("John 3:16")!, "test-key", api.fetcher);
