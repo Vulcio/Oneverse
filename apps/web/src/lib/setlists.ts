@@ -1,4 +1,4 @@
-import { transposeKey, type SetlistSummary } from "@oneverse/core";
+import { renderChart, setItemSlides, transposeKey, type RenderedChart, type ScreenSlide, type SetlistSongView, type SetlistSummary } from "@oneverse/core";
 import type { TFunction } from "i18next";
 
 import { formatSetDate, formatSetDay } from "@oneverse/ui/lib/dates";
@@ -38,4 +38,19 @@ export function transposeLabel(key: string | null, steps: number, t: TFunction):
 export function todayIso(): string {
   const now = new Date();
   return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+/** A set item's title (issue #305): a song's, a text's (else "Text"), or the placeholder for a song the viewer can't read. */
+export function setItemTitle(item: { text?: { title: string } | null; song: { title: string } | null }, t: TFunction): string {
+  if (item.text) return item.text.title || t("sets.text.untitled");
+  return item.song?.title ?? t("sets.hiddenSong");
+}
+
+/**
+ * A set item as the screens cut it (issue #305): a song's chart, as played in
+ * the set, and its lyrics' slides, or a text's paragraphs with no chart.
+ */
+export function setItemView(view: Pick<SetlistSongView, "item" | "song" | "arrangement" | "text">): { chart: RenderedChart | null; slides: ScreenSlide[] } {
+  const chart = view.song ? renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps, suggestedCapo: view.song.suggestedCapo }) : null;
+  return { chart, slides: setItemSlides({ chart, text: view.text }) };
 }

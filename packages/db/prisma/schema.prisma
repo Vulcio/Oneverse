@@ -1656,9 +1656,14 @@ model SongOwnershipRequest {
 }
 
 model SetlistItem {
-  id            String   @id @default(cuid())
+  id            String          @id @default(cuid())
   setlistId     String
-  songVersionId String
+  /// What it is (issue #305): a song, or slides of text. Each kind has its own fields: a song's songVersionId, a text's text.
+  kind          SetlistItemKind @default(SONG)
+  /// A song's; null for any other kind.
+  songVersionId String?
+  /// A text's (issue #305): {title, body}, the body's paragraphs its slides. Null for any other kind.
+  text          Json?
   arrangementId String?
   position      Int // Sort order (0-based)
   createdAt     DateTime @default(now())
@@ -1685,7 +1690,7 @@ model SetlistItem {
   sharedByUserId String?
 
   setlist        Setlist      @relation(fields: [setlistId], references: [id], onDelete: Cascade)
-  songVersion    SongVersion  @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
+  songVersion    SongVersion? @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
   arrangement    Arrangement? @relation("PlayedArrangement", fields: [arrangementId], references: [id], onDelete: SetNull)
   // Its own arrangement for this set, if one was made (see Arrangement.setlistItemId).
   setArrangement Arrangement? @relation("SetOnlyArrangement")
@@ -3149,6 +3154,12 @@ model SignupInvitation {
 }
 
 // After a song of a set (issue #199): see SET_TRANSITIONS in packages/core.
+/// What a set's item is (issue #305): what the screens cut into slides, each its own way.
+enum SetlistItemKind {
+  SONG
+  TEXT
+}
+
 enum SetTransition {
   STOP
   NEXT

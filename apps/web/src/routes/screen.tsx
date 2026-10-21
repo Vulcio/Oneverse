@@ -1,4 +1,4 @@
-import { composeBuiltInTemplate, formatScreenCode, lyricSlides, renderChart, screenBuiltInTemplate, screenLayers, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
+import { composeBuiltInTemplate, formatScreenCode, screenBuiltInTemplate, screenLayers, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
@@ -12,7 +12,7 @@ import type { StageLive } from "#/components/screen-widgets";
 import { loadLocale } from "@oneverse/app/i18n";
 import { useScreenDisplay } from "#/lib/screen-display";
 import { getVisitorLocale } from "@oneverse/app/server-auth";
-import { setlistTitle } from "#/lib/setlists";
+import { setItemTitle, setItemView, setlistTitle } from "#/lib/setlists";
 
 /**
  * A big screen (issue #186): open songverse.one/screen on whatever drives
@@ -89,16 +89,13 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
   // A copy kept before themes (issue #194) has none: the default look.
   const look = theme ?? composeBuiltInTemplate("classic")!;
   const song = useMemo<StageSong | null>(() => {
-    if (!view?.song) return null;
-    const chart = renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps, suggestedCapo: view.song.suggestedCapo });
-    return { key: view.item.id, title: view.song.title, slides: lyricSlides(chart), credits: set?.credits[view.song.id], chart };
-  }, [view, set]);
+    if (!view || (!view.song && !view.text)) return null;
+    const { chart, slides } = setItemView(view);
+    return { key: view.item.id, title: setItemTitle(view, t), slides, credits: view.song ? set?.credits[view.song.id] : undefined, chart };
+  }, [view, set, t]);
 
-  // Each song's slides, counted once per set (issue #289): the Slide count widget's set.
-  const slideCounts = useMemo(
-    () => (set?.songs ?? []).map((one) => (one.song ? lyricSlides(renderChart(one.song.document, one.arrangement?.document ?? null, { transposeSteps: one.item.transposeSteps })).length : 0)),
-    [set],
-  );
+  // Each item's slides, counted once per set (issue #289): the Slide count widget's set.
+  const slideCounts = useMemo(() => (set?.songs ?? []).map((one) => setItemView(one).slides.length), [set]);
 
   // What the template's widgets read (issue #268): the song's details, the next song, when this item came on.
   const [itemStartedAt, setItemStartedAt] = useState<number | null>(null);
@@ -107,13 +104,12 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
     const songs = set?.songs ?? [];
     const at = view ? songs.indexOf(view) : -1;
     const next = at >= 0 ? songs.slice(at + 1).find((one) => one.song) : undefined;
-    const nextChart = next?.song ? renderChart(next.song.document, next.arrangement?.document ?? null, { transposeSteps: next.item.transposeSteps }) : null;
     return {
       details: view?.song && song ? { title: view.song.title, key: song.chart?.key ?? view.song.key, tempo: view.song.tempo } : null,
-      nextSong: next?.song && nextChart ? { title: next.song.title, slides: lyricSlides(nextChart) } : null,
+      nextSong: next?.song ? { title: next.song.title, slides: setItemView(next).slides } : null,
       // The set's items (issue #272): the one on screen and the one after, whatever they are.
-      item: view && at >= 0 ? { title: view.song?.title ?? "", position: at + 1, count: songs.length } : null,
-      nextItem: at >= 0 && songs[at + 1]?.song ? { title: songs[at + 1]!.song!.title } : null,
+      item: view && at >= 0 ? { title: setItemTitle(view, t), position: at + 1, count: songs.length } : null,
+      nextItem: at >= 0 && songs[at + 1] ? { title: setItemTitle(songs[at + 1]!, t) } : null,
       itemStartedAt,
       // The media operator's (issue #269).
       operator: stage?.timer ?? null,

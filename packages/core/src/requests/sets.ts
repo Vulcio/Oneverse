@@ -27,11 +27,30 @@ export type UpdateSetlistRequest = z.input<typeof UpdateSetlistSchema>;
 
 const transposeSteps = z.number().int().min(-11).max(11);
 
-export const AddSetlistItemSchema = z.strictObject({
-  songVersionId: z.string(),
-  transposeSteps: optional(transposeSteps).describe("Semitones relative to the song's own key"),
-  afterItemId: optional(z.string().min(1).max(40)).describe("Played right after this song of the set (issue #199); at the end when left out"),
+/** The longest text item's body (issue #305). */
+export const SETLIST_TEXT_MAX = 5000;
+
+/** A text item (issue #305): a title, and a body whose paragraphs (split by a blank line) are its slides. */
+export const SetlistItemTextSchema = z.strictObject({
+  title: z.string().trim().max(120).describe("Shown in the set and on the screens' title widgets; may be empty"),
+  body: z.string().max(SETLIST_TEXT_MAX).describe("Its slides: paragraphs split by a blank line"),
 });
+export type SetlistItemText = z.output<typeof SetlistItemTextSchema>;
+
+/** A stored text item's text as it's read: null when it can't be. */
+export function readItemText(value: unknown): SetlistItemText | null {
+  const text = SetlistItemTextSchema.safeParse(value);
+  return text.success ? text.data : null;
+}
+
+export const AddSetlistItemSchema = z
+  .strictObject({
+    songVersionId: optional(z.string()).describe("A song (an item of kind SONG); give this or text"),
+    text: optional(SetlistItemTextSchema).describe("Slides of text (an item of kind TEXT, issue #305); give this or songVersionId"),
+    transposeSteps: optional(transposeSteps).describe("Semitones relative to the song's own key"),
+    afterItemId: optional(z.string().min(1).max(40)).describe("Played right after this item of the set (issue #199); at the end when left out"),
+  })
+  .refine((item) => (item.songVersionId === undefined) !== (item.text === undefined), "Give either songVersionId or text");
 
 /** A set item's own timer (issue #269): started on the screens' stage when Live comes to it. */
 export const SetlistItemTimerSchema = z.strictObject({
@@ -59,6 +78,7 @@ export const UpdateSetlistItemSchema = z.strictObject({
     .optional()
     .describe('For a transition (issue #10): the chords played into the next song, as degrees of its key ("2m7", "57"); [] for none'),
   timer: SetlistItemTimerSchema.nullable().optional().describe("Its own timer (issue #269), started on the screens when Live comes to it; null: none"),
+  text: optional(SetlistItemTextSchema).describe("A text item's title and body (issue #305); refused for a song"),
 });
 export type UpdateSetlistItemRequest = z.input<typeof UpdateSetlistItemSchema>;
 

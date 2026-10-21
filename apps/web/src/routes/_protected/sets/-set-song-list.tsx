@@ -11,7 +11,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { degreeChords, formatTimer, SET_TRANSITIONS, TRANSPOSE_STEP_OPTIONS, transposeKey, type SetlistItem, type SetlistSongRef, type UpdateSetlistItemRequest } from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Check, GripVertical, Pencil, Timer, X } from "lucide-react";
+import { Check, GripVertical, Pencil, Text as TextIcon, Timer, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -19,7 +19,8 @@ import { Button } from "@oneverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import type { SetProgress } from "#/lib/set-progress";
-import { transposeLabel } from "#/lib/setlists";
+import { setItemTitle, transposeLabel } from "#/lib/setlists";
+import { TextItemDialog } from "#/components/set-text-item";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Input } from "@oneverse/ui/components/input";
 import { TransitionChordsPicker, TransitionSymbol, TransitionVariations } from "#/components/set-transition";
@@ -139,7 +140,10 @@ function SongRow({
   const [customizing, setCustomizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const song = item.song;
-  const title = song?.title ?? t("sets.hiddenSong");
+  const title = setItemTitle(item, t);
+  // Slides of text (issue #305): its title, opened to change.
+  const text = item.text ?? null;
+  const [editingText, setEditingText] = useState(false);
 
   // Its own arrangement for this set, opened to change.
   async function customize() {
@@ -199,9 +203,24 @@ function SongRow({
             {song.title}
             {song.versionName ? <span className="font-normal text-muted-foreground"> — {song.versionName}</span> : null}
           </Link>
+        ) : text ? (
+          <span className="flex items-center gap-1.5" data-testid="set-text-row">
+            <TextIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <Link to={mode === "live" ? "/sets/$setlistId/live/$itemId" : "/sets/$setlistId/songs/$itemId"} params={{ setlistId, itemId: item.id }} className="font-medium hover:underline">
+              {title}
+            </Link>
+            {canEdit ? (
+              <Button variant="ghost" size="icon" className="size-7" aria-label={t("sets.text.edit", { title })} onClick={() => setEditingText(true)}>
+                <Pencil />
+              </Button>
+            ) : null}
+          </span>
         ) : (
           <span className="text-sm italic text-muted-foreground">{title}</span>
         )}
+        {text && editingText ? (
+          <TextItemDialog open={editingText} onOpenChange={setEditingText} text={text} onSave={async (changed) => onChange({ text: changed })} />
+        ) : null}
         {item.songbookReferences.length > 0 ? (
           <span className="text-xs text-muted-foreground" data-testid="set-song-references">
             {item.songbookReferences.join(", ")}
@@ -318,8 +337,8 @@ function SongRow({
               data-testid="set-song-transition-note"
             />
           ) : null}
-          {/* The chords played into the next song (issue #10). */}
-          {item.transition === "TRANSITION" && hasNext ? (
+          {/* The chords played into the next song (issue #10): a song's. */}
+          {item.transition === "TRANSITION" && hasNext && song ? (
             <>
               <TransitionChordsPicker fromKey={song ? playedKey(item) : null} toKey={nextKey} lastChord={item.edgeChords?.last ?? null} firstChord={nextFirstChord} degrees={item.transitionChords ?? []} onChange={(transitionChords) => onChange({ transitionChords })} />
               <TransitionVariations fromKey={song ? playedKey(item) : null} toKey={nextKey} lastChord={item.edgeChords?.last ?? null} firstChord={nextFirstChord} degrees={item.transitionChords ?? []} onChange={(transitionChords) => onChange({ transitionChords })} />

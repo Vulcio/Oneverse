@@ -16,6 +16,7 @@ import type {
   DisplaySpacingValue,
   LiveViewValue,
   SetTransitionValue,
+  SetlistItemKind,
   TechRoleValue,
 } from "../constants/index.js";
 import type { ArrangementDocumentV2, ChartPreferences } from "../schemas/arrangement-document-v2.js";
@@ -39,7 +40,7 @@ import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, Sav
 import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
-import type { UpdateSetlistItemRequest } from "../requests/sets.js";
+import type { AddSetlistItemSchema, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
 import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
@@ -186,6 +187,10 @@ export interface SetlistSummary {
 
 export interface SetlistItem {
   id: string;
+  /** What it is (issue #305): left out by an older API, a song. A kind this client doesn't know is shown as a placeholder. */
+  kind?: SetlistItemKind;
+  /** A text item's title and body, its paragraphs its slides (textSlides); null or left out for a song. */
+  text?: SetlistItemText | null;
   position: number;
   /** Semitones relative to the song's own key. */
   transposeSteps: number;
@@ -199,7 +204,7 @@ export interface SetlistItem {
   timer?: { kind: "countdown" | "count-up"; duration: number } | null;
   /** Its first and last chords as played (issue #217); null when the viewer can't read it. */
   edgeChords?: { first: string | null; last: string | null } | null;
-  /** Null when the song isn't readable by the current user (shown as a placeholder). */
+  /** Null when the song isn't readable by the current user (shown as a placeholder), and for an item that isn't a song. */
   song: SetlistSongRef | null;
   /** Also in the current user's own library, i.e. openable outside the set. */
   inLibrary: boolean;
@@ -241,7 +246,9 @@ export interface SetTransitionView {
 
 export interface SetlistSongView {
   set: SetlistSummary;
-  item: { id: string; position: number; transposeSteps: number; notes: string | null; arrangementId: string | null };
+  item: { id: string; position: number; transposeSteps: number; notes: string | null; arrangementId: string | null; kind?: SetlistItemKind };
+  /** A text item's title and body (issue #305); null or left out for a song. */
+  text?: SetlistItemText | null;
   /** What happens after it (issue #199), with the keys and tempos either side as played; null: nothing said. */
   transition?: SetTransitionView | null;
   song:
@@ -265,7 +272,7 @@ export interface SetlistSongView {
   nextItemId: string | null;
   /** Where the song is in the viewer's numbered songbooks: "JEM 855 · JEM3" (issue #59). */
   songbookReferences: string[];
-  /** The next song's title; null at the end of the set, or when the viewer can't read that song. */
+  /** The next item's title (a song's, or a text's); null at the end of the set, or when the viewer can't read that song. */
   nextTitle: string | null;
   /** The current user's private note on this song of the set. */
 }
@@ -2600,7 +2607,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     deleteSetlist: (setlistId: string) => request<void>(`/setlists/${setlistId}`, { method: "DELETE" }),
     searchSetlistSongs: (setlistId: string, query: string) =>
       request<SetlistSongRef[]>(`/setlists/${setlistId}/song-candidates?q=${encodeURIComponent(query)}`),
-    addSetlistItem: (setlistId: string, data: { songVersionId: string; transposeSteps?: number; afterItemId?: string }) =>
+    addSetlistItem: (setlistId: string, data: z.input<typeof AddSetlistItemSchema>) =>
       request<SetlistDetail>(`/setlists/${setlistId}/items`, { method: "POST", body: JSON.stringify(data) }),
     updateSetlistItem: (
       setlistId: string,

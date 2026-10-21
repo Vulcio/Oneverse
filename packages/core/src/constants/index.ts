@@ -140,6 +140,10 @@ export type LiveViewValue = (typeof LIVE_VIEWS)[number];
  * its count-in on the last bar (SEGUE); or a bridge into it - a key or tempo
  * change, a pad under a prayer (TRANSITION, with a note).
  */
+/** What a set's item is (issue #305): a song, or slides of text. A client that doesn't know a kind shows it as a placeholder. */
+export const SETLIST_ITEM_KINDS = ["SONG", "TEXT"] as const;
+export type SetlistItemKind = (typeof SETLIST_ITEM_KINDS)[number];
+
 export const SET_TRANSITIONS = ["STOP", "NEXT", "SEGUE", "TRANSITION"] as const;
 export type SetTransitionValue = (typeof SET_TRANSITIONS)[number];
 

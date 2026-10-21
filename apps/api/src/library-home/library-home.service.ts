@@ -61,7 +61,7 @@ export class LibraryHomeService {
     const [inSets, viewed] = await Promise.all([
       this.prisma.client.setlistItem.groupBy({
         by: ["songVersionId"],
-        where: { setlist: { ownerTeamId: { in: teamIds }, OR: [{ eventDate: { gte: since } }, { eventDate: null, createdAt: { gte: since } }] } },
+        where: { songVersionId: { not: null }, setlist: { ownerTeamId: { in: teamIds }, OR: [{ eventDate: { gte: since } }, { eventDate: null, createdAt: { gte: since } }] } },
         _count: { _all: true },
       }),
       this.prisma.client.songView.groupBy({
@@ -71,7 +71,7 @@ export class LibraryHomeService {
       }),
     ]);
     const score = new Map<string, number>();
-    for (const row of inSets) score.set(row.songVersionId, (score.get(row.songVersionId) ?? 0) + 2 * row._count._all);
+    for (const row of inSets) if (row.songVersionId) score.set(row.songVersionId, (score.get(row.songVersionId) ?? 0) + 2 * row._count._all);
     for (const row of viewed) score.set(row.songVersionId, (score.get(row.songVersionId) ?? 0) + row._count._all);
     return [...score]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))

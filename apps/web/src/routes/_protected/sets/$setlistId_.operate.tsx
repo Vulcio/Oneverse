@@ -1,9 +1,7 @@
 import {
   formatTimer,
-  lyricSlides,
   readSyncTimer,
   readSyncLayers,
-  renderChart,
   SCREEN_SWITCHABLE_LAYERS,
   SYNC_STAGE_MESSAGE_MAX,
   type ScreenSwitchableLayer,
@@ -32,7 +30,7 @@ import { setMode } from "#/lib/mode";
 import { useSidePanelRoom } from "#/lib/side-panel";
 import { markCurrent, markPlayed } from "#/lib/set-progress";
 import { disableSync, enableSync, leadSync, presentScreens, screensLocked, sendStage, syncState, takeScreens, useSync } from "#/lib/sync-client";
-import { setlistTitle } from "#/lib/setlists";
+import { setItemTitle, setItemView, setlistTitle } from "#/lib/setlists";
 import { cn } from "@oneverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId_/operate")({
@@ -211,7 +209,7 @@ function useSetSlides(copy: SetlistOfflineCopy) {
     () =>
       copy.songs.map((view) => ({
         itemId: view.item.id,
-        count: view.song ? lyricSlides(renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps })).length : 0,
+        count: setItemView(view).slides.length,
       })),
     [copy],
   );
@@ -385,17 +383,17 @@ function SlidesTab({ copy, view }: { copy: SetlistOfflineCopy; view: SetlistSong
   const presenting = session?.presenting ?? null;
   const [notesShown, setNotesShown] = useState(false);
   const [position, setPosition] = useState("");
-  const chart = useMemo(() => (view?.song ? renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps }) : null), [view]);
-  const slides = useMemo(() => (chart ? lyricSlides(chart) : []), [chart]);
-  if (!view?.song || !chart) return <p className="text-sm text-muted-foreground">{t("screens.operator.noSong")}</p>;
+  // A song's chart and lyrics, or a text's paragraphs (issue #305).
+  const { chart, slides } = useMemo(() => (view ? setItemView(view) : { chart: null, slides: [] }), [view]);
+  if (!view || (!view.song && !view.text)) return <p className="text-sm text-muted-foreground">{t("screens.operator.noSong")}</p>;
   const itemId = view.item.id;
   const here = presenting?.itemId === itemId ? presenting.slide : null;
   const send = (slide: number) => presentScreens({ itemId, slide, black: false });
   // The notes (issue #275): those on the song, filtered by their writers' team position.
   const holders = new Set(position ? members.filter((member) => member.positionIds?.includes(position)).map((member) => member.userId) : []);
-  const notes = notesShown ? (copy.notes[view.song.id]?.notes ?? []).filter((note) => !note.resolved && (!position || holders.has(note.author.id))) : [];
+  const notes = notesShown && view.song ? (copy.notes[view.song.id]?.notes ?? []).filter((note) => !note.resolved && (!position || holders.has(note.author.id))) : [];
   const notesFor = (passIndex: number): SongNote[] => {
-    const pass = chart.passes[passIndex];
+    const pass = chart?.passes[passIndex];
     if (!pass) return [];
     return notes.filter((note) => note.anchor.kind !== "song" && ("passId" in note.anchor && note.anchor.passId ? note.anchor.passId === pass.id : "sectionId" in note.anchor && note.anchor.sectionId === pass.section.id));
   };
@@ -446,7 +444,7 @@ function SlidesTab({ copy, view }: { copy: SetlistOfflineCopy; view: SetlistSong
       {songNotes.length > 0 ? <NotesList notes={songNotes} /> : null}
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-4">
         {slides.map((slide, index) => {
-          const pass = chart.passes[slide.passIndex];
+          const pass = chart?.passes[slide.passIndex];
           const first = index === 0 || slides[index - 1]!.passIndex !== slide.passIndex;
           const passNotes = first ? notesFor(slide.passIndex) : [];
           return (
@@ -466,9 +464,9 @@ function SlidesTab({ copy, view }: { copy: SetlistOfflineCopy; view: SetlistSong
                 data-slide={index}
               >
                 <span className="flex items-center gap-1">
-                  {first ? (
+                  {first && pass ? (
                     <span className="rounded bg-[var(--section-tag)] px-1.5 text-[10px] font-semibold tracking-wide text-[var(--section-ink)] uppercase">
-                      {pass?.label ?? pass?.section.label ?? t(`chart.sections.${pass?.section.type ?? "verse"}`)}
+                      {pass.label ?? pass.section.label ?? t(`chart.sections.${pass.section.type}`)}
                     </span>
                   ) : null}
                   <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{index + 1}</span>
@@ -630,10 +628,7 @@ function OnScreens({ copy }: { copy: SetlistOfflineCopy }) {
   const { session } = useSync();
   const presenting = session?.presenting ?? null;
   const view = presenting ? copy.songs.find((one) => one.item.id === presenting.itemId) : undefined;
-  const slides = useMemo(
-    () => (view?.song ? lyricSlides(renderChart(view.song.document, view.arrangement?.document ?? null, { transposeSteps: view.item.transposeSteps })) : []),
-    [view],
-  );
+  const slides = useMemo(() => (view ? setItemView(view).slides : []), [view]);
   const slide = presenting ? slides[presenting.slide] : undefined;
   return (
     <Card className="lg:col-span-2" data-testid="operator-on-screens">
@@ -641,12 +636,12 @@ function OnScreens({ copy }: { copy: SetlistOfflineCopy }) {
         <CardTitle className="text-base">{t("screens.operator.onScreens")}</CardTitle>
       </CardHeader>
       <CardContent>
-        {!presenting || !view?.song ? (
+        {!presenting || !view || (!view.song && !view.text) ? (
           <p className="text-sm text-muted-foreground">{t("screens.operator.notPresenting")}</p>
         ) : (
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium">
-              {view.song.title} · {t("screens.slideOf", { slide: presenting.slide + 1, count: slides.length })}
+              {setItemTitle(view, t)} · {t("screens.slideOf", { slide: presenting.slide + 1, count: slides.length })}
               {presenting.black ? ` · ${t("screens.black")}` : ""}
             </p>
             <p className={cn("text-lg", presenting.black && "opacity-40")}>{slide?.lines.join(" / ") || t("screens.noWords")}</p>

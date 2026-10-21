@@ -46,6 +46,35 @@ export function lyricSlides(chart: Pick<RenderedChart, "passes">, size: number =
 }
 
 /**
+ * A text item's slides (issue #305): its body's paragraphs, split by a blank
+ * line, each one slide of its lines as written - none dropped, none joined -
+ * with the item's title as their label. An empty body is one empty slide,
+ * like a pass without words.
+ */
+export function textSlides(text: { title: string; body: string }): ScreenSlide[] {
+  const label = text.title.trim() || null;
+  const paragraphs = text.body
+    .replace(/\r\n?/g, "\n")
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.split("\n").map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean))
+    .filter((lines) => lines.length > 0);
+  if (paragraphs.length === 0) return [{ passIndex: 0, passId: "text-0", label, lines: [], part: 0 }];
+  return paragraphs.map((lines, index) => ({ passIndex: index, passId: `text-${index}`, label, lines, part: 0 }));
+}
+
+/**
+ * A set item's slides, whatever it is (issue #305) - the one rule every
+ * client cuts an item by, so only "this item, slide N" crosses the network:
+ * a song's chart by lyricSlides, a text by textSlides; anything else (a
+ * song the viewer can't read, a kind this client doesn't know) has none.
+ */
+export function setItemSlides(item: { chart?: Pick<RenderedChart, "passes"> | null; text?: { title: string; body: string } | null }, size: number = LYRIC_LINES_PER_SLIDE): ScreenSlide[] {
+  if (item.chart) return lyricSlides(item.chart, size);
+  if (item.text) return textSlides(item.text);
+  return [];
+}
+
+/**
  * The slide `slide` moves to, going `by` slides on, kept within the song;
  * null when it would leave it (the leader goes to the next or previous song).
  */

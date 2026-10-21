@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Input } from "@oneverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
+import { TextItemDialog } from "#/components/set-text-item";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -76,6 +77,21 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/** Slides of text for the screens (issue #305): a welcome, a reading, announcements. */
+export function AddText({ set, onAdded }: { set: SetlistDetail; onAdded: (set: SetlistDetail) => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <p className="text-xs text-muted-foreground">{t("sets.text.addHint")}</p>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)} data-testid="set-add-text">
+        {t("sets.text.add")}
+      </Button>
+      {open ? <TextItemDialog open={open} onOpenChange={setOpen} text={null} onSave={async (text) => onAdded(await apiClient.addSetlistItem(set.id, { text }))} /> : null}
     </div>
   );
 }

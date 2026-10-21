@@ -1,4 +1,5 @@
-import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2 } from "@oneverse/core";
+import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText } from "@oneverse/core";
+import { TextItemSlides } from "#/components/set-text-item";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type RefObject, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -65,6 +66,8 @@ export interface LiveSong {
   onTransitionChords?: (degrees: string[]) => void;
   /** Its notes (issue #256): where it's opened from (a set or not), and the song they're pinned in. Absent: none. */
   notes?: { context: NotesContext; document: SongDocumentV2 };
+  /** A set's text item (issue #305): its slides, in place of a chart. */
+  text?: SetlistItemText | null;
 }
 
 /** How far down a chart is scrolled for its song to count as played (issue #153). */
@@ -464,7 +467,7 @@ export function LiveView({
       </main>
 
       {/* Presenting on the set's screens (issue #186), leading its session. */}
-      {song.setId ? <PresentPanel setId={song.setId} itemId={song.id} chart={chart} next={next} previous={previous} onSlidePass={goToPass} /> : null}
+      {song.setId ? <PresentPanel setId={song.setId} itemId={song.id} chart={chart} text={song.text ?? null} next={next} previous={previous} onSlidePass={goToPass} /> : null}
 
       {layout === "footer" ? (
         <footer className="flex shrink-0 items-center gap-1 border-t bg-card px-2 py-2 sm:gap-2 sm:px-4" data-testid="live-controls" data-layout="footer">
@@ -642,6 +645,8 @@ function LiveSongSection({
           <LiveChartWithNotes song={song} notes={song.notes} chart={chart} display={display} />
         ) : chart ? (
           <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={song.player} songVersionId={song.songVersionId} />
+        ) : song.text ? (
+          <TextItemSlides text={song.text} />
         ) : (
           <p className="text-muted-foreground">{t("sets.hiddenSong")}</p>
         )}

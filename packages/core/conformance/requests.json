@@ -346,6 +346,44 @@
           }
         },
         {
+          "name": "a text (issue #305)",
+          "args": [
+            {
+              "text": {
+                "title": " Welcome ",
+                "body": "Coffee after the service"
+              }
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "value": {
+              "text": {
+                "title": "Welcome",
+                "body": "Coffee after the service"
+              }
+            }
+          }
+        },
+        {
+          "name": "a song and a text",
+          "args": [
+            {
+              "songVersionId": "song_1",
+              "text": {
+                "title": "",
+                "body": "x"
+              }
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "messages": [
+              "Give either songVersionId or text"
+            ]
+          }
+        },
+        {
           "name": "nothing",
           "args": [
             {}
@@ -353,7 +391,7 @@
           "expected": {
             "ok": false,
             "messages": [
-              "songVersionId must be a string"
+              "Give either songVersionId or text"
             ]
           }
         }

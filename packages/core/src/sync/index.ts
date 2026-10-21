@@ -44,7 +44,7 @@ export interface SyncStems {
 
 /**
  * What the leader shows on the set's screens (issue #186): a slide of a song
- * of the set, as lyricSlides() cuts it, or nothing (`black`).
+ * of the set, as setItemSlides() cuts it (a song's lyrics or a text's paragraphs), or nothing (`black`).
  */
 export interface SyncPresenting {
   itemId: string;

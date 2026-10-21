@@ -56,7 +56,7 @@ import { setStackSegues, useStackSegues } from "#/lib/live-stack";
 import { useSync } from "#/lib/sync-client";
 import type { AppSession } from "@oneverse/app/server-auth";
 import { deviceStorage } from "#/lib/offline-data";
-import { setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
+import { setItemTitle, setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
 import { useSmartLists } from "#/lib/smart-lists";
 import { filtersOf, parseLibrarySearch } from "#/routes/_protected/library/-library-search";
 import { useMyOrganizations } from "@oneverse/planning/organizations";
@@ -511,7 +511,7 @@ function SetsPanel({ title, pathname, setlists }: { title: string; pathname: str
             key={set.id}
             active={pathname === `/sets/${set.id}` || pathname.startsWith(`/sets/${set.id}/`)}
             title={setlistTitle(set, t, i18n.language)}
-            detail={[set.teamName ?? (set.isGuest ? set.ownerName : null) ?? t("nav.personal"), t("nav.songCount", { count: set.itemCount })].join(" · ")}
+            detail={[set.teamName ?? (set.isGuest ? set.ownerName : null) ?? t("nav.personal"), t("nav.itemCount", { count: set.itemCount })].join(" · ")}
           >
             {(className, content) => (
               <Link to="/sets/$setlistId" params={{ setlistId: set.id }} className={className}>
@@ -610,7 +610,7 @@ function SetSongsPanel({ setId, pathname, sets, onBack }: { setId: string; pathn
               className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md px-1 py-0.5 hover:bg-sidebar-accent data-[status=active]:bg-sidebar-accent"
             >
               <span className="truncate text-base font-medium text-foreground">{setlistTitle(set, t, i18n.language)}</span>
-              <span className="truncate text-xs text-muted-foreground">{[setOwnerLabel(set, t), t("nav.songCount", { count: set.items.length })].join(" · ")}</span>
+              <span className="truncate text-xs text-muted-foreground">{[setOwnerLabel(set, t), t("nav.itemCount", { count: set.items.length })].join(" · ")}</span>
             </Link>
             {/* What the songs show on their right (issue #199), on this device. */}
             <DropdownMenu>
@@ -715,7 +715,7 @@ function SetSongEntry({
   const movable = set.canEdit && mode === "live";
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: item.id, disabled: !movable });
   const song = item.song;
-  const title = song?.title ?? t("sets.hiddenSong");
+  const title = setItemTitle(item, t);
   const baseKey = song?.key && item.arrangement ? (transposeKey(song.key, item.arrangement.transposeSteps) ?? song.key) : (song?.key ?? null);
   const playedKey = baseKey ? (transposeKey(baseKey, item.transposeSteps) ?? baseKey) : null;
   // What they chose to see on the right (issue #199), in columns that line up down the list.

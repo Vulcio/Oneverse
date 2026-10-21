@@ -22,7 +22,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
 import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
@@ -1300,6 +1300,16 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "an arrangement: changed words, an inserted line", args: [SONG, ARRANGEMENT, 2] },
         ],
       },
+      textSlides: {
+        about: "A text item's slides (issue #305): its paragraphs, split by a blank line, each one slide of its lines as written, labelled with its title; an empty body is one empty slide.",
+        params: ["text"],
+        run: textSlides,
+        cases: [
+          { name: "three paragraphs", args: [{ title: "Welcome", body: "Welcome to church!\nCoffee after the service.\n\nKids go to the hall\n\n\n  Wi-Fi: guests  " }] },
+          { name: "Windows line ends, a line of spaces between", args: [{ title: "", body: "One\r\n  \r\nTwo\r\nthree" }] },
+          { name: "an empty body", args: [{ title: "Pause", body: "  " }] },
+        ],
+      },
       resolveScreenTheme: {
         about:
           "A screen theme as every client reads it (issue #194, docs/screen-theme-v1.md): what it says over the defaults; a part it can't read falls back to that part's defaults, a field it doesn't know is ignored, and anything that isn't a theme is the default look.",
@@ -2280,6 +2290,8 @@ export const CONFORMANCE: ConformanceArea[] = [
         run: checked(AddSetlistItemSchema),
         cases: [
           { name: "a song", args: [{ songVersionId: "song_1" }] },
+          { name: "a text (issue #305)", args: [{ text: { title: " Welcome ", body: "Coffee after the service" } }] },
+          { name: "a song and a text", args: [{ songVersionId: "song_1", text: { title: "", body: "x" } }] },
           { name: "nothing", args: [{}] },
         ],
       },

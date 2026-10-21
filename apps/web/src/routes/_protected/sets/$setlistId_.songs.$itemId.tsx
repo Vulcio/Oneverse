@@ -17,7 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/component
 import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
-import { setlistTitle, transposeLabel } from "#/lib/setlists";
+import { setItemTitle, setlistTitle, transposeLabel } from "#/lib/setlists";
+import { TextItemSlides } from "#/components/set-text-item";
 import { useSongView } from "#/lib/song-views";
 import { useSyncSong } from "#/lib/sync-client";
 
@@ -95,7 +96,7 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{song?.title ?? t("sets.hiddenSong")}</h1>
+          <h1 className="text-2xl font-semibold">{setItemTitle(view, t)}</h1>
           <p className="text-sm text-muted-foreground">{details}</p>
           {view.sharedBy ? (
             <div>
@@ -156,6 +157,13 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
             </CardContent>
           </Card>
         </ChartOrPdf>
+      ) : view.text ? (
+        // Slides of text (issue #305), as the screens show them.
+        <Card>
+          <CardContent>
+            <TextItemSlides text={view.text} />
+          </CardContent>
+        </Card>
       ) : null}
 
       {item.notes ? (

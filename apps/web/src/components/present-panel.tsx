@@ -1,4 +1,4 @@
-import { lyricSlides, stepSlide, structureOf, type RenderedChart, type SyncPresenting } from "@oneverse/core";
+import { setItemSlides, stepSlide, structureOf, type RenderedChart, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, MonitorOff, MonitorUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,6 +22,7 @@ export function PresentPanel({
   setId,
   itemId,
   chart,
+  text,
   next,
   previous,
   onSlidePass,
@@ -29,6 +30,8 @@ export function PresentPanel({
   setId: string;
   itemId: string;
   chart: RenderedChart | null;
+  /** A text item's (issue #305): its slides, when there's no chart. */
+  text?: SetlistItemText | null;
   next: (() => void) | null;
   previous: (() => void) | null;
   /** The chart scrolled to the pass a slide's from. */
@@ -48,7 +51,7 @@ export function PresentPanel({
     setSent(next);
     publishPresenting(next);
   };
-  const slides = useMemo(() => (chart ? lyricSlides(chart) : []), [chart]);
+  const slides = useMemo(() => setItemSlides({ chart, text }), [chart, text]);
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const screens = sync.setId === setId ? sync.members.filter((member) => member.screen) : [];
   // A media operator running the screens alone (issue #275): this Live shows what's on them, and waits.

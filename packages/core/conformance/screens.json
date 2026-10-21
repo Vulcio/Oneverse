@@ -562,6 +562,101 @@
         }
       ]
     },
+    "textSlides": {
+      "about": "A text item's slides (issue #305): its paragraphs, split by a blank line, each one slide of its lines as written, labelled with its title; an empty body is one empty slide.",
+      "params": [
+        "text"
+      ],
+      "cases": [
+        {
+          "name": "three paragraphs",
+          "args": [
+            {
+              "title": "Welcome",
+              "body": "Welcome to church!\nCoffee after the service.\n\nKids go to the hall\n\n\n  Wi-Fi: guests  "
+            }
+          ],
+          "expected": [
+            {
+              "passIndex": 0,
+              "passId": "text-0",
+              "label": "Welcome",
+              "lines": [
+                "Welcome to church!",
+                "Coffee after the service."
+              ],
+              "part": 0
+            },
+            {
+              "passIndex": 1,
+              "passId": "text-1",
+              "label": "Welcome",
+              "lines": [
+                "Kids go to the hall"
+              ],
+              "part": 0
+            },
+            {
+              "passIndex": 2,
+              "passId": "text-2",
+              "label": "Welcome",
+              "lines": [
+                "Wi-Fi: guests"
+              ],
+              "part": 0
+            }
+          ]
+        },
+        {
+          "name": "Windows line ends, a line of spaces between",
+          "args": [
+            {
+              "title": "",
+              "body": "One\r\n  \r\nTwo\r\nthree"
+            }
+          ],
+          "expected": [
+            {
+              "passIndex": 0,
+              "passId": "text-0",
+              "label": null,
+              "lines": [
+                "One"
+              ],
+              "part": 0
+            },
+            {
+              "passIndex": 1,
+              "passId": "text-1",
+              "label": null,
+              "lines": [
+                "Two",
+                "three"
+              ],
+              "part": 0
+            }
+          ]
+        },
+        {
+          "name": "an empty body",
+          "args": [
+            {
+              "title": "Pause",
+              "body": "  "
+            }
+          ],
+          "expected": [
+            {
+              "passIndex": 0,
+              "passId": "text-0",
+              "label": "Pause",
+              "lines": [],
+              "part": 0
+            }
+          ]
+        }
+      ]
+    },
     "resolveScreenTheme": {
       "about": "A screen theme as every client reads it (issue #194, docs/screen-theme-v1.md): what it says over the defaults; a part it can't read falls back to that part's defaults, a field it doesn't know is ignored, and anything that isn't a theme is the default look.",
       "params": [

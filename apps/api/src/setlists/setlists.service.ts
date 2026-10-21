@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { type SavedDisplaySettings, chartEdgeChords, readItemTimer, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
+import { type SavedDisplaySettings, chartEdgeChords, readItemText, readItemTimer, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -19,6 +19,14 @@ import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** An item with its song: a song item (issue #305). */
+function hasSong<T extends { songVersion: SongRow | null }>(item: T): item is T & { songVersion: SongRow } {
+  return item.songVersion !== null;
+}
+
+/** A song item's song id (issue #305: other kinds have none). */
+const songIdsOf = (items: { songVersionId: string | null }[]) => [...new Set(items.flatMap((item) => (item.songVersionId ? [item.songVersionId] : [])))];
 const CANDIDATE_LIMIT = 20;
 
 export interface SongRef {
@@ -141,12 +149,13 @@ export class SetlistsService {
       },
     });
 
-    const [readable, inViewersLibrary] = await Promise.all([this.sets.readableItems(set, set.items), this.sets.visibilityFor(user)]);
+    const songItems = set.items.filter(hasSong);
+    const [readable, inViewersLibrary] = await Promise.all([this.sets.readableItems(set, songItems), this.sets.visibilityFor(user)]);
 
     // Other versions of each song, for the version picker (editors only).
     const siblingsByWork = new Map<string, SongRef[]>();
     if (access.canEdit) {
-      const workIds = [...new Set(set.items.map((item) => item.songVersion.workId))];
+      const workIds = [...new Set(songItems.map((item) => item.songVersion.workId))];
       const siblings = await this.prisma.client.songVersion.findMany({
         where: { AND: [{ workId: { in: workIds } }, await this.sets.addableWhere(set)] },
         select: SONG_SELECT,
@@ -159,21 +168,21 @@ export class SetlistsService {
 
     // The arrangements each song could play in this set (editors only).
     const choices = access.canEdit
-      ? await this.arrangements.choicesForSet(set, [...new Set(set.items.map((item) => item.songVersionId))])
+      ? await this.arrangements.choicesForSet(set, songIdsOf(set.items))
       : new Map<string, { id: string; name: string; isTeamDefault: boolean }[]>();
 
 
     // Pending requests for the team to take over songs shared into this set.
     const pending = set.ownerTeamId
       ? await this.prisma.client.songOwnershipRequest.findMany({
-          where: { teamId: set.ownerTeamId, status: "PENDING", songVersionId: { in: set.items.map((item) => item.songVersionId) } },
+          where: { teamId: set.ownerTeamId, status: "PENDING", songVersionId: { in: songIdsOf(set.items) } },
           select: { id: true, songVersionId: true },
         })
       : [];
     const pendingBySong = new Map(pending.map((request) => [request.songVersionId, request.id]));
 
     // Where each song is in the viewer's numbered songbooks: "JEM 855 · JEM3" (issue #55).
-    const referencesBySong = await this.songbookReferences(user, set.items.map((item) => item.songVersionId));
+    const referencesBySong = await this.songbookReferences(user, songIdsOf(set.items));
 
     return {
       ...summarize(set),
@@ -181,12 +190,15 @@ export class SetlistsService {
       canEdit: access.canEdit,
       isGuest: access.isGuest,
       items: set.items.map((item) => {
+        if (!hasSong(item)) return otherItem(item);
         const song = item.songVersion;
         const shown = readable.has(item.id) || inViewersLibrary(song);
         const sharedPersonalSong = !!set.ownerTeamId && song.ownerScope === "USER" && !!song.ownerUserId;
         const requestId = pendingBySong.get(song.id) ?? null;
         return {
           id: item.id,
+          kind: item.kind,
+          text: null,
           position: item.position,
           transposeSteps: item.transposeSteps,
           notes: item.notes,
@@ -250,6 +262,7 @@ export class SetlistsService {
       where: { setlistId: set.id },
       select: { id: true, sharedByUserId: true, songVersion: { select: SONG_SELECT } },
     });
+    const songItems = items.filter(hasSong);
     const [addable, actorSees] = await Promise.all([this.sets.addableIn(next), this.sets.visibilityFor(user)]);
     const sharer = set.ownerUserId ?? user.id;
 
@@ -260,7 +273,7 @@ export class SetlistsService {
         where: { setlistItem: { setlistId: set.id } },
         data: { ownerScope: teamId ? "TEAM" : "USER", ownerUserId: next.ownerUserId, ownerTeamId: next.ownerTeamId },
       });
-      for (const item of items) {
+      for (const item of songItems) {
         const sharedByUserId = addable(item.songVersion) ? null : (item.sharedByUserId ?? (actorSees(item.songVersion) ? sharer : null));
         if (sharedByUserId !== item.sharedByUserId) {
           await tx.setlistItem.update({ where: { id: item.id }, data: { sharedByUserId } });
@@ -298,20 +311,26 @@ export class SetlistsService {
 
   async addItem(user: AuthenticatedUser, setlistId: string, dto: AddSetlistItemDto) {
     const set = await this.sets.findEditable(user, setlistId);
-    await this.assertAddable(set, dto.songVersionId);
+    if (dto.songVersionId) await this.assertAddable(set, dto.songVersionId);
     await this.prisma.client.$transaction(async (tx) => {
       let position = await tx.setlistItem.count({ where: { setlistId } });
       // Right after a song of the set (issue #199, "Play next" in Live): the ones after it move down one.
       if (dto.afterItemId) {
         const after = await tx.setlistItem.findFirst({ where: { id: dto.afterItemId, setlistId }, select: { position: true } });
-        if (!after) throw new NotFoundException("That song isn't in this set any more.");
+        if (!after) throw new NotFoundException("That item isn't in this set any more.");
         position = after.position + 1;
         await tx.setlistItem.updateMany({ where: { setlistId, position: { gte: position } }, data: { position: { increment: 1 } } });
       }
+      // Slides of text (issue #305): nothing of a song's.
+      if (dto.text) {
+        await tx.setlistItem.create({ data: { setlistId, kind: "TEXT", text: dto.text, position } });
+        return;
+      }
+      const songVersionId = dto.songVersionId!;
       // A team set plays the team's usual arrangement of the song, if it has one.
-      const arrangementId = set.ownerTeamId ? await this.arrangements.teamDefaultId(set.ownerTeamId, dto.songVersionId) : null;
+      const arrangementId = set.ownerTeamId ? await this.arrangements.teamDefaultId(set.ownerTeamId, songVersionId) : null;
       await tx.setlistItem.create({
-        data: { setlistId, songVersionId: dto.songVersionId, transposeSteps: dto.transposeSteps ?? 0, position, arrangementId },
+        data: { setlistId, songVersionId, transposeSteps: dto.transposeSteps ?? 0, position, arrangementId },
       });
     });
     return this.findOne(user, setlistId);
@@ -320,9 +339,28 @@ export class SetlistsService {
   async updateItem(user: AuthenticatedUser, setlistId: string, itemId: string, dto: UpdateSetlistItemDto) {
     const set = await this.sets.findEditable(user, setlistId);
     const item = await this.findItem(setlistId, itemId);
-    if (dto.songVersionId !== undefined && dto.songVersionId !== item.songVersionId) {
+    // Not a song (issue #305): only what every item has, and a text's text.
+    if (!item.songVersionId) {
+      if (dto.songVersionId !== undefined || dto.arrangementId !== undefined || dto.transposeSteps !== undefined || dto.transitionChords !== undefined) {
+        throw new BadRequestException("Only a song has a version, an arrangement, a key or transition chords");
+      }
+      await this.prisma.client.setlistItem.update({
+        where: { id: itemId },
+        data: {
+          ...(dto.text !== undefined && { text: dto.text }),
+          ...(dto.notes !== undefined && { notes: dto.notes || null }),
+          ...(dto.transition !== undefined && { transition: dto.transition }),
+          ...(dto.transitionNote !== undefined && { transitionNote: dto.transitionNote }),
+          ...(dto.timer !== undefined && { timer: dto.timer ?? Prisma.DbNull }),
+        },
+      });
+      return this.findOne(user, setlistId);
+    }
+    if (dto.text !== undefined) throw new BadRequestException("Only a text item has a text");
+    const itemSongId = item.songVersionId;
+    if (dto.songVersionId !== undefined && dto.songVersionId !== itemSongId) {
       const [current, next] = await Promise.all([
-        this.prisma.client.songVersion.findUniqueOrThrow({ where: { id: item.songVersionId }, select: { workId: true } }),
+        this.prisma.client.songVersion.findUniqueOrThrow({ where: { id: itemSongId }, select: { workId: true } }),
         this.prisma.client.songVersion.findUnique({ where: { id: dto.songVersionId }, select: { workId: true } }),
       ]);
       if (!next || next.workId !== current.workId) {
@@ -331,8 +369,8 @@ export class SetlistsService {
       await this.assertAddable(set, dto.songVersionId);
     }
     // Another version plays the team's usual arrangement of it (an arrangement belongs to one version).
-    const switching = dto.songVersionId !== undefined && dto.songVersionId !== item.songVersionId;
-    const songVersionId = switching ? dto.songVersionId! : item.songVersionId;
+    const switching = dto.songVersionId !== undefined && dto.songVersionId !== itemSongId;
+    const songVersionId = switching ? dto.songVersionId! : itemSongId;
     let arrangementId: string | null | undefined = switching
       ? set.ownerTeamId
         ? await this.arrangements.teamDefaultId(set.ownerTeamId, songVersionId)
@@ -372,7 +410,8 @@ export class SetlistsService {
   async setArrangement(user: AuthenticatedUser, setlistId: string, itemId: string, name: string) {
     const set = await this.sets.findEditable(user, setlistId);
     const item = await this.findItem(setlistId, itemId);
-    return { arrangementId: await this.arrangements.forSetItem(user, set, item, name) };
+    if (!item.songVersionId) throw new BadRequestException("Only a song has an arrangement");
+    return { arrangementId: await this.arrangements.forSetItem(user, set, { ...item, songVersionId: item.songVersionId }, name) };
   }
 
   async removeItem(user: AuthenticatedUser, setlistId: string, itemId: string) {
@@ -420,22 +459,28 @@ export class SetlistsService {
     const next = set.items[index + 1];
 
     const [readable, inViewersLibrary, viewer] = await Promise.all([
-      this.sets.readableItems(set, next ? [item, next] : [item]),
+      this.sets.readableItems(set, [item, ...(next ? [next] : [])].filter(hasSong)),
       this.sets.visibilityFor(user),
       this.prisma.client.user.findUnique({ where: { id: user.id }, select: { chordNotation: true, capoDisplayMode: true, liveView: true, chordDiagrams: true, chordColors: true, leftHanded: true, guitarTuning: true, ukuleleTuning: true, pianoSmooth: true, pianoHands: true, pianoNoteNames: true, displaySettings: true } }),
     ]);
     const song = item.songVersion;
-    const shown = readable.has(item.id) || inViewersLibrary(song);
+    const shown = !!song && (readable.has(item.id) || inViewersLibrary(song));
     const document = shown ? readSongDocument(song.documentJson) : null;
     // Played as the set says: anyone who can open the set sees the arrangement it plays.
     const arrangement = document && item.arrangementId ? await this.arrangements.forChart(item.arrangementId, document) : null;
     const preferences = shown ? await this.arrangements.preferences(user.id, song.id, arrangement?.id ?? null) : null;
+    // The next item's title: a song's, as the viewer may read it, or a text's (issue #305).
+    const nextTitle = !next ? null : hasSong(next) ? (readable.has(next.id) || inViewersLibrary(next.songVersion) ? next.songVersion.title : null) : (readItemText(next.text)?.title ?? null);
 
     return {
       set: { ...summarize(set), itemCount: set.items.length, canEdit: access.canEdit, isGuest: access.isGuest },
-      item: { id: item.id, position: item.position, transposeSteps: item.transposeSteps, notes: item.notes, arrangementId: arrangement?.id ?? null },
+      item: { id: item.id, position: item.position, transposeSteps: item.transposeSteps, notes: item.notes, arrangementId: arrangement?.id ?? null, kind: item.kind },
+      // A text item's (issue #305).
+      text: song ? null : readItemText(item.text),
       // What happens after it (issue #199), with the key and tempo it goes from and to.
-      transition: item.transition ? this.transitionView(item, next && (readable.has(next.id) || inViewersLibrary(next.songVersion)) ? next : null, shown) : null,
+      transition: item.transition
+        ? this.transitionView({ ...item, songVersion: song }, next && hasSong(next) && (readable.has(next.id) || inViewersLibrary(next.songVersion)) ? next : null, shown)
+        : null,
       song: shown
         ? {
             ...toSongRef(song),
@@ -467,20 +512,20 @@ export class SetlistsService {
         // Each mode's, from the Display panel (issue #209).
         displaySettings: (viewer?.displaySettings ?? {}) as SavedDisplaySettings,
       },
-      inLibrary: inViewersLibrary(song),
+      inLibrary: !!song && inViewersLibrary(song),
       sharedBy: shown && item.sharedBy ? { id: item.sharedBy.id, displayName: item.sharedBy.displayName } : null,
       previousItemId: set.items[index - 1]?.id ?? null,
       // "JEM 855 · JEM3", for Live's header (issue #59).
       songbookReferences: shown ? ((await this.songbookReferences(user, [song.id])).get(song.id) ?? []) : [],
       nextItemId: next?.id ?? null,
       // What's coming, for Perform mode - unless the viewer can't read that song.
-      nextTitle: next && (readable.has(next.id) || inViewersLibrary(next.songVersion)) ? next.songVersion.title : null,
+      nextTitle,
     };
   }
 
   /** A song's transition into the next (issue #199): its kind and note, and the keys and tempos either side, as played. */
   private transitionView(
-    item: { transition: SetTransitionValue | null; transitionNote: string | null; transitionChords: string[]; transposeSteps: number; tempoOverride: number | null; songVersion: SongRow; arrangement: { id: string; name: string; documentJson: unknown; setlistItemId: string | null } | null },
+    item: { transition: SetTransitionValue | null; transitionNote: string | null; transitionChords: string[]; transposeSteps: number; tempoOverride: number | null; songVersion: SongRow | null; arrangement: { id: string; name: string; documentJson: unknown; setlistItemId: string | null } | null },
     next: { transposeSteps: number; tempoOverride: number | null; songVersion: SongRow; arrangement: { id: string; name: string; documentJson: unknown; setlistItemId: string | null } | null } | null,
     shown: boolean,
   ) {
@@ -488,10 +533,10 @@ export class SetlistsService {
       const ref = toSongRef(one.songVersion);
       return { key: playedKey(ref, one.arrangement ? arrangementRef(one.arrangement) : null, one.transposeSteps), tempo: one.tempoOverride ?? ref.tempo };
     };
-    const from = shown ? side(item) : { key: null, tempo: null };
+    const from = shown && hasSong(item) ? side(item) : { key: null, tempo: null };
     const to = next ? side(next) : { key: null, tempo: null };
     // From the song's last chord to the next one's first (issue #217).
-    const lastChord = shown ? edgeChords(item).last : null;
+    const lastChord = shown && hasSong(item) ? edgeChords(item).last : null;
     const firstChord = next ? edgeChords(next).first : null;
     return { kind: item.transition!, note: item.transitionNote, chords: item.transitionChords, fromKey: from.key, toKey: to.key, fromTempo: from.tempo, toTempo: to.tempo, lastChord, firstChord };
   }
@@ -522,6 +567,7 @@ export class SetlistsService {
   async setMyChartPreferences(user: AuthenticatedUser, setlistId: string, itemId: string, preferences: unknown) {
     await this.sets.findViewable(user, setlistId);
     const item = await this.findItem(setlistId, itemId);
+    if (!item.songVersionId) throw new BadRequestException("Only a song has chart preferences");
     return this.arrangements.savePreferences(user.id, item.songVersionId, item.arrangementId, preferences);
   }
 
@@ -571,6 +617,35 @@ function edgeChords(item: { transposeSteps: number; songVersion: SongRow; arrang
   const document = readSongDocument(item.songVersion.documentJson);
   const arrangement = item.arrangement ? readArrangementDocument(item.arrangement.documentJson, document, item.songVersion.id, () => "a").document : null;
   return chartEdgeChords(renderChart(document, arrangement, { transposeSteps: item.transposeSteps }));
+}
+
+/**
+ * An item that isn't a song (issue #305): a text, with its title and body,
+ * and none of a song's parts. Shown the same to everyone who opens the set.
+ */
+function otherItem(item: { id: string; kind: "SONG" | "TEXT"; text: unknown; position: number; notes: string | null; transition: SetTransitionValue | null; transitionNote: string | null; timer: unknown }) {
+  return {
+    id: item.id,
+    kind: item.kind,
+    text: readItemText(item.text),
+    position: item.position,
+    transposeSteps: 0,
+    notes: item.notes,
+    transition: item.transition,
+    transitionNote: item.transitionNote,
+    transitionChords: [],
+    timer: readItemTimer(item.timer),
+    edgeChords: null,
+    song: null,
+    inLibrary: false,
+    sharedBy: null,
+    ownershipRequest: null,
+    canRequestOwnership: false,
+    songbookReferences: [],
+    versions: [],
+    arrangement: null,
+    arrangements: [],
+  };
 }
 
 /** A set item's arrangement: its name, and the key it moves the song to (the item's own key goes on top). */

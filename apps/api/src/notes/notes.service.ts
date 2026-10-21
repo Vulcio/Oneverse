@@ -230,7 +230,9 @@ export class NotesService {
         orderBy: { position: "asc" },
         select: { id: true, sharedByUserId: true, songVersion: { select: SONG_SELECT } },
       });
-      readableThere = items.length > 0 && (await this.sets.readableItems(row, items)).size > 0;
+      // Found by its song: each has it.
+      const songItems = items.flatMap((item) => (item.songVersion ? [{ ...item, songVersion: item.songVersion }] : []));
+      readableThere = songItems.length > 0 && (await this.sets.readableItems(row, songItems)).size > 0;
       set = { set: row, canEdit: access.canEdit, itemId: items[0]?.id ?? null };
     }
     if (!(await this.policy.canSeeSong(user, song)) && !(throughSet && readableThere)) throw new NotFoundException("Song version not found");

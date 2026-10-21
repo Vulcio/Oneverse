@@ -49,6 +49,10 @@ Each way in is one row: its chords as steps (tap one to hear it) and **Use**; ho
 
 To reorder, skip or repeat sections for one set only, choose **Just for this set…** in the song's **Version** menu. It copies the version the set played (or the song's order) and opens it in the [version editor](/versions/#editing-it). It's used only in this set, isn't listed with the song's versions, and goes when the song leaves the set. The ✎ button next to the menu reopens it.
 
+### Text for the screens
+
+A set can also hold slides of text: a welcome, a reading, the announcements. Under **Add songs**, **Add text** opens a box with a **Title** and the **Text**; a blank line starts a new slide, and the box counts them as you type. The text takes its place in the set like a song - drag it, remove it with **×** - and its pencil button (**Edit** and its title) changes it. It has no version, key or chords. Opened from the set or in Live, it reads as its slides; on the [screens](/screens/) it's presented like a song's words, one paragraph at a time, with its title in the widgets that name the item on screen.
+
 ## Playing from a set
 
 Click a song in the set to open its chart, as the set plays it: its version, in the set's key.

@@ -26,6 +26,7 @@ export class SongOwnershipService {
     });
     if (!item || item.setlistId !== setlistId) throw new NotFoundException("Item not found");
     const song = item.songVersion;
+    if (!song) throw new BadRequestException("Only a song can be handed to a team");
     if (song.ownerScope !== "USER" || !song.ownerUserId) throw new BadRequestException("Only someone's personal song can be handed to a team");
 
     const pending = await this.prisma.client.songOwnershipRequest.findFirst({

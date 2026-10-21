@@ -49,6 +49,10 @@ Chaque façon d'enchaîner tient sur une ligne : ses accords en étapes (touchez
 
 Pour réordonner, sauter ou répéter des sections dans une seule liste, choisissez **Pour cette liste seulement…** dans le menu **Version** du chant. Cela copie la version que la liste jouait (ou l'ordre du chant) et l'ouvre dans l'[éditeur de version](/fr/versions/#le-modifier). Elle ne sert que dans cette liste, n'apparaît pas parmi les versions du chant, et disparaît quand le chant quitte la liste. Le bouton ✎ à côté du menu la rouvre.
 
+### Du texte pour les écrans
+
+Une liste peut aussi contenir des diapositives de texte : un accueil, une lecture, les annonces. Sous **Ajouter des chants**, **Ajouter du texte** ouvre une fenêtre avec un **Titre** et le **Texte** ; une ligne vide commence une nouvelle diapositive, et la fenêtre les compte pendant la saisie. Le texte prend sa place dans la liste comme un chant - faites-le glisser, retirez-le avec **×** - et son bouton crayon (**Modifier** et son titre) le change. Il n'a ni version, ni tonalité, ni accords. Ouvert depuis la liste ou en live, il se lit comme ses diapositives ; sur les [écrans](/fr/screens/), il est présenté comme les paroles d'un chant, un paragraphe à la fois, avec son titre dans les widgets qui nomment l'élément à l'écran.
+
 ## Jouer depuis une liste
 
 Cliquez sur un chant de la liste pour ouvrir sa grille, telle que la liste la joue : sa version, dans la tonalité de la liste.

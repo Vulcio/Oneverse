@@ -10,7 +10,7 @@ import { apiClient } from "#/lib/api-client";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setMode } from "#/lib/mode";
 import { markCurrent, markPlayed } from "#/lib/set-progress";
-import { setlistTitle } from "#/lib/setlists";
+import { setItemTitle, setlistTitle } from "#/lib/setlists";
 import { useSongView } from "#/lib/song-views";
 import { useSyncSong } from "#/lib/sync-client";
 import { useStackSegues } from "#/lib/live-stack";
@@ -144,7 +144,9 @@ function SetLiveView({ views, readings }: { views: SetlistSongView[]; readings: 
     const { item, song } = view;
     return {
       id: item.id,
-      title: song?.title ?? t("sets.hiddenSong"),
+      title: setItemTitle(view, t),
+      // Slides of text (issue #305).
+      text: view.text ?? null,
       artist: song?.artists?.join(", ") || null,
       setName: setlistTitle(set, t, i18n.language),
       setId: set.id,
