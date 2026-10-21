@@ -9,12 +9,13 @@ import { StemSeparationProcessor } from "../stem-separation/stem-separation.proc
 import { ffmpegVersion } from "../recordings/ffmpeg.js";
 import { NotificationsProcessor } from "../notifications/notifications.processor.js";
 import { TeamEventsProcessor } from "../team-events/team-events.processor.js";
+import { BibleImportProcessor } from "../scriptures/bibles.processor.js";
 import { TransferExpiryProcessor } from "../user-management/transfer-expiry.processor.js";
 import { HEARTBEAT_KEY, settingsKeyCheck } from "./jobs.constants.js";
 import { redis } from "./redis.js";
 
 /** Every job processor: a new one needs adding here, or no process runs its jobs. */
-const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor];
+const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor];
 
 const logger = new Logger("Jobs");
 

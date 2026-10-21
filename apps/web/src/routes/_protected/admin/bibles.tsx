@@ -7,23 +7,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Input } from "@oneverse/ui/components/input";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
+import { ImportedBiblesCard } from "./-imported-bibles";
 import { Actions, Field, Said, useAction } from "./-metadata-providers";
 
 export const Route = createFileRoute("/_protected/admin/bibles")({
-  loader: () => apiClient.getYouVersionSettings(),
+  loader: async () => {
+    const [youversion, imported] = await Promise.all([apiClient.getYouVersionSettings(), apiClient.listAdminBibles()]);
+    return { youversion, imported };
+  },
   component: AdminBiblesPage,
 });
 
-/** Admin > Bibles (issue #304): where translations come from - for now, YouVersion's App Key. */
+/** Admin > Bibles: where translations come from - files imported here (issue #301), and YouVersion's App Key (issue #304). */
 function AdminBiblesPage() {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState<YouVersionSettings>(Route.useLoaderData());
+  const loaded = Route.useLoaderData();
+  const [settings, setSettings] = useState<YouVersionSettings>(loaded.youversion);
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("bibles.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("bibles.description")}</p>
       </div>
+      <ImportedBiblesCard initial={loaded.imported} />
       <YouVersionCard settings={settings} onSaved={setSettings} />
       {settings.source === "none" ? null : <TryPassageCard />}
     </div>

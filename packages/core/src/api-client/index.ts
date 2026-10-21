@@ -36,6 +36,9 @@ import type { CuePoint } from "../recording/cues.js";
 import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
 import type { z } from "zod";
+import type { BibleUpdateSchema } from "../requests/scriptures.js";
+import type { BibleSourceFormat } from "../scriptures/bible.js";
+import type { PassageChapter } from "../scriptures/references.js";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
 import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
@@ -1803,6 +1806,41 @@ export interface YouVersionPassage {
   rights: { offline: boolean; projection: boolean; export: boolean };
 }
 
+/** What an imported Bible may be used for beyond being read (issue #301): the admin's to say, off until then. */
+export interface BibleRights {
+  projection: boolean;
+  offline: boolean;
+  export: boolean;
+}
+
+/** A Bible imported from a file (issue #301), with its books as it names them. */
+export interface ImportedBible {
+  id: string;
+  name: string;
+  abbreviation: string | null;
+  language: string | null;
+  copyright: string | null;
+  books: { number: number; name: string; osisId?: string; chapters: number }[];
+  rights: BibleRights;
+}
+
+/** As Admin > Bibles lists it: how its import went too. */
+export interface AdminBible extends ImportedBible {
+  status: "IMPORTING" | "READY" | "FAILED";
+  error: string | null;
+  sourceFormat: BibleSourceFormat | null;
+  verseCount: number;
+  createdAt: string;
+}
+
+/** A passage of an imported Bible (issue #301), chapter by chapter, with its copyright line. */
+export interface BiblePassage {
+  reference: string;
+  bible: Pick<ImportedBible, "id" | "name" | "abbreviation" | "copyright">;
+  chapters: PassageChapter[];
+  rights: BibleRights;
+}
+
 /** A song's link to choose from, found at one service by its title and artist (issue #169). */
 export interface LinkCandidate {
   title: string;
@@ -2844,6 +2882,20 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getYouVersionBibles: (language: string) => request<YouVersionBible[]>(`/scriptures/youversion/bibles?${new URLSearchParams({ language })}`),
     getYouVersionPassage: (bibleId: number, reference: string) =>
       request<YouVersionPassage>(`/scriptures/youversion/bibles/${bibleId}/passage?${new URLSearchParams({ reference })}`),
+    /** Bibles imported from files (issue #301): those anyone can read, and a passage of one. */
+    listBibles: () => request<ImportedBible[]>("/scriptures/bibles"),
+    getBiblePassage: (bibleId: string, reference: string) =>
+      request<BiblePassage>(`/scriptures/bibles/${encodeURIComponent(bibleId)}/passage?${new URLSearchParams({ reference })}`),
+    /** The admin's: every imported Bible, a file to import (by the Worker), its details and rights, deleting one. */
+    listAdminBibles: () => request<AdminBible[]>("/admin/scriptures/bibles"),
+    importBible: (file: Blob, filename = "bible.xml") => {
+      const form = new FormData();
+      form.append("file", file, filename);
+      return request<AdminBible>("/admin/scriptures/bibles", { method: "POST", body: form });
+    },
+    updateBible: (bibleId: string, data: z.input<typeof BibleUpdateSchema>) =>
+      request<AdminBible>(`/admin/scriptures/bibles/${encodeURIComponent(bibleId)}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteBible: (bibleId: string) => request<void>(`/admin/scriptures/bibles/${encodeURIComponent(bibleId)}`, { method: "DELETE" }),
     /** YouVersion's App Key (issue #304); empty clears it. */
     getYouVersionSettings: () => request<YouVersionSettings>("/admin/scriptures/youversion"),
     saveYouVersionKey: (appKey: string) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ appKey }) }),

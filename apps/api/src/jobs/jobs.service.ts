@@ -1,4 +1,5 @@
 import { InjectQueue } from "@nestjs/bullmq";
+import { SCRIPTURES_QUEUE } from "../scriptures/bibles.types.js";
 import { Injectable } from "@nestjs/common";
 import type { Job, Queue } from "bullmq";
 import { BULK_UPLOAD_QUEUE } from "../bulk-upload/bulk-upload.types.js";
@@ -57,10 +58,11 @@ export class JobsService {
     @InjectQueue(STEM_SEPARATION_QUEUE) private readonly stemSeparation: Queue,
     @InjectQueue(TEAM_EVENTS_QUEUE) private readonly teamEvents: Queue,
     @InjectQueue(NOTIFICATIONS_QUEUE) private readonly notifications: Queue,
+    @InjectQueue(SCRIPTURES_QUEUE) private readonly scriptures: Queue,
   ) {}
 
   private get queues(): Queue[] {
-    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications];
+    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications, this.scriptures];
   }
 
   async status(): Promise<JobsStatus> {

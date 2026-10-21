@@ -2744,6 +2744,53 @@ model MetadataSettings {
   updatedAt               DateTime @updatedAt
 }
 
+// A Bible translation imported from a file (issue #301): Zefania, Beblia,
+// OSIS or json-bible, converted on the Worker, for everyone on the server.
+// Its verses are rows (BibleVerse); `books` names its books as the file
+// did ([{number, name, osisId}]). What the text may be used for is the
+// admin's to say (`can*`, all off until then): projection on the screens,
+// offline copies, export. `sourceStorageKey` is the uploaded file until it's
+// imported, then null (the object deleted when nothing else uses it).
+model Bible {
+  id               String      @id @default(cuid())
+  name             String
+  abbreviation     String?
+  language         String?
+  copyright        String?
+  sourceFormat     String?
+  status           BibleStatus @default(IMPORTING)
+  error            String?
+  sourceStorageKey String?
+  books            Json        @default("[]")
+  verseCount       Int         @default(0)
+  canProject       Boolean     @default(false)
+  canOffline       Boolean     @default(false)
+  canExport        Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  verses           BibleVerse[]
+}
+
+enum BibleStatus {
+  IMPORTING
+  READY
+  FAILED
+}
+
+// A verse of an imported Bible (issue #301); `endVerse` for verses printed
+// together ("16-17").
+model BibleVerse {
+  bibleId  String
+  book     Int
+  chapter  Int
+  verse    Int
+  endVerse Int?
+  text     String
+  bible    Bible  @relation(fields: [bibleId], references: [id], onDelete: Cascade)
+
+  @@id([bibleId, book, chapter, verse])
+}
+
 // Bibles' settings (issue #304): YouVersion's Platform API's App Key,
 // encrypted with SETTINGS_ENCRYPTION_KEY. None: YOUVERSION_APP_KEY; without
 // one, YouVersion isn't asked and nothing about it shows.
