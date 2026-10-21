@@ -103,6 +103,12 @@ Le serveur de ce Songverse pour séparer les enregistrements en pistes (un serve
 
 Gère les catalogues de recueils publiés (voir [Recueils](/fr/songbooks/#à-partir-du-catalogue-dun-recueil-publié)) : en ajouter, modifier leurs entrées dans un tableau, les importer ou les exporter en CSV ou JSON.
 
+### Bibles
+
+D'où viennent les traductions de la Bible. **YouVersion** garde l'App Key de la Platform API de YouVersion : enregistrez une application sur platform.youversion.com ; les versions utilisables sont celles que YouVersion accorde à cette application. Saisissez-la comme **App Key** - gardée chiffrée et plus jamais affichée ; laissez-la vide pour garder l'actuelle. Sans clé (ici ou dans la variable d'environnement `YOUVERSION_APP_KEY`), YouVersion n'est pas interrogé et rien ne s'en affiche. **Tester la connexion** liste les versions anglaises de la clé ; **Revenir aux variables d'environnement** revient à `YOUVERSION_APP_KEY`, ou à aucun YouVersion sans elle.
+
+**Essayer un passage** en lit un avec la clé : **Chercher les versions** d'une langue (un code comme `fr` ou `en`), choisissez une **Version**, écrivez un **Passage** comme on l'écrit (« Jean 3.16-18 », « John 3:16 »), puis **Lire**. La mention de copyright de chaque version s'affiche sous son texte, et une version qui n'en a pas n'est pas utilisée. La licence d'une version dit si son texte peut être enregistré, utilisé hors ligne ou montré sur les écrans ; tant qu'elles ne sont pas lues, Songverse redemande le texte à YouVersion à chaque fois et n'en garde rien.
+
 ### Maintenance du serveur
 
 La page **Métadonnées** a deux tâches de maintenance : **Vérifier** compare les migrations de la base de données présentes sur le serveur avec celles appliquées, et **Exécuter le script de départ** réapplique les données intégrées (catégories d'étiquettes, étiquettes, accordages). On peut le relancer sans risque.

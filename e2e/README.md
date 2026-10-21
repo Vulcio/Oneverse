@@ -14,7 +14,7 @@ seed`) - some suites use the built-in global tags.
    going to a file - with no email provider configured the API prints the
    emails it would send, and the suites read verification links from there.
    Point the API's song artwork and song info at the suites' stand-ins for
-   Apple Music (and its API), MusicBrainz, Deezer, Spotify, YouTube, Wikidata and Wikipedia (`lib/fake-providers.mjs`, which the
+   Apple Music (and its API), MusicBrainz, Deezer, Spotify, YouTube, YouVersion, Wikidata and Wikipedia (`lib/fake-providers.mjs`, which the
    suites that need them start on port 3999):
 
    ```sh
@@ -22,7 +22,7 @@ seed`) - some suites use the built-in global tags.
      DEEZER_API_URL=http://localhost:3999/deezer APPLE_MUSIC_API_URL=http://localhost:3999/applemusic \
      WIKIDATA_API_URL=http://localhost:3999/wikidata/w/api.php WIKIPEDIA_URL='http://localhost:3999/wikipedia/{lang}' \
      SPOTIFY_API_URL=http://localhost:3999/spotify SPOTIFY_ACCOUNTS_URL=http://localhost:3999/spotify-accounts \
-     YOUTUBE_API_URL=http://localhost:3999/youtube
+     YOUTUBE_API_URL=http://localhost:3999/youtube YOUVERSION_API_URL=http://localhost:3999/youversion
    # Push notifications go to a stand-in push service (lib/fake-push.mjs, port 3997) besides the real ones.
    # The Worker reads the notification emails' and pushes' outcomes; the email suites read its log, /tmp/worker.log.
    export PUSH_TEST_ORIGINS=http://localhost:3997

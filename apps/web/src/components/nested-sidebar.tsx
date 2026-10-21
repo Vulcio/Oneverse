@@ -11,6 +11,7 @@ import {
   BadgeCheck,
   Guitar,
   Handshake,
+  BookMarked,
   BookOpen,
   ChevronLeft,
   Check,
@@ -253,6 +254,7 @@ function SectionPanel({
           { to: "/admin/stem-separation", label: t("nav.adminStemSeparation"), icon: <AudioWaveform /> },
           { to: "/admin/catalogs", label: t("nav.adminCatalogs"), icon: <FileStack /> },
           { to: "/admin/metadata", label: t("nav.adminMetadata"), icon: <LayoutDashboard /> },
+          { to: "/admin/bibles", label: t("nav.adminBibles"), icon: <BookMarked /> },
           { to: "/library", label: t("nav.backToApp"), icon: <ArrowLeft /> },
         ]}
       />
@@ -946,7 +948,7 @@ function PeoplePanel({ title }: { title: string }) {
   );
 }
 
-function LinksPanel({ title, pathname, links }: { title: string; pathname: string; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata"; label: string; icon: ReactNode }[] }) {
+function LinksPanel({ title, pathname, links }: { title: string; pathname: string; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles"; label: string; icon: ReactNode }[] }) {
   return (
     <>
       <PanelHeader title={title} />

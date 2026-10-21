@@ -10,6 +10,10 @@
 // has "Nopicture" in it), MusicBrainz's artists with a Wikidata link (none
 // for "Nobio"), Wikidata (WIKIDATA_API_URL at /wikidata/w/api.php) and
 // Wikipedia's summaries (WIKIPEDIA_URL at /wikipedia/{lang}).
+// YouVersion's Platform API (issue #304; YOUVERSION_API_URL at /youversion),
+// shaped as its documentation describes: the key in X-YVP-App-Key
+// (`youversionKey`), version 3034 (with a copyright line) and 9001 (without)
+// in English, John 3's 36 verses, and 429 in plain text for the key "spent-allowance-key".
 // Spotify (issue #89; SPOTIFY_API_URL at /spotify, SPOTIFY_ACCOUNTS_URL at
 // /spotify-accounts): app tokens for `spotifyApp`'s client ID and secret,
 // then the song on "Album 1" (2013, ISRC USSPOT1300001) and on "Spotify
@@ -164,6 +168,57 @@ const spotifyTracks = (title, artist) => [
 /** The key the YouTube stand-in accepts, and how many searches it got: a suite sets it. */
 export const youtubeKey = { key: null, searches: 0 };
 
+// --- YouVersion (issue #304)
+/** The App Key the YouVersion stand-in accepts, and how many passages it gave: a suite sets it. */
+export const youversionKey = { key: null, passages: 0 };
+
+const youversionBibles = {
+  3034: {
+    id: 3034,
+    abbreviation: "BSB",
+    title: "Berean Standard Bible",
+    localized_title: "Berean Standard Bible",
+    localized_abbreviation: "BSB",
+    language_tag: "en",
+    copyright: "The Holy Bible, Berean Standard Bible, BSB.",
+    info: "Dedicated to the public domain.",
+    promotional_content: null,
+    publisher_url: "https://berean.bible",
+    youversion_deep_link: "https://www.bible.com/versions/3034",
+    books: ["JHN"],
+    organization_id: null,
+  },
+  9001: { id: 9001, abbreviation: "NOC", title: "No Copyright Version", language_tag: "en", copyright: "", info: null, books: ["JHN"] },
+};
+
+function youversionAnswer(req, url, res) {
+  const key = req.headers["x-yvp-app-key"];
+  if (!key) return json(res, { fault: { faultstring: "Failed to resolve API Key variable request.header.x-yvp-app-key", detail: { errorcode: "steps.oauth.v2.FailedToResolveAPIKey" } } }, 401);
+  if (key === "spent-allowance-key") {
+    res.writeHead(429, { "Content-Type": "text/plain" });
+    return res.end("Rate limit exceeded.");
+  }
+  if (key !== youversionKey.key) return json(res, { fault: { faultstring: "Invalid ApiKey", detail: { errorcode: "oauth.v2.InvalidApiKey" } } }, 401);
+  const path = url.pathname.replace(/^\/youversion/, "");
+  if (path === "/v1/bibles") {
+    const english = url.searchParams.getAll("language_ranges[]").some((range) => /^en\b/.test(range));
+    return json(res, { data: english ? Object.values(youversionBibles) : [], next_page_token: null, total_size: english ? 2 : 0 });
+  }
+  const bible = /^\/v1\/bibles\/(\d+)(\/.*)?$/.exec(path);
+  const found = bible && youversionBibles[bible[1]];
+  if (!found) return json(res, { message: "Bible not found" }, 404);
+  const rest = bible[2] ?? "";
+  if (rest === "") return json(res, found);
+  if (rest === "/books/JHN/chapters/3/verses") return json(res, { data: Array.from({ length: 36 }, (_, i) => ({ id: String(i + 1), passage_id: `JHN.3.${i + 1}`, title: String(i + 1) })) });
+  const passage = /^\/passages\/(JHN\.3(?:\.(\d+))?)$/.exec(rest);
+  if (passage && (!passage[2] || Number(passage[2]) <= 36)) {
+    youversionKey.passages++;
+    const reference = passage[2] ? `John 3:${passage[2]}` : "John 3";
+    return json(res, { id: passage[1], content: `${found.abbreviation} text of ${reference}.`, reference });
+  }
+  return json(res, { message: "Passage not found" }, 404);
+}
+
 // --- artists
 const artistNames = new Map();
 const qids = new Map();
@@ -232,6 +287,7 @@ export function startFakeProviders() {
       const found = track && lastSpotify.get(track[1]);
       return found ? json(res, found) : json(res, { error: { status: 404, message: "Non existing id" } }, 404);
     }
+    if (path.startsWith("/youversion/")) return youversionAnswer(req, url, res);
     if (path === "/youtube/search") {
       const key = url.searchParams.get("key");
       if (!youtubeKey.key || key !== youtubeKey.key) return json(res, { error: { code: 400, message: "API key not valid. Please pass a valid API key.", errors: [{ reason: "badRequest" }] } }, 400);

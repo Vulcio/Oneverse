@@ -1765,6 +1765,35 @@ export interface MetadataSettings {
   youtube: { source: "database" | "env" | "none"; hasDatabaseKey: boolean };
 }
 
+/** YouVersion's App Key (issue #304): never the key, only whether the database has one; none: YouVersion off. */
+export interface YouVersionSettings {
+  source: "database" | "env" | "none";
+  hasDatabaseKey: boolean;
+}
+
+/** A YouVersion version (issue #304): its copyright line goes with every passage shown. */
+export interface YouVersionBible {
+  id: number;
+  abbreviation: string;
+  title: string;
+  languageTag: string;
+  copyright: string | null;
+  info: string | null;
+  link: string | null;
+}
+
+/**
+ * A passage of a YouVersion version (issue #304): verses or whole chapters as
+ * YouVersion gives them, never to be kept - `rights` says what else it may
+ * be used for, nothing until a version's licence is read.
+ */
+export interface YouVersionPassage {
+  reference: string;
+  bible: YouVersionBible;
+  parts: { id: string; reference: string; text: string }[];
+  rights: { offline: boolean; projection: boolean; export: boolean };
+}
+
 /** A song's link to choose from, found at one service by its title and artist (issue #169). */
 export interface LinkCandidate {
   title: string;
@@ -2801,6 +2830,16 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     saveYouTubeKey: (apiKey: string) => request<MetadataSettings>("/admin/metadata/youtube", { method: "PUT", body: JSON.stringify({ apiKey }) }),
     resetYouTubeKey: () => request<MetadataSettings>("/admin/metadata/youtube", { method: "DELETE" }),
     testYouTubeKey: () => request<{ ok: boolean; message: string }>("/admin/metadata/youtube/test", { method: "POST" }),
+    /** Which outside Bible providers are set up (issue #304). */
+    getScriptureProviders: () => request<{ youversion: boolean }>("/scriptures/providers"),
+    getYouVersionBibles: (language: string) => request<YouVersionBible[]>(`/scriptures/youversion/bibles?${new URLSearchParams({ language })}`),
+    getYouVersionPassage: (bibleId: number, reference: string) =>
+      request<YouVersionPassage>(`/scriptures/youversion/bibles/${bibleId}/passage?${new URLSearchParams({ reference })}`),
+    /** YouVersion's App Key (issue #304); empty clears it. */
+    getYouVersionSettings: () => request<YouVersionSettings>("/admin/scriptures/youversion"),
+    saveYouVersionKey: (appKey: string) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ appKey }) }),
+    resetYouVersionKey: () => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "DELETE" }),
+    testYouVersionKey: () => request<{ ok: boolean; message: string }>("/admin/scriptures/youversion/test", { method: "POST" }),
     /** MusicBrainz's contact, in its User-Agent; empty goes back to MUSICBRAINZ_CONTACT. */
     saveMusicBrainzContact: (contact: string) => request<MetadataSettings>("/admin/metadata/musicbrainz", { method: "PUT", body: JSON.stringify({ contact }) }),
 

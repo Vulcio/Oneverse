@@ -145,7 +145,7 @@ jobs:
       SETTINGS_ENCRYPTION_KEY: "e2e-only-settings-key-not-for-production-use"
       MUSICBRAINZ_CONTACT: "https://github.com/Vulcio/Oneverse"
       # Song artwork (issue #85) and song info (issue #22) from the suites' stand-ins for
-      # Apple Music (and its API), MusicBrainz, Deezer, Spotify, YouTube, Wikidata and Wikipedia (e2e/lib/fake-providers.mjs).
+      # Apple Music (and its API), MusicBrainz, Deezer, Spotify, YouTube, YouVersion, Wikidata and Wikipedia (e2e/lib/fake-providers.mjs).
       ITUNES_SEARCH_URL: "http://localhost:3999"
       MUSICBRAINZ_API_URL: "http://localhost:3999/mb/ws/2/"
       DEEZER_API_URL: "http://localhost:3999/deezer"
@@ -155,6 +155,7 @@ jobs:
       SPOTIFY_API_URL: "http://localhost:3999/spotify"
       SPOTIFY_ACCOUNTS_URL: "http://localhost:3999/spotify-accounts"
       YOUTUBE_API_URL: "http://localhost:3999/youtube"
+      YOUVERSION_API_URL: "http://localhost:3999/youversion"
       # A stand-in push service (e2e/lib/fake-push.mjs) the API may post to, besides the real ones (issue #236).
       PUSH_TEST_ORIGINS: "http://localhost:3997"
     steps:

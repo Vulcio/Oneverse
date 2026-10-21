@@ -2739,6 +2739,15 @@ model MetadataSettings {
   updatedAt               DateTime @updatedAt
 }
 
+// Bibles' settings (issue #304): YouVersion's Platform API's App Key,
+// encrypted with SETTINGS_ENCRYPTION_KEY. None: YOUVERSION_APP_KEY; without
+// one, YouVersion isn't asked and nothing about it shows.
+model ScriptureSettings {
+  id                  String   @id @default("singleton")
+  youversionAppKeyEnc String?
+  updatedAt           DateTime @updatedAt
+}
+
 // An artist (issue #86): the name songs credit (VersionContributor.source,
 // as PERFORMER), matched by `key` - the name folded (no case or accents) -
 // with a picture and a short bio. Not anyone's: the same for everyone who

@@ -33,6 +33,7 @@ import { Route as SetInviteTokenRouteImport } from './routes/set-invite.$token'
 import { Route as TransferTokenRouteImport } from './routes/transfer.$token'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/_protected/admin/index'
 import { Route as ProtectedAdminAuthRouteImport } from './routes/_protected/admin/auth'
+import { Route as ProtectedAdminBiblesRouteImport } from './routes/_protected/admin/bibles'
 import { Route as ProtectedAdminCatalogsRouteImport } from './routes/_protected/admin/catalogs'
 import { Route as ProtectedAdminCollaborationRouteImport } from './routes/_protected/admin/collaboration'
 import { Route as ProtectedAdminInstrumentsRouteImport } from './routes/_protected/admin/instruments'
@@ -194,6 +195,11 @@ const ProtectedAdminIndexRoute = ProtectedAdminIndexRouteImport.update({
 const ProtectedAdminAuthRoute = ProtectedAdminAuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => ProtectedAdminRoute,
+} as any)
+const ProtectedAdminBiblesRoute = ProtectedAdminBiblesRouteImport.update({
+  id: '/bibles',
+  path: '/bibles',
   getParentRoute: () => ProtectedAdminRoute,
 } as any)
 const ProtectedAdminCatalogsRoute = ProtectedAdminCatalogsRouteImport.update({
@@ -457,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
   '/admin/auth': typeof ProtectedAdminAuthRoute
+  '/admin/bibles': typeof ProtectedAdminBiblesRoute
   '/admin/catalogs': typeof ProtectedAdminCatalogsRoute
   '/admin/collaboration': typeof ProtectedAdminCollaborationRoute
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
@@ -523,6 +530,7 @@ export interface FileRoutesByTo {
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
   '/admin/auth': typeof ProtectedAdminAuthRoute
+  '/admin/bibles': typeof ProtectedAdminBiblesRoute
   '/admin/catalogs': typeof ProtectedAdminCatalogsRoute
   '/admin/collaboration': typeof ProtectedAdminCollaborationRoute
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
@@ -593,6 +601,7 @@ export interface FileRoutesById {
   '/set-invite/$token': typeof SetInviteTokenRoute
   '/transfer/$token': typeof TransferTokenRoute
   '/_protected/admin/auth': typeof ProtectedAdminAuthRoute
+  '/_protected/admin/bibles': typeof ProtectedAdminBiblesRoute
   '/_protected/admin/catalogs': typeof ProtectedAdminCatalogsRoute
   '/_protected/admin/collaboration': typeof ProtectedAdminCollaborationRoute
   '/_protected/admin/instruments': typeof ProtectedAdminInstrumentsRoute
@@ -663,6 +672,7 @@ export interface FileRouteTypes {
     | '/set-invite/$token'
     | '/transfer/$token'
     | '/admin/auth'
+    | '/admin/bibles'
     | '/admin/catalogs'
     | '/admin/collaboration'
     | '/admin/instruments'
@@ -729,6 +739,7 @@ export interface FileRouteTypes {
     | '/set-invite/$token'
     | '/transfer/$token'
     | '/admin/auth'
+    | '/admin/bibles'
     | '/admin/catalogs'
     | '/admin/collaboration'
     | '/admin/instruments'
@@ -798,6 +809,7 @@ export interface FileRouteTypes {
     | '/set-invite/$token'
     | '/transfer/$token'
     | '/_protected/admin/auth'
+    | '/_protected/admin/bibles'
     | '/_protected/admin/catalogs'
     | '/_protected/admin/collaboration'
     | '/_protected/admin/instruments'
@@ -1026,6 +1038,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/admin/auth'
       preLoaderRoute: typeof ProtectedAdminAuthRouteImport
+      parentRoute: typeof ProtectedAdminRoute
+    }
+    '/_protected/admin/bibles': {
+      id: '/_protected/admin/bibles'
+      path: '/bibles'
+      fullPath: '/admin/bibles'
+      preLoaderRoute: typeof ProtectedAdminBiblesRouteImport
       parentRoute: typeof ProtectedAdminRoute
     }
     '/_protected/admin/catalogs': {
@@ -1334,6 +1353,7 @@ declare module '@tanstack/react-router' {
 
 interface ProtectedAdminRouteChildren {
   ProtectedAdminAuthRoute: typeof ProtectedAdminAuthRoute
+  ProtectedAdminBiblesRoute: typeof ProtectedAdminBiblesRoute
   ProtectedAdminCatalogsRoute: typeof ProtectedAdminCatalogsRoute
   ProtectedAdminCollaborationRoute: typeof ProtectedAdminCollaborationRoute
   ProtectedAdminInstrumentsRoute: typeof ProtectedAdminInstrumentsRoute
@@ -1351,6 +1371,7 @@ interface ProtectedAdminRouteChildren {
 
 const ProtectedAdminRouteChildren: ProtectedAdminRouteChildren = {
   ProtectedAdminAuthRoute: ProtectedAdminAuthRoute,
+  ProtectedAdminBiblesRoute: ProtectedAdminBiblesRoute,
   ProtectedAdminCatalogsRoute: ProtectedAdminCatalogsRoute,
   ProtectedAdminCollaborationRoute: ProtectedAdminCollaborationRoute,
   ProtectedAdminInstrumentsRoute: ProtectedAdminInstrumentsRoute,
