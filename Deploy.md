@@ -59,7 +59,7 @@ Create a **Project** to hold everything, then add these five resources.
 - Build context / base directory: `.` (repo root) — see [Gotcha #1](#1-docker-build-context) if this matters to you
 - Port: `3001`
 - Domain: `api.songverse.one`
-- Watch paths (if you use auto-deploy): `apps/api/**`, `packages/core/**`, `packages/db/**`, `packages/secret-crypto/**`, `packages/tsconfig/**`, `Dockerfile.api`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` - see [Watch paths](#watch-paths)
+- Watch paths (if you use auto-deploy): `apps/api/**`, `packages/core/**`, `packages/db/**`, `packages/secret-crypto/**`, `packages/tsconfig/**`, `Dockerfile.api`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` - see [Watch paths](#watch-paths)
 
 Environment variables:
 ```
@@ -105,7 +105,7 @@ Keep this stable once set — BetterAuth encrypts its signing key with it in the
 
 **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`:** optional, and also settable at **Admin > Auth** instead of these env vars. Leave both unset everywhere to keep email+password (and passkeys) as the only sign-in methods — the "Continue with Google" button only renders once either path is configured. To enable it, create an OAuth 2.0 Client ID at the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) with an authorized redirect URI of `<AUTH_URL>/api/auth/callback/google` (e.g. `https://api.songverse.one/api/auth/callback/google`).
 
-**Passkeys** (`@better-auth/passkey`) need no extra configuration. They're added and used at Oneverse; their relying-party ID is the parent domain `AUTH_URL` and `ONEVERSE_URL` share (`songverse.one`, see `apps/api/src/auth/auth-domains.ts`), not Oneverse's own hostname. A passkey works only for the ID it was made for: keep Oneverse under the domain it was (`account.songverse.one` while the API is `api.songverse.one`) and passkeys made before keep working; move both to `oneverse.top` and everyone adds theirs again.
+**Passkeys** (`@better-auth/passkey`) need no extra configuration. They're added and used at Oneverse; their relying-party ID is the parent domain `AUTH_URL` and `ONEVERSE_URL` share (`songverse.one`, see `apps/api/src/auth/auth-domains.ts`), not Oneverse's own hostname. A passkey works only for the ID it was made for, so the passkeys made before #303 are removed by its migration, and everyone adds theirs again at Oneverse. Moving Oneverse and the API to another domain later does the same: remove them (`DELETE FROM "Passkey"`), as they no longer work.
 
 **The session cookie is cross-subdomain by design** (`advanced.crossSubDomainCookies` in `better-auth.ts`): Oneverse (`account.songverse.one`) and this API (`api.songverse.one`) are different origins but the same *site* (same registrable domain), so a cookie scoped to `songverse.one` reaches both. That parent domain is derived automatically from `AUTH_URL` and `ONEVERSE_URL` (their shared suffix; `WEB_URL` and `PLANIVERSE_URL` instead, without Oneverse), so they must be subdomains of one domain you own — the API refuses to start otherwise. The apps don't use it: each keeps its tokens in a cookie of its own (`oneverse_session_songverse`, `…_planiverse`), on its own domain. Two subdomains of a shared hosting domain (e.g. two different `*.up.railway.app` hosts) won't work either: browsers refuse cookies scoped to a public suffix. This is also why the API's CORS config (`main.ts`) names the web app's exact origin with `credentials: true` rather than using a wildcard — browsers refuse to combine a wildcard `Access-Control-Allow-Origin` with credentialed (cookie-bearing) requests.
 
@@ -201,7 +201,7 @@ Where people sign in, sign up, reset a password and manage their account (#303, 
 - Build context: `.`
 - Port: `3000`
 - Domain: `account.songverse.one` (a subdomain of the domain the API shares: see `ONEVERSE_URL` above)
-- Watch paths (if you use auto-deploy): `apps/oneverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/tsconfig/**`, `Dockerfile.oneverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`
+- Watch paths (if you use auto-deploy): `apps/oneverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/tsconfig/**`, `Dockerfile.oneverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
 
 Environment variables:
 ```
@@ -225,7 +225,7 @@ Songverse's web app (`apps/web`). Called the Web app in earlier versions of this
 - Build context: `.`
 - Port: `3000`
 - Domain: `app.songverse.one`
-- Watch paths (if you use auto-deploy): `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`
+- Watch paths (if you use auto-deploy): `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
 
 Environment variables:
 ```
@@ -254,7 +254,7 @@ Optional (#241): Songverse's planning on its own - My calendar, organisations, t
 - Build context: `.`
 - Port: `3000`
 - Domain: `plan.songverse.one` (any subdomain of the domain the API shares)
-- Watch paths (if you use auto-deploy): `apps/planiverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.planiverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`
+- Watch paths (if you use auto-deploy): `apps/planiverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.planiverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
 
 Environment variables:
 ```
@@ -299,7 +299,7 @@ The website at the root domain (`apps/site`, #43): one static page in English an
 - Build context: `.`
 - Port: `80`
 - Domain: `songverse.one`
-- Watch paths (if you use auto-deploy): `apps/site/**`, `Dockerfile.site`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`
+- Watch paths (if you use auto-deploy): `apps/site/**`, `Dockerfile.site`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
 
 Environment variables: none needed. `APP_URL` (default `https://app.songverse.one`) is where paths that aren't website pages are redirected.
 
@@ -314,7 +314,7 @@ The user documentation (`apps/docs`), a static site served by nginx.
 - Build context: `.`
 - Port: `80`
 - Domain: `docs.songverse.one`
-- Watch paths (under the app's advanced settings, if you use auto-deploy): `apps/docs/**`, `Dockerfile.docs`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, so only docs changes rebuild it.
+- Watch paths (under the app's advanced settings, if you use auto-deploy): `apps/docs/**`, `Dockerfile.docs`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`, so only docs changes rebuild it.
 
 No environment variables. The build fails if any page links to a page or heading that doesn't exist, so a broken docs change never deploys.
 
@@ -329,9 +329,9 @@ A one-time change for a deployment that predates #303, where people signed in on
 1. **Oneverse app:** create it (see "Oneverse app" above), with its domain, and deploy it.
 2. **API and Worker:** set `ONEVERSE_URL` on the API (the Worker needs nothing new), and redeploy both. The new migration adds the OAuth tables; the API registers Songverse and Planiverse as its clients as it starts.
 3. **Songverse and Planiverse:** set `ONEVERSE_URL`, and their own address (`WEB_URL`, `PLANIVERSE_URL`), then redeploy them.
-4. **Check** [Verify](#4-verify). Everyone signs in once more (the apps' sessions are new); passkeys keep working while Oneverse and the API stay under the domain they were (`songverse.one`). Google sign-in's redirect URI is on the API and doesn't change.
+4. **Check** [Verify](#4-verify). Everyone signs in once more (the apps' sessions are new), and adds their passkeys again at Oneverse: the migration removes the old ones. Google sign-in's redirect URI is on the API and doesn't change.
 
-The apps can move to other domains later (`songverse.top`): change their address on the API and on the app, together. Moving Oneverse and the API to `oneverse.top` changes the passkeys' relying party, so everyone adds their passkeys again.
+The apps can move to other domains later (`songverse.top`): change their address on the API and on the app, together. To move Oneverse and the API to `oneverse.top` (`oneverse.top` and `api.oneverse.top`), change `AUTH_URL` and `ONEVERSE_URL` together, the `API_URL` of every app, Google's redirect URI, and remove the passkeys again.
 
 ### Renaming the repository to Oneverse
 
@@ -405,14 +405,14 @@ With auto-deploy on, Dokploy rebuilds an app only when a push changes a file mat
 
 | App | Watch paths |
 |---|---|
-| API, Worker | `apps/api/**`, `packages/core/**`, `packages/db/**`, `packages/secret-crypto/**`, `packages/tsconfig/**`, `Dockerfile.api` |
-| Oneverse | `apps/oneverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/tsconfig/**`, `Dockerfile.oneverse` |
-| Songverse | `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse` |
-| Planiverse | `apps/planiverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.planiverse` |
-| Site | `apps/site/**`, `Dockerfile.site` |
-| Docs | `apps/docs/**`, `Dockerfile.docs` |
+| API, Worker | `apps/api/**`, `packages/core/**`, `packages/db/**`, `packages/secret-crypto/**`, `packages/tsconfig/**`, `Dockerfile.api`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
+| Oneverse | `apps/oneverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/tsconfig/**`, `Dockerfile.oneverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
+| Songverse | `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
+| Planiverse | `apps/planiverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.planiverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
+| Site | `apps/site/**`, `Dockerfile.site`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
+| Docs | `apps/docs/**`, `Dockerfile.docs`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 
-Every app also watches the root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`: every image installs its dependencies from them, so a dependency change rebuilds them all.
+The root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` and `patches/**` are in every app's: every image installs its dependencies from them, so a dependency change rebuilds them all.
 
 - `packages/core` (shared types, translations, the API client) is in the API's and every web app's: a change there has to reach them all, or the web apps and the API disagree.
 - `packages/ui` and `packages/app` (#241: the UI, signing in) are in every web app's: a change there rebuilds Oneverse, Songverse and Planiverse; `packages/planning` (the planning screens) only Songverse and Planiverse.
