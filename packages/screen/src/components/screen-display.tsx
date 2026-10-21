@@ -45,7 +45,7 @@ function Pairing({ code, pairUrl }: { code: string; pairUrl: string }) {
     <div className="flex size-full flex-col items-center justify-center gap-[4vh] p-[5vmin] text-center" data-testid="screen-pairing">
       <p className="flex items-center gap-3 text-[3vmin] font-semibold text-neutral-300">
         <Music2 className="size-[4vmin]" aria-hidden />
-        Songverse
+        Oneverse
       </p>
       <div className="flex flex-wrap items-center justify-center gap-[6vmin]">
         {/* The QR code on white, for any phone's camera. */}
