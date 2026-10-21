@@ -107,15 +107,15 @@ jobs:
     # The API and browser suites in e2e/, against production builds of the
     # API and web app. Emails print to the API's output (no email provider
     # configured), which the suites read verification links from.
-    # In four jobs at once (issue #308), each with its own stack and database,
-    # running a quarter of the suites of about the same length (run.mjs --shard).
+    # In six jobs at once (issue #308), each with its own stack and database,
+    # running a sixth of the suites, of about the same length (run.mjs --shard).
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    name: e2e (${{ matrix.shard }}/4)
+    name: e2e (${{ matrix.shard }}/6)
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -182,8 +182,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Playwright's Chromium, kept between runs for its version: only the
+      # system libraries it needs are installed each time.
+      - name: Playwright's version
+        id: playwright
+        run: echo "version=$(pnpm --filter @oneverse/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Chromium for Playwright
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @oneverse/e2e exec playwright install --with-deps chromium
+
+      - name: Install Chromium's system libraries
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @oneverse/e2e exec playwright install-deps chromium
 
       # The Worker turns recorded takes into Opus with it (issue #127), as in the API/Worker image.
       - name: Install ffmpeg
@@ -219,7 +236,7 @@ jobs:
           echo "The API or a web app didn't start"; tail -50 /tmp/api.log /tmp/worker.log /tmp/web.log /tmp/planiverse.log /tmp/oneverse.log /tmp/screen.log; exit 1
 
       - name: Run the end-to-end suites
-        run: node e2e/run.mjs --shard ${{ matrix.shard }}/4
+        run: node e2e/run.mjs --shard ${{ matrix.shard }}/6
 
       - name: Keep screenshots and server logs
         if: failure()

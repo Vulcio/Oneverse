@@ -5,8 +5,10 @@
 // parts of about the same length, by each suite's last known duration
 // (durations.json, from CI's summary; a suite not there counts as an
 // average one). `--list` prints the suites instead of running them.
+// `--durations` reads CI's summaries (`PASS  web/sets (42s)`, pasted from
+// every part's log) on its input and keeps their durations in durations.json.
 import { spawn } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -18,6 +20,22 @@ const all = ["api", "web"].flatMap((dir) =>
     .map((file) => `${dir}/${file.replace(/\.test\.mjs$/, "")}`),
 );
 const args = process.argv.slice(2);
+if (args.includes("--durations")) {
+  const file = path.join(root, "durations.json");
+  const durations = JSON.parse(readFileSync(file, "utf8"));
+  let read = 0;
+  // Only passed suites: a failed one's time is mostly its timeouts.
+  for (const [, suite, seconds] of readFileSync(0, "utf8").matchAll(/^\s*PASS\s+(\S+)\s+\((\d+)s\)/gm)) {
+    if (!all.includes(suite)) continue;
+    durations[suite] = Number(seconds);
+    read++;
+  }
+  // Suites that are gone, left out.
+  const kept = Object.fromEntries(all.filter((suite) => suite in durations).map((suite) => [suite, durations[suite]]));
+  writeFileSync(file, `{\n${Object.entries(kept).map(([suite, seconds]) => `${JSON.stringify(suite)}: ${seconds}`).join(",\n")}\n}\n`);
+  console.log(`${read} durations read, ${all.length - Object.keys(kept).length} suites without one`);
+  process.exit(0);
+}
 const shardAt = args.indexOf("--shard");
 const shard = shardAt >= 0 ? /^(\d+)\/(\d+)$/.exec(args.splice(shardAt, 2)[1] ?? "") : null;
 if (shardAt >= 0 && (!shard || Number(shard[1]) < 1 || Number(shard[1]) > Number(shard[2]))) {

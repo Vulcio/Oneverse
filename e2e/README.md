@@ -73,12 +73,14 @@ that screenshot on failure, `signIn()` for the web app's sign-in form - and
 end with `finish()`, which sets the exit code. Name the file
 `<name>.test.mjs` and `run.mjs` picks it up.
 
-CI runs the suites in four jobs at once (issue #308): `node e2e/run.mjs
---shard 2/4` runs the second part, `--list` shows which suites that is. The
+CI runs the suites in six jobs at once (issue #308): `node e2e/run.mjs
+--shard 2/6` runs the second part, `--list` shows which suites that is. The
 parts are balanced by each suite's duration in `durations.json`, taken from
 CI's summary (`PASS  web/sets (42s)`); a new suite counts as an average one
-until the file is refreshed. Every suite still runs alone against its stack,
-so a suite never needs to know which part it's in.
+until the file is refreshed: paste every part's summary from a green run
+into `node e2e/run.mjs --durations`. Every suite still runs alone against
+its own stack and database, so a suite never needs to know which part it's
+in, nor count on what another suite left behind.
 
 ## Docs screenshots
 
