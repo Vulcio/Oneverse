@@ -13,7 +13,7 @@ import { useRouter } from "@tanstack/react-router";
 import { History, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { chartOfSections, SongChart } from "#/components/song-chart";
+import { chartOfSections, SongChart } from "@oneverse/screen/components/song-chart";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";

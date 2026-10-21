@@ -25,7 +25,7 @@ import {
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import { SongChart } from "#/components/song-chart";
+import { SongChart } from "@oneverse/screen/components/song-chart";
 import { Popover, PopoverContent } from "@oneverse/ui/components/popover";
 import { apiClient } from "#/lib/api-client";
 import { playPiano, strum } from "#/lib/chord-sound";

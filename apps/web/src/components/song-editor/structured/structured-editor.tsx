@@ -26,7 +26,7 @@ import { ChevronLeft, ChevronRight, FileUp, Minus, Plus, Redo2, StickyNote, Sepa
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
-import { chartOfSections, SongChart } from "#/components/song-chart";
+import { chartOfSections, SongChart } from "@oneverse/screen/components/song-chart";
 import { useDisplaySettings } from "#/lib/display-settings";
 import { Button } from "@oneverse/ui/components/button";
 import { NativeSelect } from "@oneverse/ui/components/native-select";

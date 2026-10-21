@@ -2,7 +2,7 @@ import { barAt, barLyrics, chartBars, structureOf, type ChartBar, type RenderedC
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { GROUP_COLORS } from "#/components/bars-row";
-import { FAMILY_COLORS, passLabel } from "#/components/song-chart";
+import { FAMILY_COLORS, passLabel } from "@oneverse/screen/components/song-chart";
 import { useBarsClock } from "#/lib/bars-clock";
 import { cn } from "@oneverse/ui/lib/utils";
 

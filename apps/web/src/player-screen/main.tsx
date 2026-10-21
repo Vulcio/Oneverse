@@ -4,7 +4,7 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
 import { createI18n, loadLocale, supportedLocale } from "@oneverse/app/i18n";
-import { ScreenStage, type StageSong } from "../components/screen-stage";
+import { ScreenStage, type StageSong } from "@oneverse/screen/components/screen-stage";
 
 /** Local Rust mock state; replace with a versioned local stage snapshot later. */
 type Snapshot = {

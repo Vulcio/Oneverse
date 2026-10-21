@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchScreenThemes, pickScreenTheme, type ScreenThemeOptions } from "#/lib/screen-display";
 import { useRemoteList } from "#/lib/screen-remote";
-import { VIDEO_INPUT_KEY } from "#/components/screen-stage";
+import { VIDEO_INPUT_KEY } from "@oneverse/screen/components/screen-stage";
 import { cn } from "@oneverse/ui/lib/utils";
 
 const entry = "flex w-full items-center gap-[2vmin] rounded-[1.2vmin] px-[2.5vmin] py-[1.6vmin] text-left text-[3.2vmin] outline-none hover:bg-white/15 focus:bg-white focus:text-black disabled:opacity-50";

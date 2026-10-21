@@ -170,6 +170,9 @@ Both web apps run on the shared server (`packages/app/server/web-server.mjs`).
 
 ## The player screen
 
+What a screen shows - `ScreenStage`, its widgets, backgrounds and effects, and the chart it draws
+(`SongChart`) - lives in `packages/screen` (`@oneverse/screen`, issue #305, source only like
+`@oneverse/ui`); every app that shows a screen builds from it, never a copy.
 `apps/web/src/player-screen/` builds `ScreenStage` on its own, client-only (`vite.player.config.ts`,
 `pnpm --filter @oneverse/web build:player-screen`), for songverse-player, the Rust mini-PC player
 (issue #247, its own repository). A change to `ScreenStage` or what it needs (providers, messages,

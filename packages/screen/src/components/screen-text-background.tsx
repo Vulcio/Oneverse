@@ -1,7 +1,7 @@
 import type { ScreenTheme } from "@oneverse/core";
 import { useEffect, useRef, type RefObject } from "react";
-import { frameMeter, screenDrawStats } from "#/lib/screen-draw-stats";
-import type { ScreenSignals } from "#/lib/screen-effects";
+import { frameMeter, screenDrawStats } from "../lib/screen-draw-stats";
+import type { ScreenSignals } from "../lib/screen-effects";
 
 /** Where the words are on the stage, as fractions of it (0 to 1), and when each word appears (performance.now()). */
 export interface StageText {

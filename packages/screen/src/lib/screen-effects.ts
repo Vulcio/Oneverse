@@ -1,6 +1,6 @@
 import { SCREEN_EFFECT_TARGETS, type ScreenTheme } from "@oneverse/core";
 import { useEffect, useRef, type RefObject } from "react";
-import { screenDrawStats } from "#/lib/screen-draw-stats";
+import { screenDrawStats } from "./screen-draw-stats";
 
 type Target = (typeof SCREEN_EFFECT_TARGETS)[number];
 

@@ -1,8 +1,8 @@
 import { lyricSlides, renderChart, screenLayers, songDocumentFromText, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ScreenStage, type StageSong } from "#/components/screen-stage";
-import type { StageLive } from "#/components/screen-widgets";
+import { ScreenStage, type StageSong } from "@oneverse/screen/components/screen-stage";
+import type { StageLive } from "@oneverse/screen/components/screen-widgets";
 import { cn } from "@oneverse/ui/lib/utils";
 
 const SAMPLE = `{key: G}

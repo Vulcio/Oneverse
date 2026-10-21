@@ -5,16 +5,16 @@ import "@fontsource-variable/lora";
 import "@fontsource-variable/nunito";
 import "@fontsource-variable/oswald";
 import "@fontsource/bebas-neue";
-import "#/styles/screen-stage.css";
+import "../screen-stage.css";
 import { SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { ScreenGrid, type StageLive } from "#/components/screen-widgets";
-import { useScreenEffects, type ScreenSignals } from "#/lib/screen-effects";
-import { TextBackground, type StageText } from "#/components/screen-text-background";
-import { ShaderBackground } from "#/components/screen-shader-background";
-import { SongChart } from "#/components/song-chart";
+import { ScreenGrid, type StageLive } from "./screen-widgets";
+import { useScreenEffects, type ScreenSignals } from "../lib/screen-effects";
+import { TextBackground, type StageText } from "./screen-text-background";
+import { ShaderBackground } from "./screen-shader-background";
+import { SongChart } from "./song-chart";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /** A song on a screen: its slides (as every screen and Live cut them), and what's shown around them. */

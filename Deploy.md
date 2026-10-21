@@ -230,7 +230,7 @@ Songverse's web app (`apps/web`). Called the Web app in earlier versions of this
 - Build context: `.`
 - Port: `3000`
 - Domain: `songverse.top` (any domain; see "Old links keep working" for `app.songverse.one`)
-- Watch paths (if you use auto-deploy): `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
+- Watch paths (if you use auto-deploy): `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/screen/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**`
 
 Environment variables:
 ```
@@ -387,7 +387,7 @@ With auto-deploy on, Dokploy rebuilds an app only when a push changes a file mat
 |---|---|
 | API, Worker | `apps/api/**`, `packages/core/**`, `packages/db/**`, `packages/secret-crypto/**`, `packages/tsconfig/**`, `Dockerfile.api`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Oneverse | `apps/oneverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/tsconfig/**`, `Dockerfile.oneverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
-| Songverse | `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
+| Songverse | `apps/web/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/screen/**`, `packages/tsconfig/**`, `Dockerfile.songverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Planiverse | `apps/planiverse/**`, `packages/core/**`, `packages/ui/**`, `packages/app/**`, `packages/planning/**`, `packages/tsconfig/**`, `Dockerfile.planiverse`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Site | `apps/site/**`, `Dockerfile.site`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
 | Docs | `apps/docs/**`, `Dockerfile.docs`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `patches/**` |
@@ -395,7 +395,7 @@ With auto-deploy on, Dokploy rebuilds an app only when a push changes a file mat
 The root `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` and `patches/**` are in every app's: every image installs its dependencies from them, so a dependency change rebuilds them all.
 
 - `packages/core` (shared types, translations, the API client) is in the API's and every web app's: a change there has to reach them all, or the web apps and the API disagree.
-- `packages/ui` and `packages/app` (#241: the UI, signing in) are in every web app's: a change there rebuilds Oneverse, Songverse and Planiverse; `packages/planning` (the planning screens) only Songverse and Planiverse.
+- `packages/ui` and `packages/app` (#241: the UI, signing in) are in every web app's: a change there rebuilds Oneverse, Songverse and Planiverse; `packages/planning` (the planning screens) only Songverse and Planiverse; `packages/screen` (what a screen shows, #305) only Songverse.
 - `packages/db` holds the Prisma schema and migrations: a new migration rebuilds the API, which applies it as it starts (step 3).
 - `e2e/`, `docs/` and the `.md` files at the root aren't in any image, so changing them rebuilds nothing.
 

@@ -1,8 +1,8 @@
 import { readIsf, readIsfValues, type IsfInput, type IsfShader, type IsfValue, type ScreenTheme } from "@oneverse/core";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import type { StageText } from "#/components/screen-text-background";
-import { frameMeter, screenDrawStats } from "#/lib/screen-draw-stats";
-import type { ScreenSignals } from "#/lib/screen-effects";
+import type { StageText } from "./screen-text-background";
+import { frameMeter, screenDrawStats } from "../lib/screen-draw-stats";
+import type { ScreenSignals } from "../lib/screen-effects";
 
 /** The most pixels a shader draws, on the long side: past it, it's stretched (a 4K TV gets a 1080p picture). */
 const MAX_SIDE = 1920;

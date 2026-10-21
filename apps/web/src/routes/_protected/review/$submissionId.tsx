@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MatchList, stateVariant } from "#/components/song-editor/publish-card";
-import { SongChart } from "#/components/song-chart";
+import { SongChart } from "@oneverse/screen/components/song-chart";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";

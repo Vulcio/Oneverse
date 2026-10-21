@@ -2,7 +2,7 @@ import { barAt, chartBars, metronomeForSong, structureOf, type ChartBar, type Re
 import { Metronome, Square } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { FAMILY_COLORS } from "#/components/song-chart";
+import { FAMILY_COLORS } from "@oneverse/screen/components/song-chart";
 import { useBarsClock } from "#/lib/bars-clock";
 import { startMetronome, stopMetronome, useMetronome } from "#/lib/metronome-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";

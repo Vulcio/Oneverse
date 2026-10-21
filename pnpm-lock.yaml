@@ -355,27 +355,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.3.0)
-      '@fontsource-variable/inter':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/lora':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/montserrat':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/nunito':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/oswald':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/playfair-display':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource/bebas-neue':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@oneverse/app':
         specifier: workspace:*
         version: link:../../packages/app
@@ -385,6 +364,9 @@ importers:
       '@oneverse/planning':
         specifier: workspace:*
         version: link:../../packages/planning
+      '@oneverse/screen':
+        specifier: workspace:*
+        version: link:../../packages/screen
       '@oneverse/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -657,6 +639,67 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.36
         version: 1.170.36(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.3.0(@types/react@19.3.0)
+      i18next:
+        specifier: ^26.4.2
+        version: 26.4.2(typescript@5.9.3)
+      react:
+        specifier: ^19.2.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.3.0(react@19.3.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/screen:
+    dependencies:
+      '@fontsource-variable/inter':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/lora':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/montserrat':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/nunito':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/oswald':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/playfair-display':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/bebas-neue':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@oneverse/core':
+        specifier: workspace:*
+        version: link:../core
+      '@oneverse/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^1.46.0
+        version: 1.46.0(react@19.3.0)
+      react-i18next:
+        specifier: ^17.0.14
+        version: 17.0.14(i18next@26.4.2(typescript@5.9.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      uqr:
+        specifier: 0.1.2
+        version: 0.1.2
+    devDependencies:
+      '@oneverse/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@types/react':
         specifier: ^19.2.0
         version: 19.3.0

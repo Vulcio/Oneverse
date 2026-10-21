@@ -24,7 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@oneverse/ui/components/sheet";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { cn } from "@oneverse/ui/lib/utils";
-import type { ChartNotesLayer, PassMarks } from "#/components/song-chart";
+import type { ChartNotesLayer, PassMarks } from "@oneverse/screen/components/song-chart";
 import { MARGIN_GAP, NotesOverlay, type OverlayLayout, type OverlayNote } from "#/components/notes-overlay";
 import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
 import { usePresence, useSongPresence } from "#/lib/live-notes";

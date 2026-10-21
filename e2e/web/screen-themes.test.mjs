@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { API, SP, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { png } from "../lib/fake-providers.mjs";
 
-const FONT = new URL("../../apps/web/node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2", import.meta.url);
+const FONT = new URL("../../packages/screen/node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2", import.meta.url);
 
 let page;
 const step = stepper(() => page);

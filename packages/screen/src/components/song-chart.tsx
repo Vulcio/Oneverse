@@ -19,7 +19,7 @@ import {
 import { AlertTriangle } from "lucide-react";
 import { Fragment, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ChartColumns } from "#/lib/chart-columns";
+import type { ChartColumns } from "../lib/chart-columns";
 import type { DisplayFontValue, DisplaySpacingValue } from "@oneverse/core";
 import { cn } from "@oneverse/ui/lib/utils";
 
