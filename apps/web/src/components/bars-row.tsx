@@ -1,16 +1,15 @@
-import { barAt, chartBars, recordingBeatPosition, metronomeForSong, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2, type StructureGroup } from "@songverse/core";
+import { barAt, chartBars, metronomeForSong, structureOf, type ChartBar, type RenderedChart, type SongDocumentV2, type StructureGroup } from "@songverse/core";
 import { Metronome, Square } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FAMILY_COLORS } from "#/components/song-chart";
+import { useBarsClock } from "#/lib/bars-clock";
 import { startMetronome, stopMetronome, useMetronome } from "#/lib/metronome-engine";
-import { deviceNow } from "#/lib/output-clock";
-import { useStems } from "#/lib/stem-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";
 import { cn } from "@songverse/ui/lib/utils";
 
 /** A section's colour on its first bar, as the structure bar's. */
-const GROUP_COLORS: Record<StructureGroup, string> = {
+export const GROUP_COLORS: Record<StructureGroup, string> = {
   edge: "bg-violet-500",
   verse: "bg-sky-500",
   chorus: "bg-amber-400",
@@ -27,9 +26,9 @@ const LEAD_BEATS = 1;
  * starts, the chord written where it changes, each section's name on its
  * first bar - and the metronome. As the music plays, the current beat
  * fills and the row slides so it stays near the left, what's coming in
- * view. It follows the stems when they play this song (their recording's
- * own beats and bars, issue #299, else its tempo and first beat), else the song's metronome (or the Sync leader's),
- * else it stands at bar 1 and can be scrolled.
+ * view. It follows the music as `useBarsClock` says (the stems, the
+ * metronome or the Sync leader's), else it stands at bar 1 and can be
+ * scrolled.
  */
 export function BarsRow({
   songId,
@@ -49,12 +48,8 @@ export function BarsRow({
   const bars = useMemo(() => chartBars(chart, document), [chart, document]);
   const steps = useMemo(() => structureOf(chart), [chart]);
   const metronome = useMetronome();
-  const stems = useStems();
+  const { source, position } = useBarsClock(songId, bars);
   const strip = useRef<HTMLDivElement>(null);
-
-  const stemsHere = stems.songVersionId === songId && stems.playing && stems.anchor && stems.beat ? { anchor: stems.anchor, beat: stems.beat, speed: stems.speed } : null;
-  const clickHere = metronome.playing && metronome.anchor && (metronome.songId === songId || metronome.following) ? { anchor: metronome.anchor, settings: metronome.settings } : null;
-  const source: "stems" | "click" | "leader" | null = stemsHere ? "stems" : clickHere ? (metronome.following ? "leader" : "click") : null;
 
   // Frame by frame, without rendering again: where the music is, in beats from the song's start.
   useEffect(() => {
@@ -69,24 +64,12 @@ export function BarsRow({
       lit = index === null ? null : (cells[index] ?? null);
       if (lit) lit.dataset.on = "";
     };
-    if (!source) {
+    if (!position) {
       light(null);
       if (countIn) countIn.hidden = true;
       element.dataset.position = "";
       return;
     }
-    const position = (): number => {
-      const now = deviceNow();
-      if (stemsHere) {
-        const seconds = stemsHere.anchor.position + ((now - stemsHere.anchor.epoch) / 1000) * stemsHere.speed;
-        // The recording's own beats and bars when they were found (issue #299), else its tempo from its first beat.
-        const mapped = stemsHere.beat.map ? recordingBeatPosition(stemsHere.beat.map, seconds, bars) : null;
-        return mapped ?? ((seconds - stemsHere.beat.firstBeat) * stemsHere.beat.tempo) / 60;
-      }
-      const { anchor, settings } = clickHere!;
-      const beats = anchor.position + (now - anchor.epoch) / 1000 / (60 / settings.tempo);
-      return beats - settings.countIn * settings.numerator;
-    };
     let frame = requestAnimationFrame(function tick() {
       const at = position();
       const whole = Math.floor(at);
@@ -119,7 +102,7 @@ export function BarsRow({
       cancelAnimationFrame(frame);
       light(null);
     };
-  }, [source, bars, stemsHere?.anchor, stemsHere?.beat, stemsHere?.speed, clickHere?.anchor, clickHere?.settings]);
+  }, [position, bars]);
 
   const tempo = chart.tempo;
   const mine = metronome.playing && metronome.songId === songId;

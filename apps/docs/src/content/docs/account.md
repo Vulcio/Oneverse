@@ -47,7 +47,7 @@ How chords read on every chart you open:
 - **Chord colours** - **Plain**, or **By chord type**.
 - **With a capo** - chords as they sound, or as the shapes to play. Shapes are written in *italics*, so they're never taken for the chords you hear, and a song with a capo shows it as a red pill - **⚠ Capo 1 · chords as shapes** - in Practice and Live.
 - **Chord diagrams** - **None**, **Guitar**, **Ukulele** or **Piano**: how to play the song's chords, beside its chart (see [Chord diagrams](/versions/#chord-diagrams)).
-- **Songs read as** - **Chords and lyrics**, or **PDF, when the song has one**: how songs show in Practice and Live unless you choose otherwise for a song (see [Playing a set live](/sets/#playing-a-set-live)). A song without a PDF always shows its chart.
+- **Songs read as** - **Chords and lyrics**, **Chord grid (bars)** (see [Chord grid](/metronome/#chord-grid)), or **PDF, when the song has one**: how songs show in Practice and Live unless you choose otherwise for a song (see [Playing a set live](/sets/#playing-a-set-live)). A song without a PDF shows its chart instead.
 
 They're where every mode starts: the [Display](/display/) panel changes them for one mode - Edit, Practice or Live - and its **↺** puts that mode back to these. Hiding chords and simpler chords are set per song, from its chart - see [Your own view of a chart](/versions/#your-own-view-of-a-chart).
 

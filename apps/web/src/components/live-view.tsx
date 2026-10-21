@@ -6,6 +6,7 @@ import { PdfPages, ViewSwitch, type ReadingView } from "#/components/chart-or-pd
 import { CommandSearch } from "#/components/command-search";
 import { MetronomeSongButton } from "#/components/metronome";
 import { BarsRow } from "#/components/bars-row";
+import { ChordGrid } from "#/components/chord-grid";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
 import { DisplayPanel } from "#/components/display-panel";
@@ -634,6 +635,9 @@ function LiveSongSection({
         ) : null}
         {pdf && song.reading ? (
           <PdfPages key={pdf.id} source={() => song.reading!.source(pdf)} name={pdf.filename} className="max-sm:-mx-4" />
+        ) : chart && song.reading?.grid ? (
+          // Its chords in bars (issue #238), following the music as the bars row does.
+          <ChordGrid songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} emptyText={t("sets.noChart")} />
         ) : chart && song.notes ? (
           <LiveChartWithNotes song={song} notes={song.notes} chart={chart} display={display} />
         ) : chart ? (

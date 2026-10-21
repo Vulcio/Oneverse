@@ -51,3 +51,16 @@ En haut d'un chant, en Session et en Live, la **ligne des mesures** place les ac
 Les mesures viennent de la grille : chaque accord a une mesure, et une ligne chantée en prend au moins deux (une ligne à un seul accord le garde une deuxième mesure). Les lignes d'accords seuls (une intro) prennent une mesure par accord, et les notes aucune. Chaque mesure a autant de temps que l'indique la mesure du chant, et une section peut avoir sa propre mesure dans l'ordre du chant.
 
 **Affichage** > **Accords** > **Mesures** la masque, séparément en Session et en Live (voir [Affichage](/fr/display/)).
+
+## Grille en mesures
+
+**Grille** / **Mesures** au-dessus d'un chant (en Session, sur sa page dans une liste et dans l'en-tête du Live) lit le chant en mesures plutôt que sa grille : les mêmes mesures, disposées comme sur une grille de jazz.
+
+![Les mesures en Session, le clic lancé](../../../assets/screenshots/fr/chord-grid.jpg)
+
+- **Quatre mesures par ligne** (deux sur un téléphone), chaque section sous son nom, avec sa mesure là où elle change.
+- **Chaque mesure** a son numéro, une barre oblique par temps et l'accord sur le temps où il change. Un accord qui continue depuis la mesure d'avant est rappelé, en gris. Dessous, les paroles chantées dans cette mesure (de l'accord où elles commencent au suivant).
+- **Pendant que la musique joue,** la mesure et le temps joués s'allument, et la page défile pour garder cette mesure en vue. Elle suit la même chose que la ligne des mesures : les pistes, le métronome ou celui du meneur.
+- **Les accords se lisent comme sur la grille :** transposés, avec votre capodastre, vos noms et vos couleurs, et sur la page d'un chant dans une liste vos **Accords simplifiés** et **Sans basses** aussi.
+
+Votre choix est gardé pour le chant, comme celui d'un PDF : chaque appareil où vous êtes connecté, et le Live, l'affichent de la même façon. Pour lire tous les chants ainsi sauf choix contraire, réglez **Lire les chants en** sur **Accords en mesures** (voir [Affichage des grilles](/fr/account/#affichage-des-grilles)).

@@ -86,6 +86,7 @@ enum ChordDiagrams {
 // How a song reads in Live (issue #155): see LIVE_VIEWS in packages/core.
 enum LiveView {
   CHART
+  GRID
   PDF
 }
 

@@ -6,6 +6,7 @@ import { DisplayPanel } from "#/components/display-panel";
 import { chartDisplayProps, displayModeOf, displaySeed, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
 import { useMode } from "#/lib/mode";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
+import { ChordGrid } from "#/components/chord-grid";
 import { apiClient } from "#/lib/api-client";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
@@ -37,9 +38,9 @@ export function renderPlayerChart(
  * "Personal chart preferences"): the arrangement the set plays, the set's
  * key on top, and the player's own view - chords they've hidden, simpler
  * chords, no bass notes, capo shapes, solfège. Changes save as they're
- * made, for this player only.
+ * made, for this player only. `grid`: as its chord grid (issue #238).
  */
-export function PlayerChart({ view, openNoteId }: { view: SetlistSongView; /** A note's thread to open (a notification's link). */ openNoteId?: string }) {
+export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistSongView; /** A note's thread to open (a notification's link). */ openNoteId?: string; grid?: boolean }) {
   const { t } = useTranslation();
   const song = view.song!;
   const [preferences, setPreferences] = useState<ChartPreferences>(view.view.preferences ?? EMPTY);
@@ -81,10 +82,12 @@ export function PlayerChart({ view, openNoteId }: { view: SetlistSongView; /** A
         <DisplayPanel mode={displayMode} settings={display} player={player} className="mr-1" />
         <span className="mr-1 [&>button]:h-7 [&>button]:text-xs">{notes.button}</span>
         <span className="mr-1 text-xs font-medium text-muted-foreground">{t("player.myView")}</span>
-        <Toggle pressed={hiding} onClick={() => setHiding(!hiding)}>
-          <EyeOff className="size-3.5" aria-hidden />
-          {t("player.hideChords")}
-        </Toggle>
+        {grid ? null : (
+          <Toggle pressed={hiding} onClick={() => setHiding(!hiding)}>
+            <EyeOff className="size-3.5" aria-hidden />
+            {t("player.hideChords")}
+          </Toggle>
+        )}
         <Toggle pressed={preferences.simplifyChords} onClick={() => savePreferences({ ...preferences, simplifyChords: !preferences.simplifyChords })}>
           {t("player.simplify")}
         </Toggle>
@@ -110,7 +113,7 @@ export function PlayerChart({ view, openNoteId }: { view: SetlistSongView; /** A
           {capoDisplay === "FINGERED" ? t("player.showingShapes") : t("player.showingSounding")}
         </p>
       ) : null}
-      {hiding ? <p className="text-xs text-muted-foreground">{t("player.hideHint")}</p> : null}
+      {hiding && !grid ? <p className="text-xs text-muted-foreground">{t("player.hideHint")}</p> : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
@@ -118,15 +121,19 @@ export function PlayerChart({ view, openNoteId }: { view: SetlistSongView; /** A
       ) : null}
       {notes.top}
       <div style={{ zoom: display.textSize }}>
-      <ChartWithDiagrams
-        notes={notes.layer}
-        chart={chart}
-        {...chartDisplayProps(display)}
-        player={player}
-        songVersionId={song.id}
-        emptyText={t("sets.noChart")}
-        onChordClick={hiding ? (id) => savePreferences({ ...preferences, hiddenChordIds: [...new Set([...preferences.hiddenChordIds, id])] }) : undefined}
-      />
+        {grid ? (
+          <ChordGrid songId={song.id} chart={chart} document={song.document} chordColors={display.chordColors} emptyText={t("sets.noChart")} />
+        ) : (
+          <ChartWithDiagrams
+            notes={notes.layer}
+            chart={chart}
+            {...chartDisplayProps(display)}
+            player={player}
+            songVersionId={song.id}
+            emptyText={t("sets.noChart")}
+            onChordClick={hiding ? (id) => savePreferences({ ...preferences, hiddenChordIds: [...new Set([...preferences.hiddenChordIds, id])] }) : undefined}
+          />
+        )}
       </div>
       {notes.dialogs}
     </div>

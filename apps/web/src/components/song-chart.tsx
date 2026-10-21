@@ -26,6 +26,11 @@ import { cn } from "@songverse/ui/lib/utils";
 // Section types with a heading of their own; "other" has none.
 const LABELLED_SECTIONS = new Set(["intro", "verse", "pre-chorus", "chorus", "post-chorus", "bridge", "vamp", "breakdown", "instrumental", "interlude", "outro", "tag"]);
 
+/** A pass's heading: its own label, else its section's, else the kind of section's name; null for a kind that has none. */
+export function passLabel(pass: RenderedPass, t: (key: string) => string): string | null {
+  return pass.label ?? pass.section.label ?? (LABELLED_SECTIONS.has(pass.section.type) ? t(`chart.sections.${pass.section.type}`) : null);
+}
+
 /** A chart of sections as written (the song editor's preview, a review): no arrangement, no player's view. */
 export function chartOfSections(sections: SectionV2[], flow: SectionInstance[] = [], key: string | null = null): RenderedChart {
   return renderChart({ $schema: "song-document/v2", revision: 0, defaults: { key }, sections, flow }, null);
@@ -86,8 +91,7 @@ export function SongChart({
   if (chart.passes.length === 0) {
     return <p className="text-sm text-muted-foreground">{emptyText ?? t("chart.empty")}</p>;
   }
-  const labelFor = (pass: RenderedPass) =>
-    pass.label ?? pass.section.label ?? (LABELLED_SECTIONS.has(pass.section.type) ? t(`chart.sections.${pass.section.type}`) : null);
+  const labelFor = (pass: RenderedPass) => passLabel(pass, t);
 
   const flowed = columns !== "1";
   // A second row that only repeats the main one (the capo's shapes with no capo, say) isn't shown.

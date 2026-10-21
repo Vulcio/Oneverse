@@ -514,6 +514,22 @@ try {
       console.log("  bars");
       await row.getByTestId("bars-metronome").click();
     }
+    // The chord grid (issue #238): the song read as its bars, the click playing; then back to the chart, which is kept for the song.
+    {
+      await page.goto(`${WEB}/library/${grace.id}`);
+      await page.getByTestId("chart-view-grid").click();
+      const grid = page.getByTestId("chord-grid");
+      await grid.waitFor();
+      await page.getByTestId("bars-metronome").click();
+      await page.locator('[data-testid="chord-grid"][data-source="click"]').waitFor();
+      await page.waitForTimeout(4200);
+      const box = await grid.boundingBox();
+      await page.screenshot({ path: path.join(dir, "chord-grid.jpg"), type: "jpeg", quality: 85, clip: { x: box.x - 24, y: box.y - 76, width: box.width + 48, height: Math.min(box.height + 96, 330) } });
+      console.log("  chord-grid");
+      await page.getByTestId("bars-metronome").click();
+      await page.getByTestId("chart-view-chart").click();
+      await page.getByTestId("song-chart").waitFor();
+    }
     // Chord diagrams (issue #207): the strip of the song's chords, and one chord's card.
     await api(me, "PATCH", "/users/me", { chordDiagrams: "GUITAR" });
     await shoot("chord-diagrams", `/library/${grace.id}`, async () => {

@@ -11,7 +11,7 @@ import { parseArrangementDocumentV2, findArrangementProblems } from "../schemas/
 import { chordPositionProblem } from "../schemas/song-document-v2.js";
 import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-document/fold.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
-import { barAt, chartBars, recordingBeatPosition } from "../song-document/bars.js";
+import { barAt, barLyrics, chartBars, recordingBeatPosition } from "../song-document/bars.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
@@ -853,6 +853,20 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "in the 3/4 pass", args: [BARS_SONG, 23.5] },
           { name: "past the end", args: [BARS_SONG, 1000] },
           { name: "before the start", args: [BARS_SONG, -1] },
+        ],
+      },
+      barLyrics: {
+        about:
+          "The words sung in each bar of a song (issue #238), for a chord grid with the lyrics under its bars: a line's words cut where its chords are pinned, each piece in the bar its chord is in, the words before a line's first chord in its first bar; \"\" for a bar where the words carry on, null for a bar under no line.",
+        params: ["song"],
+        run: (song: unknown) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          return barLyrics(chart, chartBars(chart, doc));
+        },
+        cases: [
+          { name: "filled in from the chart", args: [SONG] },
+          { name: "a section's own rhythm, a 3/4 pass, an intro of chords alone", args: [BARS_SONG] },
         ],
       },
       recordingBeatPosition: {

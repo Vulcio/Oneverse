@@ -12,6 +12,7 @@ import { DisplayPanel } from "#/components/display-panel";
 import { chartDisplayProps, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChartOrPdf, songViewStore } from "#/components/chart-or-pdf";
+import { ChordGrid } from "#/components/chord-grid";
 import { StemDock } from "#/components/stem-dock";
 import { Button } from "@songverse/ui/components/button";
 import { Card, CardContent } from "@songverse/ui/components/card";
@@ -145,8 +146,20 @@ export function PracticeSongPage({
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls. */}
       {display.bars ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} className="sticky top-0 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
 
-      {/* The chart, or its PDF (issue #152). */}
-      <ChartOrPdf songVersionId={version.id} attachments={attachments} defaultView={liveView} store={songViewStore(version.id)}>
+      {/* The chart, its chord grid (issue #238) or its PDF (issue #152). */}
+      <ChartOrPdf
+        songVersionId={version.id}
+        attachments={attachments}
+        defaultView={liveView}
+        store={songViewStore(version.id)}
+        grid={
+          <Card>
+            <CardContent style={{ zoom: display.textSize }}>
+              <ChordGrid songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} emptyText={t("sets.noChart")} />
+            </CardContent>
+          </Card>
+        }
+      >
         <Card>
           <CardContent className="flex flex-col gap-3">
             {/* Zoom, not font size: the chart's own sizes keep their proportions. */}

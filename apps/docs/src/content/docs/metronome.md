@@ -51,3 +51,16 @@ At the top of a song in Practice and in Live, the **bars row** puts the song's c
 The bars come from the chart: each chord gets a bar, and a sung line takes at least two (a line with one chord holds it for a second bar). Lines of chords alone (an intro) take a bar per chord, and notes take none. Each bar has as many beats as the song's time signature says, and a section can have a time signature of its own in the song's order.
 
 **Display** > **Chords** > **Bars** hides it, separately in Practice and in Live (see [Display](/display/)).
+
+## Chord grid
+
+**Chart** / **Grid** above a song (in Practice, on its page in a set, and in Live's header) reads the song as a chord grid instead of its chart: the same bars, laid out like a lead sheet.
+
+![The chord grid in Practice, the click playing](../../assets/screenshots/en/chord-grid.jpg)
+
+- **Four bars to a row** (two on a phone), each section under its name, with its time signature where it changes.
+- **Each bar** has its number, a slash for each beat and the chord on the beat it changes on. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord they start on to the next one).
+- **While the music plays,** the bar and the beat being played light up, and the grid scrolls to keep that bar in view. It follows the same things as the bars row: the stems, the metronome, or the leader's.
+- **The chords read as on the chart:** transposed, with your capo, names and colours, and on a set's song page your **Simpler chords** and **No bass notes** too.
+
+Your choice is kept for the song, as a PDF's is: every device you sign in on, and Live, show it the same way. To read every song this way unless you choose otherwise, set **Songs read as** to **Chord grid (bars)** (see [Chart display](/account/#chart-display)).

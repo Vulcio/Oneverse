@@ -137,8 +137,19 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
       ) : null}
 
       {song ? (
-        // The chart, or the song's PDF (issue #152).
-        <ChartOrPdf songVersionId={song.id} defaultView={view.view.liveView ?? "CHART"} store={setSongViewStore(set.id, item.id, view.view.preferences)}>
+        // The chart, its chord grid (issue #238) or the song's PDF (issue #152).
+        <ChartOrPdf
+          songVersionId={song.id}
+          defaultView={view.view.liveView ?? "CHART"}
+          store={setSongViewStore(set.id, item.id, view.view.preferences)}
+          grid={
+            <Card>
+              <CardContent>
+                <PlayerChart view={view} openNoteId={note} grid />
+              </CardContent>
+            </Card>
+          }
+        >
           <Card>
             <CardContent>
               <PlayerChart view={view} openNoteId={note} />

@@ -214,3 +214,45 @@ export function recordingBeatPosition(map: BeatMap, seconds: number, bars: reado
   if (!song) return barsLength(bars) + (bar - bars.length) * (bars.at(-1)?.beats ?? 4) + within;
   return song.start + Math.min(within, song.beats - 1e-6);
 }
+
+/**
+ * The words sung in each bar (issue #238), for a chord grid with the lyrics
+ * under its bars: a line's words are cut where its chords are pinned, each
+ * piece going to the bar its chord is in, and the words before a line's
+ * first chord to its first bar. A chord pinned inside a word cuts before
+ * the word: a grid reads words, not syllables. A bar with no change of the
+ * line's chords gets "" (the words carry on); one with no words to sing (an
+ * intro, a line of chords alone) null.
+ */
+export function barLyrics(chart: Pick<RenderedChart, "passes">, bars: readonly ChartBar[]): (string | null)[] {
+  const words: (string | null)[] = bars.map((bar) => (bar.lineId === null ? null : ""));
+  let run = 0;
+  while (run < bars.length) {
+    const first = bars[run]!;
+    // A line's bars, one after another in its pass.
+    let end = run + 1;
+    while (end < bars.length && bars[end]!.passIndex === first.passIndex && bars[end]!.lineId === first.lineId) end++;
+    const line = first.lineId === null ? undefined : chart.passes[first.passIndex]?.lines.find((one) => one.id === first.lineId);
+    if (!line || line.text.trim() === "") for (let index = run; index < end; index++) words[index] = null;
+    else {
+      const wordStart = (at: number) => {
+        let start = Math.min(at, line.text.length);
+        while (start > 0 && /\S/.test(line.text[start - 1]!)) start--;
+        return start;
+      };
+      const at = new Map(line.chords.map((chord) => [chord.id, wordStart(chord.at)]));
+      const cuts: { bar: number; at: number }[] = [];
+      for (let index = run; index < end; index++) {
+        const pinned = bars[index]!.chords.flatMap((chord) => (at.has(chord.id) ? [at.get(chord.id)!] : []));
+        const cut = index === run ? 0 : pinned.length > 0 ? Math.min(...pinned) : null;
+        // A cut never goes back: a chord pinned earlier in the line than the bar before's.
+        if (cut !== null && cut > (cuts.at(-1)?.at ?? -1)) cuts.push({ bar: index, at: cut });
+      }
+      cuts.forEach((cut, i) => {
+        words[cut.bar] = line.text.slice(cut.at, cuts[i + 1]?.at ?? line.text.length).trim();
+      });
+    }
+    run = end;
+  }
+  return words;
+}

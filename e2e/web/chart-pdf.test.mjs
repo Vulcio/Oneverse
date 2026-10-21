@@ -40,10 +40,11 @@ const inked = (canvas) => canvas.evaluate((el) => {
   return dark;
 });
 
-await step("a song without a PDF has no switch; its chart as ever", async () => {
+await step("a song without a PDF: Chart / Grid, no PDF; its chart as ever", async () => {
   await page.goto(`${WEB}/library/${plain.id}`);
   await page.getByTestId("practice-song").locator('[data-chord="G"]').first().waitFor();
-  if (await page.getByTestId("chart-view").count()) throw new Error("a switch without a PDF");
+  await page.getByTestId("chart-view-grid").waitFor();
+  if (await page.getByTestId("chart-view-pdf").count()) throw new Error("PDF without a PDF");
 });
 
 await step("with a PDF: Chart / PDF; the PDF's pages drawn, as wide as the page", async () => {

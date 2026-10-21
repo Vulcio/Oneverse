@@ -1,5 +1,5 @@
 import type { Attachment, ChartPreferences, LiveViewValue } from "@songverse/core";
-import { FileText, Loader2, Music } from "lucide-react";
+import { FileText, LayoutGrid, Loader2, Music } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@songverse/ui/components/card";
@@ -39,11 +39,13 @@ export function songViewStore(songVersionId: string): ViewStore {
   };
 }
 
-/** How a player reads a song, chosen for it or else their default: its chart, or one of its PDFs - the chart when it has none. */
+/** How a player reads a song, chosen for it or else their default: its chart, its chord grid (issue #238), or one of its PDFs - the chart when it has none. */
 export interface ReadingView {
   pdfs: Attachment[];
-  /** The PDF shown; null: the chart. */
+  /** The PDF shown; null: the chart or the grid. */
   shown: Attachment | null;
+  /** The chord grid shown, rather than the chart (never with a PDF). */
+  grid: boolean;
   choose: (view: LiveViewValue, pdfId?: string) => void;
   /** Where to read a PDF from: its signed address online (streamed by ranges), its bytes offline. */
   source: (file: Attachment) => Promise<PdfSource>;
@@ -99,6 +101,7 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
   return {
     pdfs,
     shown,
+    grid: view === "GRID",
     choose: (next, pdfId) => {
       chosen.current = true;
       const change: ViewChoice = next === "PDF" ? { view: next, ...(pdfId ? { pdfId } : {}) } : { view: next };
@@ -119,19 +122,19 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
   };
 }
 
-/** The Chart / PDF switch, and which PDF when there are several; nothing when the song has no PDF. */
+/** The Chart / Grid / PDF switch - PDF when the song has one - and which PDF when there are several. */
 export function ViewSwitch({ reading, compact = false }: { reading: ReadingView; compact?: boolean }) {
   const { t } = useTranslation();
-  const { pdfs, shown, choose } = reading;
-  if (pdfs.length === 0) return null;
+  const { pdfs, shown, grid, choose } = reading;
+  const chart = !shown && !grid;
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="chart-view">
       <div className="inline-flex rounded-md border p-0.5" role="group" aria-label={t("chartView.label")}>
         <button
           type="button"
-          aria-pressed={!shown}
+          aria-pressed={chart}
           onClick={() => choose("CHART")}
-          className={cn("flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-sm [&_svg]:size-4", !shown ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", chart ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
           title={compact ? t("chartView.chart") : undefined}
           data-testid="chart-view-chart"
         >
@@ -140,15 +143,28 @@ export function ViewSwitch({ reading, compact = false }: { reading: ReadingView;
         </button>
         <button
           type="button"
-          aria-pressed={!!shown}
-          onClick={() => choose("PDF", shown?.id ?? pdfs[0]!.id)}
-          className={cn("flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-sm [&_svg]:size-4", shown ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact ? t("chartView.pdf") : undefined}
-          data-testid="chart-view-pdf"
+          aria-pressed={grid}
+          onClick={() => choose("GRID")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", grid ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          title={compact ? t("chartView.grid") : undefined}
+          data-testid="chart-view-grid"
         >
-          <FileText />
-          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.pdf")}</span>
+          <LayoutGrid />
+          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.grid")}</span>
         </button>
+        {pdfs.length > 0 ? (
+          <button
+            type="button"
+            aria-pressed={!!shown}
+            onClick={() => choose("PDF", shown?.id ?? pdfs[0]!.id)}
+            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", shown ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+            title={compact ? t("chartView.pdf") : undefined}
+            data-testid="chart-view-pdf"
+          >
+            <FileText />
+            <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.pdf")}</span>
+          </button>
+        ) : null}
       </div>
       {shown && pdfs.length > 1 && !compact ? (
         <NativeSelect compact value={shown.id} onChange={(event) => choose("PDF", event.target.value)} aria-label={t("chartView.which")}>
@@ -164,21 +180,24 @@ export function ViewSwitch({ reading, compact = false }: { reading: ReadingView;
 }
 
 /**
- * A song's chart - or, when the player reads it as a PDF, that instead
- * (issues #152, #155): the switch above it, the choice kept with their
- * chart preferences, so Live shows the same.
+ * A song's chart - or, when the player reads it as its chord grid or a
+ * PDF, that instead (issues #152, #155, #238): the switch above it, the
+ * choice kept with their chart preferences, so Live shows the same.
  */
 export function ChartOrPdf({
   songVersionId,
   attachments,
   defaultView,
   store,
+  grid,
   children,
 }: {
   songVersionId: string;
   attachments?: Attachment[];
   defaultView: LiveViewValue;
   store: ViewStore;
+  /** The song's chord grid; without one (no chart), the chart's place shows. */
+  grid?: ReactNode;
   children: ReactNode;
 }) {
   const reading = useReadingView(songVersionId, attachments, defaultView, store);
@@ -187,7 +206,7 @@ export function ChartOrPdf({
     <div className="flex flex-col gap-3">
       <ViewSwitch reading={reading} />
       {/* On a phone, out to the screen's edges (the page's gutter, --gutter). */}
-      {shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : children}
+      {shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : reading.grid && grid ? grid : children}
     </div>
   );
 }

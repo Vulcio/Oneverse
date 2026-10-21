@@ -130,8 +130,8 @@ export type LiveControlValue = (typeof LIVE_CONTROLS)[number];
 /** How opaque floating controls are, 20% to 100%. */
 export const CONTROLS_OPACITIES = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] as const;
 
-/** How a song reads in Live (issue #155): its chart (chords and lyrics), or its PDF. More to come: lyrics only (#106), drummer (#107). */
-export const LIVE_VIEWS = ["CHART", "PDF"] as const;
+/** How a song reads in Live (issue #155): its chart (chords and lyrics), its chords in bars (the chord grid, issue #238), or its PDF. More to come: lyrics only (#106), drummer (#107). */
+export const LIVE_VIEWS = ["CHART", "GRID", "PDF"] as const;
 export type LiveViewValue = (typeof LIVE_VIEWS)[number];
 
 /**
