@@ -1,4 +1,4 @@
-import type { BiblePassage, ImportedBible, PassageChapter, SetItemPassage, SetlistItemPassageRef } from "@oneverse/core";
+import type { BiblePassage, ImportedBible, PassageChapter, SetItemPassage, SetlistItemPassageRef, SetlistItemScreenTemplate } from "@oneverse/core";
 import { passageCredit } from "@oneverse/screen/lib/set-items";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,12 +7,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { PassageTemplateSelect, templateRef } from "#/components/passage-template-select";
 import { apiClient } from "#/lib/api-client";
 
 /**
  * A set's passage item (issue #301): an imported Bible and a reference, as
  * people write it ("John 3:16-18", "Psaume 23,1-4"), read from the Bible
- * before it's kept - the set holds the reference, never the text.
+ * before it's kept - the set holds the reference, never the text - and the
+ * template the screens show it with (issue #310).
  */
 export function PassageItemDialog({
   open,
@@ -24,12 +26,13 @@ export function PassageItemDialog({
   onOpenChange: (open: boolean) => void;
   /** The item's, to change; null for a new one. */
   passage: SetItemPassage | null;
-  onSave: (passage: SetlistItemPassageRef) => Promise<void>;
+  onSave: (passage: SetlistItemPassageRef, screenTemplate: SetlistItemScreenTemplate | null) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [bibles, setBibles] = useState<ImportedBible[] | null>(null);
   const [bibleId, setBibleId] = useState(passage?.bibleId ?? "");
   const [reference, setReference] = useState(passage?.reference ?? "");
+  const [template, setTemplate] = useState(() => templateRef(passage?.template));
   const [preview, setPreview] = useState<BiblePassage | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +77,7 @@ export function PassageItemDialog({
             onSubmit={(event) => {
               event.preventDefault();
               void act(async () => {
-                await onSave({ bibleId, reference: reference.trim() });
+                await onSave({ bibleId, reference: reference.trim() }, template);
                 onOpenChange(false);
               });
             }}
@@ -99,6 +102,7 @@ export function PassageItemDialog({
                 </Button>
               </div>
             </div>
+            <PassageTemplateSelect id="set-passage-template" value={template} onChange={setTemplate} />
             {preview ? (
               <div className="max-h-60 overflow-y-auto rounded-md border p-3" data-testid="set-passage-preview">
                 <p className="mb-2 text-sm font-medium">{preview.reference}</p>

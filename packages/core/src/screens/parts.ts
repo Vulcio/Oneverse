@@ -31,7 +31,9 @@ export const SCREEN_EFFECTS_SCHEMA = "screen-effects/v1";
 export const SCREEN_TEMPLATE_SCHEMA = "screen-template/v1";
 
 /** What a template is for, to find it (issue #281); its names are in the locale files (`screens.tags.<tag>`). */
-export const SCREEN_TEMPLATE_TAGS = ["audience", "stage", "presentation", "lyrics", "chords", "signage"] as const;
+export const SCREEN_TEMPLATE_TAGS = ["audience", "stage", "presentation", "lyrics", "chords", "signage", "scripture"] as const;
+/** How many verses of a passage a template puts on a slide (issue #310), at most. */
+export const SCREEN_VERSES_PER_SLIDE_MAX = 10;
 export type ScreenTemplateTag = (typeof SCREEN_TEMPLATE_TAGS)[number];
 export const SCREEN_PART_KINDS = ["content", "background", "effects"] as const;
 export type ScreenPartKind = (typeof SCREEN_PART_KINDS)[number];
@@ -68,7 +70,11 @@ function effectsSchema(strict: boolean) {
   return screenEffectsSchema(strict).extend({ $schema: z.literal(SCREEN_EFFECTS_SCHEMA).default(SCREEN_EFFECTS_SCHEMA) });
 }
 
-/** A template's own document: its tags and layout - the widget grid and the masks. Its parts are referred to beside it. */
+/**
+ * A template's own document: its tags and layout - the widget grid and the
+ * masks - and how many verses of a passage go on a slide (issue #310). Its
+ * parts are referred to beside it.
+ */
 function templateSchema(strict: boolean) {
   const theme = strict ? ScreenThemeRequestSchema.shape : ScreenThemeSchema.shape;
   const object = strict ? z.strictObject : z.object;
@@ -77,6 +83,7 @@ function templateSchema(strict: boolean) {
     tags: z.array(z.enum(SCREEN_TEMPLATE_TAGS)).max(SCREEN_TEMPLATE_TAGS.length).default([]),
     grid: theme.grid,
     masks: theme.masks,
+    versesPerSlide: z.number().int().min(1).max(SCREEN_VERSES_PER_SLIDE_MAX).default(1),
   });
 }
 
@@ -141,7 +148,8 @@ export function readScreenTemplate(input: unknown): ScreenTemplateLayout {
         return mask.success ? [mask.data] : [];
       })
     : [];
-  return ScreenTemplateSchema.parse({ tags, grid: resolveGrid(raw.grid), masks: masks.slice(0, SCREEN_MASKS_MAX) });
+  const verses = ScreenTemplateSchema.shape.versesPerSlide.safeParse(raw.versesPerSlide);
+  return ScreenTemplateSchema.parse({ tags, grid: resolveGrid(raw.grid), masks: masks.slice(0, SCREEN_MASKS_MAX), versesPerSlide: verses.success ? verses.data : undefined });
 }
 
 /**
@@ -212,7 +220,7 @@ export interface ScreenBuiltInTemplate {
 const TAGS: Record<string, ScreenTemplateTag[]> = {
   classic: ["audience", "lyrics"],
   concert: ["audience", "lyrics"],
-  chapel: ["audience", "lyrics"],
+  chapel: ["audience", "lyrics", "scripture"],
   sunrise: ["audience", "lyrics"],
   starlight: ["audience", "lyrics"],
   spotlight: ["audience", "lyrics"],
@@ -284,6 +292,8 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
     template: ScreenTemplateSchema.parse({ ...one.template, tags: TAGS[one.id] ?? [] }),
   })),
   { id: "band-chart", content: "chart", background: "classic", effects: null, template: ScreenTemplateSchema.parse({ tags: TAGS["band-chart"] }) },
+  // For a passage (issue #310): the chapel's look, two verses a slide.
+  { id: "scripture", content: "chapel", background: "chapel", effects: null, template: ScreenTemplateSchema.parse({ tags: ["audience", "scripture"], versesPerSlide: 2 }) },
 ];
 
 export function screenBuiltInPart(kind: "content", id: string | null | undefined): ScreenContentTheme | undefined;

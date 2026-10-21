@@ -60,6 +60,24 @@ export function readItemPassage(value: unknown): SetlistItemPassageRef | null {
   return passage.success ? passage.data : null;
 }
 
+/**
+ * A passage item's own screen template (issue #310): a saved one by its id,
+ * or a built-in one by its id ("scripture"). The screens show the passage
+ * with it, as many verses a slide as it says; the rest of the set keeps the
+ * screen's own.
+ */
+export const SetlistItemScreenTemplateSchema = z.union([
+  z.strictObject({ id: z.string().min(1).max(40).describe("A saved template's id (GET /screen-themes)") }),
+  z.strictObject({ builtIn: z.string().min(1).max(40).describe('A built-in template\'s id, like "scripture"') }),
+]);
+export type SetlistItemScreenTemplate = z.output<typeof SetlistItemScreenTemplateSchema>;
+
+/** A stored item's screen template as it's read: null when there's none, or it can't be. */
+export function readItemScreenTemplate(value: unknown): SetlistItemScreenTemplate | null {
+  const template = SetlistItemScreenTemplateSchema.safeParse(value);
+  return template.success ? template.data : null;
+}
+
 export const AddSetlistItemSchema = z
   .strictObject({
     songVersionId: optional(z.string()).describe("A song (an item of kind SONG); give this, text or passage"),
@@ -67,6 +85,7 @@ export const AddSetlistItemSchema = z
     passage: optional(SetlistItemPassageSchema).describe("A Bible passage (an item of kind PASSAGE, issue #301); give this, songVersionId or text"),
     transposeSteps: optional(transposeSteps).describe("Semitones relative to the song's own key"),
     afterItemId: optional(z.string().min(1).max(40)).describe("Played right after this item of the set (issue #199); at the end when left out"),
+    screenTemplate: optional(SetlistItemScreenTemplateSchema).describe("A passage's screen template (issue #310); the screen's own when left out"),
   })
   .refine((item) => [item.songVersionId, item.text, item.passage].filter((one) => one !== undefined).length === 1, "Give one of songVersionId, text or passage");
 
@@ -98,6 +117,7 @@ export const UpdateSetlistItemSchema = z.strictObject({
   timer: SetlistItemTimerSchema.nullable().optional().describe("Its own timer (issue #269), started on the screens when Live comes to it; null: none"),
   text: optional(SetlistItemTextSchema).describe("A text item's title and body (issue #305); refused for a song"),
   passage: optional(SetlistItemPassageSchema).describe("A passage item's Bible and reference (issue #301); refused for any other kind"),
+  screenTemplate: SetlistItemScreenTemplateSchema.nullable().optional().describe("A passage item's screen template (issue #310); null: the screen's own. Refused for any other kind"),
 });
 export type UpdateSetlistItemRequest = z.input<typeof UpdateSetlistItemSchema>;
 

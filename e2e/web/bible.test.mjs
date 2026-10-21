@@ -1,7 +1,8 @@
 // The Bible in the sidebar (issue #310): off until a team's admin turns it on
 // on the team's page; then its members find it under Tools, pick a version,
 // a book (in the Bible's order or A-Z), a chapter and verses - all named in
-// their own language - read the passage, and add it to one of their sets.
+// their own language - read the passage, and add it to one of their sets
+// with the screen template it's shown with, which the set's page names.
 import { chromium } from "playwright";
 import { SP, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { importBible } from "../lib/bibles.mjs";
@@ -79,16 +80,39 @@ try {
     if ((await page.getByTestId("bible-order-alphabetical").getAttribute("aria-pressed")) !== "true") throw new Error("the order wasn't kept");
   });
 
-  await step("typed as French people write it: Jean 3,16 read, and added to the team's set", async () => {
+  await step("typed as French people write it: Jean 3,16 read, and added to the team's set with the Scripture template", async () => {
     await page.locator("#bible-reference").fill("Jean 3,16");
     await page.getByTestId("bible-read").click();
     await page.getByTestId("bible-passage").getByText("For God so loved the world", { exact: false }).waitFor();
     const card = page.getByTestId("bible-add-to-set");
     await card.locator("#bible-set").selectOption({ label: `Bible set ${stamp} (Bible band ${stamp})` });
+    // Scripture's templates first, each saying how many verses it puts on a slide.
+    const groups = await card.locator("#bible-template optgroup").evaluateAll((all) => all.map((group) => group.label));
+    if (groups[0] !== "For scripture") throw new Error(groups.join(" | "));
+    await card.locator("#bible-template").selectOption({ label: "Scripture - 2 verses a slide" });
     await card.getByTestId("bible-add").click();
     await card.getByTestId("bible-added").waitFor();
     const item = (await api(leader, "GET", `/setlists/${set.id}`)).items.find((one) => one.kind === "PASSAGE");
-    if (item?.passage?.bibleId !== bible.id || item.passage.reference !== "John 3:16") throw new Error(JSON.stringify(item?.passage));
+    if (item?.passage?.bibleId !== bible.id || item.passage.reference !== "John 3:16" || item.passage.template?.builtIn !== "scripture") throw new Error(JSON.stringify(item?.passage));
+  });
+
+  await step("the set's page names its template; its dialog keeps it, and the picked one is kept on this device", async () => {
+    await page.getByTestId("bible-add-to-set").getByRole("link").click();
+    await page.waitForURL(`${WEB}/sets/${set.id}`);
+    const row = page.getByTestId("set-passage-row");
+    await row.getByTestId("set-passage-template").getByText("Scripture").waitFor();
+    await row.getByRole("button").click();
+    const dialog = page.getByTestId("set-passage-dialog");
+    if ((await dialog.locator("#set-passage-template").inputValue()) !== "b:scripture") throw new Error(await dialog.locator("#set-passage-template").inputValue());
+    await dialog.locator("#set-passage-template").selectOption({ value: "" });
+    await dialog.getByRole("button", { name: "Save" }).click();
+    await row.getByTestId("set-passage-template").waitFor({ state: "detached" });
+    const item = (await api(leader, "GET", `/setlists/${set.id}`)).items.find((one) => one.kind === "PASSAGE");
+    if (item.passage.template !== null) throw new Error(JSON.stringify(item.passage.template));
+    await page.goto(`${WEB}/bible`);
+    await page.locator("#bible-reference").fill("John 3:16");
+    await page.getByTestId("bible-read").click();
+    if ((await page.locator("#bible-template").inputValue()) !== "b:scripture") throw new Error("the template wasn't kept");
   });
 
   await step("no page errors", async () => {

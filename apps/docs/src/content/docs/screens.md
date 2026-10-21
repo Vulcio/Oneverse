@@ -90,7 +90,7 @@ The **Templates** tab has four views: **Templates**, **Content themes**, **Backg
 
 ### Templates and their tags
 
-Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Lyrics**, **Chords** and **Signage**. Pick tags above the list to see only the templates with all of them. **New template** starts one from the built-in parts. The **Built-in templates**:
+Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Lyrics**, **Chords**, **Signage** and **Scripture**. Pick tags above the list to see only the templates with all of them. **New template** starts one from the built-in parts. The **Built-in templates**:
 
 - **Classic** - white words on black, the line before and after dimmed: the default.
 - **Concert** - bold capitals over moving coloured light, words revealed one by one.
@@ -103,6 +103,7 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 - **Stage display** - for the platform, on a grid of [widgets](/screens/#widgets): the slide now and the next one, the clock, a countdown, the song and what's next, and the operator's messages.
 - **Stage monitor** - big capitals at the top and the whole section, for the band.
 - **Band chart** - the song's chart with its chords, the section being sung in view, for the band.
+- **Scripture** - for a Bible passage: the chapel's look, two verses on each slide.
 
 **Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3** - changing as you change them. **⏵** plays the sample song, **‹ ›** go slide by slide.
 
@@ -110,6 +111,7 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 
 - **Content, background and effects** - the template's three parts: built-in ones, or yours and your teams'. **Customize** beside a built-in part makes a copy of your own and opens it; **Edit** opens one of yours. A part used by several templates says so: changing it changes them all.
 - **Tags** - what the template is for.
+- **Bible passages** - **Verses per slide**: how many verses of a passage go on a slide when a set's passage is shown with this template (see [Bible](/bible/#adding-it-to-a-set)). Tag it **Scripture** to offer it first for passages.
 - **Layout and widgets** - places [widgets](/screens/#widgets) on a grid. Below.
 - **Masks** - black over part of the picture, or a window to the video input. See [Layers](/screens/#layers).
 

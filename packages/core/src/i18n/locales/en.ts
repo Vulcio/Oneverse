@@ -283,7 +283,7 @@ const en = {
     /** Templates' views (issue #281): the templates, then each kind of part. */
     views: { templates: "Templates", content: "Content themes", background: "Background themes", effects: "Effects" },
     /** What a template is for (issue #281). */
-    tags: { audience: "Audience", stage: "Stage", presentation: "Presentation", lyrics: "Lyrics", chords: "Chords", signage: "Signage" },
+    tags: { audience: "Audience", stage: "Stage", presentation: "Presentation", lyrics: "Lyrics", chords: "Chords", signage: "Signage", scripture: "Scripture" },
     noTemplatesTagged: "No template has all these tags.",
     effects: "Effects",
     effectsHint: "The background answering the words and the words' own movement. Turn them off on a screen that can't keep up.",
@@ -623,6 +623,9 @@ const en = {
       partsHint: "A template is made of a content theme, a background theme and effects: built-in ones, or yours. Customize one to make it your own.",
       tags: "Tags",
       tagsHint: "What this template is for, to find it and pick it on a screen.",
+      passages: "Bible passages",
+      versesPerSlide: "Verses per slide",
+      versesPerSlideHint: "How many verses of a passage go on a slide when a set's passage is shown with this template. Tag it Scripture to offer it first for passages.",
       shows: "Shows",
       showsOptions: { lyrics: "Lyrics, for the audience", chart: "The chord chart, for the band" },
       baseAndVideo: "Base and video input",
@@ -778,6 +781,7 @@ const en = {
       "stage-display": { name: "Stage display", description: "For the platform: the slide now and the next one, the clock, a countdown, the song and what's next, and the operator's messages." },
       "stage-monitor": { name: "Stage monitor", description: "Big capitals at the top and the whole section, for the band." },
       "band-chart": { name: "Band chart", description: "The song's chart with its chords, the section being sung in view, for the band." },
+      scripture: { name: "Scripture", description: "For a Bible passage: the chapel's look, two verses on each slide." },
     },
   },
   sync: {
@@ -3341,6 +3345,14 @@ const en = {
     cardDescription: "A Bible in the sidebar of everyone here, to read a passage and add it to a set.",
     enable: "Show the Bible in the sidebar",
     fromOrganization: "On for every team of {{name}}.",
+    template: "Screen template",
+    templateScreen: "The screen's own template",
+    templateScripture: "For scripture",
+    templateOther: "Other templates",
+    templateGone: "A template no longer available",
+    templateHint: "The screens show the passage with it while it's presented; the rest of the set keeps theirs.",
+    versesPerSlide_one: "{{count}} verse a slide",
+    versesPerSlide_other: "{{count}} verses a slide",
   },
   bibles: {
     title: "Bibles",

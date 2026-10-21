@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { type SavedDisplaySettings, type SetItemPassage, chartEdgeChords, readItemPassage, readItemText, readItemTimer, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
+import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -18,6 +18,7 @@ import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
 import { BiblesService, type PassageUse } from "../scriptures/bibles.service.js";
+import { templateLayout } from "../screens/screen-templates.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -187,7 +188,7 @@ export class SetlistsService {
     const referencesBySong = await this.songbookReferences(user, songIdsOf(set.items));
     // Passages (issue #301), by their Bible and reference: their verses are the song view's.
     const passages = new Map<string, SetItemPassage | null>();
-    for (const item of set.items) if (item.kind === "PASSAGE") passages.set(item.id, await this.bibles.itemPassage(item.passage, "list"));
+    for (const item of set.items) if (item.kind === "PASSAGE") passages.set(item.id, await this.itemPassage(item, "list"));
 
     return {
       ...summarize(set),
@@ -319,6 +320,10 @@ export class SetlistsService {
     const set = await this.sets.findEditable(user, setlistId);
     if (dto.songVersionId) await this.assertAddable(set, dto.songVersionId);
     const passage = dto.passage ? await this.passageRef(dto.passage) : null;
+    if (dto.screenTemplate) {
+      if (!passage) throw new BadRequestException("Only a passage item has a screen template");
+      await this.assertTemplate(user, dto.screenTemplate);
+    }
     await this.prisma.client.$transaction(async (tx) => {
       let position = await tx.setlistItem.count({ where: { setlistId } });
       // Right after a song of the set (issue #199, "Play next" in Live): the ones after it move down one.
@@ -330,7 +335,7 @@ export class SetlistsService {
       }
       // A Bible passage (issue #301): its Bible and reference, as that Bible names the book.
       if (passage) {
-        await tx.setlistItem.create({ data: { setlistId, kind: "PASSAGE", passage, position } });
+        await tx.setlistItem.create({ data: { setlistId, kind: "PASSAGE", passage, position, ...(dto.screenTemplate && { screenTemplate: dto.screenTemplate }) } });
         return;
       }
       // Slides of text (issue #305): nothing of a song's.
@@ -358,6 +363,8 @@ export class SetlistsService {
       }
       if (dto.text !== undefined && item.kind !== "TEXT") throw new BadRequestException("Only a text item has a text");
       if (dto.passage !== undefined && item.kind !== "PASSAGE") throw new BadRequestException("Only a passage item has a passage");
+      if (dto.screenTemplate !== undefined && item.kind !== "PASSAGE") throw new BadRequestException("Only a passage item has a screen template");
+      if (dto.screenTemplate) await this.assertTemplate(user, dto.screenTemplate);
       const passage = dto.passage ? await this.passageRef(dto.passage) : undefined;
       await this.prisma.client.setlistItem.update({
         where: { id: itemId },
@@ -368,12 +375,14 @@ export class SetlistsService {
           ...(dto.transition !== undefined && { transition: dto.transition }),
           ...(dto.transitionNote !== undefined && { transitionNote: dto.transitionNote }),
           ...(dto.timer !== undefined && { timer: dto.timer ?? Prisma.DbNull }),
+          ...(dto.screenTemplate !== undefined && { screenTemplate: dto.screenTemplate ?? Prisma.DbNull }),
         },
       });
       return this.findOne(user, setlistId);
     }
     if (dto.text !== undefined) throw new BadRequestException("Only a text item has a text");
     if (dto.passage !== undefined) throw new BadRequestException("Only a passage item has a passage");
+    if (dto.screenTemplate !== undefined) throw new BadRequestException("Only a passage item has a screen template");
     const itemSongId = item.songVersionId;
     if (dto.songVersionId !== undefined && dto.songVersionId !== itemSongId) {
       const [current, next] = await Promise.all([
@@ -501,7 +510,7 @@ export class SetlistsService {
       // A text item's (issue #305).
       text: song ? null : readItemText(item.text),
       // A passage's (issue #301), with its verses as `passages` may have them.
-      passage: item.kind === "PASSAGE" ? await this.bibles.itemPassage(item.passage, passages) : null,
+      passage: item.kind === "PASSAGE" ? await this.itemPassage(item, passages) : null,
       // What happens after it (issue #199), with the key and tempo it goes from and to.
       transition: item.transition
         ? this.transitionView({ ...item, songVersion: song }, next && hasSong(next) && (readable.has(next.id) || inViewersLibrary(next.songVersion)) ? next : null, shown)
@@ -602,6 +611,37 @@ export class SetlistsService {
     const item = await this.prisma.client.setlistItem.findUnique({ where: { id: itemId } });
     if (!item || item.setlistId !== setlistId) throw new NotFoundException("Item not found");
     return item;
+  }
+
+  /** A passage item's passage (issue #301), with the screen template it's shown with (issue #310). */
+  private async itemPassage(item: { passage: unknown; screenTemplate: unknown }, use: PassageUse): Promise<SetItemPassage | null> {
+    const passage = await this.bibles.itemPassage(item.passage, use);
+    return passage && { ...passage, template: await this.itemTemplate(item.screenTemplate) };
+  }
+
+  /** A passage's own screen template (issue #310), named, with how many verses it puts on a slide; null without one, or once it's deleted. */
+  private async itemTemplate(value: unknown): Promise<SetItemTemplate | null> {
+    const ref = readItemScreenTemplate(value);
+    if (!ref) return null;
+    if ("builtIn" in ref) {
+      const builtIn = screenBuiltInTemplate(ref.builtIn);
+      return builtIn ? { id: null, builtIn: builtIn.id, name: null, versesPerSlide: builtIn.template.versesPerSlide } : null;
+    }
+    const row = await this.prisma.client.screenTheme.findUnique({ where: { id: ref.id }, select: { id: true, name: true, document: true } });
+    return row ? { id: row.id, builtIn: null, name: row.name, versesPerSlide: templateLayout(row).versesPerSlide } : null;
+  }
+
+  /** A template someone gives a passage (issue #310): a built-in one, or one they may pick for a screen - theirs or a team's they're in. */
+  private async assertTemplate(user: AuthenticatedUser, ref: SetlistItemScreenTemplate) {
+    if ("builtIn" in ref) {
+      if (!screenBuiltInTemplate(ref.builtIn)) throw new BadRequestException("screenTemplate must be a built-in template's id");
+      return;
+    }
+    const found = await this.prisma.client.screenTheme.findFirst({
+      where: { id: ref.id, OR: [{ ownerUserId: user.id }, { team: { memberships: { some: { userId: user.id } } } }] },
+      select: { id: true },
+    });
+    if (!found) throw new NotFoundException("Screen theme not found");
   }
 
   /** A passage to keep in a set (issue #301): its Bible imported, its reference read and found there, as that Bible names it. */

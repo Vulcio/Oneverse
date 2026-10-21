@@ -73,6 +73,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
     kind: "template",
     name: from ? t(`screens.templates.${from.id}.name`) : t("screens.newTemplateName"),
     tags: from?.template.tags ?? [],
+    versesPerSlide: from?.template.versesPerSlide ?? 1,
     grid: from?.template.grid ?? null,
     masks: from?.template.masks ?? [],
     refs: from
@@ -123,7 +124,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
                               size="sm"
                               variant="outline"
                               onClick={() =>
-                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, grid: theme.template.grid, masks: theme.template.masks, refs: theme.parts })
+                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, refs: theme.parts })
                               }
                               data-testid="edit-theme"
                             >

@@ -1312,7 +1312,7 @@ export const CONFORMANCE: ConformanceArea[] = [
       },
       passageSlides: {
         about:
-          "A passage item's slides (issue #301): each verse on slides of its own, its words on lines of at most 44 characters, 4 lines a slide, labelled with its place; none when its Bible may not be shown on screens.",
+          "A passage item's slides (issues #301, #310): each verse on slides of its own, or as many together as its template says (never across chapters, each starting with its number), its words on lines of at most 44 characters, 4 lines a slide for one verse and up to 10 for several, labelled with its place; none when its Bible may not be shown on screens.",
         params: ["passage"],
         run: passageSlides,
         cases: [
@@ -1332,6 +1332,20 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a word longer than a line", args: [{ bookName: "Psalms", projection: true, chapters: [{ book: 19, chapter: 1, verses: [{ number: 1, text: "Blessed supercalifragilisticexpialidociousandsomewhatlonger man" }] }] }] },
           { name: "its Bible may not be projected", args: [{ bookName: "John", projection: false, chapters: [{ book: 43, chapter: 3, verses: [{ number: 16, text: "For God so loved the world" }] }] }] },
           { name: "no verses", args: [{ bookName: "John", projection: true, chapters: [] }] },
+          {
+            name: "a template's two verses a slide (issue #310): not across chapters, the last alone",
+            args: [
+              {
+                bookName: "John",
+                projection: true,
+                template: { id: null, builtIn: "scripture", name: null, versesPerSlide: 2 },
+                chapters: [
+                  { book: 43, chapter: 3, verses: [{ number: 16, text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." }, { number: 17, endNumber: 18, text: "For God sent not his Son." }, { number: 19, text: "And this is the condemnation." }] },
+                  { book: 43, chapter: 4, verses: [{ number: 1, text: "When therefore the Lord knew" }, { number: 2, text: "Though Jesus himself baptized not" }] },
+                ],
+              },
+            ],
+          },
         ],
       },
       resolveScreenTheme: {
@@ -1436,12 +1450,14 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       readScreenTemplate: {
-        about: "A template's layout as a client reads it (issue #281): its tags (one it doesn't know left out), its widget grid and masks.",
+        about: "A template's layout as a client reads it (issues #281, #310): its tags (one it doesn't know left out), its widget grid and masks, and how many verses of a passage go on a slide (1 to 10; anything else, one).",
         params: ["input"],
         run: readScreenTemplate,
         cases: [
           { name: "tags, one from a later version", args: [{ tags: ["stage", "chords", "hologram", "stage"] }] },
           { name: "a mask that can't be read: left out", args: [{ masks: [{ id: "a", shape: "ellipse", x: 10 }, { id: "b", shape: "star" }] }] },
+          { name: "three verses a slide, for scripture", args: [{ tags: ["scripture"], versesPerSlide: 3 }] },
+          { name: "verses a slide that can't be: one", args: [{ versesPerSlide: 40 }] },
         ],
       },
       filterScreenTemplates: {

@@ -1,4 +1,4 @@
-import type { BibleBookLocale, BiblePassage, ImportedBible, SetlistSummary, YouVersionBible, YouVersionPassage } from "@oneverse/core";
+import { readItemScreenTemplate, type BibleBookLocale, type BiblePassage, type ImportedBible, type SetlistItemScreenTemplate, type SetlistSummary, type YouVersionBible, type YouVersionPassage } from "@oneverse/core";
 import { setlistTitle } from "@oneverse/screen/lib/set-items";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { importedVersion, languageTag, PassagePicker, pickerLanguages, youVersionVersion } from "#/components/passage-picker";
+import { PassageTemplateSelect } from "#/components/passage-template-select";
 import { PassageVerses } from "#/components/set-passage-item";
 import { apiClient } from "#/lib/api-client";
 
@@ -18,6 +19,16 @@ export const Route = createFileRoute("/_protected/bible")({
 /** Where the last language and version read are kept on this device. */
 const LANGUAGE_KEY = "oneverse.bible.language";
 const VERSION_KEY = "oneverse.bible.version";
+/** And the screen template last picked for a passage (issue #310). */
+const TEMPLATE_KEY = "oneverse.bible.template";
+
+function storedTemplate(): SetlistItemScreenTemplate | null {
+  try {
+    return readItemScreenTemplate(JSON.parse(stored(TEMPLATE_KEY) || "null"));
+  } catch {
+    return null;
+  }
+}
 
 function stored(key: string): string {
   try {
@@ -191,11 +202,16 @@ function BiblePage() {
   );
 }
 
-/** An imported Bible's passage, into one of the sets the reader can change: the set keeps the reference, never the text. */
+/**
+ * An imported Bible's passage, into one of the sets the reader can change:
+ * the set keeps the reference, never the text, and the template the screens
+ * show it with (issue #310), the last one picked on this device.
+ */
 function AddToSet({ bibleId, reference }: { bibleId: string; reference: string }) {
   const { t, i18n } = useTranslation();
   const [sets, setSets] = useState<SetlistSummary[] | null>(null);
   const [setId, setSetId] = useState("");
+  const [template, setTemplate] = useState(storedTemplate);
   const [added, setAdded] = useState<SetlistSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -221,6 +237,15 @@ function AddToSet({ bibleId, reference }: { bibleId: string; reference: string }
         <CardDescription>{t("biblePage.addToSetHint")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        <PassageTemplateSelect
+          id="bible-template"
+          value={template}
+          onChange={(picked) => {
+            setTemplate(picked);
+            store(TEMPLATE_KEY, JSON.stringify(picked));
+            setAdded(null);
+          }}
+        />
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-48 flex-1 flex-col gap-2">
             <Label htmlFor="bible-set">{t("biblePage.set")}</Label>
@@ -239,7 +264,7 @@ function AddToSet({ bibleId, reference }: { bibleId: string; reference: string }
               setBusy(true);
               setError(null);
               void apiClient
-                .addSetlistItem(setId, { passage: { bibleId, reference } })
+                .addSetlistItem(setId, { passage: { bibleId, reference }, ...(template && { screenTemplate: template }) })
                 .then(
                   () => setAdded(sets?.find((set) => set.id === setId) ?? null),
                   (err: unknown) => setError(err instanceof Error ? err.message : String(err)),

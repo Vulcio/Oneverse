@@ -255,8 +255,10 @@ export function PassagePicker({
                 if (picked) {
                   write({ book: picked.number, chapter: null, from: "", to: "" });
                   // One chapter only (Jude, Philemon): nothing to pick.
-                  if (picked.chapters === 1) (setChapter(1), write({ book: picked.number, chapter: 1, from: "", to: "" }));
-                  else setChaptersOpen(true);
+                  if (picked.chapters === 1) {
+                    setChapter(1);
+                    write({ book: picked.number, chapter: 1, from: "", to: "" });
+                  } else setChaptersOpen(true);
                 }
               }}
               itemToStringLabel={(one) => one.name}

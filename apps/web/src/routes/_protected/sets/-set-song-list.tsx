@@ -22,6 +22,7 @@ import type { SetProgress } from "#/lib/set-progress";
 import { setItemTitle, transposeLabel } from "#/lib/setlists";
 import { TextItemDialog } from "#/components/set-text-item";
 import { PassageItemDialog } from "#/components/set-passage-item";
+import { templateName } from "#/components/passage-template-select";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Input } from "@oneverse/ui/components/input";
 import { TransitionChordsPicker, TransitionSymbol, TransitionVariations } from "#/components/set-transition";
@@ -225,6 +226,11 @@ function SongRow({
             <Link to={mode === "live" ? "/sets/$setlistId/live/$itemId" : "/sets/$setlistId/songs/$itemId"} params={{ setlistId, itemId: item.id }} className="font-medium hover:underline">
               {title}
             </Link>
+            {passage.template ? (
+              <span className="text-xs text-muted-foreground" data-testid="set-passage-template">
+                {templateName(passage.template, t)}
+              </span>
+            ) : null}
             {canEdit ? (
               <Button variant="ghost" size="icon" className="size-7" aria-label={t("sets.passage.edit", { title })} onClick={() => setEditingPassage(true)}>
                 <Pencil />
@@ -235,7 +241,7 @@ function SongRow({
           <span className="text-sm italic text-muted-foreground">{title}</span>
         )}
         {passage && editingPassage ? (
-          <PassageItemDialog open={editingPassage} onOpenChange={setEditingPassage} passage={passage} onSave={async (changed) => onChange({ passage: changed })} />
+          <PassageItemDialog open={editingPassage} onOpenChange={setEditingPassage} passage={passage} onSave={async (changed, screenTemplate) => onChange({ passage: changed, screenTemplate })} />
         ) : null}
         {text && editingText ? (
           <TextItemDialog open={editingText} onOpenChange={setEditingText} text={text} onSave={async (changed) => onChange({ text: changed })} />

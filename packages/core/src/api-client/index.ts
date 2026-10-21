@@ -844,8 +844,10 @@ export interface ScreenCurrent {
   screen: ScreenSummary;
   /** Its look (issue #194), worked out: its theme, else its built-in one, else the default. */
   theme: ScreenTheme;
-  /** Its theme's pictures, videos and fonts; left out by an older API. */
+  /** Its theme's pictures, videos and fonts, and those of its items' own templates; left out by an older API. */
   assets?: ScreenThemeAsset[];
+  /** Its set's items that have a template of their own (issue #310, a passage's), by item id: their look while they're presented. */
+  itemThemes?: Record<string, ScreenTheme>;
   set: (SetlistOfflineCopy & { credits: Record<string, { writers: string[]; copyright: string | null; ccli: string | null }> }) | null;
 }
 

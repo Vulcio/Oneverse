@@ -90,7 +90,7 @@ L'onglet **Modèles** a quatre vues : **Modèles**, **Thèmes de contenu**, **Th
 
 ### Les modèles et leurs tags
 
-Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentation**, **Paroles**, **Accords** et **Affichage**. Choisissez des tags au-dessus de la liste pour ne voir que les modèles qui les ont tous. **Nouveau modèle** en commence un avec les parties intégrées. Les **Modèles intégrés** :
+Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentation**, **Paroles**, **Accords**, **Affichage** et **Écriture**. Choisissez des tags au-dessus de la liste pour ne voir que les modèles qui les ont tous. **Nouveau modèle** en commence un avec les parties intégrées. Les **Modèles intégrés** :
 
 - **Classique** - paroles blanches sur noir, la ligne d'avant et d'après atténuées : l'apparence par défaut.
 - **Concert** - majuscules grasses sur une lumière colorée en mouvement, les mots révélés un à un.
@@ -103,6 +103,7 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 - **Affichage de scène** - pour la scène, sur une grille de [widgets](/fr/screens/#widgets) : la diapositive en cours et la suivante, l'heure, un compte à rebours, le chant et la suite, et les messages de l'opérateur.
 - **Retour de scène** - de grandes majuscules en haut et toute la partie, pour les musiciens.
 - **Grille du groupe** - la grille du chant avec ses accords, la partie chantée en vue, pour les musiciens.
+- **Écriture** - pour un passage de la Bible : le style chapelle, deux versets par diapositive.
 
 **Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3** - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
 
@@ -110,6 +111,7 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 
 - **Contenu, fond et effets** - les trois parties du modèle : intégrées, ou les vôtres et celles de vos équipes. **Personnaliser** à côté d'une partie intégrée en fait une copie à vous et l'ouvre ; **Modifier** ouvre une des vôtres. Une partie utilisée par plusieurs modèles le dit : la changer les change tous.
 - **Tags** - ce à quoi sert le modèle.
+- **Passages de la Bible** - **Versets par diapositive** : combien de versets d'un passage vont sur une diapositive quand un passage d'une liste est affiché avec ce modèle (voir [Bible](/fr/bible/#lajouter-à-une-liste)). Étiquetez-le **Écriture** pour le proposer en premier pour les passages.
 - **Mise en page et widgets** - place des [widgets](/fr/screens/#widgets) sur une grille. Voir plus bas.
 - **Masques** - du noir sur une partie de l'image, ou une fenêtre sur l'entrée vidéo. Voir [Calques](/fr/screens/#calques).
 

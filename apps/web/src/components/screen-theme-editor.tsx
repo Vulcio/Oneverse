@@ -23,6 +23,7 @@ import {
   SCREEN_REACTIONS_MAX,
   SCREEN_REVEALS,
   SCREEN_TEMPLATE_TAGS,
+  SCREEN_VERSES_PER_SLIDE_MAX,
   SCREEN_TEXT_ANIMATIONS,
   SCREEN_TEXT_EFFECTS,
   SCREEN_TRANSITIONS,
@@ -78,6 +79,8 @@ export interface ThemeDraft {
   ownerTeamId?: string | null;
   /** A template's tags, widgets and masks, and its parts. */
   tags?: ScreenTemplateTag[];
+  /** How many verses of a passage it puts on a slide (issue #310). */
+  versesPerSlide?: number;
   grid?: ScreenTheme["grid"];
   masks?: ScreenMask[];
   refs?: TemplateRefs;
@@ -143,6 +146,7 @@ export function ScreenThemeEditor({
   const parts = useMemo(() => [...savedHere, ...listed.filter((one) => !savedHere.some((saved) => saved.id === one.id))], [savedHere, listed]);
   const [refs, setRefs] = useState<TemplateRefs>(draft.refs ?? { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null });
   const [tags, setTags] = useState<ScreenTemplateTag[]>(draft.tags ?? []);
+  const [versesPerSlide, setVersesPerSlide] = useState(draft.versesPerSlide ?? 1);
   const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[] }, own?: unknown) =>
     composeScreenTheme({
       content: kind === "content" ? own : partDocument("content", with_.content, parts),
@@ -199,7 +203,7 @@ export function ScreenThemeEditor({
     try {
       let saved: ScreenThemeSummary | ScreenPartSummary;
       if (kind === "template") {
-        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks }, content: refs.content, background: refs.background, effects: refs.effects };
+        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide }, content: refs.content, background: refs.background, effects: refs.effects };
         saved = draft.id && !asNew ? await apiClient.updateScreenTheme(draft.id, body) : await apiClient.createScreenTheme({ ...body, ...(teamId && { teamId }) });
       } else {
         const document = extractPart(kind, theme) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
@@ -281,6 +285,20 @@ export function ScreenThemeEditor({
                 <Group title={t("screens.editor.tags")} open testId="theme-group-tags">
                   <TagPicker value={tags} onChange={setTags} testId="theme-tags" />
                   <span className="text-xs text-muted-foreground">{t("screens.editor.tagsHint")}</span>
+                </Group>
+                <Group title={t("screens.editor.passages")} open={versesPerSlide !== 1 || tags.includes("scripture")} testId="theme-group-passages">
+                  <Field label={t("screens.editor.versesPerSlide")}>
+                    <Input
+                      type="number"
+                      className="h-8 w-24"
+                      min={1}
+                      max={SCREEN_VERSES_PER_SLIDE_MAX}
+                      value={versesPerSlide}
+                      onChange={(event) => setVersesPerSlide(Math.min(SCREEN_VERSES_PER_SLIDE_MAX, Math.max(1, Math.round(Number(event.target.value) || 1))))}
+                      data-testid="theme-verses-per-slide"
+                    />
+                  </Field>
+                  <span className="text-xs text-muted-foreground">{t("screens.editor.versesPerSlideHint")}</span>
                 </Group>
                 <Group title={t("screens.editor.widgets")} open={!!theme.grid} testId="theme-group-widgets">
               <LayoutSettings

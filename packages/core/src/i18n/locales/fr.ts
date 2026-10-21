@@ -283,7 +283,7 @@ const fr: typeof en = {
     /** Templates' views (issue #281): the templates, then each kind of part. */
     views: { templates: "Modèles", content: "Thèmes de contenu", background: "Thèmes de fond", effects: "Effets" },
     /** What a template is for (issue #281). */
-    tags: { audience: "Public", stage: "Scène", presentation: "Présentation", lyrics: "Paroles", chords: "Accords", signage: "Affichage" },
+    tags: { audience: "Public", stage: "Scène", presentation: "Présentation", lyrics: "Paroles", chords: "Accords", signage: "Affichage", scripture: "Écriture" },
     noTemplatesTagged: "Aucun modèle n'a tous ces tags.",
     effects: "Effets",
     effectsHint: "Le fond qui répond aux paroles et le mouvement propre des paroles. Désactivez-les sur un écran qui ne suit pas.",
@@ -623,6 +623,9 @@ const fr: typeof en = {
       partsHint: "Un modèle est fait d'un thème de contenu, d'un thème de fond et d'effets : intégrés, ou les vôtres. Personnalisez-en un pour qu'il soit à vous.",
       tags: "Tags",
       tagsHint: "Ce à quoi sert ce modèle, pour le trouver et le choisir sur un écran.",
+      passages: "Passages de la Bible",
+      versesPerSlide: "Versets par diapositive",
+      versesPerSlideHint: "Combien de versets d'un passage vont sur une diapositive quand un passage d'une liste est affiché avec ce modèle. Étiquetez-le Écriture pour le proposer en premier pour les passages.",
       shows: "Affiche",
       showsOptions: { lyrics: "Les paroles, pour le public", chart: "La grille d'accords, pour les musiciens" },
       baseAndVideo: "Base et entrée vidéo",
@@ -778,6 +781,7 @@ const fr: typeof en = {
       "stage-display": { name: "Affichage de scène", description: "Pour la scène : la diapositive en cours et la suivante, l'heure, un compte à rebours, le chant et la suite, et les messages de l'opérateur." },
       "stage-monitor": { name: "Retour de scène", description: "De grandes majuscules en haut et toute la partie, pour les musiciens." },
       "band-chart": { name: "Grille du groupe", description: "La grille du chant avec ses accords, la partie chantée en vue, pour les musiciens." },
+      scripture: { name: "Écriture", description: "Pour un passage de la Bible : le style chapelle, deux versets par diapositive." },
     },
   },
   sync: {
@@ -3344,6 +3348,14 @@ const fr: typeof en = {
     cardDescription: "Une Bible dans la barre latérale de tout le monde ici, pour lire un passage et l'ajouter à une liste.",
     enable: "Montrer la Bible dans la barre latérale",
     fromOrganization: "Activée pour toutes les équipes de {{name}}.",
+    template: "Modèle d'écran",
+    templateScreen: "Le modèle de l'écran",
+    templateScripture: "Pour les Écritures",
+    templateOther: "Autres modèles",
+    templateGone: "Un modèle qui n'est plus disponible",
+    templateHint: "Les écrans affichent le passage avec ce modèle pendant qu'il est présenté ; le reste de la liste garde le leur.",
+    versesPerSlide_one: "{{count}} verset par diapositive",
+    versesPerSlide_other: "{{count}} versets par diapositive",
   },
   bibles: {
     title: "Bibles",

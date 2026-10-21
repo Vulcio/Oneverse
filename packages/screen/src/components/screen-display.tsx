@@ -29,7 +29,7 @@ export function ScreenDisplay({ pairUrl, pinnedTheme }: { pairUrl: string; pinne
     <div className="fixed inset-0 cursor-none overflow-hidden bg-black text-white select-none" data-testid="screen-display" data-state={state.kind}>
       {state.kind === "pairing" ? <Pairing code={state.code} pairUrl={pairUrl} /> : null}
       {state.kind === "showing" ? (
-        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} />
+        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
       ) : null}
     </div>
   );
@@ -62,12 +62,29 @@ function Pairing({ code, pairUrl }: { code: string; pairUrl: string }) {
   );
 }
 
-function Showing({ current, presenting, online, stage, offset, theme }: { current: ScreenCurrent; presenting: SyncPresenting | null; online: boolean; stage: SyncStage | null; offset: number; theme: ScreenTheme }) {
+function Showing({
+  current,
+  presenting,
+  online,
+  stage,
+  offset,
+  theme,
+  itemThemes,
+}: {
+  current: ScreenCurrent;
+  presenting: SyncPresenting | null;
+  online: boolean;
+  stage: SyncStage | null;
+  offset: number;
+  theme: ScreenTheme;
+  itemThemes?: Record<string, ScreenTheme>;
+}) {
   const { t, i18n } = useTranslation();
   const set = current.set;
   const view = presenting && set ? set.songs.find((song) => song.item.id === presenting.itemId) : undefined;
-  // A copy kept before themes (issue #194) has none: the default look.
-  const look = theme ?? composeBuiltInTemplate("classic")!;
+  // A passage with a template of its own (issue #310) is shown with it; anything else, the screen's. A copy kept
+  // before themes (issue #194) has none: the default look.
+  const look = (view && itemThemes?.[view.item.id]) || theme || composeBuiltInTemplate("classic")!;
   const song = useMemo<StageSong | null>(() => {
     if (!view || (!view.song && !view.text && !view.passage)) return null;
     const { chart, slides } = setItemView(view);
@@ -178,6 +195,7 @@ function Showing({ current, presenting, online, stage, offset, theme }: { curren
       data-item={presenting?.itemId ?? ""}
       data-slide={presenting?.slide ?? ""}
       data-theme={current.screen.themeId ?? current.screen.themeTemplate ?? ""}
+      data-item-theme={String(!!(view && itemThemes?.[view.item.id]))}
       onDoubleClick={() => !showPicker && setMenu(true)}
       onContextMenu={(event) => {
         event.preventDefault();

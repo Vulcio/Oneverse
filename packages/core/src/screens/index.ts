@@ -80,12 +80,24 @@ export interface SetItemPassage {
   chapters: PassageChapter[];
   /** Whether its Bible may be shown on screens (the admin's say, for its licence): without it, it has no slides. */
   projection: boolean;
+  /** The template the screens show it with (issue #310), with how many verses it puts on a slide; null or left out: the screen's own, a verse a slide. */
+  template?: SetItemTemplate | null;
+}
+
+/** A set item's own screen template (issue #310): a saved one by its id and name, or a built-in one by its id (named in `screens.templates`). */
+export interface SetItemTemplate {
+  id: string | null;
+  builtIn: string | null;
+  name: string | null;
+  versesPerSlide: number;
 }
 
 /** Characters on a line of a passage's slide, at most (a longer word keeps its own line). */
 export const PASSAGE_LINE_CHARS = 44;
 /** Lines of a passage on a slide, at most: a longer verse goes on over several. */
 export const PASSAGE_LINES_PER_SLIDE = 4;
+/** Lines on a slide of several verses, at most, however many its template puts together. */
+export const PASSAGE_LINES_MAX = 10;
 
 /** Words put on lines of at most `width` characters, in order; a longer word is a line of its own. */
 function wrapWords(text: string, width: number): string[] {
@@ -104,24 +116,34 @@ function wrapWords(text: string, width: number): string[] {
 }
 
 /**
- * A passage's slides (issue #301): each verse on slides of its own, its words
- * on lines of at most PASSAGE_LINE_CHARS, PASSAGE_LINES_PER_SLIDE lines a
- * slide, labelled with its place ("John 3:16", "John 3:16-17" for verses
- * printed together). None when its Bible may not be shown on screens, or
- * has no verses for it.
+ * A passage's slides (issues #301, #310): its verses, as many together as its
+ * template puts on a slide (one by default, never across chapters), their
+ * words on lines of at most PASSAGE_LINE_CHARS - PASSAGE_LINES_PER_SLIDE
+ * lines a slide for one verse, more for several, up to PASSAGE_LINES_MAX -
+ * labelled with their place ("John 3:16", "John 3:16-17" for verses printed
+ * or shown together). Several verses on a slide each start with their
+ * number. None when its Bible may not be shown on screens, or has no verses
+ * for it.
  */
-export function passageSlides(passage: Pick<SetItemPassage, "bookName" | "chapters" | "projection">): ScreenSlide[] {
+export function passageSlides(passage: Pick<SetItemPassage, "bookName" | "chapters" | "projection" | "template">): ScreenSlide[] {
   if (!passage.projection) return [];
+  const together = Math.max(1, Math.floor(passage.template?.versesPerSlide ?? 1));
+  const perSlide = Math.min(PASSAGE_LINES_PER_SLIDE * together, PASSAGE_LINES_MAX);
   const slides: ScreenSlide[] = [];
   let passIndex = 0;
   for (const chapter of passage.chapters) {
-    for (const verse of chapter.verses) {
-      const number = verse.endNumber !== undefined && verse.endNumber > verse.number ? `${verse.number}-${verse.endNumber}` : `${verse.number}`;
+    for (let at = 0; at < chapter.verses.length; at += together) {
+      const verses = chapter.verses.slice(at, at + together);
+      const first = verses[0]!;
+      const last = verses[verses.length - 1]!;
+      const end = Math.max(last.endNumber ?? last.number, last.number);
+      const number = end > first.number ? `${first.number}-${end}` : `${first.number}`;
       const label = `${passage.bookName} ${chapter.chapter}:${number}`;
-      const passId = `verse-${chapter.chapter}-${verse.number}`;
-      const lines = wrapWords(verse.text, PASSAGE_LINE_CHARS);
-      for (let at = 0, part = 0; at < lines.length; at += PASSAGE_LINES_PER_SLIDE, part++) {
-        slides.push({ passIndex, passId, label, lines: lines.slice(at, at + PASSAGE_LINES_PER_SLIDE), part });
+      const passId = `verse-${chapter.chapter}-${first.number}`;
+      const text = verses.length > 1 ? verses.map((verse) => `${verse.endNumber !== undefined && verse.endNumber > verse.number ? `${verse.number}-${verse.endNumber}` : verse.number} ${verse.text}`).join(" ") : first.text;
+      const lines = wrapWords(text, PASSAGE_LINE_CHARS);
+      for (let line = 0, part = 0; line < lines.length; line += perSlide, part++) {
+        slides.push({ passIndex, passId, label, lines: lines.slice(line, line + perSlide), part });
       }
       passIndex++;
     }
@@ -137,7 +159,7 @@ export function passageSlides(passage: Pick<SetItemPassage, "bookName" | "chapte
  * client doesn't know) has none.
  */
 export function setItemSlides(
-  item: { chart?: Pick<RenderedChart, "passes"> | null; text?: { title: string; body: string } | null; passage?: Pick<SetItemPassage, "bookName" | "chapters" | "projection"> | null },
+  item: { chart?: Pick<RenderedChart, "passes"> | null; text?: { title: string; body: string } | null; passage?: Pick<SetItemPassage, "bookName" | "chapters" | "projection" | "template"> | null },
   size: number = LYRIC_LINES_PER_SLIDE,
 ): ScreenSlide[] {
   if (item.chart) return lyricSlides(item.chart, size);

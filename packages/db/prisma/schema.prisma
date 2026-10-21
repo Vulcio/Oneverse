@@ -1689,6 +1689,8 @@ model SetlistItem {
   transitionChords String[]       @default([])
   /// Its own timer (issue #269): {kind: "countdown"|"count-up", duration: seconds}, started on the screens' stage when Live comes to it.
   timer            Json?
+  /// A passage's own screen template (issue #310): {id} a saved one, or {builtIn}. No foreign key: one deleted since is the screen's own again.
+  screenTemplate   Json?
 
   // Set on a song shared into the set by its owner - when a personal set
   // moves to a team, its owner's songs a team set couldn't otherwise hold.

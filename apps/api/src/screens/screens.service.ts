@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, GoneException, Injectable, NotFoundException } from "@nestjs/common";
-import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, readScreenReport, screenTier, type ScreenMode, type ScreenReport, type ScreenTier, type ScreenOwnerRequest } from "@oneverse/core";
+import { orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, type ScreenTheme, type SetItemPassage, readScreenReport, screenTier, type ScreenMode, type ScreenReport, type ScreenTier, type ScreenOwnerRequest } from "@oneverse/core";
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
@@ -182,7 +182,34 @@ export class ScreensService {
     }
     // Its template's pictures, videos and fonts (issues #194, #281), at addresses a screen can load without a session.
     const look = screenLook({ themeTemplate: screen.themeTemplate, ...shown });
-    return { screen: present(screen), theme: look.theme, assets: look.assets, set };
+    // Its passages' own templates (issue #310), by item: what it shows while one of them is presented.
+    const items = await this.itemLooks(set?.songs ?? [], { effects: shown.effects });
+    const assets = [...look.assets, ...items.assets.filter((asset) => !look.assets.some((one) => one.id === asset.id))];
+    return { screen: present(screen), theme: look.theme, assets, itemThemes: items.themes, set };
+  }
+
+  /** The looks of a set's items that have a template of their own (issue #310), and the files they refer to. */
+  private async itemLooks(views: { item: { id: string }; passage: SetItemPassage | null }[], options: { effects: boolean }) {
+    const themes: Record<string, ScreenTheme> = {};
+    const assets: ReturnType<typeof templateLook>["assets"] = [];
+    const saved = new Map<string, ReturnType<typeof templateLook> | null>();
+    for (const view of views) {
+      const template = view.passage?.template;
+      if (template?.builtIn) {
+        const theme = composeBuiltInTemplate(template.builtIn, options);
+        if (theme) themes[view.item.id] = theme;
+      } else if (template?.id) {
+        if (!saved.has(template.id)) {
+          const row = await this.prisma.client.screenTheme.findUnique({ where: { id: template.id }, select: TEMPLATE_PARTS_SELECT });
+          const look = row ? templateLook(row, options) : null;
+          saved.set(template.id, look);
+          for (const asset of look?.assets ?? []) if (!assets.some((one) => one.id === asset.id)) assets.push(asset);
+        }
+        const look = saved.get(template.id);
+        if (look) themes[view.item.id] = look.theme;
+      }
+    }
+    return { themes, assets };
   }
 
   /**

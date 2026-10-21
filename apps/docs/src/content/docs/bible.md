@@ -19,7 +19,9 @@ The passage shows with its version's copyright line. A YouVersion passage also h
 
 ## Adding it to a set
 
-A passage from a Bible imported on the server can go into a set. Under the passage, **Add to a set** lists the sets you can change that are still to come: pick one and **Add to the set**. The set keeps the reference, never a copy of the text, and shows it like a passage added from the set's page (see [Sets](/sets/)). A YouVersion passage can't go into a set yet, until each version's licence says where its text may go.
+A passage from a Bible imported on the server can go into a set. Under the passage, **Add to a set** lists the sets you can change that are still to come: pick one, then its **Screen template**, and **Add to the set**. The set keeps the reference, never a copy of the text, and shows it like a passage added from the set's page (see [Sets](/sets/)). A YouVersion passage can't go into a set yet, until each version's licence says where its text may go.
+
+**Screen template** is the template the [screens](/screens/) show the passage with while it's presented; the rest of the set keeps the screen's own. Those **For scripture** come first - the built-in **Scripture** and the templates tagged **Scripture** - then **Other templates**, each with how many verses it puts on a slide. **The screen's own template** shows it like the rest of the set, a verse a slide. The last one you picked is kept on this device.
 
 ## Turning it on
 

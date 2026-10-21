@@ -107,7 +107,7 @@ export function AddPassage({ set, onAdded }: { set: SetlistDetail; onAdded: (set
       <Button size="sm" variant="outline" onClick={() => setOpen(true)} data-testid="set-add-passage">
         {t("sets.passage.add")}
       </Button>
-      {open ? <PassageItemDialog open={open} onOpenChange={setOpen} passage={null} onSave={async (passage) => onAdded(await apiClient.addSetlistItem(set.id, { passage }))} /> : null}
+      {open ? <PassageItemDialog open={open} onOpenChange={setOpen} passage={null} onSave={async (passage, screenTemplate) => onAdded(await apiClient.addSetlistItem(set.id, { passage, ...(screenTemplate && { screenTemplate }) }))} /> : null}
     </div>
   );
 }

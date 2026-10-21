@@ -658,7 +658,7 @@
       ]
     },
     "passageSlides": {
-      "about": "A passage item's slides (issue #301): each verse on slides of its own, its words on lines of at most 44 characters, 4 lines a slide, labelled with its place; none when its Bible may not be shown on screens.",
+      "about": "A passage item's slides (issues #301, #310): each verse on slides of its own, or as many together as its template says (never across chapters, each starting with its number), its words on lines of at most 44 characters, 4 lines a slide for one verse and up to 10 for several, labelled with its place; none when its Bible may not be shown on screens.",
       "params": [
         "passage"
       ],
@@ -797,6 +797,90 @@
             }
           ],
           "expected": []
+        },
+        {
+          "name": "a template's two verses a slide (issue #310): not across chapters, the last alone",
+          "args": [
+            {
+              "bookName": "John",
+              "projection": true,
+              "template": {
+                "id": null,
+                "builtIn": "scripture",
+                "name": null,
+                "versesPerSlide": 2
+              },
+              "chapters": [
+                {
+                  "book": 43,
+                  "chapter": 3,
+                  "verses": [
+                    {
+                      "number": 16,
+                      "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."
+                    },
+                    {
+                      "number": 17,
+                      "endNumber": 18,
+                      "text": "For God sent not his Son."
+                    },
+                    {
+                      "number": 19,
+                      "text": "And this is the condemnation."
+                    }
+                  ]
+                },
+                {
+                  "book": 43,
+                  "chapter": 4,
+                  "verses": [
+                    {
+                      "number": 1,
+                      "text": "When therefore the Lord knew"
+                    },
+                    {
+                      "number": 2,
+                      "text": "Though Jesus himself baptized not"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "passIndex": 0,
+              "passId": "verse-3-16",
+              "label": "John 3:16-18",
+              "lines": [
+                "16 For God so loved the world, that he gave",
+                "his only begotten Son, that whosoever",
+                "believeth in him should not perish, but have",
+                "everlasting life. 17-18 For God sent not his",
+                "Son."
+              ],
+              "part": 0
+            },
+            {
+              "passIndex": 1,
+              "passId": "verse-3-19",
+              "label": "John 3:19",
+              "lines": [
+                "And this is the condemnation."
+              ],
+              "part": 0
+            },
+            {
+              "passIndex": 2,
+              "passId": "verse-4-1",
+              "label": "John 4:1-2",
+              "lines": [
+                "1 When therefore the Lord knew 2 Though",
+                "Jesus himself baptized not"
+              ],
+              "part": 0
+            }
+          ]
         }
       ]
     },
@@ -2487,7 +2571,8 @@
               "$schema": "screen-template/v1",
               "tags": [],
               "grid": null,
-              "masks": []
+              "masks": [],
+              "versesPerSlide": 1
             }
           }
         },
@@ -2681,7 +2766,8 @@
                   }
                 ]
               },
-              "masks": []
+              "masks": [],
+              "versesPerSlide": 1
             }
           }
         }
@@ -2748,7 +2834,7 @@
       ]
     },
     "readScreenTemplate": {
-      "about": "A template's layout as a client reads it (issue #281): its tags (one it doesn't know left out), its widget grid and masks.",
+      "about": "A template's layout as a client reads it (issues #281, #310): its tags (one it doesn't know left out), its widget grid and masks, and how many verses of a passage go on a slide (1 to 10; anything else, one).",
       "params": [
         "input"
       ],
@@ -2772,7 +2858,8 @@
               "chords"
             ],
             "grid": null,
-            "masks": []
+            "masks": [],
+            "versesPerSlide": 1
           }
         },
         {
@@ -2808,7 +2895,43 @@
                 "invert": false,
                 "feather": 0
               }
-            ]
+            ],
+            "versesPerSlide": 1
+          }
+        },
+        {
+          "name": "three verses a slide, for scripture",
+          "args": [
+            {
+              "tags": [
+                "scripture"
+              ],
+              "versesPerSlide": 3
+            }
+          ],
+          "expected": {
+            "$schema": "screen-template/v1",
+            "tags": [
+              "scripture"
+            ],
+            "grid": null,
+            "masks": [],
+            "versesPerSlide": 3
+          }
+        },
+        {
+          "name": "verses a slide that can't be: one",
+          "args": [
+            {
+              "versesPerSlide": 40
+            }
+          ],
+          "expected": {
+            "$schema": "screen-template/v1",
+            "tags": [],
+            "grid": null,
+            "masks": [],
+            "versesPerSlide": 1
           }
         }
       ]
