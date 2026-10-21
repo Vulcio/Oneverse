@@ -32,7 +32,7 @@ await step("dashboard shows overview and settings together", async () => {
   await page.goto(`${WEB}/dashboard`);
   await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { name: "Welcome back, Member Roles" }).waitFor();
-  for (const name of ["Recently updated", "Teams", "Profile", "Roles", "Email", "Passkeys", "Storage", "Language"]) {
+  for (const name of ["Recently updated", "Teams", "Profile", "Roles", "Your Oneverse account", "Storage", "Language"]) {
     if ((await page.getByText(name, { exact: true }).count()) === 0) throw new Error(`missing ${name}`);
   }
   await page.getByRole("link", { name: "Add what you play or do" }).waitFor();
