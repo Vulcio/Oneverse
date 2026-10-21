@@ -3309,6 +3309,7 @@ const fr: typeof en = {
     reference: "Passage",
     referencePlaceholder: "Jean 3.16-18",
     read: "Lire",
+    readOnYouVersion: "Lire sur YouVersion",
   },
   metadataProviders: {
     title: "Sources de métadonnées",

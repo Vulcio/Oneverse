@@ -55,19 +55,23 @@ describe("YouVersion's Platform API", () => {
     const api = fakeApi();
     const bibles = await youVersionBibles("en", "test-key", api.fetcher);
     expect(bibles).toEqual([
-      { id: 3034, abbreviation: "BSB", title: "Berean Standard Bible", languageTag: "en", copyright: BSB.copyright, info: BSB.info, link: "https://www.bible.com/versions/3034" },
+      { id: 3034, abbreviation: "BSB", title: "Berean Standard Bible", languageTag: "en", copyright: BSB.copyright, attribution: BSB.copyright, info: BSB.info, link: "https://www.bible.com/versions/3034" },
     ]);
     expect(api.asked[0]!.key).toBe("test-key");
     expect(api.asked[0]!.url.searchParams.get("language_ranges[]")).toBe("en");
     expect(await youVersionBibles("fr", "test-key", api.fetcher)).toEqual([]);
   });
 
-  it("takes the long copyright when there's no short one, as plain text", async () => {
+  it("takes the long copyright when there's no short one, else the title and info, as plain text", async () => {
     const answer = (body: unknown): Fetcher => async () => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
     const long = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: "", promotional_content: "<p>Scripture taken from the <b>BSB</b> &amp; used by permission.</p>" }));
     expect(long.copyright).toBe("Scripture taken from the BSB & used by permission.");
     const none = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: " ", promotional_content: null }));
     expect(none.copyright).toBeNull();
+    // A text out of copyright, as Martin 1744 (FMAR) comes: its title and info instead.
+    expect(none.attribution).toBe(`Berean Standard Bible. ${BSB.info}`);
+    const bare = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: null, promotional_content: null, info: null }));
+    expect(bare.attribution).toBe("Berean Standard Bible");
   });
 
   it("asks for a verse, a chapter, and verses one by one", async () => {

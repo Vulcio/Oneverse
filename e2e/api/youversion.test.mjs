@@ -52,7 +52,7 @@ let res = await passage(3034, "Jean 3.16-18");
 let body = await res.json();
 check(
   "verses, one by one, with the version and its copyright",
-  res.status === 200 && body.reference === "John 3:16-18" && body.parts.map((p) => p.id).join() === "JHN.3.16,JHN.3.17,JHN.3.18" && body.parts[0].text === "BSB text of John 3:16." && /Berean/.test(body.bible.copyright),
+  res.status === 200 && body.reference === "John 3:16-18" && body.parts.map((p) => p.id).join() === "JHN.3.16,JHN.3.17,JHN.3.18" && body.parts[0].text === "BSB text of John 3:16." && /Berean/.test(body.bible.copyright) && body.bible.attribution === body.bible.copyright,
   JSON.stringify(body).slice(0, 400),
 );
 check("no rights beyond reading it", body.rights && !body.rights.offline && !body.rights.projection && !body.rights.export, JSON.stringify(body.rights));
@@ -66,8 +66,8 @@ res = await passage(3034, "John");
 check("a whole book is refused", res.status === 400, String(res.status));
 res = await passage(3034, "Hezekiah 1:1");
 check("a book that doesn't exist is refused", res.status === 400, String(res.status));
-res = await passage(9001, "John 3:16");
-check("a version without a copyright line isn't used", res.status === 503 && /no copyright/.test((await res.json()).message), String(res.status));
+body = await (await passage(9001, "John 3:16")).json();
+check("a version without a copyright line: its title and info instead", body.bible?.copyright === null && body.bible.attribution === "No Copyright Version. Public domain." && body.parts?.[0]?.text === "NOC text of John 3:16.", JSON.stringify(body).slice(0, 400));
 res = await passage(4242, "John 3:16");
 check("a version YouVersion doesn't have: 404", res.status === 404, String(res.status));
 

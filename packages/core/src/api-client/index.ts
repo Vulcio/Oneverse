@@ -1780,13 +1780,15 @@ export interface YouVersionSettings {
   hasDatabaseKey: boolean;
 }
 
-/** A YouVersion version (issue #304): its copyright line goes with every passage shown. */
+/** A YouVersion version (issue #304): its attribution goes with every passage shown. */
 export interface YouVersionBible {
   id: number;
   abbreviation: string;
   title: string;
   languageTag: string;
   copyright: string | null;
+  /** The copyright line, else the version's title and info (a text out of copyright). */
+  attribution: string;
   info: string | null;
   link: string | null;
 }

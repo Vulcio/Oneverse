@@ -3306,6 +3306,7 @@ const en = {
     reference: "Passage",
     referencePlaceholder: "John 3:16-18",
     read: "Read",
+    readOnYouVersion: "Read on YouVersion",
   },
   metadataProviders: {
     title: "Metadata providers",

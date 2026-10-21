@@ -188,7 +188,7 @@ const youversionBibles = {
     books: ["JHN"],
     organization_id: null,
   },
-  9001: { id: 9001, abbreviation: "NOC", title: "No Copyright Version", language_tag: "en", copyright: "", info: null, books: ["JHN"] },
+  9001: { id: 9001, abbreviation: "NOC", title: "No Copyright Version", language_tag: "en", copyright: "", info: "<p>Public domain.</p>", books: ["JHN"] },
 };
 
 function youversionAnswer(req, url, res) {

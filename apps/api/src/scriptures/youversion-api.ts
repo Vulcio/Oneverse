@@ -58,8 +58,14 @@ export interface YouVersionBible {
   abbreviation: string;
   title: string;
   languageTag: string;
-  /** The publisher's copyright line (the short one, else the long one), shown with every passage. */
+  /** The publisher's copyright line (the short one, else the long one). */
   copyright: string | null;
+  /**
+   * What's shown with every passage: the copyright line, else (a version
+   * whose publisher gives none, like the public-domain Martin 1744) its
+   * title and what it says about itself.
+   */
+  attribution: string;
   /** More about the text, YouVersion's reader shows it below a chapter. */
   info: string | null;
   /** The version on YouVersion (bible.com). */
@@ -85,15 +91,21 @@ function plainText(value: string | null | undefined): string {
 }
 
 export function youVersionBible(json: YouVersionBibleJson): YouVersionBible {
+  const title = json.localized_title || json.title || json.abbreviation;
+  // As YouVersion's own example does: the short copyright, else the longer
+  // one (`promotional_content`), which some versions have alone.
+  const copyright = plainText(json.copyright) || plainText(json.promotional_content) || null;
+  const info = plainText(json.info) || null;
   return {
     id: json.id,
     abbreviation: json.localized_abbreviation || json.abbreviation,
-    title: json.localized_title || json.title || json.abbreviation,
+    title,
     languageTag: json.language_tag,
-    // As YouVersion's own example does: the short copyright, else the longer
-    // one (`promotional_content`), which some versions have alone.
-    copyright: plainText(json.copyright) || plainText(json.promotional_content) || null,
-    info: json.info?.trim() || null,
+    copyright,
+    // YouVersion's SDK refuses a version with neither, but a text out of
+    // copyright needs no line: its title and info say which text it is.
+    attribution: copyright ?? (info ? `${title}. ${info}` : title),
+    info,
     link: json.youversion_deep_link || null,
   };
 }
