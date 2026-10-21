@@ -1310,6 +1310,9 @@ const fr: typeof en = {
     roleAllowsLossless: "Garde les originaux sans perte",
     roleAllowsAudioUploads: "Importe des fichiers audio",
     roleAllowsOperateScreens: "Gère les écrans",
+    roleAllowsTeamAssignable: "Donné par les équipes",
+    roleTeamAssignable: "Les équipes peuvent le donner",
+    roleTeamAssignableHint: "Les administrateurs d'une équipe ou d'une organisation le donnent à leurs propres membres, dans leur équipe ou organisation seulement : il leur permet d'y gérer les écrans, rien d'autre (stockage, envois audio et pistes restent ce que vous donnez ici).",
     roleAllowsStemsLimited: "Sépare des enregistrements en pistes ({{count}} par mois)",
     roleStorage: "Stocke {{size}}",
     rolesNone: "Aucun rôle pour l'instant : créez-en dans",
@@ -3311,6 +3314,11 @@ const fr: typeof en = {
     backfill: "Chercher les artistes pas encore cherchés",
     backfilling: "Recherche…",
     backfilled: "{{tried}} artistes essayés, quelque chose trouvé pour {{found}}.",
+  },
+  scopedRoles: {
+    title: "Rôles",
+    descriptionTeam: "Ce que des membres peuvent faire sur les listes et les écrans de cette équipe : un opérateur média gère les écrans de ses listes sans les modifier. L'administration décide quels rôles les équipes peuvent donner.",
+    descriptionOrganization: "Ce que des membres peuvent faire sur les listes et les écrans des équipes de cette organisation : un opérateur média gère leurs écrans sans modifier les listes. L'administration décide quels rôles les organisations peuvent donner.",
   },
   biblePage: {
     title: "Bible",

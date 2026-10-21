@@ -6,6 +6,9 @@ import { StorageQuotaService } from "../storage/storage-quota.service.js";
 
 const BYTES_PER_MB = 1024 * 1024;
 
+/** Where a role is given (issue #270): a team, or an organisation. */
+export type Scope = { teamId: string } | { organizationId: string };
+
 const ROLE_SELECT = {
   id: true,
   name: true,
@@ -16,6 +19,7 @@ const ROLE_SELECT = {
   canKeepLosslessAudio: true,
   canUploadAudio: true,
   canOperateScreens: true,
+  teamAssignable: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,
   permissions: true,
@@ -123,9 +127,43 @@ export class RolesService {
     const found = await this.prisma.client.role.count({ where: { id: { in: wanted } } });
     if (found !== wanted.length) throw new BadRequestException("roleIds must be existing roles");
     await this.prisma.client.$transaction([
-      this.prisma.client.roleAssignment.deleteMany({ where: { ...holder, roleId: { notIn: wanted } } }),
+      // Those given everywhere; those given on a team or an organisation stay (issue #270).
+      this.prisma.client.roleAssignment.deleteMany({ where: { ...holder, scopeKey: "", roleId: { notIn: wanted } } }),
       this.prisma.client.roleAssignment.createMany({ data: wanted.map((roleId) => ({ ...holder, roleId })), skipDuplicates: true }),
     ]);
+  }
+
+  /** The roles a team's or an organisation's admins give their members there (issue #270), and who has which. */
+  async scopedRoles(scope: Scope) {
+    const where = "teamId" in scope ? { scopeTeamId: scope.teamId } : { scopeOrganizationId: scope.organizationId };
+    const [roles, assignments, members] = await Promise.all([
+      this.prisma.client.role.findMany({ where: { teamAssignable: true }, select: { id: true, name: true, description: true, canOperateScreens: true }, orderBy: { name: "asc" } }),
+      this.prisma.client.roleAssignment.findMany({ where: { ...where, userId: { not: null } }, select: { userId: true, roleId: true } }),
+      this.memberIds(scope),
+    ]);
+    // Its members' only: one who left keeps nothing here.
+    return { roles, members: members.map((userId) => ({ userId, roleIds: assignments.filter((one) => one.userId === userId).map((one) => one.roleId) })) };
+  }
+
+  /** The roles a member has on the team or the organisation from now on: only team-assignable ones, given there. */
+  async setScopedRoles(scope: Scope, userId: string, roleIds: string[]): Promise<void> {
+    if (!(await this.memberIds(scope)).includes(userId)) throw new NotFoundException("Member not found");
+    const wanted = [...new Set(roleIds)];
+    const found = await this.prisma.client.role.count({ where: { id: { in: wanted }, teamAssignable: true } });
+    if (found !== wanted.length) throw new BadRequestException("roleIds must be roles a team's admins may give");
+    const at = "teamId" in scope ? { scopeTeamId: scope.teamId, scopeKey: `team:${scope.teamId}` } : { scopeOrganizationId: scope.organizationId, scopeKey: `organization:${scope.organizationId}` };
+    await this.prisma.client.$transaction([
+      this.prisma.client.roleAssignment.deleteMany({ where: { userId, scopeKey: at.scopeKey, roleId: { notIn: wanted } } }),
+      this.prisma.client.roleAssignment.createMany({ data: wanted.map((roleId) => ({ userId, roleId, ...at })), skipDuplicates: true }),
+    ]);
+  }
+
+  private async memberIds(scope: Scope): Promise<string[]> {
+    const rows =
+      "teamId" in scope
+        ? await this.prisma.client.teamMembership.findMany({ where: { teamId: scope.teamId }, select: { userId: true } })
+        : await this.prisma.client.organizationMembership.findMany({ where: { organizationId: scope.organizationId }, select: { userId: true } });
+    return rows.map((row) => row.userId);
   }
 
   private async find(roleId: string) {

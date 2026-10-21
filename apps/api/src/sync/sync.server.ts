@@ -9,7 +9,7 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import { JwtVerifierService } from "../auth/jwt-verifier.service.js";
 import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { capabilitiesOf } from "../roles/capabilities.js";
+import { capabilitiesIn, capabilitiesOf } from "../roles/capabilities.js";
 import { SCREEN_CHANNEL, ScreensService } from "../screens/screens.service.js";
 import { SCREEN_ONLINE_TTL_S, SCREEN_REPORT_TTL_S, screenOnlineKey, screenReportKey } from "../screens/screen-channel.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
@@ -580,7 +580,8 @@ export class SyncServer implements OnModuleDestroy {
     if (!set || !access?.canView) return this.send(connection, { type: "error", code: "not-found", message: "Set not found" });
     connection.setId = set.id;
     connection.canLead = access.canEdit;
-    connection.canOperate = (await capabilitiesOf(this.prisma.client, connection.user!.id)).canOperateScreens;
+    // Run screens everywhere, or on the set's team or its organisation (issue #270).
+    connection.canOperate = (await capabilitiesIn(this.prisma.client, connection.user!.id, set.ownerTeamId)).canOperateScreens;
     connection.accessCheckedAt = Date.now();
     await this.present(connection);
     await this.changed(set.id);
@@ -609,7 +610,7 @@ export class SyncServer implements OnModuleDestroy {
     const access = user && !user.bannedAt && !user.deletedAt && set ? await this.access.access(connection.user!, set) : null;
     if (access?.canView) {
       connection.canLead = access.canEdit;
-      connection.canOperate = (await capabilitiesOf(this.prisma.client, connection.user!.id)).canOperateScreens;
+      connection.canOperate = (await capabilitiesIn(this.prisma.client, connection.user!.id, set?.ownerTeamId ?? null)).canOperateScreens;
       return true;
     }
     await this.leaveSet(connection);

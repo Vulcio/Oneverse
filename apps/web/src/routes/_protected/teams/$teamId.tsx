@@ -3,6 +3,7 @@ import { loadTeamPage, TeamPage } from "@oneverse/planning/pages/team";
 import { AppearanceCard } from "#/components/appearance-card";
 import { BibleCard } from "#/components/bible-card";
 import { BrandsCard } from "#/components/brands-card";
+import { ScopedRolesCard } from "#/components/scoped-roles-card";
 import { SonicServerCard } from "#/components/sonic-server-card";
 import { apiClient } from "#/lib/api-client";
 
@@ -31,6 +32,8 @@ function TeamDetail() {
           {team.usesSongverse !== false ? <BrandsCard owner={{ teamId: team.id }} /> : null}
           {/* Its own Sonic server for its songs' stems (issue #300). */}
           {team.usesSongverse !== false ? <SonicServerCard owner={{ teamId: team.id }} /> : null}
+          {/* Roles its admins give its members, here only (issue #270): the media operator. */}
+          {team.usesSongverse !== false ? <ScopedRolesCard owner={{ teamId: team.id }} members={data.members} /> : null}
           {/* The Bible in its members' sidebar (issue #310), for a team that uses Songverse. */}
           {team.usesSongverse !== false ? (
           <BibleCard

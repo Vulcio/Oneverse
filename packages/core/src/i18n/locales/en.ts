@@ -1307,6 +1307,9 @@ const en = {
     roleAllowsLossless: "Keeps lossless originals",
     roleAllowsAudioUploads: "Uploads audio files",
     roleAllowsOperateScreens: "Runs the screens",
+    roleAllowsTeamAssignable: "Given by teams",
+    roleTeamAssignable: "Teams can give it",
+    roleTeamAssignableHint: "A team's or an organisation's admins give it to their own members, on their team or organisation only: it lets them run its screens there, nothing else (storage, uploads and stems stay what you give here).",
     roleAllowsStemsLimited: "Splits recordings into stems ({{count}} a month)",
     roleStorage: "Stores {{size}}",
     rolesNone: "No roles yet: create them in",
@@ -3308,6 +3311,11 @@ const en = {
     backfill: "Look up artists not looked up yet",
     backfilling: "Looking up…",
     backfilled: "Tried {{tried}} artists, found something for {{found}}.",
+  },
+  scopedRoles: {
+    title: "Roles",
+    descriptionTeam: "What members may do on this team's sets and screens, beyond what they are: a media operator runs the screens of its sets without editing them. Admin decides which roles teams can give.",
+    descriptionOrganization: "What members may do on the sets and screens of this organisation's teams: a media operator runs their screens without editing the sets. Admin decides which roles organisations can give.",
   },
   biblePage: {
     title: "Bible",

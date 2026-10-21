@@ -66,7 +66,9 @@ The one place that says what people may do beyond their own and their teams' son
 - **Run the screens** - control what's presented on the screens of any set they can open, beside its leader, and lock that control to themselves (see [The media operator](/screens/#the-media-operator));
 - **A storage tier** - how much a person may store, or a team's pool.
 
-**Reviewer**, **Stem separation** and **Audio uploads** are built in: they can be edited but not deleted. **New role** adds your own, such as "Storage 10 GB". Give roles to people in **Users** and to teams in **Teams**. Someone can do what any of their roles allows - their own and their teams' - and the largest limit wins; without a storage tier, the defaults in **Storage** apply. Global admins can do everything. Changes take effect straight away.
+**Teams can give it** lets a team's or an organisation's admins give the role to their own members, on their team or organisation only (see [Teams](/teams/#roles-on-the-team)). Given that way, it lets them run the screens there and nothing else: storage, uploads, stems and review stay what you give here. Untick it and the roles teams gave stop counting.
+
+**Reviewer**, **Stem separation**, **Audio uploads** and **Media operator** (runs the screens; teams can give it) are built in: they can be edited but not deleted. **New role** adds your own, such as "Storage 10 GB". Give roles to people in **Users** and to teams in **Teams**. Someone can do what any of their roles allows - their own and their teams' - and the largest limit wins; without a storage tier, the defaults in **Storage** apply. Global admins can do everything. Changes take effect straight away.
 
 ### Instruments
 

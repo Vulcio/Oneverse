@@ -105,6 +105,10 @@ Les administrateurs d'une équipe lui donnent une **Couleur** et une image sur s
 
 Quand ce Songverse le permet, les admins d'une équipe peuvent connecter son propre serveur Songverse Sonic dans **Séparation en pistes** sur sa page : les chants de l'équipe y sont alors séparés en pistes, par ses membres. Voir [Votre propre serveur de séparation](/fr/sonic/).
 
+## Rôles dans l'équipe
+
+Sous **Rôles**, les administrateurs de l'équipe donnent à ses membres les rôles que l'administration permet aux équipes de donner, dans cette équipe seulement. Le rôle intégré **Media operator** (opérateur média) gère les écrans des listes de l'équipe - présenter, le minuteur, les messages, les calques - sans modifier les listes (voir [L'opérateur média](/fr/screens/#lopérateur-média)). Cochez un rôle sous le nom d'un membre pour le donner, décochez-le pour le reprendre. Les administrateurs d'une organisation font de même sur sa page pour toutes ses équipes. Rien ne s'affiche quand l'administration ne permet aux équipes de donner aucun rôle.
+
 ## Bible
 
 Sous **Bible**, les administrateurs de l'équipe cochent **Montrer la Bible dans la barre latérale** : ses membres trouvent alors une [Bible](/fr/bible/) dans les **Outils** de la barre latérale, pour lire un passage et l'ajouter à une liste. Une équipe d'une organisation qui l'a activée l'a déjà.

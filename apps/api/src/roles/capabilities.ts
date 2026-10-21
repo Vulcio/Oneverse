@@ -81,18 +81,37 @@ export function monthlyLimitOf(capabilities: Capabilities, defaultLimit: number 
   return limits.includes(null) ? null : Math.max(...(limits as number[]));
 }
 
-/** A user's roles: their own, and those of every team they're a member of. */
+/** A user's roles: their own, and those of every team they're a member of - those given everywhere, not on one team or organisation. */
 export async function capabilitiesOf(prisma: PrismaClient, userId: string): Promise<Capabilities> {
   const roles = await prisma.role.findMany({
-    where: { assignments: { some: { OR: [{ userId }, { team: { memberships: { some: { userId } } } }] } } },
+    where: { assignments: { some: { scopeKey: "", OR: [{ userId }, { team: { memberships: { some: { userId } } } }] } } },
     select: ROLE_FIELDS,
     orderBy: { name: "asc" },
   });
   return combineRoles(roles);
 }
 
+/**
+ * What a user may do on one team's things - its sets, its screens (issue
+ * #270): their roles everywhere, and those given them on that team or its
+ * organisation. A role given there counts for what makes sense there only:
+ * running screens. Storage, uploads, review and stem separation stay the
+ * roles given everywhere.
+ */
+export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamId: string | null): Promise<Capabilities> {
+  const everywhere = await capabilitiesOf(prisma, userId);
+  if (!teamId) return everywhere;
+  const team = await prisma.team.findUnique({ where: { id: teamId }, select: { organizationId: true } });
+  if (!team) return everywhere;
+  const scoped = await prisma.role.findMany({
+    where: { teamAssignable: true, assignments: { some: { userId, OR: [{ scopeTeamId: teamId }, ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId }] : [])] } } },
+    select: { id: true, canOperateScreens: true },
+  });
+  return { ...everywhere, canOperateScreens: everywhere.canOperateScreens || scoped.some((role) => role.canOperateScreens) };
+}
+
 /** A team's own roles: what its pool may hold. */
 export async function teamStorageLimitMb(prisma: PrismaClient, teamId: string): Promise<number | null> {
-  const roles = await prisma.role.findMany({ where: { assignments: { some: { teamId } } }, select: { storageLimitMb: true } });
+  const roles = await prisma.role.findMany({ where: { assignments: { some: { teamId, scopeKey: "" } } }, select: { storageLimitMb: true } });
   return largest(roles.map((role) => role.storageLimitMb));
 }

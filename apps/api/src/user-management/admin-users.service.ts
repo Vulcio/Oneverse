@@ -45,6 +45,8 @@ export class AdminUsersService {
       this.quota.getDefaultLimitMb(),
       // Every role given (issue #160), to users and to teams, and who's on which team: worked out here in one go.
       this.prisma.client.roleAssignment.findMany({
+        // Given everywhere; those given on a team or an organisation only (issue #270) are theirs to show.
+        where: { scopeKey: "" },
         select: { userId: true, teamId: true, team: { select: { name: true } }, role: { select: { id: true, name: true, canReview: true, storageLimitMb: true } } },
         orderBy: { role: { name: "asc" } },
       }),

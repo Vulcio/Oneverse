@@ -62,12 +62,12 @@ Most of Core exists today inside `apps/api` and the shared packages. Core is fir
 |---|---|---|
 | One account, personal space, Teams, Organisations | BetterAuth in `apps/api`; `Team.organizationId`; organisation mode NONE / SINGLE / MULTI (#241) | Joining an organisation follows joining a team (`joinTeamOrganization()`), not an owner-approved request |
 | Planiverse on the same accounts | `apps/planiverse`, `packages/planning`, `packages/app` (#241, #242) | None |
-| Scoped capabilities | `Role` + `RoleAssignment` to a user or a team, combined by `capabilitiesOf()` | Not scoped: a team's role applies to its members everywhere |
-| Universal Sets | `Setlist` owned by a user or a team | `SetlistItem.songVersionId` is required: items can only be songs |
+| Scoped capabilities | `Role` + `RoleAssignment` to a user or a team, combined by `capabilitiesOf()`; an assignment scoped to a team or an organisation (#270), given by its admins for team-assignable roles (Media operator), read by `capabilitiesIn()` for running screens | Scoped to a set or a session; the plan's other capabilities (follow, cue, route, manage devices) |
+| Universal Sets | `Setlist` owned by a user or a team; `SetlistItem.kind`: songs, texts (#305), Bible passages (#301) | PDF pages, PPTX slides, media |
 | Screens owned by person, Team or Organisation | `Screen.owner*` (#222), token hash, revocable | Profiles and pairing again: #284 |
 | Layer stack, templates, brands | #280, #287, #281, #279 | None |
 | Live session | `SyncSession` in Redis, one per set: `rev`, leader, `presenting`, media operator (#190, #275) | Keyed by set; control is "can edit the set"; no command log, no epoch for an offline takeover |
-| Common slide protocol | `lyricSlides()` from a chart; `SyncPresenting` = item + slide number | Slides come only from songs |
+| Common slide protocol | `setItemSlides()` in core for songs, texts and passages (a passage's template sets its verses per slide, #310); `SyncPresenting` = item + slide number, commands checked against `basedOn` (#305) | Image and media slides |
 | Oneverse Player | Rust daemon serving Songverse's `ScreenStage` bundle; mock set, loopback, no auth | The local snapshot contract (#247) |
 | Sonic | Independent; Teams and Organisations can bring their own server (#300) | None |
 

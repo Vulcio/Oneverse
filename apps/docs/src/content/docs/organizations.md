@@ -29,6 +29,8 @@ Its admins also:
 
 **Leave organisation** takes you out of it and its teams; its only admin makes someone else an admin first.
 
+Under **Roles**, its admins give its members the roles Admin lets teams give, on all its teams, such as the **Media operator**, who runs their screens (see [Teams](/teams/#roles-on-the-team)).
+
 Under **Bible**, its admins tick **Show the Bible in the sidebar** for the members of all its teams (see [Bible](/bible/)).
 
 ## Putting a team in it

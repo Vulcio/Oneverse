@@ -29,6 +29,8 @@ Ses administrateurs peuvent aussi :
 
 **Quitter l'organisation** vous retire d'elle et de ses équipes ; son seul administrateur nomme d'abord quelqu'un d'autre administrateur.
 
+Sous **Rôles**, ses administrateurs donnent à ses membres les rôles que l'administration permet aux équipes de donner, sur toutes ses équipes, comme le **Media operator** (opérateur média), qui gère leurs écrans (voir [Équipes](/fr/teams/#rôles-dans-léquipe)).
+
 Sous **Bible**, ses administrateurs cochent **Montrer la Bible dans la barre latérale** pour les membres de toutes ses équipes (voir [Bible](/fr/bible/)).
 
 ## Y mettre une équipe

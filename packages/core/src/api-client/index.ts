@@ -851,6 +851,15 @@ export interface ScreenCurrent {
   set: (SetlistOfflineCopy & { credits: Record<string, { writers: string[]; copyright: string | null; ccli: string | null }> }) | null;
 }
 
+/**
+ * The roles a team's or an organisation's admins give their members, there
+ * only (issue #270): those Admin made team-assignable, and who has which.
+ */
+export interface ScopedRolesView {
+  roles: { id: string; name: string; description: string; canOperateScreens: boolean }[];
+  members: { userId: string; roleIds: string[] }[];
+}
+
 /** Admin > Roles (issue #160): what a role allows, and how many have it. */
 export interface AdminRole {
   id: string;
@@ -866,6 +875,8 @@ export interface AdminRole {
   canUploadAudio: boolean;
   /** Controls what's presented on the screens of the sets they can open (issue #305). */
   canOperateScreens: boolean;
+  /** A team's or an organisation's admins give it to their own members, on their team or organisation only (issue #270). */
+  teamAssignable: boolean;
   /** Null: Admin > Stem separation's. */
   stemSeparationMonthlyLimit: number | null;
   /** A storage tier (MB). */
@@ -3056,6 +3067,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminSetUserRoles: (userId: string, data: AssignRolesRequest) => request<void>(`/admin/users/${userId}/roles`, { method: "PUT", body: JSON.stringify(data) }),
     adminListTeams: () => request<AdminTeamSummary[]>("/admin/teams"),
     adminSetTeamRoles: (teamId: string, data: AssignRolesRequest) => request<void>(`/admin/teams/${teamId}/roles`, { method: "PUT", body: JSON.stringify(data) }),
+    // Roles given on a team or an organisation only (issue #270), by its admins.
+    getTeamScopedRoles: (teamId: string) => request<ScopedRolesView>(`/teams/${teamId}/roles`),
+    setTeamMemberRoles: (teamId: string, userId: string, data: AssignRolesRequest) => request<void>(`/teams/${teamId}/members/${userId}/roles`, { method: "PUT", body: JSON.stringify(data) }),
+    getOrganizationScopedRoles: (organizationId: string) => request<ScopedRolesView>(`/organizations/${organizationId}/roles`),
+    setOrganizationMemberRoles: (organizationId: string, userId: string, data: AssignRolesRequest) =>
+      request<void>(`/organizations/${organizationId}/members/${userId}/roles`, { method: "PUT", body: JSON.stringify(data) }),
     adminGetCollaborationSettings: () => request<CollaborationSettingsSummary>("/admin/collaboration"),
     adminSaveCollaborationSettings: (data: SaveCollaborationSettingsRequest) => request<void>("/admin/collaboration", { method: "PUT", body: JSON.stringify(data) }),
     adminClearCollaborationSettings: () => request<void>("/admin/collaboration", { method: "DELETE" }),

@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { loadOrganizationPage, OrganizationPage } from "@oneverse/planning/pages/organization";
 import { BibleCard } from "#/components/bible-card";
 import { BrandsCard } from "#/components/brands-card";
+import { ScopedRolesCard } from "#/components/scoped-roles-card";
 import { SonicServerCard } from "#/components/sonic-server-card";
 import { apiClient } from "#/lib/api-client";
 
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/_protected/organizations/$organizationId"
           <>
             <BrandsCard owner={{ organizationId: data.organization.id }} />
             <SonicServerCard owner={{ organizationId: data.organization.id }} />
+            {/* Roles its admins give its members, on its teams only (issue #270). */}
+            <ScopedRolesCard owner={{ organizationId: data.organization.id }} members={data.members} />
             <BibleCard
               enabled={!!data.organization.bible}
               onChange={async (bible) => {

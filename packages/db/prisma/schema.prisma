@@ -677,6 +677,7 @@ model Team {
   contributedVersions  SongVersion[]          @relation("VersionContributedByTeam")
   // What its members may do (issue #160), and its storage pool's limit.
   roleAssignments      RoleAssignment[]
+  scopedRoles          RoleAssignment[]       @relation("RoleScopeTeam")
   // Its screens' looks (issue #194), for every member to pick.
   screenThemes         ScreenTheme[]
   screenParts          ScreenPart[]
@@ -749,7 +750,8 @@ model Organization {
   // Its own Songverse Sonic server for its teams' songs' stems (issue #300).
   sonicServer  SonicServer?
   // A Bible in its teams' members' sidebar (issue #310), turned on by its admins.
-  bible        Boolean      @default(false)
+  bible        Boolean                   @default(false)
+  scopedRoles  RoleAssignment[]          @relation("RoleScopeOrganization")
 }
 
 model OrganizationMembership {
@@ -1672,8 +1674,8 @@ model SetlistItem {
   passage       Json?
   arrangementId String?
   position      Int // Sort order (0-based)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   // Per-item overrides. Transposition is in semitones relative to the song
   // version's own key (same convention as Arrangement.transposeSteps), so it
@@ -2760,22 +2762,22 @@ model MetadataSettings {
 // offline copies, export. `sourceStorageKey` is the uploaded file until it's
 // imported, then null (the object deleted when nothing else uses it).
 model Bible {
-  id               String      @id @default(cuid())
+  id               String       @id @default(cuid())
   name             String
   abbreviation     String?
   language         String?
   copyright        String?
   sourceFormat     String?
-  status           BibleStatus @default(IMPORTING)
+  status           BibleStatus  @default(IMPORTING)
   error            String?
   sourceStorageKey String?
-  books            Json        @default("[]")
-  verseCount       Int         @default(0)
-  canProject       Boolean     @default(false)
-  canOffline       Boolean     @default(false)
-  canExport        Boolean     @default(false)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  books            Json         @default("[]")
+  verseCount       Int          @default(0)
+  canProject       Boolean      @default(false)
+  canOffline       Boolean      @default(false)
+  canExport        Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
   verses           BibleVerse[]
 }
 
@@ -2997,6 +2999,9 @@ model Role {
   // Runs a set's screens (issue #305): controls what's presented on the sets
   // its holders can open, beside the set's leader, and may lock the control.
   canOperateScreens          Boolean  @default(false)
+  // A team's or an organisation's admins may give it to their own members,
+  // only on their team or organisation (issue #270).
+  teamAssignable             Boolean  @default(false)
   // Separations a month for who has this role; null uses Admin > Stem separation's.
   stemSeparationMonthlyLimit Int?
   // A storage tier: the limit it gives a user, or a team's pool.
@@ -3011,18 +3016,28 @@ model Role {
 
 // A role given to a user or to a team (exactly one of the two).
 model RoleAssignment {
-  id        String   @id @default(cuid())
-  roleId    String
-  userId    String?
-  teamId    String?
-  createdAt DateTime @default(now())
+  id                  String   @id @default(cuid())
+  roleId              String
+  userId              String?
+  teamId              String?
+  // Where it applies (issue #270): everywhere (none), or only on one team's
+  // sets and screens, or an organisation's teams'. Given to a user only.
+  // scopeKey is "", "team:<id>" or "organization:<id>", to keep one of each.
+  scopeTeamId         String?
+  scopeOrganizationId String?
+  scopeKey            String   @default("")
+  createdAt           DateTime @default(now())
 
-  role Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  role              Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user              User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team              Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  scopeTeam         Team?         @relation("RoleScopeTeam", fields: [scopeTeamId], references: [id], onDelete: Cascade)
+  scopeOrganization Organization? @relation("RoleScopeOrganization", fields: [scopeOrganizationId], references: [id], onDelete: Cascade)
 
-  @@unique([roleId, userId])
+  @@unique([roleId, userId, scopeKey])
   @@unique([roleId, teamId])
+  @@index([scopeTeamId])
+  @@index([scopeOrganizationId])
   @@index([userId])
   @@index([teamId])
 }
