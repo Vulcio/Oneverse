@@ -14,6 +14,8 @@ export const ORIGIN = WEB;
 export const PLANIVERSE = process.env.E2E_PLANIVERSE_URL ?? "http://localhost:3002";
 /** Where everyone signs in (issue #303): the apps send people there and back. */
 export const ONEVERSE = process.env.E2E_ONEVERSE_URL ?? "http://localhost:3003";
+/** The screen app (issue #305): what big screens open. */
+export const SCREEN = process.env.E2E_SCREEN_URL ?? "http://localhost:3004";
 /** The API's console output: with no email provider configured, it prints the emails it would send (verification links etc.). */
 export const LOG = process.env.E2E_API_LOG ?? "/tmp/api-dev.log";
 export const DB = (process.env.E2E_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/songverse_dev").replace(/\?.*$/, "");

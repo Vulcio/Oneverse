@@ -1,0 +1,43 @@
+# The screen app (issue #305): what a big screen opens, at
+# screen.oneverse.top - a code to pair it on Songverse's Screens page, then
+# the set's stage (packages/screen). Built and served like Songverse's web
+# app (see Dockerfile.songverse for why it's a small Node server, and why
+# this file sits at the repo root), by the web apps' shared server
+# (packages/app/server/web-server.mjs).
+#
+# At runtime: API_URL (the API's address), SONGVERSE_URL (where screens are
+# paired: the QR code's link) and ONEVERSE_URL. The API needs SCREEN_URL set
+# to this app's address, to let it in (CORS).
+FROM node:22-slim AS base
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+WORKDIR /repo
+
+FROM base AS deps
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY patches ./patches
+COPY packages/tsconfig/package.json packages/tsconfig/
+COPY packages/core/package.json packages/core/
+COPY packages/ui/package.json packages/ui/
+COPY packages/app/package.json packages/app/
+COPY packages/screen/package.json packages/screen/
+COPY apps/screen/package.json apps/screen/
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+COPY packages/tsconfig packages/tsconfig
+COPY packages/core packages/core
+COPY packages/ui packages/ui
+COPY packages/app packages/app
+COPY packages/screen packages/screen
+COPY apps/screen apps/screen
+RUN pnpm --filter @oneverse/core build \
+ && pnpm --filter @oneverse/screen-app build
+
+FROM base AS runtime
+ENV NODE_ENV=production
+COPY --from=build /repo/node_modules /repo/node_modules
+COPY --from=build /repo/packages /repo/packages
+COPY --from=build /repo/apps/screen /repo/apps/screen
+WORKDIR /repo/apps/screen
+EXPOSE 3000
+CMD ["node", "server.mjs"]

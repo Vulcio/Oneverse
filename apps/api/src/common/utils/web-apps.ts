@@ -22,9 +22,18 @@ export function oneverseUrl(): string | null {
   return webAddress("ONEVERSE_URL");
 }
 
+/**
+ * The screen app's (SCREEN_URL, issue #305): what big screens open
+ * (screen.oneverse.top). Its pages call the API with a screen's token, so
+ * it's let in like the other apps.
+ */
+export function screenUrl(): string | null {
+  return webAddress("SCREEN_URL");
+}
+
 /** Every web app's origin, Songverse's first. */
 export function webOrigins(): string[] {
-  return [songverseUrl(), planiverseUrl(), oneverseUrl()].flatMap((address) => (address ? [new URL(address).origin] : []));
+  return [songverseUrl(), planiverseUrl(), oneverseUrl(), screenUrl()].flatMap((address) => (address ? [new URL(address).origin] : []));
 }
 
 /**

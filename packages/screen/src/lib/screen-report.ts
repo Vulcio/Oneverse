@@ -1,5 +1,5 @@
 import type { ScreenReport } from "@oneverse/core";
-import { screenDrawStats } from "@oneverse/screen/lib/screen-draw-stats";
+import { screenDrawStats } from "./screen-draw-stats";
 
 const loadedAt = performance.now();
 let gpu: { name: string | null; webgl: 0 | 1 | 2; maxTexture: number | null } | null = null;

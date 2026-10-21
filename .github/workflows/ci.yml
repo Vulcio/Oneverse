@@ -78,7 +78,7 @@ jobs:
           # A new branch has no "before" to compare with: treat it as code, every image built.
           if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
             echo "code=true" >> "$GITHUB_OUTPUT"
-            echo 'images=["api","songverse","planiverse","oneverse","docs","site"]' >> "$GITHUB_OUTPUT"
+            echo 'images=["api","songverse","planiverse","oneverse","screen","docs","site"]' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           files=$(git diff --name-only "$BASE" "$GITHUB_SHA")
@@ -98,6 +98,7 @@ jobs:
           echo "$files" | grep -qE "$deps|^Dockerfile\.songverse$|^apps/web/(package\.json|server\.mjs|vite\.config|tsconfig)" && images+=('"songverse"')
           echo "$files" | grep -qE "$deps|^Dockerfile\.planiverse$|^apps/planiverse/(package\.json|server\.mjs|vite\.config|tsconfig)" && images+=('"planiverse"')
           echo "$files" | grep -qE "$deps|^Dockerfile\.oneverse$|^apps/oneverse/(package\.json|server\.mjs|vite\.config|tsconfig)" && images+=('"oneverse"')
+          echo "$files" | grep -qE "$deps|^Dockerfile\.screen$|^apps/screen/(package\.json|server\.mjs|vite\.config|tsconfig)" && images+=('"screen"')
           echo "$files" | grep -qE "$deps|^Dockerfile\.docs$|^apps/docs/" && images+=('"docs"')
           echo "$files" | grep -qE "$deps|^Dockerfile\.site$|^apps/site/" && images+=('"site"')
           echo "images=[$(IFS=,; echo "${images[*]}")]" >> "$GITHUB_OUTPUT"
@@ -140,6 +141,8 @@ jobs:
       SONGVERSE_URL: "http://localhost:3000"
       # Oneverse (issue #303): where everyone signs in; the apps are its OAuth clients.
       ONEVERSE_URL: "http://localhost:3003"
+      # The screen app (issue #305): what big screens open; the API trusts it.
+      SCREEN_URL: "http://localhost:3004"
       # Test-only values; nothing real is protected by them.
       BETTER_AUTH_SECRET: "e2e-only-secret-not-for-production-use"
       SETTINGS_ENCRYPTION_KEY: "e2e-only-settings-key-not-for-production-use"
@@ -182,7 +185,7 @@ jobs:
         run: pnpm --filter @oneverse/db exec prisma migrate deploy
 
       - name: Build the API and the web apps
-        run: pnpm exec vp run --filter "@oneverse/api..." --filter "@oneverse/web..." --filter "@oneverse/planiverse..." --filter "@oneverse/oneverse..." build
+        run: pnpm exec vp run --filter "@oneverse/api..." --filter "@oneverse/web..." --filter "@oneverse/planiverse..." --filter "@oneverse/oneverse..." --filter "@oneverse/screen-app..." build
 
       # The suites use the built-in tags and other metadata the seed adds.
       # It runs after the build, which builds @oneverse/core for it.
@@ -196,15 +199,16 @@ jobs:
           # As the Worker is deployed (Deploy.md): without BETTER_AUTH_SECRET or the
           # addresses (issue #96) - only the database, Redis, the settings key, and
           # here the providers' stand-ins.
-          (cd apps/api && env -u BETTER_AUTH_SECRET -u AUTH_URL -u WEB_URL -u PLANIVERSE_URL -u ONEVERSE_URL -u API_URL -u E2E_API_LOG node dist/worker.js > /tmp/worker.log 2>&1 &)
+          (cd apps/api && env -u BETTER_AUTH_SECRET -u AUTH_URL -u WEB_URL -u PLANIVERSE_URL -u ONEVERSE_URL -u SCREEN_URL -u API_URL -u E2E_API_LOG node dist/worker.js > /tmp/worker.log 2>&1 &)
           (cd apps/web && PORT=3000 node server.mjs > /tmp/web.log 2>&1 &)
           (cd apps/planiverse && PORT=3002 node server.mjs > /tmp/planiverse.log 2>&1 &)
           (cd apps/oneverse && PORT=3003 node server.mjs > /tmp/oneverse.log 2>&1 &)
+          (cd apps/screen && PORT=3004 node server.mjs > /tmp/screen.log 2>&1 &)
           for i in $(seq 1 60); do
-            curl -sf http://localhost:3001/health > /dev/null && curl -sf http://localhost:3000/ > /dev/null && curl -sf http://localhost:3002/ > /dev/null && curl -sf http://localhost:3003/sign-in > /dev/null && exit 0
+            curl -sf http://localhost:3001/health > /dev/null && curl -sf http://localhost:3000/ > /dev/null && curl -sf http://localhost:3002/ > /dev/null && curl -sf http://localhost:3003/sign-in > /dev/null && curl -sf http://localhost:3004/ > /dev/null && exit 0
             sleep 2
           done
-          echo "The API or a web app didn't start"; tail -50 /tmp/api.log /tmp/worker.log /tmp/web.log /tmp/planiverse.log /tmp/oneverse.log; exit 1
+          echo "The API or a web app didn't start"; tail -50 /tmp/api.log /tmp/worker.log /tmp/web.log /tmp/planiverse.log /tmp/oneverse.log /tmp/screen.log; exit 1
 
       - name: Run the end-to-end suites
         run: pnpm --filter @oneverse/e2e e2e
@@ -220,6 +224,8 @@ jobs:
             /tmp/worker.log
             /tmp/web.log
             /tmp/planiverse.log
+            /tmp/oneverse.log
+            /tmp/screen.log
           retention-days: 7
 
   # Builds the images Dokploy deploys, so a Dockerfile that no longer

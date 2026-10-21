@@ -1,7 +1,7 @@
 import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
 import { useEffect, useRef, useState } from "react";
 import { getApiUrl } from "@oneverse/app/public-env";
-import { screenReport } from "#/lib/screen-report";
+import { screenReport } from "./screen-report";
 
 /**
  * A screen's side of issue #186, in the browser of whatever drives the big

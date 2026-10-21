@@ -1,9 +1,9 @@
 import { CalendarDays, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchScreenSets, pickScreenSet, type ScreenSetOption, type ScreenSets } from "#/lib/screen-display";
-import { useRemoteList } from "#/lib/screen-remote";
-import { setlistTitle } from "#/lib/setlists";
+import { fetchScreenSets, pickScreenSet, type ScreenSetOption, type ScreenSets } from "../lib/screen-display";
+import { useRemoteList } from "../lib/screen-remote";
+import { setlistTitle } from "../lib/set-items";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /**

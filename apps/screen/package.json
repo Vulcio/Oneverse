@@ -1,0 +1,43 @@
+{
+  "name": "@oneverse/screen-app",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "build": "vp build",
+    "dev": "vp dev --port 3004",
+    "start": "node server.mjs",
+    "lint": "vp lint src --deny-warnings",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oneverse/app": "workspace:*",
+    "@oneverse/core": "workspace:*",
+    "@oneverse/screen": "workspace:*",
+    "@oneverse/ui": "workspace:*",
+    "@tanstack/react-router": "^1.170.36",
+    "@tanstack/react-start": "^1.168.54",
+    "i18next": "^26.4.2",
+    "lucide-react": "^1.46.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-i18next": "^17.0.14"
+  },
+  "devDependencies": {
+    "@oneverse/tsconfig": "workspace:*",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.7.3",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0",
+    "vite-plus": "1.0.0",
+    "zod": "^4.6.5"
+  }
+}
