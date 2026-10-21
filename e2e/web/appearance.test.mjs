@@ -19,6 +19,8 @@ try {
 
   await step("a team's colour picked on its page, and shown in the sidebar", async () => {
     await page.goto(`${WEB}/teams/${team.id}`);
+    // Often the part's first page: clicked once it has hydrated.
+    await page.waitForLoadState("networkidle");
     const card = page.getByTestId("appearance");
     await card.getByText("Colour and picture").waitFor();
     await card.getByTestId("appearance-color-violet").click();
