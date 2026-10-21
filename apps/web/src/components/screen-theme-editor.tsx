@@ -119,7 +119,7 @@ function extractPart(kind: ScreenPartKind, theme: ScreenTheme): unknown {
 export function ScreenThemeEditor({
   draft,
   teams,
-  parts,
+  parts: listed,
   context,
   widgetDefaults = [],
   onClose,
@@ -138,6 +138,9 @@ export function ScreenThemeEditor({
 }) {
   const { t } = useTranslation();
   const kind = draft.kind;
+  // Parts saved from this editor, until the page's list has them: a background just saved previews under the words opened next.
+  const [savedHere, setSavedHere] = useState<ScreenPartSummary[]>([]);
+  const parts = useMemo(() => [...savedHere, ...listed.filter((one) => !savedHere.some((saved) => saved.id === one.id))], [savedHere, listed]);
   const [refs, setRefs] = useState<TemplateRefs>(draft.refs ?? { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null });
   const [tags, setTags] = useState<ScreenTemplateTag[]>(draft.tags ?? []);
   const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[] }, own?: unknown) =>
@@ -628,6 +631,7 @@ export function ScreenThemeEditor({
             setEditing(null);
             // The part saved, in the template at once; the list of parts comes again with the page.
             const part = saved as ScreenPartSummary;
+            setSavedHere((before) => [part, ...before.filter((one) => one.id !== part.id)]);
             pickPart(part.kind, { id: part.id });
             setTheme((before) => composeScreenTheme({ ...splitParts(before), [part.kind]: part.document, template: { grid: before.grid, masks: before.masks } }));
             onSaved(saved);
