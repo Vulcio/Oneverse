@@ -95,8 +95,14 @@ await step("a changed list can be saved again; the sidebar opens it with its fil
   await page.waitForURL(new RegExp(`[?&]q=[^&]*${stamp}`));
   await page.waitForLoadState("networkidle");
   await rangeIs("1–2 of 2");
-  await page.getByRole("button", { name: "Save changes to the list" }).click();
-  await page.getByRole("button", { name: "Save changes to the list" }).waitFor({ state: "detached" });
+  // The bar can render again as the search settles, losing a click: clicked until the list has the change.
+  const save = page.getByRole("button", { name: "Save changes to the list" });
+  for (let attempt = 0; ; attempt++) {
+    await save.click({ timeout: 5000 }).catch(() => {});
+    const saved = await save.waitFor({ state: "detached", timeout: 5000 }).then(() => true, () => false);
+    if (saved) break;
+    if (attempt === 3) throw new Error("the list wasn't saved");
+  }
   await sections().getByRole("link", { name: "Songs", exact: true }).click();
   await page.waitForURL(`${WEB}/library/songs`);
   await page.getByRole("heading", { name: "Songs", exact: true }).waitFor();
