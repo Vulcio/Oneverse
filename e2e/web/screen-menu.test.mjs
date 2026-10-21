@@ -106,6 +106,8 @@ try {
     await tv.keyboard.press("ArrowDown");
     await tv.keyboard.press("Enter");
     await tv.locator('[data-testid="screen-menu"][data-view="themes"]').waitFor();
+    // The team's come from the API: listed once they're there.
+    await menu().getByTestId("screen-menu-theme").filter({ hasText: `Hall look ${stamp}` }).waitFor({ timeout: 5000 });
     const names = await menu().getByTestId("screen-menu-theme").allInnerTexts();
     if (!names.some((one) => one.includes("Concert")) || !names.some((one) => one.includes(`Hall look ${stamp}`))) throw new Error(names.join(" | "));
     if (names.some((one) => one.includes("Not theirs"))) throw new Error("someone else's theme offered");
