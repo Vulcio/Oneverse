@@ -12,10 +12,19 @@ export function planiverseUrl(): string | null {
   return webAddress("PLANIVERSE_URL");
 }
 
+/**
+ * Oneverse's (ONEVERSE_URL, issue #303): where people sign in, and the
+ * account's pages. Set, the apps sign in through it (Sign in with Oneverse)
+ * and may live on domains of their own; unset, everyone signs in in the
+ * apps, under one parent domain, as before.
+ */
+export function oneverseUrl(): string | null {
+  return webAddress("ONEVERSE_URL");
+}
+
 /** Every web app's origin, Songverse's first. */
 export function webOrigins(): string[] {
-  const planiverse = planiverseUrl();
-  return [new URL(songverseUrl()).origin, ...(planiverse ? [new URL(planiverse).origin] : [])];
+  return [songverseUrl(), planiverseUrl(), oneverseUrl()].flatMap((address) => (address ? [new URL(address).origin] : []));
 }
 
 /**

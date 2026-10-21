@@ -4,10 +4,13 @@ import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { jwt } from "better-auth/plugins/jwt";
 import { customSession } from "better-auth/plugins/custom-session";
 import { passkey } from "@better-auth/passkey";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { prisma } from "@oneverse/db";
+import { authPrisma } from "./oauth-prisma.js";
 import { getEffectiveAuthSettings, type EffectiveAuthSettings } from "./auth-settings.js";
-import { webOrigins } from "../common/utils/web-apps.js";
-import { passkeyRpId, sharedCookieDomain } from "./auth-domains.js";
+import { oneverseUrl, planiverseUrl, songverseUrl, webOrigins } from "../common/utils/web-apps.js";
+import { passkeyRpId, sharedCookieDomain, signInOrigins } from "./auth-domains.js";
+import { OAUTH_SCOPES, apiResource } from "./oauth-clients.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
 import { markInvitationAccepted, passFromCookies, signupAllowed } from "../invitations/signup-gate.js";
 import {
@@ -37,11 +40,17 @@ const bootstrapAdminEmails = new Set(
 // it's a different origin from AUTH_URL - has to be explicitly trusted.
 // PLANIVERSE_URL, when set, is the second web app's (issue #241): trusted
 // the same way, and under the same parent domain (see web-apps.ts).
+// ONEVERSE_URL, when set, is where people sign in (issue #303): only it then
+// shares BetterAuth's cookie with the API, and Songverse and Planiverse sign
+// in through it as OAuth clients, on whatever domain they're on.
 const authUrl = new URL(process.env.AUTH_URL ?? "http://localhost:3001");
 const webOriginList = webOrigins();
-const webHostnames = webOriginList.map((origin) => new URL(origin).hostname);
+const signInOriginList = signInOrigins({ songverse: songverseUrl(), planiverse: planiverseUrl(), oneverse: oneverseUrl() });
+const signInHostnames = signInOriginList.map((origin) => new URL(origin).hostname);
+// The OAuth provider's sign-in page: Oneverse's, or Songverse's without it.
+const signInPage = `${oneverseUrl() ?? songverseUrl()}/sign-in`;
 
-const cookieDomain = sharedCookieDomain(authUrl.hostname, ...webHostnames);
+const cookieDomain = sharedCookieDomain(authUrl.hostname, ...signInHostnames);
 
 /**
  * BetterAuth issues sessions (cookie-based, shared with the web app via
@@ -65,7 +74,7 @@ function buildAuth(settings: EffectiveAuthSettings) {
     baseURL: authUrl.origin,
     secret: process.env.BETTER_AUTH_SECRET,
     trustedOrigins: webOriginList,
-    database: prismaAdapter(prisma, { provider: "postgresql" }),
+    database: prismaAdapter(authPrisma, { provider: "postgresql" }),
     advanced: {
       // See sharedCookieDomain above.
       crossSubDomainCookies: cookieDomain ? { enabled: true, domain: cookieDomain } : { enabled: false },
@@ -196,6 +205,9 @@ function buildAuth(settings: EffectiveAuthSettings) {
     plugins: [
       jwt({
         jwt: {
+          // Its default, written out: the OAuth provider's access tokens
+          // (below) take theirs from here, so JwtAuthGuard checks both alike.
+          issuer: authUrl.origin,
           // Base user fields only — guards re-derive isGlobalAdmin and other
           // authorization state from Postgres by `sub` rather than trusting
           // token claims (see JwtAuthGuard).
@@ -224,9 +236,25 @@ function buildAuth(settings: EffectiveAuthSettings) {
         // on AUTH_URL above - under the parent domain, so passkeys survive
         // a web app moving between subdomains and work in both apps (see
         // passkeyRpId).
-        rpID: passkeyRpId(authUrl.hostname, ...webHostnames),
-        rpName: "Songverse",
-        origin: webOriginList,
+        rpID: passkeyRpId(authUrl.hostname, ...signInHostnames),
+        rpName: oneverseUrl() ? "Oneverse" : "Songverse",
+        origin: signInOriginList,
+      }),
+      // Sign in with Oneverse (issue #303): the web apps are OAuth clients
+      // (see oauth-clients.ts, written when the API starts). Their access
+      // tokens are JWTs for this API (`resource`), signed by the jwt plugin
+      // above; refresh tokens keep them signed in for 30 days of absence.
+      oauthProvider({
+        loginPage: signInPage,
+        // The apps are the API's own (skipConsent): nobody is asked.
+        consentPage: signInPage,
+        scopes: OAUTH_SCOPES,
+        resources: [apiResource()],
+        // Every enabled client may ask for the API: they're all ours.
+        enforcePerClientResources: false,
+        // An app's server refreshes for every page its people open: two at
+        // once mustn't sign them out.
+        refreshTokenReuseInterval: 30,
       }),
     ],
   });

@@ -11,6 +11,7 @@ import compression from "compression";
 import type { Express, NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module.js";
 import { getAuth } from "./auth/better-auth.js";
+import { registerOAuthClients } from "./auth/oauth-clients.js";
 import { webOrigins } from "./common/utils/web-apps.js";
 import { apiDocsAllowed } from "./security/security-settings.js";
 
@@ -98,6 +99,10 @@ async function bootstrap() {
 
   // Sync play's WebSocket (issue #13), on the same port.
   app.get(SyncServer).attach(app.getHttpServer());
+
+  // The web apps as OAuth clients (Sign in with Oneverse, issue #303), from
+  // their addresses as this start has them.
+  await registerOAuthClients();
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3001;
   await app.listen(port);

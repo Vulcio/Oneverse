@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vite-plus/test";
-import { planiverseUrl, songverseUrl, webOrigins } from "./web-apps.js";
+import { oneverseUrl, planiverseUrl, songverseUrl, webOrigins } from "./web-apps.js";
 
-const saved = { WEB_URL: process.env.WEB_URL, PLANIVERSE_URL: process.env.PLANIVERSE_URL };
+const saved = { WEB_URL: process.env.WEB_URL, PLANIVERSE_URL: process.env.PLANIVERSE_URL, ONEVERSE_URL: process.env.ONEVERSE_URL };
 afterEach(() => {
   for (const [name, value] of Object.entries(saved)) {
     if (value === undefined) delete process.env[name];
@@ -29,6 +29,14 @@ describe("the web apps' addresses (issue #241)", () => {
   it("gives both origins", () => {
     process.env.WEB_URL = "https://app.songverse.one";
     process.env.PLANIVERSE_URL = "plan.songverse.one/";
+    delete process.env.ONEVERSE_URL;
     expect(webOrigins()).toEqual(["https://app.songverse.one", "https://plan.songverse.one"]);
+  });
+  it("adds Oneverse's when it's set (issue #303)", () => {
+    process.env.WEB_URL = "https://songverse.top";
+    delete process.env.PLANIVERSE_URL;
+    process.env.ONEVERSE_URL = "oneverse.top";
+    expect(oneverseUrl()).toBe("https://oneverse.top");
+    expect(webOrigins()).toEqual(["https://songverse.top", "https://oneverse.top"]);
   });
 });

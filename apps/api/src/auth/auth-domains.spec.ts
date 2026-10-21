@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { passkeyRpId, sharedCookieDomain } from "./auth-domains.js";
+import { passkeyRpId, sharedCookieDomain, signInOrigins } from "./auth-domains.js";
 
 describe("sharedCookieDomain", () => {
   it("is the parent both apps share", () => {
@@ -37,5 +37,20 @@ describe("with Planiverse (issue #241)", () => {
   });
   it("is unset when all are on one host (local dev)", () => {
     expect(sharedCookieDomain("localhost", "localhost", "localhost")).toBeUndefined();
+  });
+});
+
+describe("with Oneverse (issue #303)", () => {
+  const apps = { songverse: "https://songverse.top", planiverse: "https://planiverse.top/", oneverse: "https://oneverse.top" };
+  it("signs in at Oneverse only, so the apps can be on domains of their own", () => {
+    const origins = signInOrigins(apps);
+    expect(origins).toEqual(["https://oneverse.top"]);
+    const hosts = origins.map((origin) => new URL(origin).hostname);
+    expect(sharedCookieDomain("api.oneverse.top", ...hosts)).toBe("oneverse.top");
+    expect(passkeyRpId("api.oneverse.top", ...hosts)).toBe("oneverse.top");
+  });
+  it("signs in in the apps without it", () => {
+    expect(signInOrigins({ ...apps, oneverse: null })).toEqual(["https://songverse.top", "https://planiverse.top"]);
+    expect(signInOrigins({ songverse: "http://localhost:3000", planiverse: null, oneverse: null })).toEqual(["http://localhost:3000"]);
   });
 });

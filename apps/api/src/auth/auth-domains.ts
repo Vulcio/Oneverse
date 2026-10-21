@@ -37,3 +37,15 @@ export function sharedCookieDomain(authHostname: string, ...webHostnames: string
 export function passkeyRpId(authHostname: string, ...webHostnames: string[]): string {
   return sharedCookieDomain(authHostname, ...webHostnames) ?? webHostnames[0] ?? authHostname;
 }
+
+/**
+ * The web apps that sign people in with BetterAuth's own cookie: Oneverse
+ * when it's deployed (issue #303) - the apps then sign in through it, with
+ * sessions of their own, and may be on any domain - else the apps
+ * themselves, as before. The cookie's domain and the passkeys' relying
+ * party are worked out from these and the API's host.
+ */
+export function signInOrigins(apps: { songverse: string; planiverse: string | null; oneverse: string | null }): string[] {
+  const addresses = apps.oneverse ? [apps.oneverse] : [apps.songverse, apps.planiverse];
+  return addresses.flatMap((address) => (address ? [new URL(address).origin] : []));
+}
