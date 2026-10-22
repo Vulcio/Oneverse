@@ -1,7 +1,6 @@
 # The live session
 
-Issue #247 (and #305, #270). **Proposed, not built**: this is the design to agree before
-the work starts. It turns sync play's set session (issue #13), today a value in Redis,
+Issue #247 (and #305, #270). **Agreed, being built** (the questions are answered under "Decided"). It turns sync play's set session (issue #13), today a value in Redis,
 into a thing of its own that Oneverse Pulse can mirror and take over, that every
 controller changes the same way, and that keeps a record of what happened.
 Written 2026-10-22 from the architecture review of `main` at 103bc4e.
@@ -168,7 +167,7 @@ The server answers `{type: "ack", id, rev}`, or `{type: "error", id, code}` with
 - **Taking over is explicit.** Someone who may lead takes the lead from someone else (as
   today); the previous holder gets `{type: "taken", part, by}` and Live says so. An exclusive
   hold on the screens refuses others' commands; the set's editors may break it with
-  "Take back", logged and told (to decide, below).
+  "Take back", logged and told.
 - The session's `presenters` (handed over live, #305) are the session-scoped grant; a role
   assignment scoped to a set or a session (#270) comes later the same way.
 
@@ -203,7 +202,7 @@ one screen differently, that screen can't know.
 Each accepted command is appended to a Redis stream (`live:log:<id>`) as it's applied, and
 the Worker writes the stream to `LiveSessionCommand` every few minutes and when the session
 ends. It's what Pulse sends back after an outage, and later what a set's page shows ("who
-moved the screens at 10:42"). How long it's kept is to decide (below).
+moved the screens at 10:42"). It's kept 90 days after the session ends.
 
 ## Pulse: offline and back
 
@@ -222,7 +221,7 @@ moved the screens at 10:42"). How long it's kept is to decide (below).
   never silently rolled back or forward. Changes to the **set itself** during the outage are
   not the session's: they're applied between songs, as #247 says.
 - While the room runs offline, the cloud keeps accepting commands from anyone still
-  connected to it (proposed, below): it can't tell an outage from a Pulse that stopped,
+  connected to it: it can't tell an outage from a Pulse that stopped,
   and refusing everyone because a mini PC was unplugged would be worse. On reconnection
   the room's state replaces what they did, and the record keeps both.
 
@@ -255,11 +254,15 @@ moved the screens at 10:42"). How long it's kept is to decide (below).
 Each step is its own commit with its tests; steps 1 to 8 change nothing a user sees except
 #312's behaviour and, at step 7, screens that no longer show the wrong words after an edit.
 
-## To decide
+## Decided
 
-1. **During an outage**, does the cloud keep accepting commands (proposed: yes, the room
-   wins when it's back), or refuse them once the session's Pulse stops reporting?
-2. **Breaking an exclusive hold**: may the set's editors take the screens back from an
-   operator who holds them alone (proposed: yes, explicitly, logged, the operator told)?
-3. **How long the record is kept**: proposed, 90 days after the session ends.
-4. **Lease length**: proposed, 60 seconds.
+brice answered the four questions on 2026-10-22:
+
+1. **During an outage the cloud keeps accepting commands.** Not every venue has a Pulse, so
+   a session must work both ways: without one, the cloud is the only authority and nothing
+   about an outage changes; with one, the room's state wins when Pulse comes back, and the
+   record keeps both.
+2. **The set's editors may break an exclusive hold** ("Take back"): explicitly, logged, and
+   the operator is told.
+3. **The record is kept 90 days** after the session ends, then removed by the Worker.
+4. **A lease lasts 60 seconds**, renewed by the device's pings.
