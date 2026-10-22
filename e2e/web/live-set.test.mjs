@@ -130,7 +130,12 @@ try {
     await entries().nth(1).getByTestId("set-transition-picker").click();
     await page.getByTestId("set-transition-SEGUE").click();
     await page.waitForFunction(() => document.querySelectorAll('[data-testid="set-transition-picker"]')[1]?.getAttribute("data-kind") === "SEGUE");
-    const kept = (await api(leader, "GET", `/setlists/${set.id}`)).items[1].transition;
+    // Shown as soon as it's picked; saved a moment after.
+    let kept = null;
+    for (let i = 0; i < 50 && kept !== "SEGUE"; i++) {
+      if (i) await new Promise((resolve) => setTimeout(resolve, 100));
+      kept = (await api(leader, "GET", `/setlists/${set.id}`)).items[1].transition;
+    }
     if (kept !== "SEGUE") throw new Error(String(kept));
   });
 
