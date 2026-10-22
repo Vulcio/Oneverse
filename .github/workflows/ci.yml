@@ -77,10 +77,19 @@ jobs:
       images: ${{ steps.diff.outputs.images }}
       # The paths a pull request changes, space-separated, for e2e to pick its suites (issue #315); empty on main.
       changed: ${{ steps.diff.outputs.changed }}
+      # The image e2e runs in, and the Playwright it's built for (see e2e-image).
+      e2e_image: ${{ steps.image.outputs.image }}
+      playwright: ${{ steps.image.outputs.playwright }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - id: image
+        run: |
+          playwright=$(node -p "require('./e2e/package.json').devDependencies.playwright")
+          tag=$( (cat .github/e2e-image/Dockerfile; echo "$playwright") | sha256sum | cut -c1-16)
+          echo "playwright=$playwright" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}-e2e:$tag" >> "$GITHUB_OUTPUT"
       - id: diff
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -114,13 +123,43 @@ jobs:
           echo "$files" | grep -qE "$deps|^Dockerfile\.site$|^apps/site/" && images+=('"site"')
           echo "images=[$(IFS=,; echo "${images[*]}")]" >> "$GITHUB_OUTPUT"
 
+  # The machine the e2e shards run in (.github/e2e-image/Dockerfile): built and
+  # pushed once for each version of it, then only pulled. Installing Chromium's
+  # libraries and ffmpeg in each shard from the runners' Ubuntu mirror took up to
+  # 37 of a shard's 44 minutes.
+  e2e-image:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: exists
+        run: docker manifest inspect "${{ needs.changes.outputs.e2e_image }}" > /dev/null 2>&1 && echo "yes=true" >> "$GITHUB_OUTPUT" || true
+      - if: steps.exists.outputs.yes != 'true'
+        uses: docker/setup-buildx-action@v3
+      - if: steps.exists.outputs.yes != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .github/e2e-image
+          build-args: PLAYWRIGHT=${{ needs.changes.outputs.playwright }}
+          push: true
+          tags: ${{ needs.changes.outputs.e2e_image }}
+
   e2e:
     # The API and browser suites in e2e/, against production builds of the
     # API and web app. Emails print to the API's output (no email provider
     # configured), which the suites read verification links from.
     # In six jobs at once (issue #308), each with its own stack and database,
     # running a sixth of the suites, of about the same length (run.mjs --shard).
-    needs: changes
+    needs: [changes, e2e-image]
     if: needs.changes.outputs.code == 'true'
     name: e2e (${{ matrix.shard }}/6)
     strategy:
@@ -128,6 +167,17 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4, 5, 6]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    # In the e2e image (see e2e-image): Chromium, its libraries, ffmpeg and psql ready.
+    # Its services are reached by their names from in there, not localhost.
+    container:
+      image: ${{ needs.changes.outputs.e2e_image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --ipc=host
     services:
       postgres:
         image: postgres:16-alpine
@@ -147,10 +197,10 @@ jobs:
         ports:
           - 6379:6379
     env:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/songverse_e2e?schema=public"
-      E2E_DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/songverse_e2e"
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/songverse_e2e?schema=public"
+      E2E_DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/songverse_e2e"
       E2E_API_LOG: /tmp/api.log
-      REDIS_URL: "redis://localhost:6379"
+      REDIS_URL: "redis://redis:6379"
       AUTH_URL: "http://localhost:3001"
       WEB_URL: "http://localhost:3000"
       API_URL: "http://localhost:3001"
@@ -201,49 +251,10 @@ jobs:
           key: vp-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: vp-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
-      # Playwright's Chromium, kept between runs for its version: only the
-      # system libraries it needs are installed each time.
-      - name: Playwright's version
-        id: playwright
-        run: echo "version=$(pnpm --filter @oneverse/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-
-      # The system packages (Chromium's libraries, ffmpeg) kept between runs: the
-      # runners' Ubuntu mirror is sometimes so slow that downloading them took
-      # half an hour of a 45-minute shard. apt still fetches what changed.
-      - name: Keep apt's downloads in a cached folder
-        id: apt
-        run: |
-          echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
-          mkdir -p ~/apt-cache/partial
-          echo "Dir::Cache::archives \"$HOME/apt-cache\";" | sudo tee /etc/apt/apt.conf.d/99-ci-cache
-          echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee -a /etc/apt/apt.conf.d/99-ci-cache
-
-      - uses: actions/cache@v4
-        with:
-          path: ~/apt-cache
-          key: apt-${{ steps.apt.outputs.image }}
-          restore-keys: apt-
-
-      - uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
-
-      - name: Install Chromium for Playwright
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @oneverse/e2e exec playwright install --with-deps chromium
-
-      - name: Install Chromium's system libraries
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @oneverse/e2e exec playwright install-deps chromium
-
-      # The Worker turns recorded takes into Opus with it (issue #127), as in the API/Worker image.
-      - name: Install ffmpeg
-        run: command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg)
-
-      - name: Let the cache read apt's downloads
-        run: sudo chown -R "$(id -u)" ~/apt-cache
+      # The image has the Chromium of the Playwright it was built for; this only
+      # downloads one (not its libraries) if they ever differ.
+      - name: Chromium for Playwright
+        run: pnpm --filter @oneverse/e2e exec playwright install chromium
 
       - name: Apply database migrations
         run: pnpm --filter @oneverse/db exec prisma migrate deploy
