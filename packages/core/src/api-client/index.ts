@@ -1803,8 +1803,6 @@ export interface MetadataSettings {
 export interface YouVersionSettings {
   source: "database" | "env" | "none";
   hasDatabaseKey: boolean;
-  /** The versions an admin allows on screens (issue #310); left out by an older API. */
-  projection?: number[];
 }
 
 /** A YouVersion version (issue #304): its attribution goes with every passage shown. */
@@ -2928,8 +2926,6 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     saveYouVersionKey: (appKey: string) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ appKey }) }),
     resetYouVersionKey: () => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "DELETE" }),
     testYouVersionKey: () => request<{ ok: boolean; message: string }>("/admin/scriptures/youversion/test", { method: "POST" }),
-    setYouVersionProjection: (bibleId: number, canProject: boolean) =>
-      request<YouVersionSettings>(`/admin/scriptures/youversion/versions/${bibleId}`, { method: "PUT", body: JSON.stringify({ canProject }) }),
     /** MusicBrainz's contact, in its User-Agent; empty goes back to MUSICBRAINZ_CONTACT. */
     saveMusicBrainzContact: (contact: string) => request<MetadataSettings>("/admin/metadata/musicbrainz", { method: "PUT", body: JSON.stringify({ contact }) }),
 

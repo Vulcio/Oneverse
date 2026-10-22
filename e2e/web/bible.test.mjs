@@ -119,7 +119,7 @@ try {
     if ((await page.locator("#bible-template").inputValue()) !== "b:scripture") throw new Error("the template wasn't kept");
   });
 
-  await step("YouVersion's versions too: one read and added to the set, which says the screens leave it out", async () => {
+  await step("YouVersion's versions too: one read and added to the set, for the screens too", async () => {
     await api(admin, "PUT", "/admin/scriptures/youversion", { appKey: youversionKey.key });
     await page.goto(`${WEB}/bible`);
     await page.waitForLoadState("networkidle");
@@ -129,7 +129,6 @@ try {
     await page.getByTestId("bible-read").click();
     await page.getByTestId("bible-passage").getByText("BSB text of John 3:16.").waitFor();
     const card = page.getByTestId("bible-add-to-set");
-    await card.getByTestId("bible-not-on-screens").waitFor();
     await card.getByTestId("bible-add").click();
     await card.getByTestId("bible-added").waitFor();
     const items = (await api(leader, "GET", `/setlists/${set.id}`)).items.filter((one) => one.kind === "PASSAGE");

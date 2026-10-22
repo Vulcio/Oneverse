@@ -3341,7 +3341,6 @@ const en = {
     passage: "Passage",
     passageHint: "Picked above, or typed: John 3:16-18, Psalm 23.",
     read: "Read",
-    youversionNotOnScreens: "An admin hasn't allowed this YouVersion version on screens: in the set it's read from YouVersion, but the screens leave it out until an admin allows it in Admin > Bibles, having read its licence.",
     addToSet: "Add to a set",
     addToSetHint: "The set keeps the passage's reference and shows its text from this Bible, on screens too if the Bible may be shown there.",
     set: "Set",
@@ -3401,9 +3400,6 @@ const en = {
     deleting: "Deleting…",
     confirmDelete: "Delete this Bible",
     readOnYouVersion: "Read on YouVersion",
-    youversionProjection: "May be shown on screens",
-    youversionProjectionHint_one: "Tick it for a version once you've read its licence: its passages in sets then go on the screens too, read from YouVersion each time and never kept. {{count}} version is allowed.",
-    youversionProjectionHint_other: "Tick it for a version once you've read its licence: its passages in sets then go on the screens too, read from YouVersion each time and never kept. {{count}} versions are allowed.",
   },
   metadataProviders: {
     title: "Metadata providers",

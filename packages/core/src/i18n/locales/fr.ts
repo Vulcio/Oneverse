@@ -3344,7 +3344,6 @@ const fr: typeof en = {
     passage: "Passage",
     passageHint: "Choisi ci-dessus, ou tapé : Jean 3,16-18, Psaume 23.",
     read: "Lire",
-    youversionNotOnScreens: "Un administrateur n'a pas autorisé cette version YouVersion sur les écrans : dans la liste, elle est lue sur YouVersion, mais les écrans la laissent de côté tant qu'un administrateur ne l'autorise pas dans Admin > Bibles, après avoir lu sa licence.",
     addToSet: "Ajouter à une liste",
     addToSetHint: "La liste garde la référence du passage et montre son texte depuis cette Bible, sur les écrans aussi si la Bible peut y être montrée.",
     set: "Liste",
@@ -3404,9 +3403,6 @@ const fr: typeof en = {
     deleting: "Suppression…",
     confirmDelete: "Supprimer cette Bible",
     readOnYouVersion: "Lire sur YouVersion",
-    youversionProjection: "Peut être affichée sur les écrans",
-    youversionProjectionHint_one: "Cochez-la pour une version une fois sa licence lue : ses passages dans les listes vont alors aussi sur les écrans, lus sur YouVersion à chaque fois et jamais gardés. {{count}} version est autorisée.",
-    youversionProjectionHint_other: "Cochez-la pour une version une fois sa licence lue : ses passages dans les listes vont alors aussi sur les écrans, lus sur YouVersion à chaque fois et jamais gardés. {{count}} versions sont autorisées.",
   },
   metadataProviders: {
     title: "Sources de métadonnées",

@@ -83,7 +83,7 @@ try {
     await dialog.locator("#bible-reference").fill("John 3:16");
     await dialog.getByTestId("bible-read").click();
     await dialog.getByTestId("set-passage-preview").getByText("BSB text of John 3:16.").waitFor();
-    await dialog.getByTestId("set-passage-not-projected").waitFor();
+    if (await dialog.getByTestId("set-passage-not-projected").count()) throw new Error("a YouVersion passage said to be kept off the screens");
     await dialog.getByTestId("set-passage-save").click();
     await dialog.waitFor({ state: "detached" });
     await desk.getByTestId("set-passage-row").getByRole("link", { name: "John 3:16 (BSB)" }).click();
