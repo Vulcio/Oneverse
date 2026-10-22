@@ -233,7 +233,7 @@ Vous pouvez envoyer des diapositives dès que la vue opérateur s'ouvre, à côt
 - **Partager avec Live** et **Les piloter seul** passent de l'un à l'autre ; **Les rendre** redonne les écrans à qui mène.
 - **Prendre le contrôle complet** vous fait aussi mener la liste : le métronome, les pistes et le chant que tout le monde suit, comme dans Live.
 
-Si vous fermez la vue opérateur, les écrans reviennent à qui mène.
+Si vous fermez la vue opérateur, les écrans reviennent à qui mène. Si c'est votre connexion qui tombe (le Wi-Fi de la régie, un rechargement), ils vous attendent une minute, toujours à vous seul si vous les aviez pris seul, et la vue opérateur les reprend en se reconnectant ; entre-temps, la barre et Live indiquent que vous avez perdu la connexion. Sans retour dans la minute, ils reviennent à qui mène.
 
 ### La liste et ses diapositives
 

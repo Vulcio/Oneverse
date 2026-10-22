@@ -233,7 +233,7 @@ You can send slides as soon as the operator view opens, beside the leader's Live
 - **Share with Live** and **Run them alone** switch between the two; **Give them back** returns the screens to the leader.
 - **Take full control** leads the set as well: the metronome, the stems and the song everyone follows, as in Live.
 
-If you close the operator view, the screens go back to the leader.
+If you close the operator view, the screens go back to the leader. If your connection drops instead (the Wi-Fi at the desk, a reload), they wait a minute for you, still yours alone if you had taken them alone, and the operator view takes them back when it reconnects; the bar and Live say you lost your connection meanwhile. Not back within the minute, they go back to the leader.
 
 ### The set and its slides
 

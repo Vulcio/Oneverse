@@ -37,6 +37,13 @@ const lockKey = (setId: string) => `songverse:sync:lock:${setId}`;
 const LOCK_MS = 3000;
 /** Deletes the lock only if it's still the one taken (a lock that outlived LOCK_MS may be someone else's). */
 const UNLOCK = 'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end';
+/**
+ * How long the screens stay with an operator whose connection dropped (a
+ * Wi-Fi blip at the desk, a reload): their console takes them back on
+ * reconnecting, and until then a lock stays theirs. After it, they're the
+ * leader's again.
+ */
+const SCREENS_GRACE_MS = 60_000;
 /** The most people the leader hands presenting to (issue #305). */
 const PRESENTERS_MAX = 20;
 /** The media operator's timer and message for a set's screens (issue #269): kept without a session. */
@@ -49,8 +56,8 @@ const PRESENCE_CHANNEL = "songverse:presence:changed";
 
 interface StoredSession extends Omit<SyncSession, "leader" | "screens"> {
   leader: { id: string; name: string; conn: string };
-  /** The media operator running the screens (issue #275), by connection. */
-  screens?: { id: string; name: string; conn: string; exclusive: boolean } | null;
+  /** The media operator running the screens (issue #275), by connection; `leftAt`: when that connection went, kept SCREENS_GRACE_MS for it to come back. */
+  screens?: { id: string; name: string; conn: string; exclusive: boolean; leftAt?: number } | null;
 }
 
 /**
@@ -194,7 +201,8 @@ export class SyncServer implements OnModuleDestroy {
     socket.on("close", () => {
       clearTimeout(signIn);
       this.connections.delete(connection.id);
-      if (connection.setId) void this.leaveSet(connection);
+      // Dropped, not left: the screens wait for them a while.
+      if (connection.setId) void this.leaveSet(connection, true);
       if (connection.presence) void this.setPresence(connection, null);
       for (const songVersionId of connection.docs.keys()) void this.leaveDoc(connection, songVersionId);
       if (connection.screen) void this.screenOnline(connection.screen.id, false);
@@ -618,14 +626,19 @@ export class SyncServer implements OnModuleDestroy {
     return false;
   }
 
-  private async leaveSet(connection: Connection) {
+  /** Out of its set; `dropped`: its connection went (rather than it leaving, or losing the set), so the screens it runs wait for it. */
+  private async leaveSet(connection: Connection, dropped = false) {
     const setId = connection.setId;
     if (!setId) return;
     connection.setId = null;
-    // The operator gone: the screens are the leader's again (issue #275).
+    // The operator gone: the screens wait for them a while (SCREENS_GRACE_MS), then are the leader's again (issue #275).
     await this.withSetLock(setId, async () => {
       const session = await this.read(setId);
-      if (session?.screens?.conn === `${this.instance}:${connection.id}`) await redis().set(sessionKey(setId), JSON.stringify({ ...session, rev: session.rev + 1, screens: null }), "EX", SESSION_TTL_S);
+      if (session?.screens?.conn !== `${this.instance}:${connection.id}`) return;
+      await redis().set(sessionKey(setId), JSON.stringify({ ...session, rev: session.rev + 1, screens: dropped ? { ...session.screens, leftAt: Date.now() } : null }), "EX", SESSION_TTL_S);
+      if (!dropped) return;
+      // Not back by then: everyone's told they're the leader's again (read() leaves them out from then on).
+      setTimeout(() => void this.changed(setId).catch(() => undefined), SCREENS_GRACE_MS + 500).unref?.();
     }).catch(() => undefined);
     await redis().hdel(membersKey(setId), `${this.instance}:${connection.id}`).catch(() => undefined);
     await this.changed(setId);
@@ -682,7 +695,7 @@ export class SyncServer implements OnModuleDestroy {
     if (message.presenting !== undefined) {
       if (message.presenting !== null && !validPresenting(message.presenting)) return this.send(connection, { type: "error", code: "bad-request", message: "Invalid presenting" });
       // Control locked to an operator (issues #275, #305): the leader's Live waits.
-      if (current.screens?.exclusive && current.screens.conn !== `${this.instance}:${connection.id}`) return this.send(connection, { type: "error", code: "forbidden", message: `${current.screens.name} runs the screens` });
+      if (current.screens?.exclusive && current.screens.id !== connection.user!.id) return this.send(connection, { type: "error", code: "forbidden", message: `${current.screens.name} runs the screens` });
       if (this.stale(connection, current, message.presentingBasedOn)) return;
       if (!samePresenting(current.presenting ?? null, message.presenting)) {
         next.presenting = message.presenting;
@@ -724,8 +737,9 @@ export class SyncServer implements OnModuleDestroy {
       });
     }
     // Giving them back: only who has them. Locking them: not while someone else has them locked.
-    if (control === null && current.screens?.conn !== conn) return;
-    if (current.screens?.exclusive && current.screens.conn !== conn) return this.send(connection, { type: "error", code: "forbidden", message: `${current.screens.name} runs the screens` });
+    // Who has them is a person: back from a dropped connection, they take them again.
+    if (control === null && current.screens?.id !== connection.user!.id) return;
+    if (current.screens?.exclusive && current.screens.id !== connection.user!.id) return this.send(connection, { type: "error", code: "forbidden", message: `${current.screens.name} runs the screens` });
     await this.write(setId, { ...current, rev: current.rev + 1, screens: control === null ? null : { id: connection.user!.id, name: connection.user!.name, conn, exclusive: control === "exclusive" } });
   }
 
@@ -745,7 +759,7 @@ export class SyncServer implements OnModuleDestroy {
       const current = await this.read(setId);
       if (!current) return this.send(connection, { type: "error", code: "forbidden", message: "Nobody's leading this set yet: take the screens first" });
       if (!this.mayPresent(connection, current)) {
-        const locked = current.screens?.exclusive && current.screens.conn !== `${this.instance}:${connection.id}`;
+        const locked = current.screens?.exclusive && current.screens.id !== connection.user?.id;
         return this.send(connection, { type: "error", code: "forbidden", message: locked ? `${current.screens!.name} runs the screens` : "Take the screens first" });
       }
       if (this.stale(connection, current, basedOn as number | undefined)) return;
@@ -780,7 +794,8 @@ export class SyncServer implements OnModuleDestroy {
   private mayPresent(connection: Connection, session: StoredSession): boolean {
     const conn = `${this.instance}:${connection.id}`;
     if (!connection.user) return false;
-    if (session.screens?.exclusive && session.screens.conn !== conn) return false;
+    // Locked to someone (issue #305): to them, on whichever of their devices - one they came back on after a drop too.
+    if (session.screens?.exclusive && session.screens.id !== connection.user.id) return false;
     return connection.canLead || connection.canOperate || session.leader.conn === conn || !!session.presenters?.some((one) => one.id === connection.user!.id);
   }
 
@@ -851,9 +866,13 @@ export class SyncServer implements OnModuleDestroy {
     await this.changed(setId);
   }
 
+  /** The session; screens whose operator left more than SCREENS_GRACE_MS ago are the leader's again. */
   private async read(setId: string): Promise<StoredSession | null> {
     const raw = await redis().get(sessionKey(setId));
-    return raw ? (JSON.parse(raw) as StoredSession) : null;
+    if (!raw) return null;
+    const session = JSON.parse(raw) as StoredSession;
+    if (session.screens?.leftAt !== undefined && Date.now() - session.screens.leftAt >= SCREENS_GRACE_MS) session.screens = null;
+    return session;
   }
 
   private async write(setId: string, session: StoredSession) {
@@ -921,7 +940,7 @@ export class SyncServer implements OnModuleDestroy {
       ? {
           ...stored,
           leader: { id: stored.leader.id, name: stored.leader.name, online: present.some((member) => member.conn === stored.leader.conn) },
-          screens: stored.screens ? { id: stored.screens.id, name: stored.screens.name, exclusive: stored.screens.exclusive } : null,
+          screens: stored.screens ? { id: stored.screens.id, name: stored.screens.name, exclusive: stored.screens.exclusive, ...(stored.screens.leftAt !== undefined && { online: false }) } : null,
         }
       : null;
     for (const connection of local) {

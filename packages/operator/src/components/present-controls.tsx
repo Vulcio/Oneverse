@@ -119,7 +119,7 @@ export function PresentControls({
     <section className="flex shrink-0 flex-col gap-2 border-t-2 border-t-primary bg-card px-2 py-2 sm:px-4" aria-label={t("screens.presenting")} data-testid="present-panel" data-slide={slide} data-black={String(presenting.black)}>
       {locked ? (
         <p className="text-xs text-muted-foreground" data-testid="present-locked">
-          {t("screens.operator.lockedBy", { name: sync.session?.screens?.name })}
+          {t(sync.session?.screens?.online === false ? "screens.operator.lockedByOffline" : "screens.operator.lockedBy", { name: sync.session?.screens?.name })}
         </p>
       ) : null}
       <fieldset disabled={locked} className="contents">

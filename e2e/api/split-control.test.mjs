@@ -95,7 +95,33 @@ try {
   desk.send({ type: "present", presenting: { itemId, slide: 0, black: true }, basedOn: 4 });
   s = await sessionWhere(desk, (m) => m.session?.presenting?.black === true);
   check("the desk still presents", s?.session.presentingRev === 5);
-  desk.send({ type: "screens", control: null });
+
+  // The desk's connection drops (a Wi-Fi blip): the lock waits for it rather than falling to the singer.
+  singer.drain();
+  desk.close();
+  s = await sessionWhere(singer, (m) => m.session?.screens?.online === false);
+  check("the desk drops: the screens stay locked to it, shown offline", s?.session.screens.exclusive === true && s.session.screens.name === "Desk" && s.canPresent === false, JSON.stringify({ screens: s?.session.screens, canPresent: s?.canPresent }));
+  singer.drain();
+  singer.send({ type: "present", presenting: { itemId, slide: 1, black: false }, basedOn: 5 });
+  e = await singer.next((m) => m.type === "error");
+  check("…the singer still can't move them meanwhile", e?.code === "forbidden" && e.message === "Desk runs the screens", JSON.stringify(e));
+  const desk2 = await joined(operator);
+  s = await sessionWhere(desk2, () => true);
+  check("back on a new connection: the desk may present at once", s?.canPresent === true && s.screensMine === false, JSON.stringify({ canPresent: s?.canPresent, screensMine: s?.screensMine }));
+  desk2.send({ type: "screens", control: "exclusive" });
+  s = await sessionWhere(desk2, (m) => m.screensMine === true);
+  check("…and takes the lock back, online again", s?.session.screens.exclusive === true && s.session.screens.online === undefined, JSON.stringify(s?.session.screens));
+
+  // Leaving on purpose (closing the console) gives them back at once.
+  singer.drain();
+  desk2.send({ type: "leave" });
+  s = await sessionWhere(singer, (m) => !m.session?.screens);
+  check("the desk leaves the set: the singer presents again at once", s?.canPresent === true, String(s?.canPresent));
+  const desk3 = await joined(operator);
+  await sessionWhere(desk3, () => true);
+  desk3.send({ type: "screens", control: "exclusive" });
+  await sessionWhere(singer, (m) => m.session?.screens?.exclusive === true);
+  desk3.send({ type: "screens", control: null });
   s = await sessionWhere(singer, (m) => !m.session?.screens);
   check("given back: the singer presents again", s?.canPresent === true, String(s?.canPresent));
 

@@ -86,9 +86,11 @@ export interface SyncSession {
    * Who runs the screens besides the leader (issue #275): a media operator,
    * sharing them, or alone (exclusive: control is locked to them, issue #305 -
    * everyone else's present commands are refused, and Live says so). Null or
-   * left out: whoever may present presents.
+   * left out: whoever may present presents. A lock is the person's, on any of
+   * their devices. `online: false`: their connection dropped; the screens wait
+   * a minute for their console to take them back, then are the leader's again.
    */
-  screens?: { id: string; name: string; exclusive: boolean } | null;
+  screens?: { id: string; name: string; exclusive: boolean; online?: boolean } | null;
 }
 
 /**
@@ -432,6 +434,25 @@ export type SyncServerMessage =
   | { type: "notes"; songVersionId: string }
   /** `stale` (issue #305): a present command based on what the screens no longer show; the session that follows has what they show now. */
   | { type: "error"; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected" | "stale"; message: string };
+
+/**
+ * The screens this device runs, after a session message: kept while they're
+ * its own; taken back when its connection dropped and they still wait for
+ * this person (`online: false`); forgotten once someone else has them, or
+ * nobody does.
+ */
+export function resumeScreens(
+  message: { session: SyncSession | null; screensMine?: boolean },
+  userId: string | null,
+  held: "shared" | "exclusive" | null,
+  take: (control: "shared" | "exclusive") => void,
+): "shared" | "exclusive" | null {
+  const screens = message.session?.screens;
+  if (message.screensMine && screens) return screens.exclusive ? "exclusive" : "shared";
+  if (!held || !screens || screens.id !== userId) return null;
+  if (screens.online === false) take(held);
+  return held;
+}
 
 /** One ping's round trip: sent and received on the device's clock, `at` on the server's (all ms). */
 export interface ClockSample {

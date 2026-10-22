@@ -137,7 +137,7 @@ function ControlBar() {
         {mine
           ? t(screens?.exclusive ? "screens.operator.youRunAlone" : "screens.operator.youRunShared")
           : screens
-            ? t("screens.operator.otherRuns", { name: screens.name })
+            ? t(screens.online === false ? "screens.operator.otherRunsOffline" : "screens.operator.otherRuns", { name: screens.name })
             : session
               ? t("screens.operator.leaderRuns", { name: session.leader.name })
               : t("screens.operator.nobodyRuns")}
@@ -416,7 +416,7 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
       </div>
       {!canPresent && session?.screens?.exclusive ? (
         <p className="text-xs text-muted-foreground" data-testid="operator-locked">
-          {t("screens.operator.lockedBy", { name: session.screens.name })}
+          {t(session.screens.online === false ? "screens.operator.lockedByOffline" : "screens.operator.lockedBy", { name: session.screens.name })}
         </p>
       ) : null}
       {songNotes.length > 0 ? <NotesList notes={songNotes} /> : null}

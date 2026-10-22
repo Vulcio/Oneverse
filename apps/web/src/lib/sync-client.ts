@@ -1,5 +1,6 @@
 import {
   clockOffset,
+  resumeScreens,
   SYNC_PATH,
   sharedMetronomeSettings,
   type ClockSample,
@@ -97,6 +98,8 @@ let resyncTimer: ReturnType<typeof setInterval> | null = null;
 let samples: ClockSample[] = [];
 let pingId = 0;
 let userId: string | null = null;
+/** The screens this device runs (issue #275), to take back after a dropped connection: see resumeScreens. */
+let heldScreens: "shared" | "exclusive" | null = null;
 /** Joined the set on this connection: once the clocks' offset is known, so what's played from the session is in time from the start. */
 let joined = false;
 /** This device led the session: after a reload or a dropped connection, it takes the lead back. */
@@ -212,6 +215,7 @@ function receive(message: SyncServerMessage) {
       // What the screens show, as the server has it (issue #305): what this device's next command is based on.
       presentRev = message.session?.presentingRev ?? 0;
       presentShown = message.session?.presenting ?? null;
+      heldScreens = resumeScreens(message, userId, heldScreens, (control) => send({ type: "screens", control }));
       emit({
         status: "on",
         error: null,
@@ -403,9 +407,12 @@ export function enableSync(setId: string, lead = false, { follow = true }: { fol
 
 export function disableSync() {
   wantLead = false;
+  heldScreens = null;
   if (retry) clearTimeout(retry);
   retry = null;
   stopTimers();
+  // Left on purpose: screens it ran are the leader's at once, not kept for it to come back.
+  send({ type: "leave" });
   const ws = socket;
   socket = null;
   ws?.close();
@@ -463,7 +470,9 @@ export function allowPresenter(userId: string, allow: boolean) {
 
 /** The media operator (issue #275) takes the screens, shared or alone, or (null) gives them back. */
 export function takeScreens(control: "shared" | "exclusive" | null) {
-  if (state.canOperate || state.canPresent) send({ type: "screens", control });
+  if (!state.canOperate && !state.canPresent) return;
+  if (control === null) heldScreens = null;
+  send({ type: "screens", control });
 }
 
 /** What the screens show (issues #275, #305), based on what they showed: from anyone who may present. */

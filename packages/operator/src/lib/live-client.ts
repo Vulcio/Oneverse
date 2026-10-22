@@ -1,4 +1,4 @@
-import { clockOffset, SYNC_PATH, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncStageCommand } from "@oneverse/core";
+import { clockOffset, resumeScreens, SYNC_PATH, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncStageCommand } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import type { OperatorHost, OperatorLive } from "../host";
 
@@ -29,6 +29,9 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
   // What the screens show, as this device last had it: what the next command is based on (see Songverse's sync client).
   let presentRev = 0;
   let presentShown: SyncPresenting | null = null;
+  // The screens this device ran, to take back after a dropped connection (the server keeps them a minute), and who we are.
+  let heldScreens: "shared" | "exclusive" | null = null;
+  let userId: string | null = null;
   const listeners = new Set<() => void>();
 
   function emit(next: Partial<OperatorLive>) {
@@ -78,6 +81,7 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
     switch (message.type) {
       case "ready":
         retries = 0;
+        userId = message.userId;
         send({ type: "join", setId: setId! });
         for (let i = 0; i < 4; i++) setTimeout(ping, i * 120);
         pinger = setInterval(ping, PING_EVERY_MS);
@@ -92,6 +96,7 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
         if (message.setId !== setId) return;
         presentRev = message.session?.presentingRev ?? 0;
         presentShown = message.session?.presenting ?? null;
+        heldScreens = resumeScreens(message, userId, heldScreens, (control) => send({ type: "screens", control }));
         emit({
           ready: true,
           error: null,
@@ -130,7 +135,9 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
       presentShown = presenting;
     },
     takeScreens(control) {
-      if (state.canOperate) send({ type: "screens", control });
+      if (!state.canOperate) return;
+      if (control === null) heldScreens = null;
+      send({ type: "screens", control });
     },
     sendStage(command: SyncStageCommand) {
       if (state.canOperate) send({ type: "stage", ...command });
@@ -148,7 +155,10 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
       connect();
     },
     close() {
+      // Left on purpose: screens it ran are the leader's at once, not kept for it to come back.
+      send({ type: "leave" });
       setId = null;
+      heldScreens = null;
       if (retry) clearTimeout(retry);
       if (pinger) clearInterval(pinger);
       retry = pinger = null;
