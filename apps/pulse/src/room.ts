@@ -1,8 +1,9 @@
 import { mayPresent, SYNC_PATH, verifyLivePass, type LiveActor, type LiveCommandOp, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncServerMessage, type SyncSession } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
-import type { Server } from "node:http";
+import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import type { CloudLink } from "./cloud-link.js";
+import type { SetCopy } from "./set-copy.js";
 
 /**
  * Oneverse Pulse's server for the room (issue #247, docs/live-session.md):
@@ -37,12 +38,35 @@ export class Room {
     server: Server,
     private readonly link: CloudLink,
     private readonly setId: string,
+    private readonly set: SetCopy | null = null,
     private readonly now: () => number = Date.now,
   ) {
     this.wss = new WebSocketServer({ server, path: SYNC_PATH, maxPayload: MAX_MESSAGE });
     this.wss.on("connection", (socket) => this.connected(socket));
     // What the cloud says, or the cloud taking the session back: the room hears it.
     link.onSession(() => this.broadcast());
+  }
+
+  /**
+   * The room's HTTP requests: `GET /set`, the set's copy (SetCopy), to
+   * someone with a pass (`Authorization: Pass <pass>`). False when it's not
+   * one of these.
+   */
+  async handle(request: IncomingMessage, response: ServerResponse): Promise<boolean> {
+    if (request.method !== "GET" || request.url !== "/set") return false;
+    const pass = /^Pass (\S+)$/.exec(request.headers.authorization ?? "")?.[1];
+    const key = this.link.passKey;
+    if (!pass || !key || !(await verifyLivePass(pass, key, this.setId, this.now()))) {
+      response.writeHead(401, { "content-type": "application/json" }).end(JSON.stringify({ message: "Enter with a pass for this set" }));
+      return true;
+    }
+    const copy = this.set?.current;
+    if (!copy) {
+      response.writeHead(404, { "content-type": "application/json" }).end(JSON.stringify({ message: "Pulse has no copy of this set yet" }));
+      return true;
+    }
+    response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }).end(JSON.stringify(copy));
+    return true;
   }
 
   close() {

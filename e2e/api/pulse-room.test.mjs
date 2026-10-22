@@ -8,6 +8,7 @@ import { API, api, call, check, finish, stamp, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 import { CloudLink } from "../../apps/pulse/dist/cloud-link.js";
 import { Room } from "../../apps/pulse/dist/room.js";
+import { SetCopy } from "../../apps/pulse/dist/set-copy.js";
 
 const leader = await user("Room host");
 const guest = await user("Room visitor");
@@ -40,10 +41,14 @@ const link = new CloudLink({
     return current;
   },
 });
-const server = createServer();
-const room = new Room(server, link, set.id);
+const copy = new SetCopy({ apiUrl: API, setId: set.id, token: async () => leader.bearer });
+const server = createServer(async (request, response) => {
+  if (!(await room.handle(request, response))) response.writeHead(404).end();
+});
+const room = new Room(server, link, set.id, copy);
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const ROOM = `ws://127.0.0.1:${server.address().port}/sync`;
+const ROOM_HTTP = `http://127.0.0.1:${server.address().port}`;
 
 /** A device on Pulse's /sync. */
 async function roomDevice() {
@@ -99,6 +104,10 @@ try {
   stranger.send({ type: "join", setId: set.id });
   check("…nor into the set", (await stranger.next((m) => m.type === "error"))?.code === "unauthorized");
 
+  check("Pulse keeps a copy of the set", (await copy.refresh()) && copy.current?.songs.length === 1);
+  const noPass = await fetch(`${ROOM_HTTP}/set`);
+  check("…not given to someone without a pass", noPass.status === 401, String(noPass.status));
+
   down = true;
   current.close();
   check("the cloud gone: the room runs the session", await until(() => link.status === "room"));
@@ -117,6 +126,10 @@ try {
   const ack = await roomTablet.next((m) => m.type === "ack" || m.type === "error");
   check("the room's Next: applied by Pulse", ack?.type === "ack", JSON.stringify(ack));
   check("…and the room hears it", !!(await roomTablet.next((m) => m.type === "session" && m.session?.presenting?.slide === 2)));
+
+  const kept = await fetch(`${ROOM_HTTP}/set`, { headers: { authorization: `Pass ${tablet.pass}` } });
+  const body = kept.ok ? await kept.json() : null;
+  check("offline, the set's copy from Pulse, to a pass, without anyone's notes", body?.songs?.[0]?.item.id === itemId && Object.keys(body.notes).length === 0, String(kept.status));
 
   // The guest, who can't edit the set, can't move the screens in the room either.
   const roomPhone = await roomDevice();

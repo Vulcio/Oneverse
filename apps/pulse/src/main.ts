@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { CloudLink } from "./cloud-link.js";
 import { Room } from "./room.js";
+import { SET_COPY_EVERY_MS, SetCopy } from "./set-copy.js";
 
 /**
  * Oneverse Pulse's live engine (issue #247), the Node process on the mini PC:
@@ -12,6 +13,7 @@ import { Room } from "./room.js";
  * PULSE_SET_ID      the set it mirrors
  * PULSE_NODE_ID     this Pulse's id (8 to 64 letters, digits, - and _)
  * PULSE_TOKEN       an API token of someone who can edit the set, until Pulse is paired like a screen
+ * PULSE_DATA_DIR    where the set's copy is kept (./pulse-data)
  * PULSE_ROOM_PORT   the room's server's port (8788); PULSE_ROOM_HOST its address (0.0.0.0: the venue's network)
  */
 function required(name: string): string {
@@ -23,27 +25,32 @@ function required(name: string): string {
   return value;
 }
 
-const link = new CloudLink({
-  apiUrl: required("ONEVERSE_API_URL"),
-  setId: required("PULSE_SET_ID"),
-  nodeId: required("PULSE_NODE_ID"),
-  token: async () => process.env.PULSE_TOKEN ?? null,
-  log: (line) => console.log(line),
-});
+const apiUrl = required("ONEVERSE_API_URL");
+const setId = required("PULSE_SET_ID");
+const token = async () => process.env.PULSE_TOKEN ?? null;
+const log = (line: string) => console.log(line);
+const link = new CloudLink({ apiUrl, setId, nodeId: required("PULSE_NODE_ID"), token, log });
+const set = new SetCopy({ apiUrl, setId, token, dataDir: process.env.PULSE_DATA_DIR ?? "pulse-data", log });
+await set.load();
+// The set fetched again as soon as the cloud's there, and every few minutes while it is.
+link.onStatus((status) => void (status === "online" && set.refresh()));
+const refresher = setInterval(() => void (link.status === "online" && set.refresh()), SET_COPY_EVERY_MS);
 link.start();
 
-const server = createServer((request, response) => {
+const server = createServer(async (request, response) => {
+  if (await room.handle(request, response)) return;
   if (request.url === "/health") {
     response.writeHead(200, { "content-type": "application/json" });
     return response.end(JSON.stringify({ cloud: link.status, session: link.engine.state?.sessionId ?? null, epoch: link.engine.state?.epoch ?? null }));
   }
   response.writeHead(404).end();
 });
-const room = new Room(server, link, required("PULSE_SET_ID"));
+const room = new Room(server, link, setId, set);
 server.listen(Number(process.env.PULSE_ROOM_PORT ?? 8788), process.env.PULSE_ROOM_HOST ?? "0.0.0.0");
 
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.on(signal, () => {
+    clearInterval(refresher);
     room.close();
     server.close();
     link.stop();
