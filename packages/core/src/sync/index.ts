@@ -74,6 +74,12 @@ export interface SyncPresenting {
   slide: number;
   /** The screens go black (between songs, or while someone speaks). */
   black: boolean;
+  /**
+   * The item's slides as the sender cut them (slideKey(), issue #247): a
+   * screen whose own differ loads the item again, and still different, shows
+   * no words rather than another slide's. Left out by older clients.
+   */
+  slideKey?: string;
 }
 
 /** A screen as it's told what it is (issue #186). */

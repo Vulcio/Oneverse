@@ -1,7 +1,8 @@
-import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
+import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, slideKey, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
 import { useEffect, useRef, useState } from "react";
 import { getApiUrl } from "@oneverse/app/public-env";
 import { screenReport } from "./screen-report";
+import { setItemView } from "./set-items";
 
 /**
  * A screen's side of issue #186, in the browser of whatever drives the big
@@ -222,6 +223,8 @@ export function useScreenDisplay(): ScreenDisplayState {
     let firstReport: ReturnType<typeof setTimeout> | null = null;
     let current: ScreenCurrent | null = null;
     let online = false;
+    /** The words last loaded again for: a key this screen still can't match isn't fetched over and over. */
+    let reloadedFor: string | null = null;
 
     const forget = () => {
       keepToken(null);
@@ -276,9 +279,15 @@ export function useScreenDisplay(): ScreenDisplayState {
           online = true;
           presenting.current = message.session?.presenting ?? null;
           stage.current = message.stage ?? null;
-          // A song it doesn't have (added since): loaded again.
+          // A song it doesn't have (added since), or whose words aren't the presenter's (edited since, issue #247): loaded again, once for those words.
           const itemId = presenting.current?.itemId;
-          if (itemId && current?.set && !current.set.songs.some((song) => song.item.id === itemId)) void load();
+          const view = itemId ? current?.set?.songs.find((song) => song.item.id === itemId) : undefined;
+          const wanted = presenting.current?.slideKey;
+          if (itemId && current?.set && !view) void load();
+          else if (view && wanted && wanted !== reloadedFor && slideKey(setItemView(view).slides) !== wanted) {
+            reloadedFor = wanted;
+            void load();
+          }
           show();
         }
       };

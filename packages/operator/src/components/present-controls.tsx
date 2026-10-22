@@ -1,4 +1,4 @@
-import { setItemSlides, stepSlide, structureOf, type RenderedChart, type SetItemPassage, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
+import { setItemSlides, slideKey, stepSlide, structureOf, type RenderedChart, type SetItemPassage, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
 import { ChevronLeft, ChevronRight, MonitorOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -52,11 +52,13 @@ export function PresentControls({
     if (!confirmed || (sent && confirmed.itemId === sent.itemId && confirmed.slide === sent.slide && confirmed.black === sent.black)) setSent(null);
   }, [confirmed]);
   const presenting = confirmed ? (sent ?? confirmed) : null;
-  const show = (next: SyncPresenting) => {
-    setSent(next);
-    present(next);
-  };
   const slides = useMemo(() => setItemSlides({ chart, text, passage }), [chart, text, passage]);
+  // With what the slides say (issue #247): a screen whose own differ shows no words rather than the wrong ones.
+  const show = (next: SyncPresenting) => {
+    const keyed = { ...next, slideKey: slideKey(slides) };
+    setSent(keyed);
+    present(keyed);
+  };
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const screens = sync.ready ? sync.members.filter((member) => member.screen) : [];
   // An operator running the screens alone (issues #275, #305): this Live shows what's on them, and waits.

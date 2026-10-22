@@ -657,6 +657,101 @@
         }
       ]
     },
+    "slideKey": {
+      "about": "What an item's slides say, in a few characters (issue #247): their count, then a 32-bit FNV-1a hash (base 36) of their lines - each slide's joined by a line feed, the slides by a form feed, hashed as UTF-16 code units. Labels don't count.",
+      "params": [
+        "slides"
+      ],
+      "cases": [
+        {
+          "name": "no slides",
+          "args": [
+            []
+          ],
+          "expected": "0-ztntfp"
+        },
+        {
+          "name": "two slides",
+          "args": [
+            [
+              {
+                "lines": [
+                  "Amazing grace",
+                  "how sweet the sound"
+                ]
+              },
+              {
+                "lines": [
+                  "That saved a wretch",
+                  "like me"
+                ]
+              }
+            ]
+          ],
+          "expected": "2-e86451"
+        },
+        {
+          "name": "a word changed",
+          "args": [
+            [
+              {
+                "lines": [
+                  "Amazing grace",
+                  "how sweet the sound"
+                ]
+              },
+              {
+                "lines": [
+                  "That saved a soul",
+                  "like me"
+                ]
+              }
+            ]
+          ],
+          "expected": "2-1fzp375"
+        },
+        {
+          "name": "the same lines cut differently",
+          "args": [
+            [
+              {
+                "lines": [
+                  "Amazing grace"
+                ]
+              },
+              {
+                "lines": [
+                  "how sweet the sound"
+                ]
+              },
+              {
+                "lines": [
+                  "That saved a wretch",
+                  "like me"
+                ]
+              }
+            ]
+          ],
+          "expected": "3-10y51av"
+        },
+        {
+          "name": "accents and an instrumental",
+          "args": [
+            [
+              {
+                "lines": [
+                  "Gloire à Dieu"
+                ]
+              },
+              {
+                "lines": []
+              }
+            ]
+          ],
+          "expected": "2-1j520as"
+        }
+      ]
+    },
     "passageSlides": {
       "about": "A passage item's slides (issues #301, #310): each verse on slides of its own, or as many together as its template says (never across chapters, each starting with its number), its words on lines of at most 44 characters, 4 lines a slide for one verse and up to 10 for several, labelled with its place; none when its Bible may not be shown on screens.",
       "params": [

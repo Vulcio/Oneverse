@@ -23,7 +23,7 @@ import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronom
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, liveSessionAt, mayPresent } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
 import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
@@ -1332,6 +1332,19 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "an empty body", args: [{ title: "Pause", body: "  " }] },
         ],
       },
+      slideKey: {
+        about:
+          "What an item's slides say, in a few characters (issue #247): their count, then a 32-bit FNV-1a hash (base 36) of their lines - each slide's joined by a line feed, the slides by a form feed, hashed as UTF-16 code units. Labels don't count.",
+        params: ["slides"],
+        run: slideKey,
+        cases: [
+          { name: "no slides", args: [[]] },
+          { name: "two slides", args: [[{ lines: ["Amazing grace", "how sweet the sound"] }, { lines: ["That saved a wretch", "like me"] }]] },
+          { name: "a word changed", args: [[{ lines: ["Amazing grace", "how sweet the sound"] }, { lines: ["That saved a soul", "like me"] }]] },
+          { name: "the same lines cut differently", args: [[{ lines: ["Amazing grace"] }, { lines: ["how sweet the sound"] }, { lines: ["That saved a wretch", "like me"] }]] },
+          { name: "accents and an instrumental", args: [[{ lines: ["Gloire à Dieu"] }, { lines: [] }]] },
+        ],
+      },
       passageSlides: {
         about:
           "A passage item's slides (issues #301, #310): each verse on slides of its own, or as many together as its template says (never across chapters, each starting with its number), its words on lines of at most 44 characters, 4 lines a slide for one verse and up to 10 for several, labelled with its place; none when its Bible may not be shown on screens.",
@@ -2305,6 +2318,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "Next pressed twice from the same slide: the second is stale", args: [LIVE_SESSION, LIVE_OPERATOR, { kind: "present", presenting: { itemId: "item_1", slide: 3, black: false }, basedOn: 3 }, 1000] },
           { name: "a presenter moves the screens", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "present", presenting: { itemId: "item_1", slide: 3, black: false }, basedOn: 4 }, 1000] },
           { name: "the same slide again is no change", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "present", presenting: { itemId: "item_1", slide: 2, black: false } }, 1000] },
+          { name: "the same slide of words edited since (another slide key): a change, the key kept", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "present", presenting: { itemId: "item_1", slide: 2, black: false, slideKey: "4-1x2y3z" } }, 1000] },
           { name: "a singer can't present", args: [LIVE_SESSION, LIVE_SINGER, { kind: "present", presenting: null }, 1000] },
           { name: "nobody can present without a session", args: [null, LIVE_EDITOR, { kind: "present", presenting: null }, 1000] },
           { name: "a slide that isn't a whole number is refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "present", presenting: { itemId: "item_1", slide: 1.5, black: false } }, 1000] },

@@ -174,6 +174,24 @@ export function setItemSlides(
 }
 
 /**
+ * What an item's slides say, in a few characters (issue #247): the same on
+ * every client that cut the same words the same way. Sent with "this item,
+ * slide N", so a screen whose own slides differ (the song edited since it
+ * loaded it) knows slide N isn't the words meant. Only the words count: a
+ * label or a chord changed doesn't change what's read.
+ */
+export function slideKey(slides: Pick<ScreenSlide, "lines">[]): string {
+  // FNV-1a, 32 bits: no crypto needed, the same in every language.
+  let hash = 0x811c9dc5;
+  const text = slides.map((slide) => slide.lines.join("\n")).join("\f");
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `${slides.length.toString(36)}-${hash.toString(36)}`;
+}
+
+/**
  * The slide `slide` moves to, going `by` slides on, kept within the song;
  * null when it would leave it (the leader goes to the next or previous song).
  */

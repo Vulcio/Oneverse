@@ -1,6 +1,7 @@
 import {
   clockOffset,
   resumeScreens,
+  samePresenting,
   SYNC_PATH,
   sharedMetronomeSettings,
   syncDeviceId,
@@ -484,10 +485,6 @@ export function presentScreens(presenting: SyncPresenting | null) {
   presentShown = presenting;
 }
 
-function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
-  if (!a || !b) return a === b;
-  return a.itemId === b.itemId && a.slide === b.slide && a.black === b.black;
-}
 
 /** The media operator (issue #269): the set's timer and message for its screens; anyone who can lead the set, leading or not. */
 export function sendStage(command: SyncStageCommand) {

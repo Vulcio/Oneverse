@@ -12,6 +12,7 @@ import {
   type SyncStageCommand,
   type TeamMember,
   type TeamPosition,
+  slideKey,
 } from "@oneverse/core";
 import { ChevronLeft, ChevronRight, Crown, Keyboard, Layers, Minus, MonitorOff, MonitorUp, Pause, Play, Plus, RotateCcw, Send, Square, Timer, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -173,14 +174,14 @@ function ControlBar() {
   );
 }
 
-/** Each item's slides (issue #277): what the arrows step through, from one song into the next. */
+/** Each item's slides (issue #277): what the arrows step through, from one song into the next, and what they say (issue #247). */
 function useSetSlides(copy: SetlistOfflineCopy) {
   return useMemo(
     () =>
-      copy.songs.map((view) => ({
-        itemId: view.item.id,
-        count: setItemView(view).slides.length,
-      })),
+      copy.songs.map((view) => {
+        const { slides } = setItemView(view);
+        return { itemId: view.item.id, count: slides.length, key: slideKey(slides) };
+      }),
     [copy],
   );
 }
@@ -233,7 +234,9 @@ function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: Se
     if (event.ctrlKey || event.metaKey || event.altKey || target?.closest("input, textarea, select, [contenteditable=true], [aria-roledescription=sortable]")) return;
     const presenting = sent.current.presenting !== undefined ? sent.current.presenting : (sync.session?.presenting ?? null);
     const layers = sent.current.layers ?? readSyncLayers(sync.stage?.layers);
-    const show = (next: SyncPresenting | null) => {
+    const show = (shown: SyncPresenting | null) => {
+      // With what its slides say (issue #247).
+      const next = shown && { ...shown, slideKey: slides.find((one) => one.itemId === shown.itemId)?.key };
       sent.current.presenting = next;
       presentScreens(next);
     };
@@ -362,7 +365,7 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
   if (view.passage && slides.length === 0) return <p className="text-sm text-muted-foreground" data-testid="operator-passage-hidden">{t(view.passage.projection ? "sets.passage.missing" : "sets.passage.notProjected")}</p>;
   const itemId = view.item.id;
   const here = presenting?.itemId === itemId ? presenting.slide : null;
-  const send = (slide: number) => presentScreens({ itemId, slide, black: false });
+  const send = (slide: number) => presentScreens({ itemId, slide, black: false, slideKey: slideKey(slides) });
   // The notes (issue #275): those on the song, filtered by their writers' team position.
   const holders = new Set(position ? members.filter((member) => member.positionIds?.includes(position)).map((member) => member.userId) : []);
   const notes = notesShown && view.song ? (copy.notes[view.song.id]?.notes ?? []).filter((note) => !note.resolved && (!position || holders.has(note.author.id))) : [];

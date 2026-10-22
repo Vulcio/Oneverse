@@ -1,4 +1,4 @@
-import { clockOffset, resumeScreens, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncStageCommand } from "@oneverse/core";
+import { clockOffset, resumeScreens, samePresenting, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncStageCommand } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import type { OperatorHost, OperatorLive } from "../host";
 
@@ -170,7 +170,3 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
   };
 }
 
-function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
-  if (!a || !b) return a === b;
-  return a.itemId === b.itemId && a.slide === b.slide && a.black === b.black;
-}

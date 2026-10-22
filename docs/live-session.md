@@ -265,7 +265,12 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    Worker every minute (`record-live-sessions`); sessions ended more than 90 days ago are
    deleted with their record by the hourly clean-up. Both can be run from Admin > Background
    jobs.
-7. `slideKey` in `presenting`.
+7. `slideKey` in `presenting`. **Done**: `slideKey(slides)` in core hashes the slides' words
+   (FNV-1a, shared cases in `screens.json`); the operator's controls and the console send it, a
+   screen app whose own key differs loads the set again (once per key) and shows no words while
+   it still differs, and the same slide with another key is a change (`samePresenting`, now
+   shared by the clients). Pulse's player screen doesn't check it yet: it moves to it
+   with the `LiveClient` (step 8).
 8. `LiveClient` in core, and the apps moved onto it.
 9. Pulse's mirror and takeover: the same engine in Node on the mini PC.
 

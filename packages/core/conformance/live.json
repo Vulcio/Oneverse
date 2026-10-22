@@ -688,6 +688,85 @@
           }
         },
         {
+          "name": "the same slide of words edited since (another slide key): a change, the key kept",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_p",
+              "name": "Pia",
+              "device": "i:4",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "present",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false,
+                "slideKey": "4-1x2y3z"
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false,
+                "slideKey": "4-1x2y3z"
+              },
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
           "name": "a singer can't present",
           "args": [
             {

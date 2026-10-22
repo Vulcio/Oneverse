@@ -62,7 +62,7 @@ La présentation passe par la [Synchro](/fr/sets/#jouer-synchronisé) : les écr
 - **Arrêter la présentation**, dans le menu Synchro, laisse les écrans afficher le nom de la liste.
 - Quand l'[opérateur média](/fr/screens/#qui-pilote-les-écrans) a pris les écrans seul, le panneau le dit et ses commandes attendent qu'il les rende.
 
-D'autres peuvent présenter à côté de vous. Dans le menu Synchro, quand vous menez, **Présentent aussi** liste les personnes de la liste : cochez quelqu'un pour qu'il présente aussi depuis son propre Live, pour cette session ; décochez-le pour arrêter. Qui peut modifier la liste, ou dont le rôle gère les écrans (voir [L'opérateur média](/fr/screens/#lopérateur-média)), présente sans qu'on le lui demande. Chaque **Diapositive suivante** fait avancer les écrans depuis ce qu'ils montrent : quand deux personnes appuient au même moment, les écrans avancent une fois, pas deux.
+D'autres peuvent présenter à côté de vous. Dans le menu Synchro, quand vous menez, **Présentent aussi** liste les personnes de la liste : cochez quelqu'un pour qu'il présente aussi depuis son propre Live, pour cette session ; décochez-le pour arrêter. Qui peut modifier la liste, ou dont le rôle gère les écrans (voir [L'opérateur média](/fr/screens/#lopérateur-média)), présente sans qu'on le lui demande. Chaque **Diapositive suivante** fait avancer les écrans depuis ce qu'ils montrent : quand deux personnes appuient au même moment, les écrans avancent une fois, pas deux. Si quelqu'un modifie le chant pendant qu'il est affiché, un écran qui a encore les anciennes paroles recharge le chant ; tant qu'il n'a pas les paroles que vous voyez, il n'en affiche aucune plutôt que les mauvaises.
 
 ## Ce qu'affichent les écrans
 

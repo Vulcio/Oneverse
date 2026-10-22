@@ -51,7 +51,7 @@ export const LIVE_PRESENTERS_MAX = 20;
 const id = z.string().max(64);
 
 /** A slide of a set item, or black (issue #186). */
-export const SyncPresentingSchema = z.object({ itemId: id, slide: z.int().min(0).max(9_999), black: z.boolean() });
+export const SyncPresentingSchema = z.object({ itemId: id, slide: z.int().min(0).max(9_999), black: z.boolean(), slideKey: z.string().max(32).optional() });
 
 /** The leader's metronome: its timeline, and its settings as the metronome reads them (the rest kept as sent). */
 export const SyncMetronomeSchema = z.object({
@@ -147,9 +147,10 @@ export function mayPresent(session: LiveSessionState | null, actor: LiveActor): 
 }
 
 /** The same slide, black or not: no change, so no new revision (issue #305). */
-function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
+/** Whether two "this item, slide N" say the same: the same slide, black or not, of the same words (issue #247). */
+export function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
   if (!a || !b) return a === b;
-  return a.itemId === b.itemId && a.slide === b.slide && a.black === b.black;
+  return a.itemId === b.itemId && a.slide === b.slide && a.black === b.black && a.slideKey === b.slideKey;
 }
 
 const refuse = (code: LiveRefusal, message: string): LiveResult => ({ ok: false, code, message });
