@@ -240,9 +240,10 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
 ## Order of work
 
 1. Split the sync server into the gateway and its services, behaviour unchanged (the e2e
-   suites as they are).
+   suites as they are). **Done** (#314).
 2. The reducer and the messages' schemas in core, with conformance cases; the server uses
-   them on today's state.
+   them on today's state. **Done**: `applyLiveOp` in `packages/core/src/live/`, its cases in
+   `conformance/live.json`; the stage's commands still go through `applyStageCommand`.
 3. `LiveSession` and its id; Redis by session; `sessionId` and `epoch` in `session`.
 4. Leases in place of connections.
 5. Commands with ids and acks; the old messages translated; `basedOn` required for new clients.

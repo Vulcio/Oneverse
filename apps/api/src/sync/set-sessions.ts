@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import { applyStageCommand, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, STEM_SPEED_MAX, STEM_SPEED_MIN, type SyncClientMessage, type SyncMember, type SyncMetronome, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand, type SyncStems } from "@oneverse/core";
+import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
@@ -23,25 +23,10 @@ const lockKey = (setId: string) => `songverse:sync:lock:${setId}`;
 const LOCK_MS = 3000;
 /** Deletes the lock only if it's still the one taken (a lock that outlived LOCK_MS may be someone else's). */
 const UNLOCK = 'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end';
-/**
- * How long the screens stay with an operator whose connection dropped (a
- * Wi-Fi blip at the desk, a reload): their console takes them back on
- * reconnecting, and until then a lock stays theirs. After it, they're the
- * leader's again.
- */
-const SCREENS_GRACE_MS = 60_000;
-/** The most people the leader hands presenting to (issue #305). */
-const PRESENTERS_MAX = 20;
 /** The media operator's timer and message for a set's screens (issue #269): kept without a session. */
 const stageKey = (setId: string) => `songverse:sync:stage:${setId}`;
 /** A stage nobody changed for this long is gone: a service, and then some. */
 const STAGE_TTL_S = 12 * 60 * 60;
-
-interface StoredSession extends Omit<SyncSession, "leader" | "screens"> {
-  leader: { id: string; name: string; conn: string };
-  /** The media operator running the screens (issue #275), by connection; `leftAt`: when that connection went, kept SCREENS_GRACE_MS for it to come back. */
-  screens?: { id: string; name: string; conn: string; exclusive: boolean; leftAt?: number } | null;
-}
 
 /**
  * A set's live session (issues #13, #186, #275, #305): who's in the set and
@@ -184,78 +169,24 @@ export class SetSessions {
     const setId = connection.setId;
     if (!setId) return;
     connection.setId = null;
-    // The operator gone: the screens wait for them a while (SCREENS_GRACE_MS), then are the leader's again (issue #275).
-    await this.withSetLock(setId, async () => {
-      const session = await this.read(setId);
-      if (session?.screens?.conn !== `${this.hub.instance}:${connection.id}`) return;
-      await redis().set(sessionKey(setId), JSON.stringify({ ...session, rev: session.rev + 1, screens: dropped ? { ...session.screens, leftAt: Date.now() } : null }), "EX", SESSION_TTL_S);
-      if (!dropped) return;
-      // Not back by then: everyone's told they're the leader's again (read() leaves them out from then on).
-      setTimeout(() => void this.changed(setId).catch(() => undefined), SCREENS_GRACE_MS + 500).unref?.();
-    }).catch(() => undefined);
-    await redis().hdel(membersKey(setId), `${this.hub.instance}:${connection.id}`).catch(() => undefined);
+    if (connection.user) {
+      const { result } = await this.withSetLock(setId, () => this.applyLocked(connection, setId, { kind: "leave", dropped })).catch(() => ({ result: null }));
+      // Not back by then: everyone's told the screens are the leader's again (read() leaves them out from then on).
+      if (result?.ok && result.changed && dropped) setTimeout(() => void this.changed(setId).catch(() => undefined), LIVE_SCREENS_GRACE_MS + 500).unref?.();
+    }
+    await redis().hdel(membersKey(setId), this.hub.member(connection)).catch(() => undefined);
     await this.changed(setId);
   }
 
+  /** Starts a session, or takes over the lead of the one going on. */
   async lead(connection: Connection) {
-    const setId = connection.setId;
-    if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
-    if (!(await this.stillAllowed(connection))) return;
-    if (!connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set leads it" });
-    await this.withSetLock(setId, async () => {
-      const current = await this.read(setId);
-      const session: StoredSession = {
-        rev: (current?.rev ?? 0) + 1,
-        leader: { id: connection.user!.id, name: connection.user!.name, conn: `${this.hub.instance}:${connection.id}` },
-        // Taking over carries on from where it was.
-        metronome: current?.metronome ?? null,
-        stems: current?.stems ?? null,
-        itemId: current?.itemId ?? null,
-        presenting: current?.presenting ?? null,
-        presentingRev: current?.presentingRev ?? 0,
-        // Who the last leader handed presenting to keeps it (issue #305), and an operator running the screens keeps them (issue #275).
-        presenters: current?.presenters ?? [],
-        screens: current?.screens ?? null,
-      };
-      await this.write(setId, session);
-    });
+    await this.command(connection, { kind: "lead" }, "Join a set first");
   }
 
+  /** The leader's metronome, stems, open item and what's presented. */
   async update(connection: Connection, message: Extract<SyncClientMessage, { type: "update" }>) {
-    const setId = connection.setId;
-    if (setId && !(await this.stillAllowed(connection))) return;
-    if (!setId) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only the leader changes the session" });
-    await this.withSetLock(setId, () => this.updateLocked(connection, setId, message));
-  }
-
-  private async updateLocked(connection: Connection, setId: string, message: Extract<SyncClientMessage, { type: "update" }>) {
-    const current = await this.read(setId);
-    if (!current || !connection.canLead || current.leader.conn !== `${this.hub.instance}:${connection.id}`) {
-      return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only the leader changes the session" });
-    }
-    const next: StoredSession = { ...current, rev: current.rev + 1 };
-    if (message.metronome !== undefined) {
-      if (message.metronome !== null && !validMetronome(message.metronome)) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Invalid metronome" });
-      next.metronome = message.metronome;
-    }
-    if (message.stems !== undefined) {
-      if (message.stems !== null && !validStems(message.stems)) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Invalid stems" });
-      next.stems = message.stems;
-    }
-    if (message.itemId !== undefined) next.itemId = typeof message.itemId === "string" ? message.itemId.slice(0, 64) : null;
-    // Another item: its own timer, if it has one, starts (issue #269).
-    if (next.itemId && next.itemId !== current.itemId) await this.itemTimer(setId, next.itemId).catch(() => undefined);
-    if (message.presenting !== undefined) {
-      if (message.presenting !== null && !validPresenting(message.presenting)) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Invalid presenting" });
-      // Control locked to an operator (issues #275, #305): the leader's Live waits.
-      if (current.screens?.exclusive && current.screens.id !== connection.user!.id) return this.hub.send(connection, { type: "error", code: "forbidden", message: `${current.screens.name} runs the screens` });
-      if (this.stale(connection, current, message.presentingBasedOn)) return;
-      if (!samePresenting(current.presenting ?? null, message.presenting)) {
-        next.presenting = message.presenting;
-        next.presentingRev = (current.presentingRev ?? 0) + 1;
-      }
-    }
-    await this.write(setId, next);
+    const { metronome, stems, itemId, presenting, presentingBasedOn } = message;
+    await this.command(connection, { kind: "tempo", metronome, stems, itemId, presenting, basedOn: presentingBasedOn }, "Only the leader changes the session", "forbidden");
   }
 
   /**
@@ -264,36 +195,7 @@ export class SetSessions {
    * one, led by them: someone has to.
    */
   async takeScreens(connection: Connection, control: "shared" | "exclusive" | null) {
-    const setId = connection.setId;
-    if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
-    if (!(await this.stillAllowed(connection))) return;
-    if (!connection.canLead && !connection.canOperate) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set, or runs screens, runs its screens" });
-    if (control !== null && control !== "shared" && control !== "exclusive") return this.hub.send(connection, { type: "error", code: "bad-request", message: "Invalid control" });
-    await this.withSetLock(setId, () => this.takeScreensLocked(connection, setId, control));
-  }
-
-  private async takeScreensLocked(connection: Connection, setId: string, control: "shared" | "exclusive" | null) {
-    const conn = `${this.hub.instance}:${connection.id}`;
-    const current = await this.read(setId);
-    if (!current) {
-      if (control === null) return;
-      return this.write(setId, {
-        rev: 1,
-        leader: { id: connection.user!.id, name: connection.user!.name, conn },
-        metronome: null,
-        stems: null,
-        itemId: null,
-        presenting: null,
-        presentingRev: 0,
-        presenters: [],
-        screens: { id: connection.user!.id, name: connection.user!.name, conn, exclusive: control === "exclusive" },
-      });
-    }
-    // Giving them back: only who has them. Locking them: not while someone else has them locked.
-    // Who has them is a person: back from a dropped connection, they take them again.
-    if (control === null && current.screens?.id !== connection.user!.id) return;
-    if (current.screens?.exclusive && current.screens.id !== connection.user!.id) return this.hub.send(connection, { type: "error", code: "forbidden", message: `${current.screens.name} runs the screens` });
-    await this.write(setId, { ...current, rev: current.rev + 1, screens: control === null ? null : { id: connection.user!.id, name: connection.user!.name, conn, exclusive: control === "exclusive" } });
+    await this.command(connection, { kind: "screens", control }, "Join a set first");
   }
 
   /**
@@ -303,61 +205,58 @@ export class SetSessions {
    * they show now.
    */
   async presentFromOperator(connection: Connection, presenting: SyncPresenting | null, basedOn: unknown) {
-    const setId = connection.setId;
-    if (setId && !(await this.stillAllowed(connection))) return;
-    if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
-    if (presenting !== null && !validPresenting(presenting)) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Invalid presenting" });
-    if (basedOn !== undefined && !(Number.isInteger(basedOn) && (basedOn as number) >= 0)) return this.hub.send(connection, { type: "error", code: "bad-request", message: "basedOn must be a revision" });
-    await this.withSetLock(setId, async () => {
-      const current = await this.read(setId);
-      if (!current) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Nobody's leading this set yet: take the screens first" });
-      if (!this.mayPresent(connection, current)) {
-        const locked = current.screens?.exclusive && current.screens.id !== connection.user?.id;
-        return this.hub.send(connection, { type: "error", code: "forbidden", message: locked ? `${current.screens!.name} runs the screens` : "Take the screens first" });
-      }
-      if (this.stale(connection, current, basedOn as number | undefined)) return;
-      if (samePresenting(current.presenting ?? null, presenting)) return;
-      await this.write(setId, { ...current, rev: current.rev + 1, presenting, presentingRev: (current.presentingRev ?? 0) + 1 });
-    });
+    await this.command(connection, { kind: "present", presenting, basedOn: basedOn as number | undefined }, "Join a set first");
   }
 
-  /** The leader hands presenting to someone in the set, or takes it back (issue #305). */
+  /** The leader hands presenting to someone in the set, or takes it back (issue #305): someone in the set now, by the name they're there with. */
   async presenter(connection: Connection, message: Extract<SyncClientMessage, { type: "presenter" }>) {
     const setId = connection.setId;
+    const member =
+      setId && message.allow === true
+        ? Object.values(await redis().hgetall(membersKey(setId)))
+            .map((raw) => JSON.parse(raw) as { id: string; name: string; screen?: boolean })
+            .find((one) => one.id === message.userId && !one.screen)
+        : undefined;
+    await this.command(connection, { kind: "presenter", userId: message.userId, allow: message.allow, name: member?.name }, "Give a userId and allow");
+  }
+
+  async end(connection: Connection) {
+    await this.command(connection, { kind: "end" }, "Only someone who can edit the set ends it", "forbidden");
+  }
+
+  /** A command from a device in a set (docs/live-session.md): its right to the set checked again, then applied under the set's lock by applyLiveOp. */
+  private async command(connection: Connection, op: LiveOp, notInSet: string, code: "bad-request" | "forbidden" = "bad-request") {
+    const setId = connection.setId;
     if (setId && !(await this.stillAllowed(connection))) return;
-    if (!setId || typeof message.userId !== "string" || typeof message.allow !== "boolean") return this.hub.send(connection, { type: "error", code: "bad-request", message: "Give a userId and allow" });
-    await this.withSetLock(setId, async () => {
-      const current = await this.read(setId);
-      if (!current || current.leader.conn !== `${this.hub.instance}:${connection.id}`) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only the leader hands presenting to someone" });
-      const presenters = (current.presenters ?? []).filter((one) => one.id !== message.userId);
-      if (message.allow) {
-        // Someone in the set now, by the name they're there with.
-        const member = Object.values(await redis().hgetall(membersKey(setId)))
-          .map((raw) => JSON.parse(raw) as { id: string; name: string; screen?: boolean })
-          .find((one) => one.id === message.userId && !one.screen);
-        if (!member) return this.hub.send(connection, { type: "error", code: "bad-request", message: "They're not in the set" });
-        if (presenters.length >= PRESENTERS_MAX) return this.hub.send(connection, { type: "error", code: "bad-request", message: `Hand presenting to ${PRESENTERS_MAX} people at most` });
-        presenters.push({ id: member.id, name: member.name });
+    if (!setId || !connection.user) return this.hub.send(connection, { type: "error", code, message: notInSet });
+    const { result, previous } = await this.withSetLock(setId, () => this.applyLocked(connection, setId, op));
+    if (!result.ok) {
+      this.hub.send(connection, { type: "error", code: result.code, message: result.message });
+      // Refused as stale (issue #305): with what the screens show now.
+      if (result.code === "stale") void this.broadcastLocal(setId);
+      return;
+    }
+    // Another item: its own timer, if it has one, starts (issue #269).
+    const itemId = result.session?.itemId;
+    if (op.kind === "tempo" && itemId && itemId !== previous?.itemId) await this.itemTimer(setId, itemId).catch(() => undefined);
+  }
+
+  private actor(connection: Connection): LiveActor {
+    return { userId: connection.user!.id, name: connection.user!.name, device: this.hub.member(connection), canLead: connection.canLead, canOperate: connection.canOperate };
+  }
+
+  /** `op` applied to the set's session, under its lock; written and announced when it changed. With the session as it was. */
+  private async applyLocked(connection: Connection, setId: string, op: LiveOp): Promise<{ result: LiveResult; previous: LiveSessionState | null }> {
+    const previous = await this.read(setId);
+    const result = applyLiveOp(previous, this.actor(connection), op, Date.now());
+    if (result.ok && result.changed) {
+      if (result.session) await this.write(setId, result.session);
+      else {
+        await redis().del(sessionKey(setId));
+        await this.changed(setId);
       }
-      await this.write(setId, { ...current, rev: current.rev + 1, presenters });
-    });
-  }
-
-  /** Whether this device may present now (issue #305): it leads, runs screens by a role, can edit the set or was handed it - and control isn't locked to someone else. */
-  private mayPresent(connection: Connection, session: StoredSession): boolean {
-    const conn = `${this.hub.instance}:${connection.id}`;
-    if (!connection.user) return false;
-    // Locked to someone (issue #305): to them, on whichever of their devices - one they came back on after a drop too.
-    if (session.screens?.exclusive && session.screens.id !== connection.user.id) return false;
-    return connection.canLead || connection.canOperate || session.leader.conn === conn || !!session.presenters?.some((one) => one.id === connection.user!.id);
-  }
-
-  /** A command based on what the screens showed before the last change (issue #305): refused, with what they show now. */
-  private stale(connection: Connection, current: StoredSession, basedOn: number | undefined): boolean {
-    if (basedOn === undefined || basedOn === (current.presentingRev ?? 0)) return false;
-    this.hub.send(connection, { type: "error", code: "stale", message: "The screens moved on before this: here's what they show now" });
-    void this.broadcastLocal(connection.setId!);
-    return true;
+    }
+    return { result, previous };
   }
 
   /** `fn` with the set's session to itself (see lockKey): across the API's instances, one change at a time. */
@@ -411,24 +310,17 @@ export class SetSessions {
     await this.changed(setId);
   }
 
-  async end(connection: Connection) {
-    const setId = connection.setId;
-    if (setId && !(await this.stillAllowed(connection))) return;
-    if (!setId || !connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set ends it" });
-    await redis().del(sessionKey(setId));
-    await this.changed(setId);
-  }
-
-  /** The session; screens whose operator left more than SCREENS_GRACE_MS ago are the leader's again. */
-  private async read(setId: string): Promise<StoredSession | null> {
+  /** The session; screens whose operator left more than LIVE_SCREENS_GRACE_MS ago are the leader's again. */
+  private async read(setId: string): Promise<LiveSessionState | null> {
     const raw = await redis().get(sessionKey(setId));
     if (!raw) return null;
-    const session = JSON.parse(raw) as StoredSession;
-    if (session.screens?.leftAt !== undefined && Date.now() - session.screens.leftAt >= SCREENS_GRACE_MS) session.screens = null;
-    return session;
+    const session = JSON.parse(raw) as LiveSessionState;
+    // Kept before the live session's state (#314): who held a part by `conn`.
+    for (const holder of [session.leader, session.screens]) if (holder && !holder.device) holder.device = (holder as { conn?: string }).conn ?? "";
+    return liveSessionAt(session, Date.now());
   }
 
-  private async write(setId: string, session: StoredSession) {
+  private async write(setId: string, session: LiveSessionState) {
     await redis().set(sessionKey(setId), JSON.stringify(session), "EX", SESSION_TTL_S);
     await this.changed(setId);
   }
@@ -477,11 +369,11 @@ export class SetSessions {
     const present = Object.entries(rawMembers)
       .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean }) }))
       .filter((member) => now - member.at < PRESENCE_MS * 2);
-    const members: SyncMember[] = present.map((member) => ({ id: member.id, name: member.name, leading: member.conn === stored?.leader.conn, ...(member.screen ? { screen: true } : {}) }));
+    const members: SyncMember[] = present.map((member) => ({ id: member.id, name: member.name, leading: member.conn === stored?.leader.device, ...(member.screen ? { screen: true } : {}) }));
     const session: SyncSession | null = stored
       ? {
           ...stored,
-          leader: { id: stored.leader.id, name: stored.leader.name, online: present.some((member) => member.conn === stored.leader.conn) },
+          leader: { id: stored.leader.id, name: stored.leader.name, online: present.some((member) => member.conn === stored.leader.device) },
           screens: stored.screens ? { id: stored.screens.id, name: stored.screens.name, exclusive: stored.screens.exclusive, ...(stored.screens.leftAt !== undefined && { online: false }) } : null,
         }
       : null;
@@ -491,69 +383,13 @@ export class SetSessions {
         setId,
         session,
         members,
-        leading: stored?.leader.conn === `${this.hub.instance}:${connection.id}`,
+        leading: stored?.leader.device === this.hub.member(connection),
         canLead: connection.canLead,
         stage,
-        screensMine: !!stored?.screens && stored.screens.conn === `${this.hub.instance}:${connection.id}`,
-        canPresent: stored ? this.mayPresent(connection, stored) : connection.canLead || connection.canOperate,
+        screensMine: !!stored?.screens && stored.screens.device === this.hub.member(connection),
+        canPresent: connection.user ? mayPresent(stored, this.actor(connection)) : false,
         canOperate: connection.canLead || connection.canOperate,
       });
     }
   }
-}
-
-/** The same slide, black or not: no change, so no new revision (issue #305). */
-function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
-  if (!a || !b) return a === b;
-  return a.itemId === b.itemId && a.slide === b.slide && a.black === b.black;
-}
-
-function validStems(value: SyncStems): boolean {
-  return (
-    typeof value === "object" &&
-    typeof value.songVersionId === "string" &&
-    value.songVersionId.length <= 64 &&
-    (value.multitrackId === undefined || value.multitrackId === null || (typeof value.multitrackId === "string" && value.multitrackId.length <= 40)) &&
-    typeof value.title === "string" &&
-    value.title.length <= 300 &&
-    (value.transpose === undefined || (Number.isInteger(value.transpose) && Math.abs(value.transpose) <= 12)) &&
-    (value.transposeParts === undefined ||
-      (typeof value.transposeParts === "object" &&
-        value.transposeParts !== null &&
-        Object.keys(value.transposeParts).length <= 64 &&
-        Object.entries(value.transposeParts).every(([id, on]) => id.length <= 64 && typeof on === "boolean"))) &&
-    (value.speed === undefined || (typeof value.speed === "number" && value.speed >= STEM_SPEED_MIN && value.speed <= STEM_SPEED_MAX)) &&
-    typeof value.playing === "boolean" &&
-    Number.isFinite(value.position) &&
-    value.position >= 0 &&
-    Number.isFinite(value.anchorAt)
-  );
-}
-
-function validPresenting(value: SyncPresenting): boolean {
-  return (
-    typeof value === "object" &&
-    typeof value.itemId === "string" &&
-    value.itemId.length <= 64 &&
-    Number.isInteger(value.slide) &&
-    value.slide >= 0 &&
-    value.slide < 10_000 &&
-    typeof value.black === "boolean"
-  );
-}
-
-function validMetronome(value: SyncMetronome): boolean {
-  const s = value?.settings;
-  return (
-    typeof value === "object" &&
-    typeof value.playing === "boolean" &&
-    Number.isFinite(value.anchorAt) &&
-    Number.isFinite(value.anchorPosition) &&
-    !!s &&
-    Number.isFinite(s.tempo) &&
-    Number.isInteger(s.numerator) &&
-    Number.isInteger(s.denominator) &&
-    Array.isArray(s.beats) &&
-    s.beats.length <= 32
-  );
 }

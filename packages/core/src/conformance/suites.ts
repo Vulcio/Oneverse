@@ -22,6 +22,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
+import { applyLiveOp, liveSessionAt, mayPresent } from "../live/index.js";
 import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -293,6 +294,25 @@ const arrangement = (json: unknown) => parseArrangementDocumentV2(json);
 
 /** A request body checked as the API checks it (checkRequest). */
 const checked = (schema: z.ZodType) => (body: unknown) => checkRequest(schema, body);
+
+// --- A set's live session and who's in it, for the live cases.
+
+const LIVE_EDITOR = { userId: "u_a", name: "Ana", device: "i:1", canLead: true, canOperate: false };
+const LIVE_OPERATOR = { userId: "u_o", name: "Olu", device: "i:3", canLead: false, canOperate: true };
+const LIVE_PRESENTER = { userId: "u_p", name: "Pia", device: "i:4", canLead: false, canOperate: false };
+const LIVE_SINGER = { userId: "u_s", name: "Sam", device: "i:5", canLead: false, canOperate: false };
+const LIVE_SESSION = {
+  rev: 7,
+  leader: { id: "u_a", name: "Ana", device: "i:1" },
+  metronome: null,
+  stems: null,
+  itemId: "item_1",
+  presenting: { itemId: "item_1", slide: 2, black: false },
+  presentingRev: 4,
+  presenters: [{ id: "u_p", name: "Pia" }],
+  screens: null,
+};
+const LIVE_LOCKED = { ...LIVE_SESSION, screens: { id: "u_o", name: "Olu", device: "i:3", exclusive: true } };
 
 export const CONFORMANCE: ConformanceArea[] = [
   {
@@ -2257,6 +2277,69 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the standard one", args: [{ placement: "below", look: "card", size: "M", color: "amber" }] },
           { name: "on stage", args: [{ placement: "beside", look: "plain", size: "L", color: "amber" }] },
           { name: "the margin one in another colour", args: [{ placement: "margin", look: "minimal", size: "M", color: "blue" }] },
+        ],
+      },
+    },
+  },
+  {
+    area: "live",
+    about:
+      "A set's live session (issue #247, docs/live-session.md): every change is an op from a person on a device, applied by one function wherever the session runs - the API, or Oneverse Pulse when the room runs on its own - so the two never disagree on what a command does.",
+    functions: {
+      applyLiveOp: {
+        about:
+          "The session after an op, at `now` (ms): `{ok, changed, session}` (session null: none, or ended), or `{ok: false, code, message}` refused as forbidden, stale or bad-request. Each change goes up `rev`; a change of what's presented goes up `presentingRev` too, which a command's `basedOn` is checked against.",
+        params: ["session", "actor", "op", "now"],
+        run: applyLiveOp,
+        cases: [
+          { name: "an editor starts a session by leading", args: [null, LIVE_EDITOR, { kind: "lead" }, 1000] },
+          { name: "someone who can't edit the set can't lead", args: [null, LIVE_SINGER, { kind: "lead" }, 1000] },
+          { name: "taking over the lead carries on from where it was", args: [LIVE_SESSION, { ...LIVE_EDITOR, userId: "u_b", name: "Bea", device: "i:2" }, { kind: "lead" }, 1000] },
+          { name: "the leader moves to another song and slide", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", itemId: "item_2", presenting: { itemId: "item_2", slide: 0, black: false }, basedOn: 4 }, 1000] },
+          { name: "the leader on another device doesn't lead", args: [LIVE_SESSION, { ...LIVE_EDITOR, device: "i:9" }, { kind: "tempo", itemId: "item_2" }, 1000] },
+          { name: "the leader's metronome, read", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", metronome: { settings: { tempo: 72, numerator: 4, denominator: 4, beats: ["accent", "normal", "normal", "normal"], countIn: 1 }, playing: true, anchorAt: 900, anchorPosition: 0 } }, 1000] },
+          { name: "a metronome that can't be read is refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", metronome: { playing: true } }, 1000] },
+          { name: "stems played 3 times as fast are refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", stems: { songVersionId: "sv_1", title: "Grace", playing: true, position: 0, anchorAt: 0, speed: 3 } }, 1000] },
+          { name: "Next pressed twice from the same slide: the second is stale", args: [LIVE_SESSION, LIVE_OPERATOR, { kind: "present", presenting: { itemId: "item_1", slide: 3, black: false }, basedOn: 3 }, 1000] },
+          { name: "a presenter moves the screens", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "present", presenting: { itemId: "item_1", slide: 3, black: false }, basedOn: 4 }, 1000] },
+          { name: "the same slide again is no change", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "present", presenting: { itemId: "item_1", slide: 2, black: false } }, 1000] },
+          { name: "a singer can't present", args: [LIVE_SESSION, LIVE_SINGER, { kind: "present", presenting: null }, 1000] },
+          { name: "nobody can present without a session", args: [null, LIVE_EDITOR, { kind: "present", presenting: null }, 1000] },
+          { name: "a slide that isn't a whole number is refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "present", presenting: { itemId: "item_1", slide: 1.5, black: false } }, 1000] },
+          { name: "an operator locks the screens", args: [LIVE_SESSION, LIVE_OPERATOR, { kind: "screens", control: "exclusive" }, 1000] },
+          { name: "locked: the leader's Live waits", args: [LIVE_LOCKED, LIVE_EDITOR, { kind: "tempo", presenting: { itemId: "item_1", slide: 3, black: false } }, 1000] },
+          { name: "locked: the operator on another of their devices presents", args: [LIVE_LOCKED, { ...LIVE_OPERATOR, device: "i:7" }, { kind: "present", presenting: { itemId: "item_1", slide: 3, black: true } }, 1000] },
+          { name: "locked: nobody else takes the screens", args: [LIVE_LOCKED, LIVE_EDITOR, { kind: "screens", control: "shared" }, 1000] },
+          { name: "giving back screens one doesn't have is no change", args: [LIVE_SESSION, LIVE_OPERATOR, { kind: "screens", control: null }, 1000] },
+          { name: "taking the screens with no session starts one", args: [null, LIVE_OPERATOR, { kind: "screens", control: "shared" }, 1000] },
+          { name: "the operator's device drops: the lock waits for them", args: [LIVE_LOCKED, LIVE_OPERATOR, { kind: "leave", dropped: true }, 5000] },
+          { name: "the operator leaves: the screens are free at once", args: [LIVE_LOCKED, LIVE_OPERATOR, { kind: "leave", dropped: false }, 5000] },
+          { name: "a minute after the drop, the screens are the leader's again", args: [{ ...LIVE_LOCKED, screens: { ...LIVE_LOCKED.screens, leftAt: 1000 } }, LIVE_EDITOR, { kind: "present", presenting: null }, 61_000] },
+          { name: "the leader hands presenting to someone in the set", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "presenter", userId: "u_s", name: "Sam", allow: true }, 1000] },
+          { name: "not in the set: no name, refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "presenter", userId: "u_s", allow: true }, 1000] },
+          { name: "only the leader hands it", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "presenter", userId: "u_s", name: "Sam", allow: true }, 1000] },
+          { name: "an editor ends it", args: [LIVE_SESSION, { ...LIVE_EDITOR, device: "i:9" }, { kind: "end" }, 1000] },
+          { name: "an op nobody knows is refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "dance" }, 1000] },
+        ],
+      },
+      liveSessionAt: {
+        about: "The session as it is at `now`: screens whose operator's device dropped LIVE_SCREENS_GRACE_MS (a minute) ago or more are the leader's again.",
+        params: ["session", "now"],
+        run: liveSessionAt,
+        cases: [
+          { name: "within the minute", args: [{ ...LIVE_LOCKED, screens: { ...LIVE_LOCKED.screens, leftAt: 1000 } }, 60_999] },
+          { name: "after it", args: [{ ...LIVE_LOCKED, screens: { ...LIVE_LOCKED.screens, leftAt: 1000 } }, 61_000] },
+        ],
+      },
+      mayPresent: {
+        about: "Whether someone may present now (issue #305): they lead, run screens, can edit the set or were handed it - and the screens aren't locked to someone else.",
+        params: ["session", "actor"],
+        run: mayPresent,
+        cases: [
+          { name: "someone handed it", args: [LIVE_SESSION, LIVE_PRESENTER] },
+          { name: "a singer", args: [LIVE_SESSION, LIVE_SINGER] },
+          { name: "the leader, while someone else has them locked", args: [LIVE_LOCKED, LIVE_EDITOR] },
+          { name: "no session: who may lead or run screens", args: [null, LIVE_OPERATOR] },
         ],
       },
     },

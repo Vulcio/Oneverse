@@ -28,6 +28,7 @@ it shows in the diff for review. Never edit the JSON by hand.
 | `arrangements.json` | Arrangements checked against a song, and moved to another song's IDs |
 | `timeline.json` | The metronome and sync play's timeline: clock offset, positions, clicks |
 | `screens.json` | A set on a big screen: songs cut into slides, pairing codes |
+| `live.json` | A set's live session: each op from a person on a device, applied the same way by the API and Pulse |
 | `requests.json` | What the API accepts, and the messages it refuses with |
 
 ## Format

@@ -1,0 +1,1917 @@
+{
+  "$schema": "songverse-conformance/v1",
+  "area": "live",
+  "about": "A set's live session (issue #247, docs/live-session.md): every change is an op from a person on a device, applied by one function wherever the session runs - the API, or Oneverse Pulse when the room runs on its own - so the two never disagree on what a command does.",
+  "functions": {
+    "applyLiveOp": {
+      "about": "The session after an op, at `now` (ms): `{ok, changed, session}` (session null: none, or ended), or `{ok: false, code, message}` refused as forbidden, stale or bad-request. Each change goes up `rev`; a change of what's presented goes up `presentingRev` too, which a command's `basedOn` is checked against.",
+      "params": [
+        "session",
+        "actor",
+        "op",
+        "now"
+      ],
+      "cases": [
+        {
+          "name": "an editor starts a session by leading",
+          "args": [
+            null,
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "lead"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 1,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": null,
+              "presenting": null,
+              "presentingRev": 0,
+              "presenters": [],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "someone who can't edit the set can't lead",
+          "args": [
+            null,
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "lead"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Only someone who can edit the set leads it"
+          }
+        },
+        {
+          "name": "taking over the lead carries on from where it was",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_b",
+              "name": "Bea",
+              "device": "i:2",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "lead"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_b",
+                "name": "Bea",
+                "device": "i:2"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "the leader moves to another song and slide",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "itemId": "item_2",
+              "presenting": {
+                "itemId": "item_2",
+                "slide": 0,
+                "black": false
+              },
+              "basedOn": 4
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_2",
+              "presenting": {
+                "itemId": "item_2",
+                "slide": 0,
+                "black": false
+              },
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "the leader on another device doesn't lead",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:9",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "itemId": "item_2"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Only the leader changes the session"
+          }
+        },
+        {
+          "name": "the leader's metronome, read",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "metronome": {
+                "settings": {
+                  "tempo": 72,
+                  "numerator": 4,
+                  "denominator": 4,
+                  "beats": [
+                    "accent",
+                    "normal",
+                    "normal",
+                    "normal"
+                  ],
+                  "countIn": 1
+                },
+                "playing": true,
+                "anchorAt": 900,
+                "anchorPosition": 0
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": {
+                "settings": {
+                  "tempo": 72,
+                  "numerator": 4,
+                  "denominator": 4,
+                  "beats": [
+                    "accent",
+                    "normal",
+                    "normal",
+                    "normal"
+                  ],
+                  "countIn": 1
+                },
+                "playing": true,
+                "anchorAt": 900,
+                "anchorPosition": 0
+              },
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "a metronome that can't be read is refused",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "metronome": {
+                "playing": true
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "Invalid metronome"
+          }
+        },
+        {
+          "name": "stems played 3 times as fast are refused",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "stems": {
+                "songVersionId": "sv_1",
+                "title": "Grace",
+                "playing": true,
+                "position": 0,
+                "anchorAt": 0,
+                "speed": 3
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "Invalid stems"
+          }
+        },
+        {
+          "name": "Next pressed twice from the same slide: the second is stale",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "present",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 3,
+                "black": false
+              },
+              "basedOn": 3
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "stale",
+            "message": "The screens moved on before this: here's what they show now"
+          }
+        },
+        {
+          "name": "a presenter moves the screens",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_p",
+              "name": "Pia",
+              "device": "i:4",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "present",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 3,
+                "black": false
+              },
+              "basedOn": 4
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 3,
+                "black": false
+              },
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "the same slide again is no change",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_p",
+              "name": "Pia",
+              "device": "i:4",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "present",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": false,
+            "session": {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "a singer can't present",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "present",
+              "presenting": null
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Take the screens first"
+          }
+        },
+        {
+          "name": "nobody can present without a session",
+          "args": [
+            null,
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "present",
+              "presenting": null
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Nobody's leading this set yet: take the screens first"
+          }
+        },
+        {
+          "name": "a slide that isn't a whole number is refused",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "present",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 1.5,
+                "black": false
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "Invalid presenting"
+          }
+        },
+        {
+          "name": "an operator locks the screens",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "screens",
+              "control": "exclusive"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            }
+          }
+        },
+        {
+          "name": "locked: the leader's Live waits",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 3,
+                "black": false
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Olu runs the screens"
+          }
+        },
+        {
+          "name": "locked: the operator on another of their devices presents",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:7",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "present",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 3,
+                "black": true
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 3,
+                "black": true
+              },
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            }
+          }
+        },
+        {
+          "name": "locked: nobody else takes the screens",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "screens",
+              "control": "shared"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Olu runs the screens"
+          }
+        },
+        {
+          "name": "giving back screens one doesn't have is no change",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "screens",
+              "control": null
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": false,
+            "session": {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "taking the screens with no session starts one",
+          "args": [
+            null,
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "screens",
+              "control": "shared"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 1,
+              "leader": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": null,
+              "presenting": null,
+              "presentingRev": 0,
+              "presenters": [],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": false
+              }
+            }
+          }
+        },
+        {
+          "name": "the operator's device drops: the lock waits for them",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "leave",
+              "dropped": true
+            },
+            5000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 5000
+              }
+            }
+          }
+        },
+        {
+          "name": "the operator leaves: the screens are free at once",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "leave",
+              "dropped": false
+            },
+            5000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "a minute after the drop, the screens are the leader's again",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 1000
+              }
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "present",
+              "presenting": null
+            },
+            61000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": null,
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "the leader hands presenting to someone in the set",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "presenter",
+              "userId": "u_s",
+              "name": "Sam",
+              "allow": true
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                },
+                {
+                  "id": "u_s",
+                  "name": "Sam"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "not in the set: no name, refused",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "presenter",
+              "userId": "u_s",
+              "allow": true
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "They're not in the set"
+          }
+        },
+        {
+          "name": "only the leader hands it",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_p",
+              "name": "Pia",
+              "device": "i:4",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "presenter",
+              "userId": "u_s",
+              "name": "Sam",
+              "allow": true
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Only the leader hands presenting to someone"
+          }
+        },
+        {
+          "name": "an editor ends it",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:9",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "end"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": null
+          }
+        },
+        {
+          "name": "an op nobody knows is refused",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "dance"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "Invalid command"
+          }
+        }
+      ]
+    },
+    "liveSessionAt": {
+      "about": "The session as it is at `now`: screens whose operator's device dropped LIVE_SCREENS_GRACE_MS (a minute) ago or more are the leader's again.",
+      "params": [
+        "session",
+        "now"
+      ],
+      "cases": [
+        {
+          "name": "within the minute",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 1000
+              }
+            },
+            60999
+          ],
+          "expected": {
+            "rev": 7,
+            "leader": {
+              "id": "u_a",
+              "name": "Ana",
+              "device": "i:1"
+            },
+            "metronome": null,
+            "stems": null,
+            "itemId": "item_1",
+            "presenting": {
+              "itemId": "item_1",
+              "slide": 2,
+              "black": false
+            },
+            "presentingRev": 4,
+            "presenters": [
+              {
+                "id": "u_p",
+                "name": "Pia"
+              }
+            ],
+            "screens": {
+              "id": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "exclusive": true,
+              "leftAt": 1000
+            }
+          }
+        },
+        {
+          "name": "after it",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 1000
+              }
+            },
+            61000
+          ],
+          "expected": {
+            "rev": 7,
+            "leader": {
+              "id": "u_a",
+              "name": "Ana",
+              "device": "i:1"
+            },
+            "metronome": null,
+            "stems": null,
+            "itemId": "item_1",
+            "presenting": {
+              "itemId": "item_1",
+              "slide": 2,
+              "black": false
+            },
+            "presentingRev": 4,
+            "presenters": [
+              {
+                "id": "u_p",
+                "name": "Pia"
+              }
+            ],
+            "screens": null
+          }
+        }
+      ]
+    },
+    "mayPresent": {
+      "about": "Whether someone may present now (issue #305): they lead, run screens, can edit the set or were handed it - and the screens aren't locked to someone else.",
+      "params": [
+        "session",
+        "actor"
+      ],
+      "cases": [
+        {
+          "name": "someone handed it",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_p",
+              "name": "Pia",
+              "device": "i:4",
+              "canLead": false,
+              "canOperate": false
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "a singer",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "the leader, while someone else has them locked",
+          "args": [
+            {
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "no session: who may lead or run screens",
+          "args": [
+            null,
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            }
+          ],
+          "expected": true
+        }
+      ]
+    }
+  }
+}
