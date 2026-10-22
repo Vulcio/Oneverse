@@ -207,6 +207,23 @@ jobs:
         id: playwright
         run: echo "version=$(pnpm --filter @oneverse/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
 
+      # The system packages (Chromium's libraries, ffmpeg) kept between runs: the
+      # runners' Ubuntu mirror is sometimes so slow that downloading them took
+      # half an hour of a 45-minute shard. apt still fetches what changed.
+      - name: Keep apt's downloads in a cached folder
+        id: apt
+        run: |
+          echo "image=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+          mkdir -p ~/apt-cache/partial
+          echo "Dir::Cache::archives \"$HOME/apt-cache\";" | sudo tee /etc/apt/apt.conf.d/99-ci-cache
+          echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee -a /etc/apt/apt.conf.d/99-ci-cache
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/apt-cache
+          key: apt-${{ steps.apt.outputs.image }}
+          restore-keys: apt-
+
       - uses: actions/cache@v4
         id: playwright-cache
         with:
@@ -224,6 +241,9 @@ jobs:
       # The Worker turns recorded takes into Opus with it (issue #127), as in the API/Worker image.
       - name: Install ffmpeg
         run: command -v ffmpeg || (sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends ffmpeg)
+
+      - name: Let the cache read apt's downloads
+        run: sudo chown -R "$(id -u)" ~/apt-cache
 
       - name: Apply database migrations
         run: pnpm --filter @oneverse/db exec prisma migrate deploy
