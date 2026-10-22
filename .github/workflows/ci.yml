@@ -260,7 +260,7 @@ jobs:
         run: pnpm --filter @oneverse/db exec prisma migrate deploy
 
       - name: Build the API and the web apps
-        run: pnpm exec vp run --filter "@oneverse/api..." --filter "@oneverse/web..." --filter "@oneverse/planiverse..." --filter "@oneverse/oneverse..." --filter "@oneverse/screen-app..." build
+        run: pnpm exec vp run --filter "@oneverse/api..." --filter "@oneverse/web..." --filter "@oneverse/planiverse..." --filter "@oneverse/oneverse..." --filter "@oneverse/screen-app..." --filter "@oneverse/pulse..." build
 
       # The suites use the built-in tags and other metadata the seed adds.
       # It runs after the build, which builds @oneverse/core for it.

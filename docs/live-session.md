@@ -295,9 +295,12 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    adds the room's changes to the record with their origin, and marks the row. A revision
    is unique within its epoch in the record now, since both sides go on from the same one.
    For now a handback is taken from anyone who can edit the set (who could make the same
-   changes one by one); Pulse's own sign-in comes with its pairing. Still to do: the Node
-   process on Pulse (connecting, noticing the outage, serving the room), and how the room's
-   devices reach it (below).
+   changes one by one); Pulse's own sign-in comes with its pairing. The Node process is
+   `apps/pulse` (`@oneverse/pulse`): `CloudLink` mirrors one set, runs it in the room after
+   `OUTAGE_MS` without the cloud, and hands it back first when it's back
+   (`e2e/api/pulse-link.test.mjs`). Still to do: the room's side (Pulse's own page, how the
+   room's devices reach it, below, and sign in to it offline), Pulse's own sign-in, and
+   running it on the mini PC.
 
 Each step is its own commit with its tests; steps 1 to 8 change nothing a user sees except
 #312's behaviour, at step 7 screens that no longer show the wrong words after an edit, and at

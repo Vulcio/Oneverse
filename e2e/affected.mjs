@@ -19,6 +19,7 @@ export const AREAS = {
   "apps/api/src/brands/": ["brands"],
   "apps/api/src/artists/": ["artists"],
   "apps/screen/": ["screen", "split-control"],
+  "apps/pulse/": ["pulse", "live-handback"],
   "apps/planiverse/": ["planiverse", "organization", "groups", "team-calendar", "event"],
   "packages/screen/": ["screen", "live"],
   "packages/operator/": ["screen-console", "screen-operator", "live", "split-control"],
