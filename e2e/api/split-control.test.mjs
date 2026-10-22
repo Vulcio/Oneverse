@@ -125,6 +125,32 @@ try {
   s = await sessionWhere(singer, (m) => !m.session?.screens);
   check("given back: the singer presents again", s?.canPresent === true, String(s?.canPresent));
 
+  // Held by the device (issue #247): back on the same device within the lease, the lock is the desk's
+  // again without asking; another account claiming the desk's device id isn't the desk.
+  const deskDevice = `desk-${stamp}`;
+  const desk4 = await syncDevice(operator);
+  devices.push(desk4);
+  desk4.send({ type: "join", setId: set.id, deviceId: deskDevice });
+  await sessionWhere(desk4, () => true);
+  desk4.send({ type: "screens", control: "exclusive" });
+  await sessionWhere(desk4, (m) => m.screensMine === true);
+  singer.drain();
+  desk4.close();
+  await sessionWhere(singer, (m) => m.session?.screens?.online === false);
+  const impostor = await syncDevice(helper);
+  devices.push(impostor);
+  impostor.send({ type: "join", setId: set.id, deviceId: deskDevice });
+  s = await sessionWhere(impostor, () => true);
+  check("another account with the desk's device id isn't the desk", s?.screensMine === false && s.session.screens.online === false, JSON.stringify({ screensMine: s?.screensMine, screens: s?.session.screens }));
+  impostor.close();
+  const desk5 = await syncDevice(operator);
+  devices.push(desk5);
+  desk5.send({ type: "join", setId: set.id, deviceId: deskDevice });
+  s = await sessionWhere(desk5, (m) => m.screensMine === true);
+  check("the desk back on the same device: the lock is its own again, without asking", s?.session.screens.exclusive === true && s.session.screens.online === undefined, JSON.stringify(s?.session.screens));
+  desk5.send({ type: "screens", control: null });
+  await sessionWhere(singer, (m) => !m.session?.screens);
+
   // The leader hands presenting to the helper, live.
   side.send({ type: "presenter", userId: helper.id, allow: true });
   e = await side.next((m) => m.type === "error");

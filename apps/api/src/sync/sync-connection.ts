@@ -26,6 +26,8 @@ export interface Connection {
   /** A screen (issue #186), signed in by its own token: it follows its set, never leads. */
   screen: SyncScreenInfo | null;
   setId: string | null;
+  /** The device it says it is, with its person (`d:<userId>:<deviceId>`, issue #247); left out: it holds things by connection. */
+  device?: string;
   canLead: boolean;
   /** Runs screens by a role (issue #305): may present and lock control on the sets it can open. */
   canOperate: boolean;

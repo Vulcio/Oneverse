@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
+import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
@@ -120,8 +120,11 @@ export class SetSessions {
     }
   }
 
-  async join(connection: Connection, setId: string) {
+  /** Joins the set; `deviceId`: the device's own (issue #247), so what it held before a reload or a drop is still its own. */
+  async join(connection: Connection, setId: string, deviceId?: unknown) {
     if (connection.setId) await this.leaveSet(connection);
+    // The person's too: another account can't claim someone's device by its id.
+    connection.device = typeof deviceId === "string" && SYNC_DEVICE_ID.test(deviceId) ? `d:${connection.user!.id}:${deviceId}` : undefined;
     const set = typeof setId === "string" ? await this.prisma.client.setlist.findUnique({ where: { id: setId }, select: { id: true, ownerUserId: true, ownerTeamId: true } }) : null;
     const access = set ? await this.access.access(connection.user!, set) : null;
     if (!set || !access?.canView) return this.hub.send(connection, { type: "error", code: "not-found", message: "Set not found" });
@@ -131,6 +134,8 @@ export class SetSessions {
     connection.canOperate = (await capabilitiesIn(this.prisma.client, connection.user!.id, set.ownerTeamId)).canOperateScreens;
     connection.accessCheckedAt = Date.now();
     await this.present(connection);
+    // Back within the lease: the screens it ran are its own again.
+    await this.withSetLock(set.id, () => this.applyLocked(connection, set.id, { kind: "back" })).catch(() => undefined);
     await this.changed(set.id);
   }
 
@@ -242,8 +247,13 @@ export class SetSessions {
     if (op.kind === "tempo" && itemId && itemId !== previous?.itemId) await this.itemTimer(setId, itemId).catch(() => undefined);
   }
 
+  /** Who holds what in a session: the device, or the connection for a client that doesn't say which device it is. */
+  private device(connection: Connection): string {
+    return connection.device ?? this.hub.member(connection);
+  }
+
   private actor(connection: Connection): LiveActor {
-    return { userId: connection.user!.id, name: connection.user!.name, device: this.hub.member(connection), canLead: connection.canLead, canOperate: connection.canOperate };
+    return { userId: connection.user!.id, name: connection.user!.name, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate };
   }
 
   /** `op` applied to the set's session, under its lock; written and announced when it changed. With the session as it was. */
@@ -342,7 +352,7 @@ export class SetSessions {
     if (!connection.setId || (!connection.user && !connection.screen)) return;
     const member = connection.screen
       ? { id: connection.screen.id, name: connection.screen.name, screen: true, at: Date.now() }
-      : { id: connection.user!.id, name: connection.user!.name, at: Date.now() };
+      : { id: connection.user!.id, name: connection.user!.name, device: this.device(connection), at: Date.now() };
     await redis().hset(membersKey(connection.setId), `${this.hub.instance}:${connection.id}`, JSON.stringify(member));
     await redis().expire(membersKey(connection.setId), SESSION_TTL_S);
   }
@@ -375,13 +385,13 @@ export class SetSessions {
     const [stored, rawMembers, stage] = await Promise.all([this.read(setId), redis().hgetall(membersKey(setId)), this.readStage(setId)]);
     const now = Date.now();
     const present = Object.entries(rawMembers)
-      .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean }) }))
+      .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean; device?: string }) }))
       .filter((member) => now - member.at < PRESENCE_MS * 2);
-    const members: SyncMember[] = present.map((member) => ({ id: member.id, name: member.name, leading: member.conn === stored?.leader.device, ...(member.screen ? { screen: true } : {}) }));
+    const members: SyncMember[] = present.map((member) => ({ id: member.id, name: member.name, leading: (member.device ?? member.conn) === stored?.leader.device, ...(member.screen ? { screen: true } : {}) }));
     const session: SyncSession | null = stored
       ? {
           ...stored,
-          leader: { id: stored.leader.id, name: stored.leader.name, online: present.some((member) => member.conn === stored.leader.device) },
+          leader: { id: stored.leader.id, name: stored.leader.name, online: present.some((member) => (member.device ?? member.conn) === stored.leader.device) },
           screens: stored.screens ? { id: stored.screens.id, name: stored.screens.name, exclusive: stored.screens.exclusive, ...(stored.screens.leftAt !== undefined && { online: false }) } : null,
         }
       : null;
@@ -391,10 +401,10 @@ export class SetSessions {
         setId,
         session,
         members,
-        leading: stored?.leader.device === this.hub.member(connection),
+        leading: stored?.leader.device === this.device(connection),
         canLead: connection.canLead,
         stage,
-        screensMine: !!stored?.screens && stored.screens.device === this.hub.member(connection),
+        screensMine: !!stored?.screens && stored.screens.device === this.device(connection),
         canPresent: connection.user ? mayPresent(stored, this.actor(connection)) : false,
         canOperate: connection.canLead || connection.canOperate,
       });

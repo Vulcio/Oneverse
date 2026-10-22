@@ -168,7 +168,7 @@ export class SyncServer implements OnModuleDestroy {
     if (!connection.user) return this.send(connection, { type: "error", code: "unauthorized", message: "Sign in first" });
     switch (message.type) {
       case "join":
-        return this.sets.join(connection, message.setId);
+        return this.sets.join(connection, message.setId, message.deviceId);
       case "leave":
         return this.sets.leaveSet(connection);
       case "lead":

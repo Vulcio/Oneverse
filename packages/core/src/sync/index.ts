@@ -13,6 +13,28 @@ import type { MetronomeSettings } from "../metronome/index.js";
 
 export const SYNC_PATH = "/sync";
 
+/** What a device id may be: 8 to 64 letters, digits, `-` or `_`. */
+export const SYNC_DEVICE_ID = /^[A-Za-z0-9_-]{8,64}$/;
+
+/**
+ * This device's id for sync play (issue #247): one per browser tab, kept
+ * across its reloads (sessionStorage), so two tabs are two devices. Never
+ * throws: without storage, a new one each time.
+ */
+export function syncDeviceId(): string {
+  const make = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`).replace(/[^A-Za-z0-9_-]/g, "");
+  try {
+    const storage = globalThis.sessionStorage;
+    const kept = storage?.getItem("oneverse.syncDevice");
+    if (kept && SYNC_DEVICE_ID.test(kept)) return kept;
+    const id = make();
+    storage?.setItem("oneverse.syncDevice", id);
+    return id;
+  } catch {
+    return make();
+  }
+}
+
 /** The metronome as the leader plays it; followers keep their own sound and volume. */
 export interface SyncMetronome {
   settings: Omit<MetronomeSettings, "sound" | "volume">;
@@ -319,7 +341,12 @@ export type SyncClientMessage =
   | { type: "ping"; id: number; sent: number }
   /** A screen's report about itself (issue #286, ScreenReport), every half minute; kept for its owner to see. */
   | { type: "report"; report: unknown }
-  | { type: "join"; setId: string }
+  /**
+   * `deviceId`: this device's own id (issue #247, syncDeviceId()): what it
+   * leads or runs is held by it, so coming back from a reload or a dropped
+   * connection within the lease, it still is. Left out: by connection, as before.
+   */
+  | { type: "join"; setId: string; deviceId?: string }
   | { type: "leave" }
   /** Starts a session, or takes over the lead of the one going on. */
   | { type: "lead" }

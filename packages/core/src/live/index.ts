@@ -102,6 +102,8 @@ export const LiveOpSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("presenter"), userId: id, name: z.string().max(200).optional(), allow: z.boolean() }),
   /** The device leaves the set; `dropped`: its connection went, so the screens it runs wait for it. */
   z.object({ kind: z.literal("leave"), dropped: z.boolean() }),
+  /** The device is back in the set (a reload, a Wi-Fi blip): what it held within its lease is its own again. */
+  z.object({ kind: z.literal("back") }),
   /** Ends the session. */
   z.object({ kind: z.literal("end") }),
 ]);
@@ -234,6 +236,12 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
       // The operator gone: the screens wait for them a while (LIVE_SCREENS_GRACE_MS), then are the leader's again (issue #275).
       if (!current?.screens || current.screens.device !== actor.device) return unchanged(current);
       return changed({ ...current, rev: current.rev + 1, screens: op.dropped ? { ...current.screens, leftAt: now } : null });
+    case "back": {
+      // Within the lease (LIVE_SCREENS_GRACE_MS) the same device takes the screens back by itself, locked or not.
+      const screens = current?.screens;
+      if (!current || !screens || screens.leftAt === undefined || screens.device !== actor.device) return unchanged(current);
+      return changed({ ...current, rev: current.rev + 1, screens: { id: screens.id, name: screens.name, device: screens.device, exclusive: screens.exclusive } });
+    }
     case "end":
       if (!actor.canLead) return refuse("forbidden", "Only someone who can edit the set ends it");
       return changed(null);

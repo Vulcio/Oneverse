@@ -249,7 +249,12 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
 3. `LiveSession` and its id; `sessionId` and `epoch` in `session`. **Done**: the row is
    made when a session starts and ended when it ends, or hourly by the Worker once its state
    is gone from Redis (`apps/api/src/sync/live-sessions.ts`).
-4. Leases in place of connections.
+4. Leases in place of connections. **Done, first part**: a device says its id when it joins
+   (`syncDeviceId()`, one per browser tab, kept across reloads); the lead and the screens are
+   held by `d:<userId>:<deviceId>`, so the same device back within the minute holds them again
+   without asking, and another account can't claim them by the id. The lease is still the
+   minute after a drop (`LIVE_SCREENS_GRACE_MS`) rather than renewed by pings, and the leader
+   keeps the lead while away, as before.
 5. Commands with ids and acks; the old messages translated; `basedOn` required for new clients.
 6. The record (stream, then the table).
 7. `slideKey` in `presenting`.

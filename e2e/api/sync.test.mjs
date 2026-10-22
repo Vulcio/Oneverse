@@ -79,8 +79,10 @@ check("a member joins: no session yet, and they can't lead", seen?.session === n
 follower.send({ type: "lead" });
 check("nor lead", (await follower.next(error))?.code === "forbidden");
 
+// The leader's device says which it is (issue #247): it leads by device, not by connection.
+const leaderDevice = `tab-${stamp}`;
 let leader = await device(owner);
-leader.send({ type: "join", setId: set.id });
+leader.send({ type: "join", setId: set.id, deviceId: leaderDevice });
 seen = await leader.next(session);
 check("the set's owner can lead", seen?.canLead === true && seen.session === null);
 check("the others hear who joined", (await follower.next((m) => session(m) && m.members.length === 2)) !== null);
@@ -116,8 +118,9 @@ leader.close();
 seen = await follower.next((m) => session(m) && m.session && !m.session.leader.online);
 check("the leader gone: the session stays, their metronome with it", seen?.session.metronome?.playing === true && seen.session.leader.id === owner.id, JSON.stringify(seen?.session));
 leader = await device(owner);
-leader.send({ type: "join", setId: set.id });
-await leader.next(session);
+leader.send({ type: "join", setId: set.id, deviceId: leaderDevice });
+seen = await leader.next(session);
+check("back on the same device: still the leader, without asking", seen?.leading === true && seen.session?.leader.online === true, JSON.stringify({ leading: seen?.leading, leader: seen?.session?.leader }));
 leader.send({ type: "lead" });
 seen = await follower.next((m) => session(m) && m.session?.leader.online);
 check("back, and leading again: where it was", seen?.session.metronome?.anchorAt === metronome.anchorAt && seen.session.itemId === "item-1");

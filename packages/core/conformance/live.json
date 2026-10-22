@@ -1363,6 +1363,251 @@
           }
         },
         {
+          "name": "the operator's device is back within the minute: the lock is theirs again",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 1000
+              }
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "back"
+            },
+            30000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            }
+          }
+        },
+        {
+          "name": "another of their devices back: no change",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 1000
+              }
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:7",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "back"
+            },
+            30000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": false,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 1000
+              }
+            }
+          }
+        },
+        {
+          "name": "back after the minute: nothing to take back",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true,
+                "leftAt": 1000
+              }
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            },
+            {
+              "kind": "back"
+            },
+            61000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": false,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
           "name": "a minute after the drop, the screens are the leader's again",
           "args": [
             {

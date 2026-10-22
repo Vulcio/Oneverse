@@ -3,6 +3,7 @@ import {
   resumeScreens,
   SYNC_PATH,
   sharedMetronomeSettings,
+  syncDeviceId,
   type ClockSample,
   type SyncClientMessage,
   type SyncMember,
@@ -194,7 +195,7 @@ function receive(message: SyncServerMessage) {
       emit({ offset: measured.offset });
       if (!joined && samples.length >= 4) {
         joined = true;
-        send({ type: "join", setId: state.setId! });
+        send({ type: "join", setId: state.setId!, deviceId: syncDeviceId() });
       } else if (moved && joined) applySession();
       return;
     }

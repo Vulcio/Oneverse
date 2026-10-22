@@ -1,4 +1,4 @@
-import { clockOffset, resumeScreens, SYNC_PATH, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncStageCommand } from "@oneverse/core";
+import { clockOffset, resumeScreens, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncStageCommand } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import type { OperatorHost, OperatorLive } from "../host";
 
@@ -82,7 +82,7 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
       case "ready":
         retries = 0;
         userId = message.userId;
-        send({ type: "join", setId: setId! });
+        send({ type: "join", setId: setId!, deviceId: syncDeviceId() });
         for (let i = 0; i < 4; i++) setTimeout(ping, i * 120);
         pinger = setInterval(ping, PING_EVERY_MS);
         return;
