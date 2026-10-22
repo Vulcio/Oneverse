@@ -228,6 +228,13 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
   local address while Pulse is online, and when the cloud is gone the page shows
   **Continue on Pulse**, a link to it, which works with no internet. An automatic switch
   (a name and certificate per Pulse under oneverse.top) may come later on top of it.
+- **Signing in to Pulse offline** (brice, 2026-10-22): a pass from the cloud. While it's there,
+  a device in a set asks for one (`{type: "pass"}`) and gets it signed with the cloud's
+  Ed25519 key (derived from `BETTER_AUTH_SECRET`): who, on which device, for which set, what
+  they may do there (`canLead`, `canOperate`), for 12 hours (`LIVE_PASS_MS`). "Continue on
+  Pulse" carries it; Pulse checks it with the cloud's public key, which it's sent with its own
+  pass, and `verifyLivePass` in core (live/pass.ts), without the internet. The same rights in
+  the room as in the cloud, as of when the pass was signed.
 - While the room runs offline, the cloud keeps accepting commands from anyone still
   connected to it: it can't tell an outage from a Pulse that stopped,
   and refusing everyone because a mini PC was unplugged would be worse. On reconnection

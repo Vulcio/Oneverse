@@ -76,7 +76,9 @@ describe("CloudLink", () => {
 
   it("signs in, joins the set as its own device, and mirrors its session", async () => {
     await online();
-    expect(latest().sent).toEqual([{ type: "hello", token: "token" }, { type: "join", setId: "set_1", deviceId: "pulse-node1" }, { type: "mirror" }]);
+    expect(latest().sent).toEqual([{ type: "hello", token: "token" }, { type: "join", setId: "set_1", deviceId: "pulse-node1" }, { type: "mirror" }, { type: "pass" }]);
+    latest().say({ type: "pass", setId: "set_1", pass: "x.y", key: "cloud-key", expiresAt: 1 });
+    expect(link.passKey).toBe("cloud-key");
     expect(link.status).toBe("online");
     latest().say({ type: "session", setId: "set_1", session: null, members: [], leading: false, canLead: true, live: LIVE });
     expect(link.engine.state).toEqual(LIVE);
@@ -113,7 +115,7 @@ describe("CloudLink", () => {
     expect(link.status).toBe("room");
     latest().say({ type: "handedBack", sessionId: "ses_1", epoch: 2, rev: 5 });
     expect(link.engine.runs).toBe(false);
-    expect(latest().types().at(-1)).toBe("mirror");
+    expect(latest().types().slice(-2)).toEqual(["mirror", "pass"]);
     expect(link.status).toBe("online");
   });
 

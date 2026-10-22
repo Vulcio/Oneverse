@@ -52,6 +52,7 @@ export class CloudLink {
   private retries = 0;
   private stopped = true;
   private current: LinkStatus = "connecting";
+  private key: string | null = null;
   private readonly listeners = new Set<(status: LinkStatus) => void>();
 
   constructor(private readonly options: CloudLinkOptions) {
@@ -60,6 +61,11 @@ export class CloudLink {
 
   get status(): LinkStatus {
     return this.current;
+  }
+
+  /** The cloud's public key, which the room's passes are checked with (core's verifyLivePass); null until heard. Kept through an outage. */
+  get passKey(): string | null {
+    return this.key;
   }
 
   /** Told each time the status changes. */
@@ -154,6 +160,9 @@ export class CloudLink {
         if (message.setId !== this.options.setId || message.live === undefined) return;
         this.engine.mirror(message.live);
         return;
+      case "pass":
+        if (message.setId === this.options.setId) this.key = message.key;
+        return;
       case "handedBack":
         this.options.log?.(`cloud link: the cloud took session ${message.sessionId} back (epoch ${message.epoch})`);
         this.engine.handedBack();
@@ -174,6 +183,8 @@ export class CloudLink {
 
   private mirror() {
     this.send({ type: "mirror" });
+    // Its own pass, for the cloud's key.
+    this.send({ type: "pass" });
     this.set("online");
   }
 }

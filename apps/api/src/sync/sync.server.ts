@@ -175,6 +175,8 @@ export class SyncServer implements OnModuleDestroy {
         return this.sets.runCommand(connection, message);
       case "mirror":
         return this.sets.mirror(connection);
+      case "pass":
+        return this.sets.pass(connection);
       case "handback":
         return this.sets.handBack(connection, message.handback);
       case "lead":

@@ -5,6 +5,7 @@ import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesIn } from "../roles/capabilities.js";
 import { endLiveSession, recordLiveOp, startLiveSession } from "./live-sessions.js";
+import { issueLivePass, livePassKey } from "./live-pass.js";
 import type { ScreensService } from "../screens/screens.service.js";
 import { SCREEN_ONLINE_TTL_S, SCREEN_REPORT_TTL_S, screenOnlineKey, screenReportKey } from "../screens/screen-channel.js";
 import type { SetlistAccessService } from "../setlists/setlist-access.service.js";
@@ -258,6 +259,16 @@ export class SetSessions {
     if (!connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set mirrors its session" });
     connection.mirrors = true;
     this.queueBroadcast(connection.setId);
+  }
+
+  /** A pass to the set's session on Pulse's page (issue #247), with what this person may do in it now. */
+  async pass(connection: Connection) {
+    const setId = connection.setId;
+    if (!setId || !connection.user) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
+    if (!(await this.stillAllowed(connection))) return;
+    const { user } = connection;
+    const { pass, expiresAt } = issueLivePass({ sub: user.id, name: user.name, setId, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate });
+    this.hub.send(connection, { type: "pass", setId, pass, key: livePassKey(), expiresAt });
   }
 
   /**
