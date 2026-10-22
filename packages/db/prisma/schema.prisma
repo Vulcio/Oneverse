@@ -2807,9 +2807,6 @@ model BibleVerse {
 model ScriptureSettings {
   id                   String   @id @default("singleton")
   youversionAppKeyEnc  String?
-  // The YouVersion versions an admin allows on screens (issue #310), by
-  // number, having read each one's licence. None by default.
-  youversionProjection Int[]    @default([])
   updatedAt            DateTime @updatedAt
 }
 

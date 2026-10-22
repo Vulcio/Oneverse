@@ -8,19 +8,17 @@ export interface YouVersionSettings {
   /** Where the App Key comes from: the database's, YOUVERSION_APP_KEY, or none (YouVersion off). */
   source: "database" | "env" | "none";
   hasDatabaseKey: boolean;
-  /** The versions an admin allows on screens (issue #310), having read each one's licence. */
-  projection: number[];
 }
 
 /**
  * What a passage may be used for beyond being read where it was asked for
- * (issue #301's rights): on screens when an admin allows the version, having
- * read its licence (issue #310); never offline or exported - the text is
- * never stored.
+ * (issue #301's rights): on screens always - an App Key gets only the versions
+ * whose licences its owner accepted, settled with YouVersion rather than in
+ * Oneverse (issue #310); never offline or exported - the text is never stored.
  */
 export interface YouVersionRights {
   offline: false;
-  projection: boolean;
+  projection: true;
   export: false;
 }
 
@@ -67,22 +65,7 @@ export class YouVersionService {
     return {
       source: row?.youversionAppKeyEnc ? "database" : process.env.YOUVERSION_APP_KEY ? "env" : "none",
       hasDatabaseKey: !!row?.youversionAppKeyEnc,
-      projection: await this.projected(),
     };
-  }
-
-  /** The versions allowed on screens (issue #310). */
-  async projected(): Promise<number[]> {
-    const row = await this.prisma.client.scriptureSettings.findUnique({ where: { id: "singleton" }, select: { youversionProjection: true } });
-    return row?.youversionProjection ?? [];
-  }
-
-  /** A version allowed on screens, or no longer, by an admin who read its licence (issue #310). */
-  async setProjection(bibleId: number, canProject: boolean): Promise<YouVersionSettings> {
-    const now = await this.projected();
-    const youversionProjection = canProject ? [...new Set([...now, bibleId])] : now.filter((id) => id !== bibleId);
-    await this.prisma.client.scriptureSettings.upsert({ where: { id: "singleton" }, create: { id: "singleton", youversionProjection }, update: { youversionProjection } });
-    return this.settings();
   }
 
   /** Saves the App Key, encrypted; empty clears it. */
@@ -148,25 +131,24 @@ export class YouVersionService {
     if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
     const bible = await this.asked(() => youVersionBibleById(bibleId, appKey, this.fetcher));
     const parts = await this.asked(() => youVersionPassage(bibleId, reference, appKey, this.fetcher));
-    return { reference: formatBibleReference(reference, { locale: locale ?? (bible.languageTag.startsWith("fr") ? "fr" : "en") }), bible, parts, rights: { offline: false, projection: (await this.projected()).includes(bibleId), export: false } };
+    return { reference: formatBibleReference(reference, { locale: locale ?? (bible.languageTag.startsWith("fr") ? "fr" : "en") }), bible, parts, rights: { offline: false, projection: true, export: false } };
   }
 
   /**
    * A set's passage from a version (issue #310) as `use` may have it: its
-   * verses asked of YouVersion each time someone reads it, or for screens
-   * when an admin allows the version - never kept, so never offline. YouVersion
+   * verses asked of YouVersion each time someone reads it or a screen shows
+   * it - never kept, so never offline. YouVersion
    * off or not answering leaves the reference, without verses.
    */
   async itemPassage(bibleId: number, text: string, use: "read" | "list" | "offline" | "screen"): Promise<SetItemPassage> {
     const reference = parseBibleReference(text);
-    const projection = (await this.projected()).includes(bibleId);
-    const passage: SetItemPassage = { bibleId: "", youversionId: bibleId, reference: text, bookName: reference ? bibleBookName(reference.book, "en") : "", bible: null, chapters: [], projection, link: null };
+    const passage: SetItemPassage = { bibleId: "", youversionId: bibleId, reference: text, bookName: reference ? bibleBookName(reference.book, "en") : "", bible: null, chapters: [], projection: true, link: null };
     const appKey = await this.appKey();
     if (!appKey) return passage;
     try {
       const bible = await this.version(bibleId, appKey);
       const named: SetItemPassage = { ...passage, bookName: text.replace(/\s*\d[\d:,.\s;-]*$/, "") || passage.bookName, bible: { name: bible.title, abbreviation: bible.abbreviation, copyright: bible.attribution }, link: bible.link };
-      if (!reference || reference.ranges.length === 0 || !(use === "read" || (use === "screen" && projection))) return named;
+      if (!reference || reference.ranges.length === 0 || !(use === "read" || use === "screen")) return named;
       return { ...named, chapters: chaptersOf(reference.book, await youVersionPassage(bibleId, reference, appKey, this.fetcher)) };
     } catch (err) {
       this.logger.warn(`YouVersion's passage for a set failed: ${err instanceof Error ? err.message : String(err)}`);

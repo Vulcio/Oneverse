@@ -138,7 +138,7 @@ function BiblePage() {
               </a>
             ) : null}
           </article>
-          <AddToSet passage={{ youversionId: read.passage.bible.id, reference: read.passage.reference }} notOnScreens={!read.passage.rights.projection} />
+          <AddToSet passage={{ youversionId: read.passage.bible.id, reference: read.passage.reference }} />
         </>
       ) : null}
     </div>
@@ -149,10 +149,9 @@ function BiblePage() {
  * A passage, into one of the sets the reader can change: the set keeps the
  * reference and its Bible or YouVersion version, never the text, and the
  * template the screens show it with (issue #310), the last one picked on
- * this device. A YouVersion version an admin hasn't allowed on screens says
- * so.
+ * this device.
  */
-function AddToSet({ passage, notOnScreens }: { passage: SetlistItemPassageRef; notOnScreens?: boolean }) {
+function AddToSet({ passage }: { passage: SetlistItemPassageRef }) {
   const { t, i18n } = useTranslation();
   const { reference } = passage;
   const [sets, setSets] = useState<SetlistSummary[] | null>(null);
@@ -181,7 +180,6 @@ function AddToSet({ passage, notOnScreens }: { passage: SetlistItemPassageRef; n
       <CardHeader>
         <CardTitle className="text-sm">{t("biblePage.addToSet")}</CardTitle>
         <CardDescription>{t("biblePage.addToSetHint")}</CardDescription>
-        {notOnScreens ? <CardDescription data-testid="bible-not-on-screens">{t("biblePage.youversionNotOnScreens")}</CardDescription> : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <PassageTemplateSelect

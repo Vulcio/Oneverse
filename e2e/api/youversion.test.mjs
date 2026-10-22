@@ -57,7 +57,7 @@ check(
   res.status === 200 && body.reference === "John 3:16-18" && body.parts.map((p) => p.id).join() === "JHN.3.16,JHN.3.17,JHN.3.18" && body.parts[0].text === "BSB text of John 3:16." && /Berean/.test(body.bible.copyright) && body.bible.attribution === body.bible.copyright,
   JSON.stringify(body).slice(0, 400),
 );
-check("no rights beyond reading it", body.rights && !body.rights.offline && !body.rights.projection && !body.rights.export, JSON.stringify(body.rights));
+check("on screens, never offline or exported", body.rights && body.rights.projection === true && !body.rights.offline && !body.rights.export, JSON.stringify(body.rights));
 check("never cached", res.headers.get("cache-control") === "no-store", String(res.headers.get("cache-control")));
 check("asked for afresh each time", youversionKey.passages === 3, String(youversionKey.passages));
 await passage(3034, "John 3:16");
@@ -94,16 +94,10 @@ const yvVerses = async (query = "") => {
   const copy = (await call(reader, "GET", `/setlists/${set.id}/offline${query}`)).body;
   return copy.songs.find((view) => view.item.id === yvItem.id)?.passage?.chapters.length ?? -1;
 };
-check("not on screens until an admin allows the version", (await yvVerses("?for=screens")) === 0);
-check("only admins allow it", (await call(reader, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true })).status === 403);
-settings = await api(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true });
-check("an admin allows it on screens", settings.projection?.includes(3034), JSON.stringify(settings));
-check("…the screens' copy reads it", (await yvVerses("?for=screens")) === 1);
+// Its licence is settled with YouVersion, not in Oneverse: no switch per version.
+check("the screens' copy reads it", (await yvVerses("?for=screens")) === 1);
 check("…never the offline copy", (await yvVerses()) === 0);
-body = await (await passage(3034, "John 3:16")).json();
-check("the Bible page says it may be shown on screens", body.rights?.projection === true && !body.rights.offline, JSON.stringify(body.rights));
-settings = await api(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: false });
-check("taken back", !settings.projection?.includes(3034) && (await yvVerses("?for=screens")) === 0, JSON.stringify(settings));
+check("no per-version switch left", (await call(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true })).status === 404);
 
 // --- a refused key, a spent one, then back to the environment (none here)
 await api(admin, "PUT", "/admin/scriptures/youversion", { appKey: "yvp-another-app-key-987654" });

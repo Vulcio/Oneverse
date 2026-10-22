@@ -31,7 +31,7 @@ function AdminBiblesPage() {
       </div>
       <ImportedBiblesCard initial={loaded.imported} />
       <YouVersionCard settings={settings} onSaved={setSettings} />
-      {settings.source === "none" ? null : <TryPassageCard settings={settings} onSaved={setSettings} />}
+      {settings.source === "none" ? null : <TryPassageCard />}
     </div>
   );
 }
@@ -98,12 +98,8 @@ function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; o
   );
 }
 
-/**
- * A passage read through the key, with the version's attribution as it must
- * be shown; and whether the version's passages in sets may go on screens
- * (issue #310), ticked once its licence is read.
- */
-function TryPassageCard({ settings, onSaved }: { settings: YouVersionSettings; onSaved: (next: YouVersionSettings) => void }) {
+/** A passage read through the key, with the version's attribution as it must be shown. */
+function TryPassageCard() {
   const { t } = useTranslation();
   const [language, setLanguage] = useState("en");
   const [bibles, setBibles] = useState<YouVersionBible[] | null>(null);
@@ -149,25 +145,6 @@ function TryPassageCard({ settings, onSaved }: { settings: YouVersionSettings; o
                 ))}
               </NativeSelect>
             </Field>
-            {bibleId !== null ? (
-              <label className="flex h-8 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="size-4"
-                  checked={!!settings.projection?.includes(bibleId)}
-                  disabled={busy}
-                  onChange={(event) => {
-                    const on = event.target.checked;
-                    void run(async () => {
-                      onSaved(await apiClient.setYouVersionProjection(bibleId, on));
-                      return "";
-                    });
-                  }}
-                  data-testid="youversion-projection"
-                />
-                {t("bibles.youversionProjection")}
-              </label>
-            ) : null}
             <Field id="youversion-reference" label={t("bibles.reference")}>
               <Input id="youversion-reference" value={reference} placeholder={t("bibles.referencePlaceholder")} onChange={(event) => setReference(event.target.value)} />
             </Field>
@@ -204,7 +181,6 @@ function TryPassageCard({ settings, onSaved }: { settings: YouVersionSettings; o
             ) : null}
           </figure>
         ) : null}
-        {bibles?.length ? <p className="text-xs text-muted-foreground">{t("bibles.youversionProjectionHint", { count: settings.projection?.length ?? 0 })}</p> : null}
         {message?.text ? <Said message={message} /> : null}
       </CardContent>
     </Card>
