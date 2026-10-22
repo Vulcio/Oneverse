@@ -74,6 +74,8 @@
           "name": "taking over the lead carries on from where it was",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -113,6 +115,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_b",
@@ -142,6 +146,8 @@
           "name": "the leader moves to another song and slide",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -188,6 +194,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -217,6 +225,8 @@
           "name": "the leader on another device doesn't lead",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -263,6 +273,8 @@
           "name": "the leader's metronome, read",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -319,6 +331,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -364,6 +378,8 @@
           "name": "a metronome that can't be read is refused",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -412,6 +428,8 @@
           "name": "stems played 3 times as fast are refused",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -465,6 +483,8 @@
           "name": "Next pressed twice from the same slide: the second is stale",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -516,6 +536,8 @@
           "name": "a presenter moves the screens",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -561,6 +583,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -590,6 +614,8 @@
           "name": "the same slide again is no change",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -634,6 +660,8 @@
             "ok": true,
             "changed": false,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -663,6 +691,8 @@
           "name": "a singer can't present",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -732,6 +762,8 @@
           "name": "a slide that isn't a whole number is refused",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -782,6 +814,8 @@
           "name": "an operator locks the screens",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -822,6 +856,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -856,6 +892,8 @@
           "name": "locked: the leader's Live waits",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -911,6 +949,8 @@
           "name": "locked: the operator on another of their devices presents",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -960,6 +1000,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -994,6 +1036,8 @@
           "name": "locked: nobody else takes the screens",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1045,6 +1089,8 @@
           "name": "giving back screens one doesn't have is no change",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1085,6 +1131,8 @@
             "ok": true,
             "changed": false,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1156,6 +1204,8 @@
           "name": "the operator's device drops: the lock waits for them",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1201,6 +1251,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -1236,6 +1288,8 @@
           "name": "the operator leaves: the screens are free at once",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1281,6 +1335,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -1310,6 +1366,8 @@
           "name": "a minute after the drop, the screens are the leader's again",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1356,6 +1414,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -1381,6 +1441,8 @@
           "name": "the leader hands presenting to someone in the set",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1423,6 +1485,8 @@
             "ok": true,
             "changed": true,
             "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 8,
               "leader": {
                 "id": "u_a",
@@ -1456,6 +1520,8 @@
           "name": "not in the set: no name, refused",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1503,6 +1569,8 @@
           "name": "only the leader hands it",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1551,6 +1619,8 @@
           "name": "an editor ends it",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1596,6 +1666,8 @@
           "name": "an op nobody knows is refused",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1650,6 +1722,8 @@
           "name": "within the minute",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1682,6 +1756,8 @@
             60999
           ],
           "expected": {
+            "sessionId": "ls_1",
+            "epoch": 0,
             "rev": 7,
             "leader": {
               "id": "u_a",
@@ -1716,6 +1792,8 @@
           "name": "after it",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1748,6 +1826,8 @@
             61000
           ],
           "expected": {
+            "sessionId": "ls_1",
+            "epoch": 0,
             "rev": 7,
             "leader": {
               "id": "u_a",
@@ -1785,6 +1865,8 @@
           "name": "someone handed it",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1822,6 +1904,8 @@
           "name": "a singer",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",
@@ -1859,6 +1943,8 @@
           "name": "the leader, while someone else has them locked",
           "args": [
             {
+              "sessionId": "ls_1",
+              "epoch": 0,
               "rev": 7,
               "leader": {
                 "id": "u_a",

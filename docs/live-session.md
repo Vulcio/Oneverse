@@ -75,9 +75,9 @@ model LiveSessionCommand {
 `UserDeletionService` needs nothing new (`SetNull`, `Cascade`). A session nobody changed
 for 12 hours is ended by a scheduled job on the Worker, as other clean-ups are.
 
-The state stays in Redis while it's live, keyed by the session's id
-(`live:session:<id>`, with `live:set:<setId>` naming the set's live session). A session
-running when this is deployed is read from the old key once and carried on.
+The state stays in Redis while it's live, under the set's key as before (one live session
+per set), carrying its `sessionId` and `epoch`. A session running when this is deployed is
+given its row and id at its next change and carried on.
 
 ## The state
 
@@ -146,7 +146,8 @@ The server answers `{type: "ack", id, rev}`, or `{type: "error", id, code}` with
 - **One reducer**, `applyLiveCommand(state, command, now)`, pure, in `@oneverse/core`
   (`live/`), with **conformance cases** (`packages/core/conformance/`). The API runs it, and
   so does Pulse (in Rust, against the same cases), so the two can't disagree on what a
-  command does.
+  command does. Pulse runs this same TypeScript in a small Node process (brice, 2026-10-22);
+  its Rust part keeps what Rust is for (NDI output, audio and timing, later MIDI and DMX).
 - **Messages as zod schemas in core**, like the API's requests: the server validates with
   them, Pulse and the native apps (#171) get the same definitions and cases.
 - **Who may** is decided before the reducer, by capability (below), fresh as today (every
@@ -235,7 +236,8 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
   messages translated) handing to `LiveSessionService` (`apps/api/src/live/`), and to the
   notes, presence and co-editing services, each in its own file as they are in the class
   today.
-- Oneverse Pulse: the same state, schemas and conformance cases, in Rust.
+- Oneverse Pulse: the live engine is this code, in a Node process on the mini PC; its Rust
+  part sends the screens' output over NDI and, later, plays audio and drives MIDI and DMX.
 
 ## Order of work
 
@@ -244,13 +246,15 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
 2. The reducer and the messages' schemas in core, with conformance cases; the server uses
    them on today's state. **Done**: `applyLiveOp` in `packages/core/src/live/`, its cases in
    `conformance/live.json`; the stage's commands still go through `applyStageCommand`.
-3. `LiveSession` and its id; Redis by session; `sessionId` and `epoch` in `session`.
+3. `LiveSession` and its id; `sessionId` and `epoch` in `session`. **Done**: the row is
+   made when a session starts and ended when it ends, or hourly by the Worker once its state
+   is gone from Redis (`apps/api/src/sync/live-sessions.ts`).
 4. Leases in place of connections.
 5. Commands with ids and acks; the old messages translated; `basedOn` required for new clients.
 6. The record (stream, then the table).
 7. `slideKey` in `presenting`.
 8. `LiveClient` in core, and the apps moved onto it.
-9. Pulse's mirror and takeover, against the conformance cases.
+9. Pulse's mirror and takeover: the same engine in Node on the mini PC.
 
 Each step is its own commit with its tests; steps 1 to 8 change nothing a user sees except
 #312's behaviour and, at step 7, screens that no longer show the wrong words after an edit.

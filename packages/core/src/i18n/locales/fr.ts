@@ -3227,6 +3227,7 @@ const fr: typeof en = {
     queue_recordings: "Prises enregistrées",
     "queue_stem-separation": "Séparation en pistes",
     queue_scriptures: "Imports de Bibles",
+    "queue_live-sessions": "Sessions en direct terminées",
     ffmpeg: "ffmpeg {{version}} : les prises enregistrées sont converties en Opus.",
     ffmpegMissing: "ffmpeg n'est pas installé là où tournent les tâches de fond : les prises enregistrées restent en WAV, environ huit fois plus lourd. L'image de l'API/du Worker l'inclut ; installez-le partout où elles tournent.",
     counts: "{{waiting}} en attente · {{active}} en cours · {{failed}} en échec",

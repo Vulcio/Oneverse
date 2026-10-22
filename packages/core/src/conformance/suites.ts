@@ -302,6 +302,8 @@ const LIVE_OPERATOR = { userId: "u_o", name: "Olu", device: "i:3", canLead: fals
 const LIVE_PRESENTER = { userId: "u_p", name: "Pia", device: "i:4", canLead: false, canOperate: false };
 const LIVE_SINGER = { userId: "u_s", name: "Sam", device: "i:5", canLead: false, canOperate: false };
 const LIVE_SESSION = {
+  sessionId: "ls_1",
+  epoch: 0,
   rev: 7,
   leader: { id: "u_a", name: "Ana", device: "i:1" },
   metronome: null,

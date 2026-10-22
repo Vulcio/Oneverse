@@ -382,6 +382,7 @@ model User {
   // How each kind of notification reaches them (issue #236): push, email; quiet hours.
   notificationSettings Json?
   screenWidgetDefaults ScreenWidgetDefault[]
+  liveSessionsStarted  LiveSession[]
 
   @@index([email])
 }
@@ -1321,6 +1322,8 @@ model Setlist {
   screens           Screen[]
   // The date of a team's event it was made for (issue #235).
   eventDateOf       TeamEventDate?
+  // Its sessions run live (issue #247).
+  liveSessions      LiveSession[]
 
   @@index([ownerUserId])
   @@index([ownerTeamId])
@@ -3297,4 +3300,32 @@ model BrandAsset {
 
   @@index([brandId])
   @@index([storageKey])
+}
+
+/// A set run live (issue #247, docs/live-session.md): sync play's session as a thing of its
+/// own, which Oneverse Pulse mirrors and its record belongs to. Its state is in Redis while
+/// it's live; ended when someone ends it, or by the Worker once nobody changed it for 12 hours.
+model LiveSession {
+  id          String            @id @default(cuid())
+  setlistId   String
+  status      LiveSessionStatus @default(LIVE)
+  /// Goes up each time another authority takes the session (Pulse offline, the cloud back).
+  epoch       Int               @default(0)
+  /// "cloud", or "pulse:<node id>" while a Pulse runs it on its own.
+  authority   String            @default("cloud")
+  startedById String?
+  startedAt   DateTime          @default(now())
+  endedAt     DateTime?
+
+  setlist   Setlist @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  startedBy User?   @relation(fields: [startedById], references: [id], onDelete: SetNull)
+
+  // One LIVE session per set: a partial unique index, in the migration.
+  @@index([setlistId])
+  @@index([status])
+}
+
+enum LiveSessionStatus {
+  LIVE
+  ENDED
 }

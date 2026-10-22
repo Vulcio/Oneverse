@@ -3224,6 +3224,7 @@ const en = {
     queue_recordings: "Recorded takes",
     "queue_stem-separation": "Stem separation",
     queue_scriptures: "Bible imports",
+    "queue_live-sessions": "Live sessions ended",
     ffmpeg: "ffmpeg {{version}}: recorded takes are turned into Opus.",
     ffmpegMissing: "ffmpeg isn't installed where the background jobs run: recorded takes stay as WAV, about eight times bigger. The API/Worker image has it; install it wherever they run.",
     counts: "{{waiting}} waiting · {{active}} running · {{failed}} failed",

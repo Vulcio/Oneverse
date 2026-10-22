@@ -2,7 +2,7 @@
 // clock's pings, joining a set only its viewers can, leading only for who
 // can edit it, the leader's updates reaching the followers (and nobody
 // else's), a leader dropping off (the session stays) and taking back the
-// lead, and the end of the session.
+// lead, and the end of the session - an id from start to end, recorded (issue #247).
 import { API, api, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 
 const owner = await user("Leader");
@@ -90,6 +90,10 @@ leader.send({ type: "lead" });
 seen = await follower.next((m) => session(m) && m.session);
 check("a session, led by the owner", seen?.session.leader.id === owner.id && seen.session.leader.online && seen.leading === false, JSON.stringify(seen?.session));
 check("the leader knows it", (await leader.next((m) => session(m) && m.leading)) !== null);
+// The live session (issue #247): an id, recorded, from start to end.
+const sessionId = seen?.session.sessionId;
+check("it has an id, at epoch 0", typeof sessionId === "string" && seen.session.epoch === 0, JSON.stringify(seen?.session));
+check("recorded: live, for this set, started by the leader", sql(`select status || ' ' || "setlistId" || ' ' || "startedById" from "LiveSession" where id = '${sessionId}'`) === `LIVE ${set.id} ${owner.id}`);
 
 const metronome = { settings: { tempo: 90, numerator: 3, denominator: 4, beats: ["accent", "normal", "normal"], subdivision: 1, countIn: 0, countInOnly: false }, playing: true, anchorAt: Date.now() + 500, anchorPosition: 0 };
 leader.send({ type: "update", metronome, itemId: "item-1" });
@@ -117,11 +121,19 @@ await leader.next(session);
 leader.send({ type: "lead" });
 seen = await follower.next((m) => session(m) && m.session?.leader.online);
 check("back, and leading again: where it was", seen?.session.metronome?.anchorAt === metronome.anchorAt && seen.session.itemId === "item-1");
+check("the same session", seen?.session.sessionId === sessionId);
 
 // --- the end
 leader.send({ type: "end" });
 seen = await follower.next((m) => session(m) && m.session === null);
 check("ended: no session for anyone", seen !== null);
+check("and recorded as ended", sql(`select status from "LiveSession" where id = '${sessionId}' and "endedAt" is not null`) === "ENDED");
+leader.send({ type: "lead" });
+seen = await follower.next((m) => session(m) && m.session && m.session.sessionId !== sessionId);
+check("led again: another session", typeof seen?.session.sessionId === "string", JSON.stringify(seen?.session));
+check("one live session for the set", sql(`select count(*) from "LiveSession" where "setlistId" = '${set.id}' and status = 'LIVE'`) === "1");
+leader.send({ type: "end" });
+await follower.next((m) => session(m) && m.session === null);
 
 // --- taken off the team: out of the set within the re-check (issue #112), not only when they reconnect
 await api(owner, "DELETE", `/teams/${team.id}/members/${member.id}`);

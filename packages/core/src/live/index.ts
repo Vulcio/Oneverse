@@ -171,6 +171,8 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
     case "lead":
       if (!actor.canLead) return refuse("forbidden", "Only someone who can edit the set leads it");
       return changed({
+        // The same session, its id and epoch kept.
+        ...(current?.sessionId !== undefined && { sessionId: current.sessionId, epoch: current.epoch ?? 0 }),
         rev: (current?.rev ?? 0) + 1,
         leader: me,
         // Taking over carries on from where it was.

@@ -63,6 +63,10 @@ export interface SyncScreenInfo {
 }
 
 export interface SyncSession {
+  /** The session's id (issue #247): the same from the moment it starts until it ends, whoever leads it. Left out by an older server. */
+  sessionId?: string;
+  /** Goes up each time another authority (Oneverse Pulse, the cloud back) takes the session (issue #247). Left out: 0. */
+  epoch?: number;
   /** Goes up with each change. */
   rev: number;
   leader: { id: string; name: string; online: boolean };

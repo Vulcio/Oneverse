@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesIn } from "../roles/capabilities.js";
+import { endLiveSession, startLiveSession } from "./live-sessions.js";
 import type { ScreensService } from "../screens/screens.service.js";
 import { SCREEN_ONLINE_TTL_S, SCREEN_REPORT_TTL_S, screenOnlineKey, screenReportKey } from "../screens/screen-channel.js";
 import type { SetlistAccessService } from "../setlists/setlist-access.service.js";
@@ -11,7 +12,7 @@ import { ACCESS_RECHECK_MS, PRESENCE_MS, SESSION_TTL_S, type Connection, type Sy
 
 /** A set's session or who's in it changed: announced to every instance, each sending it to its own connections in the set. */
 export const CHANNEL = "songverse:sync:changed";
-const sessionKey = (setId: string) => `songverse:sync:session:${setId}`;
+export const sessionKey = (setId: string) => `songverse:sync:session:${setId}`;
 const membersKey = (setId: string) => `songverse:sync:members:${setId}`;
 /**
  * One change to a set's session at a time (issue #305), across the API's
@@ -250,10 +251,17 @@ export class SetSessions {
     const previous = await this.read(setId);
     const result = applyLiveOp(previous, this.actor(connection), op, Date.now());
     if (result.ok && result.changed) {
-      if (result.session) await this.write(setId, result.session);
-      else {
+      if (result.session) {
+        // Started now, or kept from before sessions had one: its row and id (issue #247).
+        if (!result.session.sessionId) {
+          const row = await startLiveSession(this.prisma, setId, connection.user!.id).catch((err: unknown) => this.logger.error(`Can't record the live session of ${setId}: ${String(err)}`));
+          if (row) Object.assign(result.session, { sessionId: row.id, epoch: row.epoch });
+        }
+        await this.write(setId, result.session);
+      } else {
         await redis().del(sessionKey(setId));
         await this.changed(setId);
+        if (previous?.sessionId) await endLiveSession(this.prisma, previous.sessionId).catch(() => undefined);
       }
     }
     return { result, previous };
