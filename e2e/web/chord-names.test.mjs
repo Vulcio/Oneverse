@@ -32,13 +32,19 @@ page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 await signIn(page, me);
 await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
 const labels = () => page.locator("[data-chord]").evaluateAll((els) => els.map((el) => el.textContent.trim()));
+// A setting on the dashboard, once its page has hydrated, and saved: chosen before, the select goes back unsaved.
+async function choose(label, value) {
+  const saved = page.waitForResponse((res) => res.url().endsWith("/users/me") && res.request().method() === "PATCH");
+  await page.getByLabel(label).selectOption(value);
+  if (!(await saved).ok()) throw new Error(`${label}: not saved`);
+  await page.waitForLoadState("networkidle");
+}
 
 await step("Chart display: Nashville numbers; the key change keeps them, the capo too", async () => {
   await page.goto(`${WEB}/dashboard`);
-  await page.getByLabel("Chord names").selectOption("NASHVILLE");
   await page.waitForLoadState("networkidle");
-  await page.getByLabel("With a capo").selectOption("FINGERED");
-  await page.waitForLoadState("networkidle");
+  await choose("Chord names", "NASHVILLE");
+  await choose("With a capo", "FINGERED");
   await page.goto(`${WEB}/library/${song.id}`);
   await page.getByTestId("practice-song").locator("[data-chord]").first().waitFor();
   // Sung in D, then in E: the same numbers both times, capo shapes or not.
@@ -57,8 +63,8 @@ await step("Roman numerals from the Display panel (issue #220): Practice only, t
 
 await step("Chart display: colours by chord type", async () => {
   await page.goto(`${WEB}/dashboard`);
-  await page.getByLabel("Chord colours").selectOption("ON");
   await page.waitForLoadState("networkidle");
+  await choose("Chord colours", "ON");
   await page.goto(`${WEB}/library/${song.id}`);
   const dominant = page.locator('[data-family="dominant"]').first();
   await dominant.waitFor();
