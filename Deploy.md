@@ -339,7 +339,7 @@ No environment variables. The build fails if any page links to a page or heading
 ### Other parts, deployed on their own
 
 - **Songverse Sonic** (stem separation and music analysis) is its own server, with its own repository and images: [Vulcio/songverse-sonic](https://github.com/Vulcio/songverse-sonic). Point the API at it in **Admin > Stem separation**; teams and organisations can bring their own (#300).
-- **The on-site player** (a mini PC driving the screens over HDMI, #247) is [Vulcio/songverse-player](https://github.com/Vulcio/songverse-player). It's a prototype: nothing in this deployment depends on it yet.
+- **The on-site player** (a mini PC driving the screens over HDMI, #247) is [Vulcio/oneverse-pulse](https://github.com/Vulcio/oneverse-pulse). It's a prototype: nothing in this deployment depends on it yet.
 
 ### Signing in at Oneverse
 
