@@ -54,6 +54,7 @@ export class CloudLink {
   private current: LinkStatus = "connecting";
   private key: string | null = null;
   private readonly listeners = new Set<(status: LinkStatus) => void>();
+  private readonly sessionListeners = new Set<() => void>();
 
   constructor(private readonly options: CloudLinkOptions) {
     this.engine = new LiveEngine(options.nodeId);
@@ -72,6 +73,16 @@ export class CloudLink {
   onStatus(listener: (status: LinkStatus) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /** Told when the session changes from the cloud's side: what it says while it runs it, or its taking it back. */
+  onSession(listener: () => void): () => void {
+    this.sessionListeners.add(listener);
+    return () => this.sessionListeners.delete(listener);
+  }
+
+  private sessionChanged() {
+    for (const listener of this.sessionListeners) listener();
   }
 
   start() {
@@ -138,6 +149,7 @@ export class CloudLink {
       if (this.current !== "online" && this.engine.takeOver()) {
         this.options.log?.(`cloud link: the room runs session ${this.engine.state?.sessionId} (epoch ${this.engine.state?.epoch})`);
         this.set("room");
+        this.sessionChanged();
       }
     }, this.options.outageMs ?? OUTAGE_MS);
     this.retry = setTimeout(() => this.connect(), Math.min(10_000, 500 * 2 ** this.retries++));
@@ -159,6 +171,7 @@ export class CloudLink {
       case "session":
         if (message.setId !== this.options.setId || message.live === undefined) return;
         this.engine.mirror(message.live);
+        if (!this.engine.runs) this.sessionChanged();
         return;
       case "pass":
         if (message.setId === this.options.setId) this.key = message.key;
@@ -182,6 +195,7 @@ export class CloudLink {
   }
 
   private mirror() {
+    this.sessionChanged();
     this.send({ type: "mirror" });
     // Its own pass, for the cloud's key.
     this.send({ type: "pass" });

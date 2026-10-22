@@ -344,6 +344,8 @@ export interface SyncMember {
 
 export type SyncClientMessage =
   | { type: "hello"; token: string }
+  /** On Oneverse Pulse's own server (issue #247), in place of hello: a pass the cloud signed (live/pass.ts). Answered with `ready`. */
+  | { type: "enter"; pass: string }
   /** A screen signs in with its screen token (issue #186), in place of hello; it joins its set by itself. */
   | { type: "screen"; token: string }
   | { type: "ping"; id: number; sent: number }

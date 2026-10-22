@@ -13,11 +13,13 @@
     "test": "vp test"
   },
   "dependencies": {
-    "@oneverse/core": "workspace:*"
+    "@oneverse/core": "workspace:*",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@oneverse/tsconfig": "workspace:*",
     "@types/node": "^22.10.5",
+    "@types/ws": "^8.18.1",
     "typescript": "^5.7.3",
     "vite-plus": "1.0.0"
   }

@@ -328,6 +328,9 @@ importers:
       '@oneverse/core':
         specifier: workspace:*
         version: link:../../packages/core
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
     devDependencies:
       '@oneverse/tsconfig':
         specifier: workspace:*
@@ -335,6 +338,9 @@ importers:
       '@types/node':
         specifier: ^22.10.5
         version: 22.20.2
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3

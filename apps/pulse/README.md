@@ -10,8 +10,14 @@ When the cloud is gone for longer than `OUTAGE_MS` (10 s), the room runs the ses
 up; when it's back, the room's session and record go to the cloud first, which takes them as they
 are, and Pulse mirrors again.
 
-Not yet: the room's side (Pulse's own page for Live and the console, reached by "Continue on
-Pulse", and how the room's devices sign in to it without the internet), Pulse's own sign-in
+`Room` is the room's server: the cloud's `/sync` for the devices on the venue's network
+(`PULSE_ROOM_PORT`, 8788, on every address by default), entered with a pass the cloud signed
+(`{type: "enter", pass}`, checked offline with the cloud's key). A device joins the set, hears
+its session and sends commands, applied by the engine while the room runs the session. `GET
+/health` says whether the cloud is there.
+
+Not yet: Pulse's own page for Live and the console (reached by "Continue on Pulse"), the stage
+(timers, messages) and most of the old messages in the room, Pulse's own sign-in
 (paired like a screen; until then `PULSE_TOKEN` is an API token of someone who can edit the set),
 and following the sets of an event rather than one set. It has not run on a mini PC yet: only in
 tests (`src/__tests__/`, `e2e/api/pulse-link.test.mjs`) against the API.

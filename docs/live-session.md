@@ -234,7 +234,8 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
   they may do there (`canLead`, `canOperate`), for 12 hours (`LIVE_PASS_MS`). "Continue on
   Pulse" carries it; Pulse checks it with the cloud's public key, which it's sent with its own
   pass, and `verifyLivePass` in core (live/pass.ts), without the internet. The same rights in
-  the room as in the cloud, as of when the pass was signed.
+  the room as in the cloud, as of when the pass was signed. Pulse's room server (`apps/pulse/src/room.ts`) is the
+  cloud's `/sync` for the venue's network, entered with a pass (`{type: "enter", pass}`).
 - While the room runs offline, the cloud keeps accepting commands from anyone still
   connected to it: it can't tell an outage from a Pulse that stopped,
   and refusing everyone because a mini PC was unplugged would be worse. On reconnection
