@@ -402,6 +402,12 @@ const fr: typeof en = {
       masks: "Masques",
     },
     operator: {
+      pulse: {
+        onPulse: "Sur Pulse : la salle mène la liste sans Internet.",
+        noPass: "Ouvrez cette page avec le lien « Continuer sur Pulse » de Live : il apporte votre laissez-passer.",
+        noCopy: "Pulse n'a pas encore de copie de cette liste.",
+        unreachable: "Pulse ne répond pas. Cet appareil est-il sur le réseau de la salle ?",
+      },
       pickTitle: "Gérer les écrans",
       pickDescription: "Choisissez une liste : ses diapositives, son minuteur et ses messages pour ses écrans.",
       noSets: "Aucune liste pour l'instant. Les listes se créent dans Songverse.",

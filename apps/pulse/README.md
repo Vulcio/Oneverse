@@ -16,14 +16,23 @@ are, and Pulse mirrors again.
 its session and sends commands, applied by the engine while the room runs the session. `GET
 /health` says whether the cloud is there.
 
-Not yet: Pulse's own page for Live and the console (reached by "Continue on Pulse"), the stage
-(timers, messages) and most of the old messages in the room, Pulse's own sign-in
-(paired like a screen; until then `PULSE_TOKEN` is an API token of someone who can edit the set),
-and following the sets of an event rather than one set. It has not run on a mini PC yet: only in
-tests (`src/__tests__/`, `e2e/api/pulse-link.test.mjs`) against the API.
+`SetCopy` keeps the set as the screens show it (without anyone's notes) on disk
+(`PULSE_DATA_DIR`), fetched when the cloud's there and every five minutes; the room gives it at
+`GET /set` to a pass (`Authorization: Pass <pass>`). Pulse's own page, at `/`, is the operator's
+console built for it by the screen app (`pnpm --filter @oneverse/screen-app build:pulse`, served
+from `PULSE_CONSOLE_DIR`, its `dist/pulse` by default): opened with `#pass=<pass>`, it shows that
+copy and runs the screens through the room (`e2e/web/pulse-console.test.mjs`).
+
+Not yet: Live asking for a pass and showing "Continue on Pulse" when the cloud drops, Live
+itself on Pulse's page, the stage (timers, messages) and most of the old messages in the room,
+Pulse's own sign-in (paired like a screen; until then `PULSE_TOKEN` is an API token of someone who
+can edit the set), and following the sets of an event rather than one set. It has not run on a
+mini PC yet: only in tests (`src/__tests__/`, `e2e/api/pulse-link`, `pulse-room`,
+`e2e/web/pulse-console`) against the API.
 
 ```sh
 pnpm --filter @oneverse/pulse build
+pnpm --filter @oneverse/screen-app build:pulse
 ONEVERSE_API_URL=https://api.oneverse.top PULSE_SET_ID=… PULSE_NODE_ID=pulse-hall-1 PULSE_TOKEN=… \
   node apps/pulse/dist/main.js
 ```

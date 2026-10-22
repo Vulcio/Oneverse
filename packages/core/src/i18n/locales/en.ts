@@ -402,6 +402,12 @@ const en = {
       masks: "Masks",
     },
     operator: {
+      pulse: {
+        onPulse: "On Pulse: the room runs the set without the internet.",
+        noPass: "Open this page from Live's \"Continue on Pulse\" link: it brings your pass.",
+        noCopy: "Pulse has no copy of this set yet.",
+        unreachable: "Pulse doesn't answer. Is this device on the venue's network?",
+      },
       pickTitle: "Run the screens",
       pickDescription: "Pick a set: its slides, timer and messages for its screens.",
       noSets: "No sets yet. Sets are made in Songverse.",

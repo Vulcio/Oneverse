@@ -18,11 +18,11 @@ export const AREAS = {
   "apps/api/src/notifications/": ["notification", "push", "reminders"],
   "apps/api/src/brands/": ["brands"],
   "apps/api/src/artists/": ["artists"],
-  "apps/screen/": ["screen", "split-control"],
+  "apps/screen/": ["screen", "split-control", "pulse"],
   "apps/pulse/": ["pulse", "live-handback"],
   "apps/planiverse/": ["planiverse", "organization", "groups", "team-calendar", "event"],
   "packages/screen/": ["screen", "live"],
-  "packages/operator/": ["screen-console", "screen-operator", "live", "split-control"],
+  "packages/operator/": ["screen-console", "screen-operator", "live", "split-control", "pulse"],
 };
 
 /** Changes no suite has anything to say about. */

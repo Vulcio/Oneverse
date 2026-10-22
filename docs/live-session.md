@@ -306,9 +306,13 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    changes one by one); Pulse's own sign-in comes with its pairing. The Node process is
    `apps/pulse` (`@oneverse/pulse`): `CloudLink` mirrors one set, runs it in the room after
    `OUTAGE_MS` without the cloud, and hands it back first when it's back
-   (`e2e/api/pulse-link.test.mjs`). Still to do: the room's side (Pulse's own page, how the
-   room's devices reach it, below, and sign in to it offline), Pulse's own sign-in, and
-   running it on the mini PC.
+   (`e2e/api/pulse-link.test.mjs`). The room's side: the cloud signs passes (below), Pulse's
+   `Room` lets a device in with one, offline, and runs its commands (`e2e/api/pulse-room`);
+   Pulse keeps a copy of the set (`SetCopy`, `GET /set` to a pass) and serves the operator's
+   console as its own page, built by the screen app (`build:pulse`), opened with `#pass=`
+   (`e2e/web/pulse-console`). Still to do: Live asking for passes and showing "Continue on
+   Pulse" (how it learns Pulse's address), Live itself on Pulse's page, Pulse's own sign-in,
+   and running it on the mini PC.
 
 Each step is its own commit with its tests; steps 1 to 8 change nothing a user sees except
 #312's behaviour, at step 7 screens that no longer show the wrong words after an edit, and at

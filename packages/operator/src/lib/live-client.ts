@@ -15,9 +15,11 @@ const OFF: OperatorLive = { ready: false, error: null, session: null, stage: nul
  * in an app that doesn't play along - the screen app's /operate: it joins the
  * set over the API's /sync, presents and runs the stage, and never leads
  * (no metronome, no stems). Songverse's console uses its own sync client.
- * `token` gives the API token, null when signed out.
+ * `token` gives the API token, null when signed out. On Oneverse Pulse's own
+ * page (issue #247), `apiUrl` is Pulse's and `pass` the pass the cloud signed:
+ * the device enters with it instead of signing in.
  */
-export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () => Promise<string | null> }) {
+export function createLiveClient({ apiUrl, token, pass }: { apiUrl: string; token: () => Promise<string | null>; pass?: () => string | null }) {
   let state = OFF;
   let setId: string | null = null;
   let socket: WebSocket | null = null;
@@ -61,6 +63,11 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
     const ws = new WebSocket(`${apiUrl.replace(/^http/, "ws").replace(/\/$/, "")}${SYNC_PATH}`);
     socket = ws;
     ws.onopen = () => {
+      if (pass) {
+        const value = pass();
+        if (!value) return emit({ error: "signed-out" });
+        return send({ type: "enter", pass: value });
+      }
       void token().then((value) => {
         if (socket !== ws) return;
         if (!value) return emit({ error: "signed-out" });
