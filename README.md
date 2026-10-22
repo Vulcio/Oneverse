@@ -19,7 +19,7 @@ Other parts live in their own repositories:
 [Songverse Sonic](https://github.com/Vulcio/songverse-sonic) (stem separation
 and music analysis, Python) and the on-site player
 [Oneverse Pulse](https://github.com/Vulcio/oneverse-pulse) (Rust, the on-site
-runtime). Planned: Songverse's native apps, Slidevese
+runtime). Planned: Songverse's native apps, Slideverse
 (presentations) and Oneverse Screen (native display apps).
 
 Where it's going, and why: [the architecture blueprint](docs/oneverse-architecture.md).

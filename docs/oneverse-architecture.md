@@ -25,7 +25,7 @@ flowchart TB
   S["Songverse (Web)<br/>Music and musicians"]
   SA["Songverse (App)<br/>Native iOS + Android · offline-first"]
   P["Planiverse<br/>Events · Rotas · Groups · Schedules"]
-  SL["Slidevese<br/>Presentations · PPTX/PDF imports · Slide editing later"]
+  SL["Slideverse<br/>Presentations · PPTX/PDF imports · Slide editing later"]
   SO["Songverse Sonic<br/>Stem separation and music analysis API"]
   SW["Oneverse Screens Web<br/>Built into Oneverse"]
   SN["Oneverse Screen<br/>Android tablet/TV · iPadOS · tvOS"]
@@ -37,7 +37,7 @@ flowchart TB
   S & SL & SW -. "Shared live-session controls" .-> CORE
 ```
 
-**Product naming:** Use **Songverse (Web)** for the browser application and **Songverse (App)** for native Android/iOS musician clients. Never label the latter “Songverse Native.” The presentation application's selected spelling is **Slidevese** (not Slideverse; to confirm before it reaches code or domains, since it breaks the -verse pattern of the other names). **Oneverse Screens Web** is built into Oneverse; the separate native display receiver is **Oneverse Screen** (`Vulcio/oneverse-screen`). **Oneverse Pulse** (`Vulcio/oneverse-pulse`, renamed from `songverse-player` on 2026-10-22) is the Rust on-site runtime; its Cargo package and binary still use the transitional name `songverse-player`.
+**Product naming:** Use **Songverse (Web)** for the browser application and **Songverse (App)** for native Android/iOS musician clients. Never label the latter “Songverse Native.” The presentation application is **Slideverse** (decided 2026-10-22). **Oneverse Screens Web** is built into Oneverse; the separate native display receiver is **Oneverse Screen** (`Vulcio/oneverse-screen`). **Oneverse Pulse** (`Vulcio/oneverse-pulse`, renamed from `songverse-player` on 2026-10-22) is the Rust on-site runtime; its Cargo package and binary still use the transitional name `songverse-player`.
 
 ## 2. Responsibility and ownership boundaries
 
@@ -48,7 +48,7 @@ flowchart TB
 | **Songverse (App)** | Native mobile experience for musicians, locally cached content, reliable offline usage and reconciliation, native-specific UX | Separate identity/ownership model |
 | **Songverse Sonic** | Independently deployable audio processing API: stem separation, tempo/key/beat/section analysis | User/Team/Organization identity, universal Sets |
 | **Planiverse** | Events, recurring schedules, homegroups, cleaning rotas, assignments, calendars, planning UX | Core membership and permission primitives |
-| **Slidevese** | Import PowerPoint (PPTX) and PDF, presentation organization and playback semantics, scripture presentation layouts; later simple slide editing | Screen registration, scripture-provider account authority |
+| **Slideverse** | Import PowerPoint (PPTX) and PDF, presentation organization and playback semantics, scripture presentation layouts; later simple slide editing | Screen registration, scripture-provider account authority |
 | **Oneverse Screens Web** | Oneverse-integrated management and browser receiver/control UI | Separate ownership and permissions |
 | **Oneverse Screen** | Native display receiver on Android tablets/TVs, iPadOS and tvOS; cached display content and resilient playback | Song and presentation editors |
 | **Oneverse Pulse** | Rust on-site runtime and fallback node on a venue mini PC: local services and session mirror, cached authorised data, LAN takeover on WAN loss, screens (HDMI, future NDI) through the shared renderer; later audio and timing, local orchestration, MIDI and lighting | Alternate content models or duplicated screen renderer |
@@ -76,7 +76,7 @@ Most of Core exists today inside `apps/api` and the shared packages. Core is fir
 
 - **Identity/workspaces:** one Oneverse account; personal space without a Team; Teams may exist without an Organization; Teams can join Organizations only through an explicit, owner-approved process. Planiverse's team-centric onboarding may differ from Songverse's. Applications remain independently usable.
 - **Permissions:** authorize by capability and scope (personal / Team / Organization / specific Set or live session), not solely a global flag. A role assignment carries its scope; a new right stays a field on `Role`. Organization administrators do not implicitly own members' personal data. Keep a distinction between *resource ownership* and *permission to use*: an Organization owns its screens and brands; it governs, not owns, its Teams' Sets.
-- **Universal Sets:** ordered, typed references to songs, scripture passages, Slidevese decks/slides, media and future items. A set item has a `kind` and one nullable foreign key per kind (not a generic JSON reference), so deletion, song folding and access checks keep working in the database. Passages are the deliberate exception: a reference plus a translation (`{bibleId}` or `{youversionId}`), since a translation can be deleted and a provider's has no row of ours. Set ownership, sharing, item resolution and live sequence state belong to Oneverse; interpretation of a song/deck remains with its product. Existing Songverse Sets migrate compatibly (every existing item is `SONG`); a resource reference never grants unrestricted access to its entire source library.
+- **Universal Sets:** ordered, typed references to songs, scripture passages, Slideverse decks/slides, media and future items. A set item has a `kind` and one nullable foreign key per kind (not a generic JSON reference), so deletion, song folding and access checks keep working in the database. Passages are the deliberate exception: a reference plus a translation (`{bibleId}` or `{youversionId}`), since a translation can be deleted and a provider's has no row of ours. Set ownership, sharing, item resolution and live sequence state belong to Oneverse; interpretation of a song/deck remains with its product. Existing Songverse Sets migrate compatibly (every existing item is `SONG`); a resource reference never grants unrestricted access to its entire source library.
 - **Common slide protocol:** each item kind has an adapter in `@oneverse/core` turning it into slides of a few generic kinds: lines of text (songs, passages), an image (a PDF page, a PPTX slide rendered at import) and media. `ScreenStage` renders those kinds only, so a screen never needs the authoring app installed. `presenting` carries the item's revision with the slide number, so a slide number stays meaningful when an item changes mid-service.
 - **Scriptures:** see section 5.
 - **Screens:** persistently owned by person, Team or Organization irrespective of who paired the device. Oneverse stores pairing credentials, revocation, capabilities, output assignments, and active display profiles; the screen's current configuration follows the selected profile. Rendering uses a fixed-order configurable layer stack: base → video input → media → content → overlays → final mask. Templates compose reusable themes; shared edits propagate, subject to explicit screen-level overrides.
@@ -95,7 +95,7 @@ Most of Core exists today inside `apps/api` and the shared packages. Core is fir
 
 - **Oneverse operator console:** general-purpose Set navigation, preview/program, screen and output routing, overlays, black/clear, profile selection, session health and takeover.
 - **Songverse (Web/App):** singers and leaders may get narrowly scoped controls (e.g., next song/section, advance, cue) for their assigned Set/session **without** permission to re-pair devices, alter Team ownership or manage unrelated outputs.
-- **Slidevese:** presentation-specific navigation, cues and slide controls against the **same** Oneverse session.
+- **Slideverse:** presentation-specific navigation, cues and slide controls against the **same** Oneverse session.
 
 Capabilities, each scoped to an Organisation, Team, Set or session:
 
@@ -116,7 +116,7 @@ The authoritative **Oneverse Live Session** tracks active Set/item/slide, target
 ## 7. Implementation strategy / migration
 
 1. **Stay in the monorepo.** `Vulcio/Oneverse` (renamed from `Vulcio/Songverse`) hosts Songverse, Planiverse, the NestJS API, Prisma DB, and shared packages `@oneverse/core`, `@oneverse/app`, `@oneverse/ui`, `@oneverse/planning`. One schema, one API, one e2e harness and atomic changes across them are worth more than separate repositories. Sonic (Python) and the player (Rust) stay separate: different languages, deployed on their own. Map dependencies and preserve working routes, contracts and deployed behavior.
-2. **First vertical slice: a scripture passage on the screens.** It exercises typed Set items, the common slide protocol and licensing, without Slidevese, renames or a new session model:
+2. **First vertical slice: a scripture passage on the screens.** It exercises typed Set items, the common slide protocol and licensing, without Slideverse, renames or a new session model:
    1. Scriptures: Bible imports (Zefania, Beblia, OSIS) to the JSON format, passage references, rights fields. *(done; the whole slice is on main, #301, #305, #310)*
    2. Typed Set items, songs only: `SetlistItem.kind`, no behaviour change.
    3. The slide contract in core, with conformance cases, and the item revision in `presenting`.
