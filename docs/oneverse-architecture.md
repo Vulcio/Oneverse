@@ -11,7 +11,8 @@
 |---|---|
 | Stay in one monorepo, renamed `Vulcio/Oneverse` (was `Vulcio/Songverse`); Sonic and the player stay in their own repositories | Decided (2026-10-21) |
 | The operator is Oneverse's: authorised by Oneverse, its console a Oneverse surface | Decided (2026-10-21) |
-| Scriptures start with imported Bibles (Zefania, Beblia, OSIS XML), stored in one JSON format compatible with json-bible | Started (2026-10-21) |
+| Scriptures start with imported Bibles (Zefania, Beblia, OSIS XML), stored in one JSON format compatible with json-bible | Done (2026-10-21) |
+| YouVersion's licensing is settled with YouVersion, not managed in Oneverse: its passages go on screens, read live, never stored or offline | Decided (2026-10-22) |
 | Workspace packages renamed `@oneverse/*` (was `@oneverse/*`); Songverse's image is `Dockerfile.songverse` (was `Dockerfile.web`) | Decided (2026-10-21) |
 | Each app on its own domain: oneverse.top, songverse.top, planiverse.top (replacing songverse.one), sign-in through Oneverse ("Sign in with Oneverse": accounts and passkeys at oneverse.top, each app its own session) | Decided (2026-10-21) |
 | Organisations govern their teams' Sets rather than owning Sets | Proposed |
@@ -86,7 +87,7 @@ Most of Core exists today inside `apps/api` and the shared packages. Core is fir
 - **Rights are data:** each translation records what it may be used for (search, offline copies, projection, export) and its copyright line, checked wherever the text goes: the API, offline caches, the player's snapshot, exports. Public-domain texts (KJV, Louis Segond 1910, WEB, …) and texts the Organisation is licensed for are the safe start.
 - **Who has them:** an instance's admin imports translations for everyone; later an Organisation or Team imports its own, licensed to it.
 - **Passage references** ("John 3:16-18", "Jn 3:16; 4:1-3") are parsed in `@oneverse/core`, with book names and abbreviations in each language, and resolved against a translation. A Set holds a passage as a reference plus a translation, never a copy of the text.
-- **YouVersion:** its Platform API needs an application registered and approved by YouVersion (an App Key sent with every request). Over 1,000 versions, each with its own licence: access does not grant caching, offline or projection rights. A provider adapter waits until an app is registered and each wanted version's terms are read. Do not assume redistribution/caching rights from API access.
+- **YouVersion** (#304, #310): a provider through its Platform API, with an App Key set in Admin > Bibles. Licensing is settled with YouVersion, not managed in Oneverse: a set holds a YouVersion passage as `{youversionId, reference}`, its text read from YouVersion each time it's shown - on screens too - with the version's copyright line and link, never stored and never in the copies kept offline.
 
 ## 6. Operator and live-session model — agreed direction
 
@@ -116,7 +117,7 @@ The authoritative **Oneverse Live Session** tracks active Set/item/slide, target
 
 1. **Stay in the monorepo.** `Vulcio/Oneverse` (renamed from `Vulcio/Songverse`) hosts Songverse, Planiverse, the NestJS API, Prisma DB, and shared packages `@oneverse/core`, `@oneverse/app`, `@oneverse/ui`, `@oneverse/planning`. One schema, one API, one e2e harness and atomic changes across them are worth more than separate repositories. Sonic (Python) and the player (Rust) stay separate: different languages, deployed on their own. Map dependencies and preserve working routes, contracts and deployed behavior.
 2. **First vertical slice: a scripture passage on the screens.** It exercises typed Set items, the common slide protocol and licensing, without Slidevese, renames or a new session model:
-   1. Scriptures: Bible imports (Zefania, Beblia, OSIS) to the JSON format, passage references, rights fields. *(started)*
+   1. Scriptures: Bible imports (Zefania, Beblia, OSIS) to the JSON format, passage references, rights fields. *(done; the whole slice is on main, #301, #305, #310)*
    2. Typed Set items, songs only: `SetlistItem.kind`, no behaviour change.
    3. The slide contract in core, with conformance cases, and the item revision in `presenting`.
    4. A `PASSAGE` item kind, rendered by `ScreenStage`.
@@ -132,7 +133,7 @@ Proposed answers are in sections 4–7; still open:
 - Organisations owning Sets: proposed no (they govern their Teams' Sets; an Organisation event's host group owns its Set). To confirm.
 - Oneverse's own entry point and domain topology (Home, operator console), with self-hosting on one server; tied to #243.
 - Controller handoff details: lease length, what a guest may do, audit retention.
-- Licensed capabilities of each provider and imported translation (search, caching, offline usage, projection, export), YouVersion included.
+- Licensed capabilities of each imported translation (search, caching, offline usage, projection, export); YouVersion's are settled with YouVersion.
 - Which item kinds after passages: PDF pages or PPTX slides first.
 - What can be delivered natively on Android TV, tvOS and tablets before hardware-validated release; start with the web screen in a WebView (#187), measured with #286's reports.
 
