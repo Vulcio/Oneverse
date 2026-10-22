@@ -28,7 +28,7 @@ flowchart TB
   SL["Slideverse<br/>Presentations · PPTX/PDF imports · Slide editing later"]
   SO["Songverse Sonic<br/>Stem separation and music analysis API"]
   SW["Oneverse Screens Web<br/>Built into Oneverse"]
-  SN["Oneverse Screen<br/>Android tablet/TV · iPadOS · tvOS"]
+  SN["Oneverse Screen<br/>Android · Android TV · iOS · iPadOS · tvOS<br/>Web + NDI display"]
   PLAYER["Oneverse Pulse<br/>Rust on-site runtime · LAN/offline fallback"]
   CORE --> S & SA & P & SL
   CORE --> SW & SN & PLAYER
@@ -50,7 +50,7 @@ flowchart TB
 | **Planiverse** | Events, recurring schedules, homegroups, cleaning rotas, assignments, calendars, planning UX | Core membership and permission primitives |
 | **Slideverse** | Import PowerPoint (PPTX) and PDF, presentation organization and playback semantics, scripture presentation layouts; later simple slide editing | Screen registration, scripture-provider account authority |
 | **Oneverse Screens Web** | Oneverse-integrated management and browser receiver/control UI | Separate ownership and permissions |
-| **Oneverse Screen** | Native display receiver on Android tablets/TVs, iPadOS and tvOS; cached display content and resilient playback | Song and presentation editors |
+| **Oneverse Screen** | Native display app on Android, Android TV, iOS, iPadOS and tvOS (`Vulcio/oneverse-screen`, code published 2026-10-22): NDI playback and contribution, hybrid display of the web screen with NDI sources, cached display content and resilient playback | Song and presentation editors |
 | **Oneverse Pulse** | Rust on-site runtime and fallback node on a venue mini PC: local services and session mirror, cached authorised data, LAN takeover on WAN loss, screens (HDMI, future NDI) through the shared renderer; later audio and timing, local orchestration, MIDI and lighting | Alternate content models or duplicated screen renderer |
 
 **Principle:** Oneverse owns reusable identities, assets, permissions, devices and coordination; each application owns its domain-specific authoring, rendering adapters and workflows. Logical ownership is **not** a mandate for separate repositories, servers or databases.
@@ -135,6 +135,6 @@ Proposed answers are in sections 4–7; still open:
 - Controller handoff details: lease length, what a guest may do, audit retention.
 - Licensed capabilities of each imported translation (search, caching, offline usage, projection, export); YouVersion's are settled with YouVersion.
 - Which item kinds after passages: PDF pages or PPTX slides first.
-- What can be delivered natively on Android TV, tvOS and tablets before hardware-validated release; start with the web screen in a WebView (#187), measured with #286's reports.
+- How Oneverse Screen (now on GitHub, with NDI playback and contribution and a hybrid Web+NDI display) reaches release on each platform, validated on hardware, measured with #286's reports; how its NDI relates to Pulse's planned NDI output (#196).
 
 **Guiding rule:** one shared model and authority, multiple purpose-built applications, independent entry points and resilient display clients.
