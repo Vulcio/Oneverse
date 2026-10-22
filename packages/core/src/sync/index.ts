@@ -1,7 +1,8 @@
 import type { SyncTimer } from "../screens/timers.js";
 import { SCREEN_SWITCHABLE_LAYERS, type ScreenSwitchableLayer } from "../screens/theme.js";
 import type { MetronomeSettings } from "../metronome/index.js";
-import type { LiveCommandOp } from "../live/index.js";
+import type { LiveCommandOp, LiveSessionState } from "../live/index.js";
+import type { LiveHandback } from "../live/engine.js";
 
 /**
  * Sync play (issue #13): the messages between a device and the API's
@@ -360,6 +361,14 @@ export type SyncClientMessage =
    * again (a resend after a drop) is applied once.
    */
   | { type: "command"; id: string; epoch?: number; op: LiveCommandOp }
+  /**
+   * Oneverse Pulse (issue #247, live/engine.ts): from someone who can edit the
+   * set, in it - every `session` that follows carries the session as it's
+   * kept (`live`), to take over from if the internet goes.
+   */
+  | { type: "mirror" }
+  /** Pulse back online: the session as the room ran it, and what it did. Answered with `handedBack`, or an error. */
+  | { type: "handback"; handback: LiveHandback }
   | { type: "leave" }
   /** Starts a session, or takes over the lead of the one going on. */
   | { type: "lead" }
@@ -453,7 +462,11 @@ export type SyncServerMessage =
       canPresent?: boolean;
       /** This user runs screens (issue #305): can edit the set, or has a role that runs screens - the operator's console is theirs, locked or not. */
       canOperate?: boolean;
+      /** The session as it's kept, holders' devices and all: only to a device that asked to `mirror` it (Pulse). */
+      live?: LiveSessionState | null;
     }
+  /** The room's session taken back (issue #247): the cloud runs it again, from `epoch` at `rev`; `rev` 0: it ended. */
+  | { type: "handedBack"; sessionId: string; epoch: number; rev: number }
   /** The songs it now watches: those it may see (issue #27). */
   | { type: "watching"; songVersionIds: string[] }
   /** Who's doing something in a watched song now (issue #27), oneself included: whenever it changes. */

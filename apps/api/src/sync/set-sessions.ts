@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, LIVE_COMMAND_ID, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
+import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, LiveHandbackSchema, liveHandedBack, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, LIVE_COMMAND_ID, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
@@ -251,6 +251,52 @@ export class SetSessions {
     await this.command(connection, op, "Join a set first", "bad-request", { id, epoch: message.epoch });
   }
 
+  /** Oneverse Pulse (issue #247): someone who can edit the set, in it, is sent the session as it's kept, to take over from. */
+  async mirror(connection: Connection) {
+    if (!connection.setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
+    if (!(await this.stillAllowed(connection))) return;
+    if (!connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set mirrors its session" });
+    connection.mirrors = true;
+    this.queueBroadcast(connection.setId);
+  }
+
+  /**
+   * Pulse back online (docs/live-session.md, "Pulse: offline and back"): the
+   * room's session taken as it is, under the set's lock (liveHandedBack: the
+   * room wins, one epoch up, so a command a device sent the cloud meanwhile
+   * is refused as from another epoch), its changes added to the record with
+   * their origin, and the row told. For now from anyone who can edit the
+   * set - who could make the same changes one by one; Pulse's own sign-in,
+   * paired like a screen, comes with its pairing.
+   */
+  async handBack(connection: Connection, input: unknown) {
+    const setId = connection.setId;
+    if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
+    if (!(await this.stillAllowed(connection))) return;
+    if (!connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set hands its session back" });
+    const parsed = LiveHandbackSchema.safeParse(input);
+    if (!parsed.success) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Invalid handback" });
+    const handback = parsed.data;
+    const taken = await this.withSetLock(setId, async () => {
+      const result = liveHandedBack(await this.read(setId), handback);
+      if (result?.session) await this.write(setId, result.session);
+      else if (result) {
+        await redis().del(sessionKey(setId));
+        await this.changed(setId);
+      }
+      return result;
+    });
+    if (!taken) return this.hub.send(connection, { type: "error", code: "stale", message: "The cloud's session isn't the one the room ran, or it was taken back already" });
+    for (const entry of handback.record) {
+      await recordLiveOp({ sessionId: handback.sessionId, ...entry }).catch((err: unknown) => this.logger.error(`Can't record the room's change to ${handback.sessionId}: ${String(err)}`));
+    }
+    const epoch = handback.epoch + 1;
+    await this.prisma.client.liveSession
+      .updateMany({ where: { id: handback.sessionId }, data: { epoch, authority: "cloud", ...(!taken.session && { status: "ENDED" as const, endedAt: new Date() }) } })
+      .catch((err: unknown) => this.logger.error(`Can't record the handback of ${handback.sessionId}: ${String(err)}`));
+    this.hub.send(connection, { type: "handedBack", sessionId: handback.sessionId, epoch, rev: taken.session?.rev ?? 0 });
+  }
+
   async end(connection: Connection) {
     await this.command(connection, { kind: "end" }, "Only someone who can edit the set ends it", "forbidden");
   }
@@ -459,6 +505,7 @@ export class SetSessions {
         screensMine: !!stored?.screens && stored.screens.device === this.device(connection),
         canPresent: connection.user ? mayPresent(stored, this.actor(connection)) : false,
         canOperate: connection.canLead || connection.canOperate,
+        ...(connection.mirrors && connection.canLead && { live: stored }),
       });
     }
   }

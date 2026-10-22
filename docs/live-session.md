@@ -222,6 +222,12 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
   device that kept talking to the cloud during the outage is told to load the state again,
   never silently rolled back or forward. Changes to the **set itself** during the outage are
   not the session's: they're applied between songs, as #247 says.
+- **How the room's devices reach Pulse** (brice, 2026-10-22): Pulse serves the console and
+  Live itself, on its own address. A page from the cloud (https) can't open a connection to
+  a box on the local network, so it can't switch over by itself; the cloud knows Pulse's
+  local address while Pulse is online, and when the cloud is gone the page shows
+  **Continue on Pulse**, a link to it, which works with no internet. An automatic switch
+  (a name and certificate per Pulse under oneverse.top) may come later on top of it.
 - While the room runs offline, the cloud keeps accepting commands from anyone still
   connected to it: it can't tell an outage from a Pulse that stopped,
   and refusing everyone because a mini PC was unplugged would be worse. On reconnection
@@ -279,7 +285,19 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    client send their slides through it, and show "sending…" meanwhile
    (`e2e/web/live-weak-connection.test.mjs`). The other messages (lead, metronome, stage) are
    still the old ones, and the two clients aren't one `LiveClient` yet.
-9. Pulse's mirror and takeover: the same engine in Node on the mini PC.
+9. Pulse's mirror and takeover: the same engine in Node on the mini PC. **Done, first part**
+   (the engine and the cloud's side): `LiveEngine` in core (`live/engine.ts`) follows the
+   cloud's session (`mirror`), takes it over one epoch up (`takeOver`), applies the room's
+   commands with the same reducer, once each, keeping their record, and hands both back
+   (`handBack`). The cloud sends the kept session (`live`, holders' devices and all) to a
+   device that asked to `mirror` it, and takes a `handback` under the set's lock
+   (`liveHandedBack`: the room's state, one more epoch up, its revisions past both sides'),
+   adds the room's changes to the record with their origin, and marks the row. A revision
+   is unique within its epoch in the record now, since both sides go on from the same one.
+   For now a handback is taken from anyone who can edit the set (who could make the same
+   changes one by one); Pulse's own sign-in comes with its pairing. Still to do: the Node
+   process on Pulse (connecting, noticing the outage, serving the room), and how the room's
+   devices reach it (below).
 
 Each step is its own commit with its tests; steps 1 to 8 change nothing a user sees except
 #312's behaviour, at step 7 screens that no longer show the wrong words after an edit, and at

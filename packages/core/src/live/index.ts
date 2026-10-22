@@ -21,6 +21,8 @@ export interface LiveHolder {
 
 /** A set's session as it's kept: SyncSession, with who leads it and runs its screens by device. */
 export interface LiveSessionState extends Omit<SyncSession, "leader" | "screens"> {
+  /** "cloud", or "pulse:<node id>" while a Pulse runs the session (see live/engine.ts). Left out: the cloud. */
+  authority?: string;
   leader: LiveHolder;
   /** The media operator running the screens (issue #275); `leftAt`: when their device dropped, kept LIVE_SCREENS_GRACE_MS for it to come back. */
   screens?: (LiveHolder & { exclusive: boolean; leftAt?: number }) | null;

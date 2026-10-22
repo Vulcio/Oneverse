@@ -3345,7 +3345,9 @@ model LiveSessionCommand {
   session LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@unique([sessionId, rev])
+  // A revision is one change in an epoch: during an outage the cloud and the room
+  // (Pulse) both go on from the same one, in epochs of their own.
+  @@unique([sessionId, epoch, rev])
   @@index([userId])
 }
 

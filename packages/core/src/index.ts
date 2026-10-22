@@ -57,6 +57,7 @@ export * from "./song-document/repeats.js";
 export * from "./metronome/index.js";
 export * from "./sync/index.js";
 export * from "./live/index.js";
+export * from "./live/engine.js";
 export * from "./screens/index.js";
 export * from "./brands/index.js";
 export * from "./file-types/index.js";

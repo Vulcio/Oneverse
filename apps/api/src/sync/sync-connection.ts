@@ -29,6 +29,8 @@ export interface Connection {
   /** The device it says it is, with its person (`d:<userId>:<deviceId>`, issue #247); left out: it holds things by connection. */
   device?: string;
   canLead: boolean;
+  /** Oneverse Pulse mirroring the set's session (issue #247): its session messages carry the session as it's kept. */
+  mirrors?: boolean;
   /** Runs screens by a role (issue #305): may present and lock control on the sets it can open. */
   canOperate: boolean;
   accessCheckedAt: number;
