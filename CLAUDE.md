@@ -174,7 +174,7 @@ What a screen shows - `ScreenStage`, its widgets, backgrounds and effects, and t
 (`SongChart`) - lives in `packages/screen` (`@oneverse/screen`, issue #305, source only like
 `@oneverse/ui`); every app that shows a screen builds from it, never a copy.
 `apps/web/src/player-screen/` builds `ScreenStage` on its own, client-only (`vite.player.config.ts`,
-`pnpm --filter @oneverse/web build:player-screen`), for songverse-player, the Rust mini-PC player
+`pnpm --filter @oneverse/web build:player-screen`), for Oneverse Pulse (`Vulcio/oneverse-pulse`, formerly songverse-player), the Rust on-site runtime
 (issue #247, its own repository). A change to `ScreenStage` or what it needs (providers, messages,
 CSS) must keep that build working: `e2e/web/player-screen.test.mjs` builds it and checks it renders.
 The screen app (`apps/screen`, `Dockerfile.screen`, `SCREEN_URL`) is what big screens open, paired

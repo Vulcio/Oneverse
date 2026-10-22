@@ -1,4 +1,4 @@
-// The player screen (issue #247): the client-only build of ScreenStage that songverse-player serves on a mini PC
+// The player screen (issue #247): the client-only build of ScreenStage that Oneverse Pulse serves on a mini PC
 // (apps/web/src/player-screen). It's built here as the player builds it, served with a stand-in for the player's
 // local API (/api/state, /api/next, /api/previous), and must show the slides in the app's own words and look, move
 // with the arrow keys, ship nothing of the web app's public files, and raise no errors. Screenshots go to
@@ -16,7 +16,7 @@ const step = stepper(() => page);
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const built = path.join(repo, "apps/web/dist/player-screen");
 
-// The player's local API, as songverse-player's Rust daemon answers it.
+// The player's local API, as Oneverse Pulse's Rust daemon answers it.
 let index = 0;
 const set = {
   title: "Amazing Grace",
@@ -43,7 +43,7 @@ const server = http.createServer((req, res) => {
 
 let browser;
 try {
-  await step("built as songverse-player builds it: a page and its assets, nothing else", async () => {
+  await step("built as Oneverse Pulse builds it: a page and its assets, nothing else", async () => {
     execFileSync("pnpm", ["--filter", "@oneverse/web", "build:player-screen"], { cwd: repo, stdio: "pipe" });
     const files = fs.readdirSync(built).sort();
     if (files.join(" ") !== "assets player-screen.html") throw new Error(`the build has ${files.join(", ")}`);

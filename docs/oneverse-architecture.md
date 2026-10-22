@@ -29,7 +29,7 @@ flowchart TB
   SO["Songverse Sonic<br/>Stem separation and music analysis API"]
   SW["Oneverse Screens Web<br/>Built into Oneverse"]
   SN["Oneverse Screen<br/>Android tablet/TV · iPadOS · tvOS"]
-  PLAYER["Oneverse Player<br/>Rust appliance · LAN/offline fallback"]
+  PLAYER["Oneverse Pulse<br/>Rust on-site runtime · LAN/offline fallback"]
   CORE --> S & SA & P & SL
   CORE --> SW & SN & PLAYER
   S -. "Music processing" .-> SO
@@ -37,7 +37,7 @@ flowchart TB
   S & SL & SW -. "Shared live-session controls" .-> CORE
 ```
 
-**Product naming:** Use **Songverse (Web)** for the browser application and **Songverse (App)** for native Android/iOS musician clients. Never label the latter “Songverse Native.” The presentation application's selected spelling is **Slidevese** (not Slideverse; to confirm before it reaches code or domains, since it breaks the -verse pattern of the other names). **Oneverse Screens Web** is built into Oneverse; the separate native display receiver is **Oneverse Screen**. **Oneverse Player** is the planned name for the current `songverse-player` Rust project.
+**Product naming:** Use **Songverse (Web)** for the browser application and **Songverse (App)** for native Android/iOS musician clients. Never label the latter “Songverse Native.” The presentation application's selected spelling is **Slidevese** (not Slideverse; to confirm before it reaches code or domains, since it breaks the -verse pattern of the other names). **Oneverse Screens Web** is built into Oneverse; the separate native display receiver is **Oneverse Screen** (`Vulcio/oneverse-screen`). **Oneverse Pulse** (`Vulcio/oneverse-pulse`, renamed from `songverse-player` on 2026-10-22) is the Rust on-site runtime; its Cargo package and binary still use the transitional name `songverse-player`.
 
 ## 2. Responsibility and ownership boundaries
 
@@ -51,7 +51,7 @@ flowchart TB
 | **Slidevese** | Import PowerPoint (PPTX) and PDF, presentation organization and playback semantics, scripture presentation layouts; later simple slide editing | Screen registration, scripture-provider account authority |
 | **Oneverse Screens Web** | Oneverse-integrated management and browser receiver/control UI | Separate ownership and permissions |
 | **Oneverse Screen** | Native display receiver on Android tablets/TVs, iPadOS and tvOS; cached display content and resilient playback | Song and presentation editors |
-| **Oneverse Player** | Rust local appliance for deterministic playback, outputs (e.g., HDMI, future NDI), local session mirror, cached data and LAN takeover on WAN loss | Alternate content models or duplicated screen renderer |
+| **Oneverse Pulse** | Rust on-site runtime and fallback node on a venue mini PC: local services and session mirror, cached authorised data, LAN takeover on WAN loss, screens (HDMI, future NDI) through the shared renderer; later audio and timing, local orchestration, MIDI and lighting | Alternate content models or duplicated screen renderer |
 
 **Principle:** Oneverse owns reusable identities, assets, permissions, devices and coordination; each application owns its domain-specific authoring, rendering adapters and workflows. Logical ownership is **not** a mandate for separate repositories, servers or databases.
 
@@ -69,7 +69,7 @@ Most of Core exists today inside `apps/api` and the shared packages. Core is fir
 | Layer stack, templates, brands | #280, #287, #281, #279 | None |
 | Live session | `SyncSession` in Redis, one per set: `rev`, leader, `presenting`, media operator (#190, #275) | Keyed by set; control is "can edit the set"; no command log, no epoch for an offline takeover |
 | Common slide protocol | `setItemSlides()` in core for songs, texts and passages (a passage's template sets its verses per slide, #310); `SyncPresenting` = item + slide number, commands checked against `basedOn` (#305) | Image and media slides |
-| Oneverse Player | Rust daemon serving Songverse's `ScreenStage` bundle; mock set, loopback, no auth | The local snapshot contract (#247) |
+| Oneverse Pulse | Rust daemon serving Songverse's `ScreenStage` bundle; mock set, loopback, no auth | The local snapshot contract (#247) |
 | Sonic | Independent; Teams and Organisations can bring their own server (#300) | None |
 
 ## 4. Shared models and invariants
@@ -111,7 +111,7 @@ Precedence follows #275: an exclusive operator holds Present and Route; the lead
 
 The authoritative **Oneverse Live Session** tracks active Set/item/slide, target output groups, control privileges, sequence/revision, and active controller state. It evolves today's `SyncSession` rather than replacing it: commands carry the `rev` they expect, so they are idempotent and a stale controller is refused. Define exclusive versus collaborative operation, control handoff, audit logs and reconnect semantics before implementation. Screen apps render the session; they do not independently decide its truth.
 
-**Offline safety:** normally the cloud Oneverse session leads. Oneverse Player mirrors a pre-authorized snapshot (including assets/permissions necessary offline), then can serve as a local LAN control authority if WAN connectivity fails. The session carries an **epoch**: the player's takeover increments it, and the cloud refuses writes from an older epoch until it has taken the room's state back (#247: the room wins). No split-brain or silent rollback on reconnect. These are **target behaviors**, not current guarantees.
+**Offline safety:** normally the cloud Oneverse session leads. Oneverse Pulse mirrors a pre-authorized snapshot (including assets/permissions necessary offline), then can serve as a local LAN control authority if WAN connectivity fails. The session carries an **epoch**: the player's takeover increments it, and the cloud refuses writes from an older epoch until it has taken the room's state back (#247: the room wins). No split-brain or silent rollback on reconnect. These are **target behaviors**, not current guarantees.
 
 ## 7. Implementation strategy / migration
 
@@ -123,7 +123,7 @@ The authoritative **Oneverse Live Session** tracks active Set/item/slide, target
    4. A `PASSAGE` item kind, rendered by `ScreenStage`.
 3. **Then** scoped role assignments (starting with #270's operator), then the session as its own entity, designed with the player's snapshot contract (#247).
 4. **Evolve existing issues, don't duplicate them.** Shipped foundations: #241, #242, #222, #279, #280, #281, #287, #190, #275. Open and relevant: #247 (offline player), #270 (operator role), #284 (profiles, pairing again), #195 (offline screen), #196 (NDI), #187 (Google TV), #165 and #171 (native apps), #243 (custom domains), #26 (offline creation). Inspect open **and closed** issues before drafting changes.
-5. **Player rename is future work:** `vulcio/songverse-player` still exists; change project/binary/docs/package names, links and automation through an issue-based, cross-repository plan. Preserve the upstream shared `ScreenStage` renderer; do not fork rendering implementations. `vulcio/songverse-sonic` remains independent.
+5. **The player is now Oneverse Pulse** (`Vulcio/oneverse-pulse`, 2026-10-22): the repository, README and scope are renamed; its Cargo package, binary and service units still say `songverse-player`, to rename through an issue. Preserve the upstream shared `ScreenStage` renderer; do not fork rendering implementations. `vulcio/songverse-sonic` remains independent.
 6. **Agent rules:** read each repository's `AGENTS.md` and `CLAUDE.md` before editing. GitHub issue first, reference issue(s) in commits, tests/docs with every change, no unverified claims of hardware/offline reliability, no push with failing checks. This document does not override repository-specific instructions.
 
 ## 8. Open design questions

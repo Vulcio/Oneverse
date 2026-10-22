@@ -1,6 +1,6 @@
 # Player screen
 
-A client-only build of the screens' stage for [songverse-player](https://github.com/Vulcio/songverse-player),
+A client-only build of the screens' stage for [Oneverse Pulse](https://github.com/Vulcio/oneverse-pulse),
 the Rust mini-PC player (issue #247). It renders with the **same** `ScreenStage`, themes, CSS and
 messages as `/screen`, so a screen looks the same on the player as in a browser: the stage lives in
 `packages/screen` (`@oneverse/screen`, issue #305), which both build from. Nothing here is a second
@@ -10,7 +10,7 @@ implementation of the stage.
 pnpm --filter @oneverse/web build:player-screen   # apps/web/dist/player-screen
 ```
 
-The output is a page (`player-screen.html`) and `assets/`; songverse-player's
+The output is a page (`player-screen.html`) and `assets/`; Oneverse Pulse's
 `tools/package-upstream-screen.sh` copies it into a bundle as `index.html` and checks it with a manifest.
 The web app's public files (its service worker and manifest) are left out (`publicDir: false`).
 
