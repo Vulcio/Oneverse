@@ -1,5 +1,6 @@
 import {
   clockOffset,
+  LiveCommands,
   resumeScreens,
   samePresenting,
   SYNC_PATH,
@@ -81,14 +82,31 @@ export interface SyncState {
   canPresent: boolean;
   /** This user runs screens (issue #305): can edit the set, or has a role that runs screens. */
   canOperate: boolean;
+  /** A change this device made is on its way, not yet confirmed by the server (issue #247). */
+  sending?: boolean;
 }
 
 let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false, canPresent: false, canOperate: false };
 /** Plays what the leader plays (the metronome, the stems); an operator's page (issue #269) only watches. */
 let following = true;
 const listeners = new Set<() => void>();
+/**
+ * Slides sent as commands (issue #247): each kept until the server answers it,
+ * sent again once back in the set after a connection that died without anyone
+ * knowing (a phone on a weak signal), and shown meanwhile rather than the
+ * session from before it - so a slide changed doesn't jump back.
+ */
+const commands = new LiveCommands((message) => {
+  if (socket?.readyState !== WebSocket.OPEN) return false;
+  socket.send(JSON.stringify(message));
+  return true;
+});
+let rejoining = false;
+/** The session as the server last sent it; `state.session` shows over it the slides this device sent that are on their way. */
+let serverSession: SyncSession | null = null;
 function emit(next: Partial<SyncState>) {
-  state = { ...state, ...next };
+  if (next.session !== undefined) serverSession = next.session;
+  state = { ...state, ...next, session: commands.view(serverSession), sending: commands.sending };
   for (const listener of listeners) listener();
 }
 
@@ -197,6 +215,7 @@ function receive(message: SyncServerMessage) {
       if (!joined && samples.length >= 4) {
         joined = true;
         send({ type: "join", setId: state.setId!, deviceId: syncDeviceId() });
+        rejoining = true;
       } else if (moved && joined) applySession();
       return;
     }
@@ -214,9 +233,17 @@ function receive(message: SyncServerMessage) {
         wantLead = true;
         keep();
       }
-      // What the screens show, as the server has it (issue #305): what this device's next command is based on.
-      presentRev = message.session?.presentingRev ?? 0;
-      presentShown = message.session?.presenting ?? null;
+      // In the set again (issue #247): what didn't get an answer goes again.
+      if (rejoining) {
+        rejoining = false;
+        commands.rejoined();
+      }
+      // What the screens show, as the server has it (issue #305): what this device's next command is based on -
+      // unless slides from here are still on their way, then those.
+      if (!commands.sending) {
+        presentRev = message.session?.presentingRev ?? 0;
+        presentShown = message.session?.presenting ?? null;
+      }
       heldScreens = resumeScreens(message, userId, heldScreens, (control) => send({ type: "screens", control }));
       emit({
         status: "on",
@@ -244,11 +271,19 @@ function receive(message: SyncServerMessage) {
       applySession();
       return;
     }
+    case "ack":
+      if (commands.receive(message)) emit({});
+      return;
     case "error": {
+      if (commands.receive(message) && !commands.sending) {
+        // Refused: what the screens show is the server's again, and the next slide is based on it.
+        presentRev = serverSession?.presentingRev ?? 0;
+        presentShown = serverSession?.presenting ?? null;
+      }
       if (message.code === "unauthorized") forgetApiToken();
       if (message.code === "not-found") return disableSync();
-      // Someone else moved the screens first (issue #305): the session that follows has where they are.
-      if (message.code === "stale") return;
+      // Someone else moved the screens first (issue #305), or the session started again since: the session that follows has where they are.
+      if (message.code === "stale" || message.code === "epoch") return emit({});
       emit({ error: message.message });
       return;
     }
@@ -410,6 +445,7 @@ export function enableSync(setId: string, lead = false, { follow = true }: { fol
 export function disableSync() {
   wantLead = false;
   heldScreens = null;
+  commands.clear();
   if (retry) clearTimeout(retry);
   retry = null;
   stopTimers();
@@ -480,9 +516,10 @@ export function takeScreens(control: "shared" | "exclusive" | null) {
 /** What the screens show (issues #275, #305), based on what they showed: from anyone who may present. */
 export function presentScreens(presenting: SyncPresenting | null) {
   if (!state.canPresent || samePresenting(presenting, presentShown)) return;
-  send({ type: "present", presenting, basedOn: presentRev });
+  commands.submit({ kind: "present", presenting, basedOn: presentRev }, serverSession?.epoch);
   presentRev += 1;
   presentShown = presenting;
+  emit({});
 }
 
 

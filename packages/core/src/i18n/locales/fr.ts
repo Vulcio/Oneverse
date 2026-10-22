@@ -543,6 +543,7 @@ const fr: typeof en = {
     screenCount_one: "{{count}} écran",
     screenCount_other: "{{count}} écrans",
     noScreens: "aucun écran connecté",
+    sending: "envoi…",
     noWords: "Pas de paroles ici",
     displayCodeLabel: "Pour afficher une liste ici, associez cet écran :",
     displayCodeHint: "Scannez le code avec votre téléphone, ou allez sur {{host}}/screens et saisissez-le. Il change toutes les 10 minutes.",

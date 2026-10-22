@@ -118,7 +118,7 @@ export function PresentControls({
   const firstOf = (passId: string) => slides.findIndex((one) => one.passId === passId);
 
   return (
-    <section className="flex shrink-0 flex-col gap-2 border-t-2 border-t-primary bg-card px-2 py-2 sm:px-4" aria-label={t("screens.presenting")} data-testid="present-panel" data-slide={slide} data-black={String(presenting.black)}>
+    <section className="flex shrink-0 flex-col gap-2 border-t-2 border-t-primary bg-card px-2 py-2 sm:px-4" aria-label={t("screens.presenting")} data-testid="present-panel" data-slide={slide} data-black={String(presenting.black)} data-sending={String(!!sync.sending)}>
       {locked ? (
         <p className="text-xs text-muted-foreground" data-testid="present-locked">
           {t(sync.session?.screens?.online === false ? "screens.operator.lockedByOffline" : "screens.operator.lockedBy", { name: sync.session?.screens?.name })}
@@ -133,6 +133,8 @@ export function PresentControls({
         <div className={cn("min-w-0 flex-1 rounded-md border px-3 py-1.5", presenting.black && "bg-neutral-950 text-neutral-500")} data-testid="present-slide">
           <p className="truncate text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
             {presenting.black ? t("screens.black") : `${t("screens.slideOf", { slide: slide + 1, count: slides.length })}${screens.length ? ` · ${t("screens.screenCount", { count: screens.length })}` : ` · ${t("screens.noScreens")}`}`}
+            {/* Not yet confirmed by the server (issue #247): a weak connection, sent again once it's back. */}
+            {sync.sending ? <span data-testid="present-sending">{` · ${t("screens.sending")}`}</span> : null}
           </p>
           {current && current.lines.length ? (
             current.lines.map((line, index) => (

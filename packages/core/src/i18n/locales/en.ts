@@ -543,6 +543,7 @@ const en = {
     screenCount_one: "{{count}} screen",
     screenCount_other: "{{count}} screens",
     noScreens: "no screen connected",
+    sending: "sending…",
     noWords: "No words here",
     displayCodeLabel: "To show a set here, pair this screen:",
     displayCodeHint: "Scan the code with your phone, or go to {{host}}/screens and type it. It changes every 10 minutes.",

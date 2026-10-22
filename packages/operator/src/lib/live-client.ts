@@ -1,4 +1,4 @@
-import { clockOffset, resumeScreens, samePresenting, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncStageCommand } from "@oneverse/core";
+import { clockOffset, LiveCommands, resumeScreens, samePresenting, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncSession, type SyncStageCommand } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import type { OperatorHost, OperatorLive } from "../host";
 
@@ -32,10 +32,19 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
   // The screens this device ran, to take back after a dropped connection (the server keeps them a minute), and who we are.
   let heldScreens: "shared" | "exclusive" | null = null;
   let userId: string | null = null;
+  // Slides sent as commands (issue #247): kept until the server answers, sent again once back in the set after a
+  // connection that died (a phone on a weak signal), shown meanwhile instead of the session from before them.
+  const commands = new LiveCommands((message) => {
+    if (socket?.readyState !== WebSocket.OPEN) return false;
+    socket.send(JSON.stringify(message));
+    return true;
+  });
+  let session: SyncSession | null = null;
+  let rejoining = false;
   const listeners = new Set<() => void>();
 
   function emit(next: Partial<OperatorLive>) {
-    state = { ...state, ...next };
+    state = { ...state, ...next, session: commands.view(next.session !== undefined ? (session = next.session) : session), sending: commands.sending };
     for (const listener of listeners) listener();
   }
 
@@ -83,6 +92,7 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
         retries = 0;
         userId = message.userId;
         send({ type: "join", setId: setId!, deviceId: syncDeviceId() });
+        rejoining = true;
         for (let i = 0; i < 4; i++) setTimeout(ping, i * 120);
         pinger = setInterval(ping, PING_EVERY_MS);
         return;
@@ -94,8 +104,16 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
       }
       case "session":
         if (message.setId !== setId) return;
-        presentRev = message.session?.presentingRev ?? 0;
-        presentShown = message.session?.presenting ?? null;
+        // In the set again: what didn't get an answer goes again.
+        if (rejoining) {
+          rejoining = false;
+          commands.rejoined();
+        }
+        // While slides are on their way, the next is based on them, not on the session from before them.
+        if (!commands.sending) {
+          presentRev = message.session?.presentingRev ?? 0;
+          presentShown = message.session?.presenting ?? null;
+        }
         heldScreens = resumeScreens(message, userId, heldScreens, (control) => send({ type: "screens", control }));
         emit({
           ready: true,
@@ -110,9 +128,17 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
           canPresent: message.canPresent ?? false,
         });
         return;
+      case "ack":
+        if (commands.receive(message)) emit({});
+        return;
       case "error":
-        // Someone else moved the screens first: the session that follows has where they are.
-        if (message.code === "stale") return;
+        if (commands.receive(message) && !commands.sending) {
+          // Refused: what the screens show is the server's again, and the next slide is based on it.
+          presentRev = session?.presentingRev ?? 0;
+          presentShown = session?.presenting ?? null;
+        }
+        // Someone else moved the screens first, or the session started again since: the session that follows has where they are.
+        if (message.code === "stale" || message.code === "epoch") return emit({});
         emit({ error: message.message });
         return;
     }
@@ -130,9 +156,10 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
       ),
     present(presenting) {
       if (!state.canPresent || samePresenting(presenting, presentShown)) return;
-      send({ type: "present", presenting, basedOn: presentRev });
+      commands.submit({ kind: "present", presenting, basedOn: presentRev }, session?.epoch);
       presentRev += 1;
       presentShown = presenting;
+      emit({});
     },
     takeScreens(control) {
       if (!state.canOperate) return;
@@ -159,6 +186,8 @@ export function createLiveClient({ apiUrl, token }: { apiUrl: string; token: () 
       send({ type: "leave" });
       setId = null;
       heldScreens = null;
+      commands.clear();
+      session = null;
       if (retry) clearTimeout(retry);
       if (pinger) clearInterval(pinger);
       retry = pinger = null;

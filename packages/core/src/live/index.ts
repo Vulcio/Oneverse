@@ -146,7 +146,6 @@ export function mayPresent(session: LiveSessionState | null, actor: LiveActor): 
   return actor.canLead || actor.canOperate || session.leader.device === actor.device || !!session.presenters?.some((one) => one.id === actor.userId);
 }
 
-/** The same slide, black or not: no change, so no new revision (issue #305). */
 /** Whether two "this item, slide N" say the same: the same slide, black or not, of the same words (issue #247). */
 export function samePresenting(a: SyncPresenting | null, b: SyncPresenting | null): boolean {
   if (!a || !b) return a === b;
@@ -254,3 +253,4 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
       return changed(null);
   }
 }
+export * from "./commands.js";

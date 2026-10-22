@@ -26,6 +26,8 @@ export interface OperatorLive {
   screensMine: boolean;
   /** The server's clock less this device's (ms), once measured. */
   offset: number | null;
+  /** A change this device made is on its way, not yet confirmed by the server (issue #247). */
+  sending?: boolean;
 }
 
 export interface OperatorHost {

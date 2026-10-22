@@ -271,11 +271,19 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    it still differs, and the same slide with another key is a change (`samePresenting`, now
    shared by the clients). Pulse's player screen doesn't check it yet: it moves to it
    with the `LiveClient` (step 8).
-8. `LiveClient` in core, and the apps moved onto it.
+8. `LiveClient` in core, and the apps moved onto it. **Done, first part**: `LiveCommands` in
+   core (`live/commands.ts`) keeps each command until the server answers it, sends again what
+   wasn't answered once the device is back in the set, and shows the slide asked for while it's
+   on its way (`view`), so a phone on a weak signal doesn't see the slide jump back, and the
+   screens get it when the connection returns. Songverse's sync client and the console's live
+   client send their slides through it, and show "sending…" meanwhile
+   (`e2e/web/live-weak-connection.test.mjs`). The other messages (lead, metronome, stage) are
+   still the old ones, and the two clients aren't one `LiveClient` yet.
 9. Pulse's mirror and takeover: the same engine in Node on the mini PC.
 
 Each step is its own commit with its tests; steps 1 to 8 change nothing a user sees except
-#312's behaviour and, at step 7, screens that no longer show the wrong words after an edit.
+#312's behaviour, at step 7 screens that no longer show the wrong words after an edit, and at
+step 8 a slide that waits for a weak connection rather than jumping back.
 
 ## Decided
 
