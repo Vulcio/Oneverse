@@ -1,6 +1,7 @@
 import type { SyncTimer } from "../screens/timers.js";
 import { SCREEN_SWITCHABLE_LAYERS, type ScreenSwitchableLayer } from "../screens/theme.js";
 import type { MetronomeSettings } from "../metronome/index.js";
+import type { LiveCommandOp } from "../live/index.js";
 
 /**
  * Sync play (issue #13): the messages between a device and the API's
@@ -347,6 +348,12 @@ export type SyncClientMessage =
    * connection within the lease, it still is. Left out: by connection, as before.
    */
   | { type: "join"; setId: string; deviceId?: string }
+  /**
+   * A change to the set's session as a command (issue #247, LiveCommand):
+   * answered with `ack` or an `error` carrying its id. The same id sent
+   * again (a resend after a drop) is applied once.
+   */
+  | { type: "command"; id: string; epoch?: number; op: LiveCommandOp }
   | { type: "leave" }
   /** Starts a session, or takes over the lead of the one going on. */
   | { type: "lead" }
@@ -464,7 +471,10 @@ export type SyncServerMessage =
   /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */
   | { type: "notes"; songVersionId: string }
   /** `stale` (issue #305): a present command based on what the screens no longer show; the session that follows has what they show now. */
-  | { type: "error"; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected" | "stale"; message: string };
+  /** A command (issue #247) applied: the session's revision after it. Sent again, not applied twice, for a command sent again. */
+  | { type: "ack"; id: string; rev: number }
+  /** `id`: the command refused, when it was one; `epoch`: sent from another epoch of the session (load it again). */
+  | { type: "error"; id?: string; code: "unauthorized" | "not-found" | "forbidden" | "bad-request" | "disconnected" | "stale" | "epoch"; message: string };
 
 /**
  * The screens this device runs, after a session message: kept while they're

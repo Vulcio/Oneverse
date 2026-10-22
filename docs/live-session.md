@@ -256,6 +256,10 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    minute after a drop (`LIVE_SCREENS_GRACE_MS`) rather than renewed by pings, and the leader
    keeps the lead while away, as before.
 5. Commands with ids and acks; the old messages translated; `basedOn` required for new clients.
+   **Done, server side**: `{type: "command", id, epoch?, op}` is answered with `ack` (and the
+   revision) or an `error` carrying its id; a resend is acknowledged, not applied again; another
+   epoch is refused (`epoch`). The old messages go through the same code without an id. The
+   clients move to commands with the shared `LiveClient` (step 8).
 6. The record (stream, then the table).
 7. `slideKey` in `presenting`.
 8. `LiveClient` in core, and the apps moved onto it.

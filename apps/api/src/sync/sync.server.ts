@@ -171,6 +171,8 @@ export class SyncServer implements OnModuleDestroy {
         return this.sets.join(connection, message.setId, message.deviceId);
       case "leave":
         return this.sets.leaveSet(connection);
+      case "command":
+        return this.sets.runCommand(connection, message);
       case "lead":
         return this.sets.lead(connection);
       case "screens":

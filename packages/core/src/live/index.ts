@@ -110,6 +110,12 @@ export const LiveOpSchema = z.discriminatedUnion("kind", [
 
 export type LiveOp = z.input<typeof LiveOpSchema>;
 
+/** What a device may send as a command: every op but those the server makes itself (leaving, coming back), and the presenter's name found by the server. */
+export type LiveCommandOp = Exclude<LiveOp, { kind: "leave" } | { kind: "back" } | { kind: "presenter" }> | { kind: "presenter"; userId: string; allow: boolean };
+
+/** A command's id: chosen by the device, 8 to 64 letters, digits, `-` or `_`. */
+export const LIVE_COMMAND_ID = /^[A-Za-z0-9_-]{8,64}$/;
+
 export type LiveRefusal = "forbidden" | "stale" | "bad-request";
 
 /** An op's outcome: the session after it (null: none, ended) and whether it changed; or why it was refused. */

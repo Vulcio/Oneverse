@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
+import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, LIVE_COMMAND_ID, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
@@ -13,6 +13,8 @@ import { ACCESS_RECHECK_MS, PRESENCE_MS, SESSION_TTL_S, type Connection, type Sy
 /** A set's session or who's in it changed: announced to every instance, each sending it to its own connections in the set. */
 export const CHANNEL = "songverse:sync:changed";
 export const sessionKey = (setId: string) => `songverse:sync:session:${setId}`;
+/** The commands applied to a set's session (issue #247), by id: the revision each left it at, to acknowledge a resend without applying it again. */
+const commandsKey = (setId: string) => `songverse:sync:commands:${setId}`;
 const membersKey = (setId: string) => `songverse:sync:members:${setId}`;
 /**
  * One change to a set's session at a time (issue #305), across the API's
@@ -216,14 +218,37 @@ export class SetSessions {
 
   /** The leader hands presenting to someone in the set, or takes it back (issue #305): someone in the set now, by the name they're there with. */
   async presenter(connection: Connection, message: Extract<SyncClientMessage, { type: "presenter" }>) {
+    await this.command(connection, await this.named(connection, { kind: "presenter", userId: message.userId, allow: message.allow }), "Give a userId and allow");
+  }
+
+  /** A presenter op with the name its person is in the set with, as the server finds them there; none when they aren't. */
+  private async named(connection: Connection, op: { kind: "presenter"; userId: unknown; allow: unknown }): Promise<LiveOp> {
     const setId = connection.setId;
     const member =
-      setId && message.allow === true
+      setId && op.allow === true
         ? Object.values(await redis().hgetall(membersKey(setId)))
             .map((raw) => JSON.parse(raw) as { id: string; name: string; screen?: boolean })
-            .find((one) => one.id === message.userId && !one.screen)
+            .find((one) => one.id === op.userId && !one.screen)
         : undefined;
-    await this.command(connection, { kind: "presenter", userId: message.userId, allow: message.allow, name: member?.name }, "Give a userId and allow");
+    return { kind: "presenter", userId: op.userId as string, allow: op.allow as boolean, name: member?.name };
+  }
+
+  /**
+   * A command (issue #247, docs/live-session.md): any change to the session,
+   * with an id the device chose. Applied once - the same id again (a resend
+   * after a drop) is acknowledged again, not applied - and answered with
+   * `ack` and the session's revision, or an `error` carrying its id. One from
+   * another epoch of the session is refused (`epoch`): the device loads it again.
+   */
+  async runCommand(connection: Connection, message: Extract<SyncClientMessage, { type: "command" }>) {
+    const id = message.id;
+    if (typeof id !== "string" || !LIVE_COMMAND_ID.test(id)) return this.hub.send(connection, { type: "error", code: "bad-request", message: "A command needs an id" });
+    const raw = (message.op ?? {}) as { kind?: unknown; userId?: unknown; allow?: unknown };
+    // Leaving and coming back are the server's to say; a presenter's name too.
+    if (raw.kind === "leave" || raw.kind === "back") return this.hub.send(connection, { type: "error", id, code: "bad-request", message: "Invalid command" });
+    const op = raw.kind === "presenter" ? await this.named(connection, { kind: "presenter", userId: raw.userId, allow: raw.allow }) : (raw as LiveOp);
+    if (message.epoch !== undefined && !Number.isInteger(message.epoch)) return this.hub.send(connection, { type: "error", id, code: "bad-request", message: "epoch must be a number" });
+    await this.command(connection, op, "Join a set first", "bad-request", { id, epoch: message.epoch });
   }
 
   async end(connection: Connection) {
@@ -231,13 +256,31 @@ export class SetSessions {
   }
 
   /** A command from a device in a set (docs/live-session.md): its right to the set checked again, then applied under the set's lock by applyLiveOp. */
-  private async command(connection: Connection, op: LiveOp, notInSet: string, code: "bad-request" | "forbidden" = "bad-request") {
+  private async command(connection: Connection, op: LiveOp, notInSet: string, code: "bad-request" | "forbidden" = "bad-request", as?: { id: string; epoch?: number }) {
     const setId = connection.setId;
     if (setId && !(await this.stillAllowed(connection))) return;
-    if (!setId || !connection.user) return this.hub.send(connection, { type: "error", code, message: notInSet });
-    const { result, previous } = await this.withSetLock(setId, () => this.applyLocked(connection, setId, op));
+    const id = as && { id: as.id };
+    if (!setId || !connection.user) return this.hub.send(connection, { type: "error", ...id, code, message: notInSet });
+    const outcome = await this.withSetLock(setId, async () => {
+      if (as) {
+        // Sent before: acknowledged again, applied once.
+        const seen = await redis().hget(commandsKey(setId), as.id);
+        if (seen !== null) return { kind: "again" as const, rev: Number(seen) };
+        if (as.epoch !== undefined && as.epoch !== ((await this.read(setId))?.epoch ?? 0)) return { kind: "epoch" as const };
+      }
+      const applied = await this.applyLocked(connection, setId, op);
+      if (as && applied.result.ok) {
+        await redis().hset(commandsKey(setId), as.id, String(applied.result.session?.rev ?? 0));
+        await redis().expire(commandsKey(setId), SESSION_TTL_S);
+      }
+      return { kind: "applied" as const, ...applied };
+    });
+    if (outcome.kind === "again") return this.hub.send(connection, { type: "ack", id: as!.id, rev: outcome.rev });
+    if (outcome.kind === "epoch") return this.hub.send(connection, { type: "error", ...id, code: "epoch", message: "The session went on in another epoch: load it again" });
+    const { result, previous } = outcome;
+    if (result.ok && as) this.hub.send(connection, { type: "ack", id: as.id, rev: result.session?.rev ?? 0 });
     if (!result.ok) {
-      this.hub.send(connection, { type: "error", code: result.code, message: result.message });
+      this.hub.send(connection, { type: "error", ...id, code: result.code, message: result.message });
       // Refused as stale (issue #305): with what the screens show now.
       if (result.code === "stale") void this.broadcastLocal(setId);
       return;
