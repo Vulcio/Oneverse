@@ -82,6 +82,14 @@ into `node e2e/run.mjs --durations`. Every suite still runs alone against
 its own stack and database, so a suite never needs to know which part it's
 in, nor count on what another suite left behind.
 
+On a pull request, CI runs only the suites its changes need (issue #315):
+`--changed <file>` (the changed paths, one a line) picks them with
+`affected.mjs` - a suite file changed runs itself, a path in one of its
+`AREAS` runs the suites named after that area, documentation runs none, and
+anything else (a shared package, the harness, an area not listed) runs every
+suite. `main` always runs every suite. Add an area to `AREAS` once you know
+which suites cover it.
+
 ## Docs screenshots
 
 `docs/screenshots.mjs` isn't a suite: it takes the screenshots for the user

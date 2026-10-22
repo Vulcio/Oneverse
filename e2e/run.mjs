@@ -7,10 +7,13 @@
 // average one). `--list` prints the suites instead of running them.
 // `--durations` reads CI's summaries (`PASS  web/sets (42s)`, pasted from
 // every part's log) on its input and keeps their durations in durations.json.
+// `--changed <file>`: only the suites the paths listed in it need (issue
+// #315, see affected.mjs), as pull requests run them; main runs every one.
 import { spawn } from "node:child_process";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { affected } from "./affected.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const all = ["api", "web"].flatMap((dir) =>
@@ -42,11 +45,22 @@ if (shardAt >= 0 && (!shard || Number(shard[1]) < 1 || Number(shard[1]) > Number
   console.error("--shard takes a part and how many, like 2/4");
   process.exit(1);
 }
+const changedAt = args.indexOf("--changed");
+const changedFile = changedAt >= 0 ? args.splice(changedAt, 2)[1] : null;
+if (changedAt >= 0 && !changedFile) {
+  console.error("--changed takes a file of changed paths, one a line");
+  process.exit(1);
+}
 // `--list`: the suites it would run, without running them.
 const listOnly = args.includes("--list");
 const filters = args.filter((arg) => arg !== "--list");
 const matching = filters.length === 0 ? all : all.filter((suite) => filters.some((f) => suite === f || suite.startsWith(`${f}/`) || suite.endsWith(`/${f}`)));
-const suites = shard ? shardOf(matching, Number(shard[1]), Number(shard[2])) : matching;
+const needed = changedFile ? (affected(readFileSync(changedFile, "utf8").split("\n").map((line) => line.trim()).filter(Boolean), matching) ?? matching) : matching;
+const suites = shard ? shardOf(needed, Number(shard[1]), Number(shard[2])) : needed;
+if (changedFile && suites.length === 0) {
+  console.log(needed.length === 0 ? "No suite needs this change." : "No suite in this part.");
+  process.exit(0);
+}
 if (suites.length === 0) {
   console.error(`No suite matches ${filters.join(" ")}. Suites: ${all.join(", ")}`);
   process.exit(1);

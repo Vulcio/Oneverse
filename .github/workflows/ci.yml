@@ -46,6 +46,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Vite+'s task cache (issue #315): a package's build, lint, type-check or
+      # tests nothing changed for since the last run are replayed, not run again.
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/.vite/task-cache
+          key: vp-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: vp-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
       - name: Apply database migrations
         run: pnpm --filter @oneverse/db exec prisma migrate deploy
 
@@ -67,6 +75,8 @@ jobs:
     outputs:
       code: ${{ steps.diff.outputs.code }}
       images: ${{ steps.diff.outputs.images }}
+      # The paths a pull request changes, space-separated, for e2e to pick its suites (issue #315); empty on main.
+      changed: ${{ steps.diff.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,6 +92,7 @@ jobs:
             exit 0
           fi
           files=$(git diff --name-only "$BASE" "$GITHUB_SHA")
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then echo "changed=$(echo $files)" >> "$GITHUB_OUTPUT"; fi
           if echo "$files" | grep -qvE '^(apps/docs/|apps/site/|docs/)|\.md$'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
@@ -182,6 +193,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Vite+'s task cache (issue #315): a package's build, lint, type-check or
+      # tests nothing changed for since the last run are replayed, not run again.
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/.vite/task-cache
+          key: vp-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: vp-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
       # Playwright's Chromium, kept between runs for its version: only the
       # system libraries it needs are installed each time.
       - name: Playwright's version
@@ -235,8 +254,18 @@ jobs:
           done
           echo "The API or a web app didn't start"; tail -50 /tmp/api.log /tmp/worker.log /tmp/web.log /tmp/planiverse.log /tmp/oneverse.log /tmp/screen.log; exit 1
 
+      # On a pull request, the suites its changes need (issue #315, e2e/affected.mjs: every
+      # one for a change it can't place); on main, every suite.
       - name: Run the end-to-end suites
-        run: node e2e/run.mjs --shard ${{ matrix.shard }}/6
+        env:
+          CHANGED: ${{ needs.changes.outputs.changed }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] && [ -n "$CHANGED" ]; then
+            echo "$CHANGED" | tr ' ' '\n' > /tmp/changed
+            node e2e/run.mjs --shard ${{ matrix.shard }}/6 --changed /tmp/changed
+          else
+            node e2e/run.mjs --shard ${{ matrix.shard }}/6
+          fi
 
       - name: Keep screenshots and server logs
         if: failure()
