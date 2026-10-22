@@ -2,8 +2,9 @@
 // session sent with an id the device chose, answered with `ack` and the
 // session's revision, or an error carrying the id. The same command sent
 // again (a resend after a drop) is acknowledged again, applied once; one
-// from another epoch is refused; the server's own ops can't be sent.
-import { api, call, check, finish, stamp, user } from "../lib/harness.mjs";
+// from another epoch is refused; the server's own ops can't be sent. Each
+// change applied is kept in the session's record, written by the Worker.
+import { api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 const leader = await user("Commander");
@@ -66,6 +67,23 @@ try {
   desk.send({ type: "command", id: `end-${stamp}`, op: { kind: "end" } });
   a = await answer(desk, `end-${stamp}`);
   check("ending it: acknowledged", a?.type === "ack", JSON.stringify(a));
+
+  // The record: each change applied, once, in order, by whom and from where.
+  const admin = await user("Recorder");
+  sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
+  const sessionId = s?.session.sessionId;
+  const recorded = () => sql(`select string_agg(rev || ' ' || (op->>'kind'), ', ' order by rev) from "LiveSessionCommand" where "sessionId" = '${sessionId}'`);
+  let record = "";
+  for (let i = 0; i < 40 && record !== "1 lead, 2 present, 3 present, 4 end"; i++) {
+    if (i % 10 === 0) await api(admin, "POST", "/admin/jobs/run/record-live-sessions");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    record = recorded();
+  }
+  check("recorded: each change applied, once, in order", record === "1 lead, 2 present, 3 present, 4 end", record);
+  check(
+    "…by whom, from which device, in the cloud",
+    sql(`select count(*) from "LiveSessionCommand" where "sessionId" = '${sessionId}' and "userId" = '${leader.id}' and "deviceId" like 'd:${leader.id}:cmd-%' and origin = 'cloud' and epoch = ${epoch}`) === "4",
+  );
 } finally {
   for (const device of devices) device.close();
 }

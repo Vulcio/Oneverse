@@ -124,10 +124,11 @@ export class JobsService {
   /**
    * A scheduled job run now, besides its schedule (issue #235): the team
    * calendar's sets ahead and reminders, the old notifications' clean-up
-   * (issue #149). Null: not one of them.
+   * (issue #149), the live sessions' record and clean-up (issue #247). Null:
+   * not one of them.
    */
   async runNow(name: string): Promise<{ queued: string } | null> {
-    const scheduled: Record<string, Queue> = { "make-event-sets": this.teamEvents, "event-reminders": this.teamEvents, "clean-up-notifications": this.notifications };
+    const scheduled: Record<string, Queue> = { "make-event-sets": this.teamEvents, "event-reminders": this.teamEvents, "clean-up-notifications": this.notifications, "record-live-sessions": this.liveSessions, "end-gone-live-sessions": this.liveSessions };
     const queue = scheduled[name];
     if (!queue) return null;
     await queue.add(name, {}, { removeOnComplete: 100, removeOnFail: 100 });

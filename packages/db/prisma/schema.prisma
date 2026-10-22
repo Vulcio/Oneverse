@@ -383,6 +383,7 @@ model User {
   notificationSettings Json?
   screenWidgetDefaults ScreenWidgetDefault[]
   liveSessionsStarted  LiveSession[]
+  liveSessionCommands  LiveSessionCommand[]
 
   @@index([email])
 }
@@ -3317,12 +3318,35 @@ model LiveSession {
   startedAt   DateTime          @default(now())
   endedAt     DateTime?
 
-  setlist   Setlist @relation(fields: [setlistId], references: [id], onDelete: Cascade)
-  startedBy User?   @relation(fields: [startedById], references: [id], onDelete: SetNull)
+  setlist   Setlist              @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  startedBy User?                @relation(fields: [startedById], references: [id], onDelete: SetNull)
+  commands  LiveSessionCommand[]
 
   // One LIVE session per set: a partial unique index, in the migration.
   @@index([setlistId])
   @@index([status])
+}
+
+/// One change to a live session, as it was applied (the record, issue #247): who, from which
+/// device, at which revision and epoch. Written from Redis by the Worker every few minutes;
+/// kept 90 days after its session ends.
+model LiveSessionCommand {
+  id        String   @id @default(cuid())
+  sessionId String
+  rev       Int
+  epoch     Int
+  at        DateTime
+  userId    String?
+  deviceId  String?
+  /// "cloud" or "pulse:<node id>": where it was applied.
+  origin    String
+  op        Json
+
+  session LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, rev])
+  @@index([userId])
 }
 
 enum LiveSessionStatus {

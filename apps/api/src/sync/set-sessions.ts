@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesIn } from "../roles/capabilities.js";
-import { endLiveSession, startLiveSession } from "./live-sessions.js";
+import { endLiveSession, recordLiveOp, startLiveSession } from "./live-sessions.js";
 import type { ScreensService } from "../screens/screens.service.js";
 import { SCREEN_ONLINE_TTL_S, SCREEN_REPORT_TTL_S, screenOnlineKey, screenReportKey } from "../screens/screen-channel.js";
 import type { SetlistAccessService } from "../setlists/setlist-access.service.js";
@@ -311,13 +311,22 @@ export class SetSessions {
           if (row) Object.assign(result.session, { sessionId: row.id, epoch: row.epoch });
         }
         await this.write(setId, result.session);
+        await this.record(connection, result.session, op);
       } else {
         await redis().del(sessionKey(setId));
         await this.changed(setId);
+        if (previous) await this.record(connection, { ...previous, rev: previous.rev + 1 }, op);
         if (previous?.sessionId) await endLiveSession(this.prisma, previous.sessionId).catch(() => undefined);
       }
     }
     return { result, previous };
+  }
+
+  /** The change kept in the session's record (issue #247); losing it never stops the change. */
+  private async record(connection: Connection, session: LiveSessionState, op: LiveOp) {
+    if (!session.sessionId) return;
+    const entry = { sessionId: session.sessionId, rev: session.rev, epoch: session.epoch ?? 0, at: Date.now(), userId: connection.user!.id, deviceId: this.device(connection), origin: "cloud", op };
+    await recordLiveOp(entry).catch((err: unknown) => this.logger.error(`Can't record a change to the live session ${session.sessionId}: ${String(err)}`));
   }
 
   /** `fn` with the set's session to itself (see lockKey): across the API's instances, one change at a time. */

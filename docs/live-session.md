@@ -200,9 +200,10 @@ one screen differently, that screen can't know.
 
 ## The record
 
-Each accepted command is appended to a Redis stream (`live:log:<id>`) as it's applied, and
-the Worker writes the stream to `LiveSessionCommand` every few minutes and when the session
-ends. It's what Pulse sends back after an outage, and later what a set's page shows ("who
+Each change applied (a command, an old message, or the server's own `leave` and `back`) is
+appended to one Redis stream (`songverse:live:record`, capped) as it's applied, and the Worker
+writes the stream to `LiveSessionCommand` every minute; an entry whose session has no row is
+dropped. It's what Pulse sends back after an outage, and later what a set's page shows ("who
 moved the screens at 10:42"). It's kept 90 days after the session ends.
 
 ## Pulse: offline and back
@@ -260,7 +261,10 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    revision) or an `error` carrying its id; a resend is acknowledged, not applied again; another
    epoch is refused (`epoch`). The old messages go through the same code without an id. The
    clients move to commands with the shared `LiveClient` (step 8).
-6. The record (stream, then the table).
+6. The record (stream, then the table). **Done**: one stream for every session, written by the
+   Worker every minute (`record-live-sessions`); sessions ended more than 90 days ago are
+   deleted with their record by the hourly clean-up. Both can be run from Admin > Background
+   jobs.
 7. `slideKey` in `presenting`.
 8. `LiveClient` in core, and the apps moved onto it.
 9. Pulse's mirror and takeover: the same engine in Node on the mini PC.
