@@ -28,6 +28,8 @@ export interface OperatorLive {
   offset: number | null;
   /** A change this device made is on its way, not yet confirmed by the server (issue #247). */
   sending?: boolean;
+  /** The set's Pulse's page with this person's pass (issue #247, core's PulseDoor): "Continue on Pulse" while the cloud's gone. */
+  pulseLink?: string | null;
 }
 
 export interface OperatorHost {

@@ -366,9 +366,11 @@ export type SyncClientMessage =
   /**
    * Oneverse Pulse (issue #247, live/engine.ts): from someone who can edit the
    * set, in it - every `session` that follows carries the session as it's
-   * kept (`live`), to take over from if the internet goes.
+   * kept (`live`), to take over from if the internet goes. `room`: Pulse's
+   * own address on the venue's network (http://…), for the set's devices to
+   * continue on when the cloud's gone (`pulse` on their sessions).
    */
-  | { type: "mirror" }
+  | { type: "mirror"; room?: string }
   /**
    * A pass to the set's session on Oneverse Pulse's own page (issue #247,
    * live/pass.ts), for this person on this device, in a set they're in:
@@ -472,6 +474,8 @@ export type SyncServerMessage =
       canOperate?: boolean;
       /** The session as it's kept, holders' devices and all: only to a device that asked to `mirror` it (Pulse). */
       live?: LiveSessionState | null;
+      /** A Pulse in the set (issue #247): its address on the venue's network, to continue on with a pass if the cloud goes (live/pulse-door.ts). */
+      pulse?: string | null;
     }
   /** A pass to the set on Pulse (issue #247): `key` is the cloud's public key, which Pulse checks passes with offline. */
   | { type: "pass"; setId: string; pass: string; key: string; expiresAt: number }

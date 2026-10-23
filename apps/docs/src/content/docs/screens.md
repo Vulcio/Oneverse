@@ -64,6 +64,10 @@ Presenting uses [Sync](/sets/#playing-in-sync): the screens are members of the s
 
 Others can present beside you. In the Sync menu, while you lead, **Also presenting** lists the people in the set: tick someone to let them present from their own Live too, for this session; tick them again to stop. Anyone who can edit the set, or whose role runs the screens (see [The media operator](/screens/#the-media-operator)), presents without being asked. Each **Next slide** moves the screens on from what they show now: when two people press it at the same moment, the screens move once, not twice. If someone edits the song while it's on, a screen that still has the old words loads the song again; until it has the words you see, it shows none rather than the wrong ones. On a weak connection, a slide you move to stays on your Live marked **sending…** until the server has it, and goes to the screens as soon as the connection is back.
 
+### When the internet goes: Continue on Pulse
+
+Oneverse Pulse, a small computer that stays at the venue, is in preparation. Where a set has one, it follows the set's session while the internet is there, and keeps its slides. If the internet goes for more than a few seconds, Pulse runs the session in the room, and Live (and the media operator's console) shows **Continue on Pulse**. Tap it, on a device connected to the venue's network: Pulse's own page opens with the set's slides and the screen controls, and you go on from where the screens were, without signing in again. When the internet is back, what the room did becomes the set's session again, and Live picks it up.
+
 ## What the screens show
 
 With a template for the audience, each slide's two lines are big and centred. The line before is faint above, the line after faint below, and each slide fades in - in the default look; a [template](/screens/#templates) changes all of it. A section without words, like an instrumental, is an empty slide, so you step through the song as the band plays it. A song's first slide shows its title, and its first and last show its credits at the bottom: who wrote it, its copyright and its CCLI song number, from the song's details.

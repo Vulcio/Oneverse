@@ -550,6 +550,8 @@ const en = {
     screenCount_other: "{{count}} screens",
     noScreens: "no screen connected",
     sending: "sending…",
+    continueOnPulse: "Continue on Pulse",
+    continueOnPulseHint: "The internet is gone, and Pulse runs the set in the room: continue there, on the venue's network.",
     noWords: "No words here",
     displayCodeLabel: "To show a set here, pair this screen:",
     displayCodeHint: "Scan the code with your phone, or go to {{host}}/screens and type it. It changes every 10 minutes.",

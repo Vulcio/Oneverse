@@ -1,6 +1,7 @@
 import {
   clockOffset,
   LiveCommands,
+  PulseDoor,
   resumeScreens,
   samePresenting,
   SYNC_PATH,
@@ -84,6 +85,8 @@ export interface SyncState {
   canOperate: boolean;
   /** A change this device made is on its way, not yet confirmed by the server (issue #247). */
   sending?: boolean;
+  /** The set's Pulse's page with this person's pass (issue #247, core's PulseDoor): "Continue on Pulse" while the cloud's gone. */
+  pulseLink?: string | null;
 }
 
 let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false, canPresent: false, canOperate: false };
@@ -102,11 +105,13 @@ const commands = new LiveCommands((message) => {
   return true;
 });
 let rejoining = false;
+/** The set's Pulse, and a pass to it, for when the cloud's gone (issue #247). */
+const door = new PulseDoor(() => send({ type: "pass" }));
 /** The session as the server last sent it; `state.session` shows over it the slides this device sent that are on their way. */
 let serverSession: SyncSession | null = null;
 function emit(next: Partial<SyncState>) {
   if (next.session !== undefined) serverSession = next.session;
-  state = { ...state, ...next, session: commands.view(serverSession), sending: commands.sending };
+  state = { ...state, ...next, session: commands.view(serverSession), sending: commands.sending, pulseLink: door.link };
   for (const listener of listeners) listener();
 }
 
@@ -245,6 +250,7 @@ function receive(message: SyncServerMessage) {
         presentShown = message.session?.presenting ?? null;
       }
       heldScreens = resumeScreens(message, userId, heldScreens, (control) => send({ type: "screens", control }));
+      door.heard(message.pulse);
       emit({
         status: "on",
         error: null,
@@ -273,6 +279,11 @@ function receive(message: SyncServerMessage) {
     }
     case "ack":
       if (commands.receive(message)) emit({});
+      return;
+    case "pass":
+      if (message.setId !== state.setId) return;
+      door.passed(message.pass, message.expiresAt);
+      emit({});
       return;
     case "error": {
       if (commands.receive(message) && !commands.sending) {
@@ -446,6 +457,7 @@ export function disableSync() {
   wantLead = false;
   heldScreens = null;
   commands.clear();
+  door.clear();
   if (retry) clearTimeout(retry);
   retry = null;
   stopTimers();

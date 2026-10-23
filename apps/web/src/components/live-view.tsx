@@ -13,6 +13,7 @@ import { ChordGrid } from "#/components/chord-grid";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
 import { DisplayPanel } from "#/components/display-panel";
+import { ContinueOnPulse } from "@oneverse/operator/components/continue-on-pulse";
 import { PresentControls } from "@oneverse/operator/components/present-controls";
 import { OperatorProvider } from "@oneverse/operator/host";
 import { songverseOperatorHost } from "#/lib/operator-host";
@@ -475,6 +476,8 @@ export function LiveView({
       {/* Presenting on the set's screens (issue #186), leading its session. */}
       {song.setId ? (
         <OperatorProvider host={songverseOperatorHost(song.setId)}>
+          {/* The cloud gone, and the set has a Pulse (issue #247): on to its page. */}
+          <ContinueOnPulse className="mx-2 mb-2 shrink-0 sm:mx-4" />
           <PresentControls
             itemId={song.id}
             chart={chart}

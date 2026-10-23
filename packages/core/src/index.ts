@@ -59,6 +59,7 @@ export * from "./sync/index.js";
 export * from "./live/index.js";
 export * from "./live/engine.js";
 export * from "./live/pass.js";
+export * from "./live/pulse-door.js";
 export * from "./screens/index.js";
 export * from "./brands/index.js";
 export * from "./file-types/index.js";

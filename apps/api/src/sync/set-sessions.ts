@@ -5,7 +5,7 @@ import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesIn } from "../roles/capabilities.js";
 import { endLiveSession, recordLiveOp, startLiveSession } from "./live-sessions.js";
-import { issueLivePass, livePassKey } from "./live-pass.js";
+import { issueLivePass, livePassKey, pulseRoomAddress } from "./live-pass.js";
 import type { ScreensService } from "../screens/screens.service.js";
 import { SCREEN_ONLINE_TTL_S, SCREEN_REPORT_TTL_S, screenOnlineKey, screenReportKey } from "../screens/screen-channel.js";
 import type { SetlistAccessService } from "../setlists/setlist-access.service.js";
@@ -252,12 +252,27 @@ export class SetSessions {
     await this.command(connection, op, "Join a set first", "bad-request", { id, epoch: message.epoch });
   }
 
-  /** Oneverse Pulse (issue #247): someone who can edit the set, in it, is sent the session as it's kept, to take over from. */
-  async mirror(connection: Connection) {
+  /**
+   * Oneverse Pulse (issue #247): someone who can edit the set, in it, is sent
+   * the session as it's kept, to take over from. `room`: its address on the
+   * venue's network, a local one only (pulseRoomAddress), told to the set's
+   * devices (`pulse`) while it's in the set.
+   */
+  async mirror(connection: Connection, room?: unknown) {
     if (!connection.setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
     if (!(await this.stillAllowed(connection))) return;
     if (!connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set mirrors its session" });
     connection.mirrors = true;
+    if (room !== undefined) {
+      // Mirrored all the same: only the set's devices aren't told where it is.
+      const address = pulseRoomAddress(room);
+      if (!address) this.hub.send(connection, { type: "error", code: "bad-request", message: "room must be an address on a local network" });
+      else {
+        connection.pulseRoom = address;
+        await this.present(connection);
+        await this.changed(connection.setId);
+      }
+    }
     this.queueBroadcast(connection.setId);
   }
 
@@ -461,7 +476,7 @@ export class SetSessions {
     if (!connection.setId || (!connection.user && !connection.screen)) return;
     const member = connection.screen
       ? { id: connection.screen.id, name: connection.screen.name, screen: true, at: Date.now() }
-      : { id: connection.user!.id, name: connection.user!.name, device: this.device(connection), at: Date.now() };
+      : { id: connection.user!.id, name: connection.user!.name, device: this.device(connection), at: Date.now(), ...(connection.mirrors && connection.pulseRoom && { pulse: connection.pulseRoom }) };
     await redis().hset(membersKey(connection.setId), `${this.hub.instance}:${connection.id}`, JSON.stringify(member));
     await redis().expire(membersKey(connection.setId), SESSION_TTL_S);
   }
@@ -494,9 +509,11 @@ export class SetSessions {
     const [stored, rawMembers, stage] = await Promise.all([this.read(setId), redis().hgetall(membersKey(setId)), this.readStage(setId)]);
     const now = Date.now();
     const present = Object.entries(rawMembers)
-      .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean; device?: string }) }))
+      .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean; device?: string; pulse?: string }) }))
       .filter((member) => now - member.at < PRESENCE_MS * 2);
-    const members: SyncMember[] = present.map((member) => ({ id: member.id, name: member.name, leading: (member.device ?? member.conn) === stored?.leader.device, ...(member.screen ? { screen: true } : {}) }));
+    // A Pulse in the set (issue #247) isn't someone in it: its address is told instead.
+    const pulse = present.find((member) => member.pulse)?.pulse ?? null;
+    const members: SyncMember[] = present.filter((member) => !member.pulse).map((member) => ({ id: member.id, name: member.name, leading: (member.device ?? member.conn) === stored?.leader.device, ...(member.screen ? { screen: true } : {}) }));
     const session: SyncSession | null = stored
       ? {
           ...stored,
@@ -517,6 +534,7 @@ export class SetSessions {
         canPresent: connection.user ? mayPresent(stored, this.actor(connection)) : false,
         canOperate: connection.canLead || connection.canOperate,
         ...(connection.mirrors && connection.canLead && { live: stored }),
+        ...(connection.user && { pulse }),
       });
     }
   }

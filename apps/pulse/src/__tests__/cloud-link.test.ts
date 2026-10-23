@@ -59,6 +59,7 @@ describe("CloudLink", () => {
       apiUrl: "https://api.example.test",
       setId: "set_1",
       nodeId: "pulse-node1",
+      roomUrl: "http://192.168.1.20:8788",
       token: async () => "token",
       outageMs: 10_000,
       open: () => {
@@ -76,7 +77,7 @@ describe("CloudLink", () => {
 
   it("signs in, joins the set as its own device, and mirrors its session", async () => {
     await online();
-    expect(latest().sent).toEqual([{ type: "hello", token: "token" }, { type: "join", setId: "set_1", deviceId: "pulse-node1" }, { type: "mirror" }, { type: "pass" }]);
+    expect(latest().sent).toEqual([{ type: "hello", token: "token" }, { type: "join", setId: "set_1", deviceId: "pulse-node1" }, { type: "mirror", room: "http://192.168.1.20:8788" }, { type: "pass" }]);
     latest().say({ type: "pass", setId: "set_1", pass: "x.y", key: "cloud-key", expiresAt: 1 });
     expect(link.passKey).toBe("cloud-key");
     expect(link.status).toBe("online");

@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/component
 import { cn } from "@oneverse/ui/lib/utils";
 import { setItemTitle, setItemView } from "@oneverse/screen/lib/set-items";
 import { useLive, useOperatorHost } from "../host";
+import { ContinueOnPulse } from "./continue-on-pulse";
 
 /** A countdown's lengths, one press away (minutes). */
 const PRESETS = [1, 3, 5, 10, 15, 30];
@@ -86,7 +87,10 @@ export function OperatorConsole({
       </div>
 
       {!sync.ready ? (
-        <p className="text-sm text-muted-foreground">{sync.error ?? t("screens.operator.connecting")}</p>
+        <>
+          <ContinueOnPulse />
+          <p className="text-sm text-muted-foreground">{sync.error ?? t("screens.operator.connecting")}</p>
+        </>
       ) : !sync.canOperate ? (
         <p className="text-sm text-muted-foreground" data-testid="operator-not-allowed">
           {t("screens.operator.notAllowed")}

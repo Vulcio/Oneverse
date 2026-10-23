@@ -23,8 +23,11 @@ console built for it by the screen app (`pnpm --filter @oneverse/screen-app buil
 from `PULSE_CONSOLE_DIR`, its `dist/pulse` by default): opened with `#pass=<pass>`, it shows that
 copy and runs the screens through the room (`e2e/web/pulse-console.test.mjs`).
 
-Not yet: Live asking for a pass and showing "Continue on Pulse" when the cloud drops, Live
-itself on Pulse's page, the stage (timers, messages) and most of the old messages in the room,
+It tells the cloud its page's address (`PULSE_ROOM_URL`, by default its first local IPv4
+address), which the set's devices hear: when they lose the cloud, Live and the console offer
+"Continue on Pulse", a link to that page with a pass.
+
+Not yet: Live itself on Pulse's page (the console only), the stage (timers, messages) and most of the old messages in the room,
 Pulse's own sign-in (paired like a screen; until then `PULSE_TOKEN` is an API token of someone who
 can edit the set), and following the sets of an event rather than one set. It has not run on a
 mini PC yet: only in tests (`src/__tests__/`, `e2e/api/pulse-link`, `pulse-room`,

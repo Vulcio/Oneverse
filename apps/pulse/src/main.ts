@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
 import { CloudLink } from "./cloud-link.js";
 import { ConsolePage } from "./console-page.js";
@@ -18,6 +19,8 @@ import { SET_COPY_EVERY_MS, SetCopy } from "./set-copy.js";
  * PULSE_DATA_DIR    where the set's copy is kept (./pulse-data)
  * PULSE_CONSOLE_DIR the page's build (the screen app's dist/pulse, beside this one in the repository)
  * PULSE_ROOM_PORT   the room's server's port (8788); PULSE_ROOM_HOST its address (0.0.0.0: the venue's network)
+ * PULSE_ROOM_URL    its address as the set's devices reach it (http://192.168.1.20:8788): told to them for
+ *                   "Continue on Pulse"; by default its first local IPv4 address. A local address only.
  */
 function required(name: string): string {
   const value = process.env[name];
@@ -32,7 +35,15 @@ const apiUrl = required("ONEVERSE_API_URL");
 const setId = required("PULSE_SET_ID");
 const token = async () => process.env.PULSE_TOKEN ?? null;
 const log = (line: string) => console.log(line);
-const link = new CloudLink({ apiUrl, setId, nodeId: required("PULSE_NODE_ID"), token, log });
+const port = Number(process.env.PULSE_ROOM_PORT ?? 8788);
+/** This mini PC's first address on the venue's network. */
+function roomUrl(): string | undefined {
+  const address = Object.values(networkInterfaces())
+    .flat()
+    .find((one) => one && one.family === "IPv4" && !one.internal)?.address;
+  return address ? `http://${address}:${port}` : undefined;
+}
+const link = new CloudLink({ apiUrl, setId, nodeId: required("PULSE_NODE_ID"), roomUrl: process.env.PULSE_ROOM_URL ?? roomUrl(), token, log });
 const set = new SetCopy({ apiUrl, setId, token, dataDir: process.env.PULSE_DATA_DIR ?? "pulse-data", log });
 await set.load();
 // The set fetched again as soon as the cloud's there, and every few minutes while it is.
@@ -51,7 +62,7 @@ const server = createServer(async (request, response) => {
   response.writeHead(404).end();
 });
 const room = new Room(server, link, setId, set);
-server.listen(Number(process.env.PULSE_ROOM_PORT ?? 8788), process.env.PULSE_ROOM_HOST ?? "0.0.0.0");
+server.listen(port, process.env.PULSE_ROOM_HOST ?? "0.0.0.0");
 
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.on(signal, () => {

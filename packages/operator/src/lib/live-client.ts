@@ -1,4 +1,4 @@
-import { clockOffset, LiveCommands, resumeScreens, samePresenting, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncSession, type SyncStageCommand } from "@oneverse/core";
+import { clockOffset, LiveCommands, PulseDoor, resumeScreens, samePresenting, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncSession, type SyncStageCommand } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import type { OperatorHost, OperatorLive } from "../host";
 
@@ -43,10 +43,12 @@ export function createLiveClient({ apiUrl, token, pass }: { apiUrl: string; toke
   });
   let session: SyncSession | null = null;
   let rejoining = false;
+  // The set's Pulse, and a pass to it, for when the cloud's gone (issue #247).
+  const door = new PulseDoor(() => send({ type: "pass" }));
   const listeners = new Set<() => void>();
 
   function emit(next: Partial<OperatorLive>) {
-    state = { ...state, ...next, session: commands.view(next.session !== undefined ? (session = next.session) : session), sending: commands.sending };
+    state = { ...state, ...next, session: commands.view(next.session !== undefined ? (session = next.session) : session), sending: commands.sending, pulseLink: door.link };
     for (const listener of listeners) listener();
   }
 
@@ -122,6 +124,7 @@ export function createLiveClient({ apiUrl, token, pass }: { apiUrl: string; toke
           presentShown = message.session?.presenting ?? null;
         }
         heldScreens = resumeScreens(message, userId, heldScreens, (control) => send({ type: "screens", control }));
+        door.heard(message.pulse);
         emit({
           ready: true,
           error: null,
@@ -137,6 +140,11 @@ export function createLiveClient({ apiUrl, token, pass }: { apiUrl: string; toke
         return;
       case "ack":
         if (commands.receive(message)) emit({});
+        return;
+      case "pass":
+        if (message.setId !== setId) return;
+        door.passed(message.pass, message.expiresAt);
+        emit({});
         return;
       case "error":
         if (commands.receive(message) && !commands.sending) {
@@ -194,6 +202,7 @@ export function createLiveClient({ apiUrl, token, pass }: { apiUrl: string; toke
       setId = null;
       heldScreens = null;
       commands.clear();
+      door.clear();
       session = null;
       if (retry) clearTimeout(retry);
       if (pinger) clearInterval(pinger);

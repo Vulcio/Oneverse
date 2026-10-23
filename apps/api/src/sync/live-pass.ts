@@ -1,5 +1,7 @@
 import { LIVE_PASS_MS, livePassPayloadPart, type LivePassPayload } from "@oneverse/core";
 import { createPrivateKey, createPublicKey, hkdfSync, sign, type KeyObject } from "node:crypto";
+import { isIP } from "node:net";
+import { isPublicAddress } from "../security/outside-address.js";
 
 /**
  * The cloud's key for passes to Oneverse Pulse (issue #247, core's
@@ -35,4 +37,25 @@ export function issueLivePass(who: Omit<LivePassPayload, "v" | "iat" | "exp">, n
   const payload: LivePassPayload = { v: 1, ...who, iat: now, exp: now + LIVE_PASS_MS };
   const part = livePassPayloadPart(payload);
   return { pass: `${part}.${sign(null, Buffer.from(part), liveKeys().privateKey).toString("base64url")}`, expiresAt: payload.exp };
+}
+
+/**
+ * Pulse's address on the venue's network (issue #247), as it says it when it
+ * mirrors a set: the set's devices are sent there with their pass when the
+ * cloud's gone, so it must be one on a local network - a private, loopback or
+ * link-local IP, or a .local name - never an address on the internet a pass
+ * could be sent off to. Its origin, or null when it isn't one.
+ */
+export function pulseRoomAddress(input: unknown): string | null {
+  if (typeof input !== "string" || input.length > 300) return null;
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    return null;
+  }
+  if ((url.protocol !== "http:" && url.protocol !== "https:") || url.username || url.password) return null;
+  const host = url.hostname.replace(/^\[|\]$/g, "");
+  const local = isIP(host) ? !isPublicAddress(host) : /^[a-z0-9-]+(\.[a-z0-9-]+)*\.local$/i.test(host);
+  return local ? url.origin : null;
 }

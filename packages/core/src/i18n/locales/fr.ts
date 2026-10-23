@@ -550,6 +550,8 @@ const fr: typeof en = {
     screenCount_other: "{{count}} écrans",
     noScreens: "aucun écran connecté",
     sending: "envoi…",
+    continueOnPulse: "Continuer sur Pulse",
+    continueOnPulseHint: "Internet est coupé et Pulse mène la liste dans la salle : continuez-y, sur le réseau de la salle.",
     noWords: "Pas de paroles ici",
     displayCodeLabel: "Pour afficher une liste ici, associez cet écran :",
     displayCodeHint: "Scannez le code avec votre téléphone, ou allez sur {{host}}/screens et saisissez-le. Il change toutes les 10 minutes.",

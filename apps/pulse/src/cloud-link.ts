@@ -33,6 +33,8 @@ export interface CloudLinkOptions {
   setId: string;
   /** This Pulse's id: its device in the set, and its authority ("pulse:<node id>"). */
   nodeId: string;
+  /** Its page's address on the venue's network (http://192.168.1.20:8788), told to the set's devices for "Continue on Pulse"; left out: not told. */
+  roomUrl?: string;
   /** A token to sign in to the cloud with; null: none now. */
   token: () => Promise<string | null>;
   outageMs?: number;
@@ -196,7 +198,7 @@ export class CloudLink {
 
   private mirror() {
     this.sessionChanged();
-    this.send({ type: "mirror" });
+    this.send({ type: "mirror", ...(this.options.roomUrl && { room: this.options.roomUrl }) });
     // Its own pass, for the cloud's key.
     this.send({ type: "pass" });
     this.set("online");

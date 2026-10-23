@@ -31,6 +31,8 @@ export interface Connection {
   canLead: boolean;
   /** Oneverse Pulse mirroring the set's session (issue #247): its session messages carry the session as it's kept. */
   mirrors?: boolean;
+  /** That Pulse's address on the venue's network, as it said it (pulseRoomAddress): the set's devices hear it as `pulse`. */
+  pulseRoom?: string;
   /** Runs screens by a role (issue #305): may present and lock control on the sets it can open. */
   canOperate: boolean;
   accessCheckedAt: number;

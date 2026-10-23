@@ -43,9 +43,26 @@ try {
   check("not after it expires", (await verifyLivePass(mine.pass, mine.key, set.id, mine.expiresAt)) === null);
 
   const theirs = await passFor(guest, "phone");
+  const phone = devices.at(-1);
   const guestPayload = await verifyLivePass(theirs.pass, theirs.key, set.id, Date.now());
   check("someone who can't edit the set: a pass that says so", guestPayload?.sub === guest.id && guestPayload.canLead === false, JSON.stringify(guestPayload));
   check("one key for every pass", theirs.key === mine.key);
+
+  // Where Pulse is (issue #247): a local address only, told to the set's devices; Pulse isn't someone in the set.
+  const pulse = await syncDevice(leader);
+  devices.push(pulse);
+  pulse.send({ type: "join", setId: set.id, deviceId: `pulse-${stamp}` });
+  await pulse.next((m) => m.type === "session");
+  pulse.send({ type: "mirror", room: "https://pulse.example.com" });
+  const outsideRoom = await pulse.next((m) => m.type === "error");
+  check("an address on the internet: refused, a pass could be sent off there", outsideRoom?.code === "bad-request", JSON.stringify(outsideRoom));
+  const stillMirrored = await pulse.next((m) => m.type === "session" && m.live !== undefined);
+  check("…mirrored all the same, the set's devices told of no Pulse", !!stillMirrored && !stillMirrored.pulse, JSON.stringify(stillMirrored?.pulse));
+  pulse.send({ type: "mirror", room: "http://192.168.1.20:8788/anything" });
+  const heard = await phone.next((m) => m.type === "session" && !!m.pulse);
+  check("a local one: the set's devices hear its page's address", heard?.pulse === "http://192.168.1.20:8788", JSON.stringify(heard?.pulse));
+  // The leader's tablet is in the set; Pulse, signed in as the leader too, isn't counted.
+  check("…and Pulse isn't one of the people in the set", heard?.members.filter((one) => one.id === leader.id).length === 1, JSON.stringify(heard?.members));
 } finally {
   for (const device of devices) device.close();
 }
