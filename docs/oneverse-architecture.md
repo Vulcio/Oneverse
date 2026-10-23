@@ -19,10 +19,12 @@
 | Pulse runs the same TypeScript live engine as the cloud, in Node; Rust keeps what needs it (NDI output, audio, timing, MIDI and lighting) | Decided (2026-10-22) |
 | Offline, phones and tablets reach Pulse through "Continue on Pulse": a link to Pulse's own page, carrying a pass the cloud signed (valid 12 hours, checked by Pulse offline); no automatic switch | Built (2026-10-23) |
 | Native apps (#165): native shell, UI and playback for stage views; they share logic only (core's JS, or native ports checked against the shared tests), decided per feature; the web UI stays for editing, sets, admin and planning | Decided (2026-10-22) |
-| Locations (#320): an organisation's or a team's, picked by events beside their free-text place; a Pulse can follow every event at one | Decided (2026-10-23), in progress |
+| Locations (#320): an organisation's or a team's, picked by events beside their free-text place; a Pulse can follow every event at one | Built (2026-10-23) |
 | NDI (#196): Oneverse Screen shows any NDI source on the network - Pulse's output or a video mixer's; what a Screen contributes (its camera, its screen capture) goes to a video mixer, not to Pulse, which doesn't take NDI in | Decided (2026-10-23) |
 | Oneverse Screen is hybrid: an NDI feed under the web content, the operator switching between the NDI sources the Screen sees, the theme placing the feed (its video layer gains an `ndi` source and a position and scale); browsers show the base instead (#196) | Decided (2026-10-23), not built |
-| Organisations govern their teams' Sets rather than owning Sets | Proposed |
+| Organisations govern their teams' Sets rather than owning Sets | Decided (2026-10-23) |
+| Joining an organisation needs no owner's approval: a link the organisation gave is its consent (step 5 of the 2026-10-22 plan, an approval request, dropped) | Decided (2026-10-23) |
+| An imported Bible's licence is the importer's to settle before importing it, as YouVersion's is settled with YouVersion; its per-Bible rights stay as built | Decided (2026-10-23) |
 
 ## 1. Product map
 
@@ -77,12 +79,12 @@ Most of Core exists today inside `apps/api` and the shared packages. Core is fir
 | Live session | `LiveSession` row with an `epoch`, `SyncSession` in Redis, one per set: `rev`, leader, `presenting`, media operator (#190, #275); commands through `applyLiveOp` in core (`conformance/live.json`), acknowledged and resent after a drop; device leases; the record (90 days) | Keyed by set; scoped to a set or session in roles |
 | Locations | `Location` owned by an organisation or a team (#320); `locationId` on events and presets | Pulse following one |
 | Common slide protocol | `setItemSlides()` in core for songs, texts and passages (a passage's template sets its verses per slide, #310); `SyncPresenting` = item + slide number, commands checked against `basedOn` (#305) | Image and media slides |
-| Oneverse Pulse | Rust daemon serving Songverse's `ScreenStage` bundle (`Vulcio/oneverse-pulse`); `apps/pulse` in the monorepo: the live engine in Node, mirroring the cloud, taking over after 10 s offline and handing back, the set copied to disk, the operator console served to the venue's network with passes checked offline | Its own pairing and sign-in (still a token in its environment), Live on its page, following a location, a run on the mini PC |
+| Oneverse Pulse | Rust daemon serving Songverse's `ScreenStage` bundle (`Vulcio/oneverse-pulse`); `apps/pulse` in the monorepo: the live engine in Node, mirroring the cloud, taking over after 10 s offline and handing back, the set copied to disk, the operator console served to the venue's network with passes checked offline | Live on its page, the room's screens offline, a run on the mini PC (`Vulcio/oneverse-pulse`'s `docs/roadmap.md`) |
 | Sonic | Independent; Teams and Organisations can bring their own server (#300) | None |
 
 ## 4. Shared models and invariants
 
-- **Identity/workspaces:** one Oneverse account; personal space without a Team; Teams may exist without an Organization; Teams can join Organizations only through an explicit, owner-approved process. Planiverse's team-centric onboarding may differ from Songverse's. Applications remain independently usable.
+- **Identity/workspaces:** one Oneverse account; personal space without a Team; Teams may exist without an Organization; a Team joins an Organization through the Organization's own link or one of its admins, with no separate approval step. Planiverse's team-centric onboarding may differ from Songverse's. Applications remain independently usable.
 - **Permissions:** authorize by capability and scope (personal / Team / Organization / specific Set or live session), not solely a global flag. A role assignment carries its scope; a new right stays a field on `Role`. Organization administrators do not implicitly own members' personal data. Keep a distinction between *resource ownership* and *permission to use*: an Organization owns its screens and brands; it governs, not owns, its Teams' Sets.
 - **Universal Sets:** ordered, typed references to songs, scripture passages, Slideverse decks/slides, media and future items. A set item has a `kind` and one nullable foreign key per kind (not a generic JSON reference), so deletion, song folding and access checks keep working in the database. Passages are the deliberate exception: a reference plus a translation (`{bibleId}` or `{youversionId}`), since a translation can be deleted and a provider's has no row of ours. Set ownership, sharing, item resolution and live sequence state belong to Oneverse; interpretation of a song/deck remains with its product. Existing Songverse Sets migrate compatibly (every existing item is `SONG`); a resource reference never grants unrestricted access to its entire source library.
 - **Common slide protocol:** each item kind has an adapter in `@oneverse/core` turning it into slides of a few generic kinds: lines of text (songs, passages), an image (a PDF page, a PPTX slide rendered at import) and media. `ScreenStage` renders those kinds only, so a screen never needs the authoring app installed. `presenting` carries the item's revision with the slide number, so a slide number stays meaningful when an item changes mid-service.
@@ -130,7 +132,7 @@ The authoritative **Oneverse Live Session** tracks active Set/item/slide, target
    3. The slide contract in core, with conformance cases, and the item revision in `presenting`.
    4. A `PASSAGE` item kind, rendered by `ScreenStage`.
 3. **Then** scoped role assignments (starting with #270's operator), then the session as its own entity, designed with the player's snapshot contract (#247). *(done: scoped roles, and `docs/live-session.md` steps 1 to 9)*
-4. **Next** (#320): locations, Pulse paired like a screen and shown as a Pulse node, and a Pulse following every event at a location with its own token; then Live itself on Pulse's page and a first run on the mini PC.
+4. **Done** (#320, 2026-10-23): locations, Pulse paired like a screen and shown as a Pulse node, following every event at a location with its own token. **Next:** Live itself on Pulse's page and a first run on the mini PC (Pulse's roadmap), and the remaining operator capabilities (section 6).
 5. **Evolve existing issues, don't duplicate them.** Shipped foundations: #241, #242, #222, #279, #280, #281, #287, #190, #275. Open and relevant: #247 (offline player), #270 (operator role), #284 (profiles, pairing again), #195 (offline screen), #196 (NDI), #187 (Google TV), #165 and #171 (native apps), #243 (custom domains), #26 (offline creation). Inspect open **and closed** issues before drafting changes.
 6. **The player is now Oneverse Pulse** (`Vulcio/oneverse-pulse`, 2026-10-22): the repository, README and scope are renamed; its Cargo package, binary and service units still say `songverse-player`, to rename through an issue. Preserve the upstream shared `ScreenStage` renderer; do not fork rendering implementations. `vulcio/songverse-sonic` remains independent.
 7. **Agent rules:** read each repository's `AGENTS.md` and `CLAUDE.md` before editing. GitHub issue first, reference issue(s) in commits, tests/docs with every change, no unverified claims of hardware/offline reliability, no push with failing checks. This document does not override repository-specific instructions.
@@ -139,10 +141,8 @@ The authoritative **Oneverse Live Session** tracks active Set/item/slide, target
 
 Proposed answers are in sections 4–7; still open:
 
-- Organisations owning Sets: proposed no (they govern their Teams' Sets; an Organisation event's host group owns its Set). To confirm.
 - Oneverse's own entry point and domain topology (Home, operator console), with self-hosting on one server; tied to #243.
 - What a guest may do in a session (lease length, 60 s, and the record's retention, 90 days, are decided).
-- Licensed capabilities of each imported translation (search, caching, offline usage, projection, export); YouVersion's are settled with YouVersion.
 - Which item kinds after passages: PDF pages or PPTX slides first.
 - How Oneverse Screen (now on GitHub, with NDI playback and contribution and a hybrid Web+NDI display) reaches release on each platform, validated on hardware, measured with #286's reports.
 
