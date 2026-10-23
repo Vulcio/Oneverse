@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { API, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
+import { pairPulse } from "../lib/pulse.mjs";
 import { CloudLink } from "../../apps/pulse/dist/cloud-link.js";
 import { ConsolePage } from "../../apps/pulse/dist/console-page.js";
 import { Room } from "../../apps/pulse/dist/room.js";
@@ -25,6 +26,8 @@ const leader = await user("Pulse page");
 const set = await api(leader, "POST", "/setlists", { name: `Pulse page ${stamp}` });
 const { items } = await api(leader, "POST", `/setlists/${set.id}/items`, { text: { title: "Notices", body: "One\n\nTwo\n\nThree" } });
 const itemId = items[0].id;
+// Pulse, paired to show the set (issue #320).
+const pulseToken = await pairPulse(leader, set.id);
 const until = async (test, ms = 15000) => {
   for (const end = Date.now() + ms; Date.now() < end; await new Promise((resolve) => setTimeout(resolve, 100))) if (test()) return true;
   return false;
@@ -32,7 +35,7 @@ const until = async (test, ms = 15000) => {
 
 // Pulse: its server first, for the address it tells the cloud.
 let link;
-const copy = new SetCopy({ apiUrl: API, setId: set.id, token: async () => leader.bearer });
+const copy = new SetCopy({ apiUrl: API, token: async () => pulseToken });
 const consolePage = new ConsolePage(path.join(repo, "apps/screen/dist/pulse"));
 const server = createServer(async (request, response) => {
   if (!(await room.handle(request, response)) && !(await consolePage.handle(request, response))) response.writeHead(404).end();
@@ -43,10 +46,9 @@ let down = false;
 let current = null;
 link = new CloudLink({
   apiUrl: API,
-  setId: set.id,
   nodeId: `pulse-page-${stamp}`,
   roomUrl: PULSE,
-  token: async () => leader.bearer,
+  token: async () => pulseToken,
   outageMs: 1500,
   open: (url) => {
     if (down) {
@@ -58,7 +60,7 @@ link = new CloudLink({
     return current;
   },
 });
-const room = new Room(server, link, set.id, copy);
+const room = new Room(server, link, copy);
 
 const watcher = await syncDevice(leader);
 const browser = await chromium.launch();

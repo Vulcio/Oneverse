@@ -5,7 +5,12 @@ The Node process Oneverse Pulse runs on the mini PC (issue #247,
 repository (Vulcio/oneverse-pulse) keeps what Rust is for (NDI, audio, timing); the live session
 runs here, with the same reducer as the cloud (`LiveEngine` in `@oneverse/core`).
 
-What it does today: `CloudLink` joins one set's session as a device of its own and mirrors it.
+What it does today: Pulse is paired like a screen (issue #320, `Pairing`): with no token of its
+own yet, it asks the cloud for a code as a Pulse and shows it on `GET /health` and in its log until
+someone confirms it in Screens (where it shows as a Pulse), then keeps its token in
+`PULSE_DATA_DIR/token`. Paired to a set, or to follow a location (the set of the event on there
+now, or next today), `CloudLink` signs in with that token, is put in that set's session by the
+cloud, and mirrors it; the next event at its location moves it to that set's session.
 When the cloud is gone for longer than `OUTAGE_MS` (10 s), the room runs the session, one epoch
 up; when it's back, the room's session and record go to the cloud first, which takes them as they
 are, and Pulse mirrors again.
@@ -28,14 +33,14 @@ address), which the set's devices hear: when they lose the cloud, Live and the c
 "Continue on Pulse", a link to that page with a pass.
 
 Not yet: Live itself on Pulse's page (the console only), the stage (timers, messages) and most of the old messages in the room,
-Pulse's own sign-in (paired like a screen; until then `PULSE_TOKEN` is an API token of someone who
-can edit the set), and following the sets of an event rather than one set. It has not run on a
-mini PC yet: only in tests (`src/__tests__/`, `e2e/api/pulse-link`, `pulse-room`,
+and handing back a session the room ran when the cloud has meanwhile moved Pulse to another set
+(the next event): that one stays in Pulse's log only. It has not run on a mini PC yet: only in
+tests (`src/__tests__/`, `e2e/api/pulse-link`, `pulse-room`, `pulse-pairing`,
 `e2e/web/pulse-console`) against the API.
 
 ```sh
 pnpm --filter @oneverse/pulse build
 pnpm --filter @oneverse/screen-app build:pulse
-ONEVERSE_API_URL=https://api.oneverse.top PULSE_SET_ID=… PULSE_NODE_ID=pulse-hall-1 PULSE_TOKEN=… \
-  node apps/pulse/dist/main.js
+ONEVERSE_API_URL=https://api.oneverse.top PULSE_NODE_ID=pulse-hall-1 node apps/pulse/dist/main.js
+# shows a code: pair it in Screens > Pair a screen, as a set's or to follow a location
 ```

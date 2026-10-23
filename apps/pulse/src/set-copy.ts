@@ -6,11 +6,11 @@ import path from "node:path";
 export const SET_COPY_EVERY_MS = 5 * 60_000;
 
 /**
- * The set Pulse runs, kept on its disk (issue #247's offline copy): its
- * songs and texts as the screens show them (the API's offline copy, `for
- * screens`), fetched while the cloud's there and served to the room when it
- * isn't. Notes are left out: Pulse fetches the copy as one person, and
- * everyone with a pass reads it.
+ * The set Pulse is on, kept on its disk (issue #247's offline copy): its
+ * songs and texts as the screens show them, fetched while the cloud's there
+ * with Pulse's own token (`GET /screens/current`, issue #320: the set put on
+ * it, or the event's on now at its location) and served to the room when it
+ * isn't. Notes are left out: everyone with a pass reads it.
  */
 export class SetCopy {
   private copy: SetlistOfflineCopy | null = null;
@@ -18,7 +18,7 @@ export class SetCopy {
   constructor(
     private readonly options: {
       apiUrl: string;
-      setId: string;
+      /** Pulse's own token; null: not paired yet. */
       token: () => Promise<string | null>;
       /** Where it's kept; left out, only in memory. */
       dataDir?: string;
@@ -27,12 +27,17 @@ export class SetCopy {
     },
   ) {}
 
+  /** The copy of `setId`, or null when Pulse has none of that set. */
+  of(setId: string | null): SetlistOfflineCopy | null {
+    return setId && this.copy?.set.id === setId ? this.copy : null;
+  }
+
   get current(): SetlistOfflineCopy | null {
     return this.copy;
   }
 
   private get file(): string | null {
-    return this.options.dataDir ? path.join(this.options.dataDir, `set-${this.options.setId.replace(/[^A-Za-z0-9_-]/g, "")}.json`) : null;
+    return this.options.dataDir ? path.join(this.options.dataDir, "set.json") : null;
   }
 
   /** The copy kept from before a restart, if any. */
@@ -51,16 +56,19 @@ export class SetCopy {
     const token = await this.options.token();
     if (!token) return false;
     try {
-      const response = await (this.options.fetch ?? fetch)(`${this.options.apiUrl.replace(/\/$/, "")}/setlists/${encodeURIComponent(this.options.setId)}/offline?for=screens`, {
-        headers: { authorization: `Bearer ${token}` },
+      const response = await (this.options.fetch ?? fetch)(`${this.options.apiUrl.replace(/\/$/, "")}/screens/current`, {
+        headers: { authorization: `Screen ${token}` },
         signal: AbortSignal.timeout(30_000),
       });
       if (!response.ok) {
         this.options.log?.(`set copy: the cloud answered ${response.status}`);
         return false;
       }
-      const copy = { ...((await response.json()) as SetlistOfflineCopy), notes: {} };
-      if (copy.version === this.copy?.version) return false;
+      const { set } = (await response.json()) as { set: SetlistOfflineCopy | null };
+      // No set on it now: the copy it had stays, for the room (it's the last one it ran).
+      if (!set) return false;
+      const copy = { ...set, notes: {} };
+      if (copy.version === this.copy?.version && copy.set.id === this.copy.set.id) return false;
       this.copy = copy;
       const file = this.file;
       if (file) {
@@ -68,7 +76,7 @@ export class SetCopy {
         await writeFile(`${file}.tmp`, JSON.stringify(copy));
         await rename(`${file}.tmp`, file);
       }
-      this.options.log?.(`set copy: version ${copy.version}`);
+      this.options.log?.(`set copy: ${copy.set.id}, version ${copy.version}`);
       return true;
     } catch (err) {
       this.options.log?.(`set copy: ${String(err)}`);

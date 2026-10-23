@@ -6,6 +6,7 @@
 import { createServer } from "node:http";
 import { API, api, call, check, finish, stamp, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
+import { pairPulse } from "../lib/pulse.mjs";
 import { CloudLink } from "../../apps/pulse/dist/cloud-link.js";
 import { Room } from "../../apps/pulse/dist/room.js";
 import { SetCopy } from "../../apps/pulse/dist/set-copy.js";
@@ -15,6 +16,8 @@ const guest = await user("Room visitor");
 const set = await api(leader, "POST", "/setlists", { name: `Pulse room ${stamp}` });
 const { items } = await api(leader, "POST", `/setlists/${set.id}/items`, { text: { title: "Notices", body: "One\n\nTwo\n\nThree" } });
 const itemId = items[0].id;
+// Pulse, paired to show the set (issue #320).
+const pulseToken = await pairPulse(leader, set.id);
 const token = (await api(leader, "POST", `/setlists/${set.id}/share-link`)).link.token;
 await call(guest, "POST", `/set-invites/${token}/join`);
 const slide = (n) => ({ itemId, slide: n, black: false });
@@ -27,9 +30,8 @@ let down = false;
 let current = null;
 const link = new CloudLink({
   apiUrl: API,
-  setId: set.id,
   nodeId: `pulse-room-${stamp}`,
-  token: async () => leader.bearer,
+  token: async () => pulseToken,
   outageMs: 1500,
   open: (url) => {
     if (down) {
@@ -41,11 +43,11 @@ const link = new CloudLink({
     return current;
   },
 });
-const copy = new SetCopy({ apiUrl: API, setId: set.id, token: async () => leader.bearer });
+const copy = new SetCopy({ apiUrl: API, token: async () => pulseToken });
 const server = createServer(async (request, response) => {
   if (!(await room.handle(request, response))) response.writeHead(404).end();
 });
-const room = new Room(server, link, set.id, copy);
+const room = new Room(server, link, copy);
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const ROOM = `ws://127.0.0.1:${server.address().port}/sync`;
 const ROOM_HTTP = `http://127.0.0.1:${server.address().port}`;

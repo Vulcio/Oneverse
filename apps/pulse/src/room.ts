@@ -37,7 +37,6 @@ export class Room {
   constructor(
     server: Server,
     private readonly link: CloudLink,
-    private readonly setId: string,
     private readonly set: SetCopy | null = null,
     private readonly now: () => number = Date.now,
   ) {
@@ -45,6 +44,19 @@ export class Room {
     this.wss.on("connection", (socket) => this.connected(socket));
     // What the cloud says, or the cloud taking the session back: the room hears it.
     link.onSession(() => this.broadcast());
+    // Another set (the next event at its location, issue #320): the passes of the last one no longer open it.
+    link.onSet(() => {
+      for (const device of this.devices) {
+        device.actor = null;
+        device.joined = false;
+        this.send(device, { type: "error", code: "unauthorized", message: "This Pulse is on another set now: enter again" });
+      }
+    });
+  }
+
+  /** The set it runs: the one the cloud last put it on. */
+  private get setId(): string | null {
+    return this.link.setId;
   }
 
   /**
@@ -56,11 +68,12 @@ export class Room {
     if (request.method !== "GET" || request.url !== "/set") return false;
     const pass = /^Pass (\S+)$/.exec(request.headers.authorization ?? "")?.[1];
     const key = this.link.passKey;
-    if (!pass || !key || !(await verifyLivePass(pass, key, this.setId, this.now()))) {
+    const setId = this.setId;
+    if (!pass || !key || !setId || !(await verifyLivePass(pass, key, setId, this.now()))) {
       response.writeHead(401, { "content-type": "application/json" }).end(JSON.stringify({ message: "Enter with a pass for this set" }));
       return true;
     }
-    const copy = this.set?.current;
+    const copy = this.set?.of(setId) ?? null;
     if (!copy) {
       response.writeHead(404, { "content-type": "application/json" }).end(JSON.stringify({ message: "Pulse has no copy of this set yet" }));
       return true;
@@ -120,7 +133,8 @@ export class Room {
 
   private async enter(device: RoomDevice, pass: unknown) {
     const key = this.link.passKey;
-    const payload = typeof pass === "string" && key ? await verifyLivePass(pass, key, this.setId, this.now()) : null;
+    const setId = this.setId;
+    const payload = typeof pass === "string" && key && setId ? await verifyLivePass(pass, key, setId, this.now()) : null;
     if (!payload) return this.send(device, { type: "error", code: "unauthorized", message: "This pass isn't one for this set, or it has expired" });
     device.actor = { userId: payload.sub, name: payload.name, device: payload.device, canLead: payload.canLead, canOperate: payload.canOperate };
     this.send(device, { type: "ready", userId: payload.sub });
@@ -144,7 +158,7 @@ export class Room {
       const actor = device.actor!;
       this.send(device, {
         type: "session",
-        setId: this.setId,
+        setId: this.setId ?? "",
         session,
         members,
         leading: stored?.leader.device === actor.device,

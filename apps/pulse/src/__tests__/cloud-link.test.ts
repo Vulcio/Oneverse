@@ -46,10 +46,11 @@ describe("CloudLink", () => {
   let sockets: FakeSocket[];
   let link: CloudLink;
   const latest = () => sockets.at(-1)!;
-  async function online() {
+  const PULSE = { id: "scr_1", name: "Stage Pulse", mode: "LYRICS", setId: "set_1", pulse: true };
+  async function online(screen: Record<string, unknown> = PULSE) {
     latest().open();
     await Promise.resolve();
-    latest().say({ type: "ready", userId: "u_ana" });
+    latest().say({ type: "screen", screen });
   }
 
   beforeEach(() => {
@@ -57,7 +58,6 @@ describe("CloudLink", () => {
     sockets = [];
     link = new CloudLink({
       apiUrl: "https://api.example.test",
-      setId: "set_1",
       nodeId: "pulse-node1",
       roomUrl: "http://192.168.1.20:8788",
       token: async () => "token",
@@ -75,9 +75,10 @@ describe("CloudLink", () => {
     vi.useRealTimers();
   });
 
-  it("signs in, joins the set as its own device, and mirrors its session", async () => {
+  it("signs in by its own token, on the set the cloud put it on, and mirrors its session", async () => {
     await online();
-    expect(latest().sent).toEqual([{ type: "hello", token: "token" }, { type: "join", setId: "set_1", deviceId: "pulse-node1" }, { type: "mirror", room: "http://192.168.1.20:8788" }, { type: "pass" }]);
+    expect(link.setId).toBe("set_1");
+    expect(latest().sent).toEqual([{ type: "screen", token: "token" }, { type: "mirror", room: "http://192.168.1.20:8788" }, { type: "pass" }]);
     latest().say({ type: "pass", setId: "set_1", pass: "x.y", key: "cloud-key", expiresAt: 1 });
     expect(link.passKey).toBe("cloud-key");
     expect(link.status).toBe("online");
@@ -111,8 +112,8 @@ describe("CloudLink", () => {
 
     vi.advanceTimersByTime(10_000);
     await online();
-    expect(latest().types()).toEqual(["hello", "join", "handback"]);
-    expect(latest().sent[2]).toMatchObject({ handback: { sessionId: "ses_1", epoch: 1, state: { presenting: { slide: 2 } }, record: [{ origin: "pulse:pulse-node1" }] } });
+    expect(latest().types()).toEqual(["screen", "handback"]);
+    expect(latest().sent[1]).toMatchObject({ handback: { sessionId: "ses_1", epoch: 1, state: { presenting: { slide: 2 } }, record: [{ origin: "pulse:pulse-node1" }] } });
     expect(link.status).toBe("room");
     latest().say({ type: "handedBack", sessionId: "ses_1", epoch: 2, rev: 5 });
     expect(link.engine.runs).toBe(false);
@@ -130,5 +131,38 @@ describe("CloudLink", () => {
     latest().say({ type: "error", code: "stale", message: "The cloud's session isn't the one the room ran" });
     expect(link.engine.runs).toBe(false);
     expect(link.status).toBe("online");
+  });
+
+  it("put on another set (the next event at its location): that set's session, from the start", async () => {
+    await online();
+    latest().say({ type: "session", setId: "set_1", session: null, members: [], leading: false, canLead: false, live: LIVE });
+    const told: (string | null)[] = [];
+    link.onSet((setId) => told.push(setId));
+    latest().say({ type: "screen", screen: { ...PULSE, setId: "set_2" } });
+    expect(told).toEqual(["set_2"]);
+    expect(link.setId).toBe("set_2");
+    expect(link.engine.state).toBeNull();
+    expect(latest().types().slice(-2)).toEqual(["mirror", "pass"]);
+    // The old set's session no longer reaches it.
+    latest().say({ type: "session", setId: "set_1", session: null, members: [], leading: false, canLead: false, live: LIVE });
+    expect(link.engine.state).toBeNull();
+  });
+
+  it("with no set on it, it waits online without mirroring; it pings so the cloud can move it", async () => {
+    await online({ ...PULSE, setId: null });
+    expect(link.status).toBe("online");
+    expect(latest().types()).toEqual(["screen"]);
+    vi.advanceTimersByTime(30_000);
+    expect(latest().types()).toEqual(["screen", "ping"]);
+  });
+
+  it("a screen's token: told to pair it as a Pulse, and nothing done", async () => {
+    const lines: string[] = [];
+    link.stop();
+    link = new CloudLink({ apiUrl: "https://api.example.test", nodeId: "pulse-node1", token: async () => "token", log: (line) => lines.push(line), open: () => { const socket = new FakeSocket(); sockets.push(socket); return socket; } });
+    link.start();
+    await online({ ...PULSE, pulse: undefined });
+    expect(link.setId).toBeNull();
+    expect(lines.some((line) => line.includes("not a Pulse's"))).toBe(true);
   });
 });

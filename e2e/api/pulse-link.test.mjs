@@ -5,12 +5,15 @@
 // to the API cut and restored on demand.
 import { API, api, check, finish, stamp, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
+import { pairPulse } from "../lib/pulse.mjs";
 import { CloudLink } from "../../apps/pulse/dist/cloud-link.js";
 
 const leader = await user("Pulse owner");
 const set = await api(leader, "POST", "/setlists", { name: `Pulse link ${stamp}` });
 const { items } = await api(leader, "POST", `/setlists/${set.id}/items`, { text: { title: "Notices", body: "One\n\nTwo\n\nThree" } });
 const itemId = items[0].id;
+// Pulse, paired to show the set (issue #320).
+const pulseToken = await pairPulse(leader, set.id);
 const slide = (n) => ({ itemId, slide: n, black: false });
 const until = async (test, ms = 15000) => {
   for (const end = Date.now() + ms; Date.now() < end; await new Promise((resolve) => setTimeout(resolve, 100))) if (test()) return true;
@@ -22,9 +25,8 @@ let down = false;
 let current = null;
 const link = new CloudLink({
   apiUrl: API,
-  setId: set.id,
   nodeId: `pulse-${stamp}`,
-  token: async () => leader.bearer,
+  token: async () => pulseToken,
   outageMs: 1500,
   open: (url) => {
     if (down) {

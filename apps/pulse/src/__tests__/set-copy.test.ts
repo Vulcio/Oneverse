@@ -5,6 +5,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { SetCopy } from "../set-copy.js";
 
 const COPY = { set: { id: "set_1" }, songs: [{ item: { id: "item_1" } }], notes: { song_1: { notes: ["mine"] } }, version: "v1" };
+const current = (set: unknown) => Response.json({ screen: { id: "scr_1" }, set });
 
 function cloud(answers: (Response | Error)[]) {
   const asked: string[] = [];
@@ -18,21 +19,32 @@ function cloud(answers: (Response | Error)[]) {
 }
 
 describe("SetCopy", () => {
-  it("keeps the set as the screens show it, without anyone's notes, on disk for after a restart", async () => {
+  it("keeps the set it's on as the screens show it, without anyone's notes, on disk for after a restart", async () => {
     const dataDir = await mkdtemp(path.join(tmpdir(), "pulse-"));
-    const { fetch, asked } = cloud([Response.json(COPY)]);
-    const copy = new SetCopy({ apiUrl: "https://api.example.test/", setId: "set_1", token: async () => "token", dataDir, fetch });
+    const { fetch, asked } = cloud([current(COPY)]);
+    const copy = new SetCopy({ apiUrl: "https://api.example.test/", token: async () => "token", dataDir, fetch });
     expect(await copy.refresh()).toBe(true);
-    expect(asked).toEqual(["https://api.example.test/setlists/set_1/offline?for=screens"]);
-    expect(copy.current).toEqual({ ...COPY, notes: {} });
-    const restarted = new SetCopy({ apiUrl: "https://api.example.test", setId: "set_1", token: async () => "token", dataDir });
+    expect(asked).toEqual(["https://api.example.test/screens/current"]);
+    expect(copy.of("set_1")).toEqual({ ...COPY, notes: {} });
+    expect(copy.of("set_2")).toBeNull();
+    const restarted = new SetCopy({ apiUrl: "https://api.example.test", token: async () => "token", dataDir });
     await restarted.load();
-    expect(restarted.current?.version).toBe("v1");
+    expect(restarted.of("set_1")?.version).toBe("v1");
+  });
+
+  it("on another set: that one's copy; with none on it, the last one kept", async () => {
+    const { fetch } = cloud([current(COPY), current({ ...COPY, set: { id: "set_2" }, version: "v1" }), current(null)]);
+    const copy = new SetCopy({ apiUrl: "https://api.example.test", token: async () => "token", fetch });
+    await copy.refresh();
+    expect(await copy.refresh()).toBe(true);
+    expect(copy.of("set_2")?.set.id).toBe("set_2");
+    expect(await copy.refresh()).toBe(false);
+    expect(copy.of("set_2")).not.toBeNull();
   });
 
   it("the cloud unreachable, or the same version: the copy kept as it was", async () => {
-    const { fetch } = cloud([Response.json(COPY), Response.json(COPY), new Error("offline"), new Response("", { status: 503 })]);
-    const copy = new SetCopy({ apiUrl: "https://api.example.test", setId: "set_1", token: async () => "token", fetch });
+    const { fetch } = cloud([current(COPY), current(COPY), new Error("offline"), new Response("", { status: 503 })]);
+    const copy = new SetCopy({ apiUrl: "https://api.example.test", token: async () => "token", fetch });
     await copy.refresh();
     expect(await copy.refresh()).toBe(false);
     expect(await copy.refresh()).toBe(false);

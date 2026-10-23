@@ -302,8 +302,8 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    (`liveHandedBack`: the room's state, one more epoch up, its revisions past both sides'),
    adds the room's changes to the record with their origin, and marks the row. A revision
    is unique within its epoch in the record now, since both sides go on from the same one.
-   For now a handback is taken from anyone who can edit the set (who could make the same
-   changes one by one); Pulse's own sign-in comes with its pairing. The Node process is
+   A handback is taken from a Pulse paired to the set (issue #320) or anyone who can edit the
+   set (who could make the same changes one by one). The Node process is
    `apps/pulse` (`@oneverse/pulse`): `CloudLink` mirrors one set, runs it in the room after
    `OUTAGE_MS` without the cloud, and hands it back first when it's back
    (`e2e/api/pulse-link.test.mjs`). The room's side: the cloud signs passes (below), Pulse's
@@ -315,9 +315,11 @@ moved the screens at 10:42"). It's kept 90 days after the session ends.
    is never sent off to the internet); the cloud tells the set's devices (`pulse` on their
    sessions) and leaves Pulse out of its members. Live and the console then ask for a pass
    and again every hour (core's `PulseDoor`), and while they can't reach the cloud show
-   **Continue on Pulse**, a link to Pulse's page with the pass. Still to do: Live itself on
-   Pulse's page (the console only for now), Pulse's own sign-in, and running it on the mini
-   PC.
+   **Continue on Pulse**, a link to Pulse's page with the pass. Pulse is paired like a screen
+   (issue #320): a code asked for as a Pulse, confirmed in Screens, its own token (a Screen of
+   kind PULSE) that may mirror, take its key and hand back - on the set put on it, or the
+   event's on now at the location it follows (`e2e/api/pulse-pairing`). Still to do: Live
+   itself on Pulse's page (the console only for now), and running it on the mini PC.
 
 Each step is its own commit with its tests; steps 1 to 8 change nothing a user sees except
 #312's behaviour, at step 7 screens that no longer show the wrong words after an edit, and at
