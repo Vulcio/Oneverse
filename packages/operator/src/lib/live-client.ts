@@ -1,4 +1,4 @@
-import { clockOffset, LiveCommands, PulseDoor, resumeScreens, samePresenting, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncSession, type SyncStageCommand } from "@oneverse/core";
+import { clockOffset, LiveCommands, PulseDoor, resumeScreens, samePresenting, stageOnlyLayers, SYNC_PATH, syncDeviceId, type ClockSample, type SyncClientMessage, type SyncPresenting, type SyncServerMessage, type SyncSession, type SyncStageCommand } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import type { OperatorHost, OperatorLive } from "../host";
 
@@ -136,6 +136,7 @@ export function createLiveClient({ apiUrl, token, pass }: { apiUrl: string; toke
           screensMine: !!message.screensMine,
           canOperate: message.canOperate ?? message.canLead,
           canPresent: message.canPresent ?? false,
+          canRoute: message.canRoute ?? message.canOperate ?? message.canLead,
         });
         return;
       case "ack":
@@ -182,7 +183,7 @@ export function createLiveClient({ apiUrl, token, pass }: { apiUrl: string; toke
       send({ type: "screens", control });
     },
     sendStage(command: SyncStageCommand) {
-      if (state.canOperate) send({ type: "stage", ...command });
+      if (state.canOperate || (state.canRoute && stageOnlyLayers(command))) send({ type: "stage", ...command });
     },
   };
 

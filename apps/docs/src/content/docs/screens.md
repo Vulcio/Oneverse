@@ -289,6 +289,8 @@ A song of the set can carry its own timer (**Timer on the screens**, on the [set
 
 A layer a screen leaves out in its own settings stays off there, whatever the panel says.
 
+Someone whose role lets them **Route the screens** (see [Roles](/admin/#roles)) - the tech at the desk, say - opens the operator view too, from Live's Sync menu, and gets these screens and layers alone: they change what the screens draw, but don't present, nor run the timer or messages. While someone runs the screens alone, only they change the layers, the set's leader included; the rest comes back when they give them back.
+
 ### Keyboard shortcuts
 
 The keyboard runs the screens too. The keyboard button beside **Screens & layers** lists the shortcuts:

@@ -289,6 +289,8 @@ Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans*
 
 Un calque qu'un écran écarte dans ses propres réglages reste masqué sur lui, quoi que dise le panneau.
 
+Qui a un rôle qui permet d'**Orienter les écrans** (voir [Rôles](/fr/admin/#rôles)) - la technique à la régie, par exemple - ouvre aussi la vue opérateur, depuis le menu Synchro de Live, et n'y a que ces écrans et ces calques : il change ce que dessinent les écrans, mais ne présente pas, et ne touche ni au minuteur ni aux messages. Quand quelqu'un pilote les écrans seul, lui seul change les calques, y compris qui mène la liste ; le reste revient quand il les rend.
+
 ### Raccourcis clavier
 
 Le clavier pilote aussi les écrans. Le bouton clavier à côté de **Écrans et calques** liste les raccourcis :

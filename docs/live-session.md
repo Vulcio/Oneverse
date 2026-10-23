@@ -181,12 +181,14 @@ The server answers `{type: "ack", id, rev}`, or `{type: "error", id, code}` with
 | `present` | The leader, the screens' holder, presenters, a role that runs screens (`canOperateScreens`) where the set's team or organisation has it; not while someone else holds the screens alone | `mayPresent` |
 | `cue` (next or previous song or section, issue #322) | Anyone who may present, or a role that cues (`canCue`) where the set's team or organisation has it; not while someone else holds the screens alone. Where to is worked out from the set where the session runs (`cueTarget`): the API reads the set, Pulse its copy | new |
 | `stage`, `take screens` | Who can edit the set, or a role that runs screens | `canLead \|\| canOperate` |
+| Route: a `stage` that only carries `layers` (issue #322) | Who can edit the set, runs screens, or a role that routes (`canRoute`) where the set's team or organisation has it; while someone holds the screens alone, only they (`mayRoute`) - the leader included. Pulse's room has no stage yet | new |
 | `presenter` | The leader | same |
 | `end` | Who can edit the set | same |
 
-Route and Manage devices are added as rows here
-when they're built; each is a field on `Role` read through `capabilitiesIn`, as
-`canOperateScreens` is.
+Manage devices (issue #322, `canManageScreens`) isn't a session command: it's
+who may pair, change and disconnect a team's or an organisation's screens, read
+by `screenManagerScope` in the screens service. Each right is a field on `Role`
+read through `capabilitiesIn`, as `canOperateScreens` is.
 
 ## What's on the screens: the slide key
 

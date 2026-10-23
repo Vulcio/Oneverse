@@ -293,6 +293,11 @@ export interface SyncStageCommand {
   layers?: SyncLayersCommand;
 }
 
+/** Whether a stage command only changes what the screens draw - their layers (issue #322): someone who routes them, without running them, may send it. */
+export function stageOnlyLayers(command: SyncStageCommand): boolean {
+  return Object.entries(command).every(([key, value]) => key === "layers" || value === undefined || (key === "reset" && value === false));
+}
+
 /**
  * A stage after the operator's command (issue #269), at `now` (server time,
  * ms): a new timer, then reset, run or pause, more or less time, then the
@@ -476,6 +481,8 @@ export type SyncServerMessage =
       canPresent?: boolean;
       /** This user may cue now (issue #322): move the screens to the next or previous song or section, by `cue` commands. */
       canCue?: boolean;
+      /** This user may route the screens now (issue #322): their layers and overlays, by `stage` messages that only carry `layers`. */
+      canRoute?: boolean;
       /** This user runs screens (issue #305): can edit the set, or has a role that runs screens - the operator's console is theirs, locked or not. */
       canOperate?: boolean;
       /** The session as it's kept, holders' devices and all: only to a device that asked to `mirror` it (Pulse). */

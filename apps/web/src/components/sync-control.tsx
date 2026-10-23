@@ -142,8 +142,8 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
                 {t("screens.addScreen")}
               </DropdownMenuItem>
             ) : null}
-            {/* The media operator's view (issue #269), in its own tab: Live carries on here. */}
-            {sync.canLead ? (
+            {/* The media operator's view (issue #269), in its own tab: Live carries on here; for whoever routes the screens too (issue #322). */}
+            {sync.canLead || sync.canOperate || sync.canRoute ? (
               <DropdownMenuItem onClick={() => window.open(`/sets/${setId}/operate`, "_blank")} data-testid="sync-operator">
                 <Timer />
                 {t("screens.operator.open")}

@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common";
-import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, LiveHandbackSchema, liveHandedBack, liveSessionAt, mayCue, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, LIVE_COMMAND_ID, type LiveActor, type LiveOp, type LiveOpContext, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
+import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, LiveHandbackSchema, liveHandedBack, liveSessionAt, mayCue, mayPresent, mayRoute, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, stageOnlyLayers, SYNC_DEVICE_ID, LIVE_COMMAND_ID, type LiveActor, type LiveOp, type LiveOpContext, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
@@ -156,6 +156,7 @@ export class SetSessions {
     const capabilities = await capabilitiesIn(this.prisma.client, connection.user!.id, set.ownerTeamId);
     connection.canOperate = capabilities.canOperateScreens;
     connection.canCue = capabilities.canCue;
+    connection.canRoute = capabilities.canRoute;
     connection.accessCheckedAt = Date.now();
     await this.present(connection);
     // Back within the lease: the screens it ran are its own again.
@@ -191,6 +192,7 @@ export class SetSessions {
       const capabilities = await capabilitiesIn(this.prisma.client, connection.user!.id, set?.ownerTeamId ?? null);
       connection.canOperate = capabilities.canOperateScreens;
       connection.canCue = capabilities.canCue;
+      connection.canRoute = capabilities.canRoute;
       return true;
     }
     await this.leaveSet(connection);
@@ -396,7 +398,7 @@ export class SetSessions {
   }
 
   private actor(connection: Connection): LiveActor {
-    return { userId: connection.user!.id, name: connection.user!.name, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate, canCue: !!connection.canCue };
+    return { userId: connection.user!.id, name: connection.user!.name, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate, canCue: !!connection.canCue, canRoute: !!connection.canRoute };
   }
 
   /** `op` applied to the set's session, under its lock; written and announced when it changed. With the session as it was. */
@@ -447,13 +449,25 @@ export class SetSessions {
     }
   }
 
-  /** The media operator (issue #269): anyone who can lead the set changes its timer and its message to the stage. */
+  /**
+   * The media operator (issue #269): anyone who can lead the set changes its
+   * timer and its message to the stage. What the screens draw - their layers
+   * (issue #322, Route) - is also changed by a role that routes, and only by
+   * the holder while the screens are locked to someone (mayRoute).
+   */
   async stage(connection: Connection, message: Extract<SyncClientMessage, { type: "stage" }>) {
     const setId = connection.setId;
     if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
     if (!(await this.stillAllowed(connection))) return;
-    if (!connection.canLead && !connection.canOperate) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set, or runs screens, runs its screens" });
     const command: SyncStageCommand = { timer: message.timer, reset: message.reset === true, run: typeof message.run === "boolean" ? message.run : undefined, add: message.add, message: message.message, layers: message.layers };
+    if (!stageOnlyLayers(command) && !connection.canLead && !connection.canOperate) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set, or runs screens, runs its screens" });
+    if (command.layers !== undefined && connection.user) {
+      const session = await this.read(setId);
+      if (!mayRoute(session, this.actor(connection))) {
+        const lockedBy = session?.screens?.exclusive ? session.screens.name : null;
+        return this.hub.send(connection, { type: "error", code: "forbidden", message: lockedBy ? `${lockedBy} runs the screens` : "Only someone who can edit the set, runs screens or routes them changes what they show" });
+      }
+    }
     // A layer cleared stays cleared while the slide on screen now is (issue #280).
     const presenting = command.layers?.clear?.length ? ((await this.read(setId))?.presenting ?? null) : null;
     const next = applyStageCommand(await this.readStage(setId), command, Date.now(), presenting);
@@ -564,6 +578,7 @@ export class SetSessions {
         screensMine: !!stored?.screens && stored.screens.device === this.device(connection),
         canPresent: connection.user ? mayPresent(stored, this.actor(connection)) : false,
         canCue: connection.user ? mayCue(stored, this.actor(connection)) : false,
+        canRoute: connection.user ? mayRoute(stored, this.actor(connection)) : false,
         canOperate: connection.canLead || connection.canOperate,
         ...(connection.mirrors && mayMirror(connection) && { live: stored }),
         ...(connection.user && { pulse }),

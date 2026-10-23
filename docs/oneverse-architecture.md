@@ -72,7 +72,7 @@ Most of Core exists today inside `apps/api` and the shared packages. Core is fir
 |---|---|---|
 | One account, personal space, Teams, Organisations | BetterAuth in `apps/api`; `Team.organizationId`; organisation mode NONE / SINGLE / MULTI (#241) | Joining an organisation follows joining a team (`joinTeamOrganization()`), not an owner-approved request |
 | Planiverse on the same accounts | `apps/planiverse`, `packages/planning`, `packages/app` (#241, #242) | None |
-| Scoped capabilities | `Role` + `RoleAssignment` to a user or a team, combined by `capabilitiesOf()`; an assignment scoped to a team or an organisation (#270), given by its admins for team-assignable roles (Media operator), read by `capabilitiesIn()` for running screens | Scoped to a set or a session; the plan's other capabilities (follow, cue, route, manage devices) |
+| Scoped capabilities | `Role` + `RoleAssignment` to a user or a team, combined by `capabilitiesOf()`; an assignment scoped to a team or an organisation (#270), given by its admins for team-assignable roles (Media operator), read by `capabilitiesIn()` for running, cueing and routing screens, and by `screenManagerScope()` for managing them (#322) | Scoped to a set or a session |
 | Universal Sets | `Setlist` owned by a user or a team; `SetlistItem.kind`: songs, texts (#305), Bible passages (#301) | PDF pages, PPTX slides, media |
 | Screens owned by person, Team or Organisation | `Screen.owner*` (#222), token hash, revocable | Profiles and pairing again: #284 |
 | Layer stack, templates, brands | #280, #287, #281, #279 | None |
@@ -117,7 +117,7 @@ Capabilities, each scoped to an Organisation, Team, Set or session:
 | Route | Layers, outputs, profiles, overlays |
 | Manage devices | Pair, re-pair, revoke screens |
 
-Precedence follows #275: an exclusive operator holds Present and Route; the leader keeps Cue. Built: Follow, Present, and Cue (#322, a `cue` command and `Role.canCue`, scoped like `canOperateScreens`). Handoff is an explicit "take" with a lease, logged, and the previous holder is told. #270 (the media operator as a role of its own) is where this lands first.
+Precedence follows #275: an exclusive operator holds Present and Route; the leader keeps Cue. Built: Follow, Present, Cue (#322, a `cue` command and `Role.canCue`, scoped like `canOperateScreens`), Route (#322, `Role.canRoute`: the screens' layers and overlays, for all or one, held by the exclusive operator; outputs and profiles beyond that are #284's screen profiles and the screens' own settings) and Manage devices (#322, `Role.canManageScreens`: pair, re-pair, revoke a team's or an organisation's screens). Handoff is an explicit "take" with a lease, logged, and the previous holder is told. #270 (the media operator as a role of its own) is where this lands first.
 
 The authoritative **Oneverse Live Session** tracks active Set/item/slide, target output groups, control privileges, sequence/revision, and active controller state. It evolves `SyncSession` rather than replacing it: commands carry the `rev` they expect, so they are idempotent and a stale controller is refused. Screen apps render the session; they do not independently decide its truth. Its design - commands, leases, who may do what, the slide key, the record, Pulse's offline side - is in `docs/live-session.md`, built in nine steps on main (2026-10-22 and 23).
 

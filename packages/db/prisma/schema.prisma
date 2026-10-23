@@ -3020,6 +3020,9 @@ model Role {
   // Cues a set's screens (issue #322): the next or previous song or section
   // only, of the sets its holders can open - a singer moving the set on.
   canCue                     Boolean  @default(false)
+  // Routes a set's screens (issue #322): what they draw - layers hidden or
+  // cleared, the title card - for all or one, without presenting.
+  canRoute                   Boolean  @default(false)
   // Manages screens (issue #322): pairs, changes and disconnects the screens
   // and Pulses of the teams and organisations it's given for, without being
   // their admin - nothing over the sets they show or who owns them.

@@ -4,6 +4,7 @@ import {
   PulseDoor,
   resumeScreens,
   samePresenting,
+  stageOnlyLayers,
   SYNC_PATH,
   sharedMetronomeSettings,
   syncDeviceId,
@@ -83,6 +84,8 @@ export interface SyncState {
   canPresent: boolean;
   /** This user may cue now (issue #322): move the screens to the next or previous song or section; left out by an older server. */
   canCue?: boolean;
+  /** This user may route the screens now (issue #322): their layers and overlays; left out by an older server. */
+  canRoute?: boolean;
   /** This user runs screens (issue #305): can edit the set, or has a role that runs screens. */
   canOperate: boolean;
   /** A change this device made is on its way, not yet confirmed by the server (issue #247). */
@@ -266,6 +269,7 @@ function receive(message: SyncServerMessage) {
         canOperate: message.canOperate ?? message.canLead,
         canPresent: message.canPresent ?? (!!message.screensMine || (message.leading && !(message.session?.screens?.exclusive && !message.screensMine))),
         canCue: !!message.canCue,
+        canRoute: message.canRoute ?? message.canOperate ?? message.canLead,
       });
       setMetronomeStartDelay(message.leading ? LEADER_START_DELAY : 0.08);
       // Just took the lead: the metronome carries on as it was (followed, or the session's), and goes out.
@@ -550,9 +554,9 @@ export function cueScreens(direction: "next" | "previous", to: "item" | "section
   emit({});
 }
 
-/** The media operator (issue #269): the set's timer and message for its screens; anyone who can lead the set, leading or not. */
+/** The media operator (issue #269): the set's timer and message for its screens; anyone who can lead the set, leading or not - and their layers, someone who routes them. */
 export function sendStage(command: SyncStageCommand) {
-  if (state.canOperate) send({ type: "stage", ...command });
+  if (state.canOperate || (state.canRoute && stageOnlyLayers(command))) send({ type: "stage", ...command });
 }
 
 /** Leading: the set's song the leader has open, for the others to follow. */

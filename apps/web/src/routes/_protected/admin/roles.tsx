@@ -134,6 +134,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
   const [canUploadAudio, setCanUploadAudio] = useState(role?.canUploadAudio ?? false);
   const [canOperateScreens, setCanOperateScreens] = useState(role?.canOperateScreens ?? false);
   const [canCue, setCanCue] = useState(role?.canCue ?? false);
+  const [canRoute, setCanRoute] = useState(role?.canRoute ?? false);
   const [canManageScreens, setCanManageScreens] = useState(role?.canManageScreens ?? false);
   const [teamAssignable, setTeamAssignable] = useState(role?.teamAssignable ?? false);
   const [monthlyLimit, setMonthlyLimit] = useState(role?.stemSeparationMonthlyLimit?.toString() ?? "");
@@ -154,6 +155,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
       canUploadAudio,
       canOperateScreens,
       canCue,
+      canRoute,
       canManageScreens,
       teamAssignable,
       stemSeparationMonthlyLimit: canSeparateStems && monthlyLimit.trim() ? Number(monthlyLimit) : null,
@@ -217,6 +219,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
             {check(canKeepLossless, setCanKeepLossless, t("admin.roleLossless"), t("admin.roleLosslessHint"), "role-lossless")}
             {check(canOperateScreens, setCanOperateScreens, t("admin.roleOperateScreens"), t("admin.roleOperateScreensHint"), "role-operate-screens")}
             {check(canCue, setCanCue, t("admin.roleCue"), t("admin.roleCueHint"), "role-cue")}
+            {check(canRoute, setCanRoute, t("admin.roleRoute"), t("admin.roleRouteHint"), "role-route")}
             {check(canManageScreens, setCanManageScreens, t("admin.roleManageScreens"), t("admin.roleManageScreensHint"), "role-manage-screens")}
             {check(teamAssignable, setTeamAssignable, t("admin.roleTeamAssignable"), t("admin.roleTeamAssignableHint"), "role-team-assignable")}
             {check(hasStorage, setHasStorage, t("admin.roleStorageTier"), t("admin.roleStorageTierHint"), "role-storage")}

@@ -45,7 +45,8 @@ const QUICK = ["wrapUp", "oneMinute", "nextSong", "louder", "slowDown", "repeat"
  * (no metronome, no stems). Anyone who runs screens presents, beside the
  * leader and whoever else may (issue #305), and may lock control to this
  * device; who can lead may take the whole lead. The keyboard moves the
- * slides and runs the rest (OPERATOR_KEYS). `back` and `title` head it;
+ * slides and runs the rest (OPERATOR_KEYS). Someone who only routes the
+ * screens (issue #322) gets their layers alone. `back` and `title` head it;
  * `itemId` is the item looked at, `onLook` looks at another.
  */
 export function OperatorConsole({
@@ -91,6 +92,12 @@ export function OperatorConsole({
           <ContinueOnPulse />
           <p className="text-sm text-muted-foreground">{sync.error ?? t("screens.operator.connecting")}</p>
         </>
+      ) : !sync.canOperate && sync.canRoute ? (
+        <div className="grid gap-6 xl:grid-cols-2" data-testid="operator-route-only">
+          <p className="text-sm text-muted-foreground xl:col-span-2">{t("screens.operator.routeOnly")}</p>
+          <ScreensList />
+          <LayersCard send={send} />
+        </div>
       ) : !sync.canOperate ? (
         <p className="text-sm text-muted-foreground" data-testid="operator-not-allowed">
           {t("screens.operator.notAllowed")}

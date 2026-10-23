@@ -37,6 +37,8 @@ export interface Connection {
   canOperate: boolean;
   /** Cues by a role (issue #322): moves the screens of the sets it can open to the next or previous song or section. */
   canCue?: boolean;
+  /** Routes by a role (issue #322): changes the layers and overlays of the screens of the sets it can open. */
+  canRoute?: boolean;
   accessCheckedAt: number;
   /** A screen's last report kept (issue #286), ms. */
   reportedAt?: number;

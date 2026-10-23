@@ -40,6 +40,8 @@ export interface LiveActor {
   canOperate: boolean;
   /** Cues by a role where the set's team or organisation has it (issue #322): the next or previous song or section only. */
   canCue?: boolean;
+  /** Routes the screens by a role where the set's team or organisation has it (issue #322): their layers and overlays only. */
+  canRoute?: boolean;
 }
 
 /** What an op may need from the set beside the session, given by where it runs: a cue, the set's items as it cuts them (issue #322). */
@@ -164,6 +166,18 @@ export function mayPresent(session: LiveSessionState | null, actor: LiveActor): 
 export function mayCue(session: LiveSessionState | null, actor: LiveActor): boolean {
   if (mayPresent(session, actor)) return true;
   if (!actor.canCue) return false;
+  return !(session?.screens?.exclusive && session.screens.id !== actor.userId);
+}
+
+/**
+ * Whether someone may route the screens now (issue #322): change what they
+ * draw - layers hidden or cleared, the title card - for all of them or one.
+ * Who can edit the set, runs screens or routes by a role; while the screens
+ * are locked to someone, only they do (#275: the exclusive operator holds
+ * Present and Route).
+ */
+export function mayRoute(session: LiveSessionState | null, actor: LiveActor): boolean {
+  if (!actor.canLead && !actor.canOperate && !actor.canRoute) return false;
   return !(session?.screens?.exclusive && session.screens.id !== actor.userId);
 }
 

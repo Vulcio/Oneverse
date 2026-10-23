@@ -3574,6 +3574,242 @@
         }
       ]
     },
+    "mayRoute": {
+      "about": "Whether someone may route the screens now (issue #322): change their layers and overlays - who can edit the set, runs screens or routes by a role, and only the holder while they're locked.",
+      "params": [
+        "session",
+        "actor"
+      ],
+      "cases": [
+        {
+          "name": "someone who routes",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canRoute": true
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "someone handed presenting doesn't route",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_p",
+              "name": "Pia",
+              "device": "i:4",
+              "canLead": false,
+              "canOperate": false
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "someone who routes, while the screens are locked",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canRoute": true
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "the leader, while someone else has them locked",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "the operator holding them locked",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_o",
+              "name": "Olu",
+              "device": "i:3",
+              "canLead": false,
+              "canOperate": true
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "no session: who may lead, run or route screens",
+          "args": [
+            null,
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canRoute": true
+            }
+          ],
+          "expected": true
+        }
+      ]
+    },
     "mayPresent": {
       "about": "Whether someone may present now (issue #305): they lead, run screens, can edit the set or were handed it - and the screens aren't locked to someone else.",
       "params": [

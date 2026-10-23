@@ -874,7 +874,7 @@ export interface ScreenCurrent {
  * only (issue #270): those Admin made team-assignable, and who has which.
  */
 export interface ScopedRolesView {
-  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canManageScreens: boolean }[];
+  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canRoute: boolean; canManageScreens: boolean }[];
   members: { userId: string; roleIds: string[] }[];
 }
 
@@ -895,6 +895,8 @@ export interface AdminRole {
   canOperateScreens: boolean;
   /** Moves the screens of the sets they can open to the next or previous song or section (issue #322). */
   canCue: boolean;
+  /** Changes what the screens of the sets they can open draw - their layers and overlays - without presenting (issue #322). */
+  canRoute: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations, without being their admin (issue #322). */
   canManageScreens: boolean;
   /** A team's or an organisation's admins give it to their own members, on their team or organisation only (issue #270). */

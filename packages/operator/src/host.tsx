@@ -22,6 +22,8 @@ export interface OperatorLive {
   canPresent: boolean;
   /** Runs screens: can edit the set, or has a role that runs screens. */
   canOperate: boolean;
+  /** May route the screens now (issue #322): their layers and overlays, without presenting; left out by an older server. */
+  canRoute?: boolean;
   /** This device runs the screens (session.screens). */
   screensMine: boolean;
   /** The server's clock less this device's (ms), once measured. */

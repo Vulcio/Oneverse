@@ -22,7 +22,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent } from "../live/index.js";
+import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
 import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -316,6 +316,7 @@ const LIVE_SESSION = {
 };
 const LIVE_LOCKED = { ...LIVE_SESSION, screens: { id: "u_o", name: "Olu", device: "i:3", exclusive: true } };
 const LIVE_CUER = { ...LIVE_SINGER, canCue: true };
+const LIVE_ROUTER = { ...LIVE_SINGER, canRoute: true };
 /** A set of three items as a cue sees it: a song of three sections, a text of one, a passage whose words aren't known. */
 const CUE_ITEMS = [
   { id: "item_1", sections: [0, 2, 5], slideKey: "7-aaaa" },
@@ -2413,6 +2414,19 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "someone who cues", args: [LIVE_SESSION, LIVE_CUER] },
           { name: "a singer", args: [LIVE_SESSION, LIVE_SINGER] },
           { name: "someone who cues, while the screens are locked", args: [LIVE_LOCKED, LIVE_CUER] },
+        ],
+      },
+      mayRoute: {
+        about: "Whether someone may route the screens now (issue #322): change their layers and overlays - who can edit the set, runs screens or routes by a role, and only the holder while they're locked.",
+        params: ["session", "actor"],
+        run: mayRoute,
+        cases: [
+          { name: "someone who routes", args: [LIVE_SESSION, LIVE_ROUTER] },
+          { name: "someone handed presenting doesn't route", args: [LIVE_SESSION, LIVE_PRESENTER] },
+          { name: "someone who routes, while the screens are locked", args: [LIVE_LOCKED, LIVE_ROUTER] },
+          { name: "the leader, while someone else has them locked", args: [LIVE_LOCKED, LIVE_EDITOR] },
+          { name: "the operator holding them locked", args: [LIVE_LOCKED, LIVE_OPERATOR] },
+          { name: "no session: who may lead, run or route screens", args: [null, LIVE_ROUTER] },
         ],
       },
       mayPresent: {
