@@ -47,6 +47,12 @@ The line-up flags what clashes: someone **Away**, who **Said not available**, or
 
 A rehearsal ahead of each date: in **New event**, **Rehearsal for** picks the event it prepares, and **Days before** how many days ahead (up to 14), with its own start time and length. It follows that event: a date moved or cancelled moves or cancels its rehearsal. It shows on the calendar marked **Rehearsal**, "for Sunday service, Sun 18 Oct", and **Open set** opens that date's set, so everyone rehearses the songs that will be played. A rehearsal takes no answers or line-up of its own: the people signed up for its date (see [Line-up](/teams/#line-up)) see it on **My calendar** and in their calendar link, and are reminded the day before. Deleting the event deletes its rehearsals.
 
+### Locations
+
+Where the team's events take place: its admins add them under **Locations** on the team's page, with **Add location**: a **Name**, an **Address (optional)** and a **Time zone**. **Edit** changes one, **Remove** takes it off (its events keep their place, without the location). A team in an organisation can also use the organisation's locations (see [Locations](/organizations/#locations)).
+
+In **New event**, **Location** picks one: the place becomes its name and the time zone its own. You can still type a place of your own beside it ("Room 4").
+
 ### Your calendar link
 
 On **My calendar**, **Calendar link** puts the dates you signed up for (see [Line-up](/teams/#line-up)) in your own calendar: **Get my calendar link**, then **Add to Google Calendar**, **Add to Apple Calendar** or **Add to Outlook** - or **Copy link** and add it to any calendar app as a subscription ("From URL", "Subscribe to calendar"). Each date shows with its team, place and a link to its set, from three months back to a year ahead; cancelled dates leave it.

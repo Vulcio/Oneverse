@@ -73,3 +73,7 @@ Its admins make one with **New event**: its **Title**, first date, start time, l
 - Only the admins choose another host (who's told), and **Delete event**, for every group. A group removed from **Groups needed** loses its part; a group taken out of the organisation keeps it, as its own event.
 
 **Presets** keep what an event usually needs: in an event's dialog, **Save as preset** under a **Preset name**. **New event** then starts from one with **Preset**, which fills its title, time, place and groups. The admins remove presets under **Presets**.
+
+## Locations
+
+Where the organisation's events take place - a church, a hall, a campus: its admins add them under **Locations** on its page, with **Add location** (a **Name**, an **Address (optional)**, a **Time zone**), **Edit** and **Remove**. Its events pick one with **Location** in their dialog, which fills the place and the time zone, and each group's part follows it; a preset keeps it too. Its groups' own events can use them as well, beside the team's own (see [Locations](/teams/#locations)).

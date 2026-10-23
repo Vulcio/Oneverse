@@ -16,6 +16,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LineupDialog, LineupLine, usePartLabel } from "./lineup";
+import { LocationField, useLocations } from "./locations";
 import { HostLink, usePlanning } from "../host";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
 import { cn } from "@oneverse/ui/lib/utils";
@@ -564,6 +565,9 @@ function EventDialog({
   const [call, setCall] = useState(event?.callMinutes ? String(event.callMinutes) : "");
   const [timeZone, setTimeZone] = useState(event?.timeZone ?? browserZone());
   const [place, setPlace] = useState(event?.place ?? "");
+  // Where it takes place (issue #320): one of the team's or its organisation's locations.
+  const locations = useLocations({ teamId });
+  const [locationId, setLocationId] = useState(event?.locationId ?? "");
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -585,6 +589,7 @@ function EventDialog({
           callMinutes: call ? Number(call) : null,
           timeZone: parentEvent.timeZone,
           place: place || null,
+          locationId: locationId || null,
           note: note || null,
           rehearsalFor: { eventId: parentEvent.id, daysBefore: Number(daysBefore) },
         }
@@ -596,6 +601,7 @@ function EventDialog({
           callMinutes: call ? Number(call) : null,
           timeZone,
           place: place || null,
+          locationId: locationId || null,
           note: note || null,
           repeat,
           parts: parts.map(partBody),
@@ -699,6 +705,17 @@ function EventDialog({
           </div>
           </>
           ) : null}
+          <LocationField
+            id="event-location"
+            locations={locations}
+            value={locationId}
+            place={place}
+            onChange={(change) => {
+              setLocationId(change.locationId);
+              if (change.place !== undefined) setPlace(change.place);
+              if (change.timeZone && !parentEvent) setTimeZone(change.timeZone);
+            }}
+          />
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="event-place">{t("teamCalendar.place")}</Label>
             <Input id="event-place" value={place} maxLength={200} onChange={(e) => setPlace(e.target.value)} />

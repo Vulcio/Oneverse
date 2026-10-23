@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { InviteLinksCard } from "../components/invite-links-card";
+import { LocationsCard } from "../components/locations";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
@@ -219,6 +220,8 @@ export function OrganizationPage({ userId, data, adminCards }: { userId: string;
           <div className="flex flex-col gap-6">
             {/* The app's own, for its admins (Songverse's: its brands, issue #279). */}
             {adminCards}
+            {/* Where its events take place (issue #320). */}
+            <LocationsCard owner={{ organizationId: organization.id }} />
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">{t("organizations.details")}</CardTitle>

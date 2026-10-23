@@ -47,6 +47,12 @@ L'équipe du jour signale ce qui coince : quelqu'un **Absent**, qui **A répondu
 
 Une répétition avant chaque date : dans **Nouvel événement**, **Répétition pour** choisit l'événement qu'elle prépare, et **Jours avant** combien de jours avant (14 au plus), avec son heure de début et sa durée. Elle suit cet événement : une date déplacée ou annulée déplace ou annule sa répétition. Elle apparaît dans le calendrier marquée **Répétition**, « pour Culte du dimanche, dim. 18 oct. », et **Ouvrir la liste** ouvre la liste de cette date, pour que chacun répète les chants qui seront joués. Une répétition n'a ni réponses ni équipe du jour à elle : les personnes inscrites à sa date (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) la voient dans **Mon calendrier** et dans leur lien de calendrier, et reçoivent un rappel la veille. Supprimer l'événement supprime ses répétitions.
 
+### Sites
+
+Où ont lieu les événements de l'équipe : ses administrateurs les ajoutent sous **Sites** sur la page de l'équipe, avec **Ajouter un site** : un **Nom**, une **Adresse (facultatif)** et un **Fuseau horaire**. **Modifier** en change un, **Retirer** l'enlève (ses événements gardent leur lieu, sans le site). Une équipe dans une organisation peut aussi utiliser les sites de l'organisation (voir [Sites](/fr/organizations/#sites)).
+
+Dans **Nouvel événement**, **Site** en choisit un : le lieu devient son nom, et le fuseau horaire le sien. Vous pouvez toujours écrire un lieu à vous à côté (« Salle 4 »).
+
 ### Votre lien de calendrier
 
 Dans **Mon calendrier**, **Lien de calendrier** met les dates où vous êtes inscrit (voir [Équipe du jour](/fr/teams/#équipe-du-jour)) dans votre propre calendrier : **Obtenir mon lien de calendrier**, puis **Ajouter à Google Agenda**, **Ajouter à Calendrier Apple** ou **Ajouter à Outlook** - ou **Copier le lien** et l'ajouter à n'importe quelle application de calendrier comme abonnement (« À partir de l'URL », « S'abonner à un calendrier »). Chaque date s'affiche avec son équipe, son lieu et un lien vers sa liste, de trois mois en arrière à un an à l'avance ; les dates annulées en disparaissent.

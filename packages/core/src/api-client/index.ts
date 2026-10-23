@@ -35,6 +35,7 @@ import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
 import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
+import type { CreateLocationRequest, UpdateLocationRequest } from "../requests/locations.js";
 import type { z } from "zod";
 import type { BibleUpdateSchema } from "../requests/scriptures.js";
 import type { SetItemPassage } from "../screens/index.js";
@@ -789,6 +790,17 @@ export interface Brand extends BrandContent {
   updatedAt: string;
 }
 
+/** A location (issue #320): where an organisation's or a team's events take place. */
+export interface EventLocation {
+  id: string;
+  name: string;
+  address: string | null;
+  timeZone: string;
+  owner: { kind: "team" | "organization"; id: string; name: string };
+  /** Its owner's admins change it. */
+  canEdit: boolean;
+}
+
 /** A widget's default look (issue #273): the user's own, or a team's. */
 export interface ScreenWidgetDefault {
   kind: ScreenWidgetKind;
@@ -1112,6 +1124,8 @@ export interface TeamEvent {
   callMinutes: number | null;
   timeZone: string;
   place: string | null;
+  /** Where it takes place (issue #320): one of its owner's locations. */
+  locationId: string | null;
   note: string | null;
   repeat: EventRepeat | null;
   /** The parts it needs (issue #235, phase 7). */
@@ -1146,6 +1160,8 @@ export interface OrganizationEvent {
   durationMinutes: number;
   timeZone: string;
   place: string | null;
+  /** Where it takes place (issue #320): one of its owner's locations. */
+  locationId: string | null;
   note: string | null;
   repeat: EventRepeat | null;
   host: { id: string; displayName: string } | null;
@@ -1162,6 +1178,8 @@ export interface OrganizationEventDate {
   endsAt: string;
   title: string;
   place: string | null;
+  /** Where it takes place (issue #320): one of its owner's locations. */
+  locationId: string | null;
   timeZone: string;
   host: { id: string; displayName: string } | null;
   canManage: boolean;
@@ -1195,6 +1213,8 @@ export interface OrganizationEventPreset {
   startTime: string;
   durationMinutes: number;
   place: string | null;
+  /** Where it takes place (issue #320): one of its owner's locations. */
+  locationId: string | null;
   needs: { teamId: string; parts?: EventPart[]; callMinutes?: number }[];
 }
 
@@ -1206,6 +1226,8 @@ export interface TeamEventDateSummary extends EventDate {
   ownTitle: string | null;
   eventTitle: string;
   place: string | null;
+  /** Where it takes place (issue #320): one of its owner's locations. */
+  locationId: string | null;
   timeZone: string;
   /** When to be there (issue #240), ISO 8601; null without a call time. */
   callAt: string | null;
@@ -3051,6 +3073,14 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createBrand: (data: CreateBrandRequest) => request<Brand>("/brands", { method: "POST", body: JSON.stringify(data) }),
     updateBrand: (brandId: string, data: UpdateBrandRequest) => request<Brand>(`/brands/${brandId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteBrand: (brandId: string) => request<void>(`/brands/${brandId}`, { method: "DELETE" }),
+    /** A team's events' locations (its own and its organisation's), an organisation's, or every one the user can use (issue #320). */
+    listLocations: (owner: { teamId?: string; organizationId?: string } = {}) => {
+      const query = new URLSearchParams(Object.entries(owner).filter((entry): entry is [string, string] => !!entry[1]));
+      return request<EventLocation[]>(`/locations${query.size ? `?${query}` : ""}`);
+    },
+    createLocation: (data: CreateLocationRequest) => request<EventLocation>("/locations", { method: "POST", body: JSON.stringify(data) }),
+    updateLocation: (locationId: string, data: UpdateLocationRequest) => request<EventLocation>(`/locations/${locationId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteLocation: (locationId: string) => request<void>(`/locations/${locationId}`, { method: "DELETE" }),
     uploadBrandAsset: (brandId: string, kind: BrandAssetKind, file: Blob, filename: string, name?: string) => {
       const form = new FormData();
       form.append("file", file, filename);

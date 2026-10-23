@@ -73,3 +73,7 @@ Ses administrateurs en créent un avec **Nouvel événement** : son **Titre**, s
 - Seuls les administrateurs choisissent un autre responsable (qui est prévenu) et **Supprimer l'événement**, pour tous les groupes. Un groupe retiré des **Groupes nécessaires** perd sa part ; un groupe retiré de l'organisation la garde, comme son propre événement.
 
 Les **Modèles** gardent ce dont un événement a habituellement besoin : dans la fenêtre d'un événement, **Enregistrer comme modèle** sous un **Nom du modèle**. **Nouvel événement** part alors de l'un d'eux avec **Modèle**, qui remplit son titre, son heure, son lieu et ses groupes. Les administrateurs retirent les modèles sous **Modèles**.
+
+## Sites
+
+Où ont lieu les événements de l'organisation - une église, une salle, un campus : ses administrateurs les ajoutent sous **Sites** sur sa page, avec **Ajouter un site** (un **Nom**, une **Adresse (facultatif)**, un **Fuseau horaire**), **Modifier** et **Retirer**. Ses événements en choisissent un avec **Site** dans leur fenêtre, ce qui remplit le lieu et le fuseau horaire, et la part de chaque groupe le suit ; un modèle le garde aussi. Les événements propres à ses groupes peuvent aussi les utiliser, à côté de ceux de l'équipe (voir [Sites](/fr/teams/#sites)).

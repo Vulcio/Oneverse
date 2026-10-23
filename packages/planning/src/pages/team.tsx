@@ -17,6 +17,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Pencil } from "lucide-react";
 import { CalendarFeedCard } from "../components/calendar-feed-card";
 import { InviteLinksCard } from "../components/invite-links-card";
+import { LocationsCard } from "../components/locations";
 import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from "../components/team-cards";
 import { TeamCalendar } from "../components/team-calendar";
 import { NewGroupForm } from "./organization";
@@ -321,6 +322,9 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
 
       {/* Its calendar link (issue #240): all its dates, for a shared calendar or a website. */}
       {isAdmin ? <CalendarFeedCard teamId={team.id} /> : null}
+
+      {/* Where its events take place (issue #320). */}
+      {isAdmin ? <LocationsCard owner={{ teamId: team.id }} /> : null}
 
       {isAdmin || positions.length > 0 ? <PositionsCard teamId={team.id} positions={positions} isAdmin={isAdmin} onChanged={refresh} onError={setError} /> : null}
 

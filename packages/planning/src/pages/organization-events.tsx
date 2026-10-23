@@ -17,6 +17,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
+import { LocationField, useLocations } from "../components/locations";
 import { HostLink, usePlanning } from "../host";
 import { cn } from "@oneverse/ui/lib/utils";
 
@@ -278,6 +279,9 @@ function OrganizationEventDialog({
   const [duration, setDuration] = useState(String(event?.durationMinutes ?? 90));
   const [timeZone, setTimeZone] = useState(event?.timeZone ?? browserZone());
   const [place, setPlace] = useState(event?.place ?? "");
+  // Where it takes place (issue #320): one of the organisation's locations.
+  const locations = useLocations({ organizationId: organization.id });
+  const [locationId, setLocationId] = useState(event?.locationId ?? "");
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
@@ -296,6 +300,9 @@ function OrganizationEventDialog({
     setStartTime(preset.startTime);
     setDuration(String(preset.durationMinutes));
     setPlace(preset.place ?? "");
+    setLocationId(preset.locationId ?? "");
+    const presetLocation = locations.find((one) => one.id === preset.locationId);
+    if (presetLocation) setTimeZone(presetLocation.timeZone);
     setNeeds(preset.needs.filter((need) => teamOf(need.teamId)).map((need) => ({ teamId: need.teamId, parts: need.parts ?? [], call: need.callMinutes ? String(need.callMinutes) : "" })));
   };
   const needsBody = () => needs.map((need) => ({ teamId: need.teamId, parts: need.parts.map(partBody), ...(need.call ? { callMinutes: Number(need.call) } : {}) }));
@@ -316,8 +323,8 @@ function OrganizationEventDialog({
     run(() => {
       const timing = { title, date, startTime, durationMinutes: Number(duration), timeZone, note: note || null, repeat: everyWeeks ? { everyWeeks: Number(everyWeeks), until: until || null } : null };
       return event
-        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
-        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, hostUserId, needs: needsBody() });
+        ? api.updateOrganizationEvent(organization.id, event.id, { ...timing, place: place || null, locationId: locationId || null, needs: needsBody(), ...(isAdmin ? { hostUserId } : {}) })
+        : api.createOrganizationEvent(organization.id, { ...timing, place: place || null, locationId: locationId || null, hostUserId, needs: needsBody() });
     });
 
   return (
@@ -396,6 +403,17 @@ function OrganizationEventDialog({
             <Label htmlFor="org-event-until">{t("teamCalendar.until")}</Label>
             <DatePicker id="org-event-until" value={until} min={date} disabled={!everyWeeks} clearable onChange={setUntil} testId="org-event-until" />
           </div>
+          <LocationField
+            id="org-event-location"
+            locations={locations}
+            value={locationId}
+            place={place}
+            onChange={(change) => {
+              setLocationId(change.locationId);
+              if (change.place !== undefined) setPlace(change.place);
+              if (change.timeZone) setTimeZone(change.timeZone);
+            }}
+          />
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="org-event-place">{t("teamCalendar.place")}</Label>
             <Input id="org-event-place" value={place} maxLength={200} onChange={(e) => setPlace(e.target.value)} />
@@ -493,7 +511,7 @@ function OrganizationEventDialog({
               variant="outline"
               disabled={busy || !presetName.trim() || needs.length === 0 || !title.trim()}
               onClick={() =>
-                void run(() => api.createOrganizationEventPreset(organization.id, { name: presetName.trim(), title, startTime, durationMinutes: Number(duration), place: place || undefined, needs: needsBody() }))
+                void run(() => api.createOrganizationEventPreset(organization.id, { name: presetName.trim(), title, startTime, durationMinutes: Number(duration), place: place || undefined, locationId: locationId || undefined, needs: needsBody() }))
               }
               data-testid="org-preset-save"
             >
