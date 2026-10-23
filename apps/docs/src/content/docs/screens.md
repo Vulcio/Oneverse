@@ -28,6 +28,10 @@ On the screen itself, with nothing presented, **OK** on the remote (or Enter on 
 
 A set put on a screen from **Screens**, in its tile's **Settings**, is fixed instead: the screen shows it until you change it, and OK doesn't open the list. Its tile says which set the day's set is, or that there's none today.
 
+### Events at a location
+
+A team's or an organisation's screen can follow one of its [locations](/teams/#locations) instead: pick **Events at Main campus (automatic)** as its **Set**. It then shows the set of the event taking place there now (started within three hours), else the next one there today, worked out in the location's time zone; it moves on by itself when the next event starts. A lobby TV or a Pulse that stays at a church is set up this way once. Its tile says "At Main campus: Sunday service", or that there's no event there now.
+
 ### The screen's menu
 
 The screen has a menu of its own, for whoever stands by it, even while a set is presented. To open it, press **OK three times** quickly on the remote (or Enter on a keyboard), hold OK for about a second, or press the remote's **Menu** key. With a mouse, **double-click** or right-click the screen; on a touch screen, **press and hold**. A single OK or a single click never opens it, so it doesn't appear over the words by accident. On a screen following the day's set, a single OK still opens the list of sets, half a second later, once no second press follows.
@@ -67,6 +71,8 @@ Others can present beside you. In the Sync menu, while you lead, **Also presenti
 ### When the internet goes: Continue on Pulse
 
 Oneverse Pulse, a small computer that stays at the venue, is in preparation. Where a set has one, it follows the set's session while the internet is there, and keeps its slides. If the internet goes for more than a few seconds, Pulse runs the session in the room, and Live (and the media operator's console) shows **Continue on Pulse**. Tap it, on a device connected to the venue's network: Pulse's own page opens with the set's slides and the screen controls, and you go on from where the screens were, without signing in again. When the internet is back, what the room did becomes the set's session again, and Live picks it up.
+
+A Pulse is paired like a screen: it shows a code, which you enter under **Pair a screen**. The form then says **This code is a Oneverse Pulse's** and names it "Pulse". Give it a set, or more usefully **Events at** its location (see [Events at a location](/screens/#events-at-a-location)): it then runs the set of whatever event is on there. In **Screens**, its tile has a **Pulse** badge.
 
 ## What the screens show
 

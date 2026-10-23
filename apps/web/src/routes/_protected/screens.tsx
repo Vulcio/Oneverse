@@ -1,7 +1,7 @@
 import { composeBuiltInTemplate, formatScreenCode, normalizeScreenCode, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
-import { Building2, MonitorCheck, MonitorUp, Plus, Settings2, User, Users, type LucideIcon } from "lucide-react";
-import { Fragment, useState, type FormEvent } from "react";
+import { Building2, MonitorCheck, MonitorUp, Plus, Radio, Settings2, User, Users, type LucideIcon } from "lucide-react";
+import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { cn } from "@oneverse/ui/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -58,6 +58,8 @@ export const Route = createFileRoute("/_protected/screens")({
       apiClient.listScreenWidgetDefaults().catch(() => []),
       apiClient.listBrands().catch(() => []),
     ]);
+    // What a screen or a Pulse can follow (issue #320): the locations of the teams and organisations one's in.
+    const locations = await apiClient.listLocations().catch(() => []);
     // Whose a new screen can be (issue #222): theirs, a team's they run, an organisation's they run.
     const owners: ScreenOwnerChoice[] = [
       { kind: "user" },
@@ -69,7 +71,7 @@ export const Route = createFileRoute("/_protected/screens")({
     // Only a set they lead can be shown: its sync session is theirs to lead.
     // Whose a new brand can be (issue #279): a team's or an organisation's they run.
     const brandOwners = owners.filter((owner): owner is BrandOwnerChoice => owner.kind !== "user");
-    return { sets: sets.filter((set) => set.canEdit), screens, themes, parts, owners, widgetDefaults, brands, brandOwners };
+    return { sets: sets.filter((set) => set.canEdit), screens, themes, parts, owners, widgetDefaults, brands, brandOwners, locations };
   },
   component: ScreensPage,
 });
@@ -314,13 +316,33 @@ function ThemeSelect({ id, value, themes, onChange }: { id: string; value: strin
 
 /** The set select's value for "The day's set" (issue #274). */
 const DAY_SET = "__day__";
+/** The set select's values for "Events at <location>" (issue #320): this, then the location's id. */
+const LOCATION_SET = "__location__:";
+
+/** A screen's set as the set select shows it. */
+const setValue = (screen: Pick<ScreenSummary, "setMode" | "setlistId" | "location">) =>
+  screen.setMode === "DAY" ? DAY_SET : screen.setMode === "LOCATION" && screen.location ? `${LOCATION_SET}${screen.location.id}` : (screen.setlistId ?? "");
+
+/** What the set select's value asks of a screen. */
+function setChange(value: string): { setMode: "DAY" } | { setMode: "LOCATION"; locationId: string } | { setMode: "FIXED"; setlistId: string | null } {
+  if (value === DAY_SET) return { setMode: "DAY" };
+  if (value.startsWith(LOCATION_SET)) return { setMode: "LOCATION", locationId: value.slice(LOCATION_SET.length) };
+  return { setMode: "FIXED", setlistId: value || null };
+}
 
 function SetSelect({ id, sets, value, onChange, allowNone = false }: { id: string; sets: SetlistSummary[]; value: string; onChange: (id: string) => void; allowNone?: boolean }) {
   const { t, i18n } = useTranslation();
+  const { locations } = Route.useLoaderData();
   return (
     <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)}>
       {/* Its owner's set of the day (issue #274). */}
       <option value={DAY_SET}>{t("screens.daySet")}</option>
+      {/* The event on now at a location (issue #320): a Pulse there, or the lobby TV. */}
+      {locations.map((location) => (
+        <option key={location.id} value={`${LOCATION_SET}${location.id}`}>
+          {t("screens.locationSet", { location: location.name })}
+        </option>
+      ))}
       {allowNone || !value ? <option value="">{t("screens.noSet")}</option> : null}
       {sets.map((set) => (
         <option key={set.id} value={set.id}>
@@ -341,6 +363,24 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
   const [name, setName] = useState(t("screens.defaultName"));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A Oneverse Pulse's code (issue #320): said so, and named so.
+  const [kind, setKind] = useState<"SCREEN" | "PULSE">("SCREEN");
+  const complete = normalizeScreenCode(code);
+  useEffect(() => {
+    if (!complete) return setKind("SCREEN");
+    let live = true;
+    apiClient
+      .checkScreenCode(complete)
+      .then((checked) => {
+        if (!live) return;
+        setKind(checked.kind ?? "SCREEN");
+        if (checked.kind === "PULSE") setName((current) => (current === t("screens.defaultName") ? t("screens.pulseName") : current));
+      })
+      .catch(() => live && setKind("SCREEN"));
+    return () => {
+      live = false;
+    };
+  }, [complete]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -349,7 +389,8 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
     setPending(true);
     setError(null);
     try {
-      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), ...(set === DAY_SET ? { setMode: "DAY" as const } : { setlistId: set }) }));
+      const shown = setChange(set);
+      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), ...(shown.setMode === "FIXED" ? { setlistId: shown.setlistId ?? undefined } : shown) }));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -370,6 +411,12 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
         {/* No set of one's own to put on it: it can still follow its owner's set of the day (issue #274). */}
         {sets.length === 0 ? <p className="mb-4 text-sm text-muted-foreground">{t("screens.noSets")}</p> : null}
         <form className="grid gap-4 sm:grid-cols-2" onSubmit={submit} data-testid="screen-pair-form">
+            {kind === "PULSE" ? (
+              <p className="flex items-center gap-2 rounded-md border border-violet-500/40 bg-violet-500/10 px-3 py-2 text-sm sm:col-span-2" data-testid="screen-pair-pulse">
+                <Radio className="size-4 shrink-0 text-violet-600 dark:text-violet-300" aria-hidden />
+                {t("screens.pulseCode")}
+              </p>
+            ) : null}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="screen-code">{t("screens.code")}</Label>
               <Input
@@ -439,6 +486,13 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
         <div className="flex items-center gap-2">
           <span className={cn("size-2 shrink-0 rounded-full", screen.online ? "bg-emerald-500" : "bg-muted-foreground/40")} aria-hidden />
           <p className="min-w-0 flex-1 truncate font-medium">{screen.name}</p>
+          {/* A Oneverse Pulse (issue #320): a node of the room, not a screen. */}
+          {screen.kind === "PULSE" ? (
+            <span className="flex shrink-0 items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-medium text-violet-700 dark:text-violet-300" title={t("screens.pulseHint")} data-testid="screen-pulse">
+              <Radio className="size-3" aria-hidden />
+              {t("screens.pulse")}
+            </span>
+          ) : null}
         </div>
         <p className="text-xs text-muted-foreground" data-testid="screen-status">
           {screen.online ? t("screens.online") : screen.lastSeenAt ? t("screens.lastSeen", { when: new Date(screen.lastSeenAt).toLocaleString(i18n.language) }) : t("screens.offline")}
@@ -454,6 +508,10 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
             ? screen.setlist
               ? t("screens.daySetNow", { set: setlistTitle(screen.setlist, t, i18n.language) })
               : t("screens.daySetNone")
+            : screen.setMode === "LOCATION" && screen.location
+              ? screen.setlist
+                ? t("screens.locationSetNow", { location: screen.location.name, set: setlistTitle(screen.setlist, t, i18n.language) })
+                : t("screens.locationSetNone", { location: screen.location.name })
             : screen.setlist
               ? setlistTitle(screen.setlist, t, i18n.language)
               : t("screens.noSet")}
@@ -512,7 +570,7 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
   const { t, i18n } = useTranslation();
   const [name, setName] = useState(screen.name);
   const [error, setError] = useState<string | null>(null);
-  const known = screen.setMode === "DAY" || !screen.setlistId || sets.some((set) => set.id === screen.setlistId);
+  const known = screen.setMode === "DAY" || screen.setMode === "LOCATION" || !screen.setlistId || sets.some((set) => set.id === screen.setlistId);
   const saved = screen.themeId ? themes.find((one) => one.id === screen.themeId) : undefined;
   const look = screenLook(screen, saved);
 
@@ -553,9 +611,9 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
                 <SetSelect
                   id={`screen-set-${screen.id}`}
                   sets={sets}
-                  value={screen.setMode === "DAY" ? DAY_SET : (screen.setlistId ?? "")}
+                  value={setValue(screen)}
                   allowNone
-                  onChange={(id) => void change(id === DAY_SET ? { setMode: "DAY" } : { setMode: "FIXED", setlistId: id || null })}
+                  onChange={(value) => void change(setChange(value))}
                 />
               ) : (
                 <p className="text-sm">{screen.setlist ? setlistTitle(screen.setlist, t, i18n.language) : t("screens.noSet")}</p>

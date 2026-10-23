@@ -366,6 +366,13 @@ const en = {
     daySet: "The day's set (automatic)",
     daySetNow: "The day's set: {{set}}",
     daySetNone: "The day's set: none today",
+    locationSet: "Events at {{location}} (automatic)",
+    locationSetNow: "At {{location}}: {{set}}",
+    locationSetNone: "At {{location}}: no event now",
+    pulse: "Pulse",
+    pulseHint: "A Oneverse Pulse: it keeps the set running in the room if the internet goes.",
+    pulseCode: "This code is a Oneverse Pulse's: it runs the set on the venue's network if the internet goes.",
+    pulseName: "Pulse",
     menu: {
       title: "This screen",
       hint: "Arrows to move, OK to choose, Back to close. Press OK three times, hold it, or press Menu (or double-click or long-press the screen) to open this menu.",

@@ -366,6 +366,13 @@ const fr: typeof en = {
     daySet: "La liste du jour (automatique)",
     daySetNow: "La liste du jour : {{set}}",
     daySetNone: "La liste du jour : aucune aujourd'hui",
+    locationSet: "Événements à {{location}} (automatique)",
+    locationSetNow: "À {{location}} : {{set}}",
+    locationSetNone: "À {{location}} : aucun événement en ce moment",
+    pulse: "Pulse",
+    pulseHint: "Un Oneverse Pulse : il fait tourner la liste dans la salle si Internet tombe.",
+    pulseCode: "Ce code est celui d'un Oneverse Pulse : il fait tourner la liste sur le réseau du lieu si Internet tombe.",
+    pulseName: "Pulse",
     menu: {
       title: "Cet écran",
       hint: "Flèches pour se déplacer, OK pour choisir, Retour pour fermer. Appuyez trois fois sur OK, maintenez-le ou appuyez sur Menu (ou double-cliquez ou appuyez longuement sur l'écran) pour ouvrir ce menu.",

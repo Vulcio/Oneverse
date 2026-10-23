@@ -28,6 +28,10 @@ Sur l'écran lui-même, quand rien n'est présenté, **OK** sur la télécommand
 
 Une liste mise sur un écran depuis **Écrans**, dans les **Réglages** de sa vignette, est fixe : l'écran l'affiche jusqu'à ce que vous la changiez, et OK n'ouvre pas la liste. Sa vignette indique quelle est la liste du jour, ou qu'il n'y en a pas aujourd'hui.
 
+### Événements à un site
+
+L'écran d'une équipe ou d'une organisation peut plutôt suivre un de ses [sites](/fr/teams/#sites) : choisissez **Événements à Campus principal (automatique)** comme **Liste**. Il affiche alors la liste de l'événement qui s'y déroule (commencé depuis moins de trois heures), sinon le prochain de la journée à cet endroit, calculé dans le fuseau horaire du site ; il passe tout seul au suivant quand il commence. Une télé d'accueil ou un Pulse qui reste dans une église se règle ainsi une fois pour toutes. Sa vignette indique « À Campus principal : Culte du dimanche », ou qu'il n'y a pas d'événement en ce moment.
+
 ### Le menu de l'écran
 
 L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une liste est présentée. Pour l'ouvrir, appuyez **trois fois sur OK** rapidement sur la télécommande (ou Entrée sur un clavier), maintenez OK environ une seconde, ou appuyez sur la touche **Menu** de la télécommande. Avec une souris, **double-cliquez** ou faites un clic droit sur l'écran ; sur un écran tactile, **appuyez longuement**. Un seul appui sur OK ou un simple clic ne l'ouvre jamais : il n'apparaît pas par accident par-dessus les paroles. Sur un écran qui suit la liste du jour, un seul appui sur OK ouvre toujours la liste des listes, une demi-seconde plus tard, quand aucun second appui ne suit.
@@ -67,6 +71,8 @@ D'autres peuvent présenter à côté de vous. Dans le menu Synchro, quand vous 
 ### Quand Internet tombe : Continuer sur Pulse
 
 Oneverse Pulse, un petit ordinateur qui reste dans la salle, est en préparation. Quand une liste en a un, il suit sa session tant qu'Internet est là, et garde ses diapositives. Si Internet tombe plus de quelques secondes, Pulse mène la session dans la salle, et Live (et la console de l'opérateur média) affiche **Continuer sur Pulse**. Touchez-le, sur un appareil connecté au réseau de la salle : la page de Pulse s'ouvre avec les diapositives de la liste et les commandes des écrans, et vous reprenez là où en étaient les écrans, sans vous reconnecter. Quand Internet revient, ce que la salle a fait redevient la session de la liste, et Live la reprend.
+
+Un Pulse s'associe comme un écran : il affiche un code, que vous saisissez sous **Associer un écran**. Le formulaire indique alors **Ce code est celui d'un Oneverse Pulse** et le nomme « Pulse ». Donnez-lui une liste, ou plutôt **Événements à** son site (voir [Événements à un site](/fr/screens/#événements-à-un-site)) : il fait alors tourner la liste de l'événement qui s'y déroule. Dans **Écrans**, sa vignette porte un badge **Pulse**.
 
 ## Ce qu'affichent les écrans
 
