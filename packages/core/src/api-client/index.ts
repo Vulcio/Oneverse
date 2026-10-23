@@ -758,6 +758,8 @@ export interface ScreenSummary {
   effects?: boolean;
   /** Its latest report about itself (issue #286), with what it can run; for who manages it, and null before its first. */
   report?: (ScreenReport & { at: string; tier: ScreenTier }) | null;
+  /** When a temporary pairing ends (issue #284); null: until it's disconnected. Left out by an older API. */
+  expiresAt?: string | null;
 }
 
 /** A screen theme's own file (issue #194): a background picture or video ("media"), or a font, at a signed address. */
@@ -3054,6 +3056,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     listScreens: (setlistId?: string) => request<ScreenSummary[]>(`/screens${setlistId ? `?setlistId=${encodeURIComponent(setlistId)}` : ""}`),
     updateScreen: (screenId: string, data: UpdateScreenRequest) => request<ScreenSummary>(`/screens/${screenId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteScreen: (screenId: string) => request<void>(`/screens/${screenId}`, { method: "DELETE" }),
+    pairScreenAgain: (screenId: string) => request<void>(`/screens/${screenId}/pair-again`, { method: "POST" }),
     /** Screen themes (issue #194): the user's own and their teams'. */
     listScreenThemes: () => request<ScreenThemeSummary[]>("/screen-themes"),
     createScreenTheme: (data: CreateScreenThemeRequest) => request<ScreenThemeSummary>("/screen-themes", { method: "POST", body: JSON.stringify(data) }),

@@ -91,7 +91,7 @@ export class SyncServer implements OnModuleDestroy {
     this.subscriber = redis().duplicate();
     this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL, NOTIFICATIONS_CHANNEL, DOC_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
     this.subscriber.on("message", (channel, id: string) => {
-      if (channel === SCREEN_CHANNEL) void this.sets.screenChanged(id);
+      if (channel === SCREEN_CHANNEL) void (id.startsWith("pair:") ? this.sets.screenPairAgain(id.slice(5)) : this.sets.screenChanged(id));
       else if (channel === NOTES_CHANNEL) this.songs.notesChanged(id);
       else if (channel === SONG_CHANNEL) this.songSaved(id);
       else if (channel === PRESENCE_CHANNEL) void this.songs.presenceChanged(id);
@@ -157,7 +157,7 @@ export class SyncServer implements OnModuleDestroy {
       this.send(connection, { type: "pong", id: message.id, sent: message.sent, at: Date.now() });
       if (connection.screen) void this.sets.screenOnline(connection.screen.id, true);
       // Pings keep coming while a device follows, so they carry the re-check.
-      if (connection.setId) await this.sets.stillAllowed(connection);
+      if (connection.setId || connection.screen) await this.sets.stillAllowed(connection);
       return;
     }
     if (message.type === "hello") return this.signIn(connection, message.token);

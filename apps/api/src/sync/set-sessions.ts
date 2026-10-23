@@ -25,8 +25,8 @@ const membersKey = (setId: string) => `songverse:sync:members:${setId}`;
  * slide the first one moved from.
  */
 /** What a sync connection keeps of a screen, read from its row. */
-const SCREEN_INFO_SELECT = { id: true, name: true, mode: true, setlistId: true, kind: true } as const;
-type ScreenInfoRow = { id: string; name: string; mode: "LYRICS" | "CHART"; setlistId: string | null; kind: "SCREEN" | "PULSE" };
+const SCREEN_INFO_SELECT = { id: true, name: true, mode: true, setlistId: true, kind: true, expiresAt: true } as const;
+type ScreenInfoRow = { id: string; name: string; mode: "LYRICS" | "CHART"; setlistId: string | null; kind: "SCREEN" | "PULSE"; expiresAt: Date | null };
 const screenInfo = (screen: ScreenInfoRow) => ({ id: screen.id, name: screen.name, mode: screen.mode, setId: screen.setlistId, ...(screen.kind === "PULSE" && { pulse: true }) });
 
 /** Who mirrors a set's session and hands it back (issue #247): someone who can edit it, or a Pulse paired to follow it (issue #320). */
@@ -117,8 +117,14 @@ export class SetSessions {
     for (const connection of mine) await this.refreshScreen(connection, screen);
   }
 
+  /** A screen asked to show a pairing code again (issue #284): its connections here are told. */
+  screenPairAgain(screenId: string) {
+    for (const connection of this.hub.connections()) if (connection.screen?.id === screenId) this.hub.send(connection, { type: "pair-again" });
+  }
+
   private async refreshScreen(connection: Connection, screen: ScreenInfoRow | null) {
-    if (!screen) {
+    // A temporary pairing that has ended (issue #284) is disconnected, as one deleted.
+    if (!screen || (screen.expiresAt && screen.expiresAt <= new Date())) {
       await this.leaveSet(connection);
       this.hub.send(connection, { type: "error", code: "disconnected", message: "This screen was disconnected" });
       connection.socket.close(4003, "Disconnected");

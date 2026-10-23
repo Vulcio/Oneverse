@@ -1,8 +1,8 @@
 import { SCREEN_TEMPLATES } from "@oneverse/core";
-import { Check, ChevronLeft, ListMusic, Palette, Video, X } from "lucide-react";
+import { Check, ChevronLeft, ListMusic, Palette, Plus, Users, Video, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchScreenThemes, pickScreenTheme, type ScreenThemeOptions } from "../lib/screen-display";
+import { fetchScreenThemes, pairScreenAgain, pickScreenTheme, screenProfiles, showScreenProfile, type ScreenThemeOptions } from "../lib/screen-display";
 import { useRemoteList } from "../lib/screen-remote";
 import { VIDEO_INPUT_KEY } from "./screen-stage";
 import { cn } from "@oneverse/ui/lib/utils";
@@ -15,11 +15,13 @@ const entry = "flex w-full items-center gap-[2vmin] rounded-[1.2vmin] px-[2.5vmi
  * another set (on a screen following the day's set; a fixed one keeps the
  * set put on it from Screens), and another theme, kept on the screen; with a
  * theme that shows a video input (issue #280), its camera or capture card,
- * kept on this device.
+ * kept on this device; and (issue #284) its profiles - one per pairing - to
+ * show another, or pair it again for one more.
  */
 export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { daySet: boolean; video?: boolean; onChooseSet: () => void; onClose: () => void }) {
   const { t } = useTranslation();
-  const [view, setView] = useState<"menu" | "themes" | "videos">("menu");
+  const [view, setView] = useState<"menu" | "themes" | "videos" | "profiles">("menu");
+  const [profiles] = useState(() => screenProfiles());
   const [cameras, setCameras] = useState<{ id: string; label: string }[] | null>(null);
   const [camera, setCamera] = useState<string | null>(() => readCamera());
   const [themes, setThemes] = useState<ScreenThemeOptions | null>(null);
@@ -78,7 +80,7 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
     <div className="absolute inset-0 z-20 flex cursor-default items-center justify-center bg-black/90 p-[5vmin]" data-testid="screen-menu" data-view={view}>
       <div className="flex max-h-full w-[min(90vw,110vmin)] flex-col gap-[2vmin]">
         <div>
-          <p className="text-[4.5vmin] font-semibold">{view === "menu" ? t("screens.menu.title") : view === "themes" ? t("screens.menu.themesTitle") : t("screens.menu.videoTitle")}</p>
+          <p className="text-[4.5vmin] font-semibold">{view === "menu" ? t("screens.menu.title") : view === "themes" ? t("screens.menu.themesTitle") : view === "profiles" ? t("screens.menu.profilesTitle") : t("screens.menu.videoTitle")}</p>
           <p className="text-[2.4vmin] opacity-60">{t("screens.menu.hint")}</p>
         </div>
         <div ref={list} className="min-h-0 overflow-y-auto pr-[1vmin]">
@@ -94,6 +96,11 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
                 <span className="min-w-0 flex-1">{t("screens.menu.theme")}</span>
                 <span className="shrink-0 text-[2.4vmin] opacity-60">{currentName}</span>
               </button>
+              <button type="button" data-pick="profiles" onClick={() => setView("profiles")} className={entry} data-testid="screen-menu-profiles">
+                <Users className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
+                <span className="min-w-0 flex-1">{t("screens.menu.profiles")}</span>
+                {profiles.profiles.length > 1 ? <span className="shrink-0 text-[2.4vmin] opacity-60">{profiles.profiles[profiles.current]?.name || t("screens.menu.unnamed")}</span> : null}
+              </button>
               {video ? (
                 <button type="button" data-pick="videos" onClick={() => setView("videos")} className={entry} data-testid="screen-menu-videos">
                   <Video className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
@@ -103,6 +110,45 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
               <button type="button" data-pick="close" onClick={onClose} className={entry} data-testid="screen-menu-close">
                 <X className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
                 {t("screens.menu.close")}
+              </button>
+            </>
+          ) : view === "profiles" ? (
+            <>
+              <button type="button" data-pick="back" onClick={() => setView("menu")} className={entry} data-testid="screen-menu-back">
+                <ChevronLeft className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
+                {t("screens.menu.back")}
+              </button>
+              <p className="px-[2.5vmin] pb-[1vmin] text-[2.2vmin] opacity-60">{t("screens.menu.profilesHint")}</p>
+              {profiles.profiles.map((one, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  data-pick={`profile-${i}`}
+                  data-current={i === profiles.current ? "" : undefined}
+                  onClick={() => {
+                    if (i !== profiles.current) showScreenProfile(i);
+                    onClose();
+                  }}
+                  className={cn(entry, i === profiles.current && "ring-[0.3vmin] ring-white/50")}
+                  data-testid="screen-menu-profile"
+                >
+                  <span className="min-w-0 flex-1 truncate">{one.name || t("screens.menu.unnamed")}</span>
+                  {one.owner ? <span className="shrink-0 text-[2.2vmin] opacity-60">{one.owner}</span> : null}
+                  {i === profiles.current ? <Check className="size-[3.2vmin] shrink-0" aria-label={t("screens.menu.current")} /> : null}
+                </button>
+              ))}
+              <button
+                type="button"
+                data-pick="pair-again"
+                onClick={() => {
+                  pairScreenAgain();
+                  onClose();
+                }}
+                className={entry}
+                data-testid="screen-menu-pair-again"
+              >
+                <Plus className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
+                {t("screens.menu.pairAgain")}
               </button>
             </>
           ) : view === "videos" ? (

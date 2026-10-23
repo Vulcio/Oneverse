@@ -10,9 +10,20 @@ import { setItemView } from "./set-items";
  * for someone to confirm it; with one, it loads its set and follows what's
  * presented over /sync, reconnecting when that drops. Disconnected from a
  * phone, it forgets its token and shows a new code.
+ *
+ * Profiles (issue #284): a screen paired again keeps a token for each
+ * pairing - a venue's TV used by two churches - and shows one at a time,
+ * picked from its menu; the one shown last comes back after a reload. A
+ * profile disconnected, or whose temporary pairing ended, is forgotten and
+ * the screen shows another, or a new code.
  */
 
 const TOKEN_KEY = "songverse.screen.token";
+/** Its profiles (issue #284), JSON: each one's token and what it was last called, for its menu. TOKEN_KEY is the one shown. */
+const PROFILES_KEY = "songverse.screen.profiles";
+/** Sent on the window when the menu picks another profile or asks for a code (issue #284). */
+const PROFILE_EVENT = "sv-screen-profile";
+const PAIR_EVENT = "sv-screen-pair";
 const CLAIM_EVERY_MS = 2000;
 const PING_EVERY_MS = 10_000;
 /** The first report (issue #286): once the screen has drawn for a while, so it has a frame rate to tell. */
@@ -22,7 +33,8 @@ const RELOAD_EVERY_MS = 2 * 60_000;
 
 export type ScreenDisplayState =
   | { kind: "starting" }
-  | { kind: "pairing"; code: string; expiresAt: string }
+  /** `adding`: another profile, beside those it has - it can go back to them. */
+  | { kind: "pairing"; code: string; expiresAt: string; adding: boolean }
   | {
       kind: "showing";
       current: ScreenCurrent;
@@ -50,6 +62,73 @@ function keepToken(token: string | null) {
   } catch {
     // Storage blocked: paired until the page reloads.
   }
+  if (token && !storedProfiles().some((one) => one.token === token)) keepProfiles([...storedProfiles(), { token, name: "", owner: "" }]);
+}
+
+/** One of the screen's pairings (issue #284): its token, and its name and owner's as last loaded. */
+export interface ScreenProfile {
+  token: string;
+  name: string;
+  owner: string;
+}
+
+function storedProfiles(): ScreenProfile[] {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PROFILES_KEY) ?? "[]") as unknown;
+    return Array.isArray(stored) ? stored.filter((one): one is ScreenProfile => typeof one?.token === "string").map((one) => ({ token: one.token, name: String(one.name ?? ""), owner: String(one.owner ?? "") })) : [];
+  } catch {
+    return [];
+  }
+}
+
+function keepProfiles(profiles: ScreenProfile[]) {
+  try {
+    localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+  } catch {
+    // Storage blocked: the one shown only.
+  }
+}
+
+/** The screen's profiles, the one shown marked, for its menu (issue #284). */
+export function screenProfiles(): { profiles: Omit<ScreenProfile, "token">[]; current: number } {
+  const token = storedToken();
+  const profiles = storedProfiles();
+  return { profiles: profiles.map(({ name, owner }) => ({ name, owner })), current: profiles.findIndex((one) => one.token === token) };
+}
+
+/** Shows another of its profiles (issue #284), by its place in screenProfiles(). */
+export function showScreenProfile(index: number) {
+  const profile = storedProfiles()[index];
+  if (!profile) return;
+  keepToken(profile.token);
+  window.dispatchEvent(new Event(PROFILE_EVENT));
+}
+
+/** Shows a code to pair it again (issue #284), for another profile beside its own. */
+export function pairScreenAgain() {
+  window.dispatchEvent(new Event(PAIR_EVENT));
+}
+
+/** Back from showing a code for another profile (issue #284): the one it showed. */
+export function stopPairingAgain() {
+  window.dispatchEvent(new Event(PROFILE_EVENT));
+}
+
+/** The profile shown is forgotten (disconnected, or its pairing ended): the token of another to show, or null. */
+function forgetShown(): string | null {
+  const token = storedToken();
+  const left = storedProfiles().filter((one) => one.token !== token);
+  keepProfiles(left);
+  const next = left[left.length - 1]?.token ?? null;
+  keepToken(next);
+  return next;
+}
+
+/** What the profile shown is called now, for the menu. */
+function nameShown(name: string, owner: string) {
+  const token = storedToken();
+  const profiles = storedProfiles();
+  if (profiles.some((one) => one.token === token && (one.name !== name || one.owner !== owner))) keepProfiles(profiles.map((one) => (one.token === token ? { ...one, name, owner } : one)));
 }
 
 /** Where a screen's token travels to another address (issue #305): the fragment, never sent to a server. */
@@ -159,6 +238,8 @@ export async function pickScreenTheme(pick: { themeId: string | null; themeTempl
 export function useScreenDisplay(): ScreenDisplayState {
   const [state, setState] = useState<ScreenDisplayState>({ kind: "starting" });
   const [token, setToken] = useState<string | null | undefined>(undefined);
+  /** Showing a code for another profile (issue #284), its own still kept. */
+  const [adding, setAdding] = useState(false);
   const presenting = useRef<SyncPresenting | null>(null);
   const stage = useRef<SyncStage | null>(null);
   const offset = useRef(0);
@@ -167,18 +248,30 @@ export function useScreenDisplay(): ScreenDisplayState {
   useEffect(() => {
     adoptHandedToken();
     setToken(storedToken());
+    // Another profile picked from the menu, or a code asked for (issue #284).
+    const switched = () => {
+      setAdding(false);
+      setToken(storedToken());
+    };
+    const pairAgain = () => setAdding(true);
+    window.addEventListener(PROFILE_EVENT, switched);
+    window.addEventListener(PAIR_EVENT, pairAgain);
+    return () => {
+      window.removeEventListener(PROFILE_EVENT, switched);
+      window.removeEventListener(PAIR_EVENT, pairAgain);
+    };
   }, []);
 
-  // No token: a code to show, until someone confirms it.
+  // No token, or another profile asked for: a code to show, until someone confirms it.
   useEffect(() => {
-    if (token !== null) return;
+    if (token !== null && !adding) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     async function pair() {
       try {
         const pairing = await json<{ pairingId: string; code: string; secret: string; expiresAt: string }>(await fetch(api("/screens/pairings"), { method: "POST" }));
         if (stopped) return;
-        setState({ kind: "pairing", code: pairing.code, expiresAt: pairing.expiresAt });
+        setState({ kind: "pairing", code: pairing.code, expiresAt: pairing.expiresAt, adding: token !== null });
         const claim = async () => {
           if (stopped) return;
           const response = await fetch(api(`/screens/pairings/${pairing.pairingId}/claim`), {
@@ -190,11 +283,12 @@ export function useScreenDisplay(): ScreenDisplayState {
           if (response?.status === 201) {
             const { token: claimed } = await json<{ token: string }>(response);
             keepToken(claimed);
+            setAdding(false);
             setToken(claimed);
             return;
           }
-          // Expired: a new code.
-          if (response?.status === 410) return void pair();
+          // Expired: a new code - or, for another profile, back to the one it showed.
+          if (response?.status === 410) return token !== null ? setAdding(false) : void pair();
           timer = setTimeout(() => void claim(), CLAIM_EVERY_MS);
         };
         timer = setTimeout(() => void claim(), CLAIM_EVERY_MS);
@@ -209,11 +303,11 @@ export function useScreenDisplay(): ScreenDisplayState {
       stopped = true;
       if (timer) clearTimeout(timer);
     };
-  }, [token]);
+  }, [token, adding]);
 
   // A token: its set, and what's presented on it.
   useEffect(() => {
-    if (!token) return;
+    if (!token || adding) return;
     let stopped = false;
     let socket: WebSocket | null = null;
     let retry: ReturnType<typeof setTimeout> | null = null;
@@ -226,10 +320,8 @@ export function useScreenDisplay(): ScreenDisplayState {
     /** The words last loaded again for: a key this screen still can't match isn't fetched over and over. */
     let reloadedFor: string | null = null;
 
-    const forget = () => {
-      keepToken(null);
-      setToken(null);
-    };
+    // Disconnected, or its pairing ended (issue #284): another profile, or a new code.
+    const forget = () => setToken(forgetShown());
     const show = () => {
       if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current });
     };
@@ -241,6 +333,7 @@ export function useScreenDisplay(): ScreenDisplayState {
       if (response?.status === 404) return forget();
       if (!response?.ok) return;
       current = await json<ScreenCurrent>(response);
+      nameShown(current.screen.name, current.screen.owner.name);
       show();
     }
     function connect() {
@@ -264,6 +357,8 @@ export function useScreenDisplay(): ScreenDisplayState {
           return;
         }
         if (message.type === "error" && message.code === "disconnected") return forget();
+        // Paired again from Screens (issue #284): a code shown for another profile.
+        if (message.type === "pair-again") return setAdding(true);
         if (message.type === "screen") {
           // Another set, mode or name: loaded again.
           online = true;
@@ -313,7 +408,7 @@ export function useScreenDisplay(): ScreenDisplayState {
       if (firstReport) clearTimeout(firstReport);
       socket?.close();
     };
-  }, [token]);
+  }, [token, adding]);
 
   return state;
 }

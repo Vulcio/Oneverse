@@ -1,4 +1,4 @@
-import { composeBuiltInTemplate, formatScreenCode, normalizeScreenCode, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@oneverse/core";
+import { composeBuiltInTemplate, formatScreenCode, normalizeScreenCode, SCREEN_PAIRING_LENGTHS, SCREEN_SWITCHABLE_LAYERS, type ScreenPairingLength, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { Building2, MonitorCheck, MonitorUp, Plus, Radio, Settings2, User, Users, type LucideIcon } from "lucide-react";
 import { Fragment, useEffect, useState, type FormEvent } from "react";
@@ -361,6 +361,23 @@ function SetSelect({ id, sets, value, onChange, allowNone = false }: { id: strin
 }
 
 /** The code the screen shows, the set it's to show and how: confirmed, the screen shows it at once. */
+const LASTS_LABELS: Record<ScreenPairingLength, string> = { "12h": "screens.lasts12h", "1d": "screens.lasts1d", "1w": "screens.lasts1w", unlimited: "screens.lastsUnlimited" };
+
+/** How long a pairing lasts (issue #284): a guest speaker's laptop, a rented venue, or until it's disconnected. */
+function LastsSelect({ id, value, onChange, placeholder, testId }: { id: string; value: string; onChange: (value: ScreenPairingLength) => void; placeholder?: string; testId: string }) {
+  const { t } = useTranslation();
+  return (
+    <NativeSelect id={id} value={value} onChange={(event) => event.target.value && onChange(event.target.value as ScreenPairingLength)} data-testid={testId}>
+      {placeholder ? <option value="">{placeholder}</option> : null}
+      {SCREEN_PAIRING_LENGTHS.map((lasts) => (
+        <option key={lasts} value={lasts}>
+          {t(LASTS_LABELS[lasts])}
+        </option>
+      ))}
+    </NativeSelect>
+  );
+}
+
 function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClose }: { owners: ScreenOwnerChoice[]; sets: SetlistSummary[]; code: string; setlistId?: string; onPaired: (screen: ScreenSummary) => Promise<void>; onClose: () => void }) {
   const { t } = useTranslation();
   const [owner, setOwner] = useState("user");
@@ -368,6 +385,7 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
   // A set from Live, else the owner's set of the day (issue #274).
   const [set, setSet] = useState(setlistId && sets.some((one) => one.id === setlistId) ? setlistId : DAY_SET);
   const [name, setName] = useState(t("screens.defaultName"));
+  const [lasts, setLasts] = useState<ScreenPairingLength>("unlimited");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A Oneverse Pulse's code (issue #320): said so, and named so.
@@ -397,7 +415,7 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
     setError(null);
     try {
       const shown = setChange(set);
-      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), ...(shown.setMode === "FIXED" ? { setlistId: shown.setlistId ?? undefined } : shown) }));
+      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), ...(lasts !== "unlimited" && { lasts }), ...(shown.setMode === "FIXED" ? { setlistId: shown.setlistId ?? undefined } : shown) }));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -450,6 +468,10 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="screen-set">{t("screens.set")}</Label>
               <SetSelect id="screen-set" sets={sets} value={set} onChange={setSet} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="screen-lasts">{t("screens.lasts")}</Label>
+              <LastsSelect id="screen-lasts" value={lasts} onChange={setLasts} testId="screen-lasts" />
             </div>
             {error ? (
               <p className="text-sm text-destructive sm:col-span-2" role="alert">
@@ -509,6 +531,13 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
               <span className={cn("inline-block size-1.5 rounded-full align-middle", TIER_COLORS[screen.report.tier])} aria-hidden /> {t(`screens.device.tiers.${screen.report.tier}`)}
             </span>
           ) : null}
+          {/* A temporary pairing (issue #284): when it ends. */}
+          {screen.expiresAt ? (
+            <span data-testid="screen-ends">
+              {" · "}
+              {t("screens.endsAt", { when: new Date(screen.expiresAt).toLocaleString(i18n.language, { dateStyle: "medium", timeStyle: "short" }) })}
+            </span>
+          ) : null}
         </p>
         <p className="truncate text-sm" data-testid="screen-set">
           {screen.setMode === "DAY"
@@ -537,6 +566,26 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
           <Settings2 />
           {t("screens.settings")}
         </Button>
+        {/* Extended (issue #284): for this long from now, or unlimited. */}
+        {screen.canManage && screen.expiresAt ? (
+          <div className="w-36">
+            <LastsSelect
+              id={`screen-extend-${screen.id}`}
+              value=""
+              placeholder={t("screens.extend")}
+              testId="screen-extend"
+              onChange={async (lasts) => {
+                setError(null);
+                try {
+                  await apiClient.updateScreen(screen.id, { lasts });
+                  await onChanged();
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : String(err));
+                }
+              }}
+            />
+          </div>
+        ) : null}
         {screen.canManage ? (
           <ConfirmButton
             label={t("screens.disconnect")}
@@ -583,6 +632,7 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
   const { t, i18n } = useTranslation();
   const [name, setName] = useState(screen.name);
   const [error, setError] = useState<string | null>(null);
+  const [pairedAgain, setPairedAgain] = useState(false);
   const known = screen.setMode === "DAY" || screen.setMode === "LOCATION" || !screen.setlistId || sets.some((set) => set.id === screen.setlistId);
   const saved = screen.themeId ? themes.find((one) => one.id === screen.themeId) : undefined;
   const look = screenLook(screen, saved);
@@ -676,6 +726,32 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`screen-owner-${screen.id}`}>{t("screens.owner")}</Label>
                 <OwnerSelect id={`screen-owner-${screen.id}`} owners={owners} current={screen.owner} value={ownerValue(screen.owner)} onChange={(value) => void change({ owner: ownerFrom(value) })} />
+              </div>
+            ) : null}
+            {/* Another profile on the same screen (issue #284): someone else pairs it too, and this one is kept. */}
+            {screen.canManage && screen.kind !== "PULSE" ? (
+              <div className="flex flex-col items-start gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    setError(null);
+                    try {
+                      await apiClient.pairScreenAgain(screen.id);
+                      setPairedAgain(true);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : String(err));
+                    }
+                  }}
+                  data-testid="screen-pair-again"
+                >
+                  <MonitorUp />
+                  {t("screens.pairAgain")}
+                </Button>
+                <p className="text-xs text-muted-foreground" data-testid="screen-pair-again-hint">
+                  {pairedAgain ? t("screens.pairAgainSent") : t("screens.pairAgainHint")}
+                </p>
               </div>
             ) : null}
             {!screen.canManage ? <p className="text-xs text-muted-foreground">{t("screens.notYours")}</p> : null}

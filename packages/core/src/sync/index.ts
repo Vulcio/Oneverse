@@ -456,6 +456,8 @@ export type SyncServerMessage =
   | { type: "ready"; userId: string; coEditing?: boolean }
   /** To a screen: what it is, again whenever that changes (renamed, another mode or set). Then it's gone: disconnected. */
   | { type: "screen"; screen: SyncScreenInfo }
+  /** To a screen (issue #284): show a pairing code again, for another profile beside its own. */
+  | { type: "pair-again" }
   | { type: "pong"; id: number; sent: number; at: number }
   | {
       type: "session";

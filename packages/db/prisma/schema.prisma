@@ -3115,6 +3115,9 @@ model Screen {
   hiddenLayers        String[]      @default([])
   // Effects (issue #281) shown, or off on a screen that can't keep up.
   effects             Boolean       @default(true)
+  // A temporary pairing (issue #284): its token stops working then, and the
+  // screen shows a new code. Null: until it's disconnected.
+  expiresAt           DateTime?
   lastSeenAt          DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt

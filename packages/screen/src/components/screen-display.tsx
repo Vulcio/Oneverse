@@ -1,5 +1,5 @@
 import { composeBuiltInTemplate, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
-import { Music2, WifiOff } from "lucide-react";
+import { ChevronLeft, Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { renderSVG } from "uqr";
@@ -7,7 +7,7 @@ import { ScreenMenu } from "./screen-menu";
 import { ScreenSetPicker } from "./screen-set-picker";
 import { ScreenStage, type StageSong } from "./screen-stage";
 import type { StageLive } from "./screen-widgets";
-import { useScreenDisplay } from "../lib/screen-display";
+import { stopPairingAgain, useScreenDisplay } from "../lib/screen-display";
 import { passageCredit, setItemTitle, setItemView, setlistTitle } from "../lib/set-items";
 
 /**
@@ -27,7 +27,7 @@ export function ScreenDisplay({ pairUrl, pinnedTheme }: { pairUrl: string; pinne
   return (
     // Black under everything: what's on a projector is the words, not the page.
     <div className="fixed inset-0 cursor-none overflow-hidden bg-black text-white select-none" data-testid="screen-display" data-state={state.kind}>
-      {state.kind === "pairing" ? <Pairing code={state.code} pairUrl={pairUrl} /> : null}
+      {state.kind === "pairing" ? <Pairing code={state.code} pairUrl={pairUrl} adding={state.adding} /> : null}
       {state.kind === "showing" ? (
         <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
       ) : null}
@@ -35,9 +35,20 @@ export function ScreenDisplay({ pairUrl, pinnedTheme }: { pairUrl: string; pinne
   );
 }
 
-/** The code to type, and a QR code to scan that opens the phone's page with it: Songverse's Screens. */
-function Pairing({ code, pairUrl }: { code: string; pairUrl: string }) {
+/**
+ * The code to type, and a QR code to scan that opens the phone's page with it: Songverse's Screens.
+ * `adding`: for another profile (issue #284) - Back, or the remote's, returns to the one it showed.
+ */
+function Pairing({ code, pairUrl, adding }: { code: string; pairUrl: string; adding: boolean }) {
   const { t } = useTranslation();
+  useEffect(() => {
+    if (!adding) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.key === "Backspace" || event.key === "GoBack" || event.key === "BrowserBack") stopPairingAgain();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [adding]);
   const base = pairUrl.replace(/\/+$/, "");
   const link = `${base}/screens?code=${code}`;
   const qr = useMemo(() => (link ? renderSVG(link, { pixelSize: 8, whiteColor: "#ffffff", blackColor: "#000000" }) : ""), [link]);
@@ -51,13 +62,19 @@ function Pairing({ code, pairUrl }: { code: string; pairUrl: string }) {
         {/* The QR code on white, for any phone's camera. */}
         <div className="size-[34vmin] rounded-[2vmin] bg-white p-[2vmin] [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: qr }} data-testid="screen-qr" data-link={link} />
         <div className="flex flex-col items-center gap-[2vmin]">
-          <p className="text-[3vmin] text-neutral-400">{t("screens.displayCodeLabel")}</p>
+          <p className="text-[3vmin] text-neutral-400">{adding ? t("screens.displayAddingLabel") : t("screens.displayCodeLabel")}</p>
           <p className="font-mono text-[11vmin] leading-none font-bold tracking-[0.15em]" data-testid="screen-code">
             {formatScreenCode(code)}
           </p>
           <p className="max-w-[60vmin] text-[2.4vmin] text-neutral-400">{t("screens.displayCodeHint", { host: base.replace(/^[a-z]+:\/\//, "") })}</p>
         </div>
       </div>
+      {adding ? (
+        <button type="button" onClick={stopPairingAgain} className="flex cursor-default items-center gap-[1.5vmin] rounded-[1.2vmin] px-[2.5vmin] py-[1.4vmin] text-[2.8vmin] text-neutral-300 outline-none hover:bg-white/15 focus:bg-white focus:text-black" data-testid="screen-pairing-back">
+          <ChevronLeft className="size-[3vmin]" aria-hidden />
+          {t("screens.displayAddingBack")}
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, GoneException, Injectable, NotFoundException } from "@nestjs/common";
-import { localDate, localTime, orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, type ScreenTheme, type SetItemPassage, readScreenReport, screenTier, type ScreenMode, type ScreenReport, type ScreenTier, type ScreenOwnerRequest } from "@oneverse/core";
+import { localDate, localTime, orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, screenPairingEnds, type ScreenPairingLength, type ScreenTheme, type SetItemPassage, readScreenReport, screenTier, type ScreenMode, type ScreenReport, type ScreenTier, type ScreenOwnerRequest } from "@oneverse/core";
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
@@ -33,6 +33,11 @@ type SetMode = "FIXED" | "DAY" | "LOCATION";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
+/** A temporary pairing that has ended (issue #284). */
+const ended = (screen: { expiresAt: Date | null }, now = new Date()) => !!screen.expiresAt && screen.expiresAt <= now;
+/** Screens still paired: unlimited, or not ended yet. */
+const notEnded = () => ({ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] });
+
 const SCREEN_SELECT = {
   id: true,
   name: true,
@@ -42,6 +47,7 @@ const SCREEN_SELECT = {
   themeTemplate: true,
   hiddenLayers: true,
   effects: true,
+  expiresAt: true,
   ownerUserId: true,
   ownerTeamId: true,
   ownerOrganizationId: true,
@@ -128,7 +134,7 @@ export class ScreensService {
    * or (issue #222) a team's or an organisation's they run - its token
    * waiting for it to claim.
    */
-  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; themeId?: string | null; themeTemplate?: string | null }) {
+  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; themeId?: string | null; themeTemplate?: string | null; lasts?: ScreenPairingLength }) {
     const { code, pairingId, pairing } = await this.waiting(input);
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
@@ -137,7 +143,7 @@ export class ScreensService {
     const locationId = change.setMode === "LOCATION" ? await this.assertLocation(owner, change.locationId) : null;
     const token = `scr_${randomBytes(32).toString("base64url")}`;
     let screen = await this.prisma.client.screen.create({
-      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, setByUserId: user.id, ...owner, tokenHash: hash(token), ...lookChange(change) },
+      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, setByUserId: user.id, ...owner, tokenHash: hash(token), expiresAt: screenPairingEnds(change.lasts ?? "unlimited"), ...lookChange(change) },
       select: SCREEN_SELECT,
     });
     if (locationId) screen = await this.followLocation(screen);
@@ -162,10 +168,13 @@ export class ScreensService {
     return { token: pairing.token, screen: present(screen) };
   }
 
-  /** The screen a token signs in, or null. */
+  /** The screen a token signs in, or null - also once its pairing has ended (issue #284): it's gone then, and the screen shows a new code. */
   async byToken(token: string) {
     if (typeof token !== "string" || !token.startsWith("scr_") || token.length > 100) return null;
-    return this.prisma.client.screen.findUnique({ where: { tokenHash: hash(token) }, select: SCREEN_SELECT });
+    const screen = await this.prisma.client.screen.findUnique({ where: { tokenHash: hash(token) }, select: SCREEN_SELECT });
+    if (!screen || !ended(screen)) return screen;
+    await this.prisma.client.screen.deleteMany({ where: { id: screen.id, expiresAt: { lte: new Date() } } });
+    return null;
   }
 
   /** What a screen shows: itself, and its set as the person who paired it reads it (null without one, or when they no longer can). */
@@ -398,11 +407,11 @@ export class ScreensService {
     const scope = await this.scopeOf(user);
     if (setlistId) {
       await this.assertCanPresent(user, setlistId);
-      const screens = await this.prisma.client.screen.findMany({ where: { setlistId }, select: SCREEN_SELECT, orderBy: { createdAt: "asc" } });
+      const screens = await this.prisma.client.screen.findMany({ where: { setlistId, ...notEnded() }, select: SCREEN_SELECT, orderBy: { createdAt: "asc" } });
       return withOnline(screens.map((screen) => present(screen, true)));
     }
     const screens = await this.prisma.client.screen.findMany({
-      where: { OR: [{ ownerUserId: user.id }, { ownerTeamId: { in: [...scope.teams, ...scope.managedTeams] } }, { ownerOrganizationId: { in: [...scope.organizations, ...scope.managedOrganizations] } }] },
+      where: { AND: [{ OR: [{ ownerUserId: user.id }, { ownerTeamId: { in: [...scope.teams, ...scope.managedTeams] } }, { ownerOrganizationId: { in: [...scope.organizations, ...scope.managedOrganizations] } }] }, notEnded()] },
       select: SCREEN_SELECT,
       orderBy: { createdAt: "asc" },
     });
@@ -414,7 +423,7 @@ export class ScreensService {
    * leads the set it shows, gives it another set (one they can edit) - it
    * then reads that set as them.
    */
-  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; themeId?: string | null; themeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean }) {
+  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; themeId?: string | null; themeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean; lasts?: ScreenPairingLength }) {
     const { screen, canManage } = await this.changeable(user, screenId);
     const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode" || key === "locationId");
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
@@ -434,6 +443,8 @@ export class ScreensService {
         ...(change.mode !== undefined && { mode: change.mode }),
         ...(change.hiddenLayers !== undefined && { hiddenLayers: [...new Set(change.hiddenLayers)] }),
         ...(change.effects !== undefined && { effects: change.effects }),
+        // Extended (issue #284): for this long from now.
+        ...(change.lasts !== undefined && { expiresAt: screenPairingEnds(change.lasts) }),
         ...(change.setlistId !== undefined && { setlistId: change.setlistId, setByUserId: change.setlistId ? user.id : null, setlistPickedOn: null }),
         // A set put on it is fixed; the day's set is worked out when it next loads (issue #274).
         ...(change.setMode !== undefined ? { setMode: change.setMode, ...(change.setMode === "DAY" && change.setlistId === undefined && { setlistPickedOn: null }) } : change.setlistId ? { setMode: "FIXED" as const } : {}),
@@ -445,6 +456,18 @@ export class ScreensService {
     if (updated.setMode === "LOCATION") updated = await this.followLocation(updated);
     await redis().publish(SCREEN_CHANNEL, screen.id);
     return present(updated, canManage);
+  }
+
+  /**
+   * Shown a pairing code again (issue #284), on the screen itself: someone
+   * else pairs it to a profile of their own, kept beside this one; the screen
+   * switches between them from its menu.
+   */
+  async pairAgain(user: AuthenticatedUser, screenId: string): Promise<void> {
+    const { screen, canManage } = await this.changeable(user, screenId);
+    if (!canManage) throw new ForbiddenException("Only whoever manages this screen shows a code on it again");
+    if (screen.kind === "PULSE") throw new BadRequestException("A Pulse is paired to one owner: pair another Pulse");
+    await redis().publish(SCREEN_CHANNEL, `pair:${screen.id}`);
   }
 
   async remove(user: AuthenticatedUser, screenId: string): Promise<void> {
@@ -501,7 +524,7 @@ export class ScreensService {
   /** A screen the user may change: one they may use (its managers, its team's or organisation's members), or that shows a set they lead. */
   private async changeable(user: AuthenticatedUser, screenId: string) {
     const screen = await this.prisma.client.screen.findUnique({ where: { id: screenId }, select: SCREEN_SELECT });
-    if (!screen) throw new NotFoundException("Screen not found");
+    if (!screen || ended(screen)) throw new NotFoundException("Screen not found");
     const scope = await this.scopeOf(user);
     const canManage = manages(user, scope, screen);
     if (canManage || uses(user, scope, screen)) return { screen, canManage };
@@ -619,6 +642,7 @@ function present(
     themeTemplate: string | null;
     hiddenLayers: string[];
     effects: boolean;
+    expiresAt: Date | null;
     lastSeenAt: Date | null;
     setMode: SetMode;
     kind: ScreenKind;
@@ -653,5 +677,6 @@ function present(
     themeTemplate: screen.themeTemplate,
     hiddenLayers: SCREEN_SWITCHABLE_LAYERS.filter((layer) => screen.hiddenLayers.includes(layer)),
     effects: screen.effects,
+    expiresAt: screen.expiresAt?.toISOString() ?? null,
   };
 }

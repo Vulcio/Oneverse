@@ -10,6 +10,17 @@ import type { PassageChapter } from "../scriptures/references.js";
 export const SCREEN_MODES = ["LYRICS", "CHART"] as const;
 export type ScreenMode = (typeof SCREEN_MODES)[number];
 
+/** How long a pairing lasts (issue #284): a guest's laptop for a service, a rented venue for a week, or until it's disconnected. */
+export const SCREEN_PAIRING_LENGTHS = ["12h", "1d", "1w", "unlimited"] as const;
+export type ScreenPairingLength = (typeof SCREEN_PAIRING_LENGTHS)[number];
+const PAIRING_LENGTH_MS: Record<ScreenPairingLength, number | null> = { "12h": 12 * 3600_000, "1d": 24 * 3600_000, "1w": 7 * 24 * 3600_000, unlimited: null };
+
+/** When a pairing made (or extended) at `now` for `lasts` ends; null: it doesn't. */
+export function screenPairingEnds(lasts: ScreenPairingLength, now: Date = new Date()): Date | null {
+  const length = PAIRING_LENGTH_MS[lasts];
+  return length === null ? null : new Date(now.getTime() + length);
+}
+
 /** Lines of lyrics on a slide, unless asked otherwise. */
 export const LYRIC_LINES_PER_SLIDE = 2;
 

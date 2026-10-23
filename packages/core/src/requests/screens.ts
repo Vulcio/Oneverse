@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { SCREEN_MODES, SCREEN_PART_KINDS, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, ScreenBackgroundThemeRequestSchema, ScreenContentThemeRequestSchema, ScreenEffectsRequestSchema, ScreenTemplateRequestSchema, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
+import { SCREEN_MODES, SCREEN_PAIRING_LENGTHS, SCREEN_PART_KINDS, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, ScreenBackgroundThemeRequestSchema, ScreenContentThemeRequestSchema, ScreenEffectsRequestSchema, ScreenTemplateRequestSchema, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
 import { optional } from "./fields.js";
 
 /** Screens (issue #186): a screen paired by its code, and changed later by whoever paired it. */
@@ -20,6 +20,8 @@ const screenFields = {
   hiddenLayers: z.array(z.enum(SCREEN_SWITCHABLE_LAYERS)).max(SCREEN_SWITCHABLE_LAYERS.length),
   /** Effects shown (issue #281), or off on a screen that can't keep up. */
   effects: z.boolean(),
+  /** How long the pairing lasts (issue #284), from now: 12h, 1d, 1w or unlimited. */
+  lasts: z.enum(SCREEN_PAIRING_LENGTHS),
 };
 
 /**
@@ -45,6 +47,7 @@ export const ConfirmScreenPairingSchema = z
   locationId: optional(screenFields.locationId),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
+  lasts: optional(screenFields.lasts).describe("How long it stays paired (issue #284); left out: unlimited"),
   })
   .refine((pairing) => pairing.setMode === "DAY" || pairing.setMode === "LOCATION" || !!pairing.setlistId, "setlistId must name the set, unless setMode is DAY or LOCATION")
   .refine((pairing) => pairing.setMode !== "LOCATION" || !!pairing.locationId, "locationId must name the location it follows when setMode is LOCATION");
@@ -72,6 +75,7 @@ export const UpdateScreenSchema = z.strictObject({
   themeTemplate: screenFields.themeTemplate.optional(),
   hiddenLayers: optional(screenFields.hiddenLayers),
   effects: optional(screenFields.effects),
+  lasts: optional(screenFields.lasts).describe("Extended (issue #284): paired for this long from now, or unlimited"),
 });
 export type UpdateScreenRequest = z.input<typeof UpdateScreenSchema>;
 

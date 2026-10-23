@@ -121,6 +121,13 @@ export class ScreensController {
     return this.screens.update(requireUser(user), screenId, dto);
   }
 
+  /** A pairing code shown on it again (issue #284): another profile, beside this one. */
+  @Post(":screenId/pair-again")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  pairAgain(@Param("screenId") screenId: string, @CurrentUser() user: AuthenticatedUser | undefined): Promise<void> {
+    return this.screens.pairAgain(requireUser(user), screenId);
+  }
+
   /** Disconnects it: its token stops working, and it goes back to showing a code. */
   @Delete(":screenId")
   @HttpCode(HttpStatus.NO_CONTENT)

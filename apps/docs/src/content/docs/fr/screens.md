@@ -12,7 +12,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
    ![Un écran affichant son code](../../../assets/screenshots/fr/screen-code.jpg)
 
 2. Sur votre téléphone ou votre tablette, scannez le code QR, ou ouvrez **Écrans** - sous **Outils** dans la barre latérale, ou depuis le menu Synchro de Live (**Écrans…**) - et saisissez le code.
-3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche - une des vôtres, ou **La liste du jour (automatique)** (voir [plus bas](/fr/screens/#la-liste-du-jour)) Puis **Associer l'écran**. Ce qu'il affiche - les paroles ou la grille des musiciens - vient de son [modèle](/fr/screens/#modèles).
+3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche - une des vôtres, ou **La liste du jour (automatique)** (voir [plus bas](/fr/screens/#la-liste-du-jour)) **Associé pour** dit combien de temps il le reste : **Sans limite**, ou **12 heures**, **1 jour** ou **1 semaine** pour l'ordinateur d'un intervenant ou l'écran d'une salle louée (voir [Pour un temps, ou pour plusieurs](/fr/screens/#pour-un-temps-ou-pour-plusieurs)). Puis **Associer l'écran**. Ce qu'il affiche - les paroles ou la grille des musiciens - vient de son [modèle](/fr/screens/#modèles).
 
    ![Associer un écran](../../../assets/screenshots/fr/screens-pair.jpg)
 
@@ -41,7 +41,8 @@ L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une l
 - **Choisir une liste** ouvre la liste des listes ci-dessus. Sur un écran à liste fixe, il est grisé : changez cette liste depuis **Écrans**.
 - **Thème** propose les modèles **Intégrés** et les **Thèmes enregistrés** du propriétaire, celui utilisé étant marqué. Choisissez-en un avec **OK** et l'écran change aussitôt. Il garde ce thème, comme s'il avait été choisi dans les **Réglages** de sa vignette.
 - **Entrée vidéo**, avec un modèle qui en affiche une (voir [Calques](/fr/screens/#calques)), liste les caméras et cartes de capture de l'appareil : **La première caméra disponible**, ou l'une d'elles par son nom. L'écran garde celle choisie, sur cet appareil. Le navigateur demande l'autorisation d'utiliser la caméra la première fois.
-- **Retour** sort des thèmes ou des caméras, et Retour (Échap) ou **Fermer** ferme le menu.
+- **Profils** liste les profils de l'écran, un pour chaque fois qu'il a été associé, celui affiché étant marqué : choisissez-en un autre et l'écran l'affiche. **L'associer à nouveau** affiche un code pour un de plus (voir [Pour un temps, ou pour plusieurs](/fr/screens/#pour-un-temps-ou-pour-plusieurs)).
+- **Retour** sort des thèmes, des caméras ou des profils, et Retour (Échap) ou **Fermer** ferme le menu.
 
 ### À qui est l'écran
 
@@ -51,6 +52,12 @@ Un écran est à vous, à une équipe ou à une organisation. En l'associant, **
 - Qui a un rôle qui permet d'**Administrer les écrans** (voir [Rôles](/fr/admin/#rôles)) - la personne qui s'occupe de la technique à l'église, par exemple - fait de même pour les équipes et organisations pour lesquelles on le lui a donné, sans en être administrateur : elle y associe des écrans et des Pulse, les renomme, les modifie et les déconnecte. Elle ne donne pas un écran à quelqu'un d'autre, et n'y met que des listes qu'elle peut modifier.
 - Les membres de l'équipe ou de l'organisation le voient et y mettent une de leurs listes - une liste qu'ils peuvent modifier. L'écran l'affiche comme eux la voient.
 - Vos écrans partent avec votre compte ; ceux d'une équipe ou d'une organisation, quand elle est supprimée.
+
+### Pour un temps, ou pour plusieurs
+
+Un écran associé pour **12 heures**, **1 jour** ou **1 semaine** dit sur sa vignette quand l'association prend fin (« Jusqu'au 14 oct. 2026, 22:00 »). Ses gestionnaires la repoussent avec **Prolonger**, sur la vignette : pour cette durée à partir de maintenant, ou **Sans limite**. À la fin, l'écran est déconnecté tout seul : il revient à un nouveau code, et sa vignette disparaît d'**Écrans**.
+
+Un même écran peut aussi avoir plusieurs profils - la télé d'une salle utilisée par deux églises, par exemple. Ses gestionnaires ouvrent ses **Réglages** et appuient sur **Afficher à nouveau un code**, ou quelqu'un devant l'écran choisit **Profils**, puis **L'associer à nouveau**, dans [son menu](/fr/screens/#le-menu-de-lécran). L'écran affiche un code, et quelqu'un d'autre l'associe comme d'habitude, à sa liste, son modèle et son propriétaire, pour la durée qu'il choisit ; **Retour** sur l'écran revient au profil qu'il affichait. Chaque profil est un écran à part dans **Écrans** : chaque propriétaire ne voit et ne modifie que le sien, et **Déconnecter** n'enlève que ce profil. L'écran passe d'un profil à l'autre depuis **Profils** dans son menu, et réaffiche le dernier quand on le rallume. Un profil déconnecté, ou arrivé à sa fin, est oublié : l'écran en affiche un autre, ou un nouveau code s'il n'en reste aucun. Un Pulse n'a qu'un propriétaire : associez plutôt un autre Pulse.
 
 ## Présenter depuis Live
 
