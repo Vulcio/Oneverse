@@ -20,6 +20,7 @@
 | Offline, phones and tablets reach Pulse through "Continue on Pulse": a link to Pulse's own page, carrying a pass the cloud signed (valid 12 hours, checked by Pulse offline); no automatic switch | Built (2026-10-23) |
 | Native apps (#165): native shell, UI and playback for stage views; they share logic only (core's JS, or native ports checked against the shared tests), decided per feature; the web UI stays for editing, sets, admin and planning | Decided (2026-10-22) |
 | Locations (#320): an organisation's or a team's, picked by events beside their free-text place; a Pulse can follow every event at one | Decided (2026-10-23), in progress |
+| NDI (#196): Oneverse Screen shows any NDI source on the network - Pulse's output or a video mixer's; what a Screen contributes (its camera, its screen capture) goes to a video mixer, not to Pulse, which doesn't take NDI in | Decided (2026-10-23) |
 | Organisations govern their teams' Sets rather than owning Sets | Proposed |
 
 ## 1. Product map
@@ -142,6 +143,6 @@ Proposed answers are in sections 4–7; still open:
 - What a guest may do in a session (lease length, 60 s, and the record's retention, 90 days, are decided).
 - Licensed capabilities of each imported translation (search, caching, offline usage, projection, export); YouVersion's are settled with YouVersion.
 - Which item kinds after passages: PDF pages or PPTX slides first.
-- How Oneverse Screen (now on GitHub, with NDI playback and contribution and a hybrid Web+NDI display) reaches release on each platform, validated on hardware, measured with #286's reports; how its NDI relates to Pulse's planned NDI output (#196).
+- How Oneverse Screen (now on GitHub, with NDI playback and contribution and a hybrid Web+NDI display) reaches release on each platform, validated on hardware, measured with #286's reports.
 
 **Guiding rule:** one shared model and authority, multiple purpose-built applications, independent entry points and resilient display clients.
