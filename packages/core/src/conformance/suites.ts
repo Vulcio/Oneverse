@@ -22,7 +22,7 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
-import { applyLiveOp, liveSessionAt, mayPresent } from "../live/index.js";
+import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent } from "../live/index.js";
 import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -315,6 +315,14 @@ const LIVE_SESSION = {
   screens: null,
 };
 const LIVE_LOCKED = { ...LIVE_SESSION, screens: { id: "u_o", name: "Olu", device: "i:3", exclusive: true } };
+const LIVE_CUER = { ...LIVE_SINGER, canCue: true };
+/** A set of three items as a cue sees it: a song of three sections, a text of one, a passage whose words aren't known. */
+const CUE_ITEMS = [
+  { id: "item_1", sections: [0, 2, 5], slideKey: "7-aaaa" },
+  { id: "item_2", sections: [0], slideKey: "2-bbbb" },
+  { id: "item_3", sections: [0] },
+];
+const CUE = { cueItems: CUE_ITEMS };
 
 export const CONFORMANCE: ConformanceArea[] = [
   {
@@ -2304,7 +2312,7 @@ export const CONFORMANCE: ConformanceArea[] = [
       applyLiveOp: {
         about:
           "The session after an op, at `now` (ms): `{ok, changed, session}` (session null: none, or ended), or `{ok: false, code, message}` refused as forbidden, stale or bad-request. Each change goes up `rev`; a change of what's presented goes up `presentingRev` too, which a command's `basedOn` is checked against.",
-        params: ["session", "actor", "op", "now"],
+        params: ["session", "actor", "op", "now", "context"],
         run: applyLiveOp,
         cases: [
           { name: "an editor starts a session by leading", args: [null, LIVE_EDITOR, { kind: "lead" }, 1000] },
@@ -2337,6 +2345,15 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the leader hands presenting to someone in the set", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "presenter", userId: "u_s", name: "Sam", allow: true }, 1000] },
           { name: "not in the set: no name, refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "presenter", userId: "u_s", allow: true }, 1000] },
           { name: "only the leader hands it", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "presenter", userId: "u_s", name: "Sam", allow: true }, 1000] },
+          { name: "someone who cues moves the screens to the next song (issue #322)", args: [LIVE_SESSION, LIVE_CUER, { kind: "cue", direction: "next", to: "item", basedOn: 4 }, 1000, CUE] },
+          { name: "someone who cues moves the screens to the next section", args: [LIVE_SESSION, LIVE_CUER, { kind: "cue", direction: "next", to: "section" }, 1000, CUE] },
+          { name: "a cue pressed twice from the same slide: the second is stale", args: [LIVE_SESSION, LIVE_CUER, { kind: "cue", direction: "next", to: "item", basedOn: 3 }, 1000, CUE] },
+          { name: "a singer who doesn't cue can't", args: [LIVE_SESSION, LIVE_SINGER, { kind: "cue", direction: "next", to: "item" }, 1000, CUE] },
+          { name: "a presenter may cue too: back to the song's first section", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "cue", direction: "previous", to: "section" }, 1000, CUE] },
+          { name: "locked: nobody else cues", args: [LIVE_LOCKED, LIVE_CUER, { kind: "cue", direction: "next", to: "item" }, 1000, CUE] },
+          { name: "past the set's last item: no change", args: [{ ...LIVE_SESSION, presenting: { itemId: "item_3", slide: 0, black: false } }, LIVE_CUER, { kind: "cue", direction: "next", to: "item" }, 1000, CUE] },
+          { name: "a cue where the set isn't known is refused", args: [LIVE_SESSION, LIVE_CUER, { kind: "cue", direction: "next", to: "item" }, 1000] },
+          { name: "a cue to somewhere it doesn't know is refused", args: [LIVE_SESSION, LIVE_CUER, { kind: "cue", direction: "up", to: "item" }, 1000, CUE] },
           { name: "an editor ends it", args: [LIVE_SESSION, { ...LIVE_EDITOR, device: "i:9" }, { kind: "end" }, 1000] },
           { name: "an op nobody knows is refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "dance" }, 1000] },
         ],
@@ -2348,6 +2365,54 @@ export const CONFORMANCE: ConformanceArea[] = [
         cases: [
           { name: "within the minute", args: [{ ...LIVE_LOCKED, screens: { ...LIVE_LOCKED.screens, leftAt: 1000 } }, 60_999] },
           { name: "after it", args: [{ ...LIVE_LOCKED, screens: { ...LIVE_LOCKED.screens, leftAt: 1000 } }, 61_000] },
+        ],
+      },
+      cueItem: {
+        about: "A set item as a cue sees it (issue #322), from its slides as the screens cut them: the first slide of each section (where the pass changes) and the slides' key; no slides known: one section and no key.",
+        params: ["id", "slides"],
+        run: cueItem,
+        cases: [
+          {
+            name: "a song of a verse in two slides, a chorus, and a verse again",
+            args: [
+              "item_1",
+              [
+                { passIndex: 0, lines: ["Amazing grace", "how sweet the sound"] },
+                { passIndex: 0, lines: ["That saved a wretch", "like me"] },
+                { passIndex: 1, lines: ["My chains are gone"] },
+                { passIndex: 2, lines: ["Twas grace that taught"] },
+              ],
+            ],
+          },
+          { name: "words not known", args: ["item_2", null] },
+        ],
+      },
+      cueTarget: {
+        about: "Where a cue goes (issue #322): the first slide of the next or previous item, or section - past an item's last section the next item's first, before its first the previous item's last; back from inside a section, its own start. Nothing shown, or an item no longer in the set: the first item. Null: nowhere to go.",
+        params: ["items", "presenting", "direction", "to"],
+        run: cueTarget,
+        cases: [
+          { name: "next song", args: [CUE_ITEMS, { itemId: "item_1", slide: 3, black: false }, "next", "item"] },
+          { name: "previous song from the first: nowhere", args: [CUE_ITEMS, { itemId: "item_1", slide: 3, black: false }, "previous", "item"] },
+          { name: "next section within the song", args: [CUE_ITEMS, { itemId: "item_1", slide: 3, black: false }, "next", "section"] },
+          { name: "next section from the song's last: the next song", args: [CUE_ITEMS, { itemId: "item_1", slide: 6, black: false }, "next", "section"] },
+          { name: "previous section from inside one: its own start", args: [CUE_ITEMS, { itemId: "item_1", slide: 3, black: false }, "previous", "section"] },
+          { name: "previous section from a section's start", args: [CUE_ITEMS, { itemId: "item_1", slide: 2, black: false }, "previous", "section"] },
+          { name: "previous section from an item's first: the previous item's last", args: [CUE_ITEMS, { itemId: "item_2", slide: 0, black: false }, "previous", "section"] },
+          { name: "nothing shown: the first item", args: [CUE_ITEMS, null, "next", "item"] },
+          { name: "an item no longer in the set: the first item", args: [CUE_ITEMS, { itemId: "gone", slide: 1, black: false }, "next", "section"] },
+          { name: "words not known: no key", args: [CUE_ITEMS, { itemId: "item_2", slide: 0, black: false }, "next", "item"] },
+          { name: "an empty set", args: [[], null, "next", "item"] },
+        ],
+      },
+      mayCue: {
+        about: "Whether someone may cue now (issue #322): anyone who may present, or cues by a role - and the screens aren't locked to someone else.",
+        params: ["session", "actor"],
+        run: mayCue,
+        cases: [
+          { name: "someone who cues", args: [LIVE_SESSION, LIVE_CUER] },
+          { name: "a singer", args: [LIVE_SESSION, LIVE_SINGER] },
+          { name: "someone who cues, while the screens are locked", args: [LIVE_LOCKED, LIVE_CUER] },
         ],
       },
       mayPresent: {

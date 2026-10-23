@@ -64,9 +64,10 @@ The one place that says what people may do beyond their own and their teams' son
 - **Upload audio files** - recordings and stems. People who sign up don't have it, but can still record in Songverse; the built-in **Audio uploads** role allows it, and was given to everyone who had an account when it came in;
 - **Keep lossless originals** - a WAV, FLAC or AIFF they upload keeps its original, as FLAC (a WAV at its own sample rate and bit depth), beside the Opus copy that's played; without it, only the Opus copy is kept (see [Audio files](/library/#audio-files-and-their-originals));
 - **Run the screens** - control what's presented on the screens of any set they can open, beside its leader, and lock that control to themselves (see [The media operator](/screens/#the-media-operator));
+- **Move the screens on** - move the screens of any set they can open to the next or previous song or section, from Live's Sync menu, without presenting any other slide: for singers who lead the set on (see [Moving the screens on](/screens/#moving-the-screens-on));
 - **A storage tier** - how much a person may store, or a team's pool.
 
-**Teams can give it** lets a team's or an organisation's admins give the role to their own members, on their team or organisation only (see [Teams](/teams/#roles-on-the-team)). Given that way, it lets them run the screens there and nothing else: storage, uploads, stems and review stay what you give here. Untick it and the roles teams gave stop counting.
+**Teams can give it** lets a team's or an organisation's admins give the role to their own members, on their team or organisation only (see [Teams](/teams/#roles-on-the-team)). Given that way, it lets them run the screens, or move them on, there and nothing else: storage, uploads, stems and review stay what you give here. Untick it and the roles teams gave stop counting.
 
 **Reviewer**, **Stem separation**, **Audio uploads** and **Media operator** (runs the screens; teams can give it) are built in: they can be edited but not deleted. **New role** adds your own, such as "Storage 10 GB". Give roles to people in **Users** and to teams in **Teams**. Someone can do what any of their roles allows - their own and their teams' - and the largest limit wins; without a storage tier, the defaults in **Storage** apply. Global admins can do everything. Changes take effect straight away.
 

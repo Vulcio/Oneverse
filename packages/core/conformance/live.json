@@ -9,7 +9,8 @@
         "session",
         "actor",
         "op",
-        "now"
+        "now",
+        "context"
       ],
       "cases": [
         {
@@ -1940,6 +1941,772 @@
           }
         },
         {
+          "name": "someone who cues moves the screens to the next song (issue #322)",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            },
+            {
+              "kind": "cue",
+              "direction": "next",
+              "to": "item",
+              "basedOn": 4
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_2",
+                "slide": 0,
+                "black": false,
+                "slideKey": "2-bbbb"
+              },
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "someone who cues moves the screens to the next section",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            },
+            {
+              "kind": "cue",
+              "direction": "next",
+              "to": "section"
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 5,
+                "black": false,
+                "slideKey": "7-aaaa"
+              },
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "a cue pressed twice from the same slide: the second is stale",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            },
+            {
+              "kind": "cue",
+              "direction": "next",
+              "to": "item",
+              "basedOn": 3
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "code": "stale",
+            "message": "The screens moved on before this: here's what they show now"
+          }
+        },
+        {
+          "name": "a singer who doesn't cue can't",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "cue",
+              "direction": "next",
+              "to": "item"
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Only someone who may present or cue moves the screens"
+          }
+        },
+        {
+          "name": "a presenter may cue too: back to the song's first section",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_p",
+              "name": "Pia",
+              "device": "i:4",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "cue",
+              "direction": "previous",
+              "to": "section"
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 0,
+                "black": false,
+                "slideKey": "7-aaaa"
+              },
+              "presentingRev": 5,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "locked: nobody else cues",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            },
+            {
+              "kind": "cue",
+              "direction": "next",
+              "to": "item"
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Olu runs the screens"
+          }
+        },
+        {
+          "name": "past the set's last item: no change",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_3",
+                "slide": 0,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            },
+            {
+              "kind": "cue",
+              "direction": "next",
+              "to": "item"
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": true,
+            "changed": false,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_3",
+                "slide": 0,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
+          "name": "a cue where the set isn't known is refused",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            },
+            {
+              "kind": "cue",
+              "direction": "next",
+              "to": "item"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "The set isn't known here"
+          }
+        },
+        {
+          "name": "a cue to somewhere it doesn't know is refused",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            },
+            {
+              "kind": "cue",
+              "direction": "up",
+              "to": "item"
+            },
+            1000,
+            {
+              "cueItems": [
+                {
+                  "id": "item_1",
+                  "sections": [
+                    0,
+                    2,
+                    5
+                  ],
+                  "slideKey": "7-aaaa"
+                },
+                {
+                  "id": "item_2",
+                  "sections": [
+                    0
+                  ],
+                  "slideKey": "2-bbbb"
+                },
+                {
+                  "id": "item_3",
+                  "sections": [
+                    0
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "direction must be next or previous"
+          }
+        },
+        {
           "name": "an editor ends it",
           "args": [
             {
@@ -2175,6 +2942,635 @@
             ],
             "screens": null
           }
+        }
+      ]
+    },
+    "cueItem": {
+      "about": "A set item as a cue sees it (issue #322), from its slides as the screens cut them: the first slide of each section (where the pass changes) and the slides' key; no slides known: one section and no key.",
+      "params": [
+        "id",
+        "slides"
+      ],
+      "cases": [
+        {
+          "name": "a song of a verse in two slides, a chorus, and a verse again",
+          "args": [
+            "item_1",
+            [
+              {
+                "passIndex": 0,
+                "lines": [
+                  "Amazing grace",
+                  "how sweet the sound"
+                ]
+              },
+              {
+                "passIndex": 0,
+                "lines": [
+                  "That saved a wretch",
+                  "like me"
+                ]
+              },
+              {
+                "passIndex": 1,
+                "lines": [
+                  "My chains are gone"
+                ]
+              },
+              {
+                "passIndex": 2,
+                "lines": [
+                  "Twas grace that taught"
+                ]
+              }
+            ]
+          ],
+          "expected": {
+            "id": "item_1",
+            "sections": [
+              0,
+              2,
+              3
+            ],
+            "slideKey": "4-14ji6h7"
+          }
+        },
+        {
+          "name": "words not known",
+          "args": [
+            "item_2",
+            null
+          ],
+          "expected": {
+            "id": "item_2",
+            "sections": [
+              0
+            ]
+          }
+        }
+      ]
+    },
+    "cueTarget": {
+      "about": "Where a cue goes (issue #322): the first slide of the next or previous item, or section - past an item's last section the next item's first, before its first the previous item's last; back from inside a section, its own start. Nothing shown, or an item no longer in the set: the first item. Null: nowhere to go.",
+      "params": [
+        "items",
+        "presenting",
+        "direction",
+        "to"
+      ],
+      "cases": [
+        {
+          "name": "next song",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_1",
+              "slide": 3,
+              "black": false
+            },
+            "next",
+            "item"
+          ],
+          "expected": {
+            "itemId": "item_2",
+            "slide": 0,
+            "black": false,
+            "slideKey": "2-bbbb"
+          }
+        },
+        {
+          "name": "previous song from the first: nowhere",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_1",
+              "slide": 3,
+              "black": false
+            },
+            "previous",
+            "item"
+          ],
+          "expected": null
+        },
+        {
+          "name": "next section within the song",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_1",
+              "slide": 3,
+              "black": false
+            },
+            "next",
+            "section"
+          ],
+          "expected": {
+            "itemId": "item_1",
+            "slide": 5,
+            "black": false,
+            "slideKey": "7-aaaa"
+          }
+        },
+        {
+          "name": "next section from the song's last: the next song",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_1",
+              "slide": 6,
+              "black": false
+            },
+            "next",
+            "section"
+          ],
+          "expected": {
+            "itemId": "item_2",
+            "slide": 0,
+            "black": false,
+            "slideKey": "2-bbbb"
+          }
+        },
+        {
+          "name": "previous section from inside one: its own start",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_1",
+              "slide": 3,
+              "black": false
+            },
+            "previous",
+            "section"
+          ],
+          "expected": {
+            "itemId": "item_1",
+            "slide": 2,
+            "black": false,
+            "slideKey": "7-aaaa"
+          }
+        },
+        {
+          "name": "previous section from a section's start",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_1",
+              "slide": 2,
+              "black": false
+            },
+            "previous",
+            "section"
+          ],
+          "expected": {
+            "itemId": "item_1",
+            "slide": 0,
+            "black": false,
+            "slideKey": "7-aaaa"
+          }
+        },
+        {
+          "name": "previous section from an item's first: the previous item's last",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_2",
+              "slide": 0,
+              "black": false
+            },
+            "previous",
+            "section"
+          ],
+          "expected": {
+            "itemId": "item_1",
+            "slide": 5,
+            "black": false,
+            "slideKey": "7-aaaa"
+          }
+        },
+        {
+          "name": "nothing shown: the first item",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            null,
+            "next",
+            "item"
+          ],
+          "expected": {
+            "itemId": "item_1",
+            "slide": 0,
+            "black": false,
+            "slideKey": "7-aaaa"
+          }
+        },
+        {
+          "name": "an item no longer in the set: the first item",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "gone",
+              "slide": 1,
+              "black": false
+            },
+            "next",
+            "section"
+          ],
+          "expected": {
+            "itemId": "item_1",
+            "slide": 0,
+            "black": false,
+            "slideKey": "7-aaaa"
+          }
+        },
+        {
+          "name": "words not known: no key",
+          "args": [
+            [
+              {
+                "id": "item_1",
+                "sections": [
+                  0,
+                  2,
+                  5
+                ],
+                "slideKey": "7-aaaa"
+              },
+              {
+                "id": "item_2",
+                "sections": [
+                  0
+                ],
+                "slideKey": "2-bbbb"
+              },
+              {
+                "id": "item_3",
+                "sections": [
+                  0
+                ]
+              }
+            ],
+            {
+              "itemId": "item_2",
+              "slide": 0,
+              "black": false
+            },
+            "next",
+            "item"
+          ],
+          "expected": {
+            "itemId": "item_3",
+            "slide": 0,
+            "black": false
+          }
+        },
+        {
+          "name": "an empty set",
+          "args": [
+            [],
+            null,
+            "next",
+            "item"
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "mayCue": {
+      "about": "Whether someone may cue now (issue #322): anyone who may present, or cues by a role - and the screens aren't locked to someone else.",
+      "params": [
+        "session",
+        "actor"
+      ],
+      "cases": [
+        {
+          "name": "someone who cues",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "a singer",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false
+            }
+          ],
+          "expected": false
+        },
+        {
+          "name": "someone who cues, while the screens are locked",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": {
+                "id": "u_o",
+                "name": "Olu",
+                "device": "i:3",
+                "exclusive": true
+              }
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false,
+              "canCue": true
+            }
+          ],
+          "expected": false
         }
       ]
     },

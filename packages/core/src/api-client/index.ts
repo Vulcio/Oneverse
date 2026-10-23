@@ -872,7 +872,7 @@ export interface ScreenCurrent {
  * only (issue #270): those Admin made team-assignable, and who has which.
  */
 export interface ScopedRolesView {
-  roles: { id: string; name: string; description: string; canOperateScreens: boolean }[];
+  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean }[];
   members: { userId: string; roleIds: string[] }[];
 }
 
@@ -891,6 +891,8 @@ export interface AdminRole {
   canUploadAudio: boolean;
   /** Controls what's presented on the screens of the sets they can open (issue #305). */
   canOperateScreens: boolean;
+  /** Moves the screens of the sets they can open to the next or previous song or section (issue #322). */
+  canCue: boolean;
   /** A team's or an organisation's admins give it to their own members, on their team or organisation only (issue #270). */
   teamAssignable: boolean;
   /** Null: Admin > Stem separation's. */

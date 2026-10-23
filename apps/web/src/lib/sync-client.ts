@@ -81,6 +81,8 @@ export interface SyncState {
   screensMine: boolean;
   /** This user may present now (issue #305): leads, runs screens, or was handed it - and control isn't locked to someone else. */
   canPresent: boolean;
+  /** This user may cue now (issue #322): move the screens to the next or previous song or section; left out by an older server. */
+  canCue?: boolean;
   /** This user runs screens (issue #305): can edit the set, or has a role that runs screens. */
   canOperate: boolean;
   /** A change this device made is on its way, not yet confirmed by the server (issue #247). */
@@ -263,6 +265,7 @@ function receive(message: SyncServerMessage) {
         // An older server doesn't say: the leader, unless locked out, and who runs the screens.
         canOperate: message.canOperate ?? message.canLead,
         canPresent: message.canPresent ?? (!!message.screensMine || (message.leading && !(message.session?.screens?.exclusive && !message.screensMine))),
+        canCue: !!message.canCue,
       });
       setMetronomeStartDelay(message.leading ? LEADER_START_DELAY : 0.08);
       // Just took the lead: the metronome carries on as it was (followed, or the session's), and goes out.
@@ -534,6 +537,18 @@ export function presentScreens(presenting: SyncPresenting | null) {
   emit({});
 }
 
+
+/**
+ * The screens to the next or previous song or section (issue #322): from
+ * someone who may cue - a singer - where to is worked out by the session from
+ * the set. Based on what they showed: pressed twice before the screens moved,
+ * the second is refused, and the session says where they are.
+ */
+export function cueScreens(direction: "next" | "previous", to: "item" | "section") {
+  if (!state.canCue) return;
+  commands.submit({ kind: "cue", direction, to, basedOn: presentRev }, serverSession?.epoch);
+  emit({});
+}
 
 /** The media operator (issue #269): the set's timer and message for its screens; anyone who can lead the set, leading or not. */
 export function sendStage(command: SyncStageCommand) {

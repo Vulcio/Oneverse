@@ -2,6 +2,7 @@ import "../zod-config.js";
 import { z } from "zod";
 import { STEM_SPEED_MAX, STEM_SPEED_MIN } from "../stems/index.js";
 import type { SyncPresenting, SyncSession } from "../sync/index.js";
+import { cueTarget, type CueItem } from "./cue.js";
 
 /**
  * The live session (issue #247, docs/live-session.md): how a set's session
@@ -37,6 +38,13 @@ export interface LiveActor {
   canLead: boolean;
   /** Runs screens by a role where the set's team or organisation has it (issue #270). */
   canOperate: boolean;
+  /** Cues by a role where the set's team or organisation has it (issue #322): the next or previous song or section only. */
+  canCue?: boolean;
+}
+
+/** What an op may need from the set beside the session, given by where it runs: a cue, the set's items as it cuts them (issue #322). */
+export interface LiveOpContext {
+  cueItems?: CueItem[];
 }
 
 /**
@@ -100,6 +108,8 @@ export const LiveOpSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("screens"), control: z.enum(["shared", "exclusive"]).nullable() }),
   /** What the screens show (issue #305), from anyone who may present. */
   z.object({ kind: z.literal("present"), presenting: SyncPresentingSchema.nullable(), basedOn }),
+  /** The screens to the next or previous song or section (issue #322), from someone who may cue: where to is worked out from the set, not sent. */
+  z.object({ kind: z.literal("cue"), direction: z.enum(["next", "previous"]), to: z.enum(["item", "section"]), basedOn }),
   /** The leader hands presenting to someone in the set, by the name they're there with, or takes it back. */
   z.object({ kind: z.literal("presenter"), userId: id, name: z.string().max(200).optional(), allow: z.boolean() }),
   /** The device leaves the set; `dropped`: its connection went, so the screens it runs wait for it. */
@@ -132,6 +142,8 @@ const INVALID: Record<string, string> = {
   control: "Invalid control",
   userId: "Give a userId and allow",
   allow: "Give a userId and allow",
+  direction: "direction must be next or previous",
+  to: "to must be item or section",
 };
 
 /** The session as it is at `now`: screens whose operator dropped more than LIVE_SCREENS_GRACE_MS ago are the leader's again. */
@@ -146,6 +158,13 @@ export function mayPresent(session: LiveSessionState | null, actor: LiveActor): 
   // Locked to someone: to them, on whichever of their devices - one they came back on after a drop too.
   if (session.screens?.exclusive && session.screens.id !== actor.userId) return false;
   return actor.canLead || actor.canOperate || session.leader.device === actor.device || !!session.presenters?.some((one) => one.id === actor.userId);
+}
+
+/** Whether someone may cue now (issue #322): anyone who may present, or cues by a role - and the screens aren't locked to someone else. */
+export function mayCue(session: LiveSessionState | null, actor: LiveActor): boolean {
+  if (mayPresent(session, actor)) return true;
+  if (!actor.canCue) return false;
+  return !(session?.screens?.exclusive && session.screens.id !== actor.userId);
 }
 
 /** Whether two "this item, slide N" say the same: the same slide, black or not, of the same words (issue #247). */
@@ -166,7 +185,7 @@ const changed = (session: LiveSessionState | null): LiveResult => ({ ok: true, c
  * screens once, the second is refused as stale. An op that changes nothing
  * (the same slide again, giving back screens one doesn't have) is no change.
  */
-export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, input: unknown, now: number): LiveResult {
+export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, input: unknown, now: number, context: LiveOpContext = {}): LiveResult {
   const parsed = LiveOpSchema.safeParse(input);
   if (!parsed.success) {
     const field = parsed.error.issues[0]?.path[0];
@@ -229,6 +248,16 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
       if (stale(op.basedOn)) return refuse("stale", "The screens moved on before this: here's what they show now");
       if (samePresenting(current.presenting ?? null, op.presenting)) return unchanged(current);
       return changed({ ...current, rev: current.rev + 1, presenting: op.presenting, presentingRev: (current.presentingRev ?? 0) + 1 });
+    case "cue": {
+      if (!current) return refuse("forbidden", "Nobody's leading this set yet");
+      if (!mayCue(current, actor)) return refuse("forbidden", lockedBy ? `${lockedBy} runs the screens` : "Only someone who may present or cue moves the screens");
+      if (stale(op.basedOn)) return refuse("stale", "The screens moved on before this: here's what they show now");
+      if (!context.cueItems) return refuse("bad-request", "The set isn't known here");
+      const presenting = cueTarget(context.cueItems, current.presenting ?? null, op.direction, op.to);
+      // The end of the set, or the same slide: nowhere to go.
+      if (!presenting || samePresenting(current.presenting ?? null, presenting)) return unchanged(current);
+      return changed({ ...current, rev: current.rev + 1, presenting, presentingRev: (current.presentingRev ?? 0) + 1 });
+    }
     case "presenter": {
       if (!current || current.leader.device !== actor.device) return refuse("forbidden", "Only the leader hands presenting to someone");
       const presenters = (current.presenters ?? []).filter((one) => one.id !== op.userId);
@@ -256,3 +285,4 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
   }
 }
 export * from "./commands.js";
+export * from "./cue.js";

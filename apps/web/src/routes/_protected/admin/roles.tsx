@@ -133,6 +133,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
   const [canKeepLossless, setCanKeepLossless] = useState(role?.canKeepLosslessAudio ?? false);
   const [canUploadAudio, setCanUploadAudio] = useState(role?.canUploadAudio ?? false);
   const [canOperateScreens, setCanOperateScreens] = useState(role?.canOperateScreens ?? false);
+  const [canCue, setCanCue] = useState(role?.canCue ?? false);
   const [teamAssignable, setTeamAssignable] = useState(role?.teamAssignable ?? false);
   const [monthlyLimit, setMonthlyLimit] = useState(role?.stemSeparationMonthlyLimit?.toString() ?? "");
   const [hasStorage, setHasStorage] = useState(role?.storageLimitMb != null);
@@ -151,6 +152,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
       canKeepLosslessAudio: canKeepLossless,
       canUploadAudio,
       canOperateScreens,
+      canCue,
       teamAssignable,
       stemSeparationMonthlyLimit: canSeparateStems && monthlyLimit.trim() ? Number(monthlyLimit) : null,
       storageLimitMb: hasStorage && storageMb.trim() ? Number(storageMb) : null,
@@ -212,6 +214,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
             {check(canUploadAudio, setCanUploadAudio, t("admin.roleAudioUploads"), t("admin.roleAudioUploadsHint"), "role-audio-uploads")}
             {check(canKeepLossless, setCanKeepLossless, t("admin.roleLossless"), t("admin.roleLosslessHint"), "role-lossless")}
             {check(canOperateScreens, setCanOperateScreens, t("admin.roleOperateScreens"), t("admin.roleOperateScreensHint"), "role-operate-screens")}
+            {check(canCue, setCanCue, t("admin.roleCue"), t("admin.roleCueHint"), "role-cue")}
             {check(teamAssignable, setTeamAssignable, t("admin.roleTeamAssignable"), t("admin.roleTeamAssignableHint"), "role-team-assignable")}
             {check(hasStorage, setHasStorage, t("admin.roleStorageTier"), t("admin.roleStorageTierHint"), "role-storage")}
             {hasStorage ? (

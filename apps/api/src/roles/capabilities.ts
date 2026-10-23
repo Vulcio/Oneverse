@@ -15,6 +15,8 @@ export interface Capabilities {
   canUploadAudio: boolean;
   /** Controls what's presented on the screens of the sets they can open (issue #305), beside the set's leader. */
   canOperateScreens: boolean;
+  /** Moves the screens of the sets they can open to the next or previous song or section (issue #322). */
+  canCue: boolean;
   /** Each separating role's monthly limit; null: the one set in Admin > Stem separation. See monthlyLimitOf. */
   stemSeparationMonthlyLimits: (number | null)[];
   /** Their own storage limit; null: the default one. */
@@ -32,6 +34,7 @@ type RoleRow = {
   canKeepLosslessAudio: boolean;
   canUploadAudio: boolean;
   canOperateScreens: boolean;
+  canCue: boolean;
   stemSeparationMonthlyLimit: number | null;
   storageLimitMb: number | null;
   permissions: string[];
@@ -44,6 +47,7 @@ const ROLE_FIELDS = {
   canKeepLosslessAudio: true,
   canUploadAudio: true,
   canOperateScreens: true,
+  canCue: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,
   permissions: true,
@@ -63,6 +67,7 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canKeepLosslessAudio: roles.some((role) => role.canKeepLosslessAudio),
     canUploadAudio: roles.some((role) => role.canUploadAudio),
     canOperateScreens: roles.some((role) => role.canOperateScreens),
+    canCue: roles.some((role) => role.canCue),
     stemSeparationMonthlyLimits: separating.map((role) => role.stemSeparationMonthlyLimit),
     storageLimitMb: largest(roles.map((role) => role.storageLimitMb)),
     permissions: [...new Set(roles.flatMap((role) => role.permissions))].sort(),
@@ -95,7 +100,7 @@ export async function capabilitiesOf(prisma: PrismaClient, userId: string): Prom
  * What a user may do on one team's things - its sets, its screens (issue
  * #270): their roles everywhere, and those given them on that team or its
  * organisation. A role given there counts for what makes sense there only:
- * running screens. Storage, uploads, review and stem separation stay the
+ * running screens, cueing them. Storage, uploads, review and stem separation stay the
  * roles given everywhere.
  */
 export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamId: string | null): Promise<Capabilities> {
@@ -105,9 +110,13 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
   if (!team) return everywhere;
   const scoped = await prisma.role.findMany({
     where: { teamAssignable: true, assignments: { some: { userId, OR: [{ scopeTeamId: teamId }, ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId }] : [])] } } },
-    select: { id: true, canOperateScreens: true },
+    select: { id: true, canOperateScreens: true, canCue: true },
   });
-  return { ...everywhere, canOperateScreens: everywhere.canOperateScreens || scoped.some((role) => role.canOperateScreens) };
+  return {
+    ...everywhere,
+    canOperateScreens: everywhere.canOperateScreens || scoped.some((role) => role.canOperateScreens),
+    canCue: everywhere.canCue || scoped.some((role) => role.canCue),
+  };
 }
 
 /** A team's own roles: what its pool may hold. */

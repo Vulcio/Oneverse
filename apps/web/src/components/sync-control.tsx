@@ -12,8 +12,16 @@ import {
 } from "@oneverse/ui/components/dropdown-menu";
 import { useMetronome } from "#/lib/metronome-engine";
 import { useStems } from "#/lib/stem-engine";
-import { allowPresenter, disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
+import { allowPresenter, cueScreens, disableSync, enableSync, endSync, leadSync, publishPresenting, unlockSyncAudio, useSync } from "#/lib/sync-client";
 import { cn } from "@oneverse/ui/lib/utils";
+
+/** The cues a singer has (issue #322), in the order they're read. */
+const CUES = [
+  ["previous", "item", "screens.cuePreviousItem"],
+  ["previous", "section", "screens.cuePreviousSection"],
+  ["next", "section", "screens.cueNextSection"],
+  ["next", "item", "screens.cueNextItem"],
+] as const;
 
 /**
  * Sync play (issue #13) for a set: on or off, who leads, and Lead or End
@@ -101,6 +109,17 @@ export function SyncControl({ setId, itemId, compact = false, className }: { set
                 <Presentation />
                 {session?.presenting ? t("screens.stopPresenting") : t("screens.present")}
               </DropdownMenuItem>
+            ) : null}
+            {/* Cue (issue #322): someone who may move the screens on, but not present any slide - a singer. */}
+            {sync.canCue && !sync.canPresent && session ? (
+              <>
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{t("screens.cue")}</DropdownMenuLabel>
+                {CUES.map(([direction, to, label]) => (
+                  <DropdownMenuItem key={label} closeOnClick={false} onClick={() => cueScreens(direction, to)} data-testid={`sync-cue-${direction}-${to}`}>
+                    {t(label)}
+                  </DropdownMenuItem>
+                ))}
+              </>
             ) : null}
             {/* Who else presents (issue #305): the leader lets someone in the set send slides too, for this session. */}
             {sync.leading && presenterChoices.length ? (

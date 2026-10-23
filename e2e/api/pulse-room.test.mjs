@@ -4,7 +4,7 @@
 // reach the cloud when it's back. Here Pulse's link and room run in this
 // process, the link's connection to the API cut and restored on demand.
 import { createServer } from "node:http";
-import { API, api, call, check, finish, stamp, user } from "../lib/harness.mjs";
+import { API, api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 import { pairPulse } from "../lib/pulse.mjs";
 import { CloudLink } from "../../apps/pulse/dist/cloud-link.js";
@@ -20,6 +20,11 @@ const itemId = items[0].id;
 const pulseToken = await pairPulse(leader, set.id);
 const token = (await api(leader, "POST", `/setlists/${set.id}/share-link`)).link.token;
 await call(guest, "POST", `/set-invites/${token}/join`);
+// The guest cues (issue #322): the next or previous section, not any slide.
+const admin = await user("Room admin");
+sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
+const cueRole = await api(admin, "POST", "/admin/roles", { name: `Room cue ${stamp}`, canCue: true });
+await api(admin, "PUT", `/admin/users/${guest.id}/roles`, { roleIds: [cueRole.id, "role_audio_uploads"] });
 const slide = (n) => ({ itemId, slide: n, black: false });
 const until = async (test, ms = 15000) => {
   for (const end = Date.now() + ms; Date.now() < end; await new Promise((resolve) => setTimeout(resolve, 100))) if (test()) return true;
@@ -143,11 +148,14 @@ try {
   roomPhone.send({ type: "command", id: `guest-${stamp}`, op: { kind: "present", presenting: slide(3) } });
   const guestAnswer = await roomPhone.next((m) => m.type === "ack" || m.type === "error");
   check("someone who may not, by their pass: refused in the room too", guestAnswer?.type === "error" && guestAnswer.code === "forbidden", JSON.stringify(guestAnswer));
+  roomPhone.send({ type: "command", id: `cue-${stamp}`, op: { kind: "cue", direction: "previous", to: "section" } });
+  const cued = await roomPhone.next((m) => m.type === "ack" || m.type === "error");
+  check("…but they cue, by their pass: Pulse finds the previous section in its copy", cued?.type === "ack" && link.engine.state?.presenting?.slide === 1, JSON.stringify(cued));
 
   down = false;
   check("back: the cloud takes the room's session", await until(() => link.status === "online" && !link.engine.runs));
   const after = await tablet.device.next((m) => m.type === "session" && m.session?.epoch === epoch + 1, 5000);
-  check("the room's slide is the cloud's", after?.session.presenting?.slide === 2, JSON.stringify(after?.session));
+  check("the room's slide is the cloud's", after?.session.presenting?.slide === 1, JSON.stringify(after?.session));
 } finally {
   for (const device of [...roomDevices, ...cloudDevices]) device.close();
   room.close();

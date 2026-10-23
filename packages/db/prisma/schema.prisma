@@ -3017,6 +3017,9 @@ model Role {
   // Runs a set's screens (issue #305): controls what's presented on the sets
   // its holders can open, beside the set's leader, and may lock the control.
   canOperateScreens          Boolean  @default(false)
+  // Cues a set's screens (issue #322): the next or previous song or section
+  // only, of the sets its holders can open - a singer moving the set on.
+  canCue                     Boolean  @default(false)
   // A team's or an organisation's admins may give it to their own members,
   // only on their team or organisation (issue #270).
   teamAssignable             Boolean  @default(false)

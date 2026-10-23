@@ -21,6 +21,8 @@ export const LivePassPayloadSchema = z.object({
   canLead: z.boolean(),
   /** Runs screens by a role. */
   canOperate: z.boolean(),
+  /** Cues by a role (issue #322); left out by passes signed before it. */
+  canCue: z.boolean().optional(),
   /** Issued and expires at (ms, the cloud's clock). */
   iat: z.number(),
   exp: z.number(),

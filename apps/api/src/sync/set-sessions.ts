@@ -1,9 +1,10 @@
 import { Logger } from "@nestjs/common";
-import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, LiveHandbackSchema, liveHandedBack, liveSessionAt, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, LIVE_COMMAND_ID, type LiveActor, type LiveOp, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
+import { applyLiveOp, applyStageCommand, LIVE_SCREENS_GRACE_MS, LiveHandbackSchema, liveHandedBack, liveSessionAt, mayCue, mayPresent, readItemTimer, readScreenReport, SCREEN_REPORT_MIN_GAP_MS, SYNC_DEVICE_ID, LIVE_COMMAND_ID, type LiveActor, type LiveOp, type LiveOpContext, type LiveResult, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncPresenting, type SyncSession, type SyncStage, type SyncStageCommand } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
 import { redis } from "../jobs/redis.js";
 import type { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesIn } from "../roles/capabilities.js";
+import { setCueItems } from "./cue-items.js";
 import { endLiveSession, recordLiveOp, startLiveSession } from "./live-sessions.js";
 import { issueLivePass, livePassKey, pulseRoomAddress } from "./live-pass.js";
 import type { ScreensService } from "../screens/screens.service.js";
@@ -146,7 +147,9 @@ export class SetSessions {
     connection.setId = set.id;
     connection.canLead = access.canEdit;
     // Run screens everywhere, or on the set's team or its organisation (issue #270).
-    connection.canOperate = (await capabilitiesIn(this.prisma.client, connection.user!.id, set.ownerTeamId)).canOperateScreens;
+    const capabilities = await capabilitiesIn(this.prisma.client, connection.user!.id, set.ownerTeamId);
+    connection.canOperate = capabilities.canOperateScreens;
+    connection.canCue = capabilities.canCue;
     connection.accessCheckedAt = Date.now();
     await this.present(connection);
     // Back within the lease: the screens it ran are its own again.
@@ -179,7 +182,9 @@ export class SetSessions {
     const access = user && !user.bannedAt && !user.deletedAt && set ? await this.access.access(connection.user!, set) : null;
     if (access?.canView) {
       connection.canLead = access.canEdit;
-      connection.canOperate = (await capabilitiesIn(this.prisma.client, connection.user!.id, set?.ownerTeamId ?? null)).canOperateScreens;
+      const capabilities = await capabilitiesIn(this.prisma.client, connection.user!.id, set?.ownerTeamId ?? null);
+      connection.canOperate = capabilities.canOperateScreens;
+      connection.canCue = capabilities.canCue;
       return true;
     }
     await this.leaveSet(connection);
@@ -297,7 +302,7 @@ export class SetSessions {
     if (!(await this.stillAllowed(connection))) return;
     // A Pulse's own (issue #320): it needs the key its room's passes are checked with, not rights.
     const who = connection.user ? { sub: connection.user.id, name: connection.user.name } : { sub: `pulse:${connection.screen!.id}`, name: connection.screen!.name };
-    const { pass, expiresAt } = issueLivePass({ ...who, setId, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate });
+    const { pass, expiresAt } = issueLivePass({ ...who, setId, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate, canCue: !!connection.canCue });
     this.hub.send(connection, { type: "pass", setId, pass, key: livePassKey(), expiresAt });
   }
 
@@ -348,6 +353,8 @@ export class SetSessions {
     if (setId && !(await this.stillAllowed(connection))) return;
     const id = as && { id: as.id };
     if (!setId || !connection.user) return this.hub.send(connection, { type: "error", ...id, code, message: notInSet });
+    // A cue goes where the set says (issue #322): its items, read before the lock.
+    const context: LiveOpContext = op.kind === "cue" ? { cueItems: await setCueItems(this.prisma, setId) } : {};
     const outcome = await this.withSetLock(setId, async () => {
       if (as) {
         // Sent before: acknowledged again, applied once.
@@ -355,7 +362,7 @@ export class SetSessions {
         if (seen !== null) return { kind: "again" as const, rev: Number(seen) };
         if (as.epoch !== undefined && as.epoch !== ((await this.read(setId))?.epoch ?? 0)) return { kind: "epoch" as const };
       }
-      const applied = await this.applyLocked(connection, setId, op);
+      const applied = await this.applyLocked(connection, setId, op, context);
       if (as && applied.result.ok) {
         await redis().hset(commandsKey(setId), as.id, String(applied.result.session?.rev ?? 0));
         await redis().expire(commandsKey(setId), SESSION_TTL_S);
@@ -383,13 +390,13 @@ export class SetSessions {
   }
 
   private actor(connection: Connection): LiveActor {
-    return { userId: connection.user!.id, name: connection.user!.name, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate };
+    return { userId: connection.user!.id, name: connection.user!.name, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate, canCue: !!connection.canCue };
   }
 
   /** `op` applied to the set's session, under its lock; written and announced when it changed. With the session as it was. */
-  private async applyLocked(connection: Connection, setId: string, op: LiveOp): Promise<{ result: LiveResult; previous: LiveSessionState | null }> {
+  private async applyLocked(connection: Connection, setId: string, op: LiveOp, context: LiveOpContext = {}): Promise<{ result: LiveResult; previous: LiveSessionState | null }> {
     const previous = await this.read(setId);
-    const result = applyLiveOp(previous, this.actor(connection), op, Date.now());
+    const result = applyLiveOp(previous, this.actor(connection), op, Date.now(), context);
     if (result.ok && result.changed) {
       if (result.session) {
         // Started now, or kept from before sessions had one: its row and id (issue #247).
@@ -550,6 +557,7 @@ export class SetSessions {
         stage,
         screensMine: !!stored?.screens && stored.screens.device === this.device(connection),
         canPresent: connection.user ? mayPresent(stored, this.actor(connection)) : false,
+        canCue: connection.user ? mayCue(stored, this.actor(connection)) : false,
         canOperate: connection.canLead || connection.canOperate,
         ...(connection.mirrors && mayMirror(connection) && { live: stored }),
         ...(connection.user && { pulse }),

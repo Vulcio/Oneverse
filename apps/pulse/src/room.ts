@@ -1,4 +1,4 @@
-import { mayPresent, SYNC_PATH, verifyLivePass, type LiveActor, type LiveCommandOp, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncServerMessage, type SyncSession } from "@oneverse/core";
+import { cueItemsOfCopy, mayCue, mayPresent, SYNC_PATH, verifyLivePass, type LiveActor, type LiveCommandOp, type LiveSessionState, type SyncClientMessage, type SyncMember, type SyncServerMessage, type SyncSession } from "@oneverse/core";
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
@@ -136,14 +136,16 @@ export class Room {
     const setId = this.setId;
     const payload = typeof pass === "string" && key && setId ? await verifyLivePass(pass, key, setId, this.now()) : null;
     if (!payload) return this.send(device, { type: "error", code: "unauthorized", message: "This pass isn't one for this set, or it has expired" });
-    device.actor = { userId: payload.sub, name: payload.name, device: payload.device, canLead: payload.canLead, canOperate: payload.canOperate };
+    device.actor = { userId: payload.sub, name: payload.name, device: payload.device, canLead: payload.canLead, canOperate: payload.canOperate, canCue: !!payload.canCue };
     this.send(device, { type: "ready", userId: payload.sub });
   }
 
   private command(device: RoomDevice, actor: LiveActor, id: string, epoch: number | undefined, op: LiveCommandOp) {
     if (!device.joined) return this.send(device, { type: "error", id, code: "bad-request", message: "Join the set first" });
     const before = this.link.engine.state;
-    this.send(device, this.link.engine.command(actor, { id, epoch, op }));
+    // A cue goes where the set says (issue #322): Pulse's copy of it.
+    const copy = op.kind === "cue" ? (this.set?.of(this.setId) ?? null) : null;
+    this.send(device, this.link.engine.command(actor, { id, epoch, op }, copy ? { cueItems: cueItemsOfCopy(copy) } : {}));
     if (this.link.engine.state !== before) this.broadcast();
   }
 
@@ -166,6 +168,7 @@ export class Room {
         stage: null,
         screensMine: !!stored?.screens && stored.screens.device === actor.device,
         canPresent: mayPresent(stored, actor),
+        canCue: mayCue(stored, actor),
         canOperate: actor.canLead || actor.canOperate,
       });
     }

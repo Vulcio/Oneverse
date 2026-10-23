@@ -472,6 +472,8 @@ export type SyncServerMessage =
       screensMine?: boolean;
       /** This user may present now (issue #305): leads, operates screens, or was handed it - and control isn't locked to someone else. */
       canPresent?: boolean;
+      /** This user may cue now (issue #322): move the screens to the next or previous song or section, by `cue` commands. */
+      canCue?: boolean;
       /** This user runs screens (issue #305): can edit the set, or has a role that runs screens - the operator's console is theirs, locked or not. */
       canOperate?: boolean;
       /** The session as it's kept, holders' devices and all: only to a device that asked to `mirror` it (Pulse). */

@@ -35,6 +35,8 @@ export interface Connection {
   pulseRoom?: string;
   /** Runs screens by a role (issue #305): may present and lock control on the sets it can open. */
   canOperate: boolean;
+  /** Cues by a role (issue #322): moves the screens of the sets it can open to the next or previous song or section. */
+  canCue?: boolean;
   accessCheckedAt: number;
   /** A screen's last report kept (issue #286), ms. */
   reportedAt?: number;

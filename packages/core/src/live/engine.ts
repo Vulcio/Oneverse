@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { applyLiveOp, LIVE_COMMAND_ID, LIVE_PRESENTERS_MAX, LiveOpSchema, SyncMetronomeSchema, SyncPresentingSchema, SyncStemsSchema, type LiveActor, type LiveCommandOp, type LiveOp, type LiveRefusal, type LiveSessionState } from "./index.js";
+import { applyLiveOp, LIVE_COMMAND_ID, LIVE_PRESENTERS_MAX, LiveOpSchema, SyncMetronomeSchema, SyncPresentingSchema, SyncStemsSchema, type LiveActor, type LiveCommandOp, type LiveOp, type LiveOpContext, type LiveRefusal, type LiveSessionState } from "./index.js";
 
 /**
  * Oneverse Pulse's side of a live session (issue #247, docs/live-session.md,
@@ -143,7 +143,7 @@ export class LiveEngine {
   }
 
   /** A command from a device in the room: applied as the cloud would (applyLiveOp), once, and kept in the record. */
-  command(actor: LiveActor, command: LiveEngineCommand): LiveEngineAnswer {
+  command(actor: LiveActor, command: LiveEngineCommand, context: LiveOpContext = {}): LiveEngineAnswer {
     const { id } = command;
     if (typeof id !== "string" || !LIVE_COMMAND_ID.test(id)) return { type: "error", code: "bad-request", message: "A command needs an id" };
     const taken = this.taken;
@@ -154,7 +154,7 @@ export class LiveEngine {
     if (again !== undefined) return { type: "ack", id, rev: again };
     if (command.epoch !== undefined && command.epoch !== taken.epoch) return { type: "error", id, code: "epoch", message: "The session went on in another epoch: load it again" };
     if (!this.session) return { type: "error", id, code: "forbidden", message: "The session ended" };
-    const result = applyLiveOp(this.session, actor, command.op, this.now());
+    const result = applyLiveOp(this.session, actor, command.op, this.now(), context);
     if (!result.ok) return { type: "error", id, code: result.code, message: result.message };
     const rev = result.session?.rev ?? taken.rev + 1;
     if (result.changed) {

@@ -179,11 +179,12 @@ The server answers `{type: "ack", id, rev}`, or `{type: "error", id, code}` with
 | Follow (join, hear the state) | Anyone who can open the set; screens of the set | `canView` |
 | `tempo`, `take lead` | Who can edit the set | `canLead` |
 | `present` | The leader, the screens' holder, presenters, a role that runs screens (`canOperateScreens`) where the set's team or organisation has it; not while someone else holds the screens alone | `mayPresent` |
+| `cue` (next or previous song or section, issue #322) | Anyone who may present, or a role that cues (`canCue`) where the set's team or organisation has it; not while someone else holds the screens alone. Where to is worked out from the set where the session runs (`cueTarget`): the API reads the set, Pulse its copy | new |
 | `stage`, `take screens` | Who can edit the set, or a role that runs screens | `canLead \|\| canOperate` |
 | `presenter` | The leader | same |
 | `end` | Who can edit the set | same |
 
-Cue (next song or section for singers), Route and Manage devices are added as rows here
+Route and Manage devices are added as rows here
 when they're built; each is a field on `Role` read through `capabilitiesIn`, as
 `canOperateScreens` is.
 

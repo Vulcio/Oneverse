@@ -117,7 +117,7 @@ Capabilities, each scoped to an Organisation, Team, Set or session:
 | Route | Layers, outputs, profiles, overlays |
 | Manage devices | Pair, re-pair, revoke screens |
 
-Precedence follows #275: an exclusive operator holds Present and Route; the leader keeps Cue. Handoff is an explicit "take" with a lease, logged, and the previous holder is told. #270 (the media operator as a role of its own) is where this lands first.
+Precedence follows #275: an exclusive operator holds Present and Route; the leader keeps Cue. Built: Follow, Present, and Cue (#322, a `cue` command and `Role.canCue`, scoped like `canOperateScreens`). Handoff is an explicit "take" with a lease, logged, and the previous holder is told. #270 (the media operator as a role of its own) is where this lands first.
 
 The authoritative **Oneverse Live Session** tracks active Set/item/slide, target output groups, control privileges, sequence/revision, and active controller state. It evolves `SyncSession` rather than replacing it: commands carry the `rev` they expect, so they are idempotent and a stale controller is refused. Screen apps render the session; they do not independently decide its truth. Its design - commands, leases, who may do what, the slide key, the record, Pulse's offline side - is in `docs/live-session.md`, built in nine steps on main (2026-10-22 and 23).
 
