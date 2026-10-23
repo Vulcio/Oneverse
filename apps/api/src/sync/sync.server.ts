@@ -163,6 +163,12 @@ export class SyncServer implements OnModuleDestroy {
     if (message.type === "hello") return this.signIn(connection, message.token);
     if (message.type === "screen") return this.sets.signInScreen(connection, message.token);
     if (message.type === "report") return this.sets.report(connection, message.report);
+    // A Pulse (issue #320) also mirrors its set's session, takes its key and hands the session back.
+    if (connection.screen?.pulse && (message.type === "mirror" || message.type === "pass" || message.type === "handback")) {
+      if (message.type === "mirror") return this.sets.mirror(connection, message.room);
+      if (message.type === "pass") return this.sets.pass(connection);
+      return this.sets.handBack(connection, message.handback);
+    }
     // A screen only follows: it pings and reports, and that's all.
     if (connection.screen) return this.send(connection, { type: "error", code: "forbidden", message: "A screen only follows its set" });
     if (!connection.user) return this.send(connection, { type: "error", code: "unauthorized", message: "Sign in first" });

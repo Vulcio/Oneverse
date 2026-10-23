@@ -9,7 +9,7 @@
 /** By path prefix: words in the names of the suites that cover it. */
 export const AREAS = {
   "apps/api/src/sync/": ["sync", "split-control", "screen", "live", "offline-sync"],
-  "apps/api/src/screens/": ["screen", "split-control"],
+  "apps/api/src/screens/": ["screen", "split-control", "pulse"],
   "apps/api/src/scriptures/": ["bible", "passage", "youversion"],
   "apps/api/src/team-events/": ["calendar", "availability", "event", "lineup", "rehearsals", "reminders", "swaps", "locations"],
   "apps/api/src/organizations/": ["organization", "groups", "planiverse", "locations"],
@@ -17,7 +17,7 @@ export const AREAS = {
   "apps/api/src/recordings/": ["recording", "opus", "practice-audio"],
   "apps/api/src/notifications/": ["notification", "push", "reminders"],
   "apps/api/src/brands/": ["brands"],
-  "apps/api/src/locations/": ["locations"],
+  "apps/api/src/locations/": ["locations", "pulse-pairing"],
   "apps/api/src/artists/": ["artists"],
   "apps/screen/": ["screen", "split-control", "pulse"],
   "apps/pulse/": ["pulse", "live-handback"],

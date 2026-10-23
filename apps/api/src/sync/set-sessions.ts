@@ -23,6 +23,14 @@ const membersKey = (setId: string) => `songverse:sync:members:${setId}`;
  * lock, so two people pressing Next together can't both be "based on" the
  * slide the first one moved from.
  */
+/** What a sync connection keeps of a screen, read from its row. */
+const SCREEN_INFO_SELECT = { id: true, name: true, mode: true, setlistId: true, kind: true } as const;
+type ScreenInfoRow = { id: string; name: string; mode: "LYRICS" | "CHART"; setlistId: string | null; kind: "SCREEN" | "PULSE" };
+const screenInfo = (screen: ScreenInfoRow) => ({ id: screen.id, name: screen.name, mode: screen.mode, setId: screen.setlistId, ...(screen.kind === "PULSE" && { pulse: true }) });
+
+/** Who mirrors a set's session and hands it back (issue #247): someone who can edit it, or a Pulse paired to follow it (issue #320). */
+const mayMirror = (connection: Connection) => connection.canLead || !!connection.screen?.pulse;
+
 const lockKey = (setId: string) => `songverse:sync:lock:${setId}`;
 const LOCK_MS = 3000;
 /** Deletes the lock only if it's still the one taken (a lock that outlived LOCK_MS may be someone else's). */
@@ -53,9 +61,13 @@ export class SetSessions {
 
   /** A screen signing in (issue #186): its token, then its set, joined at once. */
   async signInScreen(connection: Connection, token: string) {
-    const screen = await this.screens.byToken(String(token));
-    if (!screen) return this.hub.send(connection, { type: "error", code: "disconnected", message: "This screen was disconnected" });
-    connection.screen = { id: screen.id, name: screen.name, mode: screen.mode, setId: screen.setlistId };
+    const found = await this.screens.byToken(String(token));
+    if (!found) return this.hub.send(connection, { type: "error", code: "disconnected", message: "This screen was disconnected" });
+    // Following a location (issue #320): on the set of the event on there now.
+    const screen = await this.screens.followLocation(found);
+    connection.screen = screenInfo(screen);
+    // A Pulse's device in its sets: its own, whatever connection it's on.
+    if (screen.kind === "PULSE") connection.device = `p:${screen.id}`;
     connection.accessCheckedAt = Date.now();
     void this.screenOnline(screen.id, true);
     this.hub.send(connection, { type: "screen", screen: connection.screen });
@@ -100,11 +112,11 @@ export class SetSessions {
   async screenChanged(screenId: string) {
     const mine = [...this.hub.connections()].filter((connection) => connection.screen?.id === screenId);
     if (mine.length === 0) return;
-    const screen = await this.prisma.client.screen.findUnique({ where: { id: screenId }, select: { id: true, name: true, mode: true, setlistId: true } });
+    const screen = await this.prisma.client.screen.findUnique({ where: { id: screenId }, select: SCREEN_INFO_SELECT });
     for (const connection of mine) await this.refreshScreen(connection, screen);
   }
 
-  private async refreshScreen(connection: Connection, screen: { id: string; name: string; mode: "LYRICS" | "CHART"; setlistId: string | null } | null) {
+  private async refreshScreen(connection: Connection, screen: ScreenInfoRow | null) {
     if (!screen) {
       await this.leaveSet(connection);
       this.hub.send(connection, { type: "error", code: "disconnected", message: "This screen was disconnected" });
@@ -112,7 +124,7 @@ export class SetSessions {
       return;
     }
     const before = connection.screen;
-    connection.screen = { id: screen.id, name: screen.name, mode: screen.mode, setId: screen.setlistId };
+    connection.screen = screenInfo(screen);
     this.hub.send(connection, { type: "screen", screen: connection.screen });
     if (screen.setlistId !== connection.setId) {
       if (screen.setlistId) await this.joinAsScreen(connection, screen.setlistId);
@@ -153,7 +165,9 @@ export class SetSessions {
       // A screen: still there, still on this set (its pairer could be changing it from elsewhere).
       if (Date.now() - connection.accessCheckedAt < ACCESS_RECHECK_MS) return !!setId;
       connection.accessCheckedAt = Date.now();
-      await this.refreshScreen(connection, await this.prisma.client.screen.findUnique({ where: { id: connection.screen.id }, select: { id: true, name: true, mode: true, setlistId: true } }));
+      // One following a location moves to the event on there now (issue #320).
+      await this.screens.followLocationOf(connection.screen.id);
+      await this.refreshScreen(connection, await this.prisma.client.screen.findUnique({ where: { id: connection.screen.id }, select: SCREEN_INFO_SELECT }));
       return !!connection.setId;
     }
     if (!setId || Date.now() - connection.accessCheckedAt < ACCESS_RECHECK_MS) return !!setId;
@@ -261,7 +275,7 @@ export class SetSessions {
   async mirror(connection: Connection, room?: unknown) {
     if (!connection.setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
     if (!(await this.stillAllowed(connection))) return;
-    if (!connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set mirrors its session" });
+    if (!mayMirror(connection)) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set mirrors its session" });
     connection.mirrors = true;
     if (room !== undefined) {
       // Mirrored all the same: only the set's devices aren't told where it is.
@@ -279,10 +293,11 @@ export class SetSessions {
   /** A pass to the set's session on Pulse's page (issue #247), with what this person may do in it now. */
   async pass(connection: Connection) {
     const setId = connection.setId;
-    if (!setId || !connection.user) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
+    if (!setId || (!connection.user && !connection.screen?.pulse)) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
     if (!(await this.stillAllowed(connection))) return;
-    const { user } = connection;
-    const { pass, expiresAt } = issueLivePass({ sub: user.id, name: user.name, setId, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate });
+    // A Pulse's own (issue #320): it needs the key its room's passes are checked with, not rights.
+    const who = connection.user ? { sub: connection.user.id, name: connection.user.name } : { sub: `pulse:${connection.screen!.id}`, name: connection.screen!.name };
+    const { pass, expiresAt } = issueLivePass({ ...who, setId, device: this.device(connection), canLead: connection.canLead, canOperate: connection.canOperate });
     this.hub.send(connection, { type: "pass", setId, pass, key: livePassKey(), expiresAt });
   }
 
@@ -291,15 +306,15 @@ export class SetSessions {
    * room's session taken as it is, under the set's lock (liveHandedBack: the
    * room wins, one epoch up, so a command a device sent the cloud meanwhile
    * is refused as from another epoch), its changes added to the record with
-   * their origin, and the row told. For now from anyone who can edit the
-   * set - who could make the same changes one by one; Pulse's own sign-in,
-   * paired like a screen, comes with its pairing.
+   * their origin, and the row told. From a paired Pulse on its set (issue
+   * #320), or anyone who can edit the set - who could make the same changes
+   * one by one.
    */
   async handBack(connection: Connection, input: unknown) {
     const setId = connection.setId;
     if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
     if (!(await this.stillAllowed(connection))) return;
-    if (!connection.canLead) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set hands its session back" });
+    if (!mayMirror(connection)) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set hands its session back" });
     const parsed = LiveHandbackSchema.safeParse(input);
     if (!parsed.success) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Invalid handback" });
     const handback = parsed.data;
@@ -474,7 +489,10 @@ export class SetSessions {
 
   async present(connection: Connection) {
     if (!connection.setId || (!connection.user && !connection.screen)) return;
-    const member = connection.screen
+    const member = connection.screen?.pulse
+      ? // A Pulse (issue #320) isn't a screen of the set: its address is told, when it gives one.
+        { id: connection.screen.id, name: connection.screen.name, node: true, device: this.device(connection), at: Date.now(), ...(connection.mirrors && connection.pulseRoom && { pulse: connection.pulseRoom }) }
+      : connection.screen
       ? { id: connection.screen.id, name: connection.screen.name, screen: true, at: Date.now() }
       : { id: connection.user!.id, name: connection.user!.name, device: this.device(connection), at: Date.now(), ...(connection.mirrors && connection.pulseRoom && { pulse: connection.pulseRoom }) };
     await redis().hset(membersKey(connection.setId), `${this.hub.instance}:${connection.id}`, JSON.stringify(member));
@@ -509,11 +527,11 @@ export class SetSessions {
     const [stored, rawMembers, stage] = await Promise.all([this.read(setId), redis().hgetall(membersKey(setId)), this.readStage(setId)]);
     const now = Date.now();
     const present = Object.entries(rawMembers)
-      .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean; device?: string; pulse?: string }) }))
+      .map(([conn, raw]) => ({ conn, ...(JSON.parse(raw) as { id: string; name: string; at: number; screen?: boolean; node?: boolean; device?: string; pulse?: string }) }))
       .filter((member) => now - member.at < PRESENCE_MS * 2);
     // A Pulse in the set (issue #247) isn't someone in it: its address is told instead.
     const pulse = present.find((member) => member.pulse)?.pulse ?? null;
-    const members: SyncMember[] = present.filter((member) => !member.pulse).map((member) => ({ id: member.id, name: member.name, leading: (member.device ?? member.conn) === stored?.leader.device, ...(member.screen ? { screen: true } : {}) }));
+    const members: SyncMember[] = present.filter((member) => !member.pulse && !member.node).map((member) => ({ id: member.id, name: member.name, leading: (member.device ?? member.conn) === stored?.leader.device, ...(member.screen ? { screen: true } : {}) }));
     const session: SyncSession | null = stored
       ? {
           ...stored,
@@ -533,7 +551,7 @@ export class SetSessions {
         screensMine: !!stored?.screens && stored.screens.device === this.device(connection),
         canPresent: connection.user ? mayPresent(stored, this.actor(connection)) : false,
         canOperate: connection.canLead || connection.canOperate,
-        ...(connection.mirrors && connection.canLead && { live: stored }),
+        ...(connection.mirrors && mayMirror(connection) && { live: stored }),
         ...(connection.user && { pulse }),
       });
     }

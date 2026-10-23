@@ -3,7 +3,9 @@ import { API } from "./harness.mjs";
 /**
  * A device on the API's /sync, signed in as `who` (issue #27): `next(match, ms)`
  * waits for the next message that matches (one that came early included),
- * null after `ms`; `send` sends one; `ready` is the sign-in's answer.
+ * null after `ms`; `send` sends one; `ready` is the sign-in's answer. `who`
+ * may be `{ screenToken }`: a screen or a Pulse signed in by its own token,
+ * `ready` then its `screen` message.
  */
 export async function syncDevice(who) {
   const ws = new WebSocket(`${API.replace(/^http/, "ws")}/sync`);
@@ -35,8 +37,8 @@ export async function syncDevice(who) {
       }, ms);
     });
   const send = (message) => ws.send(JSON.stringify(message));
-  const answer = next((m) => m.type === "ready" || m.type === "error");
-  send({ type: "hello", token: who.bearer });
+  const answer = next((m) => m.type === (who.screenToken ? "screen" : "ready") || m.type === "error");
+  send(who.screenToken ? { type: "screen", token: who.screenToken } : { type: "hello", token: who.bearer });
   const ready = await answer;
   /** Forgets what came so far. */
   const drain = () => messages.splice(0);

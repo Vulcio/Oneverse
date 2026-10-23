@@ -8,8 +8,10 @@ const screenFields = {
   name: z.string().trim().min(1, "name must not be empty").max(60),
   mode: z.enum(SCREEN_MODES),
   setlistId: z.string().min(1).max(40),
-  /** A set put on it, or its owner's set of the day (issue #274). */
-  setMode: z.enum(["FIXED", "DAY"]),
+  /** A set put on it, its owner's set of the day (issue #274), or the set of the event on now at a location (issue #320). */
+  setMode: z.enum(["FIXED", "DAY", "LOCATION"]),
+  /** The location it follows (issue #320): one of its owner's, or its team's organisation's. */
+  locationId: z.string().min(1).max(40),
   /** A saved theme (issue #194); null for none. */
   themeId: z.string().min(1).max(40).nullable(),
   /** A built-in theme by its id ("concert"); null for none. A screen has one or the other, else the default look. */
@@ -38,13 +40,20 @@ export const ConfirmScreenPairingSchema = z
   owner: optional(ScreenOwnerSchema).describe("Left out: the person's own"),
   name: screenFields.name,
   mode: optional(screenFields.mode).describe("Left out: LYRICS - what the screen shows comes from its template (issue #281); CHART is kept for screens paired before"),
-  setMode: optional(screenFields.setMode).describe("FIXED (the default): the set given; DAY: its owner's set of the day (issue #274), setlistId left out"),
+  setMode: optional(screenFields.setMode).describe("FIXED (the default): the set given; DAY: its owner's set of the day (issue #274), setlistId left out; LOCATION: the set of the event on now at `locationId` (issue #320)"),
   setlistId: optional(screenFields.setlistId),
+  locationId: optional(screenFields.locationId),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
   })
-  .refine((pairing) => pairing.setMode === "DAY" || !!pairing.setlistId, "setlistId must name the set, unless setMode is DAY");
+  .refine((pairing) => pairing.setMode === "DAY" || pairing.setMode === "LOCATION" || !!pairing.setlistId, "setlistId must name the set, unless setMode is DAY or LOCATION")
+  .refine((pairing) => pairing.setMode !== "LOCATION" || !!pairing.locationId, "locationId must name the location it follows when setMode is LOCATION");
 export type ConfirmScreenPairingRequest = z.input<typeof ConfirmScreenPairingSchema>;
+
+/** POST /screens/pairings: a code for a screen, or (issue #320) for a Oneverse Pulse, shown as one when it's confirmed. */
+export const StartScreenPairingSchema = z.strictObject({
+  kind: optional(z.enum(["SCREEN", "PULSE"])).describe("SCREEN when left out"),
+});
 
 /** POST /screens/pairings/:id/claim: the screen asks for its token. */
 export const ClaimScreenPairingSchema = z.strictObject({
@@ -58,6 +67,7 @@ export const UpdateScreenSchema = z.strictObject({
   mode: optional(screenFields.mode),
   setMode: optional(screenFields.setMode),
   setlistId: screenFields.setlistId.nullable().optional(),
+  locationId: screenFields.locationId.nullable().optional().describe("The location it follows in LOCATION mode (issue #320)"),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
   hiddenLayers: optional(screenFields.hiddenLayers),

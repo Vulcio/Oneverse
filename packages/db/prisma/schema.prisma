@@ -3080,6 +3080,9 @@ model Screen {
   id                  String        @id @default(cuid())
   name                String
   mode                ScreenMode    @default(LYRICS)
+  // A screen, or a Oneverse Pulse (issue #320): paired the same way, shown
+  // as a Pulse node, and allowed to mirror and hand back its set's session.
+  kind                ScreenKind    @default(SCREEN)
   tokenHash           String        @unique
   // Whose it is (issue #222): a person's, a team's or an organisation's -
   // exactly one. Its managers rename it, change its look or disconnect it.
@@ -3092,6 +3095,9 @@ model Screen {
   // loads; picked on the screen itself, it stays for that day (setlistPickedOn).
   setMode             ScreenSetMode @default(FIXED)
   setlistPickedOn     String?
+  // LOCATION (issue #320): the set of the event at this location that's on
+  // now, or next today - worked out in the location's time zone.
+  locationId          String?
   // Who put its set on it: it reads the set as they would.
   setByUserId         String?
   // Its look (issue #194): a saved theme, or a built-in one by its id ("concert"); neither, the default.
@@ -3112,12 +3118,14 @@ model Screen {
   setBy             User?         @relation("ScreenSetBy", fields: [setByUserId], references: [id], onDelete: SetNull)
   setlist           Setlist?      @relation(fields: [setlistId], references: [id], onDelete: SetNull)
   theme             ScreenTheme?  @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  location          Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   @@index([ownerUserId])
   @@index([ownerTeamId])
   @@index([ownerOrganizationId])
   @@index([setlistId])
   @@index([themeId])
+  @@index([locationId])
 }
 
 // A look for screens (issue #194): a screen-theme/v1 document
@@ -3229,6 +3237,12 @@ model ScreenThemeAsset {
 enum ScreenSetMode {
   FIXED
   DAY
+  LOCATION
+}
+
+enum ScreenKind {
+  SCREEN
+  PULSE
 }
 
 enum ScreenMode {
@@ -3389,6 +3403,8 @@ model Location {
   teamEvents         TeamEvent[]
   organizationEvents OrganizationEvent[]
   eventPresets       OrganizationEventPreset[]
+  // Screens and Pulses that follow its events (issue #320).
+  screens            Screen[]
 
   @@index([ownerTeamId])
   @@index([ownerOrganizationId])

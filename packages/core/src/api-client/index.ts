@@ -740,8 +740,12 @@ export interface ScreenSummary {
   setlist: { id: string; name: string | null; eventDate: string | null; fromEvent?: boolean } | null;
   /** When it last loaded its set. */
   lastSeenAt: string | null;
-  /** A set put on it, or its owner's set of the day (issue #274); left out by an older API. */
-  setMode?: "FIXED" | "DAY";
+  /** A set put on it, its owner's set of the day (issue #274), or the event on now at a location (issue #320); left out by an older API. */
+  setMode?: "FIXED" | "DAY" | "LOCATION";
+  /** A screen, or a Oneverse Pulse (issue #320); left out by an older API. */
+  kind?: "SCREEN" | "PULSE";
+  /** The location it follows in LOCATION mode (issue #320). */
+  location?: { id: string; name: string } | null;
   /** Connected now (issue #267); left out where it isn't known (a screen's own view of itself). */
   online?: boolean;
   createdAt: string;
@@ -3037,7 +3041,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     listCustomInstruments: () => request<CustomInstrument[]>("/instruments"),
     adminListInstruments: () => request<AdminCustomInstrument[]>("/admin/instruments"),
     /** Screens (issue #186): a code a screen shows, before confirming it. */
-    checkScreenCode: (code: string) => request<{ code: string; expiresAt: string }>(`/screens/pairings/${encodeURIComponent(code)}`),
+    checkScreenCode: (code: string) => request<{ code: string; expiresAt: string; kind?: "SCREEN" | "PULSE" }>(`/screens/pairings/${encodeURIComponent(code)}`),
     confirmScreenPairing: (code: string, data: ConfirmScreenPairingRequest) =>
       request<ScreenSummary>(`/screens/pairings/${encodeURIComponent(code)}/confirm`, { method: "POST", body: JSON.stringify(data) }),
     /** The screens showing a set (for who leads it), or the user's own. */

@@ -90,6 +90,8 @@ export interface SyncScreenInfo {
   mode: "LYRICS" | "CHART";
   /** The set it shows; null until it's given one. */
   setId: string | null;
+  /** A Oneverse Pulse (issue #320): it mirrors its set's session and hands it back; left out for a screen. */
+  pulse?: boolean;
 }
 
 export interface SyncSession {

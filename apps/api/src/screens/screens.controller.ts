@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, UpdateScreenSchema } from "@oneverse/core";
+import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, StartScreenPairingSchema, UpdateScreenSchema } from "@oneverse/core";
 import type { Response } from "express";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
@@ -11,6 +11,7 @@ import { ScreensService } from "./screens.service.js";
 
 class ConfirmScreenPairingDto extends zodDto(ConfirmScreenPairingSchema) {}
 class ClaimScreenPairingDto extends zodDto(ClaimScreenPairingSchema) {}
+class StartScreenPairingDto extends zodDto(StartScreenPairingSchema) {}
 class UpdateScreenDto extends zodDto(UpdateScreenSchema) {}
 class ScreenCurrentQueryDto extends zodDto(ScreenCurrentQuerySchema) {}
 class PickScreenSetDto extends zodDto(PickScreenSetSchema) {}
@@ -39,8 +40,8 @@ export class ScreensController {
   @Public()
   @RateLimit("heavy")
   @Post("pairings")
-  startPairing(): ReturnType<ScreensService["startPairing"]> {
-    return this.screens.startPairing();
+  startPairing(@Body() dto: StartScreenPairingDto): ReturnType<ScreensService["startPairing"]> {
+    return this.screens.startPairing(dto?.kind ?? "SCREEN");
   }
 
   /** The screen asks for its token, every couple of seconds: 202 until someone confirms its code. */
