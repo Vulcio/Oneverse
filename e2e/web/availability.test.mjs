@@ -60,7 +60,7 @@ try {
     await card.locator(`[data-away-range="${plus(8)}/${plus(10)}"]`).getByTestId("away-edit").click();
     const editor = card.getByTestId("away-editor");
     // The range shows selected; picking again starts a new one: the first day, then the last.
-    await editor.locator(`td[data-day="${plus(9)}"]`).first().waitFor();
+    await editor.locator(`td[data-day="${plus(8)}"]`).first().waitFor();
     await pickDay(editor, plus(8));
     await pickDay(editor, plus(11));
     if ((await editor.getByLabel("Note (optional)").inputValue()) !== "Holidays") throw new Error("the note wasn't kept");
