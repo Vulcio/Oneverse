@@ -21,6 +21,7 @@
 | Native apps (#165): native shell, UI and playback for stage views; they share logic only (core's JS, or native ports checked against the shared tests), decided per feature; the web UI stays for editing, sets, admin and planning | Decided (2026-10-22) |
 | Locations (#320): an organisation's or a team's, picked by events beside their free-text place; a Pulse can follow every event at one | Decided (2026-10-23), in progress |
 | NDI (#196): Oneverse Screen shows any NDI source on the network - Pulse's output or a video mixer's; what a Screen contributes (its camera, its screen capture) goes to a video mixer, not to Pulse, which doesn't take NDI in | Decided (2026-10-23) |
+| Oneverse Screen is hybrid: an NDI feed under the web content, the operator switching between the NDI sources the Screen sees, the theme placing the feed (its video layer gains an `ndi` source and a position and scale); browsers show the base instead (#196) | Decided (2026-10-23), not built |
 | Organisations govern their teams' Sets rather than owning Sets | Proposed |
 
 ## 1. Product map
