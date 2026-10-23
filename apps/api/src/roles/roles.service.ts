@@ -20,6 +20,7 @@ const ROLE_SELECT = {
   canUploadAudio: true,
   canOperateScreens: true,
   canCue: true,
+  canManageScreens: true,
   teamAssignable: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,
@@ -138,7 +139,7 @@ export class RolesService {
   async scopedRoles(scope: Scope) {
     const where = "teamId" in scope ? { scopeTeamId: scope.teamId } : { scopeOrganizationId: scope.organizationId };
     const [roles, assignments, members] = await Promise.all([
-      this.prisma.client.role.findMany({ where: { teamAssignable: true }, select: { id: true, name: true, description: true, canOperateScreens: true, canCue: true }, orderBy: { name: "asc" } }),
+      this.prisma.client.role.findMany({ where: { teamAssignable: true }, select: { id: true, name: true, description: true, canOperateScreens: true, canCue: true, canManageScreens: true }, orderBy: { name: "asc" } }),
       this.prisma.client.roleAssignment.findMany({ where: { ...where, userId: { not: null } }, select: { userId: true, roleId: true } }),
       this.memberIds(scope),
     ]);

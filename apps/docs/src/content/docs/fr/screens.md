@@ -48,6 +48,7 @@ L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une l
 Un écran est à vous, à une équipe ou à une organisation. En l'associant, **Pour** le choisit : **Moi seulement**, ou une équipe ou une [organisation](/fr/organizations/) dont vous êtes administrateur - le projecteur et l'écran de retour de l'église appartiennent à l'église, et restent quand la personne qui les a associés s'en va. Les boutons au-dessus des vignettes les montrent **Tous**, **Les miens**, ou ceux d'une équipe ou d'une organisation.
 
 - L'écran d'une équipe est géré par ses administrateurs, celui d'une organisation par les siens : ils le renomment, changent ce qu'il affiche et son modèle, le donnent à quelqu'un d'autre avec **Appartient à**, ou le déconnectent.
+- Qui a un rôle qui permet d'**Administrer les écrans** (voir [Rôles](/fr/admin/#rôles)) - la personne qui s'occupe de la technique à l'église, par exemple - fait de même pour les équipes et organisations pour lesquelles on le lui a donné, sans en être administrateur : elle y associe des écrans et des Pulse, les renomme, les modifie et les déconnecte. Elle ne donne pas un écran à quelqu'un d'autre, et n'y met que des listes qu'elle peut modifier.
 - Les membres de l'équipe ou de l'organisation le voient et y mettent une de leurs listes - une liste qu'ils peuvent modifier. L'écran l'affiche comme eux la voient.
 - Vos écrans partent avec votre compte ; ceux d'une équipe ou d'une organisation, quand elle est supprimée.
 

@@ -48,6 +48,7 @@ The screen has a menu of its own, for whoever stands by it, even while a set is 
 A screen is yours, a team's or an organisation's. When you pair it, **For** chooses: **Just me**, or a team or [organisation](/organizations/) you're an admin of - the church's projector and stage monitor belong to the church, and stay when whoever paired them leaves. The buttons above the tiles show **All** of them, **Mine**, or one team's or organisation's.
 
 - A team's screen is managed by the team's admins, an organisation's by its admins: they rename it, change what it shows and its template, give it to someone else with **Belongs to**, or disconnect it.
+- Someone whose role lets them **Manage screens** (see [Roles](/admin/#roles)) - the church's tech person, say - does the same for the teams and organisations it was given for, without being their admin: they pair screens and Pulses for them, rename, change and disconnect them. They don't give a screen to someone else, and put only sets they can edit on it.
 - The team's or organisation's members see it and put one of their sets on it - a set they can edit. The screen shows it as they see it.
 - Your own screens go with your account; a team's or an organisation's go when it's deleted.
 

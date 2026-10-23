@@ -60,6 +60,8 @@ export const Route = createFileRoute("/_protected/screens")({
     ]);
     // What a screen or a Pulse can follow (issue #320): the locations of the teams and organisations one's in.
     const locations = await apiClient.listLocations().catch(() => []);
+    // Whose a screen paired now can be (issue #322): also the teams and organisations whose screens one manages by a role.
+    const pairing = await apiClient.listScreenPairingOwners().catch(() => ({ teams: [], organizations: [] }));
     // Whose a new screen can be (issue #222): theirs, a team's they run, an organisation's they run.
     const owners: ScreenOwnerChoice[] = [
       { kind: "user" },
@@ -71,7 +73,12 @@ export const Route = createFileRoute("/_protected/screens")({
     // Only a set they lead can be shown: its sync session is theirs to lead.
     // Whose a new brand can be (issue #279): a team's or an organisation's they run.
     const brandOwners = owners.filter((owner): owner is BrandOwnerChoice => owner.kind !== "user");
-    return { sets: sets.filter((set) => set.canEdit), screens, themes, parts, owners, widgetDefaults, brands, brandOwners, locations };
+    const pairOwners: ScreenOwnerChoice[] = [
+      { kind: "user" },
+      ...pairing.teams.map((team) => ({ kind: "team" as const, id: team.id, name: team.name })),
+      ...(organizations?.mode === "NONE" ? [] : pairing.organizations.map((organization) => ({ kind: "organization" as const, id: organization.id, name: organization.name }))),
+    ];
+    return { sets: sets.filter((set) => set.canEdit), screens, themes, parts, owners, pairOwners, widgetDefaults, brands, brandOwners, locations };
   },
   component: ScreensPage,
 });
@@ -129,7 +136,7 @@ function ScreensTabPanel() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const search = Route.useSearch();
-  const { sets, screens, themes, owners } = Route.useLoaderData();
+  const { sets, screens, themes, owners, pairOwners } = Route.useLoaderData();
   const [paired, setPaired] = useState<ScreenSummary | null>(null);
   // Open from a screen's QR code, or from a set's Live view.
   const [adding, setAdding] = useState(!!search.code || !!search.setlistId);
@@ -155,7 +162,7 @@ function ScreensTabPanel() {
         </Card>
       ) : adding ? (
         <PairForm
-          owners={owners}
+          owners={pairOwners}
           sets={sets}
           code={search.code ?? ""}
           setlistId={search.setlistId}
@@ -566,6 +573,12 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
  * shows, its template and whose it is on the left, the screen as it looks
  * on the right. Each change goes to the screen at once.
  */
+/** Whether the viewer owns a screen - theirs, or a team's or organisation's they run - rather than managing it by a role (issue #322): only its owners give it to someone else. */
+function ownsIt(screen: ScreenSummary, owners: ScreenOwnerChoice[]): boolean {
+  if (screen.owner.kind === "user") return true;
+  return owners.some((owner) => owner.kind !== "user" && owner.kind === screen.owner.kind && owner.id === screen.owner.id);
+}
+
 function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose }: { screen: ScreenSummary; sets: SetlistSummary[]; themes: ScreenThemeSummary[]; owners: ScreenOwnerChoice[]; onChanged: () => Promise<void>; onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const [name, setName] = useState(screen.name);
@@ -659,7 +672,7 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
                 })}
               </div>
             </fieldset>
-            {screen.canManage && owners.length > 1 ? (
+            {screen.canManage && owners.length > 1 && ownsIt(screen, owners) ? (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor={`screen-owner-${screen.id}`}>{t("screens.owner")}</Label>
                 <OwnerSelect id={`screen-owner-${screen.id}`} owners={owners} current={screen.owner} value={ownerValue(screen.owner)} onChange={(value) => void change({ owner: ownerFrom(value) })} />

@@ -4,7 +4,7 @@ import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { capabilitiesOf } from "../roles/capabilities.js";
+import { capabilitiesOf, screenManagerScope } from "../roles/capabilities.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { SetlistsService } from "../setlists/setlists.service.js";
 
@@ -132,7 +132,7 @@ export class ScreensService {
     const { code, pairingId, pairing } = await this.waiting(input);
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
-    const owner = await this.ownerFor(user, change.owner);
+    const owner = await this.ownerFor(user, change.owner, true);
     // Following a location (issue #320): one its owner's events can take.
     const locationId = change.setMode === "LOCATION" ? await this.assertLocation(owner, change.locationId) : null;
     const token = `scr_${randomBytes(32).toString("base64url")}`;
@@ -402,7 +402,7 @@ export class ScreensService {
       return withOnline(screens.map((screen) => present(screen, true)));
     }
     const screens = await this.prisma.client.screen.findMany({
-      where: { OR: [{ ownerUserId: user.id }, { ownerTeamId: { in: [...scope.teams] } }, { ownerOrganizationId: { in: [...scope.organizations] } }] },
+      where: { OR: [{ ownerUserId: user.id }, { ownerTeamId: { in: [...scope.teams, ...scope.managedTeams] } }, { ownerOrganizationId: { in: [...scope.organizations, ...scope.managedOrganizations] } }] },
       select: SCREEN_SELECT,
       orderBy: { createdAt: "asc" },
     });
@@ -420,6 +420,8 @@ export class ScreensService {
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
+    // Who owns it is its owners' to change, not someone who manages it by a role (issue #322).
+    if (change.owner && !manages(user, { ...(await this.scopeOf(user)), managedTeams: new Set(), managedOrganizations: new Set() }, screen)) throw new ForbiddenException("Only the screen's owners give it to someone else");
     const owner = change.owner ? await this.ownerFor(user, change.owner) : null;
     // Following a location (issue #320): the one given, or the one it had; checked against its owner (maybe the new one).
     const setMode = change.setMode ?? (change.setlistId ? "FIXED" : screen.setMode);
@@ -458,23 +460,41 @@ export class ScreensService {
       this.prisma.client.teamMembership.findMany({ where: { userId: user.id }, select: { teamId: true, role: true } }),
       this.prisma.client.organizationMembership.findMany({ where: { userId: user.id }, select: { organizationId: true, role: true } }),
     ]);
+    const memberOf = { teams: new Set(teams.map((one) => one.teamId)), organizations: new Set(organizations.map((one) => one.organizationId)) };
+    // A role that manages screens (issue #322): theirs to manage as their admins' are.
+    const managed = await screenManagerScope(this.prisma.client, user.id, memberOf);
     return {
-      teams: new Set(teams.map((one) => one.teamId)),
+      ...memberOf,
       adminTeams: new Set(teams.filter((one) => one.role === "ADMIN").map((one) => one.teamId)),
-      organizations: new Set(organizations.map((one) => one.organizationId)),
       adminOrganizations: new Set(organizations.filter((one) => one.role === "ADMIN").map((one) => one.organizationId)),
+      managedTeams: managed.teams,
+      managedOrganizations: managed.organizations,
     };
   }
 
-  /** The owner a screen is given: the user, or a team or organisation they run. */
-  private async ownerFor(user: AuthenticatedUser, owner: ScreenOwnerRequest | undefined) {
+  /** The teams and organisations a screen paired by the user can be given (issue #322): theirs to run, or whose screens they manage by a role. */
+  async pairingOwners(user: AuthenticatedUser): Promise<{ teams: { id: string; name: string }[]; organizations: { id: string; name: string }[] }> {
+    const scope = await this.scopeOf(user);
+    const [teams, organizations] = await Promise.all([
+      this.prisma.client.team.findMany({ where: { id: { in: [...scope.adminTeams, ...scope.managedTeams] } }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+      this.prisma.client.organization.findMany({ where: { id: { in: [...scope.adminOrganizations, ...scope.managedOrganizations] } }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    ]);
+    return { teams, organizations };
+  }
+
+  /**
+   * The owner a screen is given: the user, or a team or organisation they
+   * run - or, when it's paired, one whose screens they manage by a role
+   * (issue #322), who never move a screen to another owner.
+   */
+  private async ownerFor(user: AuthenticatedUser, owner: ScreenOwnerRequest | undefined, pairing = false) {
     if (!owner || owner.kind === "user") return { ownerUserId: user.id, ownerTeamId: null, ownerOrganizationId: null };
     const scope = await this.scopeOf(user);
     if (owner.kind === "team") {
-      if (!user.isGlobalAdmin && !scope.adminTeams.has(owner.id!)) throw new ForbiddenException("Only a team's admins give it a screen");
+      if (!user.isGlobalAdmin && !scope.adminTeams.has(owner.id!) && !(pairing && scope.managedTeams.has(owner.id!))) throw new ForbiddenException("Only a team's admins, or whoever manages its screens, give it a screen");
       return { ownerUserId: null, ownerTeamId: owner.id!, ownerOrganizationId: null };
     }
-    if (!user.isGlobalAdmin && !scope.adminOrganizations.has(owner.id!)) throw new ForbiddenException("Only an organisation's admins give it a screen");
+    if (!user.isGlobalAdmin && !scope.adminOrganizations.has(owner.id!) && !(pairing && scope.managedOrganizations.has(owner.id!))) throw new ForbiddenException("Only an organisation's admins, or whoever manages its screens, give it a screen");
     return { ownerUserId: null, ownerTeamId: null, ownerOrganizationId: owner.id! };
   }
 
@@ -546,15 +566,20 @@ interface Scope {
   adminTeams: Set<string>;
   organizations: Set<string>;
   adminOrganizations: Set<string>;
+  /** Those whose screens they manage by a role (issue #322): as their admins do, but never giving one to another owner. */
+  managedTeams: Set<string>;
+  managedOrganizations: Set<string>;
 }
 type Owned = { ownerUserId: string | null; ownerTeamId: string | null; ownerOrganizationId: string | null };
 
-/** Its person, its team's admins, its organisation's admins, global admins. */
+/** Its person, its team's admins, its organisation's admins, whoever manages them by a role (issue #322), global admins. */
 const manages = (user: AuthenticatedUser, scope: Scope, screen: Owned) =>
   user.isGlobalAdmin ||
   screen.ownerUserId === user.id ||
   (!!screen.ownerTeamId && scope.adminTeams.has(screen.ownerTeamId)) ||
-  (!!screen.ownerOrganizationId && scope.adminOrganizations.has(screen.ownerOrganizationId));
+  (!!screen.ownerOrganizationId && scope.adminOrganizations.has(screen.ownerOrganizationId)) ||
+  (!!screen.ownerTeamId && scope.managedTeams.has(screen.ownerTeamId)) ||
+  (!!screen.ownerOrganizationId && scope.managedOrganizations.has(screen.ownerOrganizationId));
 
 /** Its team's or organisation's members put their sets on it. */
 const uses = (user: AuthenticatedUser, scope: Scope, screen: Owned) =>

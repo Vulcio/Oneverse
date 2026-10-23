@@ -872,7 +872,7 @@ export interface ScreenCurrent {
  * only (issue #270): those Admin made team-assignable, and who has which.
  */
 export interface ScopedRolesView {
-  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean }[];
+  roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canManageScreens: boolean }[];
   members: { userId: string; roleIds: string[] }[];
 }
 
@@ -893,6 +893,8 @@ export interface AdminRole {
   canOperateScreens: boolean;
   /** Moves the screens of the sets they can open to the next or previous song or section (issue #322). */
   canCue: boolean;
+  /** Pairs, changes and disconnects the screens of their teams and organisations, without being their admin (issue #322). */
+  canManageScreens: boolean;
   /** A team's or an organisation's admins give it to their own members, on their team or organisation only (issue #270). */
   teamAssignable: boolean;
   /** Null: Admin > Stem separation's. */
@@ -3047,6 +3049,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     confirmScreenPairing: (code: string, data: ConfirmScreenPairingRequest) =>
       request<ScreenSummary>(`/screens/pairings/${encodeURIComponent(code)}/confirm`, { method: "POST", body: JSON.stringify(data) }),
     /** The screens showing a set (for who leads it), or the user's own. */
+    /** Whose a screen paired now can be (issues #222, #322): the teams and organisations one runs, or whose screens one manages by a role. */
+    listScreenPairingOwners: () => request<{ teams: { id: string; name: string }[]; organizations: { id: string; name: string }[] }>("/screens/owners"),
     listScreens: (setlistId?: string) => request<ScreenSummary[]>(`/screens${setlistId ? `?setlistId=${encodeURIComponent(setlistId)}` : ""}`),
     updateScreen: (screenId: string, data: UpdateScreenRequest) => request<ScreenSummary>(`/screens/${screenId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteScreen: (screenId: string) => request<void>(`/screens/${screenId}`, { method: "DELETE" }),

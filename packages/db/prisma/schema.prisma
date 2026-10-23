@@ -3020,6 +3020,10 @@ model Role {
   // Cues a set's screens (issue #322): the next or previous song or section
   // only, of the sets its holders can open - a singer moving the set on.
   canCue                     Boolean  @default(false)
+  // Manages screens (issue #322): pairs, changes and disconnects the screens
+  // and Pulses of the teams and organisations it's given for, without being
+  // their admin - nothing over the sets they show or who owns them.
+  canManageScreens           Boolean  @default(false)
   // A team's or an organisation's admins may give it to their own members,
   // only on their team or organisation (issue #270).
   teamAssignable             Boolean  @default(false)

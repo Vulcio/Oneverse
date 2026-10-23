@@ -110,6 +110,12 @@ export class ScreensController {
     return this.screens.list(requireUser(user), typeof setlistId === "string" && setlistId ? setlistId : undefined);
   }
 
+  /** Whose a screen paired now can be (issues #222, #322): the teams and organisations they run, or whose screens they manage by a role. */
+  @Get("owners")
+  owners(@CurrentUser() user: AuthenticatedUser | undefined): ReturnType<ScreensService["pairingOwners"]> {
+    return this.screens.pairingOwners(requireUser(user));
+  }
+
   @Patch(":screenId")
   update(@Param("screenId") screenId: string, @Body() dto: UpdateScreenDto, @CurrentUser() user: AuthenticatedUser | undefined): ReturnType<ScreensService["update"]> {
     return this.screens.update(requireUser(user), screenId, dto);
