@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { addDays, callAt, daysBetween, eventDates, eventFallsOn, INSTRUMENTS, localDate, rehearsalDates, TECH_ROLES, type EventDate, type EventPart, type EventTiming } from "@oneverse/core";
 import type { Prisma } from "@oneverse/db";
 import { NotificationsService, type NotificationInput } from "../notifications/notifications.service.js";
+import { eventLocation } from "../locations/locations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { signedUpFor, signupKey } from "./signups.js";
 import type { CreateTeamEventDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
@@ -117,6 +118,7 @@ export class TeamEventsService {
       callMinutes: event.callMinutes,
       timeZone: event.timeZone,
       place: event.place,
+      locationId: event.locationId,
       note: event.note,
       repeat: event.rehearsalForId ? null : (timingOf(event).repeat ?? null),
       parts: partsOf(event),
@@ -187,6 +189,8 @@ export class TeamEventsService {
     if (dto.repeat?.until && dto.repeat.until < dto.date) throw new BadRequestException(["repeat.until must not be before date"]);
     // A rehearsal (issue #235, phase 7): its dates are its event's; no repeat, parts or set of its own.
     const parent = dto.rehearsalFor ? await this.rehearsalParent(teamId, dto.rehearsalFor.eventId) : null;
+    // Where it takes place (issue #320): its place is the location's name unless given.
+    const location = dto.locationId ? await eventLocation(this.prisma, { teamId }, dto.locationId) : null;
     const event = await this.prisma.client.teamEvent.create({
       data: {
         teamId,
@@ -196,7 +200,8 @@ export class TeamEventsService {
         durationMinutes: dto.durationMinutes ?? 90,
         callMinutes: dto.callMinutes ?? null,
         timeZone: dto.timeZone,
-        place: dto.place || null,
+        place: dto.place || location?.name || null,
+        locationId: location?.id ?? null,
         note: dto.note || null,
         repeatEveryWeeks: parent ? null : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: !parent && dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -221,6 +226,7 @@ export class TeamEventsService {
     const repeat = dto.repeat === undefined ? timingOf(before).repeat : dto.repeat;
     const date = dto.date ?? dateText(before.date);
     if (repeat?.until && repeat.until < date) throw new BadRequestException(["repeat.until must not be before date"]);
+    const location = dto.locationId ? await eventLocation(this.prisma, { teamId }, dto.locationId) : null;
     await this.prisma.client.teamEvent.update({
       where: { id: eventId },
       data: {
@@ -230,7 +236,9 @@ export class TeamEventsService {
         durationMinutes: dto.durationMinutes,
         callMinutes: dto.callMinutes,
         timeZone: dto.timeZone,
-        place: dto.place,
+        // Another location, no place given: the location's name.
+        place: dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place,
+        locationId: dto.locationId,
         note: dto.note,
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -327,6 +335,7 @@ export class TeamEventsService {
       ownTitle: date.title,
       eventTitle: event.title,
       place: event.place,
+      locationId: event.locationId,
       timeZone: event.timeZone,
       callAt: callAt(date.startsAt, event.callMinutes),
       repeats: !!event.repeatEveryWeeks,

@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { eventFallsOn, type EventPart } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { eventLocation } from "../locations/locations.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { AvailabilityService } from "../team-events/availability.service.js";
@@ -65,6 +66,7 @@ export class OrganizationEventsService {
       durationMinutes: event.durationMinutes,
       timeZone: event.timeZone,
       place: event.place,
+      locationId: event.locationId,
       note: event.note,
       repeat: event.repeatEveryWeeks ? { everyWeeks: event.repeatEveryWeeks, until: event.repeatUntil ? dateText(event.repeatUntil) : null } : null,
       host: event.host,
@@ -110,6 +112,8 @@ export class OrganizationEventsService {
     if (dto.repeat?.until && dto.repeat.until < dto.date) throw new BadRequestException(["repeat.until must not be before date"]);
     await this.checkHost(organizationId, dto.hostUserId);
     await this.checkNeeds(organizationId, dto.needs);
+    // Where it takes place (issue #320): its place is the location's name unless given.
+    const location = dto.locationId ? await eventLocation(this.prisma, { organizationId }, dto.locationId) : null;
     const event = await this.prisma.client.organizationEvent.create({
       data: {
         organizationId,
@@ -118,7 +122,8 @@ export class OrganizationEventsService {
         startTime: dto.startTime,
         durationMinutes: dto.durationMinutes ?? 90,
         timeZone: dto.timeZone,
-        place: dto.place || null,
+        place: dto.place || location?.name || null,
+        locationId: location?.id ?? null,
         note: dto.note || null,
         repeatEveryWeeks: dto.repeat?.everyWeeks ?? null,
         repeatUntil: dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -138,7 +143,7 @@ export class OrganizationEventsService {
   }
 
   /** What a group's part takes from the event: all but its parts. */
-  private timing(event: { title: string; date: Date; startTime: string; durationMinutes: number; timeZone: string; place: string | null; note: string | null; repeatEveryWeeks: number | null; repeatUntil: Date | null }) {
+  private timing(event: { title: string; date: Date; startTime: string; durationMinutes: number; timeZone: string; place: string | null; locationId: string | null; note: string | null; repeatEveryWeeks: number | null; repeatUntil: Date | null }) {
     return {
       title: event.title,
       date: dateText(event.date),
@@ -146,6 +151,7 @@ export class OrganizationEventsService {
       durationMinutes: event.durationMinutes,
       timeZone: event.timeZone,
       ...(event.place ? { place: event.place } : {}),
+      ...(event.locationId ? { locationId: event.locationId } : {}),
       ...(event.note ? { note: event.note } : {}),
       ...(event.repeatEveryWeeks ? { repeat: { everyWeeks: event.repeatEveryWeeks, ...(event.repeatUntil ? { until: dateText(event.repeatUntil) } : {}) } } : {}),
     };
@@ -166,6 +172,9 @@ export class OrganizationEventsService {
     if (dto.needs) await this.checkNeeds(organizationId, dto.needs);
     const repeat = dto.repeat === undefined ? (before.repeatEveryWeeks ? { everyWeeks: before.repeatEveryWeeks, until: before.repeatUntil ? dateText(before.repeatUntil) : null } : null) : dto.repeat;
     if (repeat?.until && repeat.until < (dto.date ?? dateText(before.date))) throw new BadRequestException(["repeat.until must not be before date"]);
+    const location = dto.locationId ? await eventLocation(this.prisma, { organizationId }, dto.locationId) : null;
+    // Another location, no place given: the location's name.
+    const place = dto.place === undefined && location && location.id !== before.locationId ? location.name : dto.place;
     const after = await this.prisma.client.organizationEvent.update({
       where: { id: eventId },
       data: {
@@ -174,7 +183,8 @@ export class OrganizationEventsService {
         startTime: dto.startTime,
         durationMinutes: dto.durationMinutes,
         timeZone: dto.timeZone,
-        place: dto.place,
+        place,
+        locationId: dto.locationId,
         note: dto.note,
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
@@ -187,7 +197,8 @@ export class OrganizationEventsService {
       startTime: dto.startTime,
       durationMinutes: dto.durationMinutes,
       timeZone: dto.timeZone,
-      place: dto.place,
+      place,
+      locationId: dto.locationId,
       note: dto.note,
       repeat: dto.repeat,
     };
@@ -237,7 +248,7 @@ export class OrganizationEventsService {
     const events = await this.prisma.client.organizationEvent.findMany({ where: { organizationId }, include: withGroups });
     const mine = new Set((await this.prisma.client.teamMembership.findMany({ where: { userId: viewer.id }, select: { teamId: true } })).map((m) => m.teamId));
     const byTeam = new Map<string, Awaited<ReturnType<TeamEventsService["dates"]>>>();
-    const out = new Map<string, { eventId: string; date: string; startsAt: string; endsAt: string; title: string; place: string | null; timeZone: string; host: Row["host"]; canManage: boolean; groups: unknown[]; cancelled: boolean }>();
+    const out = new Map<string, { eventId: string; date: string; startsAt: string; endsAt: string; title: string; place: string | null; locationId: string | null; timeZone: string; host: Row["host"]; canManage: boolean; groups: unknown[]; cancelled: boolean }>();
     for (const event of events) {
       const canManage = role === "ADMIN" || event.hostUserId === viewer.id;
       for (const part of event.teamEvents) {
@@ -246,7 +257,7 @@ export class OrganizationEventsService {
         const shown = await this.availability.withAnswers(part.teamId, viewer.id, canManage, dates);
         for (const date of shown) {
           const key = `${event.id}|${date.date}`;
-          const entry = out.get(key) ?? { eventId: event.id, date: date.date, startsAt: date.startsAt, endsAt: date.endsAt, title: date.title, place: event.place, timeZone: event.timeZone, host: event.host, canManage, groups: [], cancelled: true };
+          const entry = out.get(key) ?? { eventId: event.id, date: date.date, startsAt: date.startsAt, endsAt: date.endsAt, title: date.title, place: event.place, locationId: event.locationId, timeZone: event.timeZone, host: event.host, canManage, groups: [], cancelled: true };
           entry.cancelled &&= date.cancelled;
           entry.groups.push({
             teamId: part.teamId,
@@ -275,16 +286,17 @@ export class OrganizationEventsService {
   async presets(viewer: Viewer, organizationId: string) {
     await this.role(viewer, organizationId);
     const rows = await this.prisma.client.organizationEventPreset.findMany({ where: { organizationId }, orderBy: { name: "asc" } });
-    return rows.map((row) => ({ id: row.id, name: row.name, title: row.title, startTime: row.startTime, durationMinutes: row.durationMinutes, place: row.place, needs: row.needs as unknown as { teamId: string; parts?: EventPart[]; callMinutes?: number }[] }));
+    return rows.map((row) => ({ id: row.id, name: row.name, title: row.title, startTime: row.startTime, durationMinutes: row.durationMinutes, place: row.place, locationId: row.locationId, needs: row.needs as unknown as { teamId: string; parts?: EventPart[]; callMinutes?: number }[] }));
   }
 
   /** By its admins: what an event usually needs, under a name of its own. */
   async createPreset(viewer: Viewer, organizationId: string, dto: OrganizationEventPresetDto) {
     if ((await this.role(viewer, organizationId)) !== "ADMIN") throw new ForbiddenException("Only the organisation's admins make presets");
     await this.checkNeeds(organizationId, dto.needs);
+    const location = dto.locationId ? await eventLocation(this.prisma, { organizationId }, dto.locationId) : null;
     try {
       const row = await this.prisma.client.organizationEventPreset.create({
-        data: { organizationId, name: dto.name, title: dto.title, startTime: dto.startTime, durationMinutes: dto.durationMinutes ?? 90, place: dto.place || null, needs: dto.needs as unknown as Prisma.InputJsonValue },
+        data: { organizationId, name: dto.name, title: dto.title, startTime: dto.startTime, durationMinutes: dto.durationMinutes ?? 90, place: dto.place || location?.name || null, locationId: location?.id ?? null, needs: dto.needs as unknown as Prisma.InputJsonValue },
       });
       return (await this.presets(viewer, organizationId)).find((one) => one.id === row.id)!;
     } catch (error) {

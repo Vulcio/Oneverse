@@ -38,6 +38,7 @@ import { SyncModule } from "./sync/sync.module.js";
 import { ScreensModule } from "./screens/screens.module.js";
 import { ScripturesModule } from "./scriptures/scriptures.module.js";
 import { BrandsModule } from "./brands/brands.module.js";
+import { LocationsModule } from "./locations/locations.module.js";
 import { InvitationsModule } from "./invitations/invitations.module.js";
 import { PeopleModule } from "./people/people.module.js";
 import { LibraryHomeModule } from "./library-home/library-home.module.js";
@@ -83,6 +84,7 @@ import { LookupsModule } from "./lookups/lookups.module.js";
     ScreensModule,
     ScripturesModule,
     BrandsModule,
+    LocationsModule,
     InvitationsModule,
     LibraryHomeModule,
     StemSeparationModule,

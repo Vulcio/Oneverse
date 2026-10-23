@@ -705,6 +705,8 @@ model Team {
   positions            TeamPosition[]
   screenWidgetDefaults ScreenWidgetDefault[]
   brands               Brand[]
+  // Where its events take place (issue #320).
+  locations            Location[]
   // Its own Songverse Sonic server for its songs' stems (issue #300).
   sonicServer          SonicServer?
   // A Bible in its members' sidebar (issue #310), turned on by its admins.
@@ -749,6 +751,8 @@ model Organization {
   screens      Screen[]
   // Its brands (issue #279): logos, colours, fonts, backgrounds, links.
   brands       Brand[]
+  // Where its events take place (issue #320), offered to its groups' events too.
+  locations    Location[]
   // Its own Songverse Sonic server for its teams' songs' stems (issue #300).
   sonicServer  SonicServer?
   // A Bible in its teams' members' sidebar (issue #310), turned on by its admins.
@@ -1346,6 +1350,8 @@ model TeamEvent {
   callMinutes         Int?
   timeZone            String
   place               String?
+  // Where it takes place (issue #320): the team's or its organisation's; `place` stays free text.
+  locationId          String?
   note                String?
   // Null: a one-off.
   repeatEveryWeeks    Int?
@@ -1374,9 +1380,11 @@ model TeamEvent {
   rehearsalFor      TeamEvent?            @relation("Rehearsals", fields: [rehearsalForId], references: [id], onDelete: Cascade)
   rehearsals        TeamEvent[]           @relation("Rehearsals")
   organizationEvent OrganizationEvent?    @relation(fields: [organizationEventId], references: [id], onDelete: Cascade)
+  location          Location?             @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   @@unique([organizationEventId, teamId])
   @@index([teamId])
+  @@index([locationId])
 }
 
 // An organisation's event (issue #241, Planiverse): its host, its timing,
@@ -1391,6 +1399,8 @@ model OrganizationEvent {
   durationMinutes  Int       @default(90)
   timeZone         String
   place            String?
+  // Where it takes place (issue #320): one of the organisation's locations.
+  locationId       String?
   note             String?
   repeatEveryWeeks Int?
   repeatUntil      DateTime? @db.Date
@@ -1404,8 +1414,10 @@ model OrganizationEvent {
   host         User?        @relation("OrganizationEventHost", fields: [hostUserId], references: [id], onDelete: SetNull)
   createdBy    User?        @relation("OrganizationEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   teamEvents   TeamEvent[]
+  location     Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
+  @@index([locationId])
 }
 
 // A saved list of what an organisation's event needs (issue #241):
@@ -1418,11 +1430,13 @@ model OrganizationEventPreset {
   startTime       String
   durationMinutes Int      @default(90)
   place           String?
+  locationId      String?
   // [{ teamId, parts }]
   needs           Json
   createdAt       DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, name])
 }
@@ -2809,9 +2823,9 @@ model BibleVerse {
 // encrypted with SETTINGS_ENCRYPTION_KEY. None: YOUVERSION_APP_KEY; without
 // one, YouVersion isn't asked and nothing about it shows.
 model ScriptureSettings {
-  id                   String   @id @default("singleton")
-  youversionAppKeyEnc  String?
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default("singleton")
+  youversionAppKeyEnc String?
+  updatedAt           DateTime @updatedAt
 }
 
 // An artist (issue #86): the name songs credit (VersionContributor.source,
@@ -3354,4 +3368,28 @@ model LiveSessionCommand {
 enum LiveSessionStatus {
   LIVE
   ENDED
+}
+
+// Where events take place (issue #320): a church, a hall, a campus. An
+// organisation's or a team's; an organisation's are offered to its groups'
+// events. An event keeps its free-text `place` beside it.
+model Location {
+  id                  String   @id @default(cuid())
+  name                String
+  address             String?
+  // The time zone of its events, and of what follows it (a Pulse, issue #320).
+  timeZone            String
+  ownerTeamId         String?
+  ownerOrganizationId String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  team               Team?                     @relation(fields: [ownerTeamId], references: [id], onDelete: Cascade)
+  organization       Organization?             @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
+  teamEvents         TeamEvent[]
+  organizationEvents OrganizationEvent[]
+  eventPresets       OrganizationEventPreset[]
+
+  @@index([ownerTeamId])
+  @@index([ownerOrganizationId])
 }

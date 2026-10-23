@@ -19,4 +19,5 @@ export * from "./messages.js";
 export * from "./organizations.js";
 export * from "./notes.js";
 export * from "./brands.js";
+export * from "./locations.js";
 export * from "./scriptures.js";
