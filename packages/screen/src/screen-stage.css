@@ -360,17 +360,22 @@
   visibility: hidden;
 }
 
-/* A slide in, and the one before it out: the same length, one over the other. */
+/*
+ * A slide in, and the one before it out (issue #324): the old one starts
+ * going at once and is gone in the first 40%, so it never lingers over the
+ * new one, which comes in just after it starts and takes the rest.
+ */
 .sv-in {
-  animation-duration: var(--t);
+  animation-duration: calc(var(--t) * 0.85);
+  animation-delay: calc(var(--t) * 0.15);
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   animation-fill-mode: both;
 }
 .sv-out {
   position: absolute;
   inset: 0;
-  animation-duration: var(--t);
-  animation-timing-function: cubic-bezier(0.64, 0, 0.78, 0);
+  animation-duration: calc(var(--t) * 0.4);
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
   animation-fill-mode: both;
   pointer-events: none;
 }
