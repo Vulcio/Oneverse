@@ -111,9 +111,13 @@ await step("the settings are kept for next time", async () => {
 
 await step("Live: one button, at the song's tempo and time signature; a song without a tempo can't", async () => {
   await page.goto(`${WEB}/library/${waltz.id}/live`);
+  // A click before the page has hydrated does nothing.
+  await page.waitForLoadState("networkidle");
   const button = page.getByTestId("metronome-song");
   await button.click();
-  if ((await button.getAttribute("aria-pressed")) !== "true") throw new Error("not pressed");
+  await page.locator('[data-testid="metronome-song"][aria-pressed="true"]').waitFor({ timeout: 5000 }).catch(() => {
+    throw new Error("not pressed");
+  });
   const list = await clicks(7, await now());
   if (!same(gaps(list), 60 / 72) || Math.max(...list.map((c) => c.beat)) !== 2) throw new Error(`gaps ${gaps(list)}`);
   await page.getByRole("button", { name: "Stop the metronome" }).click();
