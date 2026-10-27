@@ -14,19 +14,22 @@ const FUZZY_LIMIT = 200;
  * ignoring case, accents and punctuation, through the trigram-indexed
  * searchText the database keeps folded by search_fold() - or a CCLI number
  * exactly. The query is folded by the same function, so both agree.
- * Misspelt words too ("amazng grace", "eternel fai moi conaitre"): songs
- * with each word of the query, where a word of four letters or more may be
- * close to one of theirs rather than in them (pg_trgm, the same index).
+ * When none of the songs in `scope` (those the search is among) matches,
+ * misspelt words ("amazng grace", "eternel fai moi conaitre"): songs with
+ * each word of the query, where a word of four letters or more may be close
+ * to one of theirs rather than in them (pg_trgm, the same index). Only then,
+ * as the words needn't be in order or next to each other: a search that
+ * finds songs as typed isn't widened.
  */
-export async function songSearchWhere(prisma: PrismaService, q: string): Promise<Prisma.SongVersionWhereInput> {
+export async function songSearchWhere(prisma: PrismaService, q: string, scope: Prisma.SongVersionWhereInput): Promise<Prisma.SongVersionWhereInput> {
   const [row] = await prisma.client.$queryRaw<{ folded: string }[]>`SELECT search_fold(${q}) AS folded`;
   const folded = row?.folded ?? q;
   // Only punctuation: nothing to find by name.
   if (!folded) return { ccli: q };
+  const asTyped: Prisma.SongVersionWhereInput = { OR: [{ searchText: { contains: folded, mode: "insensitive" as const } }, { ccli: q }] };
+  if (await prisma.client.songVersion.findFirst({ where: { AND: [scope, asTyped] }, select: { id: true } })) return asTyped;
   const fuzzy = await misspelt(prisma, folded);
-  return {
-    OR: [{ searchText: { contains: folded, mode: "insensitive" as const } }, { ccli: q }, ...(fuzzy.length ? [{ id: { in: fuzzy } }] : [])],
-  };
+  return fuzzy.length ? { OR: [...asTyped.OR!, { id: { in: fuzzy } }] } : asTyped;
 }
 
 /** Songs with every word of `folded`, those long enough maybe misspelt; none when no word is. */

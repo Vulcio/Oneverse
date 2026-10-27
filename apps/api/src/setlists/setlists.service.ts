@@ -312,9 +312,10 @@ export class SetlistsService {
   async candidates(user: AuthenticatedUser, setlistId: string, query: string | undefined) {
     const set = await this.sets.findEditable(user, setlistId);
     const search = query?.trim();
+    const addable = await this.sets.addableWhere(set);
     const songs = await this.prisma.client.songVersion.findMany({
       where: {
-        AND: [await this.sets.addableWhere(set), ...(search ? [await songSearchWhere(this.prisma, search)] : [])],
+        AND: [addable, ...(search ? [await songSearchWhere(this.prisma, search, addable)] : [])],
       },
       select: SONG_SELECT,
       orderBy: search ? { title: "asc" } : { updatedAt: "desc" },

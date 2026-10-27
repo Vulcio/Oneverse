@@ -670,15 +670,16 @@ export class SongVersionsService {
     // Searched in the lyrics (issue #221): every word in the song's words, somewhere (findByLyrics checks the order).
     const lyrics = query.in === "lyrics" ? (parseLyricsQuery(query.q ?? "") ?? []) : null;
     const q = lyrics ? undefined : query.q?.trim();
+    // Those that can go in a set the user changes (issue #328: its Add songs), or all they can see.
+    const scope = query.addableTo ? await this.sets.addableWhere(await this.sets.findEditable(user, query.addableTo)) : await this.access.songsVisibleTo(user);
     return {
       AND: [
-        // Those that can go in a set the user changes (issue #328: its Add songs), or all they can see.
-        query.addableTo ? await this.sets.addableWhere(await this.sets.findEditable(user, query.addableTo)) : await this.access.songsVisibleTo(user),
+        scope,
         ...(lyrics ? (lyrics.length > 0 ? lyrics.map((term) => ({ lyricsText: { contains: term } })) : [{ id: { in: [] } }]) : []),
         ...(q
           ? [
               // searchText is the title, subtitle, version name and performers (kept by the database; see the schema).
-              await songSearchWhere(this.prisma, q),
+              await songSearchWhere(this.prisma, q, scope),
             ]
           : []),
         ...(query.language ? [{ language: query.language }] : []),
