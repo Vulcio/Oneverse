@@ -42,6 +42,7 @@ import {
   Monitor,
   BookText,
   Check,
+  ListChecks,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -57,6 +58,7 @@ import { setTheme, useMode } from "#/lib/mode";
 import { forgetSmartLists, smartListSearch, useSmartLists } from "#/lib/smart-lists";
 import { setlistTitle } from "#/lib/setlists";
 import { DropNoticeBar, useSetDrop, type SetDropTarget } from "#/components/set-drop";
+import { forgetQuickSelection, useQuickSelection } from "#/lib/quick-selection";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@oneverse/ui/components/collapsible";
 import {
   DropdownMenu,
@@ -217,6 +219,7 @@ export function AccountMenuContent({ session, side, align }: { session: AppSessi
           variant="destructive"
           onClick={() => {
             forgetSmartLists();
+            forgetQuickSelection();
             // This app's session, then Oneverse's (issue #303).
             void forgetOffline().then(() => {
               window.location.href = "/auth/sign-out";
@@ -359,6 +362,7 @@ function MainNav({
   const shownSetlists = sidebarSets.slice(0, SIDEBAR_SET_LIMIT);
   // A song dragged from the library goes in the set it's dropped on (issue #330).
   const setDrop = useSetDrop();
+  const quick = useQuickSelection();
   const smartLists = useSmartLists();
   const listId = useRouterState({ select: (s) => (s.location.search as { list?: string }).list });
   const favorites = useRouterState({ select: (s) => !!(s.location.search as { favorites?: boolean }).favorites });
@@ -403,6 +407,19 @@ function MainNav({
             isActive={pathname.startsWith("/sets")}
             empty={t("sets.noSetsYet")}
             items={[
+              // The Quick selection (issue #334), once it holds songs - or to drop one on.
+              ...(quick?.songs.length || setDrop.dragging || pathname === "/quick-selection"
+                ? [
+                    {
+                      key: "quick-selection",
+                      label: `${t("quickSelection.title")} (${quick?.songs.length ?? 0})`,
+                      icon: <ListChecks />,
+                      isActive: pathname === "/quick-selection",
+                      link: { to: "/quick-selection" as const },
+                      drop: setDrop.quickTarget(),
+                    },
+                  ]
+                : []),
               ...shownSetlists.map((set) => ({
                 key: set.id,
                 label: setlistTitle(set, t, i18n.language),

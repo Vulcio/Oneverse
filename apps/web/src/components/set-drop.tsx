@@ -6,9 +6,12 @@ import { useAddSongToSet } from "#/components/set-team-access";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
 import { carriesSong, SONG_DRAG_TYPE, useDraggedSong } from "#/lib/song-drag";
+import { addToQuickSelection, inQuickSelection, useQuickSelection } from "#/lib/quick-selection";
+
+const QUICK = "quick-selection";
 
 /** What came of a drop, said in the sidebar for a moment. */
-export type DropNotice = { setId: string; text: string } | { error: string };
+export type DropNotice = { setId: string; text: string } | { quick: true; text: string } | { error: string };
 
 /** How a set in the sidebar takes a song being dragged: it can, it has it, it can't, or not known yet. */
 export type DropState = "addable" | "in" | "refused" | "loading";
@@ -37,6 +40,7 @@ export function useSetDrop() {
   const closeNotice = useCallback(() => setNotice(null), []);
   const dropped = useRef("");
   const adding = useAddSongToSet((set) => setNotice({ setId: set.id, text: t("sets.dropOnSet.added", { song: dropped.current, set: setlistTitle(set, t, i18n.language) }) }));
+  const quick = useQuickSelection();
 
   useEffect(() => {
     setSets(null);
@@ -58,6 +62,26 @@ export function useSetDrop() {
     if (failed) setNotice({ error: failed });
   }
 
+  /** What makes an entry a place to drop the song, under `key`. */
+  function dropProps(key: string, onDrop: (songVersionId: string, songTitle: string) => void): HTMLAttributes<HTMLElement> {
+    const title = dragged?.title ?? "";
+    return {
+      onDragOver: (event: DragEvent) => {
+        if (!carriesSong(event)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        setOver(key);
+      },
+      onDragLeave: () => setOver((current) => (current === key ? null : current)),
+      onDrop: (event: DragEvent) => {
+        const songVersionId = event.dataTransfer.getData(SONG_DRAG_TYPE);
+        if (!songVersionId) return;
+        event.preventDefault();
+        onDrop(songVersionId, title);
+      },
+    };
+  }
+
   /** A set's state and what makes its entry a place to drop, while a song is dragged. */
   function target(setId: string): SetDropTarget | undefined {
     if (!dragged) return undefined;
@@ -65,29 +89,26 @@ export function useSetDrop() {
     const set = sets.get(setId);
     const state: DropState = !set || !set.canAddSong ? "refused" : set.hasSong ? "in" : "addable";
     if (state !== "addable") return { state, over: false, props: {} };
-    const title = dragged.title;
+    return { state, over: over === setId, props: dropProps(setId, (songVersionId, title) => void drop(set!, songVersionId, title)) };
+  }
+
+  /** The Quick selection's entry (issue #334): any song you can see goes in, once. */
+  function quickTarget(): SetDropTarget | undefined {
+    if (!dragged) return undefined;
+    if (!quick) return { state: "loading", over: false, props: {} };
+    if (inQuickSelection(quick, dragged.id)) return { state: "in", over: false, props: {} };
     return {
-      state,
-      over: over === setId,
-      props: {
-        onDragOver: (event: DragEvent) => {
-          if (!carriesSong(event)) return;
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
-          setOver(setId);
-        },
-        onDragLeave: () => setOver((current) => (current === setId ? null : current)),
-        onDrop: (event: DragEvent) => {
-          const songVersionId = event.dataTransfer.getData(SONG_DRAG_TYPE);
-          if (!songVersionId) return;
-          event.preventDefault();
-          void drop(set!, songVersionId, title);
-        },
-      },
+      state: "addable",
+      over: over === QUICK,
+      props: dropProps(QUICK, (songVersionId, title) =>
+        void addToQuickSelection(songVersionId)
+          .then(() => setNotice({ quick: true, text: t("sets.dropOnSet.added", { song: title, set: t("quickSelection.title") }) }))
+          .catch((err: unknown) => setNotice({ error: err instanceof Error ? err.message : String(err) })),
+      ),
     };
   }
 
-  return { dragging: !!dragged, target, notice, closeNotice, dialog: adding.dialog };
+  return { dragging: !!dragged, target, quickTarget, notice, closeNotice, dialog: adding.dialog };
 }
 
 /** What came of the last drop, with the set to open; gone after a few seconds. */
@@ -104,9 +125,15 @@ export function DropNoticeBar({ notice, onClose }: { notice: DropNotice; onClose
       ) : (
         <>
           <span className="min-w-0 flex-1">{notice.text}</span>
-          <Link to="/sets/$setlistId" params={{ setlistId: notice.setId }} className="shrink-0 font-medium underline-offset-2 hover:underline" onClick={onClose}>
-            {t("sets.dropOnSet.open")}
-          </Link>
+          {"quick" in notice ? (
+            <Link to="/quick-selection" className="shrink-0 font-medium underline-offset-2 hover:underline" onClick={onClose}>
+              {t("sets.addToSet.open")}
+            </Link>
+          ) : (
+            <Link to="/sets/$setlistId" params={{ setlistId: notice.setId }} className="shrink-0 font-medium underline-offset-2 hover:underline" onClick={onClose}>
+              {t("sets.dropOnSet.open")}
+            </Link>
+          )}
         </>
       )}
     </div>

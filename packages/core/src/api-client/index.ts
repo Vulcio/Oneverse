@@ -45,7 +45,7 @@ import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, Sav
 import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
-import type { AddSetlistItemSchema, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
+import type { AddQuickSelectionSchema, AddSetlistItemSchema, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
 import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
@@ -188,6 +188,20 @@ export interface SetlistSummary {
   signedUp?: boolean;
   /** For an event's set: its date is over, in the team's time zone. */
   past?: boolean;
+}
+
+/** Someone's Quick selection (issue #334): songs gathered, to add to a set at once. */
+export interface QuickSelection {
+  songs: SetlistSongRef[];
+}
+
+/** What came of adding the Quick selection to a set. */
+export interface QuickSelectionAdded {
+  added: number;
+  /** Already in the set, or not allowed in it (a team set takes the team's songs). */
+  skipped: { songVersionId: string; title: string; reason: "in-set" | "not-addable" }[];
+  set: SetlistDetail;
+  selection: QuickSelection;
 }
 
 /** A set a song could go in (issue #330): the song's Add to set. */
@@ -2754,6 +2768,13 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       return response.blob();
     },
     listSetlists: () => request<SetlistSummary[]>("/setlists"),
+    getQuickSelection: () => request<QuickSelection>("/quick-selection"),
+    addToQuickSelection: (songVersionId: string) => request<QuickSelection>(`/quick-selection/songs/${songVersionId}`, { method: "PUT" }),
+    removeFromQuickSelection: (songVersionId: string) => request<QuickSelection>(`/quick-selection/songs/${songVersionId}`, { method: "DELETE" }),
+    clearQuickSelection: () => request<QuickSelection>("/quick-selection", { method: "DELETE" }),
+    /** Its songs at the end of a set (issue #334); those added leave it unless `keep`. */
+    addQuickSelectionTo: (setlistId: string, data: z.input<typeof AddQuickSelectionSchema> = {}) =>
+      request<QuickSelectionAdded>(`/quick-selection/add-to/${setlistId}`, { method: "POST", body: JSON.stringify(data) }),
     /** The sets the user can change, not over, that a song could go in (issue #330). */
     setsForSong: (songVersionId: string) => request<SetForSong[]>(`/setlists/for-song/${songVersionId}`),
     createSetlist: (data: { name?: string; eventDate?: string; teamId?: string }) =>

@@ -145,3 +145,8 @@ export const ReorderSetlistItemsSchema = z.strictObject({
     .describe("Every item id of the set, in the new order"),
 });
 
+
+/** The Quick selection's songs into a set (issue #334). */
+export const AddQuickSelectionSchema = z.strictObject({
+  keep: optional(z.boolean()).describe("Keep the songs added in the selection; by default they leave it"),
+});

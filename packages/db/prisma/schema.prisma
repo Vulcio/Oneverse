@@ -365,6 +365,7 @@ model User {
   contributedVersions  SongVersion[]         @relation("VersionContributedBy")
   songsSharedWithMe    AccessGrant[]         @relation("AccessGrantTo")
   favoriteSongs        FavoriteSong[]
+  quickSelection       QuickSelectionSong[]
   songViews            SongView[]
   connectionsAsked     Connection[]          @relation("ConnectionRequester")
   connectionsAnswered  Connection[]          @relation("ConnectionAddressee")
@@ -1097,6 +1098,7 @@ model SongVersion {
   userNotes         Note[] // notes on it (issue #256); not the song's `notes` field
   revisions         SongVersionRevision[]
   favoritedBy       FavoriteSong[]
+  inQuickSelections QuickSelectionSong[]
   views             SongView[]
 
   @@index([workId])
@@ -2972,6 +2974,21 @@ model FavoriteSong {
   userId        String
   songVersionId String
   createdAt     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  songVersion SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, songVersionId])
+  @@index([songVersionId])
+}
+
+/// A song in someone's Quick selection (issue #330 follow-up, #334): songs
+/// gathered from anywhere - a song, the library, the search box - then
+/// added to a set all at once. Theirs alone, on every device.
+model QuickSelectionSong {
+  userId        String
+  songVersionId String
+  addedAt       DateTime @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   songVersion SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)

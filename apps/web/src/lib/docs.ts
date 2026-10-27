@@ -15,6 +15,8 @@ const PAGES: [RegExp, string][] = [
   [/^\/library/, "library"],
   [/^\/sets\/[^/]+\/operate/, "screens"],
   [/^\/sets/, "sets"],
+  // The Quick selection (issue #334), with the sets.
+  [/^\/quick-selection/, "sets"],
   [/^\/screens/, "screens"],
   [/^\/brands/, "brands"],
   [/^\/songbook/, "songbooks"],

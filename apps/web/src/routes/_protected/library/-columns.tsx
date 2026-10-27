@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { artistNames } from "#/lib/artists";
+import { QuickSelectToggle } from "#/components/quick-selection";
 
 function tagLabel(tags: SongVersionSummary["tags"], locale: LocaleValue): string {
   if (tags.length === 0) return "—";
@@ -50,10 +51,12 @@ export function useLibraryColumns(currentUserId: string): ColumnDef<SongVersionS
             <span className="size-8 shrink-0">
               <SongCover song={row.original} size="small" className="rounded" />
             </span>
-            <span className="font-medium">
+            <span className="min-w-0 flex-1 font-medium">
               {row.original.title}
               {row.original.versionName ? <span className="font-normal text-muted-foreground"> — {row.original.versionName}</span> : null}
             </span>
+            {/* Into the Quick selection (issue #334). */}
+            <QuickSelectToggle songVersionId={row.original.id} className="-my-1 shrink-0" />
           </span>
         ),
       },

@@ -1,4 +1,4 @@
-import { CreateSetlistSchema, UpdateSetlistSchema, AddSetlistItemSchema, SetlistOfflineQuerySchema, UpdateSetlistItemSchema, SetArrangementSchema, ReorderSetlistItemsSchema } from "@oneverse/core";
+import { AddQuickSelectionSchema, CreateSetlistSchema, UpdateSetlistSchema, AddSetlistItemSchema, SetlistOfflineQuerySchema, UpdateSetlistItemSchema, SetArrangementSchema, ReorderSetlistItemsSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class CreateSetlistDto extends zodDto(CreateSetlistSchema) {}
@@ -15,3 +15,5 @@ export class SetArrangementDto extends zodDto(SetArrangementSchema) {}
 
 export class ReorderSetlistItemsDto extends zodDto(ReorderSetlistItemsSchema) {}
 
+
+export class AddQuickSelectionDto extends zodDto(AddQuickSelectionSchema) {}

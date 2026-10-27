@@ -21,6 +21,7 @@ import { Route as ProtectedMetronomeRouteImport } from './routes/_protected/metr
 import { Route as ProtectedNotificationsRouteImport } from './routes/_protected/notifications'
 import { Route as ProtectedOfflineRouteImport } from './routes/_protected/offline'
 import { Route as ProtectedPeopleRouteImport } from './routes/_protected/people'
+import { Route as ProtectedQuickSelectionRouteImport } from './routes/_protected/quick-selection'
 import { Route as ProtectedReviewRouteImport } from './routes/_protected/review'
 import { Route as ProtectedScreensRouteImport } from './routes/_protected/screens'
 import { Route as ProtectedTunerRouteImport } from './routes/_protected/tuner'
@@ -136,6 +137,11 @@ const ProtectedOfflineRoute = ProtectedOfflineRouteImport.update({
 const ProtectedPeopleRoute = ProtectedPeopleRouteImport.update({
   id: '/people',
   path: '/people',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedQuickSelectionRoute = ProtectedQuickSelectionRouteImport.update({
+  id: '/quick-selection',
+  path: '/quick-selection',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedReviewRoute = ProtectedReviewRouteImport.update({
@@ -458,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof ProtectedNotificationsRoute
   '/offline': typeof ProtectedOfflineRoute
   '/people': typeof ProtectedPeopleRoute
+  '/quick-selection': typeof ProtectedQuickSelectionRoute
   '/review': typeof ProtectedReviewRouteWithChildren
   '/screens': typeof ProtectedScreensRoute
   '/tuner': typeof ProtectedTunerRoute
@@ -527,6 +534,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof ProtectedNotificationsRoute
   '/offline': typeof ProtectedOfflineRoute
   '/people': typeof ProtectedPeopleRoute
+  '/quick-selection': typeof ProtectedQuickSelectionRoute
   '/screens': typeof ProtectedScreensRoute
   '/tuner': typeof ProtectedTunerRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -598,6 +606,7 @@ export interface FileRoutesById {
   '/_protected/notifications': typeof ProtectedNotificationsRoute
   '/_protected/offline': typeof ProtectedOfflineRoute
   '/_protected/people': typeof ProtectedPeopleRoute
+  '/_protected/quick-selection': typeof ProtectedQuickSelectionRoute
   '/_protected/review': typeof ProtectedReviewRouteWithChildren
   '/_protected/screens': typeof ProtectedScreensRoute
   '/_protected/tuner': typeof ProtectedTunerRoute
@@ -670,6 +679,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/offline'
     | '/people'
+    | '/quick-selection'
     | '/review'
     | '/screens'
     | '/tuner'
@@ -739,6 +749,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/offline'
     | '/people'
+    | '/quick-selection'
     | '/screens'
     | '/tuner'
     | '/auth/callback'
@@ -809,6 +820,7 @@ export interface FileRouteTypes {
     | '/_protected/notifications'
     | '/_protected/offline'
     | '/_protected/people'
+    | '/_protected/quick-selection'
     | '/_protected/review'
     | '/_protected/screens'
     | '/_protected/tuner'
@@ -966,6 +978,13 @@ declare module '@tanstack/react-router' {
       path: '/people'
       fullPath: '/people'
       preLoaderRoute: typeof ProtectedPeopleRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/quick-selection': {
+      id: '/_protected/quick-selection'
+      path: '/quick-selection'
+      fullPath: '/quick-selection'
+      preLoaderRoute: typeof ProtectedQuickSelectionRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/review': {
@@ -1437,6 +1456,7 @@ interface ProtectedRouteChildren {
   ProtectedNotificationsRoute: typeof ProtectedNotificationsRoute
   ProtectedOfflineRoute: typeof ProtectedOfflineRoute
   ProtectedPeopleRoute: typeof ProtectedPeopleRoute
+  ProtectedQuickSelectionRoute: typeof ProtectedQuickSelectionRoute
   ProtectedReviewRoute: typeof ProtectedReviewRouteWithChildren
   ProtectedScreensRoute: typeof ProtectedScreensRoute
   ProtectedTunerRoute: typeof ProtectedTunerRoute
@@ -1480,6 +1500,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedNotificationsRoute: ProtectedNotificationsRoute,
   ProtectedOfflineRoute: ProtectedOfflineRoute,
   ProtectedPeopleRoute: ProtectedPeopleRoute,
+  ProtectedQuickSelectionRoute: ProtectedQuickSelectionRoute,
   ProtectedReviewRoute: ProtectedReviewRouteWithChildren,
   ProtectedScreensRoute: ProtectedScreensRoute,
   ProtectedTunerRoute: ProtectedTunerRoute,

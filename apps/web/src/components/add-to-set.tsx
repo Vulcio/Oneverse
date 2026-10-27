@@ -9,6 +9,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle, setOwnerLabel } from "#/lib/setlists";
 import { useAddSongToSet } from "#/components/set-team-access";
+import { addToQuickSelection, inQuickSelection, removeFromQuickSelection, useQuickSelection } from "#/lib/quick-selection";
 
 /**
  * Add to set, on a song (issue #330): the sets you can change that aren't
@@ -125,6 +126,7 @@ function SetChoices({ songVersionId, songTitle, adding, onLeave }: { songVersion
   return (
     <div className="flex flex-col">
       <p className="border-b px-3 py-2 text-sm font-medium">{t("sets.addToSet.title")}</p>
+      <QuickSelectionChoice songVersionId={songVersionId} />
       {error ? <p className="px-3 py-2 text-sm text-destructive">{error}</p> : null}
       {sets === null ? (
         error ? null : <p className="px-3 py-2 text-sm text-muted-foreground">{t("sets.addToSet.loading")}</p>
@@ -182,6 +184,38 @@ function SetChoices({ songVersionId, songTitle, adding, onLeave }: { songVersion
           {t("sets.addToSet.newSet")}
         </Link>
       </div>
+    </div>
+  );
+}
+
+/** The Quick selection (issue #334), first: in or out, and how many songs it holds. */
+function QuickSelectionChoice({ songVersionId }: { songVersionId: string }) {
+  const { t } = useTranslation();
+  const selection = useQuickSelection();
+  const [busy, setBusy] = useState(false);
+  const selected = inQuickSelection(selection, songVersionId);
+  return (
+    <div className="border-b px-1 py-1">
+      <button
+        type="button"
+        disabled={busy || !selection}
+        aria-pressed={selected}
+        onClick={() => {
+          setBusy(true);
+          void (selected ? removeFromQuickSelection(songVersionId) : addToQuickSelection(songVersionId)).finally(() => setBusy(false));
+        }}
+        className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+        data-testid="add-to-quick-selection"
+        data-state={selected ? "in" : "out"}
+      >
+        <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">{selected ? <Check className="text-primary" /> : <ListPlus className="text-muted-foreground" />}</span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm">{t("quickSelection.title")}</span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {selected ? t("quickSelection.inItRemove") : t("quickSelection.count", { count: selection?.songs.length ?? 0 })}
+          </span>
+        </span>
+      </button>
     </div>
   );
 }
