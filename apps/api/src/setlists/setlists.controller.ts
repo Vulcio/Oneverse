@@ -37,6 +37,16 @@ export class SetlistsController {
     return this.setlists.list(requireUser(user));
   }
 
+  @Get("for-song/:songVersionId")
+  @ApiOperation({
+    summary: "The sets a song could go in",
+    description:
+      "Sets the user can change whose date isn't over (upcoming soonest first, then undated), each with `hasSong` (the song is in it already) and `canAddSong` (it may go in it: a team set takes the team's songs, songs in songbooks shared with the team and approved global ones). Issue #330.",
+  })
+  forSong(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string) {
+    return this.setlists.forSong(requireUser(user), songVersionId);
+  }
+
   @Post()
   create(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: CreateSetlistDto) {
     return this.setlists.create(requireUser(user), dto);

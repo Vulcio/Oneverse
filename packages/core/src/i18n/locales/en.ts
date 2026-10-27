@@ -2146,6 +2146,22 @@ const en = {
     title: "Sets",
     description: "Song lists for services, rehearsals and gigs.",
     newSet: "New set",
+    // A song's Add to set, and dragging it from the library onto a set (issue #330).
+    addToSet: {
+      button: "Add to set",
+      title: "Add to a set",
+      loading: "Loading…",
+      none: "No upcoming sets you can change.",
+      inIt: "Already in it",
+      notAddable: "This song can't go in this set",
+      open: "Open",
+      newSet: "New set with this song…",
+    },
+    dropOnSet: {
+      title: "Drop the song on a set to add it at the end",
+      added: "{{song}} added to {{set}}",
+      open: "Open set",
+    },
     noSetsYet: "No sets yet",
     viewAll: "View all ({{count}})",
     untitled: "Untitled set",

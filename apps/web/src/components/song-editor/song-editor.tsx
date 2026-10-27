@@ -24,6 +24,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSPropertie
 import { useTranslation } from "react-i18next";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 import { Button } from "@oneverse/ui/components/button";
+import { AddToSetButton } from "#/components/add-to-set";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
@@ -664,6 +665,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
             </>
           ) : null}
           {edit ? <FavoriteButton key={edit.version.id} songVersionId={edit.version.id} initial={!!edit.version.isFavorite} /> : null}
+          {/* Into one of one's sets (issue #330); just the icon until there is room, as Share. */}
+          {edit ? <AddToSetButton songVersionId={edit.version.id} labelClassName="hidden xl:inline" /> : null}
           {edit && canManage && edit.version.ownerScope !== "GLOBAL" ? (
             <Button type="button" variant="outline" onClick={() => setSharing(true)} aria-label={t("sharing.share")}>
               <Share2 />

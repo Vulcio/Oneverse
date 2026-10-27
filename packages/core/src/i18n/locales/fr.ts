@@ -2150,6 +2150,22 @@ const fr: typeof en = {
     title: "Listes de chants",
     description: "Les chants prévus pour un culte, une répétition ou un concert.",
     newSet: "Nouvelle liste",
+    // Ajouter à une liste depuis un chant, ou en le glissant depuis la bibliothèque (issue #330).
+    addToSet: {
+      button: "Ajouter à une liste",
+      title: "Ajouter à une liste",
+      loading: "Chargement…",
+      none: "Aucune liste à venir que vous pouvez modifier.",
+      inIt: "Déjà dedans",
+      notAddable: "Ce chant ne peut pas aller dans cette liste",
+      open: "Ouvrir",
+      newSet: "Nouvelle liste avec ce chant…",
+    },
+    dropOnSet: {
+      title: "Déposez le chant sur une liste pour l'ajouter à la fin",
+      added: "{{song}} ajouté à {{set}}",
+      open: "Ouvrir la liste",
+    },
     noSetsYet: "Aucune liste pour l'instant",
     viewAll: "Tout afficher ({{count}})",
     untitled: "Liste sans titre",

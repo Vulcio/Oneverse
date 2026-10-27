@@ -11,6 +11,8 @@ import { formatSetDate, todayIso } from "#/lib/setlists";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 
 export const Route = createFileRoute("/_protected/sets/new")({
+  // From a song's Add to set (issue #330): the song goes in the new set.
+  validateSearch: (search: Record<string, unknown>): { song?: string } => (typeof search.song === "string" && search.song ? { song: search.song } : {}),
   component: NewSet,
 });
 
@@ -19,6 +21,7 @@ function NewSet() {
   const navigate = useNavigate();
   const router = useRouter();
   const { teams } = Route.useRouteContext();
+  const { song } = Route.useSearch();
   const adminTeams = teams.filter((team) => team.currentUserRole === "ADMIN");
 
   const [eventDate, setEventDate] = useState("");
@@ -36,6 +39,8 @@ function NewSet() {
         eventDate: eventDate || undefined,
         teamId: owner || undefined,
       });
+      // A song that can't go in it (a team set takes the team's songs): the set is made all the same, and its page says nothing is in it.
+      if (song) await apiClient.addSetlistItem(set.id, { songVersionId: song }).catch(() => null);
       await router.invalidate();
       await navigate({ to: "/sets/$setlistId", params: { setlistId: set.id } });
     } catch (err) {

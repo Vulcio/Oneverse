@@ -27,6 +27,13 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
   - son **Minuteur sur les écrans** - **Pas de minuteur**, **Chronomètre** ou un compte à rebours : lancé sur les [écrans](/fr/screens/#lopérateur-média) de la liste quand Live arrive à ce chant.
 - **×** retire un chant de la liste (le chant lui-même n'est pas touché).
 
+### Ajouter un chant depuis le chant ou la bibliothèque
+
+Pas besoin d'ouvrir la liste pour y ajouter un chant :
+
+- Sur un chant, en **Édition** ou en **Session**, **Ajouter à une liste** affiche les listes que vous pouvez modifier et qui ne sont pas passées - les prochaines d'abord, puis celles sans date. Choisissez-en une et le chant s'ajoute à la fin. Une liste qui le contient déjà affiche **Déjà dedans**, avec **Ouvrir** pour y aller ; une liste où il ne peut pas aller (une liste d'équipe et un chant qui n'est pas à l'équipe) le dit. **Nouvelle liste avec ce chant…** crée une liste qui le contient déjà.
+- Dans les **Chants** de la bibliothèque, faites glisser un chant sur une liste de la barre latérale. Pendant que vous le faites glisser, les listes qui peuvent le recevoir sont entourées, celle qui le contient déjà est cochée et les autres sont estompées ; lâchez-le sur une liste et il s'ajoute à la fin, avec **Ouvrir la liste** pour y aller.
+
 ### Accords vers le chant suivant
 
 Pour une **Transition**, le bouton **Accords** à côté de sa note propose des accords à jouer vers le chant suivant : du dernier accord de ce chant au premier accord du suivant, tels que la liste les joue (avec la version et la **Tonalité** de chaque chant). Les deux encadrent la liste - **De C → … → vers D** - et les propositions mènent à ce premier accord (« I » ci-dessous) : si le chant suivant commence sur son 4 ou son 6m plutôt que son 1, elles y mènent. Les accords sont montrés avec leurs chiffres dans la tonalité du chant suivant, comme les grilles Nashville les écrivent : **5⁷** est son 5 avec une septième (A7 en D), **7°7** une septième diminuée sur son 7 (C#°7), **♭7/6** C sur B.

@@ -1,7 +1,7 @@
 import { parseLyricsQuery, resolveTranslation, type LocaleValue, type LyricsMatch, type SongSort, type SongVersionSummary, type Tag } from "@oneverse/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ListFilter, Loader2, Quote, Search, Star, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { filtersOf, parseLibrarySearch, sameFilters, SORTS, type LibrarySearch } from "./-library-search";
@@ -17,6 +17,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { refreshSmartLists, useSmartLists } from "#/lib/smart-lists";
 import { useInLyrics } from "#/lib/lyrics-search";
 import { LyricsSnippet } from "#/components/lyrics-snippet";
+import { songDragProps } from "#/lib/song-drag";
 
 const PAGE_SIZE = 50;
 
@@ -218,6 +219,8 @@ function LibraryIndex() {
                 }),
               });
             }}
+            // Dragged onto a set in the sidebar (issue #330).
+            rowProps={(version) => ({ ...songDragProps({ id: version.id, title: version.title }), "data-testid": "library-song-row" } as ComponentProps<"tr">)}
             onRowClick={(version) => void navigate({ to: "/library/$songVersionId", params: { songVersionId: version.id }, search: fromOf(search) })}
           />
           {/* Near the end, the next ones come (issue #150); the button for a keyboard, or a list too short to scroll. */}

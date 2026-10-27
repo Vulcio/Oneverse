@@ -15,6 +15,7 @@ import { ChartOrPdf, songViewStore } from "#/components/chart-or-pdf";
 import { ChordGrid } from "#/components/chord-grid";
 import { StemDock } from "#/components/stem-dock";
 import { Button } from "@oneverse/ui/components/button";
+import { AddToSetButton } from "#/components/add-to-set";
 import { Card, CardContent } from "@oneverse/ui/components/card";
 import { YouTubeDock } from "#/components/youtube-dock";
 import { apiClient } from "#/lib/api-client";
@@ -132,6 +133,8 @@ export function PracticeSongPage({
           <DisplayPanel mode="PRACTICE" settings={display} player={player} className="h-9" />
           {notes.button}
           <MetronomeSongButton songId={version.id} tempo={chart.tempo} timeSignature={chart.timeSignature} variant="button" />
+          {/* Into one of one's sets (issue #330). */}
+          <AddToSetButton songVersionId={version.id} />
           <Button variant="outline" onClick={() => setMode("edit")}>
             <Pencil />
             {t("practice.edit")}

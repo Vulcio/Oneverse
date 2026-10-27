@@ -41,6 +41,7 @@ import {
   Building2,
   Monitor,
   BookText,
+  Check,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -55,6 +56,7 @@ import { forgetOffline } from "#/lib/offline-db";
 import { setTheme, useMode } from "#/lib/mode";
 import { forgetSmartLists, smartListSearch, useSmartLists } from "#/lib/smart-lists";
 import { setlistTitle } from "#/lib/setlists";
+import { DropNoticeBar, useSetDrop, type SetDropTarget } from "#/components/set-drop";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@oneverse/ui/components/collapsible";
 import {
   DropdownMenu,
@@ -263,6 +265,8 @@ interface NavItem {
   icon?: ReactNode;
   muted?: boolean;
   link: { to: NonNullable<LinkProps["to"]>; params?: Record<string, string>; search?: object };
+  /** A set, while a song is dragged from the library (issue #330). */
+  drop?: SetDropTarget;
 }
 
 /**
@@ -304,10 +308,21 @@ function NavGroup({
           <SidebarMenuSub data-testid={testId}>
             {items.length === 0 && empty ? <p className="px-2 py-1 text-xs text-muted-foreground">{empty}</p> : null}
             {items.map((item) => (
-              <SidebarMenuSubItem key={item.key}>
+              <SidebarMenuSubItem
+                key={item.key}
+                {...item.drop?.props}
+                data-drop-state={item.drop?.state}
+                className={cn(
+                  item.drop && "rounded-md border border-dashed border-transparent [&_*]:pointer-events-none",
+                  item.drop?.state === "addable" && "border-sidebar-border",
+                  item.drop?.over && "border-primary bg-sidebar-accent",
+                  (item.drop?.state === "refused" || item.drop?.state === "loading") && "opacity-50",
+                )}
+              >
                 <SidebarMenuSubButton isActive={item.isActive} render={<Link {...(item.link as LinkProps)} className={cn(item.muted && "text-muted-foreground")} />}>
                     {item.icon}
                     <span className="truncate">{item.label}</span>
+                    {item.drop?.state === "in" ? <Check className="ml-auto text-primary" aria-label={t("sets.addToSet.inIt")} /> : null}
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             ))}
@@ -342,6 +357,8 @@ function MainNav({
   // on the Sets page. A team's event sets only for dates you signed up for (issue #235).
   const sidebarSets = setlists.filter((set) => setListing(set) === "sidebar");
   const shownSetlists = sidebarSets.slice(0, SIDEBAR_SET_LIMIT);
+  // A song dragged from the library goes in the set it's dropped on (issue #330).
+  const setDrop = useSetDrop();
   const smartLists = useSmartLists();
   const listId = useRouterState({ select: (s) => (s.location.search as { list?: string }).list });
   const favorites = useRouterState({ select: (s) => !!(s.location.search as { favorites?: boolean }).favorites });
@@ -393,12 +410,22 @@ function MainNav({
                 icon: set.eventDate ? <CalendarDays /> : <ClipboardList />,
                 isActive: pathname === `/sets/${set.id}`,
                 link: { to: "/sets/$setlistId" as const, params: { setlistId: set.id } },
+                drop: setDrop.target(set.id),
               })),
-              ...(sidebarSets.length > shownSetlists.length
+              ...(sidebarSets.length > shownSetlists.length && !setDrop.dragging
                 ? [{ key: "all", label: t("sets.viewAll", { count: sidebarSets.length }), muted: true, isActive: false, link: { to: "/sets" as const } }]
                 : []),
             ]}
           />
+          {setDrop.dragging ? (
+            <li className="px-4 py-1 text-xs text-muted-foreground" data-testid="set-drop-hint">
+              {t("sets.dropOnSet.title")}
+            </li>
+          ) : setDrop.notice ? (
+            <li className="py-1">
+              <DropNoticeBar notice={setDrop.notice} onClose={setDrop.closeNotice} />
+            </li>
+          ) : null}
           <NavGroup
             icon={<BookOpen />}
             label={t("nav.songbooks")}

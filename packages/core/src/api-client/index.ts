@@ -190,6 +190,14 @@ export interface SetlistSummary {
   past?: boolean;
 }
 
+/** A set a song could go in (issue #330): the song's Add to set. */
+export interface SetForSong extends SetlistSummary {
+  /** The song is in it already. */
+  hasSong: boolean;
+  /** It may go in it (a team set takes the team's songs and approved global ones). */
+  canAddSong: boolean;
+}
+
 export interface SetlistItem {
   id: string;
   /** What it is (issue #305): left out by an older API, a song. A kind this client doesn't know is shown as a placeholder. */
@@ -2727,6 +2735,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       return response.blob();
     },
     listSetlists: () => request<SetlistSummary[]>("/setlists"),
+    /** The sets the user can change, not over, that a song could go in (issue #330). */
+    setsForSong: (songVersionId: string) => request<SetForSong[]>(`/setlists/for-song/${songVersionId}`),
     createSetlist: (data: { name?: string; eventDate?: string; teamId?: string }) =>
       request<SetlistSummary>("/setlists", { method: "POST", body: JSON.stringify(data) }),
     getSetlist: (setlistId: string) => request<SetlistDetail>(`/setlists/${setlistId}`),

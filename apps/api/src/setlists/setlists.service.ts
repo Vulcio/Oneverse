@@ -124,6 +124,32 @@ export class SetlistsService {
     });
   }
 
+  /**
+   * The sets a song could go in (issue #330, a song's Add to set): those the
+   * user can change whose date isn't over, soonest first, then undated ones -
+   * each saying whether the song is in it already and whether it may go in it
+   * (a team set takes the team's songs and approved global ones).
+   */
+  async forSong(user: AuthenticatedUser, songVersionId: string) {
+    const visible = await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.policy.songsVisibleTo(user)] } });
+    if (visible === 0) throw new NotFoundException("Song not found");
+    const today = formatDate(new Date(startOfTodayUtc()));
+    const sets = (await this.list(user)).filter((set) => set.canEdit && !set.past && (set.eventDate === null || set.eventDate >= today));
+    const owners = new Map(
+      (await this.prisma.client.setlist.findMany({ where: { id: { in: sets.map((set) => set.id) } }, select: { id: true, ownerUserId: true, ownerTeamId: true } })).map((set) => [set.id, set]),
+    );
+    const holding = new Set(
+      (await this.prisma.client.setlistItem.findMany({ where: { setlistId: { in: sets.map((set) => set.id) }, songVersionId }, select: { setlistId: true } })).map((item) => item.setlistId),
+    );
+    return Promise.all(
+      sets.map(async (set) => ({
+        ...set,
+        hasSong: holding.has(set.id),
+        canAddSong: (await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.sets.addableWhere(owners.get(set.id)!)] } })) > 0,
+      })),
+    );
+  }
+
   async create(user: AuthenticatedUser, dto: CreateSetlistDto) {
     const eventDate = dto.eventDate ? parseDate(dto.eventDate) : null;
     if (eventDate && eventDate.getTime() < startOfTodayUtc() - DAY_MS) {

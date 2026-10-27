@@ -27,6 +27,13 @@ Choose **Sets** > **New set**:
   - its **Timer on the screens** - **No timer**, **Count up** or a countdown: started on the set's [screens](/screens/#the-media-operator) when Live comes to the song.
 - **×** removes a song from the set (the song itself isn't affected).
 
+### Adding a song from the song or the library
+
+You don't have to open the set to add a song to it:
+
+- On a song, in **Edit** or **Practice**, **Add to set** lists the sets you can change that aren't over - the next ones first, then those without a date. Pick one and the song goes at its end. A set it's in already says **Already in it**, with **Open** to go there; a set it can't go in (a team set and a song that isn't the team's) says so. **New set with this song…** makes a new set with the song already in it.
+- In the library's **Songs**, drag a song onto a set in the sidebar. While you drag, the sets that can take it are outlined, one that already has it is ticked, and the others are dimmed; let go on a set and the song goes at its end, with **Open set** to go there.
+
 ### Chords into the next song
 
 For a **Transition**, the **Chords** button beside its note suggests chords to play into the next song: from the last chord of this song to the first chord of the next, as the set plays them (with each song's version and **Key**). The two frame the list - **From C → … → into D** - and the suggestions lead into that first chord ("I" below): if the next song starts on its 4 or its 6m rather than its 1, they lead there. Chords are shown with their numbers in the next song's key, as Nashville charts write them: **5⁷** is its 5 with a 7th (A7 in D), **7°7** a diminished 7th on its 7 (C#°7), **♭7/6** C over B.

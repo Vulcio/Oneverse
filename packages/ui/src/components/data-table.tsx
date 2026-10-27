@@ -11,7 +11,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { Input } from "./input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 
@@ -31,6 +31,8 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onRowClick?: (row: TData) => void;
+  /** More of a row's attributes: a row that can be dragged somewhere, its test id. */
+  rowProps?: (row: TData) => ComponentProps<"tr">;
   emptyMessage?: string;
   /** Shows a search box above the table, filtering across every column's
    * rendered value, when set. */
@@ -48,6 +50,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   onRowClick,
+  rowProps,
   emptyMessage = "No results.",
   filterPlaceholder,
   sorting: controlledSorting,
@@ -105,6 +108,7 @@ export function DataTable<TData, TValue>({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
+                {...rowProps?.(row.original)}
                 onClick={() => onRowClick?.(row.original)}
                 className={onRowClick ? "cursor-pointer" : undefined}
               >
