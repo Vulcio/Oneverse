@@ -31,7 +31,7 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
 
 Pas besoin d'ouvrir la liste pour y ajouter un chant :
 
-- Sur un chant, en **Édition** ou en **Session**, **Ajouter à une liste** affiche les listes que vous pouvez modifier et qui ne sont pas passées - les prochaines d'abord, puis celles sans date. Choisissez-en une et le chant s'ajoute à la fin. Une liste qui le contient déjà affiche **Déjà dedans**, avec **Ouvrir** pour y aller ; une liste où il ne peut pas aller (une liste d'équipe et un chant qui n'est pas à l'équipe) le dit. **Nouvelle liste avec ce chant…** crée une liste qui le contient déjà.
+- Sur un chant, en **Édition** ou en **Session**, **Ajouter à une liste** affiche les listes que vous pouvez modifier et qui ne sont pas passées - les prochaines d'abord, puis celles sans date. Choisissez-en une et le chant s'ajoute à la fin. Une liste qui le contient déjà affiche **Déjà dedans**, avec **Ouvrir** pour y aller ; une liste où il ne peut pas aller (une liste d'équipe et un chant qui n'est pas à l'équipe) le dit. **Nouvelle liste avec ce chant…** crée une liste qui le contient déjà. Les chants trouvés par le champ de recherche en haut (Ctrl K) ont le même bouton, à côté d'eux.
 - Dans les **Chants** de la bibliothèque, faites glisser un chant sur une liste de la barre latérale. Pendant que vous le faites glisser, les listes qui peuvent le recevoir sont entourées, celle qui le contient déjà est cochée et les autres sont estompées ; lâchez-le sur une liste et il s'ajoute à la fin, avec **Ouvrir la liste** pour y aller.
 
 ### Accords vers le chant suivant

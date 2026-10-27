@@ -31,7 +31,7 @@ Choose **Sets** > **New set**:
 
 You don't have to open the set to add a song to it:
 
-- On a song, in **Edit** or **Practice**, **Add to set** lists the sets you can change that aren't over - the next ones first, then those without a date. Pick one and the song goes at its end. A set it's in already says **Already in it**, with **Open** to go there; a set it can't go in (a team set and a song that isn't the team's) says so. **New set with this song…** makes a new set with the song already in it.
+- On a song, in **Edit** or **Practice**, **Add to set** lists the sets you can change that aren't over - the next ones first, then those without a date. Pick one and the song goes at its end. A set it's in already says **Already in it**, with **Open** to go there; a set it can't go in (a team set and a song that isn't the team's) says so. **New set with this song…** makes a new set with the song already in it. Songs found by the search box at the top (Ctrl K) have the same button, beside them.
 - In the library's **Songs**, drag a song onto a set in the sidebar. While you drag, the sets that can take it are outlined, one that already has it is ticked, and the others are dimmed; let go on a set and the song goes at its end, with **Open set** to go there.
 
 ### Chords into the next song

@@ -8,6 +8,7 @@ import { apiClient } from "#/lib/api-client";
 import { useInLyrics } from "#/lib/lyrics-search";
 import { useSongSearch } from "#/lib/song-search";
 import { LyricsSnippet } from "#/components/lyrics-snippet";
+import { AddToSetIconButton } from "#/components/add-to-set";
 import { useMode } from "#/lib/mode";
 import { formatSetDate, setlistTitle } from "#/lib/setlists";
 import { cn } from "@oneverse/ui/lib/utils";
@@ -28,6 +29,8 @@ interface Result {
   references?: string[];
   /** A song, in Live in a set they can change (issue #199): added after the song playing, or at the end. */
   add?: (where: "next" | "end") => void;
+  /** A song, anywhere else: Add to set, with the sets one can change (issue #330). */
+  songId?: string;
   /** Found in the lyrics: the line, shown under the title. */
   lyrics?: LyricsMatch;
 }
@@ -144,6 +147,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
         detail: entry.abbreviation ? entry.songbookName : null,
         open: go(() => void openSong(entry.songVersionId)),
         add: addToSet(entry.songVersionId),
+        songId: entry.songVersionId,
       })),
       ...songs.map((song) => ({
         kind: "songs" as const,
@@ -153,6 +157,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
         references: song.references,
         open: go(() => void openSong(song.id)),
         add: addToSet(song.id),
+        songId: song.id,
       })),
       // A song found by its title isn't repeated here.
       ...lyrics
@@ -165,6 +170,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
           lyrics: found.match,
           open: go(() => void openSong(found.id, found.match.lineId)),
           add: addToSet(found.id),
+        songId: found.id,
         })),
       ...sortSets(setlists, q)
         .filter((set) => !q || matches(setlistTitle(set, t, i18n.language), set.name, set.teamName))
@@ -330,6 +336,8 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
                         <ListEnd />
                       </button>
                     </span>
+                  ) : result.songId ? (
+                    <AddToSetIconButton songVersionId={result.songId} onLeave={onDone} />
                   ) : null}
                 </div>
               );

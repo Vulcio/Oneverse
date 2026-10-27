@@ -11,6 +11,7 @@ const grace = await api(leader, "POST", "/song-versions", { artists: ["Test Arti
 const isoDate = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
 const sunday = await api(leader, "POST", "/setlists", { name: `Sunday ${tag}`, eventDate: isoDate(4) });
 const rehearsal = await api(leader, "POST", "/setlists", { name: `Rehearsal ${tag}` });
+const youth = await api(leader, "POST", "/setlists", { name: `Youth ${tag}` });
 const teamSet = await api(leader, "POST", "/setlists", { name: `Team service ${tag}`, eventDate: isoDate(6), teamId: team.id });
 const old = await api(leader, "POST", "/setlists", { name: `Old ${tag}`, eventDate: isoDate(1) });
 sql(`update "Setlist" set "eventDate"='${isoDate(-4)}' where id='${old.id}'`);
@@ -75,6 +76,19 @@ await step("dragging a library song onto a set in the sidebar adds it", async ()
   // The sidebar is itself again.
   await page.getByTestId("set-drop-hint").waitFor({ state: "detached" });
   if ((await page.locator("[data-drop-state]").count()) !== 0) throw new Error("sets still marked as drop targets");
+});
+
+await step("Ctrl+K: Add to set on a song found", async () => {
+  await page.keyboard.press("Control+k");
+  await page.getByRole("combobox").fill(`Grace ${tag}`);
+  const row = page.getByRole("option", { name: new RegExp(`Grace ${tag}`) }).first();
+  await row.getByTestId("search-add-to-set").click();
+  await choice(youth).click();
+  await page.locator(`[data-testid="add-to-set-choice"][data-set-id="${youth.id}"][data-state="in"]`).waitFor();
+  if (!(await songsOf(youth)).includes(grace.id)) throw new Error("not in the set");
+  // Still searching: the song wasn't opened.
+  await page.getByRole("combobox").waitFor();
+  if (page.url().includes(`/library/${grace.id}`)) throw new Error("the song was opened");
 });
 
 await browser.close();

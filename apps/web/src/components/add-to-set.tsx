@@ -35,7 +35,39 @@ export function AddToSetButton({ songVersionId, className, labelClassName }: { s
   );
 }
 
-function SetChoices({ songVersionId }: { songVersionId: string }) {
+/**
+ * The same, as a small button on a song found by the search box (Ctrl K):
+ * `onLeave` closes the search when a set is opened from it.
+ */
+export function AddToSetIconButton({ songVersionId, onLeave }: { songVersionId: string; onLeave: () => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  return (
+    // Clicks in the list stay in it, rather than opening the song (React carries them out of the portal).
+    <span className="flex shrink-0" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          render={
+            <button
+              type="button"
+              aria-label={t("sets.addToSet.button")}
+              title={t("sets.addToSet.button")}
+              className="flex h-7 items-center rounded-md border bg-background px-2 text-foreground hover:bg-accent [&_svg]:size-3.5"
+              data-testid="search-add-to-set"
+            />
+          }
+        >
+          <ListPlus />
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-80 p-0" data-testid="add-to-set-list">
+          {open ? <SetChoices songVersionId={songVersionId} onLeave={onLeave} /> : null}
+        </PopoverContent>
+      </Popover>
+    </span>
+  );
+}
+
+function SetChoices({ songVersionId, onLeave }: { songVersionId: string; onLeave?: () => void }) {
   const { t, i18n } = useTranslation();
   const [sets, setSets] = useState<SetForSong[] | null>(null);
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -103,7 +135,7 @@ function SetChoices({ songVersionId }: { songVersionId: string }) {
                   </span>
                 </button>
                 {set.hasSong ? (
-                  <Button variant="ghost" size="sm" render={<Link to="/sets/$setlistId" params={{ setlistId: set.id }} />}>
+                  <Button variant="ghost" size="sm" render={<Link to="/sets/$setlistId" params={{ setlistId: set.id }} onClick={onLeave} />}>
                     {t("sets.addToSet.open")}
                   </Button>
                 ) : null}
@@ -116,6 +148,7 @@ function SetChoices({ songVersionId }: { songVersionId: string }) {
         <Link
           to="/sets/new"
           search={{ song: songVersionId }}
+          onClick={onLeave}
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4"
           data-testid="add-to-new-set"
         >
