@@ -126,6 +126,9 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 - **Stage monitor** - big capitals at the top and the whole section, for the band.
 - **Band chart** - the song's chart with its chords, the section being sung in view, for the band.
 - **Scripture** - for a Bible passage: the chapel's look, two verses on each slide.
+- **Drift** - colours flowing slowly, speeding up as each slide comes, then settling again.
+- **Turning** - colours swirling and turning a little further with each slide, closer in a chorus.
+- **Neural** - glowing threads on black that quicken and brighten with each line.
 
 **Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3** - changing as you change them. **⏵** plays the sample song, **‹ ›** go slide by slide.
 

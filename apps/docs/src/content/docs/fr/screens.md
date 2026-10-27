@@ -126,6 +126,9 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 - **Retour de scène** - de grandes majuscules en haut et toute la partie, pour les musiciens.
 - **Grille du groupe** - la grille du chant avec ses accords, la partie chantée en vue, pour les musiciens.
 - **Écriture** - pour un passage de la Bible : le style chapelle, deux versets par diapositive.
+- **Dérive** - des couleurs qui coulent lentement, accélèrent à chaque diapositive, puis se calment.
+- **Tournoiement** - des couleurs qui tourbillonnent et tournent un peu plus à chaque diapositive, plus proches dans un refrain.
+- **Neuronal** - des fils lumineux sur fond noir qui s'animent et s'éclairent à chaque ligne.
 
 **Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3** - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
 

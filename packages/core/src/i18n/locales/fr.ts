@@ -347,8 +347,8 @@ const fr: typeof en = {
       sharedBy_other: "Utilisé par {{count}} modèles : le changer les change tous.",
       builtIn: {
         content: { classic: "Classique", concert: "Concert", chapel: "Chapelle", sunrise: "Aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Diffusion", minimal: "Minimal", "stage-display": "Affichage de scène", "stage-monitor": "Retour de scène", chart: "Grille d'accords" },
-        background: { classic: "Noir", concert: "Aurore boréale", chapel: "Dégradé chaud", sunrise: "Vagues d'aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Noir (diffusion)", minimal: "Presque noir", "stage-display": "Noir (scène)", "stage-monitor": "Noir (retour)", flow: "Courants", strings: "Cordes", grid: "Grille néon", bokeh: "Bokeh", "mesh-gradient": "Dégradé maillé", "paper-mesh": "Dégradé maillé Paper", "neuro-noise": "Bruit neuronal", "glow-lines": "Lignes lumineuses", embers: "Braises" },
-        effects: { pulse: "Pulsation", concert: "Concert", sunrise: "Aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", breathe: "Respiration" },
+        background: { classic: "Noir", concert: "Aurore boréale", chapel: "Dégradé chaud", sunrise: "Vagues d'aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Noir (diffusion)", minimal: "Presque noir", "stage-display": "Noir (scène)", "stage-monitor": "Noir (retour)", flow: "Courants", strings: "Cordes", grid: "Grille néon", bokeh: "Bokeh", "mesh-gradient": "Dégradé maillé", "paper-mesh": "Dégradé maillé Paper", "neuro-noise": "Bruit neuronal", "slow-mesh": "Dégradé lent", "turning-mesh": "Dégradé tournant", "glow-lines": "Lignes lumineuses", embers: "Braises" },
+        effects: { pulse: "Pulsation", concert: "Concert", sunrise: "Aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", breathe: "Respiration", ramp: "Accélère à chaque diapositive", turn: "Tourne à chaque diapositive", nerves: "S'anime à chaque ligne", "chorus-lift": "Élan du refrain" },
       },
     },
     add: "Ajouter un écran",
@@ -845,6 +845,9 @@ const fr: typeof en = {
       "stage-monitor": { name: "Retour de scène", description: "De grandes majuscules en haut et toute la partie, pour les musiciens." },
       "band-chart": { name: "Grille du groupe", description: "La grille du chant avec ses accords, la partie chantée en vue, pour les musiciens." },
       scripture: { name: "Écriture", description: "Pour un passage de la Bible : le style chapelle, deux versets par diapositive." },
+      drift: { name: "Dérive", description: "Des couleurs qui coulent lentement, accélèrent à chaque diapositive, puis se calment." },
+      turning: { name: "Tournoiement", description: "Des couleurs qui tourbillonnent et tournent un peu plus à chaque diapositive, plus proches dans un refrain." },
+      neural: { name: "Neuronal", description: "Des fils lumineux sur fond noir qui s'animent et s'éclairent à chaque ligne." },
     },
   },
   sync: {

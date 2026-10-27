@@ -256,6 +256,14 @@ const BUILT_IN_EFFECTS: ScreenBuiltInPart<ScreenEffects>[] = [
   },
   { id: "spotlight", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "movement", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.6 }], text: { animation: "pulse", amount: 0.3, speed: 1 } }) },
   { id: "breathe", part: ScreenEffectsSchema.parse({ reactions: [{ on: "line", target: "pulse", amount: 0.3 }], text: { animation: "breathe", amount: 0.4, speed: 0.6 } }) },
+  // For shaders (issue #324): a slow background that speeds up as the words come, then settles quickly.
+  { id: "ramp", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "movement", amount: 1, rise: 150, fall: 700 }] }) },
+  // ...that turns a little further with each slide, and comes a little closer in a chorus.
+  { id: "turn", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "rotation", amount: 0.8, rise: 200, fall: 1200 }, { on: "chorus", target: "scale", amount: 0.6 }] }) },
+  // ...that quickens and glows with each line.
+  { id: "nerves", part: ScreenEffectsSchema.parse({ reactions: [{ on: "line", target: "movement", amount: 0.7, rise: 100, fall: 500 }, { on: "line", target: "brightness", amount: 0.5, rise: 100, fall: 500 }] }) },
+  // ...calm in the verses, livelier while a chorus lasts.
+  { id: "chorus-lift", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "pulse", amount: 0.3 }, { on: "chorus", target: "movement", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.4 }] }) },
 ];
 
 const split = SCREEN_THEME_TEMPLATES.map((one) => ({ id: one.id, ...splitScreenTheme(one.theme) }));
@@ -279,7 +287,10 @@ export const SCREEN_BACKGROUND_THEMES: ScreenBuiltInPart<ScreenBackgroundTheme>[
   { id: "mesh-gradient", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0b0620", "#7c3aed", "#ec4899", "#0ea5e9"], shader: { builtIn: "mesh-gradient" } }, reacts: { movement: 0.5, hue: 0.3, brightness: 0.5 } }) },
   // Ported from Paper Shaders (issue #324).
   { id: "paper-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#120a2e", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], shader: { builtIn: "paper-mesh" } }, reacts: { movement: 0.5, hue: 0.2, brightness: 0.4 } }) },
-  { id: "neuro-noise", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#000000", "#ffffff", "#47a6ff"], shader: { builtIn: "neuro-noise", values: { sv_brightness: 0.03, sv_contrast: 0.55 } } }, reacts: { movement: 0.6, brightness: 0.4 } }) },
+  { id: "neuro-noise", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#000000", "#ffffff", "#47a6ff"], motion: 0.3, shader: { builtIn: "neuro-noise", values: { sv_brightness: 0.03, sv_contrast: 0.55 } } }, reacts: { movement: 0.8, brightness: 0.4 } }) },
+  // Slow, for effects that speed it up (ramp) or turn it (turn).
+  { id: "slow-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0c0a24", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], motion: 0.15, shader: { builtIn: "paper-mesh" } }, reacts: { movement: 1, hue: 0.2, brightness: 0.3 } }) },
+  { id: "turning-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#06121f", "#0ea5e9", "#22d3ee", "#a855f7", "#f472b6"], motion: 0.25, spin: 3, shader: { builtIn: "paper-mesh", values: { sv_swirl: 0.35 } } }, reacts: { movement: 0.3, rotation: 1, scale: 0.8 } }) },
   { id: "glow-lines", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#02030a", "#22d3ee", "#a855f7", "#f43f5e"], shader: { builtIn: "glow-lines" } }, reacts: { movement: 0.6, elements: 0.7, brightness: 0.5 } }) },
   { id: "embers", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0a0503", "#f97316", "#facc15", "#ef4444"], shader: { builtIn: "embers" } }, reacts: { movement: 0.5, elements: 0.6, brightness: 0.6 } }) },
 ];
@@ -295,6 +306,10 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
     template: ScreenTemplateSchema.parse({ ...one.template, tags: TAGS[one.id] ?? [] }),
   })),
   { id: "band-chart", content: "chart", background: "classic", effects: null, template: ScreenTemplateSchema.parse({ tags: TAGS["band-chart"] }) },
+  // Shaders that move with the words (issue #324).
+  { id: "drift", content: "classic", background: "slow-mesh", effects: "ramp", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"] }) },
+  { id: "turning", content: "classic", background: "turning-mesh", effects: "turn", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"] }) },
+  { id: "neural", content: "classic", background: "neuro-noise", effects: "nerves", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"] }) },
   // For a passage (issue #310): the chapel's look, two verses a slide.
   { id: "scripture", content: "chapel", background: "chapel", effects: null, template: ScreenTemplateSchema.parse({ tags: ["audience", "scripture"], versesPerSlide: 2 }) },
 ];

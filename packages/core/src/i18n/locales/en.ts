@@ -347,8 +347,8 @@ const en = {
       sharedBy_other: "Used by {{count}} templates: changing it changes them all.",
       builtIn: {
         content: { classic: "Classic", concert: "Concert", chapel: "Chapel", sunrise: "Sunrise", starlight: "Starlight", spotlight: "Spotlight", stream: "Stream", minimal: "Minimal", "stage-display": "Stage display", "stage-monitor": "Stage monitor", chart: "Chord chart" },
-        background: { classic: "Black", concert: "Aurora", chapel: "Warm gradient", sunrise: "Sunrise waves", starlight: "Starlight", spotlight: "Spotlights", stream: "Black (stream)", minimal: "Near black", "stage-display": "Black (stage)", "stage-monitor": "Black (monitor)", flow: "Flow", strings: "Strings", grid: "Neon grid", bokeh: "Bokeh", "mesh-gradient": "Mesh gradient", "paper-mesh": "Paper mesh gradient", "neuro-noise": "Neuro noise", "glow-lines": "Glow lines", embers: "Embers" },
-        effects: { pulse: "Pulse", concert: "Concert", sunrise: "Sunrise", starlight: "Starlight", spotlight: "Spotlight", breathe: "Breathe" },
+        background: { classic: "Black", concert: "Aurora", chapel: "Warm gradient", sunrise: "Sunrise waves", starlight: "Starlight", spotlight: "Spotlights", stream: "Black (stream)", minimal: "Near black", "stage-display": "Black (stage)", "stage-monitor": "Black (monitor)", flow: "Flow", strings: "Strings", grid: "Neon grid", bokeh: "Bokeh", "mesh-gradient": "Mesh gradient", "paper-mesh": "Paper mesh gradient", "neuro-noise": "Neuro noise", "slow-mesh": "Slow mesh", "turning-mesh": "Turning mesh", "glow-lines": "Glow lines", embers: "Embers" },
+        effects: { pulse: "Pulse", concert: "Concert", sunrise: "Sunrise", starlight: "Starlight", spotlight: "Spotlight", breathe: "Breathe", ramp: "Speed up with each slide", turn: "Turn with each slide", nerves: "Quicken with each line", "chorus-lift": "Chorus lift" },
       },
     },
     add: "Add screen",
@@ -845,6 +845,9 @@ const en = {
       "stage-monitor": { name: "Stage monitor", description: "Big capitals at the top and the whole section, for the band." },
       "band-chart": { name: "Band chart", description: "The song's chart with its chords, the section being sung in view, for the band." },
       scripture: { name: "Scripture", description: "For a Bible passage: the chapel's look, two verses on each slide." },
+      drift: { name: "Drift", description: "Colours flowing slowly, speeding up as each slide comes, then settling again." },
+      turning: { name: "Turning", description: "Colours swirling and turning a little further with each slide, closer in a chorus." },
+      neural: { name: "Neural", description: "Glowing threads on black that quicken and brighten with each line." },
     },
   },
   sync: {
