@@ -150,7 +150,7 @@ How the words look, edited from **Content themes** (**New content theme**, or **
 - **Text** - the font (or an **Uploaded font**: a WOFF2, WOFF, TTF or OTF file you may use this way), its size (**Fit the line**, or fixed), weight, colour, **Capitals**, **Readability** (a shadow, an outline or a glow, for words over a moving background), alignment, line and letter spacing.
 - **Lines** - **The slide**, with the lines before and after it, or **The whole section** with the slide's lines picked out; the lines around them **Dimmed**, **Smaller**, **Blurred** or **Hidden**.
 - **Layout** - top, centre, bottom or **Lower third**, and a **Safe margin** for TVs that crop their edges.
-- **Motion** - **Between slides**: a cut, a fade, a slide, rise, scale, blur or zoom, and how long it takes (a new song takes twice as long). **Words appear** all at once, line by line, word by word, letter by letter, typed or glowing.
+- **Motion** - **Between slides**: a cut, a fade, a slide, rise, scale, blur, zoom or **Move**, and how long it takes (a new song takes twice as long). The old slide is gone within the first part of it, so it never lingers over the new one. With **Move**, the words that are on both slides glide to their new place - the line just sung moves up and dims as the next comes in, a repeated line stays where it is - and only what's new fades in; it works best with the lines before and after shown, and words appearing all at once or word by word. **Words appear** all at once, line by line, word by word, letter by letter, typed or glowing.
 - **Title and credits** - whether to show the song's title and its credits (writers, copyright, CCLI number), on which slides and where.
 - **Chords** - for the chord chart: the chords' colour and the chart's size.
 

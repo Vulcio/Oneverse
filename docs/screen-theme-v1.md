@@ -66,7 +66,7 @@ section with the slide's lines picked out.
   "title": { "show": true, "when": "first" },                       // first, every
   "credits": { "show": true, "where": "bottom", "when": "first-and-last" }, // bottom, top, lower-third; first, last, first-and-last, every
   "motion": {
-    "transition": "fade",    // cut, fade, slide, rise, scale, blur, zoom
+    "transition": "fade",    // cut, fade, slide, rise, scale, blur, zoom, move (the words on both slides glide to their new place, issue #324)
     "duration": 350,         // ms per slide; a new song takes twice as long
     "reveal": "none",        // none, lines, words, letters, typewriter, glow
     "stagger": 60            // ms between pieces; a slide's words are all in within 1.6 s

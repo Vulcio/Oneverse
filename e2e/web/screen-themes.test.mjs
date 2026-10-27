@@ -167,6 +167,32 @@ try {
     await tv.getByTestId("screen-lines").getByText("third line here").waitFor();
   });
 
+  await step("Move: the words on both slides glide to their new place (issue #324)", async () => {
+    const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
+    const [content] = (await api(leader, "GET", "/screen-parts?kind=content")).filter((one) => one.id === saved.parts.content.id);
+    const changed = { ...content.document, lines: { ...content.document.lines, group: "slide", before: 1, after: 1 }, motion: { ...content.document.motion, transition: "move", duration: 1500, reveal: "none" } };
+    await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: changed });
+    await tv.locator('[data-testid="screen-stage"][data-transition="move"]').waitFor();
+    page = tablet;
+    await tablet.getByTestId("present-previous").click();
+    page = tv;
+    await tv.getByTestId("screen-lines").getByText("First line here").waitFor();
+    await tv.waitForTimeout(1600);
+    // "second line here" is on both slides (the current line, then the line before): it moves rather than fading.
+    const moving = tv.waitForFunction(
+      () => document.getAnimations().some((one) => one.effect?.target?.hasAttribute?.("data-word") && JSON.stringify(one.effect.getKeyframes()).includes("translate")),
+      null,
+      { polling: "raf", timeout: 10000 },
+    );
+    page = tablet;
+    await tablet.getByTestId("present-next").click();
+    page = tv;
+    await moving;
+    await tv.screenshot({ path: `${SP}/screen-theme-move.png` });
+    await tv.getByTestId("screen-lines").getByText("third line here").waitFor();
+    await tv.getByTestId("screen-before").getByText("second", { exact: false }).waitFor();
+  });
+
   await step("a picture for the background theme and a font for the content theme, from their own lists: on the screen", async () => {
     page = tablet;
     await tablet.evaluate(() => localStorage.setItem("songverse.mode", "edit"));

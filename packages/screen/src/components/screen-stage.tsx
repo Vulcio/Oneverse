@@ -8,12 +8,13 @@ import "@fontsource/bebas-neue";
 import "../screen-stage.css";
 import { SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "./screen-widgets";
 import { useScreenEffects, type ScreenSignals } from "../lib/screen-effects";
 import { TextBackground, type StageText } from "./screen-text-background";
 import { ShaderBackground } from "./screen-shader-background";
+import { moveWords } from "../lib/screen-move";
 import { SongChart } from "./song-chart";
 import { cn } from "@oneverse/ui/lib/utils";
 
@@ -95,7 +96,8 @@ export function ScreenStage({
   const shown = useRef<{ key: string; song: StageSong | null; index: number }>({ key: viewKey, song, index });
   const songChange = outgoing?.songChange ?? false;
   const duration = theme.motion.transition === "cut" ? 0 : theme.motion.duration * (songChange ? 2 : 1);
-  useEffect(() => {
+  // Before the new slide is painted (issue #324): never a frame of it alone, without the old one going.
+  useBeforePaint(() => {
     const before = shown.current;
     shown.current = { key: viewKey, song, index };
     if (before.key === viewKey || theme.motion.transition === "cut") return setOutgoing(null);
@@ -104,6 +106,16 @@ export function ScreenStage({
     const timer = setTimeout(() => setOutgoing(null), theme.motion.duration * (changed ? 2 : 1) + 50);
     return () => clearTimeout(timer);
   }, [viewKey]);
+  // Move (issue #324): the words on both slides glide from the old one to the new.
+  useBeforePaint(() => {
+    const stage = stageRef.current;
+    if (!stage || !outgoing || theme.motion.transition !== "move" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const stops = [...stage.querySelectorAll<HTMLElement>('[data-testid="screen-out"]')].flatMap((out) => {
+      const into = out.parentElement?.querySelector<HTMLElement>(':scope > [data-testid="screen-lyrics"]');
+      return into ? [moveWords(out, into, duration)] : [];
+    });
+    return () => stops.forEach((stop) => stop());
+  }, [outgoing?.key, viewKey]);
 
   // Black: faded out, then the words gone (nothing to read under it); back at once, coming in as a slide does.
   const [dark, setDark] = useState(black);
@@ -462,6 +474,22 @@ function Background({ theme, media, shader, text, signals }: { theme: ScreenThem
 }
 
 /** The words of one slide: the current lines, the ones around them, the title and credits, placed as the theme says. */
+/** A layout effect where there's a page to lay out, an effect on the server. */
+const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/** A line as words a Move can take from one slide to the next (issue #324). */
+function movingWords(line: string): ReactNode {
+  return line.split(/(\s+)/).map((word, i) =>
+    /^\s+$/.test(word) || !word ? (
+      word
+    ) : (
+      <span key={i} className="inline-block" data-word>
+        {word}
+      </span>
+    ),
+  );
+}
+
 function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageSong; index: number; phase: "in" | "out" | "still" }) {
   const { t } = useTranslation();
   const slides = song.slides;
@@ -538,7 +566,7 @@ function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageS
           { group: after, now: false, id: "screen-after" },
         ].map(({ group, now, id }) =>
           group.length > 0 || now ? (
-            <div key={id} className={cn("flex w-full flex-col", align, !now && `sv-context sv-context-${lines.contextStyle}`)} style={{ gap: `${size * 0.18}cqmin` }} data-testid={phase === "out" ? undefined : id}>
+            <div key={id} className={cn("flex w-full flex-col", align, !now && `sv-context sv-context-${lines.contextStyle}`)} style={{ gap: `${size * 0.18}cqmin` }} data-testid={phase === "out" ? undefined : id} data-group={id}>
               {group.map((line, i) => (
                 <p
                   key={i}
@@ -551,7 +579,7 @@ function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageS
                     textTransform: text.upperCase ? "uppercase" : undefined,
                   }}
                 >
-                  {now && phase !== "out" && motion.reveal !== "none" ? reveal(line, motion.reveal, () => piece++) : line}
+                  {now && phase !== "out" && motion.reveal !== "none" ? reveal(line, motion.reveal, () => piece++) : motion.transition === "move" ? movingWords(line) : line}
                 </p>
               ))}
             </div>
@@ -576,14 +604,14 @@ function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageS
 
 /** A line cut into the pieces that come in one after the other: the line, its words, or its letters. */
 function reveal(line: string, kind: ScreenTheme["motion"]["reveal"], next: () => number): ReactNode {
-  const piece = (content: string, key: number | string) => (
-    <span key={key} className="sv-piece" style={{ "--i": next() } as CSSProperties}>
+  const piece = (content: string, key: number | string, word = false) => (
+    <span key={key} className="sv-piece" style={{ "--i": next() } as CSSProperties} data-word={word || undefined}>
       {content}
     </span>
   );
   if (kind === "lines") return piece(line, 0);
   const words = line.split(/(\s+)/);
-  if (kind === "words" || kind === "glow") return words.map((word, i) => (/^\s+$/.test(word) ? word : piece(word, i)));
+  if (kind === "words" || kind === "glow") return words.map((word, i) => (/^\s+$/.test(word) ? word : piece(word, i, true)));
   // Letters (and typed): a word's letters kept together, so it wraps as a word.
   return words.map((word, i) =>
     /^\s+$/.test(word) ? (

@@ -824,7 +824,7 @@ const fr: typeof en = {
       where: "Où",
       wheres: { bottom: "En bas", top: "En haut", "lower-third": "Tiers inférieur" },
       transition: "Entre les diapositives",
-      transitions: { cut: "Coupe", fade: "Fondu", slide: "Glissement", rise: "Montée", scale: "Échelle", blur: "Flou", zoom: "Zoom" },
+      transitions: { cut: "Coupe", fade: "Fondu", slide: "Glissement", rise: "Montée", scale: "Échelle", blur: "Flou", zoom: "Zoom", move: "Déplacement" },
       duration: "Durée",
       reveal: "Apparition des mots",
       reveals: { none: "D'un coup", lines: "Ligne par ligne", words: "Mot par mot", letters: "Lettre par lettre", typewriter: "Tapés", glow: "En lumière" },

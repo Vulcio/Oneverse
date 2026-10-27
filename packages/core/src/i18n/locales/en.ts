@@ -824,7 +824,7 @@ const en = {
       where: "Where",
       wheres: { bottom: "Bottom", top: "Top", "lower-third": "Lower third" },
       transition: "Between slides",
-      transitions: { cut: "Cut", fade: "Fade", slide: "Slide", rise: "Rise", scale: "Scale", blur: "Blur", zoom: "Zoom" },
+      transitions: { cut: "Cut", fade: "Fade", slide: "Slide", rise: "Rise", scale: "Scale", blur: "Blur", zoom: "Zoom", move: "Move" },
       duration: "Length",
       reveal: "Words appear",
       reveals: { none: "All at once", lines: "Line by line", words: "Word by word", letters: "Letter by letter", typewriter: "Typed", glow: "Glowing" },

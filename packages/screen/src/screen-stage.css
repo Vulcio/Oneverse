@@ -429,6 +429,14 @@
 .sv-out-zoom {
   animation-name: sv-zoom-out;
 }
+/* Move (issue #324): the words themselves move (lib/screen-move.ts); what's left of the old slide fades. */
+.sv-in-move {
+  animation-name: none;
+}
+.sv-out-move {
+  animation-name: sv-fade-out;
+  animation-duration: calc(var(--t) * 0.3);
+}
 @keyframes sv-fade-in {
   from {
     opacity: 0;

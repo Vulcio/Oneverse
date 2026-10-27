@@ -47,7 +47,7 @@ export const SCREEN_TEXT_BACKGROUNDS = ["flow", "strings", "grid", "bokeh"] as c
 export const SCREEN_THEME_ASSET_KINDS = ["media", "font", "shader"] as const;
 export type ScreenThemeAssetKind = (typeof SCREEN_THEME_ASSET_KINDS)[number];
 /** How one slide gives way to the next. */
-export const SCREEN_TRANSITIONS = ["cut", "fade", "slide", "rise", "scale", "blur", "zoom"] as const;
+export const SCREEN_TRANSITIONS = ["cut", "fade", "slide", "rise", "scale", "blur", "zoom", "move"] as const;
 /** How a slide's words come in: all at once, line by line, word by word, letter by letter, typed, or glowing in. */
 export const SCREEN_REVEALS = ["none", "lines", "words", "letters", "typewriter", "glow"] as const;
 export const SCREEN_TEXT_EFFECTS = ["none", "shadow", "outline", "glow"] as const;
