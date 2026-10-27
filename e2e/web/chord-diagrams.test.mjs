@@ -29,6 +29,23 @@ page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 await signIn(page, me);
 await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
 
+/**
+ * Chart display's Chord diagrams, on the dashboard, until the account has it:
+ * a choice made as the page loads, before it's ready, changes nothing (a cold
+ * server's first dashboard, in CI).
+ */
+async function chooseDiagrams(value) {
+  for (let tries = 0; ; tries++) {
+    await page.goto(`${WEB}/dashboard`);
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("Chord diagrams").selectOption(value);
+    await page.waitForLoadState("networkidle");
+    const saved = (await api(me, "GET", "/users/me")).chordDiagrams;
+    if (saved === value) return;
+    if (tries === 2) throw new Error(saved);
+  }
+}
+
 await step("no diagrams until the player picks an instrument", async () => {
   await page.goto(`${WEB}/library/${song.id}`);
   await page.getByTestId("practice-song").waitFor();
@@ -37,11 +54,7 @@ await step("no diagrams until the player picks an instrument", async () => {
 });
 
 await step("Chart display: guitar", async () => {
-  await page.goto(`${WEB}/dashboard`);
-  await page.getByLabel("Chord diagrams").selectOption("GUITAR");
-  await page.waitForLoadState("networkidle");
-  const saved = (await api(me, "GET", "/users/me")).chordDiagrams;
-  if (saved !== "GUITAR") throw new Error(saved);
+  await chooseDiagrams("GUITAR");
 });
 
 await step("Practice: the song's chords as a guitarist frets them with the capo on 2", async () => {
@@ -198,9 +211,7 @@ await step("a tuning, and left-handed diagrams", async () => {
 });
 
 await step("piano (phase 4): smooth voicings or root position, both hands or the right only, note names in the card", async () => {
-  await page.goto(`${WEB}/dashboard`);
-  await page.getByLabel("Chord diagrams").selectOption("PIANO");
-  await page.waitForLoadState("networkidle");
+  await chooseDiagrams("PIANO");
   await page.goto(`${WEB}/library/${song.id}`);
   await page.waitForLoadState("networkidle");
   const strip = page.locator("[data-testid=chord-strip][data-instrument=piano]");
