@@ -1,4 +1,5 @@
 import type { RenderedChart } from "../song-document/render.js";
+import { barAt, lineAtPosition, type BeatPlace, type ChartBar } from "../song-document/bars.js";
 import type { PassageChapter } from "../scriptures/references.js";
 
 /**
@@ -55,6 +56,35 @@ export function lyricSlides(chart: Pick<RenderedChart, "passes">, size: number =
     for (let at = 0, part = 0; at < lines.length; at += per, part++) slides.push({ passIndex, passId: pass.id, label, lines: lines.slice(at, at + per), part });
   });
   return slides;
+}
+
+/**
+ * The slide showing the words sung at `position` (in beats from the song's
+ * start; a beat or two ahead, so they're read before they're sung), as
+ * `lyricSlides` cuts the chart: the slide of the line `lineAtPosition`
+ * finds, else its pass's first one (an intro, an instrumental). What
+ * "Follow the music" shows (issue #238). Null outside the song.
+ */
+export function slideAtPosition(
+  chart: Pick<RenderedChart, "passes">,
+  bars: readonly ChartBar[],
+  places: readonly (BeatPlace | null)[][],
+  position: number,
+  size: number = LYRIC_LINES_PER_SLIDE,
+): number | null {
+  const slides = lyricSlides(chart, size);
+  const now = barAt(bars, position);
+  const bar = now ? bars[now.bar] : undefined;
+  if (!bar) return null;
+  const first = slides.findIndex((slide) => slide.passIndex === bar.passIndex);
+  if (first < 0) return null;
+  const line = lineAtPosition(bars, places, position);
+  if (!line) return first;
+  const per = Math.max(1, Math.floor(size));
+  const sung = chart.passes[line.passIndex]!.lines.filter((one) => one.kind === "lyric" && one.text.trim() !== "");
+  const index = sung.findIndex((one) => one.id === line.lineId);
+  // A line not on the slides (a line of chords alone): its pass's first.
+  return index < 0 ? first : first + Math.floor(index / per);
 }
 
 /**

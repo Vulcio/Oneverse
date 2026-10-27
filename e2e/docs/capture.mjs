@@ -534,6 +534,11 @@ try {
       const area = await page.getByTestId("chord-grid-area").boundingBox();
       await page.screenshot({ path: path.join(dir, "chord-grid-edit.jpg"), type: "jpeg", quality: 85, clip: { x: area.x - 24, y: area.y - 12, width: area.width + 48, height: Math.min(area.height + 24, 420) } });
       console.log("  chord-grid-edit");
+      // The beats in the words: bar 1's third beat picked, to put on a letter.
+      await grid.locator('[data-grid-bar="0"] [data-beat-tick="3"]').click();
+      const words = await grid.locator('[data-grid-bar="0"]').boundingBox();
+      await page.screenshot({ path: path.join(dir, "chord-grid-beats.jpg"), type: "jpeg", quality: 85, clip: { x: area.x - 24, y: area.y - 12, width: area.width + 48, height: Math.min(words.y + words.height - area.y + 36, 420) } });
+      console.log("  chord-grid-beats");
       await page.getByTestId("chord-grid-cancel").click();
       await page.getByTestId("chart-view-chart").click();
       await page.getByTestId("song-chart").waitFor();

@@ -71,6 +71,13 @@ export const BarChordSchema = z.object({
   beat: z.number().positive(),
 });
 
+/** A beat of a bar sung at a character of a line (issue #238): placed by hand where the grid's own guess was wrong. */
+export const BeatAnchorSchema = LyricAnchorSchema.extend({
+  /** 1-based, after the first: the first beat is where the bar starts (`lyricAnchor`). */
+  beat: z.number().int().min(2).max(32),
+});
+export type BeatAnchor = z.infer<typeof BeatAnchorSchema>;
+
 export const BarSchema = z.object({
   /** Chord changes in this bar; none means the previous chord carries on. */
   chords: z.array(BarChordSchema).default([]),
@@ -79,6 +86,8 @@ export const BarSchema = z.object({
   cue: z.string().max(200).nullable().optional(),
   /** Its own length in beats, when it isn't the section's: a pickup, a 2/4 bar before the chorus. */
   beats: z.number().int().positive().max(32).nullable().optional(),
+  /** Beats placed in the lyrics by hand; the others are placed between them, the chords and the bar lines. */
+  beatAnchors: z.array(BeatAnchorSchema).max(32).optional(),
 });
 
 /** An optional bar-by-bar timing layer on a section; the lines stay the structure. */
@@ -255,6 +264,9 @@ function songDocumentIntegrityIssues(doc: {
       if (bar.lyricAnchor && !lineIds.has(bar.lyricAnchor.lineId)) {
         issues.push({ path: ["sections", s, "rhythm", "bars", b, "lyricAnchor"], message: `No line ${bar.lyricAnchor.lineId}` });
       }
+      bar.beatAnchors?.forEach((anchor, a) => {
+        if (!lineIds.has(anchor.lineId)) issues.push({ path: ["sections", s, "rhythm", "bars", b, "beatAnchors", a, "lineId"], message: `No line ${anchor.lineId}` });
+      });
     });
   });
   return issues;

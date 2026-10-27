@@ -1,4 +1,4 @@
-import { prettyChord, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
+import { prettyChord, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
 import { TextItemSlides } from "#/components/set-text-item";
 import { PassageReading } from "#/components/set-passage-item";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
@@ -27,6 +27,7 @@ import { SyncControl } from "#/components/sync-control";
 import { SidebarTrigger } from "@oneverse/ui/components/sidebar";
 import { chartDisplayProps, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
 import { cn } from "@oneverse/ui/lib/utils";
+import { useBarsClock } from "#/lib/bars-clock";
 
 const SPEEDS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
 
@@ -148,6 +149,10 @@ export function LiveView({
   const [extra, setExtra] = useState<Record<string, number>>({});
   const charts = useMemo(() => songs.map((one) => one.chartFor(extra[one.id] ?? 0)), [songs, extra]);
   const chart = charts[at] ?? null;
+  // Where the music is in the song's bars: what Follow the music moves the screens' slides with (issue #238).
+  const bars = useMemo(() => (chart ? chartBars(chart, song.notes?.document) : []), [chart, song.notes?.document]);
+  const clock = useBarsClock(song.id, bars);
+  const music = useMemo(() => (chart && bars.length > 0 ? { bars, position: clock.position } : null), [chart, bars, clock.position]);
   const secondsOf = (i: number) => (charts[i] ? chartSeconds(charts[i]!, songs[i]!.durationSeconds) : 0);
   const seconds = secondsOf(at);
   const anySeconds = charts.some((_, i) => secondsOf(i) > 0);
@@ -486,6 +491,7 @@ export function LiveView({
             next={next}
             previous={previous}
             onSlidePass={goToPass}
+            music={music}
             manage={
               <Link to="/screens" search={{ setlistId: song.setId }} className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground hover:underline" data-testid="present-add-screen">
                 <MonitorUp className="size-3.5" />

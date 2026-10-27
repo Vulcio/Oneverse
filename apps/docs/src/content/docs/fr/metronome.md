@@ -85,3 +85,18 @@ Si vous pouvez modifier le chant, **Modifier les mesures** au-dessus des mesures
 - **Enregistrer les mesures** les enregistre, et **Annuler** abandonne vos changements. Chaque reprise d'une section a les mêmes mesures : un refrain change partout où il revient.
 
 Les mesures sont enregistrées avec le chant, comme les [barres de mesure](/fr/song-editor/#les-barres-de-mesure) de l'éditeur, et apparaissent dans son historique. La ligne des mesures, le clic et les mesures les suivent. Si vous déplacez ensuite une barre de mesure dans l'éditeur, les accords placés ici gardent leurs temps dans chaque mesure qui n'a pas changé.
+
+### Placer les temps dans les paroles
+
+Sous chaque mesure, ses paroles sont découpées à ses temps : pendant la musique, les paroles du temps joué sont soulignées. La grille place les temps d'elle-même. Le premier temps est là où commencent les paroles de la mesure, le temps d'un accord est sur son mot, et les autres sont répartis entre eux, chacun sur le mot le plus proche. Un mot tenu sur un temps n'en a pas.
+
+![Les temps dans les paroles, dans Modifier les mesures : le temps 3 de la mesure 1 choisi](../../../assets/screenshots/fr/chord-grid-beats.jpg)
+
+Quand un temps est chanté ailleurs, déplacez-le dans **Modifier les mesures**. Chaque temps est un petit numéro juste avant la lettre où il est chanté (un temps tenu se met juste après celui d'avant).
+
+- **Faites glisser un temps sur une lettre**, ou touchez-le puis touchez la lettre. Il peut aller sur n'importe quelle lettre, pas seulement au début d'un mot, mais il reste dans les paroles de sa mesure, entre le temps d'avant et celui d'après. Les temps que vous avez placés sont remplis.
+- **Le temps 1 est le début de la mesure.** Le faire glisser déplace la barre de mesure dans sa ligne de paroles : des mots passent d'une mesure à l'autre.
+- **Laisser la grille le placer**, affiché quand vous touchez un temps que vous avez placé, le rend à la grille.
+
+**Enregistrer les mesures** enregistre les temps avec les mesures. C'est aussi avec eux que [Suivre la musique](/fr/screens/#suivre-la-musique) fait avancer les écrans.
+

@@ -1,5 +1,5 @@
-import { setItemSlides, slideKey, stepSlide, structureOf, type RenderedChart, type SetItemPassage, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
-import { ChevronLeft, ChevronRight, MonitorOff } from "lucide-react";
+import { barBeatPlaces, setItemSlides, slideAtPosition, slideKey, stepSlide, structureOf, type ChartBar, type RenderedChart, type SetItemPassage, type SetlistItemText, type SyncPresenting } from "@oneverse/core";
+import { AudioLines, ChevronLeft, ChevronRight, MonitorOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -8,6 +8,28 @@ import { useLive, useOperatorHost } from "../host";
 
 /** After a step back past a song's first slide: the previous song opens on its last. */
 let openOnLastSlide = false;
+
+/** Follow the music: on this device until turned off. */
+const FOLLOW_KEY = "oneverse.present.followMusic";
+/** How far ahead of the music the slides go, in beats: the words are read before they're sung. */
+const FOLLOW_AHEAD = 2;
+
+function readFollow(): boolean {
+  try {
+    return localStorage.getItem(FOLLOW_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveFollow(on: boolean) {
+  try {
+    if (on) localStorage.setItem(FOLLOW_KEY, "1");
+    else localStorage.removeItem(FOLLOW_KEY);
+  } catch {
+    // Not kept: on for this page only.
+  }
+}
 
 /**
  * Presenting a set on its screens (issues #186, #305), the compact controls
@@ -18,6 +40,11 @@ let openOnLastSlide = false;
  * (setItemSlides), so only "this song, slide N" is sent. Control locked to an
  * operator, they show who has it, and wait. `manage` ends the row (the app's
  * link to its screens).
+ *
+ * Given the song's `music` (its bars and where the click or the recording
+ * is), Follow the music (issue #238) moves the slides on by themselves, a
+ * couple of beats ahead of the words sung (`slideAtPosition`, from the
+ * beats placed in the words); Previous or Next turns it off.
  */
 export function PresentControls({
   itemId,
@@ -28,6 +55,7 @@ export function PresentControls({
   previous,
   onSlidePass,
   manage,
+  music,
 }: {
   itemId: string;
   chart: RenderedChart | null;
@@ -40,6 +68,8 @@ export function PresentControls({
   /** The chart scrolled to the pass a slide's from. */
   onSlidePass: (passId: string) => void;
   manage?: ReactNode;
+  /** The song's bars and where the music is in them (in beats; null when nothing plays), to follow it. Left out, it can't be. */
+  music?: { bars: readonly ChartBar[]; position: (() => number) | null } | null;
 }) {
   const { t } = useTranslation();
   const sync = useLive();
@@ -83,8 +113,32 @@ export function PresentControls({
     onSlidePass(current.passId);
   }, [presenting, current?.passId]);
 
+  // Follow the music: the slide of the words about to be sung, sent when it isn't the one shown.
+  const [follow, setFollow] = useState(readFollow);
+  const changeFollow = (on: boolean) => {
+    setFollow(on);
+    saveFollow(on);
+  };
+  const places = useMemo(() => (chart && music ? barBeatPlaces(chart, music.bars) : null), [chart, music?.bars]);
+  const following = follow && !!chart && !!music && !!places;
+  const latest = useRef({ presenting, slide, show });
+  latest.current = { presenting, slide, show };
+  useEffect(() => {
+    const position = music?.position;
+    if (!following || !position || !chart || !places || locked) return;
+    const timer = window.setInterval(() => {
+      const { presenting: now, slide: shown, show: send } = latest.current;
+      if (!now || now.black || now.itemId !== itemId) return;
+      const to = slideAtPosition(chart, music.bars, places, position() + FOLLOW_AHEAD);
+      if (to !== null && to !== shown) send({ ...now, itemId, slide: to });
+    }, 100);
+    return () => window.clearInterval(timer);
+  }, [following, music?.position, chart, places, locked, itemId]);
+
   function go(by: 1 | -1) {
     if (!presenting) return;
+    // Taken in hand: no longer following the music.
+    if (follow) changeFollow(false);
     const to = stepSlide(slides.length, slide, by);
     if (to !== null) return show({ ...presenting, itemId, slide: to });
     if (by > 0) next?.();
@@ -177,7 +231,10 @@ export function PresentControls({
               type="button"
               className={cn("h-7 min-w-8 shrink-0 rounded-full border px-2 text-xs font-semibold", here ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent")}
               disabled={locked}
-              onClick={() => show({ ...presenting, itemId, slide: first, black: false })}
+              onClick={() => {
+                if (follow) changeFollow(false);
+                show({ ...presenting, itemId, slide: first, black: false });
+              }}
               aria-label={t("live.goToPass", { name })}
               aria-current={here ? "step" : undefined}
               data-testid="present-section"
@@ -187,6 +244,21 @@ export function PresentControls({
             </button>
           );
         })}
+        {chart && music ? (
+          <button
+            type="button"
+            className={cn("flex h-7 shrink-0 items-center gap-1 rounded-full border px-2 text-xs font-semibold", follow ? "border-primary bg-primary/15 text-primary" : "text-muted-foreground hover:bg-accent")}
+            disabled={locked}
+            aria-pressed={follow}
+            title={t("screens.followMusicHint")}
+            onClick={() => changeFollow(!follow)}
+            data-testid="present-follow"
+            data-waiting={follow && !music.position ? "" : undefined}
+          >
+            <AudioLines className="size-3.5" />
+            {follow && !music.position ? t("screens.followMusicWaiting") : t("screens.followMusic")}
+          </button>
+        ) : null}
         {manage}
       </div>
     </section>

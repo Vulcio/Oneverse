@@ -76,6 +76,12 @@ Presenting uses [Sync](/sets/#playing-in-sync): the screens are members of the s
 
 Others can present beside you. In the Sync menu, while you lead, **Also presenting** lists the people in the set: tick someone to let them present from their own Live too, for this session; tick them again to stop. Anyone who can edit the set, or whose role runs the screens (see [The media operator](/screens/#the-media-operator)), presents without being asked. Each **Next slide** moves the screens on from what they show now: when two people press it at the same moment, the screens move once, not twice. If someone edits the song while it's on, a screen that still has the old words loads the song again; until it has the words you see, it shows none rather than the wrong ones. On a weak connection, a slide you move to stays on your Live marked **sending…** until the server has it, and goes to the screens as soon as the connection is back.
 
+### Following the music
+
+**Follow the music**, at the end of the row of sections, moves the slides on by themselves as the song plays: with the song's click (the metronome started for it), its recording's stems, or the Sync leader's click. Each slide comes up two beats before its first line is sung, so it's read in time. Where each line is sung comes from the beats placed in the words (see [Placing beats in the words](/metronome/#placing-beats-in-the-words)): placed by the grid itself, or by hand where it got them wrong. Bars with no words, such as an intro, show their section's first slide.
+
+While nothing plays, the button says **Waiting for the music**. **Next slide**, **Previous slide** or a section picked by hand turns it off, so you can take over at any moment; press it again to follow once more. It stays on, on this device, until you turn it off, and does nothing while the screens are black.
+
 ### Moving the screens on
 
 Someone whose role lets them **Move the screens on** (see [Roles](/admin/#roles)) - a singer leading the set on, say - doesn't present, but has **Move the screens** in Live's Sync menu: **Previous song**, **Previous section**, **Next section** and **Next song**. The screens go to the first slide of that song or section, as everyone's Live cuts it: past a song's last section, **Next section** goes to the next song. Like **Next slide**, two people pressing at the same moment move the screens once, and while someone runs the screens alone it does nothing. A Bible passage counts as one section. It works the same on Pulse when the internet goes.

@@ -85,3 +85,18 @@ If you can edit the song, **Edit bars** above the grid in Practice lets you say 
 - **Save bars** saves them, and **Cancel** drops your changes. Every pass of a section has the same bars, so a chorus is changed everywhere it comes back.
 
 The bars are saved with the song, as the Editor's [bar lines](/song-editor/#bar-lines) are, and show in the song's history. The bars row, the click and the grid all follow them. If you later move a bar line in the Editor, the chords you placed here keep their beats in every bar that hasn't changed.
+
+### Placing beats in the words
+
+Under each bar, its words are cut at its beats: as the music plays, the words of the beat being played are underlined. The grid places the beats by itself. The first beat is where the bar's words start, a chord's beat is on its word, and the others are spread evenly between them, each on the nearest word. A word held over a beat gets none.
+
+![The beats in the words in Edit bars: beat 3 of bar 1 picked](../../assets/screenshots/en/chord-grid-beats.jpg)
+
+When a beat is sung somewhere else, move it in **Edit bars**. Each beat is a small number just before the letter it's sung on (a held beat sits right after the one before it).
+
+- **Drag a beat onto a letter**, or tap it and then tap the letter. It can go on any letter, not only the start of a word, but it stays in its own bar's words, between the beats before and after it. Beats you placed are filled in.
+- **Beat 1 is where the bar starts.** Dragging it moves the bar line within its line of lyrics, so words go from one bar to the next.
+- **Let the grid place it**, shown when you tap a beat you placed, gives it back to the grid.
+
+**Save bars** saves the beats with the bars. They are also what [Follow the music](/screens/#following-the-music) moves the screens with.
+

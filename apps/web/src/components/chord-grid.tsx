@@ -1,13 +1,18 @@
 import {
   barAt,
-  barLyrics,
+  barBeatPlaces,
+  barLyricSpans,
+  beatPlaceRange,
   chartBars,
   editableRhythm,
   insertRhythmBar,
   moveRhythmChord,
+  placeRhythmBeat,
   removeRhythmBar,
   setRhythmBarBeats,
   structureOf,
+  type BarLyricSpan,
+  type BeatPlace,
   type ChartBar,
   type ChartBarChord,
   type RenderedChart,
@@ -26,8 +31,11 @@ import { cn } from "@oneverse/ui/lib/utils";
 
 type Sections = SongDocumentV2["sections"];
 
-/** A pointer that went down on a chord in Edit: a drag once it's moved, else a tap. */
-type ChordPress = { pointerId: number; x: number; y: number; sectionId: string; chordId: string; dragging: boolean };
+/** A pointer that went down on a chord, or on a beat in the words, in Edit: a drag once it's moved, else a tap. */
+type ChordPress = { pointerId: number; x: number; y: number; dragging: boolean } & ({ sectionId: string; chordId: string } | { bar: number; beat: number });
+
+/** A beat of a bar, picked in Edit to place in the words: 1-based. */
+type PickedBeat = { bar: number; beat: number };
 
 /** How far a pointer moves before a press on a chord is a drag (px). */
 const DRAG_FROM = 6;
@@ -48,7 +56,9 @@ const DRAG_FROM = 6;
  * places its chords on beats (the right half of a beat is its "and"),
  * dragged or tapped there, and adds, removes or shortens bars (a pickup, a
  * 2/4 bar), saved as each section's rhythm - every pass of a section has
- * the same bars.
+ * the same bars. The beats are placed in the words too (`barBeatPlaces`):
+ * in Edit, each is a number before the letter it's sung on, to drag to
+ * another (beat 1 moves the bar line).
  */
 export function ChordGrid({
   songId,
@@ -75,6 +85,7 @@ export function ChordGrid({
   const [draft, setDraft] = useState<Record<string, Rhythm>>({});
   const [picked, setPicked] = useState<{ sectionId: string; chordId: string } | null>(null);
   const [pickedBar, setPickedBar] = useState<number | null>(null);
+  const [pickedBeat, setPickedBeat] = useState<PickedBeat | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   // Loop: the first bar tapped, waiting for the last.
@@ -84,7 +95,8 @@ export function ChordGrid({
     [document, draft],
   );
   const bars = useMemo(() => chartBars(chart, shown), [chart, shown]);
-  const words = useMemo(() => barLyrics(chart, bars), [chart, bars]);
+  const spans = useMemo(() => barLyricSpans(chart, bars), [chart, bars]);
+  const places = useMemo(() => barBeatPlaces(chart, bars), [chart, bars]);
   const steps = useMemo(() => structureOf(chart), [chart]);
   const { source, position } = useBarsClock(songId, bars);
   const player = useGridPlayer(songId, bars, chart);
@@ -118,6 +130,23 @@ export function ChordGrid({
     setPicked(null);
     setPickedBar(bar.index);
   };
+  // A beat put on a letter of the words: only where beatPlaceRange says it may go.
+  const placeBeat = (target: PickedBeat, letter: { lineId: string; at: number }) => {
+    const bar = bars[target.bar];
+    const rhythm = bar ? rhythmOf(bar) : null;
+    setPickedBeat(null);
+    if (!bar || !rhythm || !editable(bar)) return;
+    const range = beatPlaceRange(chart, bars, bar.index, target.beat);
+    if (!range.some((span) => span.lineId === letter.lineId && letter.at >= span.from && letter.at < span.to)) return setProblem(t(target.beat === 1 ? "chordGrid.barLineOutside" : "chordGrid.beatOutside"));
+    change(bar, placeRhythmBeat(rhythm, bar.barInPass, target.beat, letter, beatsOf(bar)), t("chordGrid.beatOutside"));
+    setPickedBar(bar.index);
+  };
+  const placeBeatAuto = (target: PickedBeat) => {
+    const bar = bars[target.bar];
+    const rhythm = bar ? rhythmOf(bar) : null;
+    setPickedBeat(null);
+    if (bar && rhythm) change(bar, placeRhythmBeat(rhythm, bar.barInPass, target.beat, null, beatsOf(bar)), t("chordGrid.cantPlace"));
+  };
   const barTools = (bar: ChartBar) => {
     const rhythm = rhythmOf(bar)!;
     const length = bar.beats;
@@ -139,36 +168,54 @@ export function ChordGrid({
     };
   };
 
-  // A chord dragged onto a beat, or tapped to pick it.
-  const chordDown = (event: ReactPointerEvent, bar: ChartBar, chord: ChartBarChord) => {
+  // A chord dragged onto a beat, or tapped to pick it; a beat in the words dragged onto a letter, or tapped to pick it.
+  const pressDown = (event: ReactPointerEvent, bar: ChartBar, what: { chordId: string } | { beat: number }) => {
     if (!editable(bar)) return;
     event.stopPropagation();
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    press.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, sectionId: bar.sectionId, chordId: chord.id, dragging: false };
+    const at = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, dragging: false };
+    press.current = "chordId" in what ? { ...at, sectionId: bar.sectionId, chordId: what.chordId } : { ...at, bar: bar.index, beat: what.beat };
   };
-  const slotUnder = (x: number, y: number) => window.document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-grid-slot]") ?? null;
+  const chordDown = (event: ReactPointerEvent, bar: ChartBar, chord: ChartBarChord) => pressDown(event, bar, { chordId: chord.id });
+  const beatDown = (event: ReactPointerEvent, bar: ChartBar, beat: number) => pressDown(event, bar, { beat });
+  // What a pointer is over: a beat to put a chord on, a letter to put a beat on.
+  const targetUnder = (x: number, y: number, current: ChordPress) => window.document.elementFromPoint(x, y)?.closest<HTMLElement>("chordId" in current ? "[data-grid-slot]" : "[data-letter]") ?? null;
   const chordMove = (event: ReactPointerEvent) => {
     const current = press.current;
     if (!current || current.pointerId !== event.pointerId) return;
     if (!current.dragging && Math.hypot(event.clientX - current.x, event.clientY - current.y) < DRAG_FROM) return;
     current.dragging = true;
     for (const element of grid.current?.querySelectorAll<HTMLElement>("[data-drop]") ?? []) delete element.dataset.drop;
-    const slot = slotUnder(event.clientX, event.clientY);
-    if (slot) slot.dataset.drop = "";
+    const target = targetUnder(event.clientX, event.clientY, current);
+    if (target) target.dataset.drop = "";
   };
   const chordUp = (event: ReactPointerEvent) => {
     const current = press.current;
     if (!current || current.pointerId !== event.pointerId) return;
     press.current = null;
     for (const element of grid.current?.querySelectorAll<HTMLElement>("[data-drop]") ?? []) delete element.dataset.drop;
+    if (!("chordId" in current)) {
+      const beat = { bar: current.bar, beat: current.beat };
+      if (!current.dragging) {
+        const same = pickedBeat?.bar === beat.bar && pickedBeat.beat === beat.beat;
+        setPickedBeat(same ? null : beat);
+        setPicked(null);
+        setProblem(null);
+        return;
+      }
+      const letter = targetUnder(event.clientX, event.clientY, current);
+      if (letter) placeBeat(beat, { lineId: letter.dataset.line!, at: Number(letter.dataset.at) });
+      return;
+    }
     const chord = { sectionId: current.sectionId, chordId: current.chordId };
     if (!current.dragging) {
       const same = picked?.chordId === chord.chordId;
       setPicked(same ? null : chord);
+      setPickedBeat(null);
       setProblem(null);
       return;
     }
-    const slot = slotUnder(event.clientX, event.clientY);
+    const slot = targetUnder(event.clientX, event.clientY, current);
     const bar = slot ? bars[Number(slot.dataset.bar)] : undefined;
     if (slot && bar) place(bar, Number(slot.dataset.beat), chord);
   };
@@ -183,6 +230,7 @@ export function ChordGrid({
     setDraft({});
     setPicked(null);
     setPickedBar(null);
+    setPickedBeat(null);
     setProblem(null);
   };
   const save = async () => {
@@ -227,13 +275,18 @@ export function ChordGrid({
     const barElements = element.querySelectorAll<HTMLElement>("[data-grid-bar]");
     let litBar: HTMLElement | null = null;
     let litBeat: HTMLElement | null = null;
+      let litWords: HTMLElement | null = null;
     const light = (bar: number | null, beat: number) => {
       if (litBar) delete litBar.dataset.on;
       if (litBeat) delete litBeat.dataset.on;
+      if (litWords) delete litWords.dataset.on;
       litBar = bar === null ? null : (barElements[bar] ?? null);
       litBeat = litBar?.querySelectorAll<HTMLElement>("[data-grid-beat]")[beat] ?? null;
+      // The words being sung: from the last beat placed in them at or before this one.
+      litWords = [...(litBar?.querySelectorAll<HTMLElement>("[data-word-beat]") ?? [])].filter((one) => Number(one.dataset.wordBeat) <= beat).at(-1) ?? null;
       if (litBar) litBar.dataset.on = "";
       if (litBeat) litBeat.dataset.on = "";
+      if (litWords) litWords.dataset.on = "";
     };
     if (!position) {
       light(null, 0);
@@ -285,7 +338,14 @@ export function ChordGrid({
       />
       {editing ? (
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2 text-sm" data-testid="chord-grid-edit">
-          <p className="text-muted-foreground">{picked ? t("chordGrid.pickBeat") : t("chordGrid.editHint")}</p>
+          <p className="text-muted-foreground">{picked ? t("chordGrid.pickBeat") : pickedBeat ? t("chordGrid.pickLetter", { n: pickedBeat.beat }) : t("chordGrid.editHint")}</p>
+          {pickedBeat && pickedBeat.beat > 1 && places[pickedBeat.bar]?.[pickedBeat.beat - 1]?.placed ? (
+            <div>
+              <Button type="button" variant="outline" size="sm" onClick={() => placeBeatAuto(pickedBeat)} data-testid="chord-grid-beat-auto">
+                {t("chordGrid.placeAuto")}
+              </Button>
+            </div>
+          ) : null}
           {tools ? (
             <div className="flex flex-wrap items-center gap-1.5" data-testid="chord-grid-bar-tools">
               <span className="mr-1 font-medium">{t("bars.bar", { n: tools.bar.index + 1 })}</span>
@@ -347,7 +407,10 @@ export function ChordGrid({
                   <GridBar
                     key={bar.index}
                     bar={bar}
-                    words={words[bar.index] ?? null}
+                    words={spans[bar.index] ?? null}
+                    lines={chart.passes[bar.passIndex]!.lines}
+                    places={places[bar.index] ?? []}
+                    pickedBeat={editing && pickedBeat?.bar === bar.index ? pickedBeat.beat : null}
                     chordColors={chordColors}
                     editing={editable(bar)}
                     locked={editing && !editable(bar)}
@@ -357,7 +420,8 @@ export function ChordGrid({
                     playable={!editing && !player.following && player.source !== null}
                     onTap={() => tapBar(bar)}
                     onSlot={(beat) => place(bar, beat)}
-                    chordEvents={{ down: chordDown, move: chordMove, up: chordUp, cancel: chordCancel }}
+                    onLetter={pickedBeat ? (letter) => placeBeat(pickedBeat, letter) : undefined}
+                    chordEvents={{ down: chordDown, beatDown, move: chordMove, up: chordUp, cancel: chordCancel }}
                   />
                 ))}
               </div>
@@ -449,6 +513,9 @@ function GridToolbar({
 function GridBar({
   bar,
   words,
+  lines,
+  places,
+  pickedBeat,
   chordColors,
   editing,
   locked,
@@ -458,10 +525,17 @@ function GridBar({
   playable,
   onTap,
   onSlot,
+  onLetter,
   chordEvents,
 }: {
   bar: ChartBar;
-  words: string | null;
+  /** Where its words are in the lines (`barLyricSpans`); null for none to sing. */
+  words: BarLyricSpan[] | null;
+  lines: readonly { id: string; text: string }[];
+  /** Where each of its beats is sung (`barBeatPlaces`). */
+  places: readonly (BeatPlace | null)[];
+  /** In Edit, its beat picked to place in the words (1-based). */
+  pickedBeat: number | null;
   chordColors: boolean;
   editing: boolean;
   /** In Edit, a pass that can't be edited here (it leaves some of its section's lines out). */
@@ -472,7 +546,15 @@ function GridBar({
   playable: boolean;
   onTap: () => void;
   onSlot: (beat: number) => void;
-  chordEvents: { down: (event: ReactPointerEvent, bar: ChartBar, chord: ChartBarChord) => void; move: (event: ReactPointerEvent) => void; up: (event: ReactPointerEvent) => void; cancel: () => void };
+  /** In Edit with a beat picked: a letter tapped to sing it on. */
+  onLetter?: (letter: { lineId: string; at: number }) => void;
+  chordEvents: {
+    down: (event: ReactPointerEvent, bar: ChartBar, chord: ChartBarChord) => void;
+    beatDown: (event: ReactPointerEvent, bar: ChartBar, beat: number) => void;
+    move: (event: ReactPointerEvent) => void;
+    up: (event: ReactPointerEvent) => void;
+    cancel: () => void;
+  };
 }) {
   const { t } = useTranslation();
   const beats = Array.from({ length: bar.beats }, (_, beat) => bar.chords.filter((chord) => Math.floor(chord.beat) - 1 === beat));
@@ -580,9 +662,143 @@ function GridBar({
           ),
         )}
       </div>
-      <p className="min-h-5 truncate text-sm text-muted-foreground" data-grid-words="">
-        {words}
-      </p>
+      <BarWords bar={bar} spans={words} lines={lines} places={places} editing={editing} pickedBeat={pickedBeat} onLetter={onLetter} chordEvents={chordEvents} />
     </div>
+  );
+}
+
+/**
+ * A bar's words, cut at the beats sung in them: the words of the beat being
+ * played light up. In Edit, every letter is a place to put a beat, and each
+ * beat is a number before the letter it's sung on - dragged or tapped, then
+ * the letter - a beat held over a word right after the one before it.
+ */
+function BarWords({
+  bar,
+  spans,
+  lines,
+  places,
+  editing,
+  pickedBeat,
+  onLetter,
+  chordEvents,
+}: {
+  bar: ChartBar;
+  spans: BarLyricSpan[] | null;
+  lines: readonly { id: string; text: string }[];
+  places: readonly (BeatPlace | null)[];
+  editing: boolean;
+  pickedBeat: number | null;
+  onLetter?: (letter: { lineId: string; at: number }) => void;
+  chordEvents: { beatDown: (event: ReactPointerEvent, bar: ChartBar, beat: number) => void; move: (event: ReactPointerEvent) => void; up: (event: ReactPointerEvent) => void; cancel: () => void };
+}) {
+  const { t } = useTranslation();
+  const textOf = (lineId: string) => lines.find((line) => line.id === lineId)?.text ?? "";
+  const pieces = (spans ?? []).map((span) => ({ ...span, text: textOf(span.lineId) }));
+  const sung = pieces.some((piece) => piece.text.slice(piece.from, piece.to).trim());
+  // Beats not placed in the words (held over a word) go with the one before.
+  const held = (beat: number) => {
+    const after: number[] = [];
+    for (let next = beat + 1; next < places.length && !places[next]; next++) after.push(next);
+    return after;
+  };
+  const tick = (beat: number) => {
+    const place = places[beat] ?? null;
+    return (
+      <span
+        key={`tick-${beat}`}
+        role="button"
+        tabIndex={0}
+        className={cn(
+          "mr-px inline-block cursor-grab touch-none rounded-sm px-0.5 align-super text-[9px] leading-3 font-semibold tabular-nums select-none",
+          place ? (place.placed ? "bg-primary/80 text-primary-foreground" : "bg-muted-foreground/20 text-foreground") : "border border-dashed border-muted-foreground/50 text-muted-foreground",
+          beat === 0 && "rounded-l-none border-l-2 border-foreground/70",
+          pickedBeat === beat + 1 && "ring-2 ring-primary",
+        )}
+        data-beat-tick={beat + 1}
+        data-placed={place?.placed ? "" : undefined}
+        aria-label={t("chordGrid.beatTick", { n: beat + 1, bar: bar.index + 1 })}
+        onPointerDown={(event) => chordEvents.beatDown(event, bar, beat + 1)}
+        onPointerMove={chordEvents.move}
+        onPointerUp={chordEvents.up}
+        onPointerCancel={chordEvents.cancel}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {beat + 1}
+      </span>
+    );
+  };
+  if (editing && spans && (sung || bar.lineId !== null)) {
+    const ticked = new Set<number>();
+    const ticksAt = (lineId: string, at: number) =>
+      places.flatMap((place, beat) => {
+        if (!place || place.lineId !== lineId || place.at !== at || ticked.has(beat)) return [];
+        for (const one of [beat, ...held(beat)]) ticked.add(one);
+        return [tick(beat), ...held(beat).map(tick)];
+      });
+    const content = pieces.flatMap((piece) =>
+      [...piece.text.slice(piece.from, piece.to)].map((letter, offset) => {
+        const at = piece.from + offset;
+        if (/\s/.test(letter)) return <span key={`${piece.lineId}-${at}`}> </span>;
+        return (
+          <span key={`${piece.lineId}-${at}`}>
+            {ticksAt(piece.lineId, at)}
+            <span
+              className={cn("rounded-[2px] data-[drop]:bg-primary/30", onLetter && "cursor-pointer hover:bg-primary/15")}
+              data-letter=""
+              data-line={piece.lineId}
+              data-at={at}
+              onClick={
+                onLetter
+                  ? (event) => {
+                      event.stopPropagation();
+                      onLetter({ lineId: piece.lineId, at });
+                    }
+                  : undefined
+              }
+            >
+              {letter}
+            </span>
+          </span>
+        );
+      }),
+    );
+    // A bar whose words carry on: its beats wait to be put in them.
+    const rest = places.map((_, beat) => beat).filter((beat) => !ticked.has(beat));
+    return (
+      <p className="min-h-5 text-sm leading-6 break-words text-muted-foreground" data-grid-words="">
+        {rest.length > 0 && !sung ? rest.map(tick) : null}
+        {content}
+        {rest.length > 0 && sung ? rest.map(tick) : null}
+      </p>
+    );
+  }
+  // Read: the words, a piece a beat sung in them.
+  const parts: { beat: number; text: string }[] = [];
+  for (const piece of pieces) {
+    let from = piece.from;
+    const cuts = places.flatMap((place, beat) => (place && place.lineId === piece.lineId && place.at > piece.from && place.at < piece.to ? [{ beat, at: place.at }] : []));
+    let beat = parts.at(-1)?.beat ?? 0;
+    // The words before a line's first bar line, sung on from the line above: a space between.
+    if (parts.length > 0) parts.push({ beat, text: " " });
+    for (const cut of cuts) {
+      parts.push({ beat, text: piece.text.slice(from, cut.at) });
+      from = cut.at;
+      beat = cut.beat;
+    }
+    parts.push({ beat, text: piece.text.slice(from, piece.to) });
+  }
+  return (
+    <p className="min-h-5 truncate text-sm text-muted-foreground" data-grid-words="">
+      {parts.map((part, index) =>
+        part.text.trim() ? (
+          <span key={index} className="rounded-sm data-[on]:text-foreground data-[on]:underline data-[on]:decoration-primary data-[on]:decoration-2 data-[on]:underline-offset-4" data-word-beat={part.beat}>
+            {part.text}
+          </span>
+        ) : (
+          part.text && <span key={index}>{part.text}</span>
+        ),
+      )}
+    </p>
   );
 }

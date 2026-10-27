@@ -11,9 +11,9 @@ import { parseArrangementDocumentV2, findArrangementProblems } from "../schemas/
 import { chordPositionProblem } from "../schemas/song-document-v2.js";
 import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-document/fold.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
-import { barAt, barLyrics, chartBars, recordingBeatPosition, recordingSecondsAt } from "../song-document/bars.js";
+import { barAt, barBeatPlaces, barLyrics, beatPlaceRange, chartBars, lineAtPosition, recordingBeatPosition, recordingSecondsAt } from "../song-document/bars.js";
 import { barLinesFromRhythm, rhythmFromBarLines, suggestedBarLines } from "../song-document/bar-lines.js";
-import { editableRhythm, insertRhythmBar, keepPlacedBeats, moveRhythmChord, removeRhythmBar, setRhythmBarBeats } from "../song-document/rhythm-edit.js";
+import { editableRhythm, insertRhythmBar, keepPlacedBeats, moveRhythmChord, placeRhythmBeat, removeRhythmBar, setRhythmBarBeats } from "../song-document/rhythm-edit.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
@@ -24,7 +24,7 @@ import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronom
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, slideAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
 import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
@@ -294,6 +294,14 @@ const ODD_BARS_SONG = {
           },
         }
       : section,
+  ),
+};
+
+/** BARS_SONG with its verse's second beat placed by hand on "is", rather than on "song" where it falls by itself. */
+const BEAT_SONG = {
+  ...BARS_SONG,
+  sections: BARS_SONG.sections.map((section) =>
+    section.id === "sec_verse" ? { ...section, rhythm: { ...section.rhythm!, bars: section.rhythm!.bars.map((bar, index) => (index === 0 ? { ...bar, beatAnchors: [{ beat: 2, lineId: "line_v1", at: 11 }] } : bar)) } } : section,
   ),
 };
 
@@ -946,6 +954,75 @@ export const CONFORMANCE: ConformanceArea[] = [
           },
         ],
       },
+      barBeatPlaces: {
+        about:
+          "Where each beat of each bar is sung (issue #238), as the chord grid's ticks show it and the screens follow it: a bar's first beat where its words start, a beat placed by hand where it was put, a chord's beat on its word, the others spread evenly between them, each on the word starting nearest - null when none starts there (a word held over the beat), or for a bar with no words.",
+        params: ["song"],
+        run: (song: unknown) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          return barBeatPlaces(chart, chartBars(chart, doc));
+        },
+        cases: [
+          { name: "filled in from the chart", args: [SONG] },
+          { name: "a section's own rhythm, a 3/4 pass, an intro of chords alone", args: [BARS_SONG] },
+          { name: "a beat placed by hand", args: [BEAT_SONG] },
+        ],
+      },
+      beatPlaceRange: {
+        about:
+          "Where a beat of a bar may be put in the lyrics in the chord grid (issue #238), as parts of lines: the first beat moves the bar line within its line, after the bar before's and before the next one's and this bar's chords'; another stays in its bar's words between the beats fixed before and after it. Empty when nowhere.",
+        params: ["song", "bar", "beat"],
+        run: (song: unknown, bar: number, beat: number) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          return beatPlaceRange(chart, chartBars(chart, doc), bar, beat);
+        },
+        cases: [
+          { name: "a beat between the bar line and a chord", args: [BEAT_SONG, 2, 2] },
+          { name: "a bar line, before its bar's next chord", args: [BEAT_SONG, 2, 1] },
+          { name: "a bar line after the line's first", args: [BEAT_SONG, 4, 1] },
+          { name: "a bar under no words: nowhere", args: [BEAT_SONG, 0, 1] },
+          { name: "a beat the bar hasn't got", args: [BEAT_SONG, 2, 5] },
+        ],
+      },
+      lineAtPosition: {
+        about: "The lyric line sung at a position, in beats from the song's start (issue #238): the last beat placed in the words at or before it in the same pass. Null before its pass's first words, or outside the song.",
+        params: ["song", "position"],
+        run: (song: unknown, position: number) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          const bars = chartBars(chart, doc);
+          return lineAtPosition(bars, barBeatPlaces(chart, bars), position);
+        },
+        cases: [
+          { name: "the first words", args: [SONG, 0] },
+          { name: "the verse's second line", args: [SONG, 13] },
+          { name: "the chorus", args: [SONG, 21] },
+          { name: "an intro of chords alone", args: [BARS_SONG, 2] },
+          { name: "words held on", args: [BARS_SONG, 14] },
+          { name: "past the end", args: [SONG, 1000] },
+        ],
+      },
+      slideAtPosition: {
+        about:
+          "The slide showing the words sung at a position (issue #238), as lyricSlides cuts the chart, two lines a slide: Follow the music on the screens. The slide of the line sung, else its pass's first (an intro, an instrumental); null outside the song.",
+        params: ["song", "position"],
+        run: (song: unknown, position: number) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          const bars = chartBars(chart, doc);
+          return slideAtPosition(chart, bars, barBeatPlaces(chart, bars), position);
+        },
+        cases: [
+          { name: "the first words", args: [SONG, 0] },
+          { name: "the verse's second line: the same slide", args: [SONG, 13] },
+          { name: "the chorus: its slide", args: [SONG, 21] },
+          { name: "an intro of chords alone: its own slide", args: [BARS_SONG, 2] },
+          { name: "the chorus", args: [BARS_SONG, 22] },
+          { name: "past the end", args: [SONG, 1000] },
+        ],
+      },
       rhythmFromBarLines: {
         about:
           "A section's rhythm from bar lines placed in its lyrics (issue #238), as the editor saves them: each bar line starts a bar where it stands (its lyricAnchor), more bars after it when it says so, and the chords up to the next bar line fall in them on the beats their words reach, rounded to the beat and half a beat apart at least; between chords with no words, evenly. Words or chords before the first bar line get a bar of their own. Null without bar lines.",
@@ -1059,6 +1136,19 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the empty bar", args: [BARS_SONG.sections[1]!.rhythm, 1] },
           { name: "a bar with chords: refused", args: [BARS_SONG.sections[1]!.rhythm, 0] },
           { name: "an empty bar placed in the lyrics: the next takes its place", args: [{ beatsPerBar: null, bars: [{ chords: [], lyricAnchor: { lineId: "line_a", at: 0 } }, { chords: [] }] }, 0] },
+        ],
+      },
+      placeRhythmBeat: {
+        about:
+          "A beat placed in the lyrics in the chord grid (issue #238), or placed by the grid again (null): the first beat moves the bar line (its lyricAnchor) and is never unplaced; another is kept in the bar's beatAnchors, in order. Null when the bar hasn't got that beat.",
+        params: ["rhythm", "bar", "beat", "place", "beatsPerBar"],
+        run: placeRhythmBeat,
+        cases: [
+          { name: "beat 2 on a word", args: [BARS_SONG.sections[1]!.rhythm, 0, 2, { lineId: "line_v1", at: 11 }, 4] },
+          { name: "beat 4 placed again by the grid", args: [{ beatsPerBar: null, bars: [{ chords: [], beatAnchors: [{ beat: 2, lineId: "line_v1", at: 6 }, { beat: 4, lineId: "line_v1", at: 14 }] }] }, 0, 4, null, 4] },
+          { name: "beat 1: the bar line moved", args: [BARS_SONG.sections[1]!.rhythm, 2, 1, { lineId: "line_v1", at: 17 }, 4] },
+          { name: "beat 1 can't be unplaced", args: [BARS_SONG.sections[1]!.rhythm, 2, 1, null, 4] },
+          { name: "a beat the bar hasn't got", args: [BARS_SONG.sections[1]!.rhythm, 0, 5, { lineId: "line_v1", at: 11 }, 4] },
         ],
       },
       keepPlacedBeats: {

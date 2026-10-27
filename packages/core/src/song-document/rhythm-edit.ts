@@ -110,6 +110,12 @@ export function setRhythmBarBeats(rhythm: Rhythm, bar: number, beats: number | n
   if (length < 1 || length > MAX_BEATS || target.chords.some((chord) => chord.beat >= length + 1)) return null;
   const next: RhythmBar = { ...target, beats: length };
   if (length === sections) delete next.beats;
+  // Beats it no longer has aren't placed anywhere.
+  if (target.beatAnchors) {
+    const kept = target.beatAnchors.filter((anchor) => anchor.beat <= length);
+    if (kept.length > 0) next.beatAnchors = kept;
+    else delete next.beatAnchors;
+  }
   return { ...rhythm, bars: rhythm.bars.map((one, at) => (at === bar ? next : one)) };
 }
 
@@ -134,6 +140,29 @@ export function removeRhythmBar(rhythm: Rhythm, bar: number): Rhythm | null {
   if (target.lyricAnchor && next && !next.lyricAnchor) bars[bar + 1] = { ...next, lyricAnchor: target.lyricAnchor };
   bars.splice(bar, 1);
   return { ...rhythm, bars };
+}
+
+/**
+ * Places beat `beat` (1-based) of bar `bar` at a character of a line, or
+ * lets the grid place it again (null). The first beat is where the bar
+ * starts: placing it moves the bar line (`lyricAnchor`), and it's never
+ * unplaced. Where it may go is `beatPlaceRange`'s to say; null when the bar
+ * hasn't got that beat.
+ */
+export function placeRhythmBeat(rhythm: Rhythm, bar: number, beat: number, place: { lineId: string; at: number } | null, timeBeats = 4): Rhythm | null {
+  const target = rhythm.bars[bar];
+  if (!target || !Number.isInteger(beat) || beat < 1 || beat > rhythmBarBeats(rhythm, target, timeBeats)) return null;
+  let next: RhythmBar;
+  if (beat === 1) {
+    if (!place) return null;
+    next = { ...target, lyricAnchor: { lineId: place.lineId, at: place.at } };
+  } else {
+    const anchors = (target.beatAnchors ?? []).filter((anchor) => anchor.beat !== beat);
+    if (place) anchors.push({ beat, lineId: place.lineId, at: place.at });
+    next = { ...target, beatAnchors: anchors.sort((a, b) => a.beat - b.beat) };
+    if (anchors.length === 0) delete next.beatAnchors;
+  }
+  return { ...rhythm, bars: rhythm.bars.map((one, at) => (at === bar ? next : one)) };
 }
 
 /**
@@ -170,7 +199,7 @@ export function keepPlacedBeats(previous: Rhythm | null | undefined, next: Rhyth
     bars: next.bars.map((bar, index) => {
       const kept = before.get(nextKeys[index]!);
       if (!kept || chordsOf(kept) !== chordsOf(bar)) return bar;
-      return { ...bar, chords: kept.chords, ...(kept.beats ? { beats: kept.beats } : {}) };
+      return { ...bar, chords: kept.chords, ...(kept.beats ? { beats: kept.beats } : {}), ...(kept.beatAnchors?.length ? { beatAnchors: kept.beatAnchors } : {}) };
     }),
   };
 }

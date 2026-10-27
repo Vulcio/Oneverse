@@ -208,6 +208,9 @@ An optional timing layer on a section; the lines stay the structure.
   pickup, a 2/4 bar before the chorus. Left out, it has `beatsPerBar`.
 - A bar with no chord changes carries the previous chord on.
 - `beat` is 1-based and may be fractional (2.5 is the "and" of 2).
+- A bar's `beatAnchors` (optional) are beats placed in the lyrics by hand,
+  `{ beat, lineId, at }` with `beat` from 2 (beat 1 is the bar's
+  `lyricAnchor`). The others are worked out (`barBeatPlaces()`, below).
 
 A section without a rhythm still has bars: `chartBars()` in `@oneverse/core`
 (issue #238) fills them in from the chart. Each chord of a line gets a bar,
@@ -236,7 +239,18 @@ writes the bars `chartBars()` filled in as one (each line's first bar at its
 start, the others at their chord's word), `moveRhythmChord()` puts a chord on
 a beat - never past the chord before or after it in the chart -
 `setRhythmBarBeats()` gives a bar its own `beats`, and `insertRhythmBar()` /
-`removeRhythmBar()` add an empty bar or remove one. Each is a conformance case.
+`removeRhythmBar()` add an empty bar or remove one, and `placeRhythmBeat()`
+puts a beat on a letter (beat 1 moving the bar's `lyricAnchor`, the others in
+`beatAnchors`). Each is a conformance case.
+
+Each beat has a place in the words (issue #238): `barLyricSpans()` gives each
+bar its part of the lines, and `barBeatPlaces()` places its beats there - the
+first where its words start, a beat in `beatAnchors` where it was put, a
+chord's integer beat on its word, the rest spread evenly between those and
+the bar's end, each on the nearest word start (none when a word is held
+over it). `beatPlaceRange()` says where the grid may move a beat, and
+`lineAtPosition()` / `slideAtPosition()` find the line sung at a position
+and its slide: what Follow the music shows on the screens.
 
 ## Anchors
 
