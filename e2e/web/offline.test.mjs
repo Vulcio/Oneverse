@@ -28,6 +28,9 @@ const offlineDatabases = () => page.evaluate(async () => (await indexedDB.databa
 
 await step("online: the service worker installs and takes the page", async () => {
   await signIn(page, me);
+  // The service worker the sign-in's pages registered is active before the
+  // next page opens: one opened while it activates is never claimed.
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await page.goto(`${WEB}/dashboard`);
   await page.waitForLoadState("networkidle");
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 30_000 });
