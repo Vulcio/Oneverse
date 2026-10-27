@@ -68,7 +68,7 @@ export function TextBackground({ kind, theme, text, signals, still }: { kind: Ki
       last = time;
       if (measured) Object.assign(screenDrawStats, measured);
       slow = slow * 0.95 + (dt > 24 ? 1 : 0) * 0.05;
-      const levels = signals.current?.levels ?? { pulse: 0, movement: 0, hue: 0, brightness: 0, elements: 0 };
+      const levels = signals.current?.levels ?? { pulse: 0, movement: 0, hue: 0, brightness: 0, elements: 0, rotation: 0, scale: 0 };
       scene.draw(context, {
         width,
         height,

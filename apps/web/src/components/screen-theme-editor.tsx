@@ -2,6 +2,7 @@ import {
   composeScreenTheme,
   SCREEN_BACKGROUNDS,
   SCREEN_SHADERS,
+  SHADER_CONTROLS,
   readIsf,
   readIsfValues,
   screenShader,
@@ -60,6 +61,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 type Part = Exclude<keyof ScreenTheme, "$schema" | "shows" | "grid" | "masks" | "effects">;
 
 /** A pace that suits each way words appear (ms between pieces): a letter comes far sooner after the last than a line does. */
+const SPEC_ORDER: string[] = Object.keys(SHADER_CONTROLS);
 const REVEAL_PACE: Record<ScreenTheme["motion"]["reveal"], number> = { none: 60, lines: 180, words: 70, letters: 25, typewriter: 18, glow: 90 };
 
 /** What the editor makes (issue #281): a template, or one of its parts. */
@@ -547,6 +549,14 @@ export function ScreenThemeEditor({
                   <Field label={t("screens.editor.movement")}>
                     <Slider value={theme.background.motion} min={0} max={1} step={0.05} onChange={(motion) => set("background", { motion })} />
                   </Field>
+                  {theme.background.kind === "shader" ? (
+                    <Field label={t("screens.editor.spin")}>
+                      <div className="flex flex-col gap-0.5" data-testid="theme-spin">
+                        <Slider value={theme.background.spin} min={-30} max={30} step={1} unit="°/s" onChange={(spin) => set("background", { spin })} />
+                        <span className="text-xs text-muted-foreground">{t("screens.editor.spinHint")}</span>
+                      </div>
+                    </Field>
+                  ) : null}
                 </>
               ) : null}
               <Field label={t("screens.editor.dim")}>
@@ -555,7 +565,7 @@ export function ScreenThemeEditor({
             </Group>
                 <Group title={t("screens.editor.reacts")} open testId="theme-group-reacts">
                   <p className="text-xs text-muted-foreground">{t("screens.editor.reactsHint")}</p>
-                  {(["movement", "hue", "brightness", "elements"] as const).map((input) => (
+                  {(theme.background.kind === "shader" ? (["movement", "hue", "brightness", "elements", "rotation", "scale"] as const) : (["movement", "hue", "brightness", "elements"] as const)).map((input) => (
                     <Field key={input} label={t(`screens.editor.reactsInputs.${input}`)}>
                       <Slider value={theme.reacts[input]} min={0} max={1} step={0.05} onChange={(value) => set("reacts", { [input]: value })} />
                     </Field>
@@ -1019,7 +1029,13 @@ function ShaderSettings({
   const read = useMemo(() => (source === null ? null : readIsf(source)), [source]);
   const values = read && !("error" in read) ? readIsfValues(read.inputs, shader.values) : {};
   const setValue = (name: string, value: IsfValue) => onShader({ ...shader, values: { ...shader.values, [name]: value } });
-  const label = (input: IsfInput) => (builtIn ? t(`screens.editor.shaderInputs.${input.name}`, { defaultValue: input.label ?? input.name }) : (input.label ?? input.name));
+  // A standard control has the spec's name everywhere; a built-in shader's own ones are named in the locale files.
+  const label = (input: IsfInput) =>
+    input.standard
+      ? t(`screens.editor.shaderControlNames.${input.name}`)
+      : builtIn
+        ? t(`screens.editor.shaderInputs.${input.name}`, { defaultValue: input.label ?? input.name })
+        : (input.label ?? input.name);
   const hex = (rgba: number[]) => `#${rgba.slice(0, 3).map((one) => Math.round(one * 255).toString(16).padStart(2, "0")).join("")}`;
 
   return (
@@ -1083,7 +1099,10 @@ function ShaderSettings({
               {read.description && !builtIn ? <span className="text-xs text-muted-foreground">{[read.description, read.credit].filter(Boolean).join(" - ")}</span> : null}
               {read.inputs
                 .filter((input) => !input.songverse && input.name in values)
-                .map((input) => {
+                // The standard controls first, in the spec's order, then the shader's own.
+                .map((input, at) => ({ input, order: input.standard ? SPEC_ORDER.indexOf(input.name) : SPEC_ORDER.length + at }))
+                .sort((a, b) => a.order - b.order)
+                .map(({ input }) => {
                   const value = values[input.name]!;
                   return (
                     <div key={input.name} className="flex flex-col gap-0.5" data-testid="theme-shader-input" data-name={input.name}>

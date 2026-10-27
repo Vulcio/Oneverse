@@ -160,6 +160,20 @@
 .sv-bg-gradient {
   background: linear-gradient(160deg, var(--c0), var(--c1) 55%, var(--c2));
 }
+/* A shader's stand-in where it can't be drawn (no WebGL 2, issue #324): its colours, drifting slowly. */
+.sv-bg-fallback {
+  background: linear-gradient(120deg, var(--c0), var(--c1), var(--c2), var(--c3), var(--c0));
+  background-size: 300% 300%;
+  animation: sv-fallback 40s ease-in-out infinite alternate;
+}
+@keyframes sv-fallback {
+  from {
+    background-position: 0% 30%;
+  }
+  to {
+    background-position: 100% 70%;
+  }
+}
 .sv-bg-dim {
   position: absolute;
   inset: 0;

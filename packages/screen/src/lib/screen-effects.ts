@@ -30,7 +30,7 @@ export function useScreenEffects(
 ): RefObject<ScreenSignals> {
   const reactions = theme.effects?.reactions ?? [];
   // The levels, for a background drawn on a canvas (issue #296) to read each frame too.
-  const signals = useRef<ScreenSignals>({ levels: { pulse: 0, movement: 0, hue: 0, brightness: 0, elements: 0 } });
+  const signals = useRef<ScreenSignals>({ levels: Object.fromEntries(SCREEN_EFFECT_TARGETS.map((target) => [target, 0])) as ScreenSignals["levels"] });
   const kicks = useRef<{ target: Target; level: number; at: number }[]>([]);
   const sustained = useRef<Partial<Record<Target, number>>>({});
   const strength = (target: Target, amount: number) => amount * (target === "pulse" ? 1 : theme.reacts[target]);

@@ -148,7 +148,7 @@ try {
     await editor.locator('[data-testid="theme-preview"] [data-testid="screen-shader"]').waitFor();
     // Mesh gradient: speed, softness, grain, shade - the sv_ inputs aren't controls.
     await editor.locator('[data-testid="theme-shader-input"][data-name="softness"]').waitFor();
-    if ((await editor.getByTestId("theme-shader-input").count()) !== 4) throw new Error(`mesh gradient controls: ${await editor.getByTestId("theme-shader-input").count()}`);
+    if ((await editor.getByTestId("theme-shader-input").count()) !== 6) throw new Error(`mesh gradient controls: ${await editor.getByTestId("theme-shader-input").count()}`);
     await editor.getByTestId("theme-shader").locator('[data-value="embers"]').click();
     await editor.locator('[data-testid="theme-shader-input"][data-name="falling"] input[type="checkbox"]').check();
     await desk.screenshot({ path: `${SP}/screen-shader-editor.png` });

@@ -1,3 +1,5 @@
+import { SHADER_CONTROLS, SHADER_SCREEN_INPUTS, isShaderControl, type ShaderControl } from "./shader-spec.js";
+
 /**
  * ISF shaders (issue #297): backgrounds written as an Interactive Shader
  * Format fragment shader - GLSL with a JSON header declaring its inputs
@@ -5,11 +7,11 @@
  * every client: the editor builds a control for each input, a screen gives
  * each its value, and the API checks an uploaded shader before keeping it.
  *
- * Songverse fills some inputs itself when a shader declares them by name:
- * `sv_movement`, `sv_hue`, `sv_brightness`, `sv_elements`, `sv_pulse`
- * (floats, 0 to 1, from effects), `sv_color1` to `sv_color4` (colours, from
- * the background theme's colours) and `sv_words` (an image: where the
- * words are on the screen). They're never shown as controls.
+ * Inputs named by the shader spec (issue #324, shader-spec.ts) are of two
+ * kinds: standard controls (`sv_brightness`, `sv_rotation`…), shown under
+ * the same label for every shader and pushed by effects, their range and
+ * default the spec's unless the header gives its own; and the inputs a
+ * screen fills itself (`sv_color1`…, `sv_pulse`, `sv_words`…), never shown.
  */
 
 export const ISF_INPUT_TYPES = ["float", "bool", "long", "color", "point2D", "image", "event", "audio", "audioFFT"] as const;
@@ -19,7 +21,7 @@ export type IsfInputType = (typeof ISF_INPUT_TYPES)[number];
 export const ISF_MAX_SOURCE = 64 * 1024;
 
 /** The inputs a screen fills itself. */
-export const ISF_SONGVERSE_INPUTS = ["sv_movement", "sv_hue", "sv_brightness", "sv_elements", "sv_pulse", "sv_color1", "sv_color2", "sv_color3", "sv_color4", "sv_words"] as const;
+export const ISF_SONGVERSE_INPUTS = SHADER_SCREEN_INPUTS;
 
 export interface IsfInput {
   name: string;
@@ -34,6 +36,8 @@ export interface IsfInput {
   labels: string[];
   /** Filled by the screen (an `sv_` input), not a control. */
   songverse: boolean;
+  /** A standard control of the shader spec: shown under its own label, pushed by effects. */
+  standard: boolean;
 }
 
 export interface IsfShader {
@@ -99,11 +103,13 @@ export function readIsf(source: unknown): IsfShader | { error: string } {
 function readInput(name: string, type: IsfInputType, input: Record<string, unknown>): IsfInput {
   const label = text(input.LABEL, 60);
   const songverse = (ISF_SONGVERSE_INPUTS as readonly string[]).includes(name);
-  const base = { name, type, label, min: null, max: null, default: null, values: [], labels: [], songverse };
+  // A standard control of another type than the spec's is the shader's own.
+  const spec: ShaderControl | null = isShaderControl(name) && SHADER_CONTROLS[name].type === type ? SHADER_CONTROLS[name] : null;
+  const base = { name, type, label, min: null, max: null, default: null, values: [], labels: [], songverse, standard: spec !== null };
   if (type === "float") {
-    const min = num(input.MIN) ?? 0;
-    const max = Math.max(min, num(input.MAX) ?? 1);
-    return { ...base, min, max, default: clamp(num(input.DEFAULT) ?? min, min, max) };
+    const min = num(input.MIN) ?? spec?.min ?? 0;
+    const max = Math.max(min, num(input.MAX) ?? spec?.max ?? 1);
+    return { ...base, min, max, default: clamp(num(input.DEFAULT) ?? (spec ? (spec.default as number) : min), min, max) };
   }
   if (type === "long") {
     const values = Array.isArray(input.VALUES) ? input.VALUES.flatMap((one) => (num(one) === null ? [] : [Math.round(one as number)])).slice(0, 20) : [];
@@ -114,7 +120,7 @@ function readInput(name: string, type: IsfInputType, input: Record<string, unkno
   }
   if (type === "bool") return { ...base, default: input.DEFAULT === true || input.DEFAULT === 1 };
   if (type === "color") return { ...base, default: (vector(input.DEFAULT, 4) ?? [0, 0, 0, 1]).map((one) => clamp(one, 0, 1)) };
-  if (type === "point2D") return { ...base, default: vector(input.DEFAULT, 2) ?? [0, 0], min: null, max: null };
+  if (type === "point2D") return { ...base, default: vector(input.DEFAULT, 2) ?? (spec ? (spec.default as number[]) : [0, 0]), min: spec?.min ?? null, max: spec?.max ?? null };
   return base;
 }
 

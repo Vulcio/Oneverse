@@ -23,7 +23,7 @@ import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronom
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
 import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
@@ -1610,6 +1610,33 @@ export const CONFORMANCE: ConformanceArea[] = [
             ],
           },
           { name: "nothing saved: the defaults", args: ['/*{"INPUTS":[{"NAME":"speed","TYPE":"float","MIN":0,"MAX":2,"DEFAULT":1}]}*/', null] },
+        ],
+      },
+      shaderControlValue: {
+        about:
+          "A shader spec control's value now (issue #324, docs/screen-shader-spec.md): the theme's, pushed by the reaction that drives it (its level times the control's share of the range: brightness a half, hue a third, density and size 0.4, scale 0.07), kept within the shader's range. A control no reaction drives, or a name the spec doesn't have, as it is.",
+        params: ["name", "base", "range", "levels"],
+        run: shaderControlValue,
+        cases: [
+          { name: "brightness, half lifted", args: ["sv_brightness", 0.4, { min: 0, max: 1 }, { brightness: 0.5 }] },
+          { name: "brightness, past its top", args: ["sv_brightness", 0.8, { min: 0, max: 1 }, { brightness: 1 }] },
+          { name: "hue: a third of a turn at most", args: ["sv_hue", 0.1, { min: 0, max: 1 }, { hue: 1 }] },
+          { name: "scale, in the shader's own range", args: ["sv_scale", 1, { min: 0.5, max: 2 }, { scale: 1 }] },
+          { name: "contrast: no reaction drives it", args: ["sv_contrast", 0.7, { min: 0, max: 1 }, { brightness: 1 }] },
+          { name: "a shader's own control", args: ["speed", 0.3, { min: 0, max: 2 }, { movement: 1 }] },
+        ],
+      },
+      advanceShaderClock: {
+        about:
+          "A shader's clock a frame later (issue #324): time runs at the theme's motion (0.5 the shader's own pace) times 1 + 4 x the movement level, added frame by frame so a change of pace never jumps; the turn (degrees) at the theme's spin plus 90 a second x the rotation level, kept within one turn.",
+        params: ["clock", "ms", "theme", "levels"],
+        run: advanceShaderClock,
+        cases: [
+          { name: "the shader's own pace", args: [{ time: 10, turn: 0, speed: 1 }, 500, { motion: 0.5, spin: 0 }, {}] },
+          { name: "ten minutes in, a full movement kick: a frame five times longer, no jump", args: [{ time: 600, turn: 0, speed: 1 }, 20, { motion: 0.5, spin: 0 }, { movement: 1 }] },
+          { name: "still", args: [{ time: 4, turn: 30, speed: 0 }, 1000, { motion: 0, spin: 0 }, { movement: 1 }] },
+          { name: "spinning backwards, and a rotation kick", args: [{ time: 0, turn: 10, speed: 1 }, 1000, { motion: 0.5, spin: -20 }, { rotation: 0.5 }] },
+          { name: "past a whole turn", args: [{ time: 0, turn: 350, speed: 1 }, 1000, { motion: 0.5, spin: 30 }, {}] },
         ],
       },
       placeScreenWidget: {

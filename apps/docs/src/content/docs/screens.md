@@ -168,26 +168,26 @@ What's under the words:
   ![Flow, Strings, Grid and Bokeh among the background themes](../../assets/screenshots/en/screen-backgrounds.jpg)
 
   The first colour is the background, the others the trails, strings, cells or discs. With effects, they also move faster, change colour, brighten or swell, as **How it answers effects** says. With **Movement** at 0, they stand still.
-- A **Shader** is drawn by the screen's graphics chip (WebGL): **Mesh gradient** (soft colours morphing into one another), **Glow lines** (glowing lines waving across the screen) or **Embers** (points of light rising in depth). Each has its own **Shader controls** - speed, softness, how many, and so on - and keeps the area behind the words quieter. **Reset controls** puts them back.
+- A **Shader** is drawn by the screen's graphics chip (WebGL 2): **Mesh gradient** (soft colours morphing into one another), **Glow lines** (glowing lines waving across the screen) or **Embers** (points of light rising in depth). Each has its own **Shader controls** - speed, softness, how many, and so on - and keeps the area behind the words quieter. **Reset controls** puts them back. **Movement** sets its pace, and **Spin** turns it slowly, one way or the other, for a shader that can turn.
 
   ![A shader background and its controls](../../assets/screenshots/en/screen-shader.jpg)
 
-  You can also **Upload…** your own: an [ISF](https://isf.video) shader (a `.fs` file up to 64 KB), the format VDMX, Resolume and many shader sites use. Its inputs become its controls; the screen fills the ones named `sv_color1` to `sv_color4` (the theme's colours), `sv_movement`, `sv_hue`, `sv_brightness`, `sv_elements`, `sv_pulse` (what effects set off, 0 to 1) and `sv_words` (an image, white where the words are). A file without an ISF header is refused; one the screen can't draw shows the colours instead. Shaders with several passes aren't drawn yet.
+  You can also **Upload…** your own: an [ISF](https://isf.video) shader (a `.fs` file up to 64 KB), the format VDMX, Resolume and many shader sites use. Its inputs become its controls. Inputs named as the [shader spec](https://github.com/Vulcio/Oneverse/blob/main/docs/screen-shader-spec.md) says - `sv_brightness`, `sv_contrast`, `sv_hue`, `sv_rotation`, `sv_scale` and the others - get the same controls as the built-in shaders and answer effects; the screen fills `sv_color1` to `sv_color8` (the theme's colours), `sv_pulse` (what effects set off), `sv_speed`, `sv_quality` and `sv_words` (an image, white where the words are). A file without an ISF header is refused; one the screen can't draw shows the colours instead. Shaders with several passes aren't drawn yet.
 
-  A screen that can't keep up draws the shader smaller and stretches it, sharper again once it can: a TV stick still moves smoothly, a mini PC draws it at full size.
-- **How it answers effects** - how much its **Movement**, **Colour shift**, **Brightness** and **Elements** (blobs, waves, particles, beams) move when effects set them off.
+  A screen that can't keep up draws the shader with less detail first, then smaller, and back again once it can: a TV stick still moves smoothly, a mini PC draws it all at full size. A screen without WebGL 2 (some older TV sticks) shows the shader's colours, slowly drifting, instead.
+- **How it answers effects** - how much its **Movement**, **Colour shift**, **Brightness** and **Elements** (blobs, waves, particles, beams) move when effects set them off; for a shader, its **Rotation** and **Scale** too.
 
 Fonts and pictures are added to a saved content or background theme, so save it first; they count toward your storage.
 
 ### Effects
 
-Effects tie the words to the background. **Reactions**: **When** a slide comes, a line or a word appears, a new section starts, or in a chorus (while it lasts), **the background** pulses with light, moves faster, shifts colour, brightens or swells its elements - each by how much you choose, times how much the background answers. **The words' movement**: a **Pulse**, **Breathe**, **Glow**, **Shimmer** or **Float**, with how much and how fast. A template can have no effects.
+Effects tie the words to the background. **Reactions**: **When** a slide comes, a line or a word appears, a new section starts, or in a chorus (while it lasts), **the background** pulses with light, moves faster, shifts colour, brightens, swells its elements, turns or comes closer - each by how much you choose, times how much the background answers. **The words' movement**: a **Pulse**, **Breathe**, **Glow**, **Shimmer** or **Float**, with how much and how fast. A template can have no effects.
 
 ![Effects: reactions and the words' movement](../../assets/screenshots/en/screen-effects.jpg)
 
 A screen that can't keep up - an old TV, a small stick computer - can turn **Effects** off in its tile's **Settings**: it shows the same template, without the reactions and the words' movement.
 
-Each screen says what it is and how it's drawing, every half minute while it's connected: its tile shows how well it keeps up - **Smooth**, **Limited** or **Minimal** - and its **Settings** show its **Device**: the browser and model, its graphics chip and the WebGL it has, its cores and memory, its screen, and how its background is drawing (frames per second, the slowest frame, the resolution a shader draws at). **Smooth** runs everything; **Limited** runs shaders at a lower resolution and light effects (a TV stick such as a Chromecast, a Raspberry Pi on a big screen); **Minimal** should keep to still backgrounds, without effects.
+Each screen says what it is and how it's drawing, every half minute while it's connected: its tile shows how well it keeps up - **Smooth**, **Limited** or **Minimal** - and its **Settings** show its **Device**: the browser and model, its graphics chip and the WebGL it has, its cores and memory, its screen, and how its background is drawing (frames per second, the slowest frame, the detail and resolution a shader draws at). **Smooth** runs everything; **Limited** runs shaders with less detail or at a lower resolution and light effects (a TV stick such as a Chromecast, a Raspberry Pi on a big screen); **Minimal** should keep to still backgrounds, without effects.
 
 ### Layers
 

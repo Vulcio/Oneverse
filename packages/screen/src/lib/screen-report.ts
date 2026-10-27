@@ -52,6 +52,7 @@ export function screenReport(): ScreenReport {
       fps: screenDrawStats.fps,
       worstMs: screenDrawStats.worstMs,
       scale: screenDrawStats.drawer === "shader" ? screenDrawStats.scale : null,
+      quality: screenDrawStats.drawer === "shader" ? screenDrawStats.quality : null,
       drawer: screenDrawStats.drawer,
       error: screenDrawStats.error,
       effects: screenDrawStats.effects,

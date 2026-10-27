@@ -58,7 +58,9 @@ section with the slide's lines picked out.
     "media": null,           // the picture's or video's asset id, for image and video; without it, the colours
     "colors": ["#000000"],   // 1-4; the first is the base, the others the gradient's or the moving lights'
     "reactive": false,       // a pulse of light with each slide; brighter in a chorus (sectionEnergy)
-    "motion": 0.5,           // 0 (still) to 1
+    "motion": 0.5,           // 0 (still) to 1; a shader's pace, 0.5 its own
+    "spin": 0,               // a shader's turn, degrees a second (-30 to 30), issue #324
+    "shader": { "builtIn": null, "asset": null, "values": {} }, // for "shader": docs/screen-shader-spec.md
     "dim": 0                 // 0-0.9: darkens the background under the words
   },
   "title": { "show": true, "when": "first" },                       // first, every
@@ -183,11 +185,12 @@ theme is what they compose to (`composeScreenTheme` in core):
   `chords` - as above. Its fonts are its files.
 - **screen-background/v1** (`ScreenBackgroundThemeSchema`): `base`,
   `video`, `background`, and `reacts` - how much its movement, hue,
-  brightness and elements answer effects (0-1). Its pictures and videos are
+  brightness, elements, and a shader's rotation and scale answer effects
+  (0-1). Its pictures and videos are
   its files.
 - **screen-effects/v1** (`ScreenEffectsSchema`): `reactions` - `{ on: slide
   | line | word | section | chorus, target: pulse | movement | hue |
-  brightness | elements, amount }` - and `text` (`animation`: none, pulse,
+  brightness | elements | rotation | scale, amount }` - and `text` (`animation`: none, pulse,
   breathe, glow, shimmer, float; `amount`; `speed`).
 - **screen-template/v1** (`ScreenTemplateSchema`): `tags` (audience, stage,
   presentation, lyrics, chords, signage), `grid`, `masks`; its parts are
@@ -226,9 +229,9 @@ device.
 - Animate only `transform`, `opacity` and a little `filter` (blur): the GPU
   composites them at 60 frames a second without laying anything out again.
   The web screen draws soft lights as radial gradients, not blurred shapes.
-- A slide's change plays the old slide out and the new one in at the same
-  time, for `duration`; `reveal` then brings the words in one piece after
-  another.
+- A slide's change takes `duration`: the old slide starts going at once and
+  is gone after 40% of it, the new one comes in from 15% (issue #324);
+  `reveal` then brings the words in one piece after another.
 - Honour the device's reduced-motion setting: still backgrounds, plain fades.
 - Black (from Live) fades everything out, then shows nothing; with a grid
   whose `black` is "words", only the words widgets go.

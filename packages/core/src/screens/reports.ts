@@ -57,13 +57,15 @@ export const ScreenReportSchema = z.object({
       worstMs: amount(60_000),
       /** The share of the screen's pixels a shader draws (0 to 1). */
       scale: amount(1),
+      /** What a shader draws (issue #324): 0 the least, 2 everything. */
+      quality: z.union([z.literal(0), z.literal(1), z.literal(2)]).nullable().default(null).catch(null),
       drawer: z.enum(["shader", "canvas", "css"]).default("css").catch("css"),
       /** A shader that couldn't be drawn: why. */
       error: text(200),
       effects: z.boolean().default(false).catch(false),
     })
     .prefault({})
-    .catch(() => ({ fps: null, worstMs: null, scale: null, drawer: "css" as const, error: null, effects: false })),
+    .catch(() => ({ fps: null, worstMs: null, scale: null, quality: null, drawer: "css" as const, error: null, effects: false })),
   /** Seconds since the screen's page loaded. */
   uptimeS: count(10 * 365 * 86_400),
 });

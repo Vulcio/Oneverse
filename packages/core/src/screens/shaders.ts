@@ -46,7 +46,7 @@ void main() {
   vec2 uv = isf_FragNormCoord;
   float aspect = RENDERSIZE.x / RENDERSIZE.y;
   vec2 p = vec2(uv.x * aspect, uv.y);
-  float t = TIME * speed * (1.0 + sv_movement * 2.0);
+  float t = TIME * speed;
   vec2 a = vec2(aspect * (0.5 + 0.38 * sin(t * 0.31)), 0.5 + 0.36 * cos(t * 0.27));
   vec2 b = vec2(aspect * (0.5 + 0.40 * cos(t * 0.23 + 1.7)), 0.5 + 0.38 * sin(t * 0.37 + 0.4));
   vec2 c = vec2(aspect * (0.5 + 0.36 * sin(t * 0.19 + 3.1)), 0.5 + 0.40 * cos(t * 0.29 + 2.2));
@@ -88,7 +88,7 @@ float line(float x, float y, float t, float i, float amp) {
 }
 void main() {
   vec2 uv = isf_FragNormCoord;
-  float t = TIME * speed * (1.0 + sv_movement * 2.0);
+  float t = TIME * speed;
   float amp = amplitude * (1.0 + sv_elements * 1.5 + sv_pulse);
   float d = split * (abs(uv.x - 0.5) * 2.0);
   vec3 colour = sv_color1.rgb;
@@ -125,7 +125,7 @@ void main() {
   vec2 uv = isf_FragNormCoord;
   float aspect = RENDERSIZE.x / RENDERSIZE.y;
   vec2 p = vec2(uv.x * aspect, uv.y);
-  float t = TIME * speed * (1.0 + sv_movement * 2.0) * (falling ? -1.0 : 1.0);
+  float t = TIME * speed * (falling ? -1.0 : 1.0);
   vec3 colour = sv_color1.rgb;
   for (int n = 0; n < 4; n++) {
     float layer = float(n);

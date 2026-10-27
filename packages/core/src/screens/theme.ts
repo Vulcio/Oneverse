@@ -223,10 +223,12 @@ export const SCREEN_CONTENT_SHOWS = ["lyrics", "chart"] as const;
  * sets a reaction off - a slide coming, a line or a word appearing, a new
  * section, a chorus (while it lasts) - and what in the background answers:
  * a pulse of light, its movement, its hue, its brightness, its elements
- * (blobs, waves, particles, beams) swelling. Names in the locale files.
+ * (blobs, waves, particles, beams) swelling; for a shader that follows the
+ * spec (issue #324), its rotation and its scale too. Names in the locale
+ * files.
  */
 export const SCREEN_EFFECT_TRIGGERS = ["slide", "line", "word", "section", "chorus"] as const;
-export const SCREEN_EFFECT_TARGETS = ["pulse", "movement", "hue", "brightness", "elements"] as const;
+export const SCREEN_EFFECT_TARGETS = ["pulse", "movement", "hue", "brightness", "elements", "rotation", "scale"] as const;
 /** What effects do to the words themselves, besides their readability. */
 export const SCREEN_TEXT_ANIMATIONS = ["none", "pulse", "breathe", "glow", "shimmer", "float"] as const;
 /** The most reactions effects have. */
@@ -258,7 +260,8 @@ export function screenEffectsSchema(strict: boolean) {
 
 /**
  * How much each of a background's inputs answers effects (issue #281), 0 to
- * 1: its movement, its hue, its brightness, its elements. Built into a
+ * 1: its movement, its hue, its brightness, its elements, its rotation and
+ * scale (a shader's, issue #324). Built into a
  * background theme; effects decide when they're set off.
  */
 export function screenReactsSchema(strict: boolean) {
@@ -268,6 +271,8 @@ export function screenReactsSchema(strict: boolean) {
     hue: z.number().min(0).max(1).default(0.3),
     brightness: z.number().min(0).max(1).default(0.5),
     elements: z.number().min(0).max(1).default(0.5),
+    rotation: z.number().min(0).max(1).default(0.5),
+    scale: z.number().min(0).max(1).default(0.5),
   });
 }
 
@@ -346,8 +351,10 @@ function screenThemeSchema(strict: boolean) {
       colors: z.array(color).min(1).max(4).default(["#000000"]),
       /** Moves with the song: a pulse as each slide comes, warmer and brighter in a chorus. */
       reactive: z.boolean().default(false),
-      /** How much it moves, 0 (still) to 1. */
+      /** How much it moves, 0 (still) to 1: a shader's pace, 0.5 being its own. */
       motion: z.number().min(0).max(1).default(0.5),
+      /** A shader's turn, in degrees a second (issue #324), one way or the other; reactions turn it further. */
+      spin: z.number().min(-30).max(30).default(0),
       /** A picture or looping video uploaded with the theme (its asset's id), for "image" and "video"; without one, the colours. */
       media: z.string().max(40).nullable().default(null),
       /** Darkens it under the words, 0 to 0.9: words stay readable over anything. */

@@ -229,6 +229,7 @@ export function formatScreenCode(code: string): string {
 export * from "./theme.js";
 export * from "./parts.js";
 export * from "./isf.js";
+export * from "./shader-spec.js";
 export * from "./shaders.js";
 export * from "./reports.js";
 

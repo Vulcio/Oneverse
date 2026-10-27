@@ -810,6 +810,7 @@ function ScreenDevice({ report }: { report: NonNullable<ScreenSummary["report"]>
         t(`screens.device.drawers.${drawing.drawer}`),
         drawing.fps !== null ? t("screens.device.fps", { fps: Math.round(drawing.fps), worst: Math.round(drawing.worstMs ?? 0) }) : null,
         drawing.scale !== null && drawing.scale < 1 ? t("screens.device.scale", { percent: Math.round(drawing.scale * 100) }) : null,
+        drawing.quality !== null && drawing.quality < 2 ? t(`screens.device.quality.${drawing.quality}`) : null,
         drawing.effects ? t("screens.device.effectsOn") : null,
       ]
         .filter(Boolean)

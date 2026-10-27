@@ -1,3 +1,5 @@
+import type { ShaderQuality } from "@oneverse/core";
+
 /**
  * How a screen's moving background is drawing, kept by whichever is drawing
  * it (a shader, issue #297, or a canvas, issue #296) for the screen's report
@@ -11,6 +13,8 @@ export interface ScreenDrawStats {
   worstMs: number | null;
   /** The share of the screen's pixels drawn, 0 to 1 (a shader draws smaller on a slow device, then stretches). */
   scale: number;
+  /** What a shader draws (issue #324): 0 the least, 2 everything; null when no shader draws. */
+  quality: ShaderQuality | null;
   /** What draws it: a "shader", a "canvas", or "css". */
   drawer: "shader" | "canvas" | "css";
   /** A shader that couldn't be drawn: why (the colours are shown instead). */
@@ -19,7 +23,7 @@ export interface ScreenDrawStats {
   effects: boolean;
 }
 
-export const screenDrawStats: ScreenDrawStats = { fps: null, worstMs: null, scale: 1, drawer: "css", error: null, effects: false };
+export const screenDrawStats: ScreenDrawStats = { fps: null, worstMs: null, scale: 1, quality: null, drawer: "css", error: null, effects: false };
 
 /** Frame times, measured in windows: a drawer calls `frame(dt)` each frame and reads the average and the worst. */
 export function frameMeter(window = 60) {
