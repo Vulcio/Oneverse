@@ -1,7 +1,7 @@
 import type { SetForSong } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { Check, ListPlus, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
@@ -29,6 +29,20 @@ export function AddToSetButton({ songVersionId, className, labelClassName }: { s
         }
       />
       <PopoverContent align="end" className="w-80 p-0" data-testid="add-to-set-list">
+        {open ? <SetChoices songVersionId={songVersionId} /> : null}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * The same list, opened from elsewhere - the song editor's More menu on a
+ * narrower screen - and shown by `anchor`.
+ */
+export function AddToSetPopover({ songVersionId, open, onOpenChange, anchor }: { songVersionId: string; open: boolean; onOpenChange: (open: boolean) => void; anchor: RefObject<HTMLElement | null> }) {
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverContent align="end" anchor={anchor} className="w-80 p-0" data-testid="add-to-set-list">
         {open ? <SetChoices songVersionId={songVersionId} /> : null}
       </PopoverContent>
     </Popover>

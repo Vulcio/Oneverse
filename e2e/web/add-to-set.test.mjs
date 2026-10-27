@@ -91,5 +91,15 @@ await step("Ctrl+K: Add to set on a song found", async () => {
   if (page.url().includes(`/library/${grace.id}`)) throw new Error("the song was opened");
 });
 
+await step("Edit on a narrower screen: Add to set from More", async () => {
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 1024, height: 800 });
+  await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
+  await page.goto(`${WEB}/library/${grace.id}`);
+  await page.getByRole("button", { name: "More actions" }).click();
+  await page.getByTestId("menu-add-to-set").click();
+  await page.locator(`[data-testid="add-to-set-choice"][data-set-id="${youth.id}"][data-state="in"]`).waitFor();
+});
+
 await browser.close();
 finish();

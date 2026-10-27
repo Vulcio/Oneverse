@@ -24,7 +24,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSPropertie
 import { useTranslation } from "react-i18next";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 import { Button } from "@oneverse/ui/components/button";
-import { AddToSetButton } from "#/components/add-to-set";
+import { AddToSetButton, AddToSetPopover } from "#/components/add-to-set";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
@@ -165,6 +165,9 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   }, [message]);
   // The header's height, for the editor's toolbar sticking under it (issue #248).
   const headerRef = useRef<HTMLDivElement>(null);
+  // Add to set from More, on a narrower screen (issue #330): shown by the More button.
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const [addingToSet, setAddingToSet] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   // The phone's save bar's height, for the chord bar over it (issue #253): 0 where it's hidden.
   const saveBarRef = useRef<HTMLDivElement>(null);
@@ -665,8 +668,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
             </>
           ) : null}
           {edit ? <FavoriteButton key={edit.version.id} songVersionId={edit.version.id} initial={!!edit.version.isFavorite} /> : null}
-          {/* Into one of one's sets (issue #330); just the icon until there is room, as Share. */}
-          {edit ? <AddToSetButton songVersionId={edit.version.id} labelClassName="hidden xl:inline" /> : null}
+          {/* Into one of one's sets (issue #330): a button of its own on a wide screen, in More on a narrower one. */}
+          {edit ? <AddToSetButton songVersionId={edit.version.id} className="hidden xl:inline-flex" /> : null}
           {edit && canManage && edit.version.ownerScope !== "GLOBAL" ? (
             <Button type="button" variant="outline" onClick={() => setSharing(true)} aria-label={t("sharing.share")}>
               <Share2 />
@@ -676,11 +679,14 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           ) : null}
           {edit ? (
             <DropdownMenu>
-              <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon" aria-label={t("songEditor.moreActions")} />}>
+              <DropdownMenuTrigger render={<Button ref={moreRef} type="button" variant="ghost" size="icon" aria-label={t("songEditor.moreActions")} />}>
                   <MoreHorizontal />
                 </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportChordPro}>{t("songEditor.exportChordPro")}</DropdownMenuItem>
+                <DropdownMenuItem className="xl:hidden" onClick={() => setAddingToSet(true)} data-testid="menu-add-to-set">
+                  {t("sets.addToSet.button")}…
+                </DropdownMenuItem>
                 {/* Notes (issue #256): a button of its own on a wide screen, here on a narrower one. */}
                 {edit ? (
                   <DropdownMenuItem className="xl:hidden" onClick={() => setNotesAsked((n) => n + 1)} data-testid="menu-notes">
@@ -703,6 +709,9 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                 ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
+          ) : null}
+          {edit ? (
+            <AddToSetPopover songVersionId={edit.version.id} open={addingToSet} onOpenChange={setAddingToSet} anchor={moreRef} />
           ) : null}
         </div>
         {/* Over the page, under the header: a message never pushes the page down (issue #248). */}
