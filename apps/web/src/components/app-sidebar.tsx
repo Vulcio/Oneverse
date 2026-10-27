@@ -426,6 +426,7 @@ function MainNav({
               <DropNoticeBar notice={setDrop.notice} onClose={setDrop.closeNotice} />
             </li>
           ) : null}
+          {setDrop.dialog}
           <NavGroup
             icon={<BookOpen />}
             label={t("nav.songbooks")}

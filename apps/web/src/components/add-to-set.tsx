@@ -8,30 +8,37 @@ import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components
 import { cn } from "@oneverse/ui/lib/utils";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle, setOwnerLabel } from "#/lib/setlists";
+import { useAddSongToSet } from "#/components/set-team-access";
 
 /**
  * Add to set, on a song (issue #330): the sets you can change that aren't
  * over, soonest first. One it's in already is ticked, one it can't go in
  * (a team set and a song that isn't the team's) says so; picking another
- * puts the song at its end. New set… makes one with the song in it.
+ * puts the song at its end - one of your own going into a team's set asks
+ * to share it with the team or move it there first (issue #331). New set…
+ * makes one with the song in it.
  */
-export function AddToSetButton({ songVersionId, className, labelClassName }: { songVersionId: string; className?: string; labelClassName?: string }) {
+export function AddToSetButton({ songVersionId, songTitle, className, labelClassName }: { songVersionId: string; songTitle: string; className?: string; labelClassName?: string }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const adding = useAdding();
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        render={
-          <Button type="button" variant="outline" className={className} aria-label={t("sets.addToSet.button")} data-testid="add-to-set">
-            <ListPlus />
-            <span className={labelClassName}>{t("sets.addToSet.button")}</span>
-          </Button>
-        }
-      />
-      <PopoverContent align="end" className="w-80 p-0" data-testid="add-to-set-list">
-        {open ? <SetChoices songVersionId={songVersionId} /> : null}
-      </PopoverContent>
-    </Popover>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          render={
+            <Button type="button" variant="outline" className={className} aria-label={t("sets.addToSet.button")} data-testid="add-to-set">
+              <ListPlus />
+              <span className={labelClassName}>{t("sets.addToSet.button")}</span>
+            </Button>
+          }
+        />
+        <PopoverContent align="end" className="w-80 p-0" data-testid="add-to-set-list">
+          {open ? <SetChoices songVersionId={songVersionId} songTitle={songTitle} adding={adding} /> : null}
+        </PopoverContent>
+      </Popover>
+      {adding.dialog}
+    </>
   );
 }
 
@@ -39,13 +46,17 @@ export function AddToSetButton({ songVersionId, className, labelClassName }: { s
  * The same list, opened from elsewhere - the song editor's More menu on a
  * narrower screen - and shown by `anchor`.
  */
-export function AddToSetPopover({ songVersionId, open, onOpenChange, anchor }: { songVersionId: string; open: boolean; onOpenChange: (open: boolean) => void; anchor: RefObject<HTMLElement | null> }) {
+export function AddToSetPopover({ songVersionId, songTitle, open, onOpenChange, anchor }: { songVersionId: string; songTitle: string; open: boolean; onOpenChange: (open: boolean) => void; anchor: RefObject<HTMLElement | null> }) {
+  const adding = useAdding();
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverContent align="end" anchor={anchor} className="w-80 p-0" data-testid="add-to-set-list">
-        {open ? <SetChoices songVersionId={songVersionId} /> : null}
-      </PopoverContent>
-    </Popover>
+    <>
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <PopoverContent align="end" anchor={anchor} className="w-80 p-0" data-testid="add-to-set-list">
+          {open ? <SetChoices songVersionId={songVersionId} songTitle={songTitle} adding={adding} /> : null}
+        </PopoverContent>
+      </Popover>
+      {adding.dialog}
+    </>
   );
 }
 
@@ -53,9 +64,10 @@ export function AddToSetPopover({ songVersionId, open, onOpenChange, anchor }: {
  * The same, as a small button on a song found by the search box (Ctrl K):
  * `onLeave` closes the search when a set is opened from it.
  */
-export function AddToSetIconButton({ songVersionId, onLeave }: { songVersionId: string; onLeave: () => void }) {
+export function AddToSetIconButton({ songVersionId, songTitle, onLeave }: { songVersionId: string; songTitle: string; onLeave: () => void }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const adding = useAdding();
   return (
     // Clicks in the list stay in it, rather than opening the song (React carries them out of the portal).
     <span className="flex shrink-0" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
@@ -74,42 +86,41 @@ export function AddToSetIconButton({ songVersionId, onLeave }: { songVersionId: 
           <ListPlus />
         </PopoverTrigger>
         <PopoverContent align="end" className="w-80 p-0" data-testid="add-to-set-list">
-          {open ? <SetChoices songVersionId={songVersionId} onLeave={onLeave} /> : null}
+          {open ? <SetChoices songVersionId={songVersionId} songTitle={songTitle} adding={adding} onLeave={onLeave} /> : null}
         </PopoverContent>
       </Popover>
+      {adding.dialog}
     </span>
   );
 }
 
-function SetChoices({ songVersionId, onLeave }: { songVersionId: string; onLeave?: () => void }) {
+/**
+ * Adding from the list, through the shared add (its dialog outside the
+ * popover, which closes as it opens): the sets the song went in since.
+ */
+function useAdding() {
+  const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
+  const add = useAddSongToSet((set) => setAdded((current) => new Set(current).add(set.id)));
+  return { ...add, added };
+}
+
+function SetChoices({ songVersionId, songTitle, adding, onLeave }: { songVersionId: string; songTitle: string; adding: ReturnType<typeof useAdding>; onLeave?: () => void }) {
   const { t, i18n } = useTranslation();
   const [sets, setSets] = useState<SetForSong[] | null>(null);
-  const [addingId, setAddingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const { add, addingId, added } = adding;
+  const error = loadError ?? adding.error;
 
   useEffect(() => {
     let cancelled = false;
     apiClient
       .setsForSong(songVersionId)
       .then((found) => !cancelled && setSets(found))
-      .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : String(err)));
+      .catch((err: unknown) => !cancelled && setLoadError(err instanceof Error ? err.message : String(err)));
     return () => {
       cancelled = true;
     };
   }, [songVersionId]);
-
-  async function add(set: SetForSong) {
-    setAddingId(set.id);
-    setError(null);
-    try {
-      await apiClient.addSetlistItem(set.id, { songVersionId });
-      setSets((current) => current && current.map((each) => (each.id === set.id ? { ...each, hasSong: true, itemCount: each.itemCount + 1 } : each)));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setAddingId(null);
-    }
-  }
 
   return (
     <div className="flex flex-col">
@@ -121,7 +132,8 @@ function SetChoices({ songVersionId, onLeave }: { songVersionId: string; onLeave
         <p className="px-3 py-2 text-sm text-muted-foreground">{t("sets.addToSet.none")}</p>
       ) : (
         <ul className="max-h-80 overflow-y-auto py-1">
-          {sets.map((set) => {
+          {sets.map((found) => {
+            const set = added.has(found.id) && !found.hasSong ? { ...found, hasSong: true, itemCount: found.itemCount + 1 } : found;
             const title = setlistTitle(set, t, i18n.language);
             const detail = set.hasSong
               ? t("sets.addToSet.inIt")
@@ -133,7 +145,7 @@ function SetChoices({ songVersionId, onLeave }: { songVersionId: string; onLeave
                 <button
                   type="button"
                   disabled={set.hasSong || !set.canAddSong || addingId !== null}
-                  onClick={() => void add(set)}
+                  onClick={() => void add(set, songVersionId, songTitle)}
                   className={cn(
                     "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring disabled:hover:bg-transparent",
                     !set.canAddSong && !set.hasSong && "opacity-60",

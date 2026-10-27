@@ -8,6 +8,7 @@ const step = stepper(() => page);
 const leader = await user("Leader");
 const team = await api(leader, "POST", "/teams", { name: `Add Team ${tag}` });
 const grace = await api(leader, "POST", "/song-versions", { artists: ["Test Artist"], title: `Grace ${tag}`, language: "en" });
+const mercy = await api(leader, "POST", "/song-versions", { artists: ["Test Artist"], title: `Mercy ${tag}`, language: "en" });
 const isoDate = (offsetDays) => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
 const sunday = await api(leader, "POST", "/setlists", { name: `Sunday ${tag}`, eventDate: isoDate(4) });
 const rehearsal = await api(leader, "POST", "/setlists", { name: `Rehearsal ${tag}` });
@@ -30,8 +31,8 @@ await step("Add to set in Practice lists upcoming and undated sets, not past one
   await choice(sunday).waitFor();
   await choice(rehearsal).waitFor();
   if ((await choice(old).count()) !== 0) throw new Error("a past set is offered");
-  if ((await choice(teamSet).getAttribute("data-state")) !== "refused") throw new Error("a team set takes a personal song");
-  await choice(teamSet).getByText("This song can't go in this set").waitFor();
+  // One's own song in a team's set: shared with the team as it's added (issue #331).
+  if ((await choice(teamSet).getAttribute("data-state")) !== "addable") throw new Error("a team set doesn't take one's own song");
 });
 
 await step("picking a set adds the song at its end and ticks it", async () => {
@@ -39,6 +40,21 @@ await step("picking a set adds the song at its end and ticks it", async () => {
   await page.locator(`[data-testid="add-to-set-choice"][data-set-id="${sunday.id}"][data-state="in"]`).waitFor();
   await choice(sunday).getByText("Already in it").waitFor();
   if (!(await songsOf(sunday)).includes(grace.id)) throw new Error("not in the set");
+  await page.keyboard.press("Escape");
+});
+
+await step("one's own song into a team's set: shared with the team first (issue #331)", async () => {
+  await page.getByTestId("add-to-set").click();
+  await choice(teamSet).click();
+  const ask = page.getByTestId("set-team-access");
+  await ask.getByText(`Share Grace ${tag} with Add Team ${tag}?`).waitFor();
+  await ask.getByRole("button", { name: `Share with Add Team ${tag}` }).click();
+  await ask.waitFor({ state: "detached" });
+  if (!(await songsOf(teamSet)).includes(grace.id)) throw new Error("not in the team's set");
+  const teams = await api(leader, "GET", `/song-versions/${grace.id}/shares/teams`);
+  if (teams[0]?.team.id !== team.id) throw new Error(JSON.stringify(teams));
+  await page.getByTestId("add-to-set").click();
+  await page.locator(`[data-testid="add-to-set-choice"][data-set-id="${teamSet.id}"][data-state="in"]`).waitFor();
   await page.keyboard.press("Escape");
 });
 
@@ -67,7 +83,7 @@ await step("dragging a library song onto a set in the sidebar adds it", async ()
   await page.getByTestId("set-drop-hint").waitFor();
   await page.locator('[data-slot="sidebar"] [data-drop-state="addable"]').filter({ hasText: `Rehearsal ${tag}` }).waitFor();
   const states = { sunday: await entry(`Sunday ${tag}`).getAttribute("data-drop-state"), team: await entry(`Team service ${tag}`).getAttribute("data-drop-state") };
-  if (states.sunday !== "in" || states.team !== "refused") throw new Error(JSON.stringify(states));
+  if (states.sunday !== "in" || states.team !== "in") throw new Error(JSON.stringify(states));
   const box = await entry(`Rehearsal ${tag}`).boundingBox();
   await page.mouse.move(box.x + 20, box.y + box.height / 2, { steps: 6 });
   await page.mouse.up();
@@ -76,6 +92,25 @@ await step("dragging a library song onto a set in the sidebar adds it", async ()
   // The sidebar is itself again.
   await page.getByTestId("set-drop-hint").waitFor({ state: "detached" });
   if ((await page.locator("[data-drop-state]").count()) !== 0) throw new Error("sets still marked as drop targets");
+});
+
+await step("one's own song dropped on a team's set: asked first, then moved to the team", async () => {
+  await page.goto(`${WEB}/library/songs?q=${encodeURIComponent(`Mercy ${tag}`)}`);
+  const row = page.getByTestId("library-song-row").filter({ hasText: `Mercy ${tag}` });
+  await row.waitFor();
+  await row.hover();
+  await page.mouse.down();
+  await page.mouse.move(400, 300, { steps: 4 });
+  const target = page.locator('[data-slot="sidebar"] [data-drop-state="addable"]').filter({ hasText: `Team service ${tag}` });
+  await target.waitFor();
+  const box = await target.boundingBox();
+  await page.mouse.move(box.x + 20, box.y + box.height / 2, { steps: 6 });
+  await page.mouse.up();
+  const ask = page.getByTestId("set-team-access");
+  await ask.getByRole("button", { name: `Move to Add Team ${tag}` }).click();
+  await page.getByTestId("set-drop-notice").getByText(`Mercy ${tag} added to Team service ${tag}`).waitFor();
+  const after = await api(leader, "GET", `/song-versions/${mercy.id}`);
+  if (after.ownerScope !== "TEAM" || !(await songsOf(teamSet)).includes(mercy.id)) throw new Error(JSON.stringify({ scope: after.ownerScope }));
 });
 
 await step("Ctrl+K: Add to set on a song found", async () => {

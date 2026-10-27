@@ -132,7 +132,8 @@ export class SetlistsService {
    * The sets a song could go in (issue #330, a song's Add to set): those the
    * user can change whose date isn't over, soonest first, then undated ones -
    * each saying whether the song is in it already and whether it may go in it
-   * (a team set takes the team's songs and approved global ones).
+   * (a team set takes the team's songs, approved global ones, songs shared
+   * with the team, and the user's own, shared with it as they're added, #331).
    */
   async forSong(user: AuthenticatedUser, songVersionId: string) {
     const visible = await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.policy.songsVisibleTo(user)] } });
@@ -149,7 +150,7 @@ export class SetlistsService {
       sets.map(async (set) => ({
         ...set,
         hasSong: holding.has(set.id),
-        canAddSong: (await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.sets.addableWhere(owners.get(set.id)!)] } })) > 0,
+        canAddSong: (await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.sets.pickableWhere(user, owners.get(set.id)!)] } })) > 0,
       })),
     );
   }

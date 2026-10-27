@@ -48,7 +48,7 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
   const [recent, setRecent] = useState<FoundSong[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   // One of your own songs in a team's set: shared with the team or moved to it as it's added (issue #331).
-  const { add, addingId, error: addError, dialog } = useAddSongToSet(set, onAdded);
+  const { add, addingId, error: addError, dialog } = useAddSongToSet(onAdded);
   const error = loadError ?? addError;
 
   // Nothing typed: the songs edited last.
@@ -119,7 +119,7 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
                 {song.lyrics ? <LyricsSnippet match={song.lyrics} className="block truncate text-xs text-muted-foreground" /> : null}
                 {song.detail ? <p className="truncate text-xs text-muted-foreground">{song.detail}</p> : null}
               </div>
-              <Button size="sm" variant="outline" disabled={addingId !== null} onClick={() => void add(song.id, song.label)}>
+              <Button size="sm" variant="outline" disabled={addingId !== null} onClick={() => void add(set, song.id, song.label)}>
                 {t("sets.add")}
               </Button>
             </li>

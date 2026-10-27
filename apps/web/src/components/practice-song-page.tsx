@@ -134,7 +134,7 @@ export function PracticeSongPage({
           {notes.button}
           <MetronomeSongButton songId={version.id} tempo={chart.tempo} timeSignature={chart.timeSignature} variant="button" />
           {/* Into one of one's sets (issue #330). */}
-          <AddToSetButton songVersionId={version.id} />
+          <AddToSetButton songVersionId={version.id} songTitle={version.title} />
           <Button variant="outline" onClick={() => setMode("edit")}>
             <Pencil />
             {t("practice.edit")}

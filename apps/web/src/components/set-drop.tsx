@@ -1,7 +1,8 @@
 import type { SetForSong } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState, type DragEvent, type HTMLAttributes } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent, type HTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
+import { useAddSongToSet } from "#/components/set-team-access";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
 import { carriesSong, SONG_DRAG_TYPE, useDraggedSong } from "#/lib/song-drag";
@@ -24,7 +25,8 @@ export interface SetDropTarget {
  * (issue #330). While one is dragged, each set says whether it takes it -
  * the sets of a song's Add to set do; one it's in already, one it can't go
  * in, or one you can't change don't - and dropping it on one puts it at the
- * set's end.
+ * set's end (one of your own on a team's set: shared with the team or moved
+ * to it first, issue #331; `dialog` asks, in the page).
  */
 export function useSetDrop() {
   const { t, i18n } = useTranslation();
@@ -33,6 +35,8 @@ export function useSetDrop() {
   const [over, setOver] = useState<string | null>(null);
   const [notice, setNotice] = useState<DropNotice | null>(null);
   const closeNotice = useCallback(() => setNotice(null), []);
+  const dropped = useRef("");
+  const adding = useAddSongToSet((set) => setNotice({ setId: set.id, text: t("sets.dropOnSet.added", { song: dropped.current, set: setlistTitle(set, t, i18n.language) }) }));
 
   useEffect(() => {
     setSets(null);
@@ -49,12 +53,9 @@ export function useSetDrop() {
   }, [dragged]);
 
   async function drop(set: SetForSong, songVersionId: string, songTitle: string) {
-    try {
-      await apiClient.addSetlistItem(set.id, { songVersionId });
-      setNotice({ setId: set.id, text: t("sets.dropOnSet.added", { song: songTitle, set: setlistTitle(set, t, i18n.language) }) });
-    } catch (err) {
-      setNotice({ error: err instanceof Error ? err.message : String(err) });
-    }
+    dropped.current = songTitle;
+    const failed = await adding.add(set, songVersionId, songTitle);
+    if (failed) setNotice({ error: failed });
   }
 
   /** A set's state and what makes its entry a place to drop, while a song is dragged. */
@@ -86,7 +87,7 @@ export function useSetDrop() {
     };
   }
 
-  return { dragging: !!dragged, target, notice, closeNotice };
+  return { dragging: !!dragged, target, notice, closeNotice, dialog: adding.dialog };
 }
 
 /** What came of the last drop, with the set to open; gone after a few seconds. */

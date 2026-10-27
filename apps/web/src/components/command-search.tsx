@@ -337,7 +337,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
                       </button>
                     </span>
                   ) : result.songId ? (
-                    <AddToSetIconButton songVersionId={result.songId} onLeave={onDone} />
+                    <AddToSetIconButton songVersionId={result.songId} songTitle={result.label} onLeave={onDone} />
                   ) : null}
                 </div>
               );

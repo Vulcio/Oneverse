@@ -671,7 +671,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           ) : null}
           {edit ? <FavoriteButton key={edit.version.id} songVersionId={edit.version.id} initial={!!edit.version.isFavorite} /> : null}
           {/* Into one of one's sets (issue #330): a button of its own on a wide screen, in More on a narrower one. */}
-          {edit ? <AddToSetButton songVersionId={edit.version.id} className="hidden xl:inline-flex" /> : null}
+          {edit ? <AddToSetButton songVersionId={edit.version.id} songTitle={edit.version.title} className="hidden xl:inline-flex" /> : null}
           {edit && canManage && edit.version.ownerScope !== "GLOBAL" ? (
             <Button type="button" variant="outline" onClick={() => setSharing(true)} aria-label={t("sharing.share")}>
               <Share2 />
@@ -714,7 +714,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
             </DropdownMenu>
           ) : null}
           {edit ? (
-            <AddToSetPopover songVersionId={edit.version.id} open={addingToSet} onOpenChange={setAddingToSet} anchor={moreRef} />
+            <AddToSetPopover songVersionId={edit.version.id} songTitle={edit.version.title} open={addingToSet} onOpenChange={setAddingToSet} anchor={moreRef} />
           ) : null}
         </div>
         {/* Over the page, under the header: a message never pushes the page down (issue #248). */}

@@ -194,7 +194,7 @@ export interface SetlistSummary {
 export interface SetForSong extends SetlistSummary {
   /** The song is in it already. */
   hasSong: boolean;
-  /** It may go in it (a team set takes the team's songs and approved global ones). */
+  /** It may go in it (a team set takes the team's songs, approved global ones, songs shared with the team, and the user's own: shared with it as they're added, issue #331). */
   canAddSong: boolean;
 }
 

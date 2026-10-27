@@ -27,7 +27,7 @@ const ids = r.body.map((set) => set.id);
 check("upcoming sets soonest first, then undated, not past ones", r.status === 200 && ids.join() === [soon.id, teamSet.id, later.id, undated.id].join(), r.body.map((set) => set.name).join(" | "));
 const byId = new Map(r.body.map((set) => [set.id, set]));
 check("a set the song is in already says so", byId.get(later.id).hasSong === true && byId.get(soon.id).hasSong === false);
-check("a team set doesn't take someone's personal song", byId.get(teamSet.id).canAddSong === false && byId.get(soon.id).canAddSong === true, JSON.stringify(byId.get(teamSet.id)));
+check("a team set takes one's own personal song (shared with the team as it's added, issue #331)", byId.get(teamSet.id).canAddSong === true && byId.get(soon.id).canAddSong === true, JSON.stringify(byId.get(teamSet.id)));
 check("each is a set summary", byId.get(soon.id).name === `Soon ${stamp}` && byId.get(soon.id).canEdit === true && typeof byId.get(soon.id).itemCount === "number");
 
 r = await call(admin, "GET", `/setlists/for-song/${teamSong.id}`);
@@ -36,6 +36,14 @@ check("the team's own song can go in the team's set", r.body.find((set) => set.i
 // A member can't change the team's sets: none listed.
 r = await call(member, "GET", `/setlists/for-song/${teamSong.id}`);
 check("only sets one can change", r.status === 200 && !r.body.some((set) => set.id === teamSet.id), JSON.stringify(r.body.map((set) => set.id)));
+
+// Someone else's personal song, shared with the admin: not theirs to share with the team.
+const membersSong = await song(member, `For Song Member's ${stamp}`);
+sql(`insert into "Connection" (id, "requesterId", "addresseeEmail", "addresseeId", status, "respondedAt") values ('cfs${stamp}', '${member.id}', '${admin.email}', '${admin.id}', 'ACCEPTED', now())`);
+r = await call(member, "PUT", `/song-versions/${membersSong.id}/shares/${admin.id}`, { canEdit: true });
+check("(shared with the admin)", r.status === 200, String(r.status));
+r = await call(admin, "GET", `/setlists/for-song/${membersSong.id}`);
+check("a team set doesn't take someone else's personal song", r.body.find((set) => set.id === teamSet.id)?.canAddSong === false && r.body.find((set) => set.id === soon.id)?.canAddSong === true, JSON.stringify(r.body.map((set) => [set.name, set.canAddSong])));
 
 r = await call(outsider, "GET", `/setlists/for-song/${personalSong.id}`);
 check("a song one can't see: 404", r.status === 404, String(r.status));

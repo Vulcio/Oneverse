@@ -84,7 +84,9 @@ r = await call(member, "GET", `/song-versions/${moving.id}`);
 check("…the team's song now", r.status === 200 && r.body.ownerScope === "TEAM" && r.body.ownerTeamId === team.id, JSON.stringify({ scope: r.body.ownerScope }));
 
 const othersSong = await song(member, `Others ${stamp}`);
-await call(member, "PUT", `/song-versions/${othersSong.id}/shares/${admin.id}`, { canEdit: true });
+sql(`insert into "Connection" (id, "requesterId", "addresseeEmail", "addresseeId", status, "respondedAt") values ('cts${stamp}', '${member.id}', '${admin.email}', '${admin.id}', 'ACCEPTED', now())`);
+r = await call(member, "PUT", `/song-versions/${othersSong.id}/shares/${admin.id}`, { canEdit: true });
+check("(someone else's song, shared with them to edit)", r.status === 200, String(r.status));
 r = await call(admin, "POST", `/setlists/${teamSet.id}/items`, { songVersionId: othersSong.id, teamAccess: "share" });
 check("someone else's song isn't theirs to share into the team's set", r.status === 400, String(r.status));
 r = await call(admin, "POST", `/setlists/${teamSet.id}/items`, { songVersionId: shared.id, teamAccess: "share" });
