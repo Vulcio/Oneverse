@@ -9,6 +9,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle, setOwnerLabel } from "#/lib/setlists";
 import { useAddSongToSet } from "#/components/set-team-access";
+import { RecentPlaysLine } from "#/components/recent-plays";
 import { addToQuickSelection, inQuickSelection, removeFromQuickSelection, useQuickSelection } from "#/lib/quick-selection";
 
 /**
@@ -142,6 +143,8 @@ function SetChoices({ songVersionId, songTitle, adding, onLeave }: { songVersion
               : !set.canAddSong
                 ? t("sets.addToSet.notAddable")
                 : [setOwnerLabel(set, t), t("nav.itemCount", { count: set.itemCount })].join(" · ");
+            // A team set: how often the song was played in the team's sets lately (issue #335) - it still goes in.
+            const plays = set.recentPlays && set.recentPlays.count > 0 && !set.hasSong && set.canAddSong ? set.recentPlays : null;
             return (
               <li key={set.id} className="flex items-center gap-1 px-1">
                 <button
@@ -160,6 +163,7 @@ function SetChoices({ songVersionId, songTitle, adding, onLeave }: { songVersion
                   <span className="min-w-0">
                     <span className="block truncate text-sm">{title}</span>
                     <span className="block truncate text-xs text-muted-foreground">{detail}</span>
+                    {plays ? <RecentPlaysLine plays={plays} className="truncate" /> : null}
                   </span>
                 </button>
                 {set.hasSong ? (

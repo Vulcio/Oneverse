@@ -7,6 +7,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { RecentPlaysLine } from "#/components/recent-plays";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { degreeChords, formatTimer, SET_TRANSITIONS, TRANSPOSE_STEP_OPTIONS, transposeKey, type SetlistItem, type SetlistSongRef, type UpdateSetlistItemRequest } from "@oneverse/core";
@@ -251,6 +252,8 @@ function SongRow({
             {item.songbookReferences.join(", ")}
           </span>
         ) : null}
+        {/* How often it was played in the team's sets lately (issue #335). */}
+        <RecentPlaysLine plays={item.recentPlays} />
         {item.arrangement && !canEdit ? (
           <span className="text-xs text-muted-foreground">{t("sets.playedAs", { name: item.arrangement.name })}</span>
         ) : null}

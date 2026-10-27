@@ -193,6 +193,8 @@ export const UpdateTeamSchema = z.strictObject({
   description: clearableText(500),
   color: z.enum(ENTITY_COLORS).nullable().optional().describe("Its colour (issue #161); null: one derived from its name"),
   bible: optional(z.boolean().describe("A Bible in its members' sidebar (issue #310)")),
+  repeatWeeks: optional(z.number().int().min(1).max(52).describe("Songs played often (issue #335): the weeks a song's plays in the team's sets are counted over")),
+  repeatLimit: z.number().int().min(1).max(52).nullable().optional().describe("From how many plays in those weeks a song is flagged when it goes in a set; null: never"),
 });
 export type UpdateTeamRequest = z.input<typeof UpdateTeamSchema>;
 

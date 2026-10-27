@@ -204,12 +204,31 @@ export interface QuickSelectionAdded {
   selection: QuickSelection;
 }
 
+/**
+ * How often a song was played in a team's sets lately (issue #335): the
+ * sets of the team dated in the last `weeks` weeks, before today, that had
+ * it (any version), the last one's date, and the team's limit - from which
+ * it's flagged (null: never). Never stops it being added.
+ */
+export interface RecentPlays {
+  count: number;
+  /** YYYY-MM-DD, or null when it wasn't played. */
+  last: string | null;
+  weeks: number;
+  limit: number | null;
+}
+
+/** Past the team's limit: to flag. */
+export const playedTooOften = (plays: RecentPlays | null | undefined) => !!plays && plays.limit !== null && plays.count >= plays.limit;
+
 /** A set a song could go in (issue #330): the song's Add to set. */
 export interface SetForSong extends SetlistSummary {
   /** The song is in it already. */
   hasSong: boolean;
   /** It may go in it (a team set takes the team's songs, approved global ones, songs shared with the team, and the user's own: shared with it as they're added, issue #331). */
   canAddSong: boolean;
+  /** A team set: how often the song was played in the team's sets lately (issue #335). */
+  recentPlays?: RecentPlays | null;
 }
 
 export interface SetlistItem {
@@ -231,6 +250,8 @@ export interface SetlistItem {
   transitionChords?: string[];
   /** Its own timer (issue #269), started on the screens' stage when Live comes to it; left out by an older API. */
   timer?: { kind: "countdown" | "count-up"; duration: number } | null;
+  /** A song in a team set: how often it was played in the team's other sets lately (issue #335); left out otherwise. */
+  recentPlays?: RecentPlays | null;
   /** Its first and last chords as played (issue #217); null when the viewer can't read it. */
   edgeChords?: { first: string | null; last: string | null } | null;
   /** Null when the song isn't readable by the current user (shown as a placeholder), and for an item that isn't a song. */
@@ -1054,6 +1075,9 @@ export interface TeamSummary {
   organization?: { id: string; name: string; color: string | null; bible?: boolean } | null;
   /** A Bible in its members' sidebar (issue #310), turned on by its admins. */
   bible?: boolean;
+  /** Songs played often (issue #335): the weeks a song's plays are counted over, and from how many it's flagged (null: never). */
+  repeatWeeks?: number;
+  repeatLimit?: number | null;
   /** A Songverse team (songs, songbooks, sets), or a group that only plans (issue #241). */
   usesSongverse?: boolean;
   /** The group it's under, in its organisation. */

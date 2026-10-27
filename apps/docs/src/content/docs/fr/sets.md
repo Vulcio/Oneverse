@@ -40,6 +40,10 @@ Pour rassembler des chants avant de savoir dans quelle liste ils iront - ou pour
 
 Sa page liste les chants, chacun avec **×** pour le retirer, et **Vider**. **Les ajouter tous à une liste** les met à la fin d'une de vos listes qui n'est pas passée, dans l'ordre où vous les avez rassemblés ; ceux qui y sont entrés quittent la sélection. Un chant déjà dans la liste est passé, et un chant qui ne peut pas y aller (une liste d'équipe et un chant qui n'est pas à l'équipe) reste dans la sélection. **Nouvelle liste avec ces chants…** crée une liste qui les contient.
 
+### Chants joués souvent
+
+Dans les listes d'une équipe, chaque chant indique combien de fois il était dans les listes de l'équipe récemment - « Joué 3 fois en 6 semaines · dernière fois le 12 oct. » - et **Ajouter à une liste** aussi, à côté de chaque liste d'équipe. Quand l'équipe a une limite (voir [Chants joués souvent](/fr/teams/#chants-joués-souvent)), un chant joué au moins ce nombre de fois est signalé en orange. Ce n'est qu'un avertissement : on peut toujours l'ajouter.
+
 ### Accords vers le chant suivant
 
 Pour une **Transition**, le bouton **Accords** à côté de sa note propose des accords à jouer vers le chant suivant : du dernier accord de ce chant au premier accord du suivant, tels que la liste les joue (avec la version et la **Tonalité** de chaque chant). Les deux encadrent la liste - **De C → … → vers D** - et les propositions mènent à ce premier accord (« I » ci-dessous) : si le chant suivant commence sur son 4 ou son 6m plutôt que son 1, elles y mènent. Les accords sont montrés avec leurs chiffres dans la tonalité du chant suivant, comme les grilles Nashville les écrivent : **5⁷** est son 5 avec une septième (A7 en D), **7°7** une septième diminuée sur son 7 (C#°7), **♭7/6** C sur B.

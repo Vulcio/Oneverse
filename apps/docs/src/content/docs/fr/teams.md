@@ -119,6 +119,10 @@ Sous **Rôles**, les administrateurs de l'équipe donnent à ses membres les rô
 
 Sous **Bible**, les administrateurs de l'équipe cochent **Montrer la Bible dans la barre latérale** : ses membres trouvent alors une [Bible](/fr/bible/) dans les **Outils** de la barre latérale, pour lire un passage et l'ajouter à une liste. Une équipe d'une organisation qui l'a activée l'a déjà.
 
+## Chants joués souvent
+
+Sous **Chants joués souvent**, les administrateurs de l'équipe choisissent sur combien de semaines compter les fois où un chant était dans les listes de l'équipe (6 par défaut) et, avec **Signaler un chant joué au moins ce nombre de fois**, une limite. Au-delà, un chant est signalé dans les listes de l'équipe et dans **Ajouter à une liste**, mais on peut toujours l'ajouter (voir [Chants joués souvent](/fr/sets/#chants-joués-souvent)). Une liste compte une fois sa date passée.
+
 ## Quitter ou supprimer une équipe
 
 **Quitter l'équipe** vous en retire. Si vous en êtes le seul administrateur, nommez d'abord un autre membre administrateur. Un administrateur peut la **Renommer** - le crayon à côté de son nom ; un groupe d'organisation aussi - ou **Supprimer l'équipe**.

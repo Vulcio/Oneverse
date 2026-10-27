@@ -2158,6 +2158,22 @@ const en = {
     alreadyIn: "Already in it: {{songs}}.",
     notAddable: "Can't go in this set, so still here: {{songs}}.",
   },
+  // How often a song was played in a team's sets lately (issue #335).
+  recentPlays: {
+    none_one: "Not played in the last week",
+    none_other: "Not played in the last {{count}} weeks",
+    played_one: "Played once in {{weeks}} weeks",
+    played_other: "Played {{count}} times in {{weeks}} weeks",
+    last: "last {{date}}",
+    overLimit_one: "The team flags a song played once in {{weeks}} weeks",
+    overLimit_other: "The team flags a song played {{count}} times in {{weeks}} weeks",
+    cardTitle: "Songs played often",
+    cardDescription: "When a song goes in one of the team's sets, it says how often it was in the team's sets lately. Past a limit, it's flagged; it can still be added.",
+    weeksLabel: "Count the plays of the last (weeks)",
+    limitLabel: "Flag a song played this many times or more",
+    save: "Save",
+    saved: "Saved",
+  },
   sets: {
     archive: "Archive",
     archiveDescription: "Past dates of your teams' calendars that you took part in.",

@@ -119,6 +119,10 @@ Under **Roles**, the team's admins give its members the roles Admin lets teams g
 
 Under **Bible**, the team's admins tick **Show the Bible in the sidebar**: its members then find a [Bible](/bible/) in the sidebar's **Tools**, to read a passage and add it to a set. A team in an organisation that turned it on has it already.
 
+## Songs played often
+
+Under **Songs played often**, the team's admins choose over how many weeks a song's plays in the team's sets are counted (6 by default) and, with **Flag a song played this many times or more**, a limit. Past it, a song is flagged in the team's sets and in **Add to set**, but can still be added (see [Songs played often](/sets/#songs-played-often)). A set counts once it's dated before today.
+
 ## Leaving or deleting a team
 
 **Leave team** takes you out of it. If you're its only admin, promote another member first. An admin can **Rename** it - the pencil beside its name; an organisation's group too - or **Delete team**.

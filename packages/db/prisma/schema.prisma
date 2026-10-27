@@ -712,6 +712,10 @@ model Team {
   sonicServer          SonicServer?
   // A Bible in its members' sidebar (issue #310), turned on by its admins.
   bible                Boolean                @default(false)
+  // Songs played often (issue #335): how far back a song's plays in its sets
+  // are counted, and from how many it's flagged when it goes in a set (null: never).
+  repeatWeeks          Int                    @default(6)
+  repeatLimit          Int?
 
   @@index([slug])
   @@index([organizationId])

@@ -2162,6 +2162,22 @@ const fr: typeof en = {
     alreadyIn: "Déjà dedans : {{songs}}.",
     notAddable: "Ne peuvent pas aller dans cette liste, donc toujours ici : {{songs}}.",
   },
+  // Combien de fois un chant a été joué dans les listes d'une équipe récemment (issue #335).
+  recentPlays: {
+    none_one: "Pas joué la semaine dernière",
+    none_other: "Pas joué ces {{count}} dernières semaines",
+    played_one: "Joué une fois en {{weeks}} semaines",
+    played_other: "Joué {{count}} fois en {{weeks}} semaines",
+    last: "dernière fois le {{date}}",
+    overLimit_one: "L'équipe signale un chant joué une fois en {{weeks}} semaines",
+    overLimit_other: "L'équipe signale un chant joué {{count}} fois en {{weeks}} semaines",
+    cardTitle: "Chants joués souvent",
+    cardDescription: "Quand un chant entre dans une liste de l'équipe, elle indique combien de fois il était dans ses listes récemment. Au-delà d'une limite, il est signalé ; on peut toujours l'ajouter.",
+    weeksLabel: "Compter les fois jouées sur (semaines)",
+    limitLabel: "Signaler un chant joué au moins ce nombre de fois",
+    save: "Enregistrer",
+    saved: "Enregistré",
+  },
   sets: {
     archive: "Archives",
     archiveDescription: "Les dates passées des calendriers de vos équipes auxquelles vous avez participé.",

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
+import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes, type RecentPlays } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -146,13 +146,48 @@ export class SetlistsService {
     const holding = new Set(
       (await this.prisma.client.setlistItem.findMany({ where: { setlistId: { in: sets.map((set) => set.id) }, songVersionId }, select: { setlistId: true } })).map((item) => item.setlistId),
     );
+    // A team set: how often the song was played in the team's sets lately (issue #335).
+    const { workId } = await this.prisma.client.songVersion.findUniqueOrThrow({ where: { id: songVersionId }, select: { workId: true } });
+    const plays = new Map<string, RecentPlays>();
+    for (const teamId of new Set(sets.flatMap((set) => (set.teamId ? [set.teamId] : [])))) plays.set(teamId, (await this.recentPlays(teamId, [workId]))(workId));
     return Promise.all(
       sets.map(async (set) => ({
         ...set,
+        ...(set.teamId && { recentPlays: plays.get(set.teamId) ?? null }),
         hasSong: holding.has(set.id),
         canAddSong: (await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.sets.pickableWhere(user, owners.get(set.id)!)] } })) > 0,
       })),
     );
+  }
+
+  /**
+   * How often songs were played in a team's sets lately (issue #335), by
+   * their work (any version counts): the team's sets dated in its last
+   * `repeatWeeks` weeks, before today, but `exceptSetId`.
+   */
+  private async recentPlays(teamId: string, workIds: string[], exceptSetId?: string): Promise<(workId: string) => RecentPlays> {
+    const team = await this.prisma.client.team.findUniqueOrThrow({ where: { id: teamId }, select: { repeatWeeks: true, repeatLimit: true } });
+    const today = startOfTodayUtc();
+    const rows = workIds.length
+      ? await this.prisma.client.setlistItem.findMany({
+          where: {
+            songVersion: { workId: { in: workIds } },
+            setlist: { ownerTeamId: teamId, eventDate: { gte: new Date(today - team.repeatWeeks * 7 * DAY_MS), lt: new Date(today) }, ...(exceptSetId && { id: { not: exceptSetId } }) },
+          },
+          select: { setlistId: true, setlist: { select: { eventDate: true } }, songVersion: { select: { workId: true } } },
+        })
+      : [];
+    const byWork = new Map<string, { sets: Set<string>; last: Date | null }>();
+    for (const row of rows) {
+      const work = byWork.get(row.songVersion!.workId) ?? { sets: new Set<string>(), last: null };
+      work.sets.add(row.setlistId);
+      if (row.setlist.eventDate && (!work.last || row.setlist.eventDate > work.last)) work.last = row.setlist.eventDate;
+      byWork.set(row.songVersion!.workId, work);
+    }
+    return (workId) => {
+      const work = byWork.get(workId);
+      return { count: work?.sets.size ?? 0, last: work?.last ? formatDate(work.last) : null, weeks: team.repeatWeeks, limit: team.repeatLimit };
+    };
   }
 
   async create(user: AuthenticatedUser, dto: CreateSetlistDto) {
@@ -218,6 +253,9 @@ export class SetlistsService {
       : [];
     const pendingBySong = new Map(pending.map((request) => [request.songVersionId, request.id]));
 
+    // A team set: how often each song was played in the team's other sets lately (issue #335).
+    const playsOf = set.ownerTeamId ? await this.recentPlays(set.ownerTeamId, [...new Set(songItems.map((item) => item.songVersion.workId))], set.id) : null;
+
     // Where each song is in the viewer's numbered songbooks: "JEM 855 · JEM3" (issue #55).
     const referencesBySong = await this.songbookReferences(user, songIdsOf(set.items));
     // Passages (issue #301), by their Bible and reference: their verses are the song view's.
@@ -248,6 +286,7 @@ export class SetlistsService {
           transitionNote: item.transitionNote,
           transitionChords: item.transitionChords,
           timer: readItemTimer(item.timer),
+          ...(playsOf && shown && { recentPlays: playsOf(song.workId) }),
           // Its first and last chords as played, where transitions start and lead (issue #217).
           edgeChords: shown ? edgeChords(item) : null,
           // Null when this viewer can't read the song (shown as a placeholder).

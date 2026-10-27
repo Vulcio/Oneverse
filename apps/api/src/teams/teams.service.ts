@@ -39,6 +39,8 @@ export class TeamsService {
       usesSongverse: m.team.usesSongverse,
       parentId: m.team.parentId,
       bible: m.team.bible,
+      repeatWeeks: m.team.repeatWeeks,
+      repeatLimit: m.team.repeatLimit,
     }));
   }
 
@@ -60,6 +62,8 @@ export class TeamsService {
       usesSongverse: membership.team.usesSongverse,
       parentId: membership.team.parentId,
       bible: membership.team.bible,
+      repeatWeeks: membership.team.repeatWeeks,
+      repeatLimit: membership.team.repeatLimit,
     };
   }
 
@@ -102,6 +106,8 @@ export class TeamsService {
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.color !== undefined && { color: dto.color }),
         ...(dto.bible !== undefined && { bible: dto.bible }),
+        ...(dto.repeatWeeks !== undefined && { repeatWeeks: dto.repeatWeeks }),
+        ...(dto.repeatLimit !== undefined && { repeatLimit: dto.repeatLimit }),
       },
     });
     return this.findOne(userId, teamId);

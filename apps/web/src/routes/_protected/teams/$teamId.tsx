@@ -3,6 +3,7 @@ import { loadTeamPage, TeamPage } from "@oneverse/planning/pages/team";
 import { AppearanceCard } from "#/components/appearance-card";
 import { BibleCard } from "#/components/bible-card";
 import { BrandsCard } from "#/components/brands-card";
+import { RepeatLimitCard } from "#/components/repeat-limit-card";
 import { ScopedRolesCard } from "#/components/scoped-roles-card";
 import { SonicServerCard } from "#/components/sonic-server-card";
 import { apiClient } from "#/lib/api-client";
@@ -34,6 +35,17 @@ function TeamDetail() {
           {team.usesSongverse !== false ? <SonicServerCard owner={{ teamId: team.id }} /> : null}
           {/* Roles its admins give its members, here only (issue #270): the media operator. */}
           {team.usesSongverse !== false ? <ScopedRolesCard owner={{ teamId: team.id }} members={data.members} /> : null}
+          {/* Songs played often (issue #335): its window and limit. */}
+          {team.usesSongverse !== false ? (
+            <RepeatLimitCard
+              weeks={team.repeatWeeks ?? 6}
+              limit={team.repeatLimit ?? null}
+              onSave={async (next) => {
+                await apiClient.updateTeam(team.id, next);
+                await router.invalidate();
+              }}
+            />
+          ) : null}
           {/* The Bible in its members' sidebar (issue #310), for a team that uses Songverse. */}
           {team.usesSongverse !== false ? (
           <BibleCard

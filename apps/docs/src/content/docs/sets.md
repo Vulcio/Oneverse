@@ -40,6 +40,10 @@ To gather songs before you know which set they go in - or to pick many from a bi
 
 Its page lists the songs, each with **×** to take it out, and **Empty**. **Add them all to a set** puts them at the end of one of your sets that isn't over, in the order you gathered them; those that went in leave the selection. One already in the set is skipped, and one that can't go in it (a team set and a song that isn't the team's) stays in the selection. **New set with these songs…** makes a new set with them in it.
 
+### Songs played often
+
+In a team's sets, each song says how often it was in the team's sets lately - "Played 3 times in 6 weeks · last 12 Oct" - and so does **Add to set** beside each team set. When the team has a limit (see [Songs played often](/teams/#songs-played-often)), a song played that many times or more is flagged in amber. It's only a warning: the song can still be added.
+
 ### Chords into the next song
 
 For a **Transition**, the **Chords** button beside its note suggests chords to play into the next song: from the last chord of this song to the first chord of the next, as the set plays them (with each song's version and **Key**). The two frame the list - **From C → … → into D** - and the suggestions lead into that first chord ("I" below): if the next song starts on its 4 or its 6m rather than its 1, they lead there. Chords are shown with their numbers in the next song's key, as Nashville charts write them: **5⁷** is its 5 with a 7th (A7 in D), **7°7** a diminished 7th on its 7 (C#°7), **♭7/6** C over B.
