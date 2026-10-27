@@ -23,7 +23,7 @@ import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronom
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { findBibleBook } from "../scriptures/books.js";
 import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
@@ -1610,6 +1610,21 @@ export const CONFORMANCE: ConformanceArea[] = [
             ],
           },
           { name: "nothing saved: the defaults", args: ['/*{"INPUTS":[{"NAME":"speed","TYPE":"float","MIN":0,"MAX":2,"DEFAULT":1}]}*/', null] },
+        ],
+      },
+      reactionLevel: {
+        about:
+          "A reaction's level some ms after it was set off (issue #324): up to its amount over `rise` (smoothstep), then back to 0 over `fall` as (1 - x)^2; without times, at once and over 1400 ms. 0 before and after.",
+        params: ["ms", "reaction"],
+        run: reactionLevel,
+        cases: [
+          { name: "no times, at once", args: [0, { amount: 0.8 }] },
+          { name: "no times, half way down", args: [700, { amount: 0.8 }] },
+          { name: "half way up a rise", args: [75, { amount: 1, rise: 150, fall: 600 }] },
+          { name: "at its top", args: [150, { amount: 1, rise: 150, fall: 600 }] },
+          { name: "half way down a fall", args: [450, { amount: 1, rise: 150, fall: 600 }] },
+          { name: "over", args: [750, { amount: 1, rise: 150, fall: 600 }] },
+          { name: "not yet", args: [-10, { amount: 1 }] },
         ],
       },
       shaderControlValue: {

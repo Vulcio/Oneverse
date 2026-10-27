@@ -1,11 +1,12 @@
-import { SCREEN_EFFECT_TARGETS, type ScreenTheme } from "@oneverse/core";
+import { reactionLevel, SCREEN_EFFECT_TARGETS, SCREEN_REACTION_FALL_MS, type ScreenTheme } from "@oneverse/core";
 import { useEffect, useRef, type RefObject } from "react";
 import { screenDrawStats } from "./screen-draw-stats";
 
 type Target = (typeof SCREEN_EFFECT_TARGETS)[number];
 
-/** How long a reaction takes to fade, in ms. */
-const DECAY_MS = 1400;
+/** How fast a level follows its reactions, in ms: up quickly, down a little more gently (frame rate aside). */
+const FOLLOW_UP_MS = 28;
+const FOLLOW_DOWN_MS = 130;
 /** Between lines, and between words, when the words don't come in piece by piece. */
 const LINE_GAP_MS = 320;
 const WORD_GAP_MS = 140;
@@ -16,8 +17,10 @@ const MAX_KICKS = 24;
  * Effects on a screen (issue #281): the background answering the words. Each
  * reaction is set off by a slide coming, a line or a word appearing, a new
  * section, or a chorus (while it lasts), and drives one of the background's
- * inputs - a pulse of light, its movement, hue, brightness, elements - by
- * its amount times how much the background answers (`reacts`). The levels
+ * inputs - a pulse of light, its movement, hue, brightness, elements, a
+ * shader's rotation or scale - by its amount times how much the background
+ * answers (`reacts`), rising and falling back over its own times (issue
+ * #324, `reactionLevel`). The levels
  * are written as CSS variables on the stage (`--react-<target>`, 0 to 1),
  * frame by frame, without rendering React again; the stage's CSS turns them
  * into light, motion and colour. Nothing runs without reactions, or for
@@ -31,7 +34,7 @@ export function useScreenEffects(
   const reactions = theme.effects?.reactions ?? [];
   // The levels, for a background drawn on a canvas (issue #296) to read each frame too.
   const signals = useRef<ScreenSignals>({ levels: Object.fromEntries(SCREEN_EFFECT_TARGETS.map((target) => [target, 0])) as ScreenSignals["levels"] });
-  const kicks = useRef<{ target: Target; level: number; at: number }[]>([]);
+  const kicks = useRef<{ target: Target; level: number; at: number; rise?: number; fall?: number }[]>([]);
   const sustained = useRef<Partial<Record<Target, number>>>({});
   const strength = (target: Target, amount: number) => amount * (target === "pulse" ? 1 : theme.reacts[target]);
   const active = reactions.length > 0;
@@ -46,15 +49,16 @@ export function useScreenEffects(
     const wordGap = reveal === "words" || reveal === "glow" ? Math.max(stagger, 60) : WORD_GAP_MS;
     for (const one of reactions) {
       const level = strength(one.target, one.amount);
-      if (one.on === "slide") kicks.current.push({ target: one.target, level, at });
-      if (one.on === "line") now.lines.slice(0, MAX_KICKS).forEach((_, i) => kicks.current.push({ target: one.target, level, at: at + i * lineGap }));
-      if (one.on === "word") words.slice(0, MAX_KICKS).forEach((_, i) => kicks.current.push({ target: one.target, level: level * 0.7, at: at + i * wordGap }));
+      const times = { rise: one.rise, fall: one.fall };
+      if (one.on === "slide") kicks.current.push({ target: one.target, level, at, ...times });
+      if (one.on === "line") now.lines.slice(0, MAX_KICKS).forEach((_, i) => kicks.current.push({ target: one.target, level, at: at + i * lineGap, ...times }));
+      if (one.on === "word") words.slice(0, MAX_KICKS).forEach((_, i) => kicks.current.push({ target: one.target, level: level * 0.7, at: at + i * wordGap, ...times }));
     }
   }, [now.viewKey, active]);
   useEffect(() => {
     if (!active) return;
     const at = performance.now();
-    for (const one of reactions) if (one.on === "section") kicks.current.push({ target: one.target, level: strength(one.target, one.amount), at });
+    for (const one of reactions) if (one.on === "section") kicks.current.push({ target: one.target, level: strength(one.target, one.amount), at, rise: one.rise, fall: one.fall });
   }, [now.sectionKey, active]);
   // A chorus holds its reactions while it lasts.
   useEffect(() => {
@@ -70,18 +74,21 @@ export function useScreenEffects(
     const levels = signals.current.levels;
     screenDrawStats.effects = true;
     let frame = 0;
+    let last = performance.now();
     const tick = () => {
       const time = performance.now();
-      kicks.current = kicks.current.filter((kick) => time - kick.at < DECAY_MS);
+      const dt = Math.min(100, time - last);
+      last = time;
+      kicks.current = kicks.current.filter((kick) => time - kick.at < (kick.rise ?? 0) + (kick.fall ?? SCREEN_REACTION_FALL_MS));
       for (const target of SCREEN_EFFECT_TARGETS) {
         let goal = sustained.current[target] ?? 0;
         for (const kick of kicks.current) {
           if (kick.target !== target || kick.at > time) continue;
-          const left = 1 - (time - kick.at) / DECAY_MS;
-          goal = Math.max(goal, kick.level * left * left);
+          goal = Math.max(goal, reactionLevel(time - kick.at, { amount: kick.level, rise: kick.rise, fall: kick.fall }));
         }
-        // Up fast, down gently.
-        levels[target] += (goal - levels[target]) * (goal > levels[target] ? 0.45 : 0.12);
+        // Up fast, down gently, the same on a 30 fps TV as on a 60 fps laptop.
+        const follow = 1 - Math.exp(-dt / (goal > levels[target] ? FOLLOW_UP_MS : FOLLOW_DOWN_MS));
+        levels[target] += (goal - levels[target]) * follow;
         element.style.setProperty(`--react-${target}`, levels[target].toFixed(3));
       }
       frame = requestAnimationFrame(tick);

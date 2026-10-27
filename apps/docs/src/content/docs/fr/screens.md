@@ -181,7 +181,7 @@ Les polices et les images s'ajoutent à un thème de contenu ou de fond enregist
 
 ### Effets
 
-Les effets relient les paroles au fond. **Réactions** : **Quand** une diapositive arrive, une ligne ou un mot apparaît, une nouvelle partie commence, ou dans un refrain (tant qu'il dure), **le fond** pulse de lumière, bouge plus vite, change de couleur, s'éclaire, fait grossir ses éléments, tourne ou se rapproche - chacun autant que vous le choisissez, fois la réponse du fond. **Le mouvement des paroles** : **Pulsation**, **Respiration**, **Lueur**, **Scintillement** ou **Flottement**, avec son intensité et sa vitesse. Un modèle peut n'avoir aucun effet.
+Les effets relient les paroles au fond. **Réactions** : **Quand** une diapositive arrive, une ligne ou un mot apparaît, une nouvelle partie commence, ou dans un refrain (tant qu'il dure), **le fond** pulse de lumière, bouge plus vite, change de couleur, s'éclaire, fait grossir ses éléments, tourne ou se rapproche - chacun autant que vous le choisissez, fois la réponse du fond. **Montée** est le temps qu'il met à y arriver et **Retombée** le temps qu'il met à revenir au calme : un fond lent qui accélère à chaque diapositive, puis se calme en une demi-seconde, c'est **bouge plus vite** avec une **Montée** et une **Retombée** courtes. **Le mouvement des paroles** : **Pulsation**, **Respiration**, **Lueur**, **Scintillement** ou **Flottement**, avec son intensité et sa vitesse. Un modèle peut n'avoir aucun effet.
 
 ![Effets : réactions et mouvement des paroles](../../../assets/screenshots/fr/screen-effects.jpg)
 

@@ -22,6 +22,7 @@ import {
   SCREEN_MASKS_MAX,
   SCREEN_POSITIONS,
   SCREEN_REACTIONS_MAX,
+  SCREEN_REACTION_FALL_MS,
   SCREEN_REVEALS,
   SCREEN_TEMPLATE_TAGS,
   SCREEN_VERSES_PER_SLIDE_MAX,
@@ -792,6 +793,18 @@ function EffectsSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (cha
                 </NativeSelect>
               </div>
               <Slider value={one.amount} min={0} max={1} step={0.05} onChange={(amount) => reaction(i, { amount })} />
+              <div className="grid grid-cols-2 gap-2">
+                <Field label={t("screens.editor.reactionRise")}>
+                  <div data-testid="theme-reaction-rise">
+                    <Slider value={one.rise ?? 0} min={0} max={1000} step={10} unit="ms" onChange={(rise) => reaction(i, { rise })} />
+                  </div>
+                </Field>
+                <Field label={t("screens.editor.reactionFall")}>
+                  <div data-testid="theme-reaction-fall">
+                    <Slider value={one.fall ?? SCREEN_REACTION_FALL_MS} min={100} max={3000} step={50} unit="ms" onChange={(fall) => reaction(i, { fall })} />
+                  </div>
+                </Field>
+              </div>
             </li>
           ))}
         </ul>

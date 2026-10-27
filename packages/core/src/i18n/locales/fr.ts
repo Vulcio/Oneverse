@@ -694,6 +694,8 @@ const fr: typeof en = {
       reactionThen: "le fond",
       triggers: { slide: "une diapositive arrive", line: "une ligne apparaît", word: "un mot apparaît", section: "une nouvelle partie commence", chorus: "dans un refrain" },
       targets: { pulse: "pulse de lumière", movement: "bouge plus vite", hue: "change de couleur", brightness: "s'éclaire", elements: "fait grossir ses éléments", rotation: "tourne", scale: "se rapproche" },
+      reactionRise: "Montée",
+      reactionFall: "Retombée",
       addReaction: "Ajouter une réaction",
       removeReaction: "Retirer cette réaction",
       textAnimation: "Le mouvement des paroles",

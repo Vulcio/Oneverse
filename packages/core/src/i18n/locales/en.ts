@@ -694,6 +694,8 @@ const en = {
       reactionThen: "the background",
       triggers: { slide: "a slide comes", line: "a line appears", word: "a word appears", section: "a new section starts", chorus: "in a chorus" },
       targets: { pulse: "pulses with light", movement: "moves faster", hue: "shifts colour", brightness: "brightens", elements: "swells its elements", rotation: "turns", scale: "comes closer" },
+      reactionRise: "Rise",
+      reactionFall: "Fall back",
       addReaction: "Add a reaction",
       removeReaction: "Remove this reaction",
       textAnimation: "The words' movement",

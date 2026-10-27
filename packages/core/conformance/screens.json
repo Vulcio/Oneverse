@@ -3791,6 +3791,93 @@
         }
       ]
     },
+    "reactionLevel": {
+      "about": "A reaction's level some ms after it was set off (issue #324): up to its amount over `rise` (smoothstep), then back to 0 over `fall` as (1 - x)^2; without times, at once and over 1400 ms. 0 before and after.",
+      "params": [
+        "ms",
+        "reaction"
+      ],
+      "cases": [
+        {
+          "name": "no times, at once",
+          "args": [
+            0,
+            {
+              "amount": 0.8
+            }
+          ],
+          "expected": 0.8
+        },
+        {
+          "name": "no times, half way down",
+          "args": [
+            700,
+            {
+              "amount": 0.8
+            }
+          ],
+          "expected": 0.2
+        },
+        {
+          "name": "half way up a rise",
+          "args": [
+            75,
+            {
+              "amount": 1,
+              "rise": 150,
+              "fall": 600
+            }
+          ],
+          "expected": 0.5
+        },
+        {
+          "name": "at its top",
+          "args": [
+            150,
+            {
+              "amount": 1,
+              "rise": 150,
+              "fall": 600
+            }
+          ],
+          "expected": 1
+        },
+        {
+          "name": "half way down a fall",
+          "args": [
+            450,
+            {
+              "amount": 1,
+              "rise": 150,
+              "fall": 600
+            }
+          ],
+          "expected": 0.25
+        },
+        {
+          "name": "over",
+          "args": [
+            750,
+            {
+              "amount": 1,
+              "rise": 150,
+              "fall": 600
+            }
+          ],
+          "expected": 0
+        },
+        {
+          "name": "not yet",
+          "args": [
+            -10,
+            {
+              "amount": 1
+            }
+          ],
+          "expected": 0
+        }
+      ]
+    },
     "shaderControlValue": {
       "about": "A shader spec control's value now (issue #324, docs/screen-shader-spec.md): the theme's, pushed by the reaction that drives it (its level times the control's share of the range: brightness a half, hue a third, density and size 0.4, scale 0.07), kept within the shader's range. A control no reaction drives, or a name the spec doesn't have, as it is.",
       "params": [

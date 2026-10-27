@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { adaptShaderDrawing, advanceShaderClock, initialShaderDrawing, readIsf, readIsfValues, shaderControlValue, type ShaderDrawing } from "../screens/index.js";
+import { adaptShaderDrawing, advanceShaderClock, initialShaderDrawing, reactionLevel, readIsf, readIsfValues, shaderControlValue, type ShaderDrawing } from "../screens/index.js";
 
 describe("a shader's clock (issue #324)", () => {
   const pace = { motion: 0.5, spin: 0 };
@@ -84,5 +84,22 @@ describe("how a shader draws on a slow device (issue #324)", () => {
   it("starts with a little less on a weak device", () => {
     expect(initialShaderDrawing({ cores: 2, memoryGb: 4 }).quality).toBe(1);
     expect(initialShaderDrawing({ cores: 8, memoryGb: 8 }).quality).toBe(2);
+  });
+});
+
+describe("a reaction's level over time (issue #324)", () => {
+  it("without times: at once, then back over 1.4 s, quickly at first", () => {
+    expect(reactionLevel(0, { amount: 0.8 })).toBeCloseTo(0.8);
+    expect(reactionLevel(700, { amount: 0.8 })).toBeCloseTo(0.2);
+    expect(reactionLevel(1400, { amount: 0.8 })).toBe(0);
+    expect(reactionLevel(-1, { amount: 0.8 })).toBe(0);
+  });
+
+  it("rises over its rise, then falls back over its fall", () => {
+    const ramp = { amount: 1, rise: 150, fall: 600 };
+    expect(reactionLevel(75, ramp)).toBeCloseTo(0.5);
+    expect(reactionLevel(150, ramp)).toBeCloseTo(1);
+    expect(reactionLevel(450, ramp)).toBeCloseTo(0.25);
+    expect(reactionLevel(750, ramp)).toBe(0);
   });
 });

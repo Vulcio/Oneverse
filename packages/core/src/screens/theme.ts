@@ -233,6 +233,27 @@ export const SCREEN_EFFECT_TARGETS = ["pulse", "movement", "hue", "brightness", 
 export const SCREEN_TEXT_ANIMATIONS = ["none", "pulse", "breathe", "glow", "shimmer", "float"] as const;
 /** The most reactions effects have. */
 export const SCREEN_REACTIONS_MAX = 12;
+/** How long a reaction takes to fall back when it doesn't say, and the longest it may take to rise and to fall, in ms. */
+export const SCREEN_REACTION_FALL_MS = 1400;
+export const SCREEN_REACTION_RISE_MAX_MS = 2000;
+export const SCREEN_REACTION_FALL_MAX_MS = 6000;
+
+/**
+ * A reaction's level `ms` after it was set off (issue #324): rising to its
+ * amount over `rise` (eased in and out), then falling back over `fall`,
+ * quickly at first; 0 before and after.
+ */
+export function reactionLevel(ms: number, reaction: { amount: number; rise?: number; fall?: number }): number {
+  const rise = reaction.rise ?? 0;
+  const fall = reaction.fall ?? SCREEN_REACTION_FALL_MS;
+  if (ms < 0 || ms >= rise + fall) return 0;
+  if (ms < rise) {
+    const x = ms / rise;
+    return reaction.amount * x * x * (3 - 2 * x);
+  }
+  const left = 1 - (ms - rise) / fall;
+  return reaction.amount * left * left;
+}
 
 /** Effects (issue #281): reactions of the background to the words, and an animation of the words. */
 export function screenEffectsSchema(strict: boolean) {
@@ -245,6 +266,9 @@ export function screenEffectsSchema(strict: boolean) {
           target: z.enum(SCREEN_EFFECT_TARGETS),
           /** How strongly, 0 to 1. */
           amount: z.number().min(0).max(1).default(0.5),
+          /** How long it takes to reach its strength, and to fall back, in ms (issue #324); left out: at once, and SCREEN_REACTION_FALL_MS. */
+          rise: z.number().int().min(0).max(SCREEN_REACTION_RISE_MAX_MS).optional(),
+          fall: z.number().int().min(100).max(SCREEN_REACTION_FALL_MAX_MS).optional(),
         }),
       )
       .max(SCREEN_REACTIONS_MAX)

@@ -181,7 +181,7 @@ Fonts and pictures are added to a saved content or background theme, so save it 
 
 ### Effects
 
-Effects tie the words to the background. **Reactions**: **When** a slide comes, a line or a word appears, a new section starts, or in a chorus (while it lasts), **the background** pulses with light, moves faster, shifts colour, brightens, swells its elements, turns or comes closer - each by how much you choose, times how much the background answers. **The words' movement**: a **Pulse**, **Breathe**, **Glow**, **Shimmer** or **Float**, with how much and how fast. A template can have no effects.
+Effects tie the words to the background. **Reactions**: **When** a slide comes, a line or a word appears, a new section starts, or in a chorus (while it lasts), **the background** pulses with light, moves faster, shifts colour, brightens, swells its elements, turns or comes closer - each by how much you choose, times how much the background answers. **Rise** is how long it takes to get there and **Fall back** how long it takes to settle again: a slow background that speeds up as each slide comes, then calms down within half a second, is **moves faster** with a short **Rise** and **Fall back**. **The words' movement**: a **Pulse**, **Breathe**, **Glow**, **Shimmer** or **Float**, with how much and how fast. A template can have no effects.
 
 ![Effects: reactions and the words' movement](../../assets/screenshots/en/screen-effects.jpg)
 

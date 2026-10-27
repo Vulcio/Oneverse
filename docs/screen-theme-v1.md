@@ -190,7 +190,10 @@ theme is what they compose to (`composeScreenTheme` in core):
   its files.
 - **screen-effects/v1** (`ScreenEffectsSchema`): `reactions` - `{ on: slide
   | line | word | section | chorus, target: pulse | movement | hue |
-  brightness | elements | rotation | scale, amount }` - and `text` (`animation`: none, pulse,
+  brightness | elements | rotation | scale, amount, rise?, fall? }` -
+  `rise` and `fall` in ms (0-2000, 100-6000; issue #324): how long it
+  takes to reach its amount and to fall back, at once and 1400 ms without
+  them (`reactionLevel`) - and `text` (`animation`: none, pulse,
   breathe, glow, shimmer, float; `amount`; `speed`).
 - **screen-template/v1** (`ScreenTemplateSchema`): `tags` (audience, stage,
   presentation, lyrics, chords, signage), `grid`, `masks`; its parts are
