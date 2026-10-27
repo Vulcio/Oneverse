@@ -527,6 +527,14 @@ try {
       await page.screenshot({ path: path.join(dir, "chord-grid.jpg"), type: "jpeg", quality: 85, clip: { x: box.x - 24, y: box.y - 76, width: box.width + 48, height: Math.min(box.height + 96, 330) } });
       console.log("  chord-grid");
       await page.getByTestId("bars-metronome").click();
+      // Edit bars (issue #238): a chord picked, a bar's tools.
+      await page.getByTestId("chord-grid-edit-start").click();
+      await grid.locator('[data-grid-bar="1"] [data-grid-words]').click();
+      await grid.locator('[data-grid-bar="2"] [data-grid-chord]').first().click();
+      const area = await page.getByTestId("chord-grid-area").boundingBox();
+      await page.screenshot({ path: path.join(dir, "chord-grid-edit.jpg"), type: "jpeg", quality: 85, clip: { x: area.x - 24, y: area.y - 12, width: area.width + 48, height: Math.min(area.height + 24, 420) } });
+      console.log("  chord-grid-edit");
+      await page.getByTestId("chord-grid-cancel").click();
       await page.getByTestId("chart-view-chart").click();
       await page.getByTestId("song-chart").waitFor();
     }

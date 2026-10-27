@@ -158,7 +158,22 @@ export function PracticeSongPage({
         grid={
           <Card>
             <CardContent style={{ zoom: display.textSize }}>
-              <ChordGrid songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} emptyText={t("sets.noChart")} />
+              <ChordGrid
+                songId={version.id}
+                chart={chart}
+                document={version.documentJson}
+                chordColors={display.chordColors}
+                emptyText={t("sets.noChart")}
+                // Bars placed by whoever can edit the song (issue #238), saved as the editor saves its chart.
+                onSave={
+                  version.canEdit
+                    ? async (sections) => {
+                        await apiClient.updateSongVersion(version.id, { sections, revision: version.documentJson.revision });
+                        await router.invalidate();
+                      }
+                    : undefined
+                }
+              />
             </CardContent>
           </Card>
         }

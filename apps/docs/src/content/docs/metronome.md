@@ -64,3 +64,24 @@ The bars come from the chart's [bar lines](/song-editor/#bar-lines) when it has 
 - **The chords read as on the chart:** transposed, with your capo, names and colours, and on a set's song page your **Simpler chords** and **No bass notes** too.
 
 Your choice is kept for the song, as a PDF's is: every device you sign in on, and Live, show it the same way. To read every song this way unless you choose otherwise, set **Songs read as** to **Chord grid (bars)** (see [Chart display](/account/#chart-display)).
+
+### Playing from the grid
+
+Above the grid, **Play the recording** plays the song's stems or recording, and **Play the click** plays the metronome at the song's tempo when it has neither.
+
+- **Tap a bar** to play from its first beat, or to jump there while it plays. With a recording, the bar is found from its beats and bars (when the [stem separation found them](/library/#separating-a-recording-into-stems)), else from its tempo and first beat. With the click, a count-in plays the beats just before the bar.
+- **Loop bars** (with a recording): tap the first bar, then the last. Those bars play over and over, marked underneath, until you press **Stop looping**.
+
+When you [play in sync](/sets/#playing-in-sync) and follow the leader, they start and stop the music: tapping a bar does nothing.
+
+### Placing chords on beats
+
+![Editing bars in Practice: a chord picked, the tools of bar 2](../../assets/screenshots/en/chord-grid-edit.jpg)
+
+If you can edit the song, **Edit bars** above the grid in Practice lets you say exactly where each chord falls:
+
+- **Move a chord to another beat.** Drag it there, or tap it and then tap the beat. Each beat has two halves: the left one is the beat itself and the right one is its "and" (the + between beats). A chord stays between the chords before and after it in the chart, so the grid and the lyrics never disagree.
+- **Change a bar.** Tap a bar to show its tools. **−** and **+** change how many beats it has, for a pickup or a 2/4 bar before the chorus. **Add a bar before** and **Add a bar after** add an empty bar, where the chord before carries on. **Remove the bar** removes an empty bar (move its chords out first).
+- **Save bars** saves them, and **Cancel** drops your changes. Every pass of a section has the same bars, so a chorus is changed everywhere it comes back.
+
+The bars are saved with the song, as the Editor's [bar lines](/song-editor/#bar-lines) are, and show in the song's history. The bars row, the click and the grid all follow them. If you later move a bar line in the Editor, the chords you placed here keep their beats in every bar that hasn't changed.

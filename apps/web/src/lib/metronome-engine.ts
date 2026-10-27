@@ -236,8 +236,13 @@ function cancelFrom(time: number) {
 
 // --- what pages call
 
-/** Starts from the top (count-in first), with these settings if given; from a song's button, `songId` says which. */
-export function startMetronome(settings?: MetronomeSettings, songId: string | null = null) {
+/**
+ * Starts from the top (count-in first), with these settings if given; from a
+ * song's button, `songId` says which. `from` starts that many beats into the
+ * timeline instead (the chord grid's bars, issue #238): a bar's start in the
+ * song, so the count-in's beats are the ones before it.
+ */
+export function startMetronome(settings?: MetronomeSettings, songId: string | null = null, from = 0) {
   load();
   // Following Sync play's leader: theirs to start.
   if (state.following) return unlockMetronomeAudio();
@@ -252,8 +257,8 @@ export function startMetronome(settings?: MetronomeSettings, songId: string | nu
   output!.gain.value = next.volume;
   anchorTime = ctx.currentTime + startDelay;
   anchorEpoch = epochFromAudioTime(anchorTime);
-  anchorPosition = 0;
-  scheduledUntil = 0;
+  anchorPosition = Math.max(0, from);
+  scheduledUntil = anchorPosition;
   emit({ settings: next, playing: true, songId, anchor: { time: anchorTime, position: anchorPosition, epoch: anchorEpoch } });
   timer ??= setInterval(schedule, TICK_MS);
   schedule();

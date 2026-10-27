@@ -204,6 +204,8 @@ An optional timing layer on a section; the lines stay the structure.
 ```
 
 - `beatsPerBar` defaults to the time signature's top number.
+- A bar's own `beats` (optional, 1 to 32) gives it a length of its own: a
+  pickup, a 2/4 bar before the chorus. Left out, it has `beatsPerBar`.
 - A bar with no chord changes carries the previous chord on.
 - `beat` is 1-based and may be fractional (2.5 is the "and" of 2).
 
@@ -224,8 +226,17 @@ a bar line before the section's first words or chords adds a bar from its
 start, and the chords between two bar lines get the beats their words
 reach, rounded, half a beat apart at least - and `suggestedBarLines()` puts
 them where `chartBars()` would have its bars. A rhythm that was loaded is
-saved unchanged while its bar lines are. `chartBars()` gives each bar its
-`lyricAt`, so `barLyrics()` cuts the words at the bar lines.
+saved unchanged while its bar lines are; moved, the rhythm is worked out
+again and `keepPlacedBeats()` keeps the beats and lengths of the bars that
+didn't change. `chartBars()` gives each bar its `lyricAt`, so `barLyrics()`
+cuts the words at the bar lines.
+
+The chord grid edits a rhythm directly (`rhythm-edit.ts`): `editableRhythm()`
+writes the bars `chartBars()` filled in as one (each line's first bar at its
+start, the others at their chord's word), `moveRhythmChord()` puts a chord on
+a beat - never past the chord before or after it in the chart -
+`setRhythmBarBeats()` gives a bar its own `beats`, and `insertRhythmBar()` /
+`removeRhythmBar()` add an empty bar or remove one. Each is a conformance case.
 
 ## Anchors
 

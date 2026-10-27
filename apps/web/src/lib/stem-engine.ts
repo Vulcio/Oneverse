@@ -201,6 +201,8 @@ let streamOut: MediaStreamAudioDestinationNode | null = null;
 let recordingDirect = false;
 // The song last played, for the lock screen's Play button.
 let lastSong: StemSong | null = null;
+// The song loaded (or loading), for the chord grid's Play (issue #238).
+let loadedSong: StemSong | null = null;
 let buffers = new Map<string, AudioBuffer>();
 let gains = new Map<string, GainNode>();
 // Transposing (issues #129, #135): each part is moved by the transposition,
@@ -761,6 +763,7 @@ if (typeof document !== "undefined") {
 /** Forgets the loaded song and frees its audio. */
 export function unloadStems() {
   generation++;
+  loadedSong = null;
   stopSources();
   stopTimer();
   clock?.dispose();
@@ -805,6 +808,7 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
   const muted = new Set([...state.muted].filter((id) => ids.has(id)));
   const soloed = new Set([...state.soloed].filter((id) => ids.has(id)));
   unloadStems();
+  loadedSong = song;
   const mine = generation;
   setAudioSession();
   const ctx = new AudioContext();
@@ -1121,6 +1125,19 @@ export async function playStems(song: StemSong) {
   armLoop();
   setMediaActions();
   updateMediaSession();
+}
+
+/**
+ * Plays the stems loaded for this song (the page's dock loads them) from
+ * `from` seconds, or from where they are: the chord grid's Play and its bars
+ * (issue #238). False when they aren't this song's, or the leader's to play.
+ */
+export function playLoadedStems(songVersionId: string, from: number | null = null): boolean {
+  const song = loadedSong;
+  if (state.following || !song || state.songVersionId !== songVersionId) return false;
+  if (from !== null) seekStems(from);
+  if (!state.playing) void playStems(song);
+  return true;
 }
 
 export function pauseStems() {

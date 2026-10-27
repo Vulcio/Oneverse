@@ -1,6 +1,7 @@
 import {
   barLinesFromRhythm,
   characterBoundaries,
+  keepPlacedBeats,
   rhythmFromBarLines,
   type BarLine,
   type SectionBarLines,
@@ -209,11 +210,12 @@ export function editorToSections(doc: PMNode): SectionV2[] {
     });
     while (lines.length > 0 && isBlank(lines.at(-1)!) && !marks[lines.at(-1)!.id]) lines.pop();
     if (lines.length === 0 && !node.attrs.label) return;
-    // Its rhythm from its bar lines (issue #238): as loaded while they're where they were (its own beats kept), else worked out again.
+    // Its rhythm from its bar lines (issue #238): as loaded while they're where they were (its own beats kept), else worked out again,
+    // the beats and bar lengths placed in the chord grid kept where their bars are unchanged.
     const loaded = (node.attrs.rhythm as SectionV2["rhythm"]) ?? null;
     const before = loaded ? barLinesFromRhythm({ lines, rhythm: loaded }) : null;
     const unchanged = !!before && lines.every((line) => JSON.stringify(before[line.id] ?? []) === JSON.stringify(marks[line.id] ?? []));
-    const rhythm = unchanged ? loaded : rhythmFromBarLines({ lines }, marks, (doc.attrs.beats as number | undefined) ?? 4);
+    const rhythm = unchanged ? loaded : keepPlacedBeats(loaded, rhythmFromBarLines({ lines }, marks, (doc.attrs.beats as number | undefined) ?? 4));
     sections.push({
       id: node.attrs.id as string,
       type: node.attrs.type as SectionType,
