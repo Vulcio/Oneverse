@@ -329,6 +329,60 @@
 .sv-bar.sv-chord-moving {
   opacity: 0.3;
 }
+/* A beat of a bar (issue #238): a small number under the letter it's sung on, dragged (or tapped, then a letter) to another. */
+.sv-beat {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: 1em;
+  vertical-align: baseline;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.sv-beat-dot {
+  position: absolute;
+  left: 0;
+  bottom: -1.35em;
+  min-width: 1.2em;
+  padding: 0 0.15em;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  cursor: grab;
+  touch-action: none;
+  color: var(--color-muted-foreground);
+  background: color-mix(in oklab, var(--color-foreground) 10%, transparent);
+}
+/* Room under a line for its beats. */
+.sv-editor p[data-sv-line]:has(.sv-beat) {
+  padding-bottom: 1em;
+}
+.sv-beat-dot::before {
+  content: attr(data-n);
+}
+/* A finger-sized place to press, below what's drawn (the letters above stay theirs). */
+.sv-beat-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 -0.8em;
+}
+.sv-beat-placed .sv-beat-dot {
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+}
+.sv-beat-held .sv-beat-dot {
+  background: transparent;
+  outline: 1px dashed color-mix(in oklab, var(--color-foreground) 40%, transparent);
+}
+.sv-beat-picked .sv-beat-dot {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+.sv-beat-refused .sv-beat-dot {
+  box-shadow: 0 0 0 2px var(--color-destructive);
+}
 .sv-drag-ghost-bar {
   width: 4px;
   height: 2.4em;

@@ -1,5 +1,7 @@
 import {
+  barBeatPlaces,
   barLinesFromRhythm,
+  chartBars,
   characterBoundaries,
   keepPlacedBeats,
   rhythmFromBarLines,
@@ -9,6 +11,7 @@ import {
   generateId,
   ID_PREFIXES,
   type LineV2,
+  type RenderedChart,
   type SectionInstance,
   type SectionType,
   type SectionV2,
@@ -199,34 +202,59 @@ const isBlank = (line: LineV2) => !line.text.trim() && line.chords.length === 0;
 export function editorToSections(doc: PMNode): SectionV2[] {
   const sections: SectionV2[] = [];
   doc.forEach((node) => {
-    if (node.type.name !== "section") return;
-    const lines: LineV2[] = [];
-    const marks: SectionBarLines = {};
-    node.forEach((child) => {
-      const line = lineFromNode(child);
-      lines.push(line);
-      const bars = barLinesOf(child);
-      if (bars.length > 0 && line.kind !== "note") marks[line.id] = bars;
-    });
-    while (lines.length > 0 && isBlank(lines.at(-1)!) && !marks[lines.at(-1)!.id]) lines.pop();
-    if (lines.length === 0 && !node.attrs.label) return;
-    // Its rhythm from its bar lines (issue #238): as loaded while they're where they were (its own beats kept), else worked out again,
-    // the beats and bar lengths placed in the chord grid kept where their bars are unchanged.
-    const loaded = (node.attrs.rhythm as SectionV2["rhythm"]) ?? null;
-    const before = loaded ? barLinesFromRhythm({ lines, rhythm: loaded }) : null;
-    const unchanged = !!before && lines.every((line) => JSON.stringify(before[line.id] ?? []) === JSON.stringify(marks[line.id] ?? []));
-    const rhythm = unchanged ? loaded : keepPlacedBeats(loaded, rhythmFromBarLines({ lines }, marks, (doc.attrs.beats as number | undefined) ?? 4));
-    sections.push({
-      id: node.attrs.id as string,
-      type: node.attrs.type as SectionType,
-      label: (node.attrs.label as string | null)?.trim() || null,
-      showLabel: node.attrs.showLabel !== false,
-      lines,
-      rhythm,
-      groove: node.attrs.groove ?? null,
-    });
+    const section = sectionFromNode(node, (doc.attrs.beats as number | undefined) ?? 4);
+    if (section) sections.push(section);
   });
   return sections;
+}
+
+/** A section block of the editor as the song will have it; null for one with nothing in it. `beats`: a bar's, by default. */
+export function sectionFromNode(node: PMNode, beats = 4): SectionV2 | null {
+  if (node.type.name !== "section") return null;
+  const lines: LineV2[] = [];
+  const marks: SectionBarLines = {};
+  node.forEach((child) => {
+    const line = lineFromNode(child);
+    lines.push(line);
+    const bars = barLinesOf(child);
+    if (bars.length > 0 && line.kind !== "note") marks[line.id] = bars;
+  });
+  while (lines.length > 0 && isBlank(lines.at(-1)!) && !marks[lines.at(-1)!.id]) lines.pop();
+  if (lines.length === 0 && !node.attrs.label) return null;
+  // Its rhythm from its bar lines (issue #238): as loaded while they're where they were (its own beats kept), else worked out again,
+  // the beats and bar lengths placed in the chord grid kept where their bars are unchanged.
+  const loaded = (node.attrs.rhythm as SectionV2["rhythm"]) ?? null;
+  const before = loaded ? barLinesFromRhythm({ lines, rhythm: loaded }) : null;
+  const unchanged = !!before && lines.every((line) => JSON.stringify(before[line.id] ?? []) === JSON.stringify(marks[line.id] ?? []));
+  const rhythm = unchanged ? loaded : keepPlacedBeats(loaded, rhythmFromBarLines({ lines }, marks, beats));
+  return {
+    id: node.attrs.id as string,
+    type: node.attrs.type as SectionType,
+    label: (node.attrs.label as string | null)?.trim() || null,
+    showLabel: node.attrs.showLabel !== false,
+    lines,
+    rhythm,
+    groove: node.attrs.groove ?? null,
+  };
+}
+
+/**
+ * Where each beat of a section's bars is sung (issue #238), as the chord
+ * grid places them (`barBeatPlaces`): the section as the only pass of a
+ * chart. Its bars are its rhythm's, one for one; none without one.
+ */
+export function sectionBeatPlaces(section: SectionV2, beats = 4) {
+  if (!section.rhythm || section.rhythm.bars.length === 0) return null;
+  const pass = {
+    id: section.id,
+    section: { id: section.id },
+    lines: section.lines.map((line) => ({ id: line.id, kind: line.kind, text: line.text, chords: line.chords.map((chord) => ({ id: chord.id, at: chord.at })) })),
+    timeSignature: null,
+    tempo: null,
+  };
+  const chart = { passes: [pass], timeSignature: { numerator: beats, denominator: 4 } } as unknown as RenderedChart;
+  const bars = chartBars(chart, { sections: [section] });
+  return { chart, bars, places: barBeatPlaces(chart, bars) };
 }
 
 /** Sections in one canonical shape, so two copies of the same chart compare equal however they were built. */

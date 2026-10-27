@@ -39,6 +39,15 @@ Bar lines mark where each bar starts, in the words, as on a lead sheet: `|Amazin
 
 The chords between two bar lines fall in their bar on the beats their words reach: a chord halfway through a bar's words is on its third beat in 4/4.
 
+### Beats in the words
+
+In a section with bar lines, each bar's other beats show as small numbers under the letters they're sung on, beat 1 being the bar line itself. They are the same beats as in the chord grid (see [Placing beats in the words](/metronome/#placing-beats-in-the-words)): placed by themselves, or by you. A dashed number is a beat held over a word.
+
+- **Drag a beat** onto another letter of its bar, or **tap it and then tap the letter**: handy on a phone, where dragging small things is fiddly. A beat stays between the beats before and after it; somewhere it can't go, it flashes red and stays where it was.
+- A beat you placed is filled in. **Tap it twice** to let the grid place it again.
+
+They are saved with the song.
+
 ## Sections
 
 Each block is a section: intro, verse, pre-chorus, chorus, post-chorus, bridge, vamp (a phrase repeated as long as needed), breakdown, instrumental, interlude, outro or tag.

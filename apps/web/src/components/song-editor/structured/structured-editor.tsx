@@ -185,6 +185,9 @@ function EditorBody({
   const emitted = useRef(sections);
   const emittedFlow = useRef(flow);
 
+  // The beats' labels in the language shown, read when the dots are drawn.
+  const tRef = useRef(t);
+  tRef.current = t;
   const events = useRef<ChordViewEvents>({ onChordPointerDown: () => {}, onBarPointerDown: () => {}, onEditChord: () => {} });
   const extensions = useMemo(
     () => [
@@ -192,6 +195,7 @@ function EditorBody({
         onChordPointerDown: (event, pos) => events.current.onChordPointerDown(event, pos),
         onBarPointerDown: (event, pos) => events.current.onBarPointerDown(event, pos),
         onEditChord: () => events.current.onEditChord(),
+        beatLabel: (beat, placed) => tRef.current(placed ? "structuredEditor.bars.beatPlaced" : "structuredEditor.bars.beat", { n: beat }),
       }),
       // Together (issue #27): the chart is the room's document; undo takes back one's own changes only; the others' carets show.
       ...(room

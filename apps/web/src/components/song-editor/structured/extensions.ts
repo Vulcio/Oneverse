@@ -1,8 +1,10 @@
 import {
+  beatPlaceRange,
   detectImportFormat,
   generateId,
   ID_PREFIXES,
   parseChord,
+  placeRhythmBeat,
   sectionsFromText,
   suggestedBarLines,
   type SectionType,
@@ -16,7 +18,8 @@ import { Mapping } from "@tiptap/pm/transform";
 import { Decoration, DecorationSet, type EditorView, type NodeView } from "@tiptap/pm/view";
 import { joinBackward, joinForward } from "@tiptap/pm/commands";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import { lineFromNode, linePosition, sectionsToEditorJSON } from "./document";
+import { cn } from "@oneverse/ui/lib/utils";
+import { lineFromNode, linePosition, sectionBeatPlaces, sectionFromNode, sectionsToEditorJSON } from "./document";
 import { SectionView } from "./section-view";
 import { LinkedView } from "./linked-view";
 
@@ -48,6 +51,8 @@ export interface ChordViewEvents {
   onBarPointerDown: (event: PointerEvent, pos: number) => void;
   /** Enter on a selected chord: edit its symbol. */
   onEditChord: () => void;
+  /** What a beat's dot under the words says to a screen reader and on hover (issue #238); its number alone without. */
+  beatLabel?: (beat: number, placed: boolean) => string;
 }
 
 // --- nodes
@@ -1119,6 +1124,7 @@ export function songEditorExtensions(events: ChordViewEvents) {
         uniqueIds(),
         chordSpacing(),
         dropTarget(),
+        beatDots(events),
         new Plugin({
           key: new PluginKey("songverseKeys"),
           props: {
@@ -1139,6 +1145,252 @@ export function songEditorExtensions(events: ChordViewEvents) {
     },
   });
   return [SongDoc, Text, SectionNode, LinkedNode, LineNode, chordNode(events), barNode(events), behaviour];
+}
+
+// --- the beats in the words (issue #238)
+
+/** A beat of a section's bar, picked to put on a letter: its section's ID, the bar (0-based), the beat (1-based). */
+type PickedBeat = { sectionId: string; bar: number; beat: number };
+const BEAT_META = "songverse:beat";
+const beatKey = new PluginKey<{ picked: PickedBeat | null; refused: string | null }>("songverseBeats");
+
+/** Where character `at` of a line (at `linePos`) is in the document: before it, after any chords on it. */
+function characterPosition(node: PMNode, linePos: number, at: number): number | null {
+  let text = 0;
+  let found: number | null = null;
+  node.forEach((child, offset) => {
+    if (found !== null || !child.isText) return;
+    const length = child.text!.length;
+    if (at >= text && at < text + length) found = linePos + 1 + offset + (at - text);
+    text += length;
+  });
+  return found;
+}
+
+/** The character a document position stands before, in a line of a section: past spaces to the next letter. */
+function letterAt(doc: PMNode, pos: number): { sectionPos: number; lineId: string; at: number } | null {
+  const $pos = doc.resolve(pos);
+  if ($pos.parent.type.name !== "line" || $pos.depth < 2) return null;
+  const section = $pos.node($pos.depth - 1);
+  if (section.type.name !== "section") return null;
+  let at = 0;
+  $pos.parent.forEach((child, offset) => {
+    if (child.isText && $pos.parentOffset > offset) at += Math.min(child.text!.length, $pos.parentOffset - offset);
+  });
+  // Its words alone (a chord or a bar line counts as a character in textContent).
+  let text = "";
+  $pos.parent.forEach((child) => {
+    if (child.isText) text += child.text;
+  });
+  while (at < text.length && /\s/.test(text[at]!)) at++;
+  if (at >= text.length) return null;
+  return { sectionPos: $pos.before($pos.depth - 1), lineId: $pos.parent.attrs.id as string, at };
+}
+
+/** The letter under a point of the screen (not the gap nearest it, as a caret): the position before it. */
+function letterPosAt(view: EditorView, x: number, y: number): number | null {
+  const found = view.posAtCoords({ left: x, top: y });
+  if (!found) return null;
+  // Of the letters either side of the gap found, the one the point is over.
+  const { doc } = view.state;
+  for (const pos of [found.pos, found.pos - 1]) {
+    if (pos < 0 || !doc.resolve(pos).parent.isTextblock || !doc.nodeAt(pos)?.isText) continue;
+    const from = view.coordsAtPos(pos, 1);
+    const to = view.coordsAtPos(pos + 1, -1);
+    if (x >= Math.min(from.left, to.left) - 0.5 && x <= Math.max(from.left, to.left) + 0.5) return pos;
+  }
+  return found.pos;
+}
+
+/** Beat `beat` of a section's bar put on a letter, or placed by the grid again (null); false where it can't go. */
+function placeBeat(view: EditorView, picked: PickedBeat, letter: { lineId: string; at: number } | null, sectionPos?: number): boolean {
+  const { doc } = view.state;
+  let at = sectionPos ?? -1;
+  if (at < 0) doc.forEach((node, offset) => (node.type.name === "section" && node.attrs.id === picked.sectionId ? (at = offset) : undefined));
+  const node = at >= 0 ? doc.nodeAt(at) : null;
+  const beats = (doc.attrs.beats as number | undefined) ?? 4;
+  const section = node ? sectionFromNode(node, beats) : null;
+  const placed = section ? sectionBeatPlaces(section, beats) : null;
+  if (!node || !section?.rhythm || !placed || node.attrs.id !== picked.sectionId) return false;
+  if (letter && !beatPlaceRange(placed.chart, placed.bars, picked.bar, picked.beat).some((span) => span.lineId === letter.lineId && letter.at >= span.from && letter.at < span.to)) return false;
+  const rhythm = placeRhythmBeat(section.rhythm, picked.bar, picked.beat, letter, beats);
+  if (!rhythm) return false;
+  view.dispatch(view.state.tr.setNodeMarkup(at, undefined, { ...node.attrs, rhythm }).setMeta(BEAT_META, { picked: null }));
+  return true;
+}
+
+function refuse(view: EditorView, key: string) {
+  view.dispatch(view.state.tr.setMeta(BEAT_META, { refused: key }).setMeta("addToHistory", false));
+  window.setTimeout(() => {
+    if (!view.isDestroyed && beatKey.getState(view.state)?.refused === key) view.dispatch(view.state.tr.setMeta(BEAT_META, { refused: null }).setMeta("addToHistory", false));
+  }, 700);
+}
+
+function beatDecorations(state: EditorState, events: ChordViewEvents): DecorationSet {
+  const { picked, refused } = beatKey.getState(state) ?? { picked: null, refused: null };
+  const beats = (state.doc.attrs.beats as number | undefined) ?? 4;
+  const decorations: Decoration[] = [];
+  state.doc.forEach((node, sectionPos) => {
+    const section = sectionFromNode(node, beats);
+    const placed = section ? sectionBeatPlaces(section, beats) : null;
+    if (!section || !placed) return;
+    const lines = new Map<string, { node: PMNode; pos: number }>();
+    node.forEach((line, offset) => lines.set(line.attrs.id as string, { node: line, pos: sectionPos + 1 + offset }));
+    placed.places.forEach((places, bar) => {
+      let last: number | null = null;
+      let held = 0;
+      places.forEach((place, index) => {
+        // Beat 1 is the bar line itself.
+        if (index === 0) {
+          const line = place ? lines.get(place.lineId) : undefined;
+          last = line && place ? characterPosition(line.node, line.pos, place.at) : null;
+          return;
+        }
+        const line = place ? lines.get(place.lineId) : undefined;
+        const pos = line && place ? characterPosition(line.node, line.pos, place.at) : last;
+        if (pos === null) return;
+        last = pos;
+        // Held beats one after another beside the beat before.
+        held = place ? 0 : held + 1;
+        const offset = held;
+        const beat = index + 1;
+        const key = `${section.id}:${bar}:${beat}`;
+        const isPicked = picked?.sectionId === section.id && picked.bar === bar && picked.beat === beat;
+        const state = `${place ? (place.placed ? "placed" : "auto") : "held"}${isPicked ? "-picked" : ""}${refused === key ? "-refused" : ""}`;
+        decorations.push(
+          Decoration.widget(
+            pos,
+            () => {
+              const dot = document.createElement("span");
+              dot.className = cn("sv-beat", `sv-beat-${place ? (place.placed ? "placed" : "auto") : "held"}`, isPicked && "sv-beat-picked", refused === key && "sv-beat-refused");
+              dot.contentEditable = "false";
+              dot.dataset.svBeat = String(beat);
+              dot.dataset.sectionId = section.id;
+              dot.dataset.bar = String(bar);
+              if (place?.placed) dot.dataset.placed = "";
+              const label = events.beatLabel?.(beat, !!place?.placed) ?? String(beat);
+              dot.title = label;
+              dot.setAttribute("role", "button");
+              dot.setAttribute("aria-label", label);
+              const number = document.createElement("span");
+              number.className = "sv-beat-dot";
+              // Drawn by its CSS, not as text: the line's text stays its words.
+              number.dataset.n = String(beat);
+              if (offset > 0) number.style.left = `${offset * 1.4}em`;
+              dot.append(number);
+              return dot;
+            },
+            { side: index, key: `${key}:${state}:${offset}`, ignoreSelection: true },
+          ),
+        );
+      });
+    });
+  });
+  return DecorationSet.create(state.doc, decorations);
+}
+
+/**
+ * A bar's beats under its words in the editor (issue #238), where its
+ * section has bar lines: a small number under the letter each is sung on,
+ * as the chord grid places them. Dragged onto another letter of its bar, or
+ * tapped and then a letter, it's placed there by hand (the section's
+ * `rhythm`); tapped twice, placed by the grid again.
+ */
+function beatDots(events: ChordViewEvents) {
+  let cached: { doc: PMNode; picked: unknown; refused: unknown; set: DecorationSet } | null = null;
+  // The click that ends a press on a dot: the dot is drawn again by then, so it lands on the words under it.
+  let dotPressed = false;
+  return new Plugin<{ picked: PickedBeat | null; refused: string | null }>({
+    key: beatKey,
+    state: {
+      init: () => ({ picked: null, refused: null }),
+      apply: (tr, previous) => {
+        const meta = tr.getMeta(BEAT_META) as Partial<{ picked: PickedBeat | null; refused: string | null }> | undefined;
+        return meta ? { ...previous, ...meta } : previous;
+      },
+    },
+    props: {
+      decorations(state) {
+        const { picked, refused } = beatKey.getState(state)!;
+        if (cached && cached.doc === state.doc && cached.picked === picked && cached.refused === refused) return cached.set;
+        cached = { doc: state.doc, picked, refused, set: beatDecorations(state, events) };
+        return cached.set;
+      },
+      // A dot's click is its press's (above).
+      handleClick: (_, __, event) => !!(event.target as HTMLElement | null)?.closest?.("[data-sv-beat]"),
+      handleDOMEvents: {
+        // A letter tapped with a beat picked: the beat goes there. As the click comes, not as the editor reads it (a second click
+        // near the dot just tapped would be its double-click).
+        click(view, event) {
+          if (dotPressed) {
+            dotPressed = false;
+            return true;
+          }
+          const picked = beatKey.getState(view.state)?.picked;
+          if (!picked || (event.target as HTMLElement | null)?.closest?.("[data-sv-beat]")) return false;
+          const pos = letterPosAt(view, event.clientX, event.clientY);
+          const letter = pos === null ? null : letterAt(view.state.doc, pos);
+          if (!letter || !placeBeat(view, picked, letter, letter.sectionPos)) refuse(view, `${picked.sectionId}:${picked.bar}:${picked.beat}`);
+          event.preventDefault();
+          return true;
+        },
+        // A dot's press is its own: no caret, no selection.
+        mousedown(_, event) {
+          if (!(event.target as HTMLElement | null)?.closest?.("[data-sv-beat]")) return false;
+          event.preventDefault();
+          return true;
+        },
+        pointerdown(view, event) {
+          const dot = (event.target as HTMLElement | null)?.closest?.<HTMLElement>("[data-sv-beat]");
+          dotPressed = false;
+          if (!dot || event.button !== 0 || !view.editable) return false;
+          event.preventDefault();
+          dotPressed = true;
+          const picked: PickedBeat = { sectionId: dot.dataset.sectionId!, bar: Number(dot.dataset.bar), beat: Number(dot.dataset.svBeat) };
+          const start = { x: event.clientX, y: event.clientY };
+          const fontSize = parseFloat(getComputedStyle(view.dom).fontSize) || 16;
+          let dragging = false;
+          let target: number | null = null;
+          // The dot is under the words: the letter just over the pointer.
+          const targetAt = (x: number, y: number) => letterPosAt(view, x, y - fontSize);
+          const move = (e: PointerEvent) => {
+            if (!dragging && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 5) return;
+            dragging = true;
+            target = targetAt(e.clientX, e.clientY);
+            setDropTarget(view, target);
+          };
+          const up = (e: PointerEvent) => {
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", up);
+            window.removeEventListener("pointercancel", cancel);
+            setDropTarget(view, null);
+            const key = `${picked.sectionId}:${picked.bar}:${picked.beat}`;
+            if (!dragging) {
+              const current = beatKey.getState(view.state)?.picked;
+              const same = current?.sectionId === picked.sectionId && current.bar === picked.bar && current.beat === picked.beat;
+              // Tapped again: a beat placed by hand goes back to where the grid puts it; one it placed, let go.
+              if (same && dot.dataset.placed !== undefined) placeBeat(view, picked, null);
+              else view.dispatch(view.state.tr.setMeta(BEAT_META, { picked: same ? null : picked }).setMeta("addToHistory", false));
+              return;
+            }
+            target = targetAt(e.clientX, e.clientY);
+            const letter = target === null ? null : letterAt(view.state.doc, target);
+            if (!letter || !placeBeat(view, picked, letter, letter.sectionPos)) refuse(view, key);
+          };
+          const cancel = () => {
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", up);
+            window.removeEventListener("pointercancel", cancel);
+            setDropTarget(view, null);
+          };
+          window.addEventListener("pointermove", move);
+          window.addEventListener("pointerup", up);
+          window.addEventListener("pointercancel", cancel);
+          return true;
+        },
+      },
+    },
+  });
 }
 
 export function setDropTarget(view: EditorView, target: number | null) {

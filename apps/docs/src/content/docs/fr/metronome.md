@@ -98,5 +98,5 @@ Quand un temps est chanté ailleurs, déplacez-le dans **Modifier les mesures**.
 - **Le temps 1 est le début de la mesure.** Le faire glisser déplace la barre de mesure dans sa ligne de paroles : des mots passent d'une mesure à l'autre.
 - **Laisser la grille le placer**, affiché quand vous touchez un temps que vous avez placé, le rend à la grille.
 
-**Enregistrer les mesures** enregistre les temps avec les mesures. C'est aussi avec eux que [Suivre la musique](/fr/screens/#suivre-la-musique) fait avancer les écrans.
+L'éditeur de chant montre les mêmes temps sous les paroles d'une section avec des barres de mesure, pour les déplacer là aussi (voir [Les temps dans les paroles](/fr/song-editor/#les-temps-dans-les-paroles)). **Enregistrer les mesures** enregistre les temps avec les mesures. C'est aussi avec eux que [Suivre la musique](/fr/screens/#suivre-la-musique) fait avancer les écrans.
 

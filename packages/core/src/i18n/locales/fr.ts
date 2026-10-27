@@ -3339,6 +3339,8 @@ const fr: typeof en = {
       toolsHint: "Faites-la glisser par sa poignée sur les paroles. Plus de mesures : un mot tenu, ou des mesures sans paroles.",
       addHint: "Faites-la glisser sur les paroles là où commence une mesure, ou cliquez pour l'ajouter au curseur. Vous pouvez aussi taper |.",
       paletteHint: "Faites glisser une barre de mesure sur les paroles là où commence une mesure, ou tapez |.",
+      beat: "Temps {{n}} : faites-le glisser sur la lettre où il est chanté, ou touchez-le puis touchez la lettre",
+      beatPlaced: "Temps {{n}}, placé par vous : faites-le glisser sur une autre lettre, ou touchez-le deux fois pour laisser la grille le placer",
     },
     placeholder: "Tapez ou collez les paroles - accords en [G], ou au-dessus des lignes",
     hints: "Tapez [G] pour un accord, | pour une barre de mesure. Faites glisser un accord ou une barre de mesure pour le déplacer, ou sélectionnez-le et utilisez ← →. Collez une grille entière n'importe où.",

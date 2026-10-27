@@ -2,7 +2,8 @@
 // its words by itself (a word held over a beat gets none), and lights the words of the beat played. In Edit bars, each
 // beat is a number before its letter: tapped then a letter, or dragged onto one, it's placed there by hand - letter by
 // letter, but only in its own bar's words - and "Let the grid place it" undoes that; beat 1 moves the bar line. Saved in
-// the section's rhythm. In Live, presenting, Follow the music moves the slides on with the click, and Next turns it off.
+// the section's rhythm. The Editor shows the same beats under the words of a section with bar lines, to tap (then a
+// letter) or drag; tapped twice, one placed by hand goes back to the grid's place. In Live, presenting, Follow the music moves the slides on with the click, and Next turns it off.
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -109,6 +110,49 @@ try {
     // Beat 3 on the e: "grac" sung on 2, "e" on 3.
     const pieces = await bar(0).locator("[data-word-beat]").allInnerTexts();
     if (pieces.join("|") !== "Amazing |grac|e") throw new Error(pieces.join("|"));
+  });
+
+  await step("the Editor shows the same beats under the words: beat 3 placed by hand", async () => {
+    await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
+    await page.goto(`${WEB}/library/${song.id}?tab=editor`);
+    await page.getByTestId("structured-editor").waitFor();
+    await page.locator('[data-sv-beat="3"][data-bar="0"][data-placed] .sv-beat-dot').waitFor();
+    // The bar line moved onto how: bar 2 starts there, its beats under "sweet the sound".
+    if ((await page.locator('[data-sv-beat][data-bar="1"]').count()) !== 3) throw new Error(`${await page.locator('[data-sv-beat][data-bar="1"]').count()} beats in bar 2`);
+  });
+
+  await step("in the Editor: beat 3 tapped twice goes back to the grid's place; beat 2 tapped, then a letter, placed; saved", async () => {
+    const dot = (bar, beat) => page.locator(`[data-sv-beat="${beat}"][data-bar="${bar}"] .sv-beat-dot`);
+    await dot(0, 3).click();
+    await page.locator('[data-sv-beat="3"][data-bar="0"].sv-beat-picked .sv-beat-dot').waitFor();
+    await dot(0, 3).click();
+    await page.locator('[data-sv-beat="3"][data-bar="0"][data-placed] .sv-beat-dot').waitFor({ state: "detached" });
+    await dot(0, 2).click();
+    // The r of grace: letter 9 of the line.
+    const r = await page.evaluate(() => {
+      const p = document.querySelector("[data-testid=structured-editor] p[data-sv-line]");
+      const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+      let n = 0;
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (node.parentElement.closest(".sv-chord, .sv-chord-gap, .sv-bar")) continue;
+        if (9 < n + node.data.length) {
+          const range = document.createRange();
+          range.setStart(node, 9 - n);
+          range.setEnd(node, 10 - n);
+          const box = range.getBoundingClientRect();
+          return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        }
+        n += node.data.length;
+      }
+      return null;
+    });
+    await page.mouse.click(r.x, r.y);
+    await page.locator('[data-sv-beat="2"][data-bar="0"][data-placed] .sv-beat-dot').waitFor();
+    await page.getByRole("button", { name: "Save song" }).first().click();
+    await page.getByText("Saved.", { exact: true }).waitFor();
+    const saved = await api(me, "GET", `/song-versions/${song.id}`);
+    const anchors = (saved.documentJson.sections[0].rhythm.bars[0].beatAnchors ?? []).map((anchor) => `${anchor.beat}@${anchor.at}`);
+    if (anchors.join(" ") !== "2@9") throw new Error(anchors.join(" "));
   });
 
   await step("Live, presenting: Follow the music moves the slides on with the click", async () => {

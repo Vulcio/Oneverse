@@ -39,6 +39,15 @@ Les barres de mesure marquent le début de chaque mesure, dans les paroles, comm
 
 Les accords entre deux barres de mesure tombent dans leur mesure sur les temps qu'atteignent leurs paroles : un accord à la moitié des paroles d'une mesure est sur son troisième temps en 4/4.
 
+### Les temps dans les paroles
+
+Dans une section avec des barres de mesure, les autres temps de chaque mesure s'affichent en petits numéros sous les lettres où ils sont chantés, le temps 1 étant la barre de mesure elle-même. Ce sont les mêmes temps que dans les mesures (voir [Placer les temps dans les paroles](/fr/metronome/#placer-les-temps-dans-les-paroles)) : placés d'eux-mêmes, ou par vous. Un numéro en pointillés est un temps tenu sur un mot.
+
+- **Faites glisser un temps** sur une autre lettre de sa mesure, ou **touchez-le puis touchez la lettre** : pratique sur un téléphone, où faire glisser de petites choses est délicat. Un temps reste entre le temps d'avant et celui d'après ; là où il ne peut pas aller, il clignote en rouge et reste où il était.
+- Un temps que vous avez placé est rempli. **Touchez-le deux fois** pour laisser la grille le placer de nouveau.
+
+Ils sont enregistrés avec le chant.
+
 ## Les sections
 
 Chaque bloc est une section : intro, couplet, pré-refrain, refrain, post-refrain, pont, vamp (une phrase répétée autant qu'il faut), break, instrumental, interlude, outro ou tag.

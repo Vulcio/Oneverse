@@ -98,5 +98,5 @@ When a beat is sung somewhere else, move it in **Edit bars**. Each beat is a sma
 - **Beat 1 is where the bar starts.** Dragging it moves the bar line within its line of lyrics, so words go from one bar to the next.
 - **Let the grid place it**, shown when you tap a beat you placed, gives it back to the grid.
 
-**Save bars** saves the beats with the bars. They are also what [Follow the music](/screens/#following-the-music) moves the screens with.
+The song Editor shows the same beats under the words of a section with bar lines, to move there too (see [Beats in the words](/song-editor/#beats-in-the-words)). **Save bars** saves the beats with the bars. They are also what [Follow the music](/screens/#following-the-music) moves the screens with.
 

@@ -3336,6 +3336,8 @@ const en = {
       toolsHint: "Drag it by its knob onto the words. More bars: a word held, or bars without words.",
       addHint: "Drag onto the words where a bar starts, or click to add one at the cursor. You can also type |.",
       paletteHint: "Drag a bar line onto the words where a bar starts, or type |.",
+      beat: "Beat {{n}}: drag it onto the letter it's sung on, or tap it and then the letter",
+      beatPlaced: "Beat {{n}}, placed by you: drag it onto another letter, or tap it twice to let the grid place it",
     },
     placeholder: "Type or paste the lyrics - chords as [G], or chords above the lines",
     hints: "Type [G] for a chord, | for a bar line. Drag a chord or a bar line to move it, or select it and use ← →. Paste a whole chart anywhere.",
