@@ -146,8 +146,8 @@ try {
     const editor = desk.getByTestId("part-editor");
     await editor.getByTestId("theme-background").locator('[data-value="shader"]').click();
     await editor.locator('[data-testid="theme-preview"] [data-testid="screen-shader"]').waitFor();
-    // Mesh gradient: speed, softness, grain, shade - the sv_ inputs aren't controls.
-    await editor.locator('[data-testid="theme-shader-input"][data-name="softness"]').waitFor();
+    // Mesh gradient: the spec's controls it has (issue #324) and its own shade - the inputs the screen fills aren't controls.
+    await editor.locator('[data-testid="theme-shader-input"][data-name="sv_softness"]').waitFor();
     if ((await editor.getByTestId("theme-shader-input").count()) !== 11) throw new Error(`mesh gradient controls: ${await editor.getByTestId("theme-shader-input").count()}`);
     await editor.getByTestId("theme-shader").locator('[data-value="embers"]').click();
     await editor.locator('[data-testid="theme-shader-input"][data-name="falling"] input[type="checkbox"]').check();

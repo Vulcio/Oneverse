@@ -170,7 +170,7 @@ try {
   await step("Move: the words on both slides glide to their new place (issue #324)", async () => {
     const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
     const [content] = (await api(leader, "GET", "/screen-parts?kind=content")).filter((one) => one.id === saved.parts.content.id);
-    const changed = { ...content.document, lines: { ...content.document.lines, group: "slide", before: 1, after: 1 }, motion: { ...content.document.motion, transition: "move", duration: 1500, reveal: "none" } };
+    const changed = { ...content.document, lines: { ...content.document.lines, group: "slide", before: 1, after: 1, contextStyle: "dim" }, motion: { ...content.document.motion, transition: "move", duration: 1500, reveal: "none" } };
     await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: changed });
     await tv.locator('[data-testid="screen-stage"][data-transition="move"]').waitFor();
     page = tablet;
