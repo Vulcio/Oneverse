@@ -77,6 +77,8 @@ export const BarSchema = z.object({
   /** Where the lyrics are when the bar starts. */
   lyricAnchor: LyricAnchorSchema.nullable().optional(),
   cue: z.string().max(200).nullable().optional(),
+  /** Its own length in beats, when it isn't the section's: a pickup, a 2/4 bar before the chorus. */
+  beats: z.number().int().positive().max(32).nullable().optional(),
 });
 
 /** An optional bar-by-bar timing layer on a section; the lines stay the structure. */

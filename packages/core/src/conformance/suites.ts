@@ -11,8 +11,9 @@ import { parseArrangementDocumentV2, findArrangementProblems } from "../schemas/
 import { chordPositionProblem } from "../schemas/song-document-v2.js";
 import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-document/fold.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
-import { barAt, barLyrics, chartBars, recordingBeatPosition } from "../song-document/bars.js";
+import { barAt, barLyrics, chartBars, recordingBeatPosition, recordingSecondsAt } from "../song-document/bars.js";
 import { barLinesFromRhythm, rhythmFromBarLines, suggestedBarLines } from "../song-document/bar-lines.js";
+import { editableRhythm, insertRhythmBar, keepPlacedBeats, moveRhythmChord, removeRhythmBar, setRhythmBarBeats } from "../song-document/rhythm-edit.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
@@ -275,6 +276,27 @@ const BARS_SONG = {
 };
 
 /** A verse to place bar lines in (issue #238): four chords over a sung line, then a line of chords alone. */
+/** BARS_SONG with a pickup before its verse and a 2-beat bar in it, placed in the chord grid. */
+const ODD_BARS_SONG = {
+  ...BARS_SONG,
+  sections: BARS_SONG.sections.map((section) =>
+    section.id === "sec_verse"
+      ? {
+          ...section,
+          rhythm: {
+            beatsPerBar: null,
+            bars: [
+              { chords: [], beats: 1 },
+              { chords: [{ chordId: "chd_v1", beat: 1 }, { chordId: "chd_v2", beat: 2.5 }], lyricAnchor: { lineId: "line_v1", at: 0 } },
+              { chords: [], beats: 2 },
+              { chords: [{ chordId: "chd_v3", beat: 1 }] },
+            ],
+          },
+        }
+      : section,
+  ),
+};
+
 const BAR_LINES_SECTION = {
   lines: [
     { id: "line_a", kind: "lyric", text: "Amazing grace how sweet the sound", chords: [{ id: "chd_a1", at: 0, raw: "G" }, { id: "chd_a2", at: 8, raw: "C" }, { id: "chd_a3", at: 18, raw: "G" }, { id: "chd_a4", at: 28, raw: "D" }] },
@@ -879,6 +901,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "transposed, in Nashville numbers", args: [SONG, { transposeSteps: 2, notation: "nashville" }] },
           { name: "passes of their own: lines left out, their own chords", args: [SONG_WITH_PASSES, {}] },
           { name: "a section's own rhythm, a 3/4 pass, an intro of chords alone", args: [BARS_SONG, {}] },
+          { name: "bars of their own length: a one-beat pickup and a 2-beat bar, a chord on the and of 2", args: [ODD_BARS_SONG, {}] },
         ],
       },
       barAt: {
@@ -968,6 +991,90 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "past the last downbeat: bars as long as the last", args: [STEADY_MAP, 2.5 + 0.5 * 13, FOUR_BARS] },
           { name: "past the song's last bar", args: [STEADY_MAP, 2.5 + 0.5 * 20, FOUR_BARS] },
           { name: "one beat: nothing to follow", args: [{ beats: [1], downbeats: [1] }, 2, FOUR_BARS] },
+        ],
+      },
+      recordingSecondsAt: {
+        about:
+          "Where in a recording a position among the song's bars (in beats from its start) is first heard, from the recording's own beats and downbeats (issue #299): recordingBeatPosition the other way round, to play from a bar of the chord grid. In seconds, to the millisecond; null without two beats and a downbeat.",
+        params: ["map", "position", "bars"],
+        run: recordingSecondsAt,
+        cases: [
+          { name: "steady 120 BPM: bar 2 starts a bar after the first downbeat", args: [STEADY_MAP, 4, FOUR_BARS] },
+          { name: "slowing down: bar 2, later", args: [SLOWING_MAP, 4, FOUR_BARS] },
+          { name: "the recording's 2-beat bar: bar 3 starts at its next downbeat", args: [ODD_BAR_MAP, 8, FOUR_BARS] },
+          { name: "the song's start", args: [STEADY_MAP, 0, FOUR_BARS] },
+          { name: "one beat: nothing to follow", args: [{ beats: [1], downbeats: [1] }, 4, FOUR_BARS] },
+        ],
+      },
+      editableRhythm: {
+        about:
+          "A section's rhythm to edit in the chord grid (issue #238): its own, else the bars chartBars fills in from the chart written as a rhythm - each chord a bar on beat 1, a sung line at least two bars, a line of chords alone a bar a chord, two empty bars without lines - each line's first bar placed at its start and the others where their chord's word starts, so the grid shows the same bars and words.",
+        params: ["section"],
+        run: editableRhythm,
+        cases: [
+          { name: "filled in from the chart: a sung line and a line of chords alone", args: [BAR_LINES_SECTION] },
+          { name: "its own rhythm, as it is", args: [BARS_SONG.sections[1]] },
+          { name: "no lines: two empty bars", args: [{ lines: [] }] },
+        ],
+      },
+      moveRhythmChord: {
+        about:
+          "A chord placed on a beat of a bar in the chord grid (issue #238): 1-based beats, 2.5 the and of 2, kept in order in its bar. Null when the beat isn't in the bar or the chord would pass the one before or after it in the chart.",
+        params: ["section", "rhythm", "chordId", "bar", "beat", "beatsPerBar"],
+        run: moveRhythmChord,
+        cases: [
+          { name: "to the and of 2 of its bar", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 0, 2.5, 4] },
+          { name: "into the empty bar after", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 1, 3, 4] },
+          { name: "past the next chord: refused", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 2, 2, 4] },
+          { name: "onto the chord before: refused", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 0, 1, 4] },
+          { name: "past the bar's end: refused", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 0, 5, 4] },
+          { name: "into the bar before: the bar that started at its word no longer does", args: [BAR_LINES_SECTION, editableRhythm(BAR_LINES_SECTION as never), "chd_a2", 0, 3, 4] },
+          { name: "in a bar of 3 beats, the and of 3", args: [BARS_SONG.sections[1], { beatsPerBar: 3, bars: BARS_SONG.sections[1]!.rhythm!.bars }, "chd_v3", 2, 3.5, 4] },
+        ],
+      },
+      setRhythmBarBeats: {
+        about: "A bar's own length in beats in the chord grid (issue #238): a pickup, a 2/4 bar; null gives it the section's again (and drops the field). Null when one of its chords would fall past its end.",
+        params: ["rhythm", "bar", "beats", "beatsPerBar"],
+        run: setRhythmBarBeats,
+        cases: [
+          { name: "an empty bar of 2 beats", args: [BARS_SONG.sections[1]!.rhythm, 1, 2, 4] },
+          { name: "a chord on beat 3: 2 beats refused", args: [BARS_SONG.sections[1]!.rhythm, 0, 2, 4] },
+          { name: "back to the section's length", args: [{ beatsPerBar: null, bars: [{ chords: [], beats: 2 }] }, 0, null, 4] },
+        ],
+      },
+      insertRhythmBar: {
+        about: "An empty bar added in the chord grid (issue #238), before the bar given (at the end with the rhythm's length): the chord before carries on through it.",
+        params: ["rhythm", "at"],
+        run: insertRhythmBar,
+        cases: [
+          { name: "before the first: a pickup to give a length", args: [BARS_SONG.sections[1]!.rhythm, 0] },
+          { name: "after the last", args: [BARS_SONG.sections[1]!.rhythm, 3] },
+        ],
+      },
+      removeRhythmBar: {
+        about: "A bar removed in the chord grid (issue #238): only one with no chord changes, never the last left; its place in the lyrics goes to the bar after when that one has none.",
+        params: ["rhythm", "bar"],
+        run: removeRhythmBar,
+        cases: [
+          { name: "the empty bar", args: [BARS_SONG.sections[1]!.rhythm, 1] },
+          { name: "a bar with chords: refused", args: [BARS_SONG.sections[1]!.rhythm, 0] },
+          { name: "an empty bar placed in the lyrics: the next takes its place", args: [{ beatsPerBar: null, bars: [{ chords: [], lyricAnchor: { lineId: "line_a", at: 0 } }, { chords: [] }] }, 0] },
+        ],
+      },
+      keepPlacedBeats: {
+        about:
+          "A rhythm worked out again from moved bar lines, keeping what the chord grid placed (issue #238): a bar at the same place in the lyrics (or as many bars after it) with the same chords keeps their beats and its own length.",
+        params: ["previous", "next"],
+        run: keepPlacedBeats,
+        cases: [
+          {
+            name: "the first bar kept, the moved one worked out again",
+            args: [
+              { beatsPerBar: null, bars: [{ chords: [{ chordId: "chd_a1", beat: 1 }, { chordId: "chd_a2", beat: 4.5 }], lyricAnchor: { lineId: "line_a", at: 0 }, beats: 5 }, { chords: [{ chordId: "chd_a3", beat: 2 }], lyricAnchor: { lineId: "line_a", at: 18 } }] },
+              { beatsPerBar: null, bars: [{ chords: [{ chordId: "chd_a1", beat: 1 }, { chordId: "chd_a2", beat: 3 }], lyricAnchor: { lineId: "line_a", at: 0 } }, { chords: [{ chordId: "chd_a3", beat: 1 }], lyricAnchor: { lineId: "line_a", at: 14 } }] },
+            ],
+          },
+          { name: "nothing placed before", args: [null, BARS_SONG.sections[1]!.rhythm] },
         ],
       },
       effectiveDisplaySettings: {

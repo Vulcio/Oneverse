@@ -12,7 +12,7 @@ import type { RenderedChart, RenderedChord, RenderedPass } from "./render.js";
  * takes at least two (one chord and the bar it carries on), a line of
  * chords alone one bar per chord, a pass with no lines two bars. Notes take
  * none. The beats of a bar are its pass's time signature's top number (4
- * without one), or the rhythm's own.
+ * without one), or the rhythm's own, or the bar's own (a pickup, an odd bar).
  */
 
 export interface ChartBarChord {
@@ -113,12 +113,14 @@ export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">
     return rhythm.bars.map((bar) => {
       const anchored = !!bar.lyricAnchor && lines.has(bar.lyricAnchor.lineId);
       if (anchored) lineId = bar.lyricAnchor!.lineId;
+      // A bar of its own length (a pickup, an odd bar), else the section's.
+      const length = bar.beats ?? beats;
       return {
         lyricAt: anchored ? bar.lyricAnchor!.at : null,
-        beats,
+        beats: length,
         // A chord left out on this pass (hidden, or not in its lines) isn't played.
         chords: bar.chords
-          .filter((one) => one.beat < beats + 1 && chords.has(one.chordId))
+          .filter((one) => one.beat < length + 1 && chords.has(one.chordId))
           .sort((a, b) => a.beat - b.beat)
           .map((one) => barChord(chords.get(one.chordId)!, one.beat)),
         lineId,
@@ -218,6 +220,27 @@ export function recordingBeatPosition(map: BeatMap, seconds: number, bars: reado
   const song = bars[bar];
   if (!song) return barsLength(bars) + (bar - bars.length) * (bars.at(-1)?.beats ?? 4) + within;
   return song.start + Math.min(within, song.beats - 1e-6);
+}
+
+/**
+ * Where in a recording a position among the song's bars (in beats from its
+ * start) is heard, from the recording's own beats and bars (issue #299): the
+ * other way round from `recordingBeatPosition`, to play from a bar of the
+ * chord grid. The first moment it's reached, in seconds; null when the map
+ * has too little to follow.
+ */
+export function recordingSecondsAt(map: BeatMap, position: number, bars: readonly Pick<ChartBar, "start" | "beats">[]): number | null {
+  const beats = map.beats.filter(Number.isFinite);
+  if (!Number.isFinite(position) || recordingBeatPosition(map, beats[0] ?? 0, bars) === null) return null;
+  // The position only ever goes forward with time: halved until it's within a tenth of a millisecond.
+  let low = beats[0]! - 3600;
+  let high = beats.at(-1)! + 3600;
+  while (high - low > 1e-4) {
+    const middle = (low + high) / 2;
+    if (recordingBeatPosition(map, middle, bars)! >= position - 1e-9) high = middle;
+    else low = middle;
+  }
+  return Math.round(high * 1000) / 1000;
 }
 
 /**
