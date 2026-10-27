@@ -14,6 +14,8 @@ await signIn(page, admin);
 
 await step("the page: each setting, where it comes from", async () => {
   await page.goto(`${WEB}/admin/security`);
+  // Often the part's first page: filled and saved once it has hydrated.
+  await page.waitForLoadState("networkidle");
   await page.getByRole("heading", { name: "Security" }).waitFor();
   await page.getByLabel("Per signed-in user, a minute").waitFor();
   if (!(await page.getByTestId("security-source").innerText()).includes("defaults")) throw new Error(await page.getByTestId("security-source").innerText());

@@ -32,6 +32,7 @@ await step("Add to set says how often the song was played, quietly while there's
 
 await step("the team's admin sets a limit on the team's page", async () => {
   await page.goto(`${WEB}/teams/${team.id}`);
+  await page.waitForLoadState("networkidle"); // hydrated: the box ticked stays ticked
   const card = page.getByTestId("repeat-limit-card");
   await card.getByText("Songs played often").waitFor();
   await card.getByTestId("repeat-limit-on").check();
