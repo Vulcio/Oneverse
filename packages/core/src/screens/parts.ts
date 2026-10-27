@@ -277,6 +277,9 @@ export const SCREEN_BACKGROUND_THEMES: ScreenBuiltInPart<ScreenBackgroundTheme>[
   { id: "bokeh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "bokeh", colors: ["#0b0a1f", "#4f46e5", "#7c3aed", "#db2777"], motion: 0.4 }, reacts: { elements: 0.7, movement: 0.5, hue: 0.3 } }) },
   // Shaders (issue #297), drawn with WebGL.
   { id: "mesh-gradient", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0b0620", "#7c3aed", "#ec4899", "#0ea5e9"], shader: { builtIn: "mesh-gradient" } }, reacts: { movement: 0.5, hue: 0.3, brightness: 0.5 } }) },
+  // Ported from Paper Shaders (issue #324).
+  { id: "paper-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#120a2e", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], shader: { builtIn: "paper-mesh" } }, reacts: { movement: 0.5, hue: 0.2, brightness: 0.4 } }) },
+  { id: "neuro-noise", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#000000", "#ffffff", "#47a6ff"], shader: { builtIn: "neuro-noise", values: { sv_brightness: 0.03, sv_contrast: 0.55 } } }, reacts: { movement: 0.6, brightness: 0.4 } }) },
   { id: "glow-lines", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#02030a", "#22d3ee", "#a855f7", "#f43f5e"], shader: { builtIn: "glow-lines" } }, reacts: { movement: 0.6, elements: 0.7, brightness: 0.5 } }) },
   { id: "embers", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0a0503", "#f97316", "#facc15", "#ef4444"], shader: { builtIn: "embers" } }, reacts: { movement: 0.5, elements: 0.6, brightness: 0.6 } }) },
 ];

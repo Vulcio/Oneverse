@@ -2,6 +2,7 @@ import {
   composeScreenTheme,
   SCREEN_BACKGROUNDS,
   SCREEN_SHADERS,
+  SHADER_COLORS_MAX,
   SHADER_CONTROLS,
   readIsf,
   readIsfValues,
@@ -46,7 +47,7 @@ import {
   type ScreenWidgetDefault,
   type TeamSummary,
 } from "@oneverse/core";
-import { ChevronLeft, ChevronRight, Copy, Pause, Pencil, Play, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Minus, Pause, Pencil, Play, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
@@ -528,7 +529,8 @@ export function ScreenThemeEditor({
               ) : null}
               <Field label={t("screens.editor.colors")}>
                 <div className="flex flex-wrap items-center gap-2">
-                  {[0, 1, 2, 3].map((i) =>
+                  {/* Four colours, or up to eight for a shader (issue #324). */}
+                  {Array.from({ length: theme.background.kind === "shader" ? Math.max(4, theme.background.colors.length) : 4 }, (_, i) => i).map((i) =>
                     i === 0 || theme.background.kind !== "color" ? (
                       <ColorInput
                         key={i}
@@ -543,6 +545,36 @@ export function ScreenThemeEditor({
                       />
                     ) : null,
                   )}
+                  {theme.background.kind === "shader" && theme.background.colors.length < SHADER_COLORS_MAX ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      aria-label={t("screens.editor.addColor")}
+                      title={t("screens.editor.addColor")}
+                      onClick={() => {
+                        const colors = [...theme.background.colors];
+                        while (colors.length < 4) colors.push(colors.at(-1)!);
+                        set("background", { colors: [...colors, colors.at(-1)!] });
+                      }}
+                      data-testid="theme-bg-add-color"
+                    >
+                      <Plus />
+                    </Button>
+                  ) : null}
+                  {theme.background.kind === "shader" && theme.background.colors.length > 4 ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      aria-label={t("screens.editor.removeColor")}
+                      title={t("screens.editor.removeColor")}
+                      onClick={() => set("background", { colors: theme.background.colors.slice(0, -1) })}
+                      data-testid="theme-bg-remove-color"
+                    >
+                      <Minus />
+                    </Button>
+                  ) : null}
                 </div>
               </Field>
               {theme.background.kind !== "color" && theme.background.kind !== "gradient" ? (

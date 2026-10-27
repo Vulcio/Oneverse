@@ -1,5 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
+import { SHADER_COLORS_MAX } from "./shader-spec.js";
 
 /**
  * Screen themes (issue #194): how a big screen shows a set - its text,
@@ -371,8 +372,8 @@ function screenThemeSchema(strict: boolean) {
     .prefault({}),
   background: object({
       kind: z.enum(SCREEN_BACKGROUNDS).default("color"),
-      /** The first is the base; a gradient or a moving background uses the others too. */
-      colors: z.array(color).min(1).max(4).default(["#000000"]),
+      /** The first is the base; a gradient or a moving background uses the others too; up to 4, or 8 for a shader (issue #324). */
+      colors: z.array(color).min(1).max(SHADER_COLORS_MAX).default(["#000000"]),
       /** Moves with the song: a pulse as each slide comes, warmer and brighter in a chorus. */
       reactive: z.boolean().default(false),
       /** How much it moves, 0 (still) to 1: a shader's pace, 0.5 being its own. */

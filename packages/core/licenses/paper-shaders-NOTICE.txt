@@ -1,0 +1,12 @@
+The built-in screen shaders "Paper mesh gradient" and "Neuro noise"
+(src/screens/shaders.ts, issue #324) are ported from Paper Shaders,
+https://github.com/paper-design/shaders (@paper-design/shaders 0.0.82),
+licensed under the Apache License 2.0 (paper-shaders-LICENSE.txt), and
+changed: GLSL rewritten for Oneverse's ISF shaders, their inputs named by
+the screen shader spec. Its NOTICE:
+
+Paper Shaders
+Copyright 2026 Paper
+
+Powered by Paper Shaders:
+https://shaders.paper.design
