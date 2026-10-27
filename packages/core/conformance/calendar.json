@@ -673,6 +673,10 @@
               "email": true,
               "push": true
             },
+            "SONG_OFFERED": {
+              "email": true,
+              "push": true
+            },
             "SET_JOINED": {
               "email": true,
               "push": true
@@ -799,6 +803,10 @@
               "push": true
             },
             "SONGBOOK_SHARED": {
+              "email": true,
+              "push": true
+            },
+            "SONG_OFFERED": {
               "email": true,
               "push": true
             },
@@ -936,6 +944,10 @@
                 "push": true
               },
               "SONGBOOK_SHARED": {
+                "email": true,
+                "push": true
+              },
+              "SONG_OFFERED": {
                 "email": true,
                 "push": true
               },

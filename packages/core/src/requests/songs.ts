@@ -131,7 +131,7 @@ export const ListSongVersionsQuerySchema = z.strictObject({
   pageSize: optional(queryInt().pipe(z.number().min(1).max(200))).describe("Defaults to 50"),
   references: optional(queryBoolean()).describe("Each song's places in your numbered songbooks too (issue #213): songbookReferences"),
   in: optional(z.enum(["lyrics"])).describe("lyrics: q searches the songs' words instead (issue #221), each song with the line found (lyricsMatch); at least three letters"),
-  addableTo: optional(z.string().max(100)).describe("Only songs that can go in this set, which you can change (issue #328: its Add songs)"),
+  addableTo: optional(z.string().max(100)).describe("Only songs that can go in this set, which you can change (issue #328: its Add songs); in a team's set, your own personal songs too, shared with the team as they're added (issue #331)"),
 });
 
 export const SetStreamingLinkSchema = z.strictObject({

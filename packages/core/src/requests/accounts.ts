@@ -211,3 +211,6 @@ export const ConnectionRequestSchema = z.strictObject({
 });
 
 export const ShareSchema = z.strictObject({ canEdit: z.boolean() });
+
+/** Moving a personal song to a team (issue #331). */
+export const MoveSongToTeamSchema = z.strictObject({ teamId: z.string().min(1).max(40) });

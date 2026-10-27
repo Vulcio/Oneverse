@@ -587,10 +587,12 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         edit.version.artists.map((a) => a.source).filter(Boolean).join(", "),
         getLanguageDisplayName(edit.version.language, i18n.language),
         contributor ? t("songEditor.contributedBy", { name: contributor }) : null,
-        // Shared with them by its owner (#77).
-        edit.version.sharedBy
-          ? t(edit.version.sharedBy.canEdit ? "sharing.sharedByEdit" : "sharing.sharedByView", { name: edit.version.sharedBy.displayName })
-          : null,
+        // Shared with them by its owner (#77), or with one of their teams (#331).
+        edit.version.sharedBy?.team
+          ? t(edit.version.sharedBy.canEdit ? "sharing.sharedWithTeamEdit" : "sharing.sharedWithTeamView", { name: edit.version.sharedBy.displayName, team: edit.version.sharedBy.team.name })
+          : edit.version.sharedBy
+            ? t(edit.version.sharedBy.canEdit ? "sharing.sharedByEdit" : "sharing.sharedByView", { name: edit.version.sharedBy.displayName })
+            : null,
         // A translation or adaptation names the song it's linked to (issue #78).
         edit.version.parentVersion
           ? t(relationKind(edit.version.relationshipType) === "adaptation" ? "songEditor.adaptationOf" : "songEditor.translationOf", { title: edit.version.parentVersion.title })
@@ -693,7 +695,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                     {t("songNotes.all")}
                   </DropdownMenuItem>
                 ) : null}
-                {edit.version.sharedBy ? (
+                {/* A team's share is the team's, not theirs to leave. */}
+                {edit.version.sharedBy && !edit.version.sharedBy.team ? (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => void leaveShared()}>{t("sharing.leave")}</DropdownMenuItem>
@@ -867,7 +870,17 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         </DialogContent>
       </Dialog>
 
-      {edit ? <ShareDialog songVersionId={edit.version.id} open={sharing} onOpenChange={setSharing} /> : null}
+      {edit ? (
+        <ShareDialog
+          songVersionId={edit.version.id}
+          songTitle={edit.version.title}
+          personal={edit.version.ownerScope === "USER"}
+          ownerTeamId={edit.version.ownerTeamId}
+          open={sharing}
+          onOpenChange={setSharing}
+          onMoved={() => void router.invalidate()}
+        />
+      ) : null}
       {startedOver ? <StartedOver onDismiss={() => setStartedOver(false)} /> : null}
       {savedElsewhere ? <SavedElsewhere by={savedElsewhere.by} dirty={dirty} onLoad={loadTheirs} onDismiss={() => setSavedElsewhere(null)} /> : null}
 

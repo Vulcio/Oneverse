@@ -17,7 +17,7 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
 
 ![Une liste de chants](../../../assets/screenshots/fr/set.jpg)
 
-- **Ajouter des chants** en les cherchant comme le champ de recherche en haut de la page : par titre, sous-titre, version, artiste, numéro CCLI ou numéro dans un recueil (« HY 42 », « 42 »), et dans leurs paroles avec **Dans les paroles**. Sans rien saisir, il affiche les derniers chants modifiés. Une liste d'équipe ne peut contenir que les chants de l'équipe et les chants globaux approuvés, pour que chaque membre puisse les ouvrir.
+- **Ajouter des chants** en les cherchant comme le champ de recherche en haut de la page : par titre, sous-titre, version, artiste, numéro CCLI ou numéro dans un recueil (« HY 42 », « 42 »), et dans leurs paroles avec **Dans les paroles**. Sans rien saisir, il affiche les derniers chants modifiés. Une liste d'équipe contient les chants de l'équipe, les chants [partagés avec l'équipe](/fr/people/#avec-une-équipe) et les chants globaux approuvés, pour que chaque membre puisse les ouvrir. Vos propres chants personnels y sont aussi proposés : en ajouter un vous demande de le **Partager avec** l'équipe (il reste à vous) ou de le **Déplacer vers** l'équipe (il devient un chant de l'équipe), puis l'ajoute.
 - **Réordonnez** en faisant glisser la poignée d'un chant (ou mettez le focus sur la poignée et utilisez Espace et les flèches).
 - Pour chaque chant, choisissez :
   - sa **Traduction**, quand le chant a des [chants liés](/fr/library/#chants-liés) (le même chant dans une autre langue, par exemple) ;

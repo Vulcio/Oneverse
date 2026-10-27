@@ -99,8 +99,9 @@ export class SetlistAccessService {
 
   /**
    * Songs everyone who can open this set can also open: approved global
-   * songs, plus the owning team's songs for a team set, or for a personal
-   * set anything its owner can see. Mirrored in memory by `addableIn()`.
+   * songs, plus the owning team's songs and those shared with it (issue
+   * #331) for a team set, or for a personal set anything its owner can see.
+   * Mirrored in memory by `addableIn()`.
    */
   async addableWhere(set: SetRow): Promise<Prisma.SongVersionWhereInput> {
     const approvedGlobal: Prisma.SongVersionWhereInput = { ownerScope: "GLOBAL", publicationState: "APPROVED" };
@@ -109,6 +110,7 @@ export class SetlistAccessService {
         OR: [
           approvedGlobal,
           { ownerScope: "TEAM", ownerTeamId: set.ownerTeamId },
+          { ownerScope: { not: "GLOBAL" }, accessGrants: { some: { grantedToTeamId: set.ownerTeamId } } },
           // In a songbook shared with the team (issue #211).
           { ownerScope: { not: "GLOBAL" }, songbookEntries: { some: { songbook: { shares: { some: { teamId: set.ownerTeamId } } } } } },
         ],
@@ -118,18 +120,29 @@ export class SetlistAccessService {
     return this.policy.songsVisibleWhere({ id: set.ownerUserId!, isGlobalAdmin: false }, await this.policy.teamIds(set.ownerUserId!));
   }
 
+  /**
+   * Songs `user` may pick for the set: what's addable, and in a team's set
+   * their own personal songs too, shared with the team or moved to it as
+   * they're added (issue #331, AddSetlistItem's teamAccess).
+   */
+  async pickableWhere(user: AuthenticatedUser, set: SetRow): Promise<Prisma.SongVersionWhereInput> {
+    const addable = await this.addableWhere(set);
+    return set.ownerTeamId ? { OR: [addable, { ownerScope: "USER", ownerUserId: user.id }] } : addable;
+  }
+
   /** In-memory twin of `addableWhere()`, for songs already loaded. */
   async addableIn(set: SetRow): Promise<(song: SongRow) => boolean> {
     const ownerTeams = set.ownerTeamId ? new Set([set.ownerTeamId]) : await this.teamIdsOf(set.ownerUserId!);
     // Songs shared with a personal set's owner (issue #77) are theirs to put in it.
     const shared = set.ownerTeamId ? new Map() : await this.policy.sharedWith(set.ownerUserId!);
-    // A team set: the songs of the songbooks shared with the team (issue #211).
+    // A team set: the songs shared with the team (issue #331), and those of the songbooks shared with it (#211).
     const teamShared = set.ownerTeamId
-      ? new Set(
-          (await this.prisma.client.songbookEntry.findMany({ where: { songbook: { shares: { some: { teamId: set.ownerTeamId } } } }, select: { songVersionId: true } })).map(
+      ? new Set([
+          ...(await this.prisma.client.accessGrant.findMany({ where: { grantedToTeamId: set.ownerTeamId }, select: { songVersionId: true } })).map((grant) => grant.songVersionId),
+          ...(await this.prisma.client.songbookEntry.findMany({ where: { songbook: { shares: { some: { teamId: set.ownerTeamId } } } }, select: { songVersionId: true } })).map(
             (entry) => entry.songVersionId,
           ),
-        )
+        ])
       : new Set<string>();
     return (song) => {
       if (song.ownerScope === "GLOBAL") return song.publicationState === "APPROVED";

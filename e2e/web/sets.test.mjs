@@ -134,11 +134,18 @@ await step("create a team set with a team-only song", async () => {
   await page.waitForURL((url) => /^\/sets\/(?!new$)[^/]+$/.test(url.pathname));
   await page.waitForLoadState("networkidle");
   teamSetUrl = page.url();
-  await page.getByText("Team sets can only include").waitFor();
+  await page.getByText("A team's set holds the team's songs").waitFor();
+  // One's own personal song is offered, and adding it asks to share it with the team or move it (issue #331).
   await page.getByPlaceholder("Search by title, artist, number or CCLI…").fill(`Amazing Grace ${tag}`);
-  await page.getByText("No matching songs.").waitFor(); // personal song not offered
-  await page.getByPlaceholder("Search by title, artist, number or CCLI…").fill(`How Great ${tag}`);
   await page.getByTestId("set-song-results").getByRole("button", { name: "Add" }).first().click();
+  const asking = page.getByTestId("set-team-access");
+  await asking.getByRole("button", { name: `Share with Worship ${tag}` }).waitFor();
+  await asking.getByRole("button", { name: `Move to Worship ${tag}` }).waitFor();
+  await asking.getByRole("button", { name: "Cancel" }).click();
+  await asking.waitFor({ state: "detached" });
+  if ((await rows().count()) !== 0) throw new Error("added without sharing");
+  await page.getByPlaceholder("Search by title, artist, number or CCLI…").fill(`How Great ${tag}`);
+  await page.getByTestId("set-song-results").getByRole("listitem").filter({ hasText: `How Great ${tag}` }).getByRole("button", { name: "Add" }).click();
   await rows().filter({ hasText: `How Great ${tag}` }).waitFor();
 });
 

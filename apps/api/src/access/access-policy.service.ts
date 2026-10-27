@@ -28,7 +28,7 @@ export const OPEN_SUBMISSION_STATES = ["SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANG
  *
  * - Songs: anyone sees approved global songs (global admins, every global
  *   song), a user's own songs, their teams' songs, songs shared with them
- *   (AccessGrant, issue #77), and the songs of a songbook shared with them
+ *   (AccessGrant, issue #77) or with one of their teams (#331), and the songs of a songbook shared with them
  *   or their teams, while they're in it (issue #211). Reviewers can also
  *   open a song while it's submitted to the global catalogue.
  * - Songbooks: anyone sees global songbooks, plus their own, their teams',
@@ -41,7 +41,8 @@ export const OPEN_SUBMISSION_STATES = ["SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANG
  *   admins can change anything. A songbook shared to edit: its entries and
  *   details too (canEditSongbook), not deleting or sharing it. Someone a song is shared with to edit
  *   changes its chart, details and credits (canEditContent), not the rest
- *   (deleting, publishing, sharing it…).
+ *   (deleting, publishing, sharing it…); shared with a team to edit, the
+ *   team's admins do, as for the team's own songs (#331).
  */
 @Injectable()
 export class AccessPolicyService {
@@ -78,11 +79,25 @@ export class AccessPolicyService {
         viewer.isGlobalAdmin ? { ownerScope: "GLOBAL" } : { ownerScope: "GLOBAL", publicationState: "APPROVED" },
         { ownerScope: "USER", ownerUserId: viewer.id },
         { ownerScope: "TEAM", ownerTeamId: { in: teamIds } },
-        { ownerScope: { not: "GLOBAL" }, accessGrants: { some: { grantedToUserId: viewer.id } } },
+        { ownerScope: { not: "GLOBAL" }, accessGrants: { some: this.grantTo(viewer.id, teamIds) } },
         // In a songbook shared with them or their teams (issue #211).
         { ownerScope: { not: "GLOBAL" }, songbookEntries: { some: { songbook: { shares: { some: this.shareTo(viewer.id, teamIds) } } } } },
       ],
     };
+  }
+
+  /** An AccessGrant to the user or one of their teams (issue #331). */
+  private grantTo(userId: string, teamIds: string[]): Prisma.AccessGrantWhereInput {
+    return { OR: [{ grantedToUserId: userId }, ...(teamIds.length > 0 ? [{ grantedToTeamId: { in: teamIds } }] : [])] };
+  }
+
+  /**
+   * An AccessGrant that lets the user edit the song: one to them to edit, or
+   * one to a team they're an admin of, to edit (issue #331).
+   */
+  private async editGrantTo(userId: string): Promise<Prisma.AccessGrantWhereInput> {
+    const adminTeams = await this.prisma.client.teamMembership.findMany({ where: { userId, role: "ADMIN" }, select: { teamId: true } });
+    return { canEdit: true, ...this.grantTo(userId, adminTeams.map((membership) => membership.teamId)) };
   }
 
   /** A SongbookShare to the user or one of their teams. */
@@ -91,21 +106,26 @@ export class AccessPolicyService {
   }
 
   /**
-   * The songs shared with the user (issue #77): which, and whether to edit -
-   * with those of the songbooks shared with them or their teams (#211), to
-   * view.
+   * The songs shared with the user (issue #77) or their teams (#331): which,
+   * and whether to edit (a team's, its admins) - with those of the songbooks
+   * shared with them or their teams (#211), to view.
    */
   async sharedWith(userId: string): Promise<Map<string, { canEdit: boolean }>> {
-    const teamIds = await this.teamIds(userId);
+    const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true, role: true } });
+    const teamIds = memberships.map((membership) => membership.teamId);
+    const adminOf = new Set(memberships.filter((membership) => membership.role === "ADMIN").map((membership) => membership.teamId));
     const [grants, entries] = await Promise.all([
-      this.prisma.client.accessGrant.findMany({ where: { grantedToUserId: userId }, select: { songVersionId: true, canEdit: true } }),
+      this.prisma.client.accessGrant.findMany({ where: this.grantTo(userId, teamIds), select: { songVersionId: true, canEdit: true, grantedToTeamId: true } }),
       this.prisma.client.songbookEntry.findMany({
         where: { songbook: { shares: { some: this.shareTo(userId, teamIds) } }, songVersion: { ownerScope: { not: "GLOBAL" } } },
         select: { songVersionId: true },
       }),
     ]);
     const shared = new Map<string, { canEdit: boolean }>(entries.map((entry) => [entry.songVersionId, { canEdit: false }]));
-    for (const grant of grants) shared.set(grant.songVersionId, { canEdit: grant.canEdit });
+    for (const grant of grants) {
+      const canEdit = grant.canEdit && (!grant.grantedToTeamId || adminOf.has(grant.grantedToTeamId));
+      shared.set(grant.songVersionId, { canEdit: canEdit || (shared.get(grant.songVersionId)?.canEdit ?? false) });
+    }
     return shared;
   }
 
@@ -117,19 +137,20 @@ export class AccessPolicyService {
   async canSeeSong(viewer: Viewer, song: OwnedSong & { id?: string }): Promise<boolean> {
     if (song.ownerScope === "GLOBAL") return viewer.isGlobalAdmin || song.publicationState === "APPROVED";
     if (await this.ownsOrBelongsTo(viewer, song)) return true;
-    if (song.id && (await this.prisma.client.accessGrant.count({ where: { songVersionId: song.id, grantedToUserId: viewer.id } })) > 0) return true;
+    if (song.id && (await this.prisma.client.accessGrant.count({ where: { songVersionId: song.id, ...this.grantTo(viewer.id, await this.teamIds(viewer.id)) } })) > 0) return true;
     if (song.id && (await this.inSharedSongbook(viewer.id, song.id))) return true;
     return !!viewer.isReviewer && !!song.id && (await this.isAwaitingReview(song.id));
   }
 
   /**
    * Whether `viewer` may change the song's chart, details and credits: who
-   * can edit it (canEdit), or someone it's shared with to edit (#77).
+   * can edit it (canEdit), or someone it's shared with to edit (#77), or
+   * an admin of a team it's shared with to edit (#331).
    */
   async canEditContent(viewer: Viewer, song: OwnedRecord & { id: string }): Promise<boolean> {
     if (await this.canEdit(viewer, song)) return true;
     if (song.ownerScope === "GLOBAL") return false;
-    return (await this.prisma.client.accessGrant.count({ where: { songVersionId: song.id, grantedToUserId: viewer.id, canEdit: true } })) > 0;
+    return (await this.prisma.client.accessGrant.count({ where: { songVersionId: song.id, ...(await this.editGrantTo(viewer.id)) } })) > 0;
   }
 
   /** Whether the song has a submission to the global catalogue still open. */

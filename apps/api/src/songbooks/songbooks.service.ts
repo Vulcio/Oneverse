@@ -77,7 +77,7 @@ export class SongbooksService {
     const references = songbookReferences(query);
     if (references.length === 0) return [];
     // Only songs that can go in that set, for its Add songs (issue #328).
-    const songsWhere = async () => (addableTo ? this.sets.addableWhere(await this.sets.findEditable(user, addableTo)) : this.access.songsVisibleTo(user));
+    const songsWhere = async () => (addableTo ? this.sets.pickableWhere(user, await this.sets.findEditable(user, addableTo)) : this.access.songsVisibleTo(user));
     const [books, songs] = await Promise.all([this.access.songbooksVisibleTo(user), songsWhere()]);
     // The numbers asked for, and (from two digits) the ones containing their digits (issue #213).
     const exact = references.flatMap((reference) => [...new Set([reference.code, normalizeEntryCode(reference.code)])].map((code) => ({ entryCode: { equals: code, mode: "insensitive" as const } })));

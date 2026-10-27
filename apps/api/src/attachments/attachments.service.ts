@@ -57,7 +57,7 @@ export class AttachmentsService {
   /**
    * The files `viewer` sees (issue #72): their own, the song's (SONG),
    * their teams' (TEAM), and those for the people the song is shared with
-   * when it's shared with them (SHARED, #79); a global admin sees them all. Seeing the song
+   * when it's shared with them or their teams (SHARED, #79, #331); a global admin sees them all. Seeing the song
    * itself is checked separately.
    */
   static visibleWhere(viewer: Viewer, teamIds: string[]): Prisma.AttachmentWhereInput {
@@ -67,7 +67,7 @@ export class AttachmentsService {
         { visibility: "SONG" },
         { uploadedByUserId: viewer.id },
         { visibility: "TEAM", visibleToTeamId: { in: teamIds } },
-        { visibility: "SHARED", songVersion: { accessGrants: { some: { grantedToUserId: viewer.id } } } },
+        { visibility: "SHARED", songVersion: { accessGrants: { some: { OR: [{ grantedToUserId: viewer.id }, { grantedToTeamId: { in: teamIds } }] } } } },
       ],
     };
   }

@@ -1666,6 +1666,9 @@ model SongOwnershipRequest {
   // Where it was asked from, for context; kept if the set goes.
   setlistId         String?
   requestedByUserId String?
+  // Offered by the song's owner (issue #331), decided by the team's admins;
+  // otherwise asked for by a team admin and decided by the song's owner.
+  offeredByOwner    Boolean                @default(false)
   status            OwnershipRequestStatus @default(PENDING)
   createdAt         DateTime               @default(now())
   decidedAt         DateTime?
@@ -2203,7 +2206,9 @@ model AccessGrant {
   // Granted by
   grantedByUserId String
 
-  // Granted to (one of these)
+  // Granted to (one of these). A team's (issue #331) is everyone in it, as
+  // they join; canEdit there lets the team's admins edit it, as a team's own
+  // song.
   grantedToUserId String?
   grantedToTeamId String?
 
@@ -2218,6 +2223,7 @@ model AccessGrant {
   grantedToTeam Team?       @relation(fields: [grantedToTeamId], references: [id], onDelete: Cascade)
 
   @@unique([songVersionId, grantedToUserId])
+  @@unique([songVersionId, grantedToTeamId])
   @@index([songVersionId])
   @@index([grantedToTeamId])
   @@index([grantedToUserId])

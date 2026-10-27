@@ -6,7 +6,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 
-/** Teams asking for songs of yours shared into their sets. Hidden when there are none. */
+/** Teams asking for songs of yours shared into their sets, and songs offered to teams you run (issue #331). Hidden when there are none. */
 export function OwnershipRequestsCard({ requests }: { requests: SongOwnershipRequest[] }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -40,7 +40,9 @@ export function OwnershipRequestsCard({ requests }: { requests: SongOwnershipReq
             <li key={request.id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
               <div className="min-w-0">
                 <p className="text-sm font-medium">
-                  {request.setlistId ? (
+                  {request.kind === "offer" ? (
+                    t("ownership.offer", { name: request.requestedByName ?? "", team: request.team.name, song: request.song.title })
+                  ) : request.setlistId ? (
                     <Link to="/sets/$setlistId" params={{ setlistId: request.setlistId }} className="hover:underline">
                       {t("ownership.request", { team: request.team.name, song: request.song.title })}
                     </Link>
@@ -48,14 +50,16 @@ export function OwnershipRequestsCard({ requests }: { requests: SongOwnershipReq
                     t("ownership.request", { team: request.team.name, song: request.song.title })
                   )}
                 </p>
-                {request.requestedByName ? (
+                {request.kind === "offer" ? (
+                  <p className="text-xs text-muted-foreground">{t("ownership.offerHint", { team: request.team.name })}</p>
+                ) : request.requestedByName ? (
                   <p className="text-xs text-muted-foreground">{t("ownership.requestedBy", { name: request.requestedByName })}</p>
                 ) : null}
                 {!request.ownerIsTeamMember ? <p className="text-xs text-destructive">{t("ownership.notMemberWarning")}</p> : null}
               </div>
               <div className="flex gap-2">
                 <Button size="sm" disabled={busyId !== null} onClick={() => void decide(request.id, true)}>
-                  {t("ownership.accept")}
+                  {t(request.kind === "offer" ? "ownership.take" : "ownership.accept")}
                 </Button>
                 <Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void decide(request.id, false)}>
                   {t("ownership.decline")}

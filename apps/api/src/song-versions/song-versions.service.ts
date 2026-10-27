@@ -384,7 +384,8 @@ function toListItem({ contributors, versionTags, imageStorageKey, ...rest }: Lis
 }
 
 /** Someone who shared the song with the viewer (issue #77), and whether to edit. */
-type SharedBy = { id: string; displayName: string; canEdit: boolean };
+/** Who shared a song with the viewer; `team`, when it's shared with one of their teams (issue #331). */
+type SharedBy = { id: string; displayName: string; canEdit: boolean; team?: { id: string; name: string } };
 
 /** What the viewer may do with a song (see AccessPolicyService). */
 interface Rights {
@@ -671,7 +672,7 @@ export class SongVersionsService {
     const lyrics = query.in === "lyrics" ? (parseLyricsQuery(query.q ?? "") ?? []) : null;
     const q = lyrics ? undefined : query.q?.trim();
     // Those that can go in a set the user changes (issue #328: its Add songs), or all they can see.
-    const scope = query.addableTo ? await this.sets.addableWhere(await this.sets.findEditable(user, query.addableTo)) : await this.access.songsVisibleTo(user);
+    const scope = query.addableTo ? await this.sets.pickableWhere(user, await this.sets.findEditable(user, query.addableTo)) : await this.access.songsVisibleTo(user);
     return {
       AND: [
         scope,
@@ -806,14 +807,28 @@ export class SongVersionsService {
     return { canManage, canEdit: canManage || !!sharedBy?.canEdit, sharedBy };
   }
 
-  /** For songs shared with `user` among `ids`: who by, and whether to edit. */
+  /**
+   * For songs shared with `user` among `ids`: who by, and whether to edit -
+   * shared with one of their teams (issue #331), which team, and to edit
+   * only for its admins. A share to them comes first (they can leave it).
+   */
   private async sharedByOf(user: AuthenticatedUser, ids: string[]): Promise<Map<string, SharedBy>> {
     if (ids.length === 0) return new Map();
+    const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId: user.id }, select: { teamId: true, role: true } });
+    const adminOf = new Set(memberships.filter((membership) => membership.role === "ADMIN").map((membership) => membership.teamId));
     const grants = await this.prisma.client.accessGrant.findMany({
-      where: { grantedToUserId: user.id, songVersionId: { in: ids } },
-      select: { songVersionId: true, canEdit: true, grantedByUser: { select: { id: true, displayName: true } } },
+      where: { songVersionId: { in: ids }, OR: [{ grantedToUserId: user.id }, { grantedToTeamId: { in: memberships.map((membership) => membership.teamId) } }] },
+      select: { songVersionId: true, canEdit: true, grantedByUser: { select: { id: true, displayName: true } }, grantedToTeam: { select: { id: true, name: true } } },
+      orderBy: { grantedToUserId: { sort: "asc", nulls: "last" } },
     });
-    return new Map(grants.map((g) => [g.songVersionId, { ...g.grantedByUser, canEdit: g.canEdit }]));
+    const shared = new Map<string, SharedBy>();
+    for (const grant of grants) {
+      const canEdit = grant.canEdit && (!grant.grantedToTeam || adminOf.has(grant.grantedToTeam.id));
+      const first = shared.get(grant.songVersionId);
+      if (first) first.canEdit ||= canEdit;
+      else shared.set(grant.songVersionId, { ...grant.grantedByUser, canEdit, ...(grant.grantedToTeam && { team: grant.grantedToTeam }) });
+    }
+    return shared;
   }
 
   /** The tags `user` sees on a song (see SeesTag). */

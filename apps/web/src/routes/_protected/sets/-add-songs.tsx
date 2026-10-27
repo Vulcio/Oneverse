@@ -12,6 +12,7 @@ import { useSongSearch, type FoundSong } from "#/lib/song-search";
 import { LyricsSnippet } from "#/components/lyrics-snippet";
 import { TextItemDialog } from "#/components/set-text-item";
 import { PassageItemDialog } from "#/components/set-passage-item";
+import { useAddSongToSet } from "#/components/set-team-access";
 
 const LIMIT = 20;
 
@@ -45,8 +46,10 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
   const [inLyrics, setInLyrics] = useInLyrics();
   const { q, songs, entries, lyrics, searching } = useSongSearch(query, { inLyrics, addableTo: set.id, limit: LIMIT });
   const [recent, setRecent] = useState<FoundSong[] | null>(null);
-  const [addingId, setAddingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // One of your own songs in a team's set: shared with the team or moved to it as it's added (issue #331).
+  const { add, addingId, error: addError, dialog } = useAddSongToSet(set, onAdded);
+  const error = loadError ?? addError;
 
   // Nothing typed: the songs edited last.
   useEffect(() => {
@@ -57,7 +60,7 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
         !cancelled &&
         setRecent(page.items.map((song) => ({ id: song.id, title: song.title, versionName: song.versionName, artists: artistNames(song.artists), references: song.songbookReferences ?? [] }))),
       )
-      .catch((err: unknown) => !cancelled && setError(err instanceof Error ? err.message : String(err)));
+      .catch((err: unknown) => !cancelled && setLoadError(err instanceof Error ? err.message : String(err)));
     return () => {
       cancelled = true;
     };
@@ -73,18 +76,6 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
         ...songs.map(fromSong),
         ...lyrics.map((found) => ({ key: `lyrics-${found.id}`, id: found.id, label: label(found), detail: null, lyrics: found.match })),
       ].filter(once);
-
-  async function add(songVersionId: string) {
-    setAddingId(songVersionId);
-    setError(null);
-    try {
-      onAdded(await apiClient.addSetlistItem(set.id, { songVersionId }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setAddingId(null);
-    }
-  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -128,13 +119,14 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
                 {song.lyrics ? <LyricsSnippet match={song.lyrics} className="block truncate text-xs text-muted-foreground" /> : null}
                 {song.detail ? <p className="truncate text-xs text-muted-foreground">{song.detail}</p> : null}
               </div>
-              <Button size="sm" variant="outline" disabled={addingId !== null} onClick={() => void add(song.id)}>
+              <Button size="sm" variant="outline" disabled={addingId !== null} onClick={() => void add(song.id, song.label)}>
                 {t("sets.add")}
               </Button>
             </li>
           ))}
         </ul>
       )}
+      {dialog}
     </div>
   );
 }

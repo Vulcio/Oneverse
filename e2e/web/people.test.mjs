@@ -47,7 +47,7 @@ await step("Alice shares her song with Bob, to edit", async () => {
   await page.getByRole("button", { name: "Share", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByText("It isn't shared with anyone yet.").waitFor();
-  await dialog.getByLabel("Person").selectOption({ label: "Bob" });
+  await dialog.getByLabel("Share with").selectOption({ label: "Bob" });
   await dialog.getByLabel("Can view or edit").selectOption("edit");
   await dialog.getByRole("button", { name: "Share", exact: true }).click();
   const shares = dialog.getByTestId("song-shares");

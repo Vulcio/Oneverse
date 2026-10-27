@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
 import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -15,6 +15,7 @@ import type {
 } from "./dto/setlist.dto.js";
 import { NotesService } from "../notes/notes.service.js";
 import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./setlist-access.service.js";
+import { SongOwnershipService } from "./song-ownership.service.js";
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
 import { songSearchWhere } from "../song-versions/song-search.js";
@@ -64,8 +65,10 @@ const ITEM_INCLUDE = {
  * Who can see and change what is decided by SetlistAccessService.
  *
  * What can be added to a set is limited to songs its whole audience can
- * open - for a team set, approved global songs and that team's own songs;
- * for a personal set, anything its owner can see. Moving a personal set to
+ * open - for a team set, approved global songs, that team's own songs and
+ * those shared with it; for a personal set, anything its owner can see.
+ * Someone adding one of their own personal songs to a team's set shares it
+ * with the team or moves it to the team as it's added (issue #331). Moving a personal set to
  * a team keeps its owner's other songs in it, shared read-only (see
  * `moveTo()`), until the owner hands them to the team or removes them.
  */
@@ -79,6 +82,7 @@ export class SetlistsService {
     private readonly notes: NotesService,
     private readonly bibles: BiblesService,
     private readonly youversion: YouVersionService,
+    private readonly ownership: SongOwnershipService,
   ) {}
 
   async list(user: AuthenticatedUser) {
@@ -338,7 +342,7 @@ export class SetlistsService {
   async candidates(user: AuthenticatedUser, setlistId: string, query: string | undefined) {
     const set = await this.sets.findEditable(user, setlistId);
     const search = query?.trim();
-    const addable = await this.sets.addableWhere(set);
+    const addable = await this.sets.pickableWhere(user, set);
     const songs = await this.prisma.client.songVersion.findMany({
       where: {
         AND: [addable, ...(search ? [await songSearchWhere(this.prisma, search, addable)] : [])],
@@ -352,7 +356,8 @@ export class SetlistsService {
 
   async addItem(user: AuthenticatedUser, setlistId: string, dto: AddSetlistItemDto) {
     const set = await this.sets.findEditable(user, setlistId);
-    if (dto.songVersionId) await this.assertAddable(set, dto.songVersionId);
+    if (dto.songVersionId && !(await this.isAddable(set, dto.songVersionId))) await this.giveToTeam(user, set, dto.songVersionId, dto.teamAccess);
+    else if (dto.teamAccess) throw new BadRequestException("teamAccess is only for one of your personal songs in a team's set");
     const passage = dto.passage ? await this.passageRef(dto.passage) : null;
     if (dto.screenTemplate) {
       if (!passage) throw new BadRequestException("Only a passage item has a screen template");
@@ -689,15 +694,38 @@ export class SetlistsService {
     return { bibleId: passage.bibleId!, reference: found.reference };
   }
 
+  private async isAddable(set: SetRow, songVersionId: string): Promise<boolean> {
+    return (await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.sets.addableWhere(set)] } })) > 0;
+  }
+
   private async assertAddable(set: SetRow, songVersionId: string): Promise<void> {
-    const count = await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, await this.sets.addableWhere(set)] } });
-    if (count === 0) {
-      throw new BadRequestException(
-        set.ownerTeamId
-          ? "A team set can only include approved global songs and the team's own songs"
-          : "Song not found or not visible to the set's owner",
-      );
+    if (!(await this.isAddable(set, songVersionId))) throw this.notAddable(set);
+  }
+
+  private notAddable(set: SetRow): BadRequestException {
+    return new BadRequestException(
+      set.ownerTeamId
+        ? "A team set can only include approved global songs, the team's own songs and songs shared with the team"
+        : "Song not found or not visible to the set's owner",
+    );
+  }
+
+  /**
+   * One of the user's own personal songs going into a team's set (issue
+   * #331): shared with the team to view, or moved to it, as `teamAccess`
+   * says; refused with SONG_NOT_SHARED when it says nothing, so the app can
+   * ask. Anything else that can't go in the set is refused.
+   */
+  private async giveToTeam(user: AuthenticatedUser, set: SetRow, songVersionId: string, teamAccess: "share" | "move" | undefined): Promise<void> {
+    const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { ownerScope: true, ownerUserId: true } });
+    if (!set.ownerTeamId || song?.ownerScope !== "USER" || song.ownerUserId !== user.id) throw this.notAddable(set);
+    if (!teamAccess) {
+      const team = await this.prisma.client.team.findUnique({ where: { id: set.ownerTeamId }, select: { id: true, name: true } });
+      throw new ConflictException({ code: "SONG_NOT_SHARED", message: `Share this song with ${team?.name ?? "the team"} to add it to the team's set`, team });
     }
+    if (teamAccess === "share") await this.ownership.shareWithTeam(user, songVersionId, set.ownerTeamId, false);
+    // Whoever changes a team's set is one of its admins (or a global admin), so it moves at once.
+    else await this.ownership.move(user, songVersionId, set.ownerTeamId);
   }
 }
 

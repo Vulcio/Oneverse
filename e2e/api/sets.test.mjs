@@ -70,18 +70,19 @@ r = await call(admin, "POST", "/setlists", { name: "Team Sunday", eventDate: iso
 const teamSet = r.body;
 check("team admin creates a team set", r.status === 201 && teamSet.teamId === team.id && teamSet.teamName === team.name);
 r = await call(admin, "POST", `/setlists/${teamSet.id}/items`, { songVersionId: personalSong.id });
-check("team set refuses the admin's personal song", r.status === 400, r.body?.message);
+check("team set asks before taking the admin's personal song (issue #331)", r.status === 409 && r.body?.code === "SONG_NOT_SHARED", r.body?.message);
 await call(admin, "POST", `/setlists/${teamSet.id}/items`, { songVersionId: teamSong.id });
 r = await call(admin, "POST", `/setlists/${teamSet.id}/items`, { songVersionId: globalSong.id, transposeSteps: 1 });
 check("team set takes team and approved global songs", r.status === 201 && r.body.items.length === 2);
 
 r = await call(admin, "GET", `/setlists/${teamSet.id}/song-candidates?q=${encodeURIComponent(`Song ${stamp}`)}`);
 const candidateIds = r.body.map((s) => s.id);
-check("team set candidates exclude personal songs", !candidateIds.includes(personalSong.id) && candidateIds.includes(teamSong.id) && candidateIds.includes(globalSong.id), r.body.map((s) => s.title).join(" | "));
+// The admin's own personal songs too, shared with the team as they're added (issue #331).
+check("team set candidates: the team's, approved global and the admin's own songs", candidateIds.includes(personalSong.id) && candidateIds.includes(teamSong.id) && candidateIds.includes(globalSong.id), r.body.map((s) => s.title).join(" | "));
 // Add songs searches as the library does, for the songs that can go in the set (issue #328).
 r = await call(admin, "GET", `/song-versions?q=${encodeURIComponent(`Song ${stamp}`)}&addableTo=${teamSet.id}`);
 const addableIds = r.body.items?.map((s) => s.id) ?? [];
-check("the library's search for a team set excludes personal songs", r.status === 200 && !addableIds.includes(personalSong.id) && addableIds.includes(teamSong.id) && addableIds.includes(globalSong.id), JSON.stringify(r.body).slice(0, 200));
+check("the library's search for a team set: the same", r.status === 200 && addableIds.includes(personalSong.id) && addableIds.includes(teamSong.id) && addableIds.includes(globalSong.id), JSON.stringify(r.body).slice(0, 200));
 r = await call(member, "GET", `/song-versions?q=x&addableTo=${teamSet.id}`);
 check("only the set's editors search for it", r.status === 403, String(r.status));
 

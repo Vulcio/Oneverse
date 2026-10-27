@@ -43,6 +43,8 @@ export const NOTIFICATION_KINDS = [
   "SONG_SHARED",
   // One of one's people shares a songbook with one.
   "SONGBOOK_SHARED",
+  // Someone offers their song to a team one runs (issue #331, to its admins): accept or decline.
+  "SONG_OFFERED",
   // Someone joins a set of one's through its link (to its owner, or its team's admins).
   "SET_JOINED",
   // Someone joins a team one runs through its invite link (to its admins).

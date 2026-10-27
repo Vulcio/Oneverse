@@ -90,6 +90,9 @@ export const AddSetlistItemSchema = z
     transposeSteps: optional(transposeSteps).describe("Semitones relative to the song's own key"),
     afterItemId: optional(z.string().min(1).max(40)).describe("Played right after this item of the set (issue #199); at the end when left out"),
     screenTemplate: optional(SetlistItemScreenTemplateSchema).describe("A passage's screen template (issue #310); the screen's own when left out"),
+    teamAccess: optional(z.enum(["share", "move"])).describe(
+      "One of your own personal songs in a team's set (issue #331): share it with the set's team to view, or move it to the team, then add it. Without it, such a song is refused with code SONG_NOT_SHARED",
+    ),
   })
   .refine((item) => [item.songVersionId, item.text, item.passage].filter((one) => one !== undefined).length === 1, "Give one of songVersionId, text or passage");
 

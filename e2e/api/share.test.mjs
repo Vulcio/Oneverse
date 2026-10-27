@@ -126,7 +126,8 @@ check("...including the chart", r.status === 200 && r.body.song.sections.length 
 r = await call(guest, "GET", `/setlists/${set.id}`);
 check("guests keep their access after the move", r.status === 200 && r.body.isGuest && r.body.items.every((i) => i.song !== null));
 r = await call(owner, "POST", `/setlists/${set.id}/items`, { songVersionId: (await song(owner, `New Personal ${stamp}`)).id });
-check("a team set still refuses new personal songs", r.status === 400, String(r.status));
+// Not without sharing it with the team, or moving it there (issue #331, see song-team-shares).
+check("a team set still asks before taking a new personal song", r.status === 409 && r.body.code === "SONG_NOT_SHARED", String(r.status));
 
 // --- ownership requests
 const item1 = byTitle(moved, personal.title);
