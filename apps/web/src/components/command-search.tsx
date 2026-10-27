@@ -1,42 +1,21 @@
-import { foldForSearch, formatSongbookReference, keptSongReferences, onlineOrKept, parseLyricsQuery, partialEntryDigits, searchKeptEntries, searchKeptLyrics, searchKeptSongs, SONGBOOK_HIT_LIMITS, songbookReferences, type LyricsMatch, type SongbookEntryHit } from "@oneverse/core";
+import { foldSearchWords, formatSongbookReference, partialEntryDigits, SONGBOOK_HIT_LIMITS, type LyricsMatch, type SongbookEntryHit } from "@oneverse/core";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useNavigate, useRouteContext, useRouter, useRouterState } from "@tanstack/react-router";
 import { BookOpen, Hash, ListEnd, ListMusic, ListPlus, Music, Quote, Search, Users, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
-import { artistNames } from "#/lib/artists";
 import { useInLyrics } from "#/lib/lyrics-search";
+import { useSongSearch } from "#/lib/song-search";
 import { LyricsSnippet } from "#/components/lyrics-snippet";
 import { useMode } from "#/lib/mode";
-import { deviceStorage } from "#/lib/offline-data";
 import { formatSetDate, setlistTitle } from "#/lib/setlists";
 import { cn } from "@oneverse/ui/lib/utils";
 
 const SONG_LIMIT = 8;
-
-/** A song found: by the library's search online, among the kept sets offline. */
-interface FoundSong {
-  id: string;
-  title: string;
-  versionName: string | null;
-  artists: string | null;
-  /** Where it is in the player's songbooks, abbreviations first (issue #213). */
-  references: string[];
-}
-/** A song found by its words (issue #221), with the line. */
-interface FoundLyrics {
-  id: string;
-  title: string;
-  versionName: string | null;
-  match: LyricsMatch;
-}
 const OTHER_LIMIT = 5;
 // Songbook references beside a song: the first two, then "+2".
 const SHOWN_REFERENCES = 2;
-// Show more (issue #213): more of each group of numbers.
-const MORE_LIMITS = { exact: 50, prefix: 100, contains: 100 };
-const DEBOUNCE_MS = 200;
 
 type Kind = "entries" | "entriesPrefix" | "entriesContains" | "songs" | "lyrics" | "sets" | "songbooks" | "teams";
 interface Result {
@@ -116,94 +95,13 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [songs, setSongs] = useState<FoundSong[]>([]);
-  const [entries, setEntries] = useState<SongbookEntryHit[]>([]);
   const [moreEntries, setMoreEntries] = useState(false);
-  const [searching, setSearching] = useState(false);
   const [active, setActive] = useState(0);
   const list = useRef<HTMLDivElement>(null);
-  const q = foldForSearch(query.trim());
   // In the songs' words too (issue #221): off unless turned on, remembered on the device.
   const [inLyrics, setInLyrics] = useInLyrics();
-  const [lyrics, setLyrics] = useState<FoundLyrics[]>([]);
-  const lyricsQuery = inLyrics ? parseLyricsQuery(query) : null;
-  const lyricsKey = lyricsQuery ? JSON.stringify(lyricsQuery) : "";
-
-  useEffect(() => {
-    if (!lyricsKey) {
-      setLyrics([]);
-      return;
-    }
-    let current = true;
-    const timer = setTimeout(() => {
-      onlineOrKept<FoundLyrics[]>(
-        async () =>
-          (await apiClient.listSongVersions({ q: query.trim(), in: "lyrics", pageSize: SONG_LIMIT, sort: "title" })).items.flatMap((song) =>
-            song.lyricsMatch ? [{ id: song.id, title: song.title, versionName: song.versionName, match: song.lyricsMatch }] : [],
-          ),
-        // Offline: the kept songs' words, matched the same way.
-        async () =>
-          (await searchKeptLyrics(deviceStorage(), query, SONG_LIMIT)).map((song) => ({ id: song.songVersionId, title: song.title, versionName: song.versionName, match: song.lyricsMatch })),
-      )
-        .then((found) => current && setLyrics(found))
-        .catch(() => current && setLyrics([]));
-    }, DEBOUNCE_MS);
-    return () => {
-      current = false;
-      clearTimeout(timer);
-    };
-  }, [lyricsKey]);
-
-  // Songs from the library's own search (title, subtitle, version, artist, CCLI), a moment after typing stops.
-  useEffect(() => {
-    if (!q) {
-      setSongs([]);
-      setEntries([]);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
-    let current = true;
-    const timer = setTimeout(() => {
-      onlineOrKept<FoundSong[]>(
-        async () =>
-          (await apiClient.listSongVersions({ q: query.trim(), pageSize: SONG_LIMIT, sort: "title", references: true })).items.map((song) => ({
-            id: song.id,
-            title: song.title,
-            versionName: song.versionName,
-            artists: artistNames(song.artists),
-            references: song.songbookReferences ?? [],
-          })),
-        // Offline: the songs kept on the device, on their own or in kept sets (issues #50, #52).
-        async () =>
-          Promise.all(
-            (await searchKeptSongs(deviceStorage(), query, SONG_LIMIT)).map(async ({ songVersionId, title, versionName, artists }) => ({
-              id: songVersionId,
-              title,
-              versionName,
-              artists,
-              references: await keptSongReferences(deviceStorage(), songVersionId),
-            })),
-          ),
-      )
-        .then((found) => current && setSongs(found))
-        .catch(() => current && setSongs([]))
-        .finally(() => current && setSearching(false));
-      // "HY 42", "42": songbook entries by reference (issue #48); offline, in kept songbooks.
-      if (songbookReferences(query).length === 0) setEntries([]);
-      else
-        onlineOrKept(
-          () => apiClient.searchSongbookEntries(query.trim(), moreEntries),
-          () => searchKeptEntries(deviceStorage(), query, moreEntries ? MORE_LIMITS : SONGBOOK_HIT_LIMITS),
-        )
-          .then((hits) => current && setEntries(hits))
-          .catch(() => current && setEntries([]));
-    }, DEBOUNCE_MS);
-    return () => {
-      current = false;
-      clearTimeout(timer);
-    };
-  }, [q, query, moreEntries]);
+  // The songs: the same search as a set's Add songs (issue #328).
+  const { q, lyricsQuery, songs, entries, lyrics, searching } = useSongSearch(query, { inLyrics, moreEntries, limit: SONG_LIMIT });
   // Another search: the first of each group of numbers again.
   useEffect(() => setMoreEntries(false), [q]);
 
@@ -221,7 +119,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
       const from = /^\/library\/[^/]+\/live\/?$/.test(location.pathname) ? (location.search as { back?: string }).back : location.href;
       return navigate({ to: "/library/$songVersionId/live", params: { songVersionId: id }, search: { ...(from && { back: from }), ...at } });
     };
-    const matches = (...texts: (string | null | undefined)[]) => texts.some((text) => text && foldForSearch(text).includes(q));
+    const matches = (...texts: (string | null | undefined)[]) => texts.some((text) => text && foldSearchWords(text).includes(q));
     // Added to the set: the set's pages and Live's "Next" reload; the song playing stays.
     const addToSet = (songVersionId: string) =>
       liveSet

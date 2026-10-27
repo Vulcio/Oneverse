@@ -11,11 +11,13 @@ import { SongVersionsController } from "./song-versions.controller.js";
 import { SongRepeatsService } from "./song-repeats.service.js";
 import { SongHistoryService } from "./song-history.service.js";
 import { SongVersionsService } from "./song-versions.service.js";
+import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 
 @Module({
   imports: [MusicBrainzModule, StorageModule, ArtworkModule, MetadataModule, ArtistsModule, LookupsModule],
   controllers: [SongVersionsController, ChordShapesController, ProgressionsController],
-  providers: [SongVersionsService, SongHistoryService, SongRepeatsService],
-  exports: [SongVersionsService, SongHistoryService, SongRepeatsService],
+  // SetlistAccessService: the songs that can go in a set, for its Add songs (issue #328).
+  providers: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService],
+  exports: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService],
 })
 export class SongVersionsModule {}

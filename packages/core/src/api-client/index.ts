@@ -1708,7 +1708,7 @@ export interface SongVersionSummary {
 
 
 export interface ListSongVersionsQuery {
-  /** Matches title, subtitle, version name or artist (ignoring case), or a CCLI number exactly. */
+  /** Matches title, subtitle, version name or artist (ignoring case, accents and punctuation), or a CCLI number exactly. */
   q?: string;
   /** "lyrics": q searches the songs' words instead (issue #221), each song with the line found. */
   in?: "lyrics";
@@ -1728,6 +1728,8 @@ export interface ListSongVersionsQuery {
   pageSize?: number;
   /** Each song's places in the viewer's numbered songbooks too (issue #213). */
   references?: boolean;
+  /** Only songs that can go in this set, which the viewer can change (issue #328: its Add songs). */
+  addableTo?: string;
 }
 
 /** What a smart list (issue #58) filters the library by: the library's own search. */
@@ -2801,7 +2803,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getOfflineSongs: (ids: string[]) => request<SongOfflineCopy[]>("/offline/songs", { method: "POST", body: JSON.stringify({ ids }) }),
     getSongbookOffline: (songbookId: string) => request<SongbookOfflineCopy>(`/offline/songbooks/${songbookId}`),
     /** Entries by number (issue #213): exactly it, then starting with it, then containing it; `more` for Show more. */
-    searchSongbookEntries: (q: string, more = false) => request<SongbookEntryHit[]>(`/songbook-entries?q=${encodeURIComponent(q)}${more ? "&more=true" : ""}`),
+    /** Songbook entries by reference ("HY 42", "42"); `addableTo` a set's id, for the songs that can go in it (issue #328). */
+    searchSongbookEntries: (q: string, more = false, addableTo?: string) =>
+      request<SongbookEntryHit[]>(`/songbook-entries?q=${encodeURIComponent(q)}${more ? "&more=true" : ""}${addableTo ? `&addableTo=${encodeURIComponent(addableTo)}` : ""}`),
     /** The notes one sees on a song (issue #256), opened in a set or not, and where a new one may go. */
     getSongNotes: (songVersionId: string, context: { setlistId?: string; songbookId?: string } = {}) => {
       const query = new URLSearchParams(Object.entries(context).filter((entry): entry is [string, string] => !!entry[1]));

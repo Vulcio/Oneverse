@@ -78,6 +78,12 @@ check("team set takes team and approved global songs", r.status === 201 && r.bod
 r = await call(admin, "GET", `/setlists/${teamSet.id}/song-candidates?q=${encodeURIComponent(`Song ${stamp}`)}`);
 const candidateIds = r.body.map((s) => s.id);
 check("team set candidates exclude personal songs", !candidateIds.includes(personalSong.id) && candidateIds.includes(teamSong.id) && candidateIds.includes(globalSong.id), r.body.map((s) => s.title).join(" | "));
+// Add songs searches as the library does, for the songs that can go in the set (issue #328).
+r = await call(admin, "GET", `/song-versions?q=${encodeURIComponent(`Song ${stamp}`)}&addableTo=${teamSet.id}`);
+const addableIds = r.body.items?.map((s) => s.id) ?? [];
+check("the library's search for a team set excludes personal songs", r.status === 200 && !addableIds.includes(personalSong.id) && addableIds.includes(teamSong.id) && addableIds.includes(globalSong.id), JSON.stringify(r.body).slice(0, 200));
+r = await call(member, "GET", `/song-versions?q=x&addableTo=${teamSet.id}`);
+check("only the set's editors search for it", r.status === 403, String(r.status));
 
 r = await call(member, "GET", `/setlists/${teamSet.id}`);
 check("team member can view the team set, read-only", r.status === 200 && r.body.canEdit === false && r.body.items.every((i) => i.song !== null && i.versions.length === 0));

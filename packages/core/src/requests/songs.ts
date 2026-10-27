@@ -120,7 +120,7 @@ export type SongSort = (typeof SONG_SORTS)[number];
 
 /** GET /song-versions: one page of the songs you can see, optionally searched and filtered. */
 export const ListSongVersionsQuerySchema = z.strictObject({
-  q: optional(queryText(200)).describe("Matches title, subtitle, version name, artist, or an exact CCLI number (ignoring case)"),
+  q: optional(queryText(200)).describe("Matches title, subtitle, version name, artist (ignoring case, accents and punctuation), or an exact CCLI number"),
   language: optional(z.string().max(10)).describe("ISO 639-1 language code"),
   tagId: optional(z.string()).describe("Only songs with this tag"),
   favorites: optional(queryBoolean()).describe("Only your favorites (issue #81)"),
@@ -131,6 +131,7 @@ export const ListSongVersionsQuerySchema = z.strictObject({
   pageSize: optional(queryInt().pipe(z.number().min(1).max(200))).describe("Defaults to 50"),
   references: optional(queryBoolean()).describe("Each song's places in your numbered songbooks too (issue #213): songbookReferences"),
   in: optional(z.enum(["lyrics"])).describe("lyrics: q searches the songs' words instead (issue #221), each song with the line found (lyricsMatch); at least three letters"),
+  addableTo: optional(z.string().max(100)).describe("Only songs that can go in this set, which you can change (issue #328: its Add songs)"),
 });
 
 export const SetStreamingLinkSchema = z.strictObject({

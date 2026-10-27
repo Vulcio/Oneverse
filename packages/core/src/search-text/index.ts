@@ -14,3 +14,22 @@ export function foldForSearch(text: string): string {
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
 }
+
+/** Apostrophes, left out of a search's words: "I've" is "ive", "l'Éternel" "leternel". */
+const APOSTROPHES = /['’‘ʼ`´]/gu;
+/**
+ * Punctuation, hyphens and spaces between a search's words, each run one
+ * space. The database's search_fold() uses the same characters.
+ */
+const BETWEEN_WORDS = /[\s!"#$%&()*+,./:;<=>?@[\\\]^_{|}~«»“”„‟‹›¡¿…‐‑‒–—―·•-]+/gu;
+
+/**
+ * Text as the library's search compares it (issue #328): as foldForSearch(),
+ * apostrophes left out and punctuation a space, so "Éternel ! Fais-moi"
+ * is "eternel fais moi" and "Saint, saint" "saint saint". The songs'
+ * searchText is folded so by the database (search_fold()), and so is the
+ * query; offline search folds both with this.
+ */
+export function foldSearchWords(text: string): string {
+  return foldForSearch(text).replace(APOSTROPHES, "").replace(BETWEEN_WORDS, " ").trim();
+}

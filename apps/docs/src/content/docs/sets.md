@@ -17,7 +17,7 @@ Choose **Sets** > **New set**:
 
 ![A set](../../assets/screenshots/en/set.jpg)
 
-- **Add songs** by searching for them by title. A team set can only include the team's own songs and approved global songs, so everyone in the team can open them.
+- **Add songs** by searching for them as the search box at the top does: by title, subtitle, version, artist, CCLI number or songbook number ("HY 42", "42"), and in their words with **In lyrics**. With nothing typed, it lists the songs edited last. A team set can only include the team's own songs and approved global songs, so everyone in the team can open them.
 - **Reorder** by dragging a song's handle (or focus the handle and use Space and the arrow keys).
 - For each song, choose:
   - its **Translation**, when the song has [linked songs](/library/#linked-songs) (the same song in another language, say);

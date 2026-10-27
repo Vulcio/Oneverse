@@ -16,7 +16,7 @@ import type {
 import { lyricsLines, matchLyrics, parseLyricsQuery, type LyricsMatch } from "../search-text/lyrics.js";
 import type { AppModeValue, CapoDisplayModeValue, ChordDiagramsValue, ChordNotationValue, LiveViewValue } from "../constants/index.js";
 import type { SongDocumentV2 } from "../schemas/song-document-v2.js";
-import { foldForSearch } from "../search-text/index.js";
+import { foldSearchWords } from "../search-text/index.js";
 import { formatSongbookReference, limitSongbookHits, rankSongbookHits, SONGBOOK_HIT_LIMITS, songbookReferences, type SongbookHitMatch } from "../songbook-references/index.js";
 
 /**
@@ -140,9 +140,9 @@ export async function allFoundSongs(storage: OfflineStorage): Promise<FoundSong[
 
 /** The songs readable offline whose title, version or artists match `query` (case and accents ignored). */
 export async function searchKeptSongs(storage: OfflineStorage, query: string, limit = 8): Promise<FoundSong[]> {
-  const q = foldForSearch(query.trim());
+  const q = foldSearchWords(query);
   return (await allFoundSongs(storage))
-    .filter((song) => !q || [song.title, song.versionName, song.artists].some((text) => text && foldForSearch(text).includes(q)))
+    .filter((song) => !q || [song.title, song.versionName, song.artists].some((text) => text && foldSearchWords(text).includes(q)))
     .sort((a, b) => a.title.localeCompare(b.title))
     .slice(0, limit);
 }

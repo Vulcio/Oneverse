@@ -17,6 +17,7 @@ import { NotesService } from "../notes/notes.service.js";
 import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./setlist-access.service.js";
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
 import { setOrder } from "../common/utils/set-order.js";
+import { songSearchWhere } from "../song-versions/song-search.js";
 import { BiblesService, type PassageUse } from "../scriptures/bibles.service.js";
 import { YouVersionService } from "../scriptures/youversion.service.js";
 import { templateLayout } from "../screens/screen-templates.js";
@@ -303,13 +304,17 @@ export class SetlistsService {
     await this.prisma.client.setlist.delete({ where: { id: setlistId } });
   }
 
-  /** Songs that can be added to this set, optionally filtered by title. */
+  /**
+   * Songs that can be added to this set, optionally searched as the library
+   * is (songSearchWhere(), issue #328). The web app's Add songs uses the
+   * library's own search with `addableTo` instead, numbers and lyrics too.
+   */
   async candidates(user: AuthenticatedUser, setlistId: string, query: string | undefined) {
     const set = await this.sets.findEditable(user, setlistId);
     const search = query?.trim();
     const songs = await this.prisma.client.songVersion.findMany({
       where: {
-        AND: [await this.sets.addableWhere(set), ...(search ? [{ title: { contains: search, mode: "insensitive" as const } }] : [])],
+        AND: [await this.sets.addableWhere(set), ...(search ? [await songSearchWhere(this.prisma, search)] : [])],
       },
       select: SONG_SELECT,
       orderBy: search ? { title: "asc" } : { updatedAt: "desc" },

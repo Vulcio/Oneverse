@@ -22,6 +22,7 @@ import type { AddSongbookEntryDto } from "./dto/add-songbook-entry.dto.js";
 import type { CreateSongbookDto } from "./dto/create-songbook.dto.js";
 import type { ImportSongbookFromCatalogDto } from "./dto/import-songbook-from-catalog.dto.js";
 import type { UpdateSongbookDto } from "./dto/update-songbook.dto.js";
+import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 
 const DETAIL_INCLUDE = {
   entries: {
@@ -61,6 +62,7 @@ export class SongbooksService {
     private readonly songVersionsService: SongVersionsService,
     private readonly access: AccessPolicyService,
     private readonly storage: StorageService,
+    private readonly sets: SetlistAccessService,
   ) {}
 
   /**
@@ -68,12 +70,15 @@ export class SongbooksService {
    * "42" (issue #48) - in songbooks the user can see, whose songs they can
    * see too: exactly that number, then numbers starting with it, then
    * containing it (issue #213), ranked by @oneverse/core's
-   * rankSongbookHits() as offline search ranks them; `more` for Show more.
+   * rankSongbookHits() as offline search ranks them; `more` for Show more,
+   * `addableTo` a set's id for the songs that can go in it.
    */
-  async searchEntries(user: AuthenticatedUser, query: string, more = false) {
+  async searchEntries(user: AuthenticatedUser, query: string, more = false, addableTo?: string) {
     const references = songbookReferences(query);
     if (references.length === 0) return [];
-    const [books, songs] = await Promise.all([this.access.songbooksVisibleTo(user), this.access.songsVisibleTo(user)]);
+    // Only songs that can go in that set, for its Add songs (issue #328).
+    const songsWhere = async () => (addableTo ? this.sets.addableWhere(await this.sets.findEditable(user, addableTo)) : this.access.songsVisibleTo(user));
+    const [books, songs] = await Promise.all([this.access.songbooksVisibleTo(user), songsWhere()]);
     // The numbers asked for, and (from two digits) the ones containing their digits (issue #213).
     const exact = references.flatMap((reference) => [...new Set([reference.code, normalizeEntryCode(reference.code)])].map((code) => ({ entryCode: { equals: code, mode: "insensitive" as const } })));
     const partial = partialEntryDigits(query).map((digits) => ({ entryCode: { contains: digits } }));

@@ -54,6 +54,7 @@
 "api/screen-parts": 1,
 "api/screens": 4,
 "api/search-accents": 1,
+"api/search-punctuation": 1,
 "api/security": 2,
 "api/set-passage-items": 2,
 "api/set-text-items": 1,

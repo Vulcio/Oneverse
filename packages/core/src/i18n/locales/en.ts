@@ -2254,7 +2254,7 @@ const en = {
     lastPlayed: "Where Live picks up",
     emptySet: "No songs in this set yet.",
     addSongs: "Add songs",
-    searchPlaceholder: "Search songs by title…",
+    searchPlaceholder: "Search by title, artist, number or CCLI…",
     noResults: "No matching songs.",
     add: "Add",
     teamSongsOnly: "Team sets can only include the team's own songs and approved global songs.",

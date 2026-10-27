@@ -112,10 +112,10 @@ export class SongbookEntriesController {
   @ApiOperation({
     summary: "Songbook entries by reference",
     description:
-      'Reads `q` as a songbook reference - "HY 42", "HY42", "Hymns 42", "42", "A-17" - and returns matching entries in songbooks the user can see, whose songs they can see too (issue #213): exactly that number (up to 10), then numbers starting with it and numbers containing it (from two digits, up to 20 each), each marked by `match`. `more` gives more of each. Empty when `q` has no number.',
+      'Reads `q` as a songbook reference - "HY 42", "HY42", "Hymns 42", "42", "A-17" - and returns matching entries in songbooks the user can see, whose songs they can see too (issue #213): exactly that number (up to 10), then numbers starting with it and numbers containing it (from two digits, up to 20 each), each marked by `match`. `more` gives more of each; `addableTo` (a set the user can change) only songs that can go in it. Empty when `q` has no number.',
   })
   search(@CurrentUser() user: AuthenticatedUser | undefined, @Query() query: SongbookEntrySearchQueryDto) {
     if (!user) throw new UnauthorizedException();
-    return this.songbooksService.searchEntries(user, query.q, query.more ?? false);
+    return this.songbooksService.searchEntries(user, query.q, query.more ?? false, query.addableTo);
   }
 }

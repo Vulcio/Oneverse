@@ -47,6 +47,8 @@ import type { AuthenticatedUser } from "../common/types/authenticated-request.js
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { songbookReferencesOf } from "../songbooks/songbook-references.js";
 import { setOrder } from "../common/utils/set-order.js";
+import { SetlistAccessService } from "../setlists/setlist-access.service.js";
+import { songSearchWhere } from "./song-search.js";
 import type { CreateSongVersionDto } from "./dto/create-song-version.dto.js";
 import type { ListSongVersionsQueryDto } from "./dto/list-song-versions-query.dto.js";
 import type { UpdateSongVersionDto } from "./dto/update-song-version.dto.js";
@@ -467,13 +469,14 @@ export class SongVersionsService {
     private readonly metadata: MetadataService,
     private readonly artwork: ArtworkService,
     private readonly artists: ArtistsService,
+    private readonly sets: SetlistAccessService,
   ) {}
 
   /**
    * One page of the songs the user can see, searched and filtered, with
    * the total across all pages. `q` matches the title, subtitle, version
-   * name or an artist (anywhere in them, ignoring case - through the
-   * trigram-indexed searchText column), or a CCLI number exactly.
+   * name or an artist (anywhere in them, ignoring case, accents and
+   * punctuation - songSearchWhere()), or a CCLI number exactly.
    */
   async findVisibleToUser(user: AuthenticatedUser, query: ListSongVersionsQueryDto = {}): Promise<SongPage> {
     const page = query.page ?? 1;
@@ -669,14 +672,13 @@ export class SongVersionsService {
     const q = lyrics ? undefined : query.q?.trim();
     return {
       AND: [
-        await this.access.songsVisibleTo(user),
+        // Those that can go in a set the user changes (issue #328: its Add songs), or all they can see.
+        query.addableTo ? await this.sets.addableWhere(await this.sets.findEditable(user, query.addableTo)) : await this.access.songsVisibleTo(user),
         ...(lyrics ? (lyrics.length > 0 ? lyrics.map((term) => ({ lyricsText: { contains: term } })) : [{ id: { in: [] } }]) : []),
         ...(q
           ? [
-              {
-                // searchText is the title, subtitle, version name and performers (kept by the database; see the schema).
-                OR: [{ searchText: { contains: await this.unaccent(q), mode: "insensitive" as const } }, { ccli: q }],
-              },
+              // searchText is the title, subtitle, version name and performers (kept by the database; see the schema).
+              await songSearchWhere(this.prisma, q),
             ]
           : []),
         ...(query.language ? [{ language: query.language }] : []),
@@ -739,7 +741,7 @@ export class SongVersionsService {
 
   /**
    * `text` without accents, by the database's own unaccent() - the one that
-   * keeps searchText and sourceSearch - so a query and what it's matched
+   * keeps sourceSearch - so a query and what it's matched
    * against are folded the same way ("cœur" and "coeur" too) (issue #56).
    */
   private async unaccent(text: string): Promise<string> {

@@ -2258,7 +2258,7 @@ const fr: typeof en = {
     lastPlayed: "Là où le Live reprend",
     emptySet: "Aucun chant dans cette liste pour l'instant.",
     addSongs: "Ajouter des chants",
-    searchPlaceholder: "Rechercher un chant par titre…",
+    searchPlaceholder: "Rechercher par titre, artiste, numéro ou CCLI…",
     noResults: "Aucun chant correspondant.",
     add: "Ajouter",
     teamSongsOnly: "Une liste d'équipe ne peut contenir que les chants de l'équipe et les chants globaux approuvés.",

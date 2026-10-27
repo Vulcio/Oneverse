@@ -51,7 +51,7 @@ await step("create a dated set without a name; it's titled by its date", async (
 });
 
 await step("add songs by searching", async () => {
-  const search = page.getByPlaceholder("Search songs by title…");
+  const search = page.getByPlaceholder("Search by title, artist, number or CCLI…");
   for (const title of [`Amazing Grace ${tag}`, `How Great ${tag}`, `Holy Holy ${tag}`]) {
     await search.fill(title);
     const result = page.getByTestId("set-song-results").getByRole("listitem").filter({ has: page.getByText(title, { exact: true }) });
@@ -135,9 +135,9 @@ await step("create a team set with a team-only song", async () => {
   await page.waitForLoadState("networkidle");
   teamSetUrl = page.url();
   await page.getByText("Team sets can only include").waitFor();
-  await page.getByPlaceholder("Search songs by title…").fill(`Amazing Grace ${tag}`);
+  await page.getByPlaceholder("Search by title, artist, number or CCLI…").fill(`Amazing Grace ${tag}`);
   await page.getByText("No matching songs.").waitFor(); // personal song not offered
-  await page.getByPlaceholder("Search songs by title…").fill(`How Great ${tag}`);
+  await page.getByPlaceholder("Search by title, artist, number or CCLI…").fill(`How Great ${tag}`);
   await page.getByTestId("set-song-results").getByRole("button", { name: "Add" }).first().click();
   await rows().filter({ hasText: `How Great ${tag}` }).waitFor();
 });

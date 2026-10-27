@@ -114,5 +114,6 @@ export const ImportCatalogEntriesSchema = CatalogFileSchema.extend({
 export const SongbookEntrySearchQuerySchema = z.strictObject({
   q: z.string().max(60).describe('A songbook reference: "HY 42", "HY42", "Hymns 42", "42", "A-17"'),
   more: optional(queryBoolean()).describe("More of each group (Show more): numbers starting with it, and containing it"),
+  addableTo: optional(z.string().max(100)).describe("Only songs that can go in this set, which you can change (issue #328: its Add songs)"),
 });
 export type SongbookEntrySearchQuery = z.input<typeof SongbookEntrySearchQuerySchema>;
