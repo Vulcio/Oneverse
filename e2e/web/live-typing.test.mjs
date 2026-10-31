@@ -153,7 +153,7 @@ try {
   await step("a save from elsewhere starts everyone over from it", async () => {
     await typeAtEndOf(one, "by Cleo", " unsaved");
     await waitForText(two, "unsaved");
-    await api(admin, "PATCH", `/song-versions/${song.id}`, { contentFormat: "CHORDPRO", content: "{start_of_verse}\n[G]Restored words\n{end_of_verse}\n" });
+    await api(owner, "PATCH", `/song-versions/${song.id}`, { contentFormat: "CHORDPRO", content: "{start_of_verse}\n[G]Restored words\n{end_of_verse}\n" });
     for (const p of [one, two]) {
       await waitForText(p, "Restored words", 10000).catch(async () => {
         throw new Error(await chartText(p));

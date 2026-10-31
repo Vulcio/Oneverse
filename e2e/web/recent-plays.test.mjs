@@ -23,6 +23,7 @@ await step("Add to set says how often the song was played, quietly while there's
   await signIn(page, leader);
   await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
   await page.goto(`${WEB}/library/${song.id}`);
+  await page.waitForLoadState("networkidle"); // hydrated: a click before it opens nothing
   await page.getByTestId("add-to-set").click();
   const plays = page.locator(`[data-testid="add-to-set-choice"][data-set-id="${next.id}"] [data-testid="recent-plays"]`);
   await plays.getByText("Played 2 times in 6 weeks").waitFor();
@@ -45,6 +46,7 @@ await step("the team's admin sets a limit on the team's page", async () => {
 
 await step("past the limit, the song is flagged in Add to set but can still be added", async () => {
   await page.goto(`${WEB}/library/${song.id}`);
+  await page.waitForLoadState("networkidle"); // hydrated: a click before it opens nothing
   await page.getByTestId("add-to-set").click();
   const choice = page.locator(`[data-testid="add-to-set-choice"][data-set-id="${next.id}"]`);
   await choice.locator('[data-testid="recent-plays"][data-over="true"]').waitFor();
