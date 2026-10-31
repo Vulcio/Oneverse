@@ -21,7 +21,7 @@ import { parseArgs } from "node:util";
 import { decryptStream, dumpPassphrase } from "./backup-crypto.js";
 import { destinationFromEnv, targetFor } from "./backup-settings.js";
 import { readAll, type BackupTarget } from "./backup-target.js";
-import { libpqUrl, run } from "./pg-tools.js";
+import { libpqUrl, majorOf, pgToolFor, run } from "./pg-tools.js";
 import { dumpTime } from "./rotation.js";
 
 const { values } = parseArgs({
@@ -54,7 +54,7 @@ async function restoreDatabase(target: BackupTarget, databaseUrl: string) {
   if (!dump) throw new Error(until ? `No dump made on or before ${values.at}` : "The backup holds no database dump");
   say(`Restoring the database from ${dump.key} (${dump.at.toISOString()}, ${dump.size} bytes)`);
 
-  const tables = await countTables(databaseUrl);
+  const { tables, major } = await inspect(databaseUrl);
   if (tables > 0) throw new Error(`The database already has ${tables} table(s): restore into an empty one (create it, then point --database-url at it)`);
 
   const dir = await mkdtemp(join(tmpdir(), "oneverse-restore-"));
@@ -63,19 +63,21 @@ async function restoreDatabase(target: BackupTarget, databaseUrl: string) {
     const body = await target.get(dump.key);
     if (!body) throw new Error(`${dump.key} can't be read`);
     await pipeline(body, decryptStream(dumpPassphrase()), createWriteStream(file));
-    await run("pg_restore", ["--no-owner", "--no-acl", "--exit-on-error", "--single-transaction", `--dbname=${libpqUrl(databaseUrl)}`, file]);
+    await run(pgToolFor("pg_restore", major), ["--no-owner", "--no-acl", "--exit-on-error", "--single-transaction", `--dbname=${libpqUrl(databaseUrl)}`, file]);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
   say("Database restored.");
 }
 
-async function countTables(databaseUrl: string): Promise<number> {
+/** How many tables the database has (a restore wants none), and its server's major version. */
+async function inspect(databaseUrl: string): Promise<{ tables: number; major: number | null }> {
   const { PrismaClient } = await import("@oneverse/db");
   const client = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
   try {
     const rows = await client.$queryRaw<{ count: bigint }[]>`SELECT count(*) AS count FROM information_schema.tables WHERE table_schema = 'public'`;
-    return Number(rows[0]?.count ?? 0);
+    const version = await client.$queryRaw<{ server_version_num: string }[]>`SHOW server_version_num`;
+    return { tables: Number(rows[0]?.count ?? 0), major: majorOf(version[0]?.server_version_num) };
   } finally {
     await client.$disconnect();
   }

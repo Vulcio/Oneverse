@@ -422,10 +422,11 @@ that fails is retried 12 hours later; one missed while the Worker was down runs
 as soon as it's back.
 
 **pg_dump's version.** `Dockerfile.api` installs PostgreSQL's own client for
-major version 16 (the server's): `pg_dump` refuses a server newer than itself.
-After upgrading Postgres, rebuild with `--build-arg POSTGRES_CLIENT=<major>`
-(in Dokploy: the app's build arguments), or the backups fail with "server
-version mismatch" in Admin > Backups.
+majors 16, 17 and 18, and each backup and restore uses the one matching the
+server (`pg_dump` refuses a server newer than itself). For a newer Postgres,
+rebuild with `--build-arg POSTGRES_CLIENTS="16 17 18 19"` (in Dokploy: the
+app's build arguments), or the backups fail with "server version mismatch" in
+Admin > Backups.
 
 The users' own copies of their songs (an archive each person can download and
 import again) are another feature, #351.

@@ -12,7 +12,7 @@ import { StorageService } from "../storage/storage.service.js";
 import { dumpPassphrase, encryptStream } from "./backup-crypto.js";
 import { getEffectiveBackupSettings, targetFor, type BackupSchedule } from "./backup-settings.js";
 import { bufferStream, readAll, type BackupTarget } from "./backup-target.js";
-import { libpqUrl, run } from "./pg-tools.js";
+import { libpqUrl, majorOf, pgToolFor, run } from "./pg-tools.js";
 import { dumpKey, dumpsToKeep, dumpTime } from "./rotation.js";
 
 /** A file deleted from the main storage, kept in the backup since this date until its retention ends. */
@@ -121,7 +121,7 @@ export class BackupService {
       const file = join(dir, "dump.enc");
       const out = new PassThrough();
       const written = pipeline(out, encryptStream(passphrase), createWriteStream(file));
-      await Promise.all([run("pg_dump", ["--format=custom", "--compress=6", "--no-owner", "--no-acl", `--dbname=${libpqUrl(databaseUrl)}`], { stdout: out }), written]);
+      await Promise.all([run(pgToolFor("pg_dump", await this.serverMajor()), ["--format=custom", "--compress=6", "--no-owner", "--no-acl", `--dbname=${libpqUrl(databaseUrl)}`], { stdout: out }), written]);
       const bytes = (await stat(file)).size;
       const key = dumpKey(at);
       await target.put(key, createReadStream(file), bytes);
@@ -129,6 +129,12 @@ export class BackupService {
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  }
+
+  /** The database server's major version, for the pg_dump that fits it. */
+  private async serverMajor(): Promise<number | null> {
+    const rows = await this.prisma.client.$queryRaw<{ server_version_num: string }[]>`SHOW server_version_num`.catch(() => []);
+    return majorOf(rows[0]?.server_version_num);
   }
 
   private async copyFiles(target: BackupTarget, keys: string[], schedule: BackupSchedule) {

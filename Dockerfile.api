@@ -49,12 +49,13 @@ ENV NODE_ENV=production
 # Only the runtime image needs it; without it, takes stay as recorded (WAV).
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 # pg_dump and pg_restore for the backups (issue #119), from PostgreSQL's own
-# packages: Debian's are another major version than the server's, and pg_dump
-# refuses a server newer than itself. POSTGRES_CLIENT is the server's major.
-ARG POSTGRES_CLIENT=16
+# packages, one per major version: pg_dump refuses a server newer than itself,
+# and the backup picks the one matching the server (pg-tools.ts's pgToolFor).
+# Add a major here when Postgres gets a new one.
+ARG POSTGRES_CLIENTS="16 17 18"
 RUN apt-get update && apt-get install -y --no-install-recommends postgresql-common ca-certificates \
  && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
- && apt-get install -y --no-install-recommends postgresql-client-${POSTGRES_CLIENT} \
+ && apt-get install -y --no-install-recommends $(for major in ${POSTGRES_CLIENTS}; do echo postgresql-client-$major; done) \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=build /repo/node_modules /repo/node_modules
 COPY --from=build /repo/packages /repo/packages

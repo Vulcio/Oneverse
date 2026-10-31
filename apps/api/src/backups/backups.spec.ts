@@ -8,7 +8,8 @@ import { createWriteStream, createReadStream } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import { decryptStream, encryptStream } from "./backup-crypto.js";
 import { DirBackupTarget, readAll } from "./backup-target.js";
-import { libpqUrl } from "./pg-tools.js";
+import { libpqUrl, majorOf, pgToolFor } from "./pg-tools.js";
+import { mkdirSync } from "node:fs";
 import { dumpKey, dumpsToKeep, dumpTime, isoWeek } from "./rotation.js";
 
 const hasOpenssl = (() => {
@@ -103,6 +104,28 @@ describe("DirBackupTarget", () => {
       await target.delete("files/abc");
       expect(await target.list("files/")).toEqual([]);
       await expect(target.put("../outside", Readable.from([Buffer.from("no")]), 2)).rejects.toThrow(/outside/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("pgToolFor", () => {
+  it("takes the server's major, else the lowest newer one, else the newest; the PATH without any", async () => {
+    const root = await mkdtemp(join(tmpdir(), "pg-lib-"));
+    try {
+      for (const major of ["16", "17", "18"]) {
+        mkdirSync(join(root, major, "bin"), { recursive: true });
+        await writeFile(join(root, major, "bin", "pg_dump"), "");
+      }
+      expect(pgToolFor("pg_dump", 18, root)).toBe(join(root, "18", "bin", "pg_dump"));
+      expect(pgToolFor("pg_dump", 15, root)).toBe(join(root, "16", "bin", "pg_dump"));
+      expect(pgToolFor("pg_dump", 19, root)).toBe(join(root, "18", "bin", "pg_dump"));
+      expect(pgToolFor("pg_dump", null, root)).toBe(join(root, "18", "bin", "pg_dump"));
+      expect(pgToolFor("pg_restore", 18, root)).toBe("pg_restore");
+      expect(pgToolFor("pg_dump", 18, join(root, "missing"))).toBe("pg_dump");
+      expect(majorOf("180006")).toBe(18);
+      expect(majorOf(undefined)).toBeNull();
     } finally {
       await rm(root, { recursive: true, force: true });
     }
