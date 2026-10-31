@@ -76,8 +76,9 @@ check("the Worker parsed it into the song's chart", chart.includes(`grace ${stam
 const read = await api(me, "GET", `/song-versions/${song.id}`);
 const doc = read.documentJson;
 check(
+  // "Strophe 1" on the song's only verse says no more than its name would (issue #344): not kept, so it reads "Verse" in English.
   "the comments named the sections",
-  JSON.stringify(doc.sections.map((s) => [s.type, s.label])) === JSON.stringify([["verse", "Strophe 1"], ["chorus", null], ["bridge", null]]),
+  JSON.stringify(doc.sections.map((s) => [s.type, s.label])) === JSON.stringify([["verse", null], ["chorus", null], ["bridge", null]]),
   JSON.stringify(doc.sections.map((s) => [s.type, s.label])),
 );
 check("the verse's number left out", doc.sections[0].lines[0].text === `Amazing grace ${stamp}`, doc.sections[0].lines[0].text);

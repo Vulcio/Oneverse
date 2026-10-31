@@ -8,7 +8,8 @@ import { WEB, api, finish, signIn, stamp, stepper, user, displaySetting } from "
 let page;
 const step = stepper(() => page);
 const me = await user("Wide");
-const verse = (n) => `{start_of_verse: Verse ${n}}\n[G]Amazing grace how [C]sweet the sound\n[G]That saved a wretch like [D]me\n[G]I once was lost but [C]now am found\n[G]Was blind but [D]now I [G]see\n{end_of_verse}\n`;
+// Each verse has its own words: identical ones would be one verse sung six times, all named "Verse" (issue #344).
+const verse = (n) => `{start_of_verse: Verse ${n}}\n[G]Amazing grace ${n} how [C]sweet the sound\n[G]That saved a wretch like [D]me\n[G]I once was lost but [C]now am found\n[G]Was blind but [D]now I [G]see\n{end_of_verse}\n`;
 const song = await api(me, "POST", "/song-versions", { title: `Wide ${stamp}`, language: "en", artists: ["Band"], content: [1, 2, 3, 4, 5, 6].map(verse).join(""), contentFormat: "CHORDPRO" });
 
 /** Each pass's left edge and how many boxes it's drawn in (more than one: split between columns). */
