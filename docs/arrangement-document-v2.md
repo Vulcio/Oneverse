@@ -1,7 +1,7 @@
 # ArrangementDocument v2
 
 **Status:** implemented - schemas in `packages/core/src/schemas/arrangement-document-v2.ts`, rendering in `packages/core/src/song-document/render.ts`, API in `apps/api/src/arrangements/`
-**Replaces:** [ArrangementDocument v1](arrangement-document-v1.md)
+**Replaces:** ArrangementDocument v1 (migrated and removed; its spec is in git history)
 **Builds on:** [SongDocument v2](song-document-v2.md)
 **Example:** [`morning-light-arrangement.v2.json`](../packages/core/src/__tests__/fixtures/morning-light-arrangement.v2.json)
 

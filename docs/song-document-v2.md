@@ -1,7 +1,7 @@
 # SongDocument v2
 
 **Status:** implementation contract (schemas in `packages/core/src/schemas/song-document-v2.ts`)
-**Replaces:** [SongDocument v1](song-document-v1.md)
+**Replaces:** SongDocument v1 (migrated and removed, issue #60; its spec is in git history)
 **Example:** [`morning-light-song.v2.json`](../packages/core/src/__tests__/fixtures/morning-light-song.v2.json)
 
 A song's music: its sections, lines, chords and timing, stored in

@@ -1051,11 +1051,11 @@ model SongVersion {
   lyricsText String?
 
   // Canonical content
-  // SongDocument v2 (docs/song-document-v2.md): the music only. Rows saved
-  // before v2 are upgraded by the API on read and at startup.
+  // SongDocument v2 (docs/song-document-v2.md): the music only. Every song
+  // is v2 (v1 was migrated and its code removed, issue #60).
   documentJson Json
-  // Capo fret the song is played with. It belongs to arrangements; it stays
-  // here until arrangements exist, then seeds each song's default one.
+  // Capo fret the song is played with as written. A version (Arrangement)
+  // sets its own in its document's defaults.
   capo         Int?
 
   // In the bin (issue #340): deleted by `deletedByUserId` at this time,

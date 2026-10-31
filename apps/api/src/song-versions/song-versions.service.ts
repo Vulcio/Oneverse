@@ -399,7 +399,7 @@ interface Rights {
 type DetailRow = Prisma.SongVersionGetPayload<{ select: typeof DETAIL_SELECT }>;
 type DetailItem = Omit<DetailRow, "versionTags" | "documentJson" | "imageStorageKey"> & {
   imageUrl: string | null;
-  /** Always v2: a song saved before v2 is upgraded as it's read. */
+  /** Always v2 (issue #60). */
   documentJson: SongDocumentV2;
   artists: DetailRow["contributors"];
   tags: DetailRow["versionTags"][number]["tag"][];
@@ -1398,8 +1398,8 @@ export class SongVersionsService {
 
   /**
    * Stores `next` in place of `stored`, but only if nobody else saved in
-   * between: the write is conditional on the stored revision (a song not
-   * yet upgraded to v2 has none, and is matched as it was).
+   * between: the write is conditional on the stored revision (a document
+   * without one is matched as it was).
    */
   private async writeDocument(tx: Prisma.TransactionClient, id: string, stored: Prisma.JsonValue, next: SongDocumentV2) {
     const storedRevision = (stored as { revision?: unknown } | null)?.revision;
