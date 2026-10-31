@@ -94,3 +94,12 @@ which suites cover it.
 
 `docs/screenshots.mjs` isn't a suite: it takes the screenshots for the user
 docs, on a fresh database. See [apps/docs/README.md](../apps/docs/README.md).
+
+## The API at library scale
+
+`node perf/bench.mjs` (issue #341) fills the database to 50,000 songs (`SONGS=…` for another
+size) by copying a few hundred made through the API, with a team, sets and a songbook, then times
+the pages people open most: how long each takes, and how many database queries and how much
+database time (with `pg_stat_statements` in `shared_preload_libraries`). Each page has a budget;
+`BUDGET=1` fails when one is over it. It isn't a suite: run it on a local stack before and after a
+change to how songs are read, not in CI, since it leaves the database full.
