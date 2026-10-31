@@ -1,16 +1,19 @@
-# Local development stack: Postgres and Redis, as production runs them
+# Local development stack: Postgres 18 and Redis, as production runs them
 # (Deploy.md), without installing them on the host.
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: songverse_dev
     ports:
       - "5432:5432"
+    # Postgres 18 keeps its data under /var/lib/postgresql/18/docker: the volume
+    # goes on /var/lib/postgresql. A volume made by 16 won't start on 18 - dump
+    # what you need, then `docker compose down -v` and start again.
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   redis:
     image: redis:7-alpine
