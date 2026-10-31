@@ -507,21 +507,25 @@ export class SongVersionsService {
   private async findByLyrics(user: AuthenticatedUser, query: ListSongVersionsQueryDto, where: Prisma.SongVersionWhereInput, page: number, pageSize: number): Promise<SongPage> {
     const terms = parseLyricsQuery(query.q ?? "");
     if (!terms) return { items: [], total: 0, page, pageSize };
-    const rows = await this.prisma.client.songVersion.findMany({ where, select: { id: true, documentJson: true }, orderBy: listOrder(query), take: LYRICS_CANDIDATES });
+    // Checked on the folded lines the database keeps (lyricsText, issue #341): only the page's songs' charts are read, for the line as written.
+    const rows = await this.prisma.client.songVersion.findMany({ where, select: { id: true, lyricsText: true }, orderBy: listOrder(query), take: LYRICS_CANDIDATES });
+    const matching = rows.filter((row) => row.lyricsText && matchLyrics(terms, row.lyricsText.split("\n").map((text) => ({ text })))).map((row) => row.id);
+    const ids = matching.slice((page - 1) * pageSize, page * pageSize);
+    const found = new Map((await this.prisma.client.songVersion.findMany({ where: { id: { in: ids } }, select: { ...LIST_SELECT, documentJson: true } })).map((version) => [version.id, version]));
     const matches = new Map<string, LyricsMatch>();
-    for (const row of rows) {
+    for (const id of ids) {
+      const version = found.get(id);
+      if (!version) continue;
       try {
-        const match = matchLyrics(terms, lyricsLines(readSongDocument(row.documentJson)));
-        if (match) matches.set(row.id, match);
+        const match = matchLyrics(terms, lyricsLines(readSongDocument(version.documentJson)));
+        if (match) matches.set(id, match);
       } catch {
         // A chart it can't read: not found by its words.
       }
     }
-    const ids = [...matches.keys()].slice((page - 1) * pageSize, page * pageSize);
-    const found = await this.prisma.client.songVersion.findMany({ where: { id: { in: ids } }, select: LIST_SELECT });
-    const versions = ids.map((id) => found.find((version) => version.id === id)).filter((version) => version !== undefined);
+    const versions = ids.filter((id) => matches.has(id)).map((id) => found.get(id)!);
     const items = await this.pageItems(user, versions, query);
-    return { items: items.map((item) => ({ ...item, lyricsMatch: matches.get(item.id)! })), total: matches.size, page, pageSize };
+    return { items: items.map((item) => ({ ...item, lyricsMatch: matches.get(item.id)! })), total: matching.length, page, pageSize };
   }
 
   /** A page's songs as listed: their images signed, who shared them, and where they are in the user's songbooks when asked. */
@@ -656,14 +660,26 @@ export class SongVersionsService {
    * Null position when it isn't in the list (any more).
    */
   async neighbors(user: AuthenticatedUser, id: string, query: ListSongVersionsQueryDto = {}) {
-    const rows = await this.prisma.client.songVersion.findMany({
-      where: await this.listWhere(user, query),
-      select: { id: true, title: true },
-      orderBy: listOrder(query),
-    });
-    const at = rows.findIndex((row) => row.id === id);
-    if (at < 0) return { position: null, total: rows.length, previous: null, next: null };
-    return { position: at + 1, total: rows.length, previous: rows[at - 1] ?? null, next: rows[at + 1] ?? null };
+    // Found from the song's own place in the order (issue #341), rather than by reading the whole list.
+    const where = await this.listWhere(user, query);
+    const sort = query.sort ?? "updatedAt";
+    const dir = query.dir ?? (sort === "updatedAt" || sort === "createdAt" ? "desc" : "asc");
+    const [current, total] = await Promise.all([
+      this.prisma.client.songVersion.findFirst({ where: { AND: [where, { id }] }, select: { id: true, [sort]: true } }),
+      this.prisma.client.songVersion.count({ where }),
+    ]);
+    if (!current) return { position: null, total, previous: null, next: null };
+    const value = (current as Record<string, unknown>)[sort];
+    // Before it in the list: earlier by the sort, or the same and a smaller id (listOrder's tie-break).
+    const before: Prisma.SongVersionWhereInput = { OR: [{ [sort]: { [dir === "asc" ? "lt" : "gt"]: value } }, { [sort]: value, id: { lt: id } }] };
+    const after: Prisma.SongVersionWhereInput = { OR: [{ [sort]: { [dir === "asc" ? "gt" : "lt"]: value } }, { [sort]: value, id: { gt: id } }] };
+    const reversed: Prisma.SongVersionOrderByWithRelationInput[] = [{ [sort]: dir === "asc" ? "desc" : "asc" }, { id: "desc" }];
+    const [earlier, previous, next] = await Promise.all([
+      this.prisma.client.songVersion.count({ where: { AND: [where, before] } }),
+      this.prisma.client.songVersion.findFirst({ where: { AND: [where, before] }, select: { id: true, title: true }, orderBy: reversed }),
+      this.prisma.client.songVersion.findFirst({ where: { AND: [where, after] }, select: { id: true, title: true }, orderBy: listOrder(query) }),
+    ]);
+    return { position: earlier + 1, total, previous, next };
   }
 
   /** What a list of the library holds: the songs the user can see, searched and filtered as `query` says. */
@@ -732,10 +748,10 @@ export class SongVersionsService {
     const where = await this.access.songsVisibleTo(user);
     const [songCount, artists] = await Promise.all([
       this.prisma.client.songVersion.count({ where }),
-      this.prisma.client.versionContributor.findMany({
+      // Grouped by the database (issue #341): Prisma's `distinct` read every credit and dropped the repeats itself.
+      this.prisma.client.versionContributor.groupBy({
+        by: ["source"],
         where: { roles: { has: "PERFORMER" }, source: { not: null }, songVersion: where },
-        select: { source: true },
-        distinct: ["source"],
       }),
     ]);
     return { songCount, artistCount: new Set(artists.map((a) => a.source!.trim().toLowerCase())).size };
