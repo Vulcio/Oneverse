@@ -3169,7 +3169,7 @@ const fr: typeof en = {
     goToPass: "Aller à {{name}}",
     short: {
       intro: "I",
-      verse: "S",
+      verse: "C",
       chorus: "R",
       "pre-chorus": "PR",
       "post-chorus": "PoR",

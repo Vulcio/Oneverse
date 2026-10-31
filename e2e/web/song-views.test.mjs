@@ -116,14 +116,23 @@ await step("Live: the set's name alone in the header; title, artist and key at t
   await page.waitForFunction(() => document.querySelector('[data-testid="live-song-top"]').getBoundingClientRect().bottom < 150);
 });
 
-await step("Live: the structure bar - V1 C V2 C, coloured by kind, following the song; a tap goes there", async () => {
+await step("Live: the structure bar - Verse 1 Chorus Verse 2 Chorus, coloured by kind, following the song; a tap goes there", async () => {
   const bar = page.getByTestId("live-structure");
-  const chips = await bar.getByRole("button").evaluateAll((els) => els.map((el) => `${el.textContent}:${el.dataset.group}`));
-  if (chips.join() !== "V1:verse,C:chorus,V2:verse,C:chorus") throw new Error(chips.join());
+  const chipsOf = () => bar.getByRole("button").evaluateAll((els) => els.map((el) => `${el.textContent}:${el.dataset.group}`).join());
+  // Room for them: named in full (issue #344).
+  await page.waitForFunction(() => document.querySelector('[data-testid="live-structure"]')?.dataset.names === "full");
+  if ((await chipsOf()) !== "Verse 1:verse,Chorus:chorus,Verse 2:verse,Chorus:chorus") throw new Error(await chipsOf());
   await page.getByTestId("live-scroll").evaluate((el) => el.scrollTo({ top: 0 }));
-  await bar.locator('[aria-current="step"]').getByText("V1").waitFor();
+  await bar.locator('[aria-current="step"]').getByText("Verse 1").waitFor();
   await bar.getByRole("button", { name: "Go to Verse 2" }).click();
-  await bar.locator('[aria-current="step"]').getByText("V2").waitFor();
+  await bar.locator('[aria-current="step"]').getByText("Verse 2").waitFor();
+  // No room: V1 C V2 C.
+  const size = page.viewportSize();
+  await page.setViewportSize({ width: 220, height: size.height });
+  await page.waitForFunction(() => document.querySelector('[data-testid="live-structure"]')?.dataset.names === "short");
+  if ((await chipsOf()) !== "V1:verse,C:chorus,V2:verse,C:chorus") throw new Error(await chipsOf());
+  await page.setViewportSize(size);
+  await page.waitForFunction(() => document.querySelector('[data-testid="live-structure"]')?.dataset.names === "full");
 });
 
 await step("Live: the key transposes for now, G+1 shown; back to the set's key", async () => {
