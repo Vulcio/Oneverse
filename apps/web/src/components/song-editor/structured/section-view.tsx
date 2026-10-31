@@ -1,4 +1,4 @@
-import { SECTION_TYPES } from "@oneverse/core";
+import { SECTION_TYPES, sectionName } from "@oneverse/core";
 import { NodeViewContent, NodeViewWrapper, useEditorState, type ReactNodeViewProps } from "@tiptap/react";
 import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Link2, ListMinus, ListPlus, MoreHorizontal, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { BlockTools, ToolButton } from "./block-tools";
 import { deleteSection, duplicateLinked, duplicateSection, moveBlock, setSung } from "./extensions";
 import { SectionInserter } from "./section-inserter";
+import { sectionNumberIn } from "./document";
 
 /** Whether the editor's cursor or selection is in the block at `pos`: its tools show (issue #250). */
 export function useBlockActive(editor: ReactNodeViewProps["editor"], getPos: () => number | undefined) {
@@ -36,7 +37,9 @@ export function SectionView({ node, editor, getPos, updateAttributes }: ReactNod
   const type = node.attrs.type as (typeof SECTION_TYPES)[number];
   const label = (node.attrs.label as string | null) ?? "";
   const showLabel = node.attrs.showLabel !== false;
-  const typeName = t(`chart.sections.${type}`);
+  // Its name when it has no label of its own, by the one rule (issue #344): "Chorus", "Verse 2".
+  const number = useEditorState({ editor, selector: ({ editor: current }) => (current ? sectionNumberIn(current.state.doc, node.attrs.id as string) : null) });
+  const typeName = sectionName({ type, label: null }, number, (one) => t(`chart.sections.${one}`)) ?? t(`chart.sections.${type}`);
   const at = () => getPos() ?? -1;
   const index = editor.state.doc.resolve(Math.max(0, at())).index(0);
   const count = editor.state.doc.childCount;

@@ -1,21 +1,4 @@
-import {
-  chordRowLabel,
-  prettyChord,
-  chordRowShowsShapes,
-  layoutChordLine,
-  type ChartCell,
-  type ChordRow as ChordRowSettings,
-  type SecondChordRow,
-  renderChart,
-  type RenderedChart,
-  type RenderedChord,
-  type ChordFamily,
-  type RenderedLine,
-  type RenderedPass,
-  type SectionInstance,
-  type SectionV2,
-  type NoteAnchor,
-} from "@oneverse/core";
+import { chordRowLabel, prettyChord, chordRowShowsShapes, layoutChordLine, type ChartCell, type ChordRow as ChordRowSettings, type SecondChordRow, renderChart, type RenderedChart, type RenderedChord, type ChordFamily, type RenderedLine, type RenderedPass, type SectionInstance, type SectionV2, type NoteAnchor, passName } from "@oneverse/core";
 import { AlertTriangle } from "lucide-react";
 import { Fragment, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,12 +6,9 @@ import type { ChartColumns } from "../lib/chart-columns";
 import type { DisplayFontValue, DisplaySpacingValue } from "@oneverse/core";
 import { cn } from "@oneverse/ui/lib/utils";
 
-// Section types with a heading of their own; "other" has none.
-const LABELLED_SECTIONS = new Set(["intro", "verse", "pre-chorus", "chorus", "post-chorus", "bridge", "vamp", "breakdown", "instrumental", "interlude", "outro", "tag"]);
-
-/** A pass's heading: its own label, else its section's, else the kind of section's name; null for a kind that has none. */
+/** A pass's heading, by the one rule (issue #344, passName()): its own label, else its section's name - "Chorus", "Verse 2"; null for a kind that has none. */
 export function passLabel(pass: RenderedPass, t: (key: string) => string): string | null {
-  return pass.label ?? pass.section.label ?? (LABELLED_SECTIONS.has(pass.section.type) ? t(`chart.sections.${pass.section.type}`) : null);
+  return passName(pass, pass.section, pass.section.number, (type) => t(`chart.sections.${type}`));
 }
 
 /** A chart of sections as written (the song editor's preview, a review): no arrangement, no player's view. */

@@ -10,6 +10,8 @@ import { formatKey, parseKey, semitonesBetween, transposeKey } from "../music-ke
 import { parseArrangementDocumentV2, findArrangementProblems } from "../schemas/arrangement-document-v2.js";
 import { chordPositionProblem } from "../schemas/song-document-v2.js";
 import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-document/fold.js";
+import type { SectionType } from "../constants/index.js";
+import { isPlainLabel, passName, sectionNumbers, withoutPlainLabels } from "../song-document/section-names.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
 import { barAt, barBeatPlaces, barLyrics, beatPlaceRange, chartBars, lineAtPosition, recordingBeatPosition, recordingSecondsAt } from "../song-document/bars.js";
 import { barLinesFromRhythm, rhythmFromBarLines, suggestedBarLines } from "../song-document/bar-lines.js";
@@ -697,6 +699,114 @@ export const CONFORMANCE: ConformanceArea[] = [
     area: "song-document",
     about: "SongDocument v2 (docs/song-document-v2.md): reading a stored one, and a song after its text or sections were edited - IDs kept for what's still there, the revision moved on.",
     functions: {
+      sectionNames: {
+        about:
+          "How a song's passes are named (issue #344): a label of its own, else its section's label, else the section's type (here in English) - numbered by where the section is written, only when the song has more than one of that type. A pass sung again is named as the section it sings; an unlabelled \"other\" has no name.",
+        params: ["song"],
+        run: (song: unknown) => {
+          const doc = read(song);
+          const numbers = sectionNumbers(doc.sections);
+          const english = (type: string) => type.split("-").map((word) => word[0]!.toUpperCase() + word.slice(1)).join("-");
+          return doc.flow.map((pass) => {
+            const section = doc.sections.find((one) => one.id === pass.sectionId)!;
+            return { passId: pass.id, number: numbers.get(section.id) ?? null, name: passName(pass, section, numbers.get(section.id), english) };
+          });
+        },
+        cases: [
+          {
+            name: "two verses, one chorus sung twice, a labelled tag and an unlabelled other",
+            args: [
+              {
+                $schema: "song-document/v2",
+                revision: 1,
+                defaults: {},
+                sections: [
+                  { id: "v1", type: "verse", lines: [] },
+                  { id: "ch", type: "chorus", lines: [] },
+                  { id: "v2", type: "verse", lines: [] },
+                  { id: "tg", type: "tag", label: "Last time", lines: [] },
+                  { id: "ot", type: "other", lines: [] },
+                ],
+                flow: [
+                  { id: "p1", sectionId: "v1" },
+                  { id: "p2", sectionId: "ch" },
+                  { id: "p3", sectionId: "v2" },
+                  { id: "p4", sectionId: "ch" },
+                  { id: "p5", sectionId: "ch", label: "Final chorus" },
+                  { id: "p6", sectionId: "tg" },
+                  { id: "p7", sectionId: "ot" },
+                ],
+              },
+            ],
+          },
+          {
+            name: "two choruses written out: Chorus 1 and Chorus 2, each repeat named as the one it sings",
+            args: [
+              {
+                $schema: "song-document/v2",
+                revision: 1,
+                defaults: {},
+                sections: [
+                  { id: "c1", type: "chorus", lines: [] },
+                  { id: "pc", type: "pre-chorus", lines: [] },
+                  { id: "c2", type: "chorus", lines: [] },
+                ],
+                flow: [
+                  { id: "p1", sectionId: "c1" },
+                  { id: "p2", sectionId: "pc" },
+                  { id: "p3", sectionId: "c2" },
+                  { id: "p4", sectionId: "c1" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      isPlainLabel: {
+        about:
+          "Whether a section's (or a pass's) label only says what its name already would - its type, in a language songs come in, with no number or its own number - so an import leaves it out (issue #344). On a pass, any number goes when the section has none.",
+        params: ["label", "section", "number", "pass"],
+        run: (label: string, section: { type: SectionType }, number: number | null, pass: boolean) => isPlainLabel(label, section, number, pass),
+        cases: [
+          { name: "Verse 2 on the second verse", args: ["Verse 2", { type: "verse" }, 2, false] },
+          { name: "Refrain on the only chorus", args: ["Refrain", { type: "chorus" }, null, false] },
+          { name: "Chorus 1 on the only chorus", args: ["Chorus 1", { type: "chorus" }, null, false] },
+          { name: "Strophe 3 on the second verse: kept", args: ["Strophe 3", { type: "verse" }, 2, false] },
+          { name: "Verse 2a: kept", args: ["Verse 2a", { type: "verse" }, 2, false] },
+          { name: "another type's name: kept", args: ["Bridge", { type: "chorus" }, null, false] },
+          { name: "Chorus 2 on a pass of the only chorus", args: ["Chorus 2", { type: "chorus" }, null, true] },
+        ],
+      },
+      withoutPlainLabels: {
+        about: "A song imported with its headings as labels: those that only say the section's name are left out, so it's named by the rule in the reader's language; the others stay.",
+        params: ["song"],
+        run: (song: unknown) => withoutPlainLabels(read(song)),
+        cases: [
+          {
+            name: "Verse 1, Chorus, Verse 2, a pass labelled Chorus 2, and a Big ending",
+            args: [
+              {
+                $schema: "song-document/v2",
+                revision: 1,
+                defaults: {},
+                sections: [
+                  { id: "v1", type: "verse", label: "Verse 1", lines: [] },
+                  { id: "ch", type: "chorus", label: "Chorus", lines: [] },
+                  { id: "v2", type: "verse", label: "Verse 2", lines: [] },
+                  { id: "en", type: "outro", label: "Big ending", lines: [] },
+                ],
+                flow: [
+                  { id: "p1", sectionId: "v1" },
+                  { id: "p2", sectionId: "ch" },
+                  { id: "p3", sectionId: "v2" },
+                  { id: "p4", sectionId: "ch", label: "Chorus 2" },
+                  { id: "p5", sectionId: "en" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
       readSongDocument: {
         about: "A stored song document, checked and with its defaults filled in; anything else fails.",
         params: ["json"],
@@ -790,6 +900,9 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "ChordPro's short directives", args: ["{sov}\n[G]One\n{eov}\n{sob}\n[D]Two\n{eob}\n", "CHORDPRO"] },
           { name: "chords over lyrics, chords above the right letters", args: ["Verse 1:\n  G        D/F#   Em\nAmazing grace how sweet\n\nChorus:\nC      G\nI once was lost\n", "CHORDS_OVER_LYRICS"] },
           { name: "a line of chords only", args: ["[Intro]\nG  D  Em  C\n", "CHORDS_OVER_LYRICS"] },
+          { name: "an instrumental in bars: a line of chords alone, a bar each (issue #344)", args: ["[Intro]\n| G | C . D . | % |\n", "CHORDS_OVER_LYRICS"] },
+          { name: "bars in ChordPro, with repeat signs and x2", args: ["{start_of_instrumental}\n||: [Em] | [C] :|| x2\n{end_of_instrumental}\n", "CHORDPRO"] },
+          { name: "bars among words: chords alone, no rhythm", args: ["{start_of_verse}\n[G]Words\n| G | C |\n{end_of_verse}\n", "CHORDPRO"] },
           { name: "plain lyrics: a section per paragraph", args: ["One\nTwo\n\nThree\n", "RAW_TEXT"] },
           { name: "labels in other languages", args: ["Strophe 1\n[G]Un\n\nRefrain\n[C]Deux\n\nPuente:\n[D]Tres\n", "CHORDS_OVER_LYRICS"] },
         ],

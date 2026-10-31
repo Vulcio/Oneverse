@@ -38,7 +38,8 @@ describe("parseChordsOverLyrics", () => {
   it("handles a chord line with no lyric line under it (instrumental)", () => {
     const sections = parseChordsOverLyrics("G C G D");
     expect(chords(sections)).toEqual(["G", "C", "G", "D"]);
-    expect(lyrics(sections)).toBe("");
+    // As far apart as written (issue #344): spaces under them, no words.
+    expect(lyrics(sections).trim()).toBe("");
   });
 
   it("treats a line that isn't all chord tokens as lyrics, not chords", () => {

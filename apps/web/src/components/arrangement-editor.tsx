@@ -17,6 +17,8 @@ import {
   type SongDocumentV2,
   type SetlistSummary,
   type SongVersionDetail,
+  passName,
+  sectionNumbers,
 } from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Eye, EyeOff, MessageSquare, MoveHorizontal, Pencil, Plus, RotateCcw, Star, Trash2 } from "lucide-react";
@@ -454,7 +456,8 @@ function PassEditor({
   const replaced = new Map(item.overrides.flatMap((o) => (o.type === "chord" ? [[o.chordId, o.raw] as const] : [])));
   const hiddenChords = new Set(item.overrides.flatMap((o) => (o.type === "hide_chord" ? [o.chordId] : [])));
   const notes = new Map(item.overrides.flatMap((o) => (o.type === "performance_note" ? [[o.lineId, o.note] as const] : [])));
-  const heading = item.label || section.label || t(`chart.sections.${section.type}`);
+  // Named by the one rule (issue #344): "Chorus", "Verse 2".
+  const heading = passName(item, section, sectionNumbers(song.sections).get(section.id), (type) => t(`chart.sections.${type}`)) ?? "";
   const set = (overrides: OverrideV2[]) => onChange({ ...item, overrides });
 
   const selectedRow = chord ? rows.find((row) => row.chords.some((c) => c.id === chord)) : undefined;

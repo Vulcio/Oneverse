@@ -55,7 +55,7 @@ Each block is a section: intro, verse, pre-chorus, chorus, post-chorus, bridge, 
 Each type has its own light colour - verses blue, choruses amber, bridges violet… - on its tag and as a faint wash behind its lines, so the parts of a song stand out at a glance.
 
 - **Add a section** with the **+** between two sections (it shows where the pointer is, and always on a touch screen), above the first one, or with **Add a section** at the end. Its menu has every type of section, and **Sing again**: a linked copy of a section already in the song, sung there.
-- A section's heading is its name ("Verse 2"): click it to rename it. The small coloured tag beside it is its **type**: choose it to change the type.
+- A section's heading is its name. Left as it is, it's named by its type, in the reader's language, and numbered in the order the sections are written when the song has more than one of that type: "Verse 1", "Verse 2", but "Chorus" when there's one chorus. A section sung again (a linked copy, a repeat) keeps the name of the one it repeats, everywhere: the chart, Live, the song order, screens and notes. Click the heading to give it a name of its own ("Final chorus"). The small coloured tag beside it is its **type**: choose it to change the type.
 - The section's tools - the eye, its duplicates, up and down, and its **⋯** menu - show on the section you're editing, or under the pointer. Their place is kept, so nothing moves when they appear. The eye hides its name ("Chorus") on the chart in Practice and Live.
 - The **⋯** menu moves, duplicates (linked or as a unique copy, see [Linked copies](/song-editor/#linked-copies)), takes out of the song order or deletes it.
 - A line can be a **note for the band** ("×2, build") rather than lyrics.
@@ -98,11 +98,13 @@ If a line or chord a copy changes is deleted from the section, the chart says so
 
 A file read in (a new song, a pasted or uploaded chart) links what it writes out again: a chorus written a second time is a linked copy of the first - also when it's a few semitones up or down (a transposed copy), when a third of its chords at most are different (a copy with those chords of its own), or when it's only the chorus's last lines.
 
-A song written before keeps its sections twice. Above the editor, its editors see what repeats - "Chorus 2 is Chorus with 1 chord of its own", "Last chorus is Chorus, 2 semitone(s) up" - and **Link** each, or **Link all**: the repeat becomes a linked copy of the section, keeping its name. Arrangements and recordings' cue points follow, and the song's **History** can undo it. Save your changes first.
+A song written before keeps its sections twice. Above the editor, its editors see what repeats - "Chorus 2 is Chorus 1 with 1 chord of its own", "Last chorus is Chorus 1, 2 semitone(s) up" - and **Link** each, or **Link all**: the repeat becomes a linked copy of the section, keeping its name. Arrangements and recordings' cue points follow, and the song's **History** can undo it. Save your changes first.
 
 ## Pasting a chart
 
-Paste a whole chart anywhere - ChordPro, or chords written above the lyrics - and it's turned into sections with chords in place. Pasting plain words just types them. Section names on a line of their own ("Verse 1", "[Chorus]", "Refrain", "Pont", "Coro") start a section of that kind, in English, French, Spanish, German, Italian or Portuguese.
+Paste a whole chart anywhere - ChordPro, or chords written above the lyrics - and it's turned into sections with chords in place. Pasting plain words just types them. Section names on a line of their own ("Verse 1", "[Chorus]", "Refrain", "Pont", "Coro") start a section of that kind, in English, French, Spanish, German, Italian or Portuguese. A name that only says what the section would be called anyway ("Verse 2" on the second verse) isn't kept as its own name, so it follows the reader's language and the numbering.
+
+A part with no words - an intro, an instrumental - can be written in bars: `| G | C | D | G |`, one bar between each pair of bar lines. It comes in as a line of chords with its bars, ready in the [chord grid](/metronome/#chord-grid). Within a bar, dots or slashes mark the beats (`| C . D . |` puts D on beat 3), `%` repeats the bar before, repeat signs (`||: … :||`) are read as bar lines, and `x2` at the end plays the line twice. A line of chords alone, without bar lines, keeps the room between its chords.
 
 ## Replacing the chart
 

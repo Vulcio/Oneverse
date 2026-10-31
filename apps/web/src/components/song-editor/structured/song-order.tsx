@@ -1,4 +1,4 @@
-import { generateId, ID_PREFIXES, passChanged, passEdited, transposeKey, type SectionInstance, type SectionV2 } from "@oneverse/core";
+import { generateId, ID_PREFIXES, passChanged, passEdited, transposeKey, type SectionInstance, type SectionV2, sectionName, sectionNumbers } from "@oneverse/core";
 import { ArrowLeft, ArrowRight, Copy, GripVertical, KeyRound, Link2, ListMinus, ListRestart, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -44,7 +44,9 @@ export function SongOrder({
   const selected = selectedProp !== undefined ? selectedProp : own;
   const select = (passId: string | null) => (onSelect ? onSelect(passId) : setOwn(passId));
   const byId = new Map(sections.map((section) => [section.id, section]));
-  const nameOf = (section: SectionV2) => section.label || t(`chart.sections.${section.type}`);
+  // Named by the one rule (issue #344): "Chorus", "Verse 2".
+  const numbers = sectionNumbers(sections);
+  const nameOf = (section: SectionV2) => sectionName(section, numbers.get(section.id), (type) => t(`chart.sections.${type}`)) ?? t("chart.sections.other");
   const passes = flow.filter((item) => byId.has(item.sectionId));
   const plain = passes.length === sections.length && passes.every((item, i) => item.sectionId === sections[i]!.id && !item.label && !item.keyChange && !item.note && !passChanged(item));
   const unsung = sections.filter((section) => !passes.some((item) => item.sectionId === section.id));

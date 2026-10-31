@@ -26,7 +26,7 @@ try {
     await page.goto(`${WEB}/library/${song.id}?tab=editor`);
     const card = page.getByTestId("song-repeats");
     await card.getByText("A section repeats an earlier one").waitFor();
-    await card.getByText("Last chorus is Chorus, 2 semitone(s) up").waitFor();
+    await card.getByText("Last chorus is Chorus 1, 2 semitone(s) up").waitFor();
   });
 
   await step("Link: a pass of the chorus, a tone up, and the message goes", async () => {

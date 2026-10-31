@@ -1,4 +1,4 @@
-import { prettyChord, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
+import { passName, prettyChord, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type StructureGroup, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
 import { TextItemSlides } from "#/components/set-text-item";
 import { PassageReading } from "#/components/set-passage-item";
 import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
@@ -453,7 +453,7 @@ export function LiveView({
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, following the music. */}
       {chart && !pdf && display.bars ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
-      {steps.length > 0 && !pdf && shows("structure") ? <StructureBar steps={steps} current={current} onPick={goToPass} /> : null}
+      {steps.length > 0 && !pdf && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} /> : null}
 
       <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {/* The whole screen's width (issue #177): a long song flows into columns rather than down. */}
@@ -1067,23 +1067,57 @@ const GROUP_STYLES: Record<StructureGroup, { filled: string; outlined: string }>
 
 /**
  * The song's structure (issue #68), fixed under the header: its passes in
- * order - V1 C V2 C B C - coloured by kind, the one being sung ringed, those
- * sung filled. Tapping one goes there.
+ * order, coloured by kind, the one being sung ringed, those sung filled.
+ * Tapping one goes there. Named in full - Verse 1 Chorus Verse 2 Chorus -
+ * when they all fit, as everywhere (issue #344: a pass's own name, or its
+ * section's); shortened to V1 C V2 C otherwise.
  */
-function StructureBar({ steps, current, onPick }: { steps: ReturnType<typeof structureOf>; current: string | null; onPick: (passId: string) => void }) {
+function StructureBar({ steps, chart, current, onPick }: { steps: ReturnType<typeof structureOf>; chart: RenderedChart | null; current: string | null; onPick: (passId: string) => void }) {
   const { t } = useTranslation();
   const bar = useRef<HTMLDivElement>(null);
+  const fullRow = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(true);
   const reached = Math.max(0, steps.findIndex((step) => step.passId === current));
+  const passes = useMemo(() => new Map((chart?.passes ?? []).map((pass) => [pass.id, pass])), [chart]);
+  const names = steps.map((step) => {
+    const pass = passes.get(step.passId);
+    const typeName = (type: string) => t(`chart.sections.${type}`);
+    return (pass && passName(pass, pass.section, pass.section.number, typeName)) || `${typeName(step.type)}${step.number ? ` ${step.number}` : ""}`;
+  });
+
+  // Full names when the row of them fits the bar; measured on a hidden copy, so showing one or the other doesn't flicker.
+  useEffect(() => {
+    const nav = bar.current;
+    const row = fullRow.current;
+    if (!nav || !row) return;
+    const measure = () => {
+      const style = getComputedStyle(nav);
+      const room = nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      setFull(row.scrollWidth <= room);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [names.join("|")]);
 
   // The current one kept in view, on a long song on a phone.
   useEffect(() => {
     bar.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [current]);
+  }, [current, full]);
 
+  const pill = "flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full border px-1.5 text-xs font-semibold whitespace-nowrap";
   return (
-    <nav ref={bar} className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-2 sm:px-4" aria-label={t("live.structure")} data-testid="live-structure">
+    <nav ref={bar} className="relative flex shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-2 sm:px-4" aria-label={t("live.structure")} data-testid="live-structure" data-names={full ? "full" : "short"}>
+      <div ref={fullRow} aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex w-max gap-1.5">
+        {steps.map((step, index) => (
+          <span key={step.passId} className={cn(pill, "px-2.5")}>
+            {names[index]}
+          </span>
+        ))}
+      </div>
       {steps.map((step, index) => {
-        const name = `${t(`chart.sections.${step.type}`)}${step.number ? ` ${step.number}` : ""}`;
+        const name = names[index]!;
         const style = GROUP_STYLES[step.group];
         const isCurrent = step.passId === current;
         return (
@@ -1096,14 +1130,22 @@ function StructureBar({ steps, current, onPick }: { steps: ReturnType<typeof str
             title={name}
             data-group={step.group}
             className={cn(
-              "flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full border px-1.5 text-xs font-semibold transition-colors",
+              pill,
+              "transition-colors",
+              full && "px-2.5",
               index <= reached ? style.filled : style.outlined,
               index < reached && "opacity-60",
               isCurrent && "ring-2 ring-foreground ring-offset-2 ring-offset-background",
             )}
           >
-            {t(`live.short.${step.type}`)}
-            {step.number ?? ""}
+            {full ? (
+              name
+            ) : (
+              <>
+                {t(`live.short.${step.type}`)}
+                {step.number ?? ""}
+              </>
+            )}
           </button>
         );
       })}

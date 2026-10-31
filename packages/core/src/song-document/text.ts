@@ -16,6 +16,7 @@ import {
   type SongDocumentV2,
 } from "../schemas/song-document-v2.js";
 import { reconcileFlow, reconcileSections } from "./reconcile.js";
+import { withoutPlainLabels } from "./section-names.js";
 
 // A ChordPro comment ("{comment: x2}") is a note line for the band. The import
 // parsers have no notes, so each goes through it marked, with its brackets
@@ -239,6 +240,8 @@ export function songFromText(text: string, format: SupportedImportFormat, option
   }
   // Notes at the very end: nothing follows, so they stay a section.
   if (cue) addSection(cue);
+  // Imported (issue #344): a "Verse 2" that only says what the name would is left out, so it's named by the rule, in the reader's language.
+  if (options.mergeRepeats) return { ...withoutPlainLabels({ sections, flow }), key: songKey, copyright };
   return { sections, flow, key: songKey, copyright };
 }
 

@@ -69,7 +69,7 @@ La présentation passe par la [Synchro](/fr/sets/#jouer-synchronisé) : les écr
 ![Présenter sur les écrans, depuis Live](../../../assets/screenshots/fr/present-panel.jpg)
 
 - **Diapositive suivante** et **Diapositive précédente** (les flèches de chaque côté) avancent de deux lignes. Au clavier ou avec une pédale Bluetooth tourne-page, la flèche bas ou Page suivante avance, la flèche haut ou Page précédente recule. Après la dernière diapositive d'un chant, Live passe au chant suivant de la liste et les écrans suivent ; avant sa première, à la dernière diapositive du chant précédent.
-- Les sections du chant (S1, R, S2…) sous la diapositive y mènent directement, pour un refrain repris ou un couplet sauté.
+- Les sections du chant (C1, R, C2…) sous la diapositive y mènent directement, pour un refrain repris ou un couplet sauté.
 - **Écran noir** éteint tous les écrans, pour une prière, une prise de parole ou entre deux chants. Appuyez de nouveau pour faire revenir les paroles.
 - **Arrêter la présentation**, dans le menu Synchro, laisse les écrans afficher le nom de la liste.
 - Quand l'[opérateur média](/fr/screens/#qui-pilote-les-écrans) a pris les écrans seul, le panneau le dit et ses commandes attendent qu'il les rende.

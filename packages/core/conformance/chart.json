@@ -150,7 +150,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -254,7 +255,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -319,7 +321,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Chorus 2",
                 "note": null,
@@ -523,7 +526,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -627,7 +631,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -692,7 +697,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Chorus 2",
                 "note": null,
@@ -897,7 +903,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -1001,7 +1008,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -1066,7 +1074,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Chorus 2",
                 "note": null,
@@ -1271,7 +1280,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -1375,7 +1385,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -1440,7 +1451,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Chorus 2",
                 "note": null,
@@ -1644,7 +1656,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -1748,7 +1761,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -1813,7 +1827,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Chorus 2",
                 "note": null,
@@ -2022,7 +2037,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -2116,7 +2132,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -2181,7 +2198,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Chorus 2",
                 "note": null,
@@ -2451,7 +2469,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -2546,7 +2565,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": "all in",
@@ -2601,7 +2621,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Verse 2",
                 "note": null,
@@ -2902,7 +2923,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -3006,7 +3028,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -3061,7 +3084,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -3116,7 +3140,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -3181,7 +3206,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -3496,7 +3522,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": null,
@@ -3591,7 +3618,8 @@
                   "id": "sec_chorus",
                   "type": "chorus",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": null,
                 "note": "all in",
@@ -3646,7 +3674,8 @@
                   "id": "sec_verse",
                   "type": "verse",
                   "label": null,
-                  "showLabel": true
+                  "showLabel": true,
+                  "number": null
                 },
                 "label": "Verse 2",
                 "note": null,

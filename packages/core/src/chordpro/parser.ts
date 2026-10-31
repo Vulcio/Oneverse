@@ -3,6 +3,7 @@ import type { Line, Segment } from "../schemas/shared.js";
 import { SECTION_TYPES, type SectionType } from "../constants/index.js";
 import { generateId, ID_PREFIXES } from "../ids/index.js";
 import { LABEL_LINE, normalizeSectionType } from "./section-labels.js";
+import { barNotationMarkup, readBarNotation } from "../chords-over-lyrics/bar-notation.js";
 
 // Chords are kept as written (`raw`); `parseChord` in ../chords reads them
 // when they're transposed or shown, so `normalized` stays null.
@@ -119,6 +120,14 @@ export function parseChordPro(text: string): ParsedSection[] {
     }
 
     ensureSection();
+    // Bars of chords, "| G | C | D | G |" or "| [G] | [C] |" (issue #344).
+    const bars = readBarNotation(line);
+    if (bars) {
+      const barLine = parseLine(barNotationMarkup(bars));
+      currentLines.push(barLine);
+      (current!.bars ??= {})[barLine.id] = bars.bars;
+      continue;
+    }
     currentLines.push(parseLine(rawLine));
   }
 

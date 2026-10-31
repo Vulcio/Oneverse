@@ -2,6 +2,7 @@ import type { ParsedSection } from "../schemas/parsed-song.js";
 import type { SectionType } from "../constants/index.js";
 import { generateId, ID_PREFIXES } from "../ids/index.js";
 import { parseLine } from "../chordpro/parser.js";
+import { barNotationMarkup, readBarNotation } from "./bar-notation.js";
 import { LABEL_LINE, normalizeSectionType } from "../chordpro/section-labels.js";
 
 // A chord token: a root note with an optional accidental, quality,
@@ -16,6 +17,7 @@ const NON_CHORD_TOKENS = new Set(["N.C.", "NC", "%"]);
  * line nothing but chord tokens" test to recognize the format. */
 export function isChordLine(trimmedLine: string): boolean {
   if (trimmedLine === "") return false;
+  if (readBarNotation(trimmedLine)) return true;
   const tokens = trimmedLine.split(/\s+/);
   return tokens.every((t) => CHORD_TOKEN.test(t) || NON_CHORD_TOKENS.has(t.toUpperCase()));
 }
@@ -42,12 +44,12 @@ function overlayChords(chordLine: string, lyricLine: string): string {
   const positions = findTokenPositions(chordLine);
   if (positions.length === 0) return lyricLine;
 
-  // No real lyric text to align against (an instrumental bar, a
-  // turnaround) - emit the chords back to back rather than padding out
-  // column-width filler that would otherwise show up as blank "lyric"
-  // segments.
+  // No lyric text to align against (an instrumental bar, a turnaround):
+  // the chords alone, as far apart as they were written (issue #344).
   if (lyricLine.trim() === "") {
-    return positions.map(({ token }) => `[${token}]`).join("");
+    let line = "";
+    for (const { token, column } of positions) line += " ".repeat(Math.max(column - line.replace(/\[[^\]]*\]/g, "").length, 0)) + `[${token}]`;
+    return line;
   }
 
   const lastColumn = positions[positions.length - 1]?.column ?? 0;
@@ -105,6 +107,15 @@ export function parseChordsOverLyrics(text: string): ParsedSection[] {
     }
 
     ensureSection();
+
+    // Bars of chords, "| G | C | D | G |" (issue #344).
+    const bars = readBarNotation(trimmed);
+    if (bars) {
+      const line = parseLine(barNotationMarkup(bars));
+      currentLines.push(line);
+      (current!.bars ??= {})[line.id] = bars.bars;
+      continue;
+    }
 
     if (isChordLine(trimmed)) {
       const next = rawLines[i];

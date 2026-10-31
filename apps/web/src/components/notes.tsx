@@ -24,7 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@oneverse/ui/components/sheet";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { cn } from "@oneverse/ui/lib/utils";
-import type { ChartNotesLayer, PassMarks } from "@oneverse/screen/components/song-chart";
+import { passLabel, type ChartNotesLayer, type PassMarks } from "@oneverse/screen/components/song-chart";
 import { MARGIN_GAP, NotesOverlay, type OverlayLayout, type OverlayNote } from "#/components/notes-overlay";
 import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesState } from "#/lib/notes";
 import { usePresence, useSongPresence } from "#/lib/live-notes";
@@ -40,9 +40,6 @@ import { PersonAvatar } from "#/components/person-avatar";
 
 type Note = SongNote & { pending?: true };
 
-// Section types with a name of their own (as the chart says them).
-const NAMED_SECTIONS = new Set(["intro", "verse", "pre-chorus", "chorus", "post-chorus", "bridge", "vamp", "breakdown", "instrumental", "interlude", "outro", "tag"]);
-
 /** What a note is pinned to, in words ("On G7", "On “grace”", "After Chorus"). */
 function useAnchorLabel(chart: RenderedChart, document: SongDocumentV2 | null) {
   const { t } = useTranslation();
@@ -51,7 +48,7 @@ function useAnchorLabel(chart: RenderedChart, document: SongDocumentV2 | null) {
     const pass = anchor.passId ? chart.passes.find((one) => one.id === anchor.passId) : undefined;
     const sectionId = anchor.kind === "afterPass" ? pass?.section.id : anchor.sectionId;
     const somePass = pass ?? chart.passes.find((one) => one.section.id === sectionId);
-    const section = somePass ? passName(somePass, t) : "";
+    const section = somePass ? (passLabel(somePass, t) ?? "") : "";
     if (anchor.kind === "section") return t("songNotes.on.section", { section });
     if (anchor.kind === "afterPass") return t("songNotes.on.afterPass", { section });
     const line = document?.sections.flatMap((one) => one.lines).find((one) => one.id === anchor.lineId);
@@ -63,10 +60,6 @@ function useAnchorLabel(chart: RenderedChart, document: SongDocumentV2 | null) {
     if (anchor.kind === "word") return t("songNotes.on.word", { word: wordAt(text, anchor.at) });
     return t(anchor.kind === "afterLine" ? "songNotes.on.afterLine" : "songNotes.on.line", { line: short(text) });
   };
-}
-
-function passName(pass: RenderedPass, t: (key: string) => string): string {
-  return pass.label ?? pass.section.label ?? (NAMED_SECTIONS.has(pass.section.type) ? t(`chart.sections.${pass.section.type}`) : "");
 }
 
 /** The word (or syllable run) starting at `at`. */
