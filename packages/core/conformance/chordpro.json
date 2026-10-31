@@ -211,6 +211,52 @@
                 {
                   "id": "line_@2",
                   "kind": "lyric",
+                  "text": "          ",
+                  "chords": [
+                    {
+                      "id": "chd_@3",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_@4",
+                      "at": 3,
+                      "raw": "D"
+                    },
+                    {
+                      "id": "chd_@5",
+                      "at": 6,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_@6",
+                      "at": 10,
+                      "raw": "C"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": null,
+              "groove": null
+            }
+          ]
+        },
+        {
+          "name": "an instrumental in bars: a line of chords alone, a bar each (issue #344)",
+          "args": [
+            "[Intro]\n| G | C . D . | % |\n",
+            "CHORDS_OVER_LYRICS"
+          ],
+          "expected": [
+            {
+              "id": "sec_@1",
+              "type": "intro",
+              "label": "[Intro]",
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_@2",
+                  "kind": "lyric",
                   "text": "",
                   "chords": [
                     {
@@ -221,12 +267,211 @@
                     {
                       "id": "chd_@4",
                       "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_@5",
+                      "at": 0,
                       "raw": "D"
+                    },
+                    {
+                      "id": "chd_@6",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_@7",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@3",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@4",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@5",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@6",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@7",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  }
+                ]
+              },
+              "groove": null
+            }
+          ]
+        },
+        {
+          "name": "bars in ChordPro, with repeat signs and x2",
+          "args": [
+            "{start_of_instrumental}\n||: [Em] | [C] :|| x2\n{end_of_instrumental}\n",
+            "CHORDPRO"
+          ],
+          "expected": [
+            {
+              "id": "sec_@1",
+              "type": "instrumental",
+              "label": null,
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_@2",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_@3",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_@4",
+                      "at": 0,
+                      "raw": "C"
                     },
                     {
                       "id": "chd_@5",
                       "at": 0,
                       "raw": "Em"
+                    },
+                    {
+                      "id": "chd_@6",
+                      "at": 0,
+                      "raw": "C"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@3",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@4",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@5",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@6",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  }
+                ]
+              },
+              "groove": null
+            }
+          ]
+        },
+        {
+          "name": "bars among words: chords alone, no rhythm",
+          "args": [
+            "{start_of_verse}\n[G]Words\n| G | C |\n{end_of_verse}\n",
+            "CHORDPRO"
+          ],
+          "expected": [
+            {
+              "id": "sec_@1",
+              "type": "verse",
+              "label": null,
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_@2",
+                  "kind": "lyric",
+                  "text": "Words",
+                  "chords": [
+                    {
+                      "id": "chd_@3",
+                      "at": 0,
+                      "raw": "G"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_@4",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_@5",
+                      "at": 0,
+                      "raw": "G"
                     },
                     {
                       "id": "chd_@6",
@@ -387,7 +632,7 @@
               {
                 "id": "sec_@1",
                 "type": "verse",
-                "label": "Strophe 1",
+                "label": null,
                 "showLabel": true,
                 "lines": [
                   {
@@ -453,7 +698,7 @@
               {
                 "id": "sec_@10",
                 "type": "verse",
-                "label": "Strophe 2",
+                "label": null,
                 "showLabel": true,
                 "lines": [
                   {

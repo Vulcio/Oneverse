@@ -1,6 +1,7 @@
 import type { SectionType } from "../constants/index.js";
 import type { SongDocumentV2 } from "../schemas/song-document-v2.js";
 import { structureGroupOf, type StructureGroup } from "../song-document/structure.js";
+import { sectionNumbers } from "../song-document/section-names.js";
 
 /**
  * Cue points (issue #110): where each section starts in a recording -
@@ -30,17 +31,12 @@ export interface CueSection {
 /** The song's sections for cue points, and the order it's sung in (section IDs): what to place, and in which order by default. */
 export function cueSectionsOf(doc: Pick<SongDocumentV2, "sections" | "flow">): { sections: CueSection[]; flow: string[] } {
   const flow = doc.flow.map((pass) => pass.sectionId).filter((id) => doc.sections.some((section) => section.id === id));
-  // Numbered by type in the order they're first sung, as the structure bar does; then any never sung.
+  // In the order they're first sung, then any never sung; numbered as everywhere, by where they're written (issue #344).
   const order = [...new Set([...flow, ...doc.sections.map((section) => section.id)])];
-  const byType = new Map<string, string[]>();
-  for (const id of order) {
-    const section = doc.sections.find((candidate) => candidate.id === id)!;
-    byType.set(section.type, [...(byType.get(section.type) ?? []), id]);
-  }
+  const numbers = sectionNumbers(doc.sections);
   const sections = order.map((id) => {
     const section = doc.sections.find((candidate) => candidate.id === id)!;
-    const same = byType.get(section.type) ?? [];
-    return { id, type: section.type as SectionType, label: section.label ?? null, number: same.length > 1 ? same.indexOf(id) + 1 : null, group: structureGroupOf(section.type as SectionType) };
+    return { id, type: section.type as SectionType, label: section.label ?? null, number: numbers.get(id) ?? null, group: structureGroupOf(section.type as SectionType) };
   });
   return { sections, flow };
 }

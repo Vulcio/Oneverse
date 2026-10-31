@@ -15,6 +15,7 @@ import {
   type SectionInstance,
   type SectionType,
   type SectionV2,
+  sectionNumbers,
 } from "@oneverse/core";
 import type { JSONContent } from "@tiptap/core";
 import type { Node as PMNode } from "@tiptap/pm/model";
@@ -289,4 +290,13 @@ export function sameFlow(a: SectionInstance[], b: SectionInstance[]): boolean {
       ]),
     );
   return canonical(a) === canonical(b);
+}
+
+/** A section's number among those of its type, as the editor has them written (issue #344): null when it's the only one. */
+export function sectionNumberIn(doc: PMNode, sectionId: string): number | null {
+  const sections: { id: string; type: string }[] = [];
+  doc.forEach((node) => {
+    if (node.type.name === "section") sections.push({ id: node.attrs.id as string, type: node.attrs.type as string });
+  });
+  return sectionNumbers(sections as { id: string; type: SectionV2["type"] }[]).get(sectionId) ?? null;
 }

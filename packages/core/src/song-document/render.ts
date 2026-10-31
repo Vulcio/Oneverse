@@ -10,6 +10,7 @@ import {
   type OverrideV2,
 } from "../schemas/arrangement-document-v2.js";
 import type { LineKind, SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song-document-v2.js";
+import { sectionNumbers } from "./section-names.js";
 
 /**
  * A chart as it's drawn: the song, played the way an arrangement says (or
@@ -65,7 +66,8 @@ export interface RenderedLine {
 export interface RenderedPass {
   /** The flow item's or arrangement item's ID. */
   id: string;
-  section: Pick<SectionV2, "id" | "type" | "label" | "showLabel">;
+  /** `number`: which of its type, by where it's written, when the song has several (issue #344, sectionName()). */
+  section: Pick<SectionV2, "id" | "type" | "label" | "showLabel"> & { number: number | null };
   /** The pass's own label ("Final chorus"); null for the section's. */
   label: string | null;
   note: string | null;
@@ -110,6 +112,7 @@ export function chartNotation(value: ChordNotationValue | null | undefined): Cho
 /** The song played as `arrangement` says (or as written), seen through `view`. */
 export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocumentV2 | null = null, view: ChartView = {}): RenderedChart {
   const sections = new Map(song.sections.map((section) => [section.id, section]));
+  const numbers = sectionNumbers(song.sections);
   const items: Item[] = arrangement
     ? arrangement.items
     : song.flow.length > 0
@@ -233,7 +236,7 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
     // 7-8: transposed, then the player's own view.
     passes.push({
       id: item.id,
-      section: { id: section.id, type: section.type, label: section.label ?? null, showLabel: section.showLabel },
+      section: { id: section.id, type: section.type, label: section.label ?? null, showLabel: section.showLabel, number: numbers.get(section.id) ?? null },
       label: item.label ?? null,
       note: item.note ?? null,
       keyChange: item.keyChange ? (key ?? item.keyChange.key) : null,

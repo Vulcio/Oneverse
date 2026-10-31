@@ -1,4 +1,4 @@
-import type { SectionV2, SongRepeat } from "@oneverse/core";
+import { sectionName, sectionNumbers, type SectionV2, type SongRepeat } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -33,9 +33,10 @@ export function RepeatsCard({ songVersionId, revision, sections, dirty }: { song
 
   if (repeats.length === 0) return done ? <p className="text-sm text-muted-foreground" role="status">{done}</p> : null;
 
+  const numbers = sectionNumbers(sections);
   const nameOf = (id: string) => {
     const section = sections.find((one) => one.id === id);
-    return section ? section.label || t(`chart.sections.${section.type}`) : "?";
+    return section ? (sectionName(section, numbers.get(id), (type) => t(`chart.sections.${type}`)) ?? t("chart.sections.other")) : "?";
   };
   const describe = (repeat: SongRepeat) => {
     const words = { name: nameOf(repeat.sectionId), of: nameOf(repeat.ofSectionId), steps: Math.abs(repeat.steps), direction: repeat.steps > 0 ? t("repeats.up") : t("repeats.down"), count: repeat.chords };

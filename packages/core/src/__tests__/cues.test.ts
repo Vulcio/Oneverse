@@ -17,7 +17,7 @@ const doc = {
 };
 
 describe("cue points (issue #110)", () => {
-  it("names the sections as the structure bar does: verses numbered, in the order sung; the order as section IDs", () => {
+  it("names the sections as the structure bar does: verses numbered by where they're written, listed in the order sung; the order as section IDs", () => {
     const { sections, flow } = cueSectionsOf(doc);
     expect(sections.map((section) => [section.id, section.number, section.group])).toEqual([
       ["v1", 1, "verse"],

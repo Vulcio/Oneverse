@@ -37,26 +37,13 @@ export interface StructureStep {
 
 /**
  * The song's passes in the order they're sung, for Live's structure bar:
- * V1 C V2 C B C. Sections are numbered by type in the order they first
- * come, and only when a song has more than one of that type; a section
- * sung again keeps its number.
+ * V1 C V2 C B C. Sections are numbered as everywhere (issue #344,
+ * sectionNumbers()): by where they're written, only when a song has more
+ * than one of that type; a section sung again keeps its number.
  */
 export function structureOf(chart: RenderedChart): StructureStep[] {
-  const byType = new Map<SectionType, string[]>();
-  for (const pass of chart.passes) {
-    const type = pass.section.type as SectionType;
-    const seen = byType.get(type) ?? [];
-    if (!seen.includes(pass.section.id)) seen.push(pass.section.id);
-    byType.set(type, seen);
-  }
   return chart.passes.map((pass) => {
     const type = pass.section.type as SectionType;
-    const sections = byType.get(type) ?? [];
-    return {
-      passId: pass.id,
-      type,
-      number: sections.length > 1 ? sections.indexOf(pass.section.id) + 1 : null,
-      group: GROUPS[type] ?? "other",
-    };
+    return { passId: pass.id, type, number: pass.section.number, group: GROUPS[type] ?? "other" };
   });
 }

@@ -19,6 +19,7 @@ export * from "./song-document/bars.js";
 export * from "./song-document/bar-lines.js";
 export * from "./song-document/rhythm-edit.js";
 export * from "./song-document/structure.js";
+export * from "./song-document/section-names.js";
 export * from "./schemas/midi.js";
 export * from "./schemas/musicbrainz.js";
 export * from "./schemas/metadata.js";

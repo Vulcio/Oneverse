@@ -10,6 +10,7 @@ import {
   type SectionInstance,
   type SectionType,
   type SectionV2,
+  sectionName,
 } from "@oneverse/core";
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from "@tiptap/react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Copy, Eye, EyeOff, Link2, Lock, LockOpen, Minus, MoreHorizontal, Plus, RotateCcw, Trash2, Unlink2 } from "lucide-react";
@@ -17,7 +18,7 @@ import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { cn } from "@oneverse/ui/lib/utils";
-import { editorToSections } from "./document";
+import { editorToSections, sectionNumberIn } from "./document";
 import { BlockTools, ToolButton } from "./block-tools";
 import { deleteLinked, moveBlock } from "./extensions";
 import { SectionInserter } from "./section-inserter";
@@ -57,7 +58,9 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
   const index = editor.state.doc.resolve(Math.max(0, at())).index(0);
   const count = editor.state.doc.childCount;
   const update = (change: Partial<SectionInstance>) => actions?.updatePass(passId, change);
-  const name = section ? section.label || t(`chart.sections.${section.type as SectionType}`) : "";
+  // Named as the section it sings, by the one rule (issue #344): "Chorus", "Verse 2".
+  const number = useEditorState({ editor, selector: ({ editor: current }) => (current ? sectionNumberIn(current.state.doc, sectionId) : null) });
+  const name = section ? (sectionName(section, number, (type) => t(`chart.sections.${type as SectionType}`)) ?? t("chart.sections.other")) : "";
   const steps = pass.transpose ?? 0;
   // Its own words, lines or chords: marked *. Only moved up or down shows as its own badge (issue #252).
   const changed = passEdited(pass);

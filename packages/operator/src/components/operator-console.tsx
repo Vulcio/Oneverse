@@ -13,6 +13,7 @@ import {
   type TeamMember,
   type TeamPosition,
   slideKey,
+  passName,
 } from "@oneverse/core";
 import { ChevronLeft, ChevronRight, Crown, Keyboard, Layers, Minus, MonitorOff, MonitorUp, Pause, Play, Plus, RotateCcw, Send, Square, Timer, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -458,7 +459,7 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
                 <span className="flex items-center gap-1">
                   {first && pass ? (
                     <span className="rounded bg-[var(--section-tag)] px-1.5 text-[10px] font-semibold tracking-wide text-[var(--section-ink)] uppercase">
-                      {pass.label ?? pass.section.label ?? t(`chart.sections.${pass.section.type}`)}
+                      {passName(pass, pass.section, pass.section.number, (type) => t(`chart.sections.${type}`))}
                     </span>
                   ) : null}
                   <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">{index + 1}</span>
