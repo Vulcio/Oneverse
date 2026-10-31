@@ -1,4 +1,4 @@
-import { chartNotation, cueSectionsOf, findKeptSong, inlineSafeType, keptFile, keptSongCopy, offlineViewer, renderChart, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type FoundSong, type SavedDisplaySettings } from "@oneverse/core";
+import { chartNotation, cueSectionsOf, inlineSafeType, keptFile, renderChart, type Attachment } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { FileText, Mic } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -18,35 +18,9 @@ import { setMode, useMode } from "#/lib/mode";
 import { keysOffline } from "#/lib/offline-db";
 import { deviceStorage } from "#/lib/offline-data";
 
-/** A song as kept on the device, with its files' list and the player's chord settings. */
-export interface OfflineSong extends FoundSong {
-  attachments: Attachment[];
-  notation: ChordNotationValue;
-  capoDisplay: CapoDisplayModeValue;
-  /** Chord diagrams beside the chart (issue #207), as of the last sync. */
-  diagrams: ChordDiagramsValue;
-  colors: boolean;
-  player: DiagramPlayer;
-  /** Each mode's display settings (issue #209), as of the last sync. */
-  displaySettings: SavedDisplaySettings | null;
-}
+import { loadOfflineSong, type OfflineSong } from "#/lib/offline-song";
 
-/** The song as kept on the device (on its own, or in a kept set), if it is. */
-export async function loadOfflineSong(songVersionId: string): Promise<OfflineSong | undefined> {
-  const storage = deviceStorage();
-  const [found, kept, viewer] = await Promise.all([findKeptSong(storage, songVersionId), keptSongCopy(storage, songVersionId), offlineViewer(storage)]);
-  if (!found) return undefined;
-  return {
-    ...found,
-    attachments: kept?.attachments ?? [],
-    notation: viewer?.chordNotation ?? "LETTERS",
-    capoDisplay: viewer?.capoDisplayMode ?? "SOUNDING",
-    diagrams: viewer?.chordDiagrams ?? "OFF",
-    colors: viewer?.chordColors ?? false,
-    player: viewer ?? {},
-    displaySettings: viewer?.displaySettings ?? null,
-  };
-}
+export { loadOfflineSong, type OfflineSong };
 
 /**
  * A song's page offline (issue #52): read-only - its chart as written, with

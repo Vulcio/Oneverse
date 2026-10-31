@@ -1,17 +1,16 @@
 import type { SetlistSummary, SongbookSummary, TeamSummary } from "@oneverse/core";
 import { useMatches, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { AppSidebar } from "#/components/app-sidebar";
 import { OfflineBanner } from "#/components/offline-banner";
 import { SiteHeader } from "#/components/site-header";
-import { MetronomeReturnButton } from "#/components/metronome";
-import { StemDockSlot, StemReturnButton } from "#/components/stem-dock";
+import { StemDockSlot } from "#/components/stem-dock-slot";
 import { SyncDetails } from "#/components/sync-details";
-import { YouTubeHost } from "#/components/youtube-dock";
-import { stopMetronome } from "#/lib/metronome-engine";
+import { stopMetronome, useMetronome } from "#/lib/metronome-engine";
 import { useRecordingClickBridge } from "#/lib/recording-click";
 import { useSyncBridge } from "#/lib/sync-client";
-import { unloadStems } from "#/lib/stem-engine";
+import { unloadStems, useStems } from "#/lib/stem-engine";
+import { useYouTube } from "#/lib/youtube-player";
 import type { AppSession } from "@oneverse/app/server-auth";
 import { nestedSidebarFor } from "#/lib/sidebar-kind";
 import { ItemPanel, NestedSidebar } from "#/components/nested-sidebar";
@@ -54,8 +53,7 @@ export function AppShell({
           <ShellSidebar session={session} teams={teams} songbooks={songbooks} setlists={setlists} />
           <div className="flex min-w-0 flex-1 flex-col">{children}</div>
         </SidebarProvider>
-        <StemReturnButton />
-        <YouTubeHost />
+        <Players metronome={false} />
         <SyncDetails />
       </>
     );
@@ -77,11 +75,33 @@ export function AppShell({
           <DockHeight slot={dockSlot} />
         </SidebarInset>
       </SidebarProvider>
-      <StemReturnButton />
-      <MetronomeReturnButton />
-      <YouTubeHost />
+      <Players metronome />
       <SyncDetails />
     </StemDockSlot.Provider>
+  );
+}
+
+const ShellPlayers = lazy(() => import("#/components/shell-players"));
+
+/**
+ * The stem player's and the metronome's way back, and the YouTube frame
+ * (issue #343): loaded once something has played, and kept from then on so
+ * the video's frame isn't taken away under it.
+ */
+function Players({ metronome }: { metronome: boolean }) {
+  const stems = useStems();
+  const ticking = useMetronome();
+  const youtube = useYouTube();
+  const [wanted, setWanted] = useState(false);
+  const playing = stems.playing || ticking.playing || !!youtube.video;
+  useEffect(() => {
+    if (playing) setWanted(true);
+  }, [playing]);
+  if (!wanted && !playing) return null;
+  return (
+    <Suspense fallback={null}>
+      <ShellPlayers metronome={metronome} />
+    </Suspense>
   );
 }
 

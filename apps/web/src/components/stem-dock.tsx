@@ -30,11 +30,12 @@ import {
   UserRoundPlus,
   type LucideIcon,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useContext, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { cueAt, sortedCues, type CuePoint, multitracksOf, semitonesBetween, transposeKey, transposesPart } from "@oneverse/core";
 import { NEW_TARGET, RecorderDialog } from "#/components/recorder-dialog";
+import { StemDockSlot } from "#/components/stem-dock-slot";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
 import { StemRecordPanel } from "#/components/stem-record-panel";
 import { CueEditor, SectionLane, sectionsGradient, useCueNames } from "#/components/stem-cues";
@@ -104,7 +105,7 @@ export function combinePeaks(tracks: (Pick<StemTrack, "peaks" | "length"> & { vo
 }
 
 /** Where the dock goes: the bottom of the page's column, kept in view (see AppShell). */
-export const StemDockSlot = createContext<HTMLElement | null>(null);
+export { StemDockSlot };
 
 const PART_ICONS: Record<StemPart, LucideIcon> = {
   VOCALS: MicVocal,

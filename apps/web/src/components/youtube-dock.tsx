@@ -5,7 +5,7 @@ import { useContext, useEffect, useRef, useState, type CSSProperties } from "rea
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
-import { StemDockSlot } from "#/components/stem-dock";
+import { StemDockSlot } from "#/components/stem-dock-slot";
 import { Button } from "@oneverse/ui/components/button";
 import { setMode } from "#/lib/mode";
 import { chooseStemSpeed, useChosenSpeed } from "#/lib/stem-engine";

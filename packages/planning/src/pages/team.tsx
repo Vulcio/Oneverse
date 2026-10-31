@@ -1,4 +1,4 @@
-import type { ApiClient, TeamRole } from "@oneverse/core";
+import type { TeamRole } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 import { RoleBadges } from "../components/role-badges";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
 import { HostLink, usePlanning } from "../host";
+import { loadTeamPage } from "../loaders";
+
+export { loadTeamPage };
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 import { Button } from "@oneverse/ui/components/button";
@@ -22,21 +25,6 @@ import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from 
 import { TeamCalendar } from "../components/team-calendar";
 import { NewGroupForm } from "./organization";
 
-/** What a team's (a group's) page needs, or null when there's no such team or it isn't theirs. */
-export async function loadTeamPage(api: ApiClient, teamId: string) {
-  const team = await api.getTeam(teamId).catch(() => null);
-  if (!team) return null;
-  const [members, inviteLinks, customInstruments, organizations, positions, organization] = await Promise.all([
-    api.listTeamMembers(teamId),
-    team.currentUserRole === "ADMIN" ? api.listTeamInviteLinks(teamId) : [],
-    api.listCustomInstruments(),
-    api.listMyOrganizations().catch(() => null),
-    api.listTeamPositions(teamId),
-    // Its organisation's groups (issue #241), for where it sits.
-    team.organization ? api.getOrganization(team.organization.id).catch(() => null) : null,
-  ]);
-  return { team, members, inviteLinks, customInstruments, organizations, positions, organization };
-}
 
 /**
  * A team, or an organisation's group (issue #241): its calendar, members and

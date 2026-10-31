@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { loadTeamPage, TeamPage } from "@oneverse/planning/pages/team";
+import { loadTeamPage } from "@oneverse/planning/loaders";
+import { TeamPage } from "@oneverse/planning/pages/team";
 import { AppearanceCard } from "#/components/appearance-card";
 import { BibleCard } from "#/components/bible-card";
 import { BrandsCard } from "#/components/brands-card";

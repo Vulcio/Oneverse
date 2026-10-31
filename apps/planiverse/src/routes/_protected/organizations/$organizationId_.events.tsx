@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { loadOrganizationEventsPage, OrganizationEventsPage } from "@oneverse/planning/pages/organization-events";
+import { loadOrganizationEventsPage } from "@oneverse/planning/loaders";
+import { OrganizationEventsPage } from "@oneverse/planning/pages/organization-events";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/organizations/$organizationId_/events")({

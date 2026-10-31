@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { loadOrganizationPage, OrganizationPage } from "@oneverse/planning/pages/organization";
+import { loadOrganizationPage } from "@oneverse/planning/loaders";
+import { OrganizationPage } from "@oneverse/planning/pages/organization";
 import { BibleCard } from "#/components/bible-card";
 import { BrandsCard } from "#/components/brands-card";
 import { ScopedRolesCard } from "#/components/scoped-roles-card";

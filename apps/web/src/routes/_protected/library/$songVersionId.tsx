@@ -1,7 +1,8 @@
 import { isNetworkError, onlineOrKept } from "@oneverse/core";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { loadOfflineSong, OfflineSongPage, type OfflineSong } from "#/components/offline-song-page";
+import { OfflineSongPage } from "#/components/offline-song-page";
+import { loadOfflineSong, type OfflineSong } from "#/lib/offline-song";
 import { PracticeSongPage } from "#/components/practice-song-page";
 import { SongEditor } from "#/components/song-editor/song-editor";
 import { useMode } from "#/lib/mode";

@@ -43,3 +43,5 @@ apps/api/.data/
 
 # End-to-end test screenshots
 e2e/.artifacts/
+e2e/perf/ids.json
+e2e/perf/pages.json

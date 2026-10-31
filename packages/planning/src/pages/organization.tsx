@@ -1,4 +1,4 @@
-import type { ApiClient, OrganizationTeam, TeamRole } from "@oneverse/core";
+import type { OrganizationTeam, TeamRole } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -16,6 +16,9 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { HostLink, usePlanning } from "../host";
+import { loadOrganizationPage } from "../loaders";
+
+export { loadOrganizationPage };
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 import { forgetMyOrganizations, groupTree } from "../organizations";
@@ -25,17 +28,6 @@ import { forgetMyOrganizations, groupTree } from "../organizations";
  * for its admins, its details, roles, invite links, and taking a team or
  * someone out, and the app's own cards (`adminCards`: Songverse's brands).
  */
-/** What the page needs, or null when there's no such organisation (or it isn't theirs to see). */
-export async function loadOrganizationPage(api: ApiClient, organizationId: string) {
-  const organization = await api.getOrganization(organizationId).catch(() => null);
-  if (!organization) return null;
-  const [members, inviteLinks, mine] = await Promise.all([
-    api.listOrganizationMembers(organizationId),
-    organization.currentUserRole === "ADMIN" ? api.listOrganizationInviteLinks(organizationId) : [],
-    api.listMyOrganizations(),
-  ]);
-  return { organization, members, inviteLinks, mode: mine.mode };
-}
 
 export function OrganizationPage({ userId, data, adminCards }: { userId: string; data: NonNullable<Awaited<ReturnType<typeof loadOrganizationPage>>>; adminCards?: ReactNode }) {
   const { api, links } = usePlanning();

@@ -1,4 +1,4 @@
-import { addDays, localDate, type ApiClient, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type OrganizationEventPreset, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
+import { addDays, localDate, type CustomInstrument, type EventPart, type OrganizationDetail, type OrganizationEvent, type OrganizationEventDate, type OrganizationEventPreset, type OrganizationMember, type OrganizationTeam } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Ban, CircleCheck, MapPin, MoreHorizontal, Pencil, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -19,6 +19,9 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { LocationField, useLocations } from "../components/locations";
 import { HostLink, usePlanning } from "../host";
+import { loadOrganizationEventsPage } from "../loaders";
+
+export { loadOrganizationEventsPage };
 import { cn } from "@oneverse/ui/lib/utils";
 
 const SHOWN_WEEKS = 8;
@@ -30,18 +33,6 @@ const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "U
  * admins and the event's host, who change it, cancel a date for all, and
  * start one from a preset.
  */
-/** What the page needs, or null when there's no such organisation (or it isn't theirs to see). */
-export async function loadOrganizationEventsPage(api: ApiClient, organizationId: string) {
-  const organization = await api.getOrganization(organizationId).catch(() => null);
-  if (!organization) return null;
-  const [events, presets, members, customInstruments] = await Promise.all([
-    api.listOrganizationEvents(organizationId),
-    api.listOrganizationEventPresets(organizationId),
-    api.listOrganizationMembers(organizationId),
-    api.listCustomInstruments(),
-  ]);
-  return { organization, events, presets, members, customInstruments };
-}
 
 export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<ReturnType<typeof loadOrganizationEventsPage>>> }) {
   const { api, links, sets } = usePlanning();

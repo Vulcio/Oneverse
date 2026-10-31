@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { loadTeamPage, TeamPage } from "@oneverse/planning/pages/team";
+import { loadTeamPage } from "@oneverse/planning/loaders";
+import { TeamPage } from "@oneverse/planning/pages/team";
 import { apiClient } from "#/lib/api-client";
 
 export const Route = createFileRoute("/_protected/teams/$teamId")({

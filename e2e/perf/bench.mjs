@@ -9,6 +9,7 @@
 //   SONGS=5000 node perf/bench.mjs   # a smaller library
 //   BUDGET=1 node perf/bench.mjs     # fail when a page is over its budget
 import { execSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import { API, api, call, sql, user } from "../lib/harness.mjs";
 
 const SONGS = Number(process.env.SONGS ?? 50_000);
@@ -70,6 +71,9 @@ for (let i = 0; i < 6; i++) {
 }
 const book = await api(owner, "POST", "/songbooks", { name: "Bench book", kind: "SIMPLE", teamId: team.id });
 for (const id of songs.filter((_, n) => n % 2).slice(0, 100)) await api(owner, "POST", `/songbooks/${book.id}/entries`, { songVersionId: id });
+
+// What perf/pages.mjs opens in a browser (issue #343).
+writeFileSync(new URL("./ids.json", import.meta.url), JSON.stringify({ owner, members, team, songs, sets, songbook: book.id }));
 
 const member = members[0];
 const set = sets[0];
