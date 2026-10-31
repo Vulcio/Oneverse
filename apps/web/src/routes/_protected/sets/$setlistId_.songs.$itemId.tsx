@@ -1,6 +1,6 @@
-import { ApiError, cueSectionsOf, keptSetSong, onlineOrKept, transposeKey, type Attachment, type SetlistSongView } from "@oneverse/core";
+import { ApiError, cueSectionsOf, keptSetSong, onlineOrKept, transposeKey, type Attachment, type SetlistSongView, type SongLink } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MetronomeSongButton } from "#/components/metronome";
@@ -84,6 +84,8 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
     .filter(Boolean)
     .join(" · ");
 
+  const reference = useVersionReference(song?.id ?? null, view.arrangement?.linkId ?? null);
+
   return (
     <div className="flex flex-col gap-6">
       <Link
@@ -99,6 +101,12 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-2xl font-semibold">{setItemTitle(view, t)}</h1>
           <p className="text-sm text-muted-foreground">{details}</p>
+          {reference ? (
+            <a href={reference.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 self-start text-sm text-primary hover:underline" data-testid="version-reference">
+              <ExternalLink className="size-3.5" />
+              {t("sets.versionReference", { label: reference.label })}
+            </a>
+          ) : null}
           {view.sharedBy ? (
             <div>
               <Badge variant="muted">{t("sets.sharedBy", { name: view.sharedBy.displayName })}</Badge>
@@ -132,6 +140,8 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
           tempo={tempo}
           timeSignature={arrangement?.timeSignature ?? song.document.defaults.timeSignature}
           setlist={{ id: set.id, name: setlistTitle(set, t, i18n.language) }}
+          // What its version plays along to (issue #346).
+          version={view.arrangement ? { link: reference, multitrackId: view.arrangement.multitrackId ?? null } : null}
           songKey={song.key}
           // The key the set plays it in: its arrangement's, with the set's own transposition on top.
           targetKey={song.key ? transposeKey(song.key, (arrangement?.transposeSteps ?? 0) + item.transposeSteps) : null}
@@ -218,6 +228,7 @@ function SetSongStems({
   setlist,
   songKey,
   targetKey,
+  version,
 }: {
   songVersionId: string;
   title: string;
@@ -230,6 +241,8 @@ function SetSongStems({
   /** The version's, for the metronome with the recording (issue #100). */
   tempo: number | null | undefined;
   timeSignature: { numerator: number; denominator: number } | null | undefined;
+  /** What the version the set plays it in plays along to (issue #346): its reference recording and multitrack. */
+  version: { link: SongLink | null; multitrackId: string | null } | null;
 }) {
   const { mode } = useMode();
   // Chosen for the song in this set: the set's own multitrack by default.
@@ -237,7 +250,12 @@ function SetSongStems({
   const chosen = useChosenMultitrack(choiceKey);
   // Bumped when a part's recorded here, to list the files again.
   const [reload, setReload] = useState(0);
-  const [files, setFiles] = useState<{ attachments: Attachment[]; offline: boolean; youtubeId: string | null; cueSections?: ReturnType<typeof cueSectionsOf> }>({ attachments: [], offline: false, youtubeId: null });
+  const [files, setFiles] = useState<{ attachments: Attachment[]; offline: boolean; songVideo: string | null; cueSections?: ReturnType<typeof cueSectionsOf> }>({
+    attachments: [],
+    offline: false,
+    songVideo: null,
+  });
+  const link = version?.link ?? null;
 
   useEffect(() => {
     if (mode !== "practice") return;
@@ -245,7 +263,7 @@ function SetSongStems({
     Promise.all([songFiles(songVersionId), apiClient.getSongVersion(songVersionId).catch(() => null)])
       .then(([files, version]) => ({
         ...files,
-        youtubeId: version?.identifiers.find((identifier) => identifier.type === "YOUTUBE")?.value ?? null,
+        songVideo: version?.identifiers.find((identifier) => identifier.type === "YOUTUBE")?.value ?? null,
         // Its sections, for the cue points (issue #110).
         ...(version ? { cueSections: cueSectionsOf(version.documentJson) } : {}),
       }))
@@ -257,12 +275,14 @@ function SetSongStems({
       cancelled = true;
     };
   }, [mode, songVersionId, reload]);
+  // The version's reference video (issue #346), from its start; else the song's own.
+  const youtube = youtubeOf(link, files.songVideo);
 
-  const playable = stemFilesOf(files.attachments, chosen, setlist.id);
+  const playable = stemFilesOf(files.attachments, chosen, setlist.id, version?.multitrackId);
   if (mode !== "practice") return null;
   // No audio of its own: its YouTube video, if it has one (issue #66).
   if (playable.stems.length === 0) {
-    return files.youtubeId ? <YouTubeDock video={{ songVersionId, videoId: files.youtubeId, title, returnTo }} /> : null;
+    return youtube ? <YouTubeDock video={{ songVersionId, videoId: youtube.id, start: youtube.start, title, returnTo }} /> : null;
   }
   return (
     <StemDock
@@ -282,4 +302,28 @@ function SetSongStems({
       }}
     />
   );
+}
+
+/** The video a set's song plays: its version's reference recording when it's a YouTube video (issue #346), else the song's own. */
+function youtubeOf(link: SongLink | null, songVideo: string | null): { id: string; start: number | null } | null {
+  if (link?.service === "YOUTUBE" && link.value) return { id: link.value, start: link.startSeconds };
+  return songVideo ? { id: songVideo, start: null } : null;
+}
+
+/** The reference recording the set's version plays along to (issue #346), when the viewer sees it. */
+function useVersionReference(songVersionId: string | null, linkId: string | null): SongLink | null {
+  const [link, setLink] = useState<SongLink | null>(null);
+  useEffect(() => {
+    setLink(null);
+    if (!songVersionId || !linkId) return;
+    let live = true;
+    apiClient.listSongLinks(songVersionId).then(
+      (links) => live && setLink(links.find((one) => one.id === linkId) ?? null),
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [songVersionId, linkId]);
+  return link;
 }

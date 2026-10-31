@@ -509,6 +509,13 @@ async function promoteToGlobal(tx: Tx, songVersionId: string, trustLabel: string
     await tx.attachment.updateMany({ where: { songVersionId, visibility: { in: ["SONG", "SHARED"] }, uploadedByUserId: null }, data: { uploadedByUserId: song.ownerUserId } });
     await tx.attachment.updateMany({ where: { songVersionId, visibility: { in: ["SONG", "SHARED"] } }, data: { visibility: "PRIVATE" } });
   }
+  // Its reference recordings (issue #346) the same way.
+  if (song.ownerScope === "TEAM" && song.ownerTeamId) {
+    await tx.songLink.updateMany({ where: { songVersionId, visibility: { in: ["SONG", "SHARED"] } }, data: { visibility: "TEAM", visibleToTeamId: song.ownerTeamId } });
+  } else {
+    await tx.songLink.updateMany({ where: { songVersionId, visibility: { in: ["SONG", "SHARED"] }, addedByUserId: null }, data: { addedByUserId: song.ownerUserId } });
+    await tx.songLink.updateMany({ where: { songVersionId, visibility: { in: ["SONG", "SHARED"] } }, data: { visibility: "PRIVATE" } });
+  }
   await tx.songOwnershipRequest.updateMany({ where: { songVersionId, status: "PENDING" }, data: { status: "DECLINED", decidedAt: new Date() } });
   // Everyone sees it now: sharing it with someone (#77) means nothing more.
   await tx.accessGrant.deleteMany({ where: { songVersionId } });

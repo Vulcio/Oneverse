@@ -13,6 +13,8 @@ import { otherPlayers, pauseStems } from "#/lib/stem-engine";
 export interface YouTubeVideo {
   songVersionId: string;
   videoId: string;
+  /** Where it starts, in seconds (a reference recording's, issue #346). */
+  start?: number | null;
   title: string;
   /** The page to come back to. */
   returnTo: string;
@@ -39,8 +41,8 @@ interface YTPlayer {
   getDuration(): number;
   setPlaybackRate(rate: number): void;
   getPlaybackRate(): number;
-  cueVideoById(videoId: string): void;
-  loadVideoById(videoId: string): void;
+  cueVideoById(video: { videoId: string; startSeconds?: number }): void;
+  loadVideoById(video: { videoId: string; startSeconds?: number }): void;
   destroy(): void;
 }
 interface YTNamespace {
@@ -121,8 +123,9 @@ async function ensurePlayer(video: YouTubeVideo, autoplay: boolean) {
   if (player && ready) {
     playerVideo = video.videoId;
     set({ position: 0, duration: 0 });
-    if (autoplay) player.loadVideoById(video.videoId);
-    else player.cueVideoById(video.videoId);
+    const load = { videoId: video.videoId, ...(video.start ? { startSeconds: video.start } : {}) };
+    if (autoplay) player.loadVideoById(load);
+    else player.cueVideoById(load);
     return;
   }
   if (!host) return;
@@ -145,7 +148,7 @@ async function ensurePlayer(video: YouTubeVideo, autoplay: boolean) {
     height: "100%",
     // No tracking cookies until the video plays.
     host: "https://www.youtube-nocookie.com",
-    playerVars: { playsinline: 1, rel: 0, autoplay: autoplay ? 1 : 0 },
+    playerVars: { playsinline: 1, rel: 0, autoplay: autoplay ? 1 : 0, ...(video.start ? { start: video.start } : {}) },
     events: {
       onReady: () => {
         ready = true;

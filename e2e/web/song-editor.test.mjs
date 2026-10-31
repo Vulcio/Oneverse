@@ -273,7 +273,7 @@ await step("link a new song to one from the match panel: an adaptation, in the s
   if (await page.getByLabel("Version name").count()) throw new Error("the version name field is still there");
 });
 
-await step("the original lists it under Linked songs; Add a translation starts a song linked to it", async () => {
+await step("the original lists it under Translations and adaptations; Add a translation starts a song linked to it", async () => {
   await page.goto(`${WEB}/library/${songId}`);
   const linked = page.getByTestId("linked-songs");
   await linked.getByRole("link", { name: TITLE }).waitFor();

@@ -30,6 +30,7 @@ export * from "./lyrics-only/parser.js";
 export * from "./import-detection/detect-format.js";
 export * from "./i18n/index.js";
 export * from "./streaming-links/parser.js";
+export * from "./streaming-links/reference.js";
 export * from "./metadata/rank.js";
 export * from "./music-keys/transpose.js";
 export * from "./chords/chord.js";

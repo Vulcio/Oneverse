@@ -344,6 +344,7 @@ model User {
   songbooksShared           SongbookShare[]          @relation("SongbookShareBy")
   importJobs                ImportJob[]
   uploadedAttachments       Attachment[]             @relation("AttachmentUploader")
+  addedSongLinks            SongLink[]               @relation("SongLinkAddedBy")
   ownedSetlists             Setlist[]                @relation("SetlistOwnerUser")
   guestSetlists             SetlistGuest[]
   sharedSetlistItems        SetlistItem[]            @relation("SetlistItemSharedBy")
@@ -678,6 +679,7 @@ model Team {
   ownedSetlists        Setlist[]              @relation("SetlistOwnerTeam")
   ownershipRequests    SongOwnershipRequest[]
   visibleAttachments   Attachment[]           @relation("AttachmentVisibleToTeam")
+  visibleSongLinks     SongLink[]             @relation("SongLinkVisibleToTeam")
   contributedVersions  SongVersion[]          @relation("VersionContributedByTeam")
   // What its members may do (issue #160), and its storage pool's limit.
   roleAssignments      RoleAssignment[]
@@ -1097,6 +1099,7 @@ model SongVersion {
   songbookEntries   SongbookEntry[]
   versionTags       SongVersionTag[]
   identifiers       SongVersionIdentifier[]
+  links             SongLink[]
   submissions       Submission[]            @relation("SubmissionSong")
   publishedFrom     Submission[]            @relation("SubmissionPublished")
   importJobs        ImportJob[]
@@ -1236,6 +1239,14 @@ model Arrangement {
   guitarTuningPresetId String?
   guitarTuningPreset   TuningPreset? @relation(fields: [guitarTuningPresetId], references: [id])
 
+  // What this version is played along to (issue #346), when it isn't the
+  // song's own: one of the song's reference recordings, and one of its
+  // multitracks (Attachment.multitrackId, a group id). In a set, a
+  // multitrack recorded for that set still comes first.
+  linkId       String?
+  link         SongLink? @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  multitrackId String?
+
   // Relations: an arrangement can't outlive its song.
   songVersion      SongVersion           @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
   ownerUser        User?                 @relation("ArrangementOwnerUser", fields: [ownerUserId], references: [id])
@@ -1249,6 +1260,46 @@ model Arrangement {
   @@index([ownerUserId])
   @@index([ownerTeamId])
   @@index([guitarTuningPresetId])
+}
+
+// A song's reference recordings (issue #346): "Live 2019", "Acoustic" - a
+// video or a track on a streaming service, or any address, from an optional
+// start. Several per song, each its adder's, shown to whom they choose as
+// files are (Attachment.visibility). The song's own links (one per service,
+// filled by the metadata providers) stay SongVersionIdentifier rows.
+model SongLink {
+  id              String               @id @default(cuid())
+  songVersionId   String
+  url             String
+  service         SongLinkService
+  // The video's or track's ID on its service; null for OTHER.
+  value           String?
+  label           String
+  // Where to start playing, in seconds.
+  startSeconds    Int?
+  addedByUserId   String?
+  visibility      AttachmentVisibility @default(PRIVATE)
+  // TEAM: the team that sees it (one its adder belongs to).
+  visibleToTeamId String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  songVersion   SongVersion   @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
+  addedBy       User?         @relation("SongLinkAddedBy", fields: [addedByUserId], references: [id], onDelete: SetNull)
+  visibleToTeam Team?         @relation("SongLinkVisibleToTeam", fields: [visibleToTeamId], references: [id], onDelete: SetNull)
+  arrangements  Arrangement[]
+
+  @@index([songVersionId])
+  @@index([addedByUserId])
+  @@index([visibleToTeamId])
+}
+
+enum SongLinkService {
+  YOUTUBE
+  SPOTIFY
+  APPLE_MUSIC
+  DEEZER
+  OTHER
 }
 
 // A player's own view of one chart (docs/arrangement-document-v2.md,

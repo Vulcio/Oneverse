@@ -17,6 +17,7 @@ import type { Prisma } from "@oneverse/db";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { SongLinksService } from "../song-links/song-links.service.js";
 import type { CreateArrangementDto, UpdateArrangementDto } from "./dto/arrangement.dto.js";
 
 const SELECT = {
@@ -28,6 +29,8 @@ const SELECT = {
   ownerUserId: true,
   ownerTeamId: true,
   isTeamDefault: true,
+  linkId: true,
+  multitrackId: true,
   documentJson: true,
   updatedAt: true,
   setlistItem: { select: { setlistId: true } },
@@ -48,6 +51,10 @@ export interface ArrangementSummary {
   teamName: string | null;
   ownerName: string | null;
   isTeamDefault: boolean;
+  /** The song's reference recording it's played along to (issue #346); null: the song's own. */
+  linkId: string | null;
+  /** The song's multitrack it plays (issue #346); null: the song's own. */
+  multitrackId: string | null;
   /** Set when it's one song's arrangement for one set (see SetlistsService): the set's id. */
   setlistId: string | null;
   /** The key it's played in (the song's key moved by its transposition), when the song has one. */
@@ -102,8 +109,11 @@ export class ArrangementsService {
       await this.access.assertSongverseTeam(dto.teamId);
     }
     let document = newArrangementDocument(song.document, songVersionId, itemId);
+    // A copy plays along to the same recording and multitrack (issue #346).
+    let media: { linkId: string | null; multitrackId: string | null } = { linkId: null, multitrackId: null };
     if (dto.copyFromId) {
       const source = await this.visibleArrangement(user, dto.copyFromId);
+      media = { linkId: source.linkId, multitrackId: source.multitrackId };
       if (source.songVersionId !== songVersionId) throw new BadRequestException("Can only copy a version of the same song");
       const copied = readArrangementDocument(source.documentJson, song.document, songVersionId, itemId).document;
       document = { ...copied, items: copied.items.map((item) => ({ ...item, id: itemId() })) };
@@ -115,6 +125,7 @@ export class ArrangementsService {
         description: dto.description || null,
         ...(dto.teamId ? { ownerScope: "TEAM", ownerTeamId: dto.teamId } : { ownerScope: "USER", ownerUserId: user.id }),
         documentJson: document as object,
+        ...media,
       },
       select: SELECT,
     });
@@ -140,7 +151,7 @@ export class ArrangementsService {
       const song = await this.visibleSong(user, item.songVersionId);
       let document = newArrangementDocument(song.document, item.songVersionId, itemId);
       const played = item.arrangementId
-        ? await this.prisma.client.arrangement.findUnique({ where: { id: item.arrangementId }, select: { documentJson: true } })
+        ? await this.prisma.client.arrangement.findUnique({ where: { id: item.arrangementId }, select: { documentJson: true, linkId: true, multitrackId: true } })
         : null;
       if (played) {
         const copied = readArrangementDocument(played.documentJson, song.document, item.songVersionId, itemId).document;
@@ -153,6 +164,9 @@ export class ArrangementsService {
           setlistItemId: item.id,
           ...(set.ownerTeamId ? { ownerScope: "TEAM", ownerTeamId: set.ownerTeamId } : { ownerScope: "USER", ownerUserId: set.ownerUserId }),
           documentJson: document as object,
+          // What the version it was copied from plays along to (issue #346).
+          linkId: played?.linkId ?? null,
+          multitrackId: played?.multitrackId ?? null,
         },
         select: { id: true },
       }));
@@ -181,6 +195,16 @@ export class ArrangementsService {
       document = parsed.data;
     }
     if (dto.isTeamDefault && (row.ownerScope !== "TEAM" || row.setlistItem)) throw new BadRequestException("Only a team's version can be the team's usual one");
+    // What it plays along to (issue #346): one of the song's reference recordings the editor sees, one of its multitracks.
+    if (dto.linkId) {
+      const teamIds = await this.access.teamIds(user.id);
+      const link = await this.prisma.client.songLink.findFirst({ where: { id: dto.linkId, songVersionId: row.songVersionId, ...SongLinksService.visibleWhere(user, teamIds) }, select: { id: true } });
+      if (!link) throw new BadRequestException(["linkId must be one of the song's reference recordings"]);
+    }
+    if (dto.multitrackId) {
+      const file = await this.prisma.client.attachment.findFirst({ where: { songVersionId: row.songVersionId, multitrackId: dto.multitrackId }, select: { id: true } });
+      if (!file) throw new BadRequestException(["multitrackId must be one of the song's multitracks"]);
+    }
 
     const updated = await this.prisma.client.$transaction(async (tx) => {
       // Conditional on the version the check above saw, so two saves at once can't both win.
@@ -191,6 +215,8 @@ export class ArrangementsService {
           ...(dto.description !== undefined && { description: dto.description || null }),
           ...(document && { documentJson: document as object }),
           ...(dto.isTeamDefault !== undefined && { isTeamDefault: dto.isTeamDefault }),
+          ...(dto.linkId !== undefined && { linkId: dto.linkId }),
+          ...(dto.multitrackId !== undefined && { multitrackId: dto.multitrackId }),
         },
       });
       if (count === 0) throw staleArrangement();
@@ -286,7 +312,8 @@ export class ArrangementsService {
     const row = await this.prisma.client.arrangement.findUnique({ where: { id: arrangementId }, select: SELECT });
     if (!row) return null;
     const { document } = readArrangementDocument(row.documentJson, song, row.songVersionId, itemId);
-    return { id: row.id, name: row.name, document };
+    // What it plays along to (issue #346), for the set's song page.
+    return { id: row.id, name: row.name, document, linkId: row.linkId, multitrackId: row.multitrackId };
   }
 
   // --- a player's own chart preferences
@@ -374,6 +401,8 @@ export class ArrangementsService {
       teamName: row.ownerTeam?.name ?? null,
       ownerName: row.ownerUser?.displayName ?? null,
       isTeamDefault: row.isTeamDefault,
+      linkId: row.linkId,
+      multitrackId: row.multitrackId,
       setlistId: row.setlistItem?.setlistId ?? null,
       key: songKey ? (transposeKey(songKey, steps) ?? songKey) : null,
       transposeSteps: steps,

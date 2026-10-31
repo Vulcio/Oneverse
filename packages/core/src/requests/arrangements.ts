@@ -19,6 +19,13 @@ export const UpdateArrangementSchema = z.strictObject({
   description,
   document: optional(object).describe("ArrangementDocument v2 (docs/arrangement-document-v2.md)"),
   isTeamDefault: optional(z.boolean()).describe("The team's usual arrangement of the song (team arrangements only)"),
+  linkId: z.string().nullable().optional().describe("The song's reference recording it's played along to (issue #346); null: the song's own"),
+  multitrackId: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,40}$/, { message: "multitrackId must be up to 40 letters, digits, - or _" })
+    .nullable()
+    .optional()
+    .describe("The song's multitrack it plays (issue #346); null: the song's own"),
   updatedAt: optional(z.union([z.iso.datetime({ offset: true, local: true }), z.iso.date()])).describe(
     "When the arrangement was last saved as the editor loaded it; a save is refused (409) if it changed since",
   ),

@@ -282,6 +282,8 @@ export function stemFilesOf(
   multitrackId: string | null | undefined,
   /** On a set's song page (issue #127): with nothing chosen, the multitrack recorded for that set. */
   setlistId?: string,
+  /** The version's multitrack (issue #346): with nothing chosen and none recorded for the set, it plays. */
+  versionMultitrackId?: string | null,
 ): Pick<StemSong, "stems" | "multitrackId" | "multitracks" | "recording" | "upgrade"> {
   const multitracks = multitracksOf(attachments)
     .filter((multitrack) => multitrack.files.length > 0)
@@ -289,8 +291,11 @@ export function stemFilesOf(
   // On a set's page, the multitrack recorded for that set rather than the song's first.
   const forSet = setlistId ? multitracks.find((multitrack) => multitrack.setlistId === setlistId) : undefined;
   const recording = wholeRecordingOf(attachments);
-  // Nothing chosen and no whole recording: the set's multitrack, if it has one.
-  const stems = playableOf(attachments, multitrackId === undefined && !recording && forSet ? forSet.id : multitrackId);
+  // The version's own (issue #346), when the song still has it.
+  const forVersion = versionMultitrackId ? multitracks.find((multitrack) => multitrack.id === versionMultitrackId) : undefined;
+  // Nothing chosen: the set's multitrack (unless there's a whole recording), then the version's, then the song's own.
+  const fallback = !recording && forSet ? forSet.id : forVersion ? forVersion.id : undefined;
+  const stems = playableOf(attachments, multitrackId === undefined ? fallback : multitrackId);
   const playingRecording = !!recording && stems.length === 1 && stems[0]?.id === recording.id;
   return {
     stems,

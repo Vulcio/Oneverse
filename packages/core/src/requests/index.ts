@@ -7,6 +7,7 @@ export * from "./offline.js";
 export * from "./publishing.js";
 export * from "./providers.js";
 export * from "./files.js";
+export * from "./song-links.js";
 export * from "./accounts.js";
 export * from "./library.js";
 export * from "./stem-separation.js";

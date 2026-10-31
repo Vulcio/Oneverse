@@ -180,6 +180,14 @@ export class SongFoldService implements OnApplicationBootstrap {
       await tx.attachment.update({ where: { id: file.id }, data: { cuePoints: mapped.length ? mapped : Prisma.DbNull } });
     }
     await tx.attachment.updateMany({ where: { songVersionId: songId }, data: { songVersionId: targetId } });
+    // Its reference recordings (issue #346) too, kept to their adders as its files are.
+    if (song.ownerScope === "TEAM" && song.ownerTeamId) {
+      await tx.songLink.updateMany({ where: { songVersionId: songId, visibility: { in: ["SONG", "SHARED"] } }, data: { visibility: "TEAM", visibleToTeamId: song.ownerTeamId } });
+    } else {
+      await tx.songLink.updateMany({ where: { songVersionId: songId, visibility: { in: ["SONG", "SHARED"] }, addedByUserId: null }, data: { addedByUserId: song.ownerUserId } });
+      await tx.songLink.updateMany({ where: { songVersionId: songId, visibility: { in: ["SONG", "SHARED"] } }, data: { visibility: "PRIVATE" } });
+    }
+    await tx.songLink.updateMany({ where: { songVersionId: songId }, data: { songVersionId: targetId } });
     // Its stem separations follow the files they made (issue #63): an HQ pass still to come lands in the song they're in now.
     await tx.stemSeparation.updateMany({ where: { songVersionId: songId }, data: { songVersionId: targetId } });
 

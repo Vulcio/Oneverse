@@ -51,7 +51,9 @@ import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequ
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
-import type { AttachmentTypeValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
+import type { AttachmentTypeValue, AttachmentVisibilityValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
+import type { CreateSongLinkRequest, UpdateSongLinkRequest } from "../requests/song-links.js";
+import type { SongLinkService } from "../streaming-links/reference.js";
 import type { ConfirmScreenPairingRequest, CreateScreenPartRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenPartRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
 import type { ScreenSwitchableLayer, ScreenTheme, ScreenWidgetKind, ScreenWidgetLook } from "../screens/theme.js";
 import type { ScreenBackgroundTheme, ScreenContentTheme, ScreenEffects, ScreenPartKind, ScreenTemplateLayout } from "../screens/parts.js";
@@ -315,7 +317,7 @@ export interface SetlistSongView {
       })
     | null;
   /** The arrangement the set plays it in (null: as written). */
-  arrangement: { id: string; name: string; document: ArrangementDocumentV2 } | null;
+  arrangement: { id: string; name: string; document: ArrangementDocumentV2; linkId?: string | null; multitrackId?: string | null } | null;
   /** How the current user reads it. */
   view: ChartViewSettings;
   inLibrary: boolean;
@@ -474,6 +476,10 @@ export interface ArrangementSummary {
   teamName: string | null;
   ownerName: string | null;
   isTeamDefault: boolean;
+  /** The song's reference recording it's played along to (issue #346); null: the song's own. */
+  linkId: string | null;
+  /** The song's multitrack it plays (issue #346); null: the song's own. */
+  multitrackId: string | null;
   /** Set when it's one song's own arrangement for one set: that set's id. */
   setlistId: string | null;
   /** The key it's played in, when the song has one. */
@@ -484,6 +490,26 @@ export interface ArrangementSummary {
   needsReview: boolean;
   canEdit: boolean;
   updatedAt: string;
+}
+
+/** A song's reference recording (issue #346): "Live 2019", a video or a track, from an optional start. */
+export interface SongLink {
+  id: string;
+  songVersionId: string;
+  url: string;
+  service: SongLinkService;
+  /** The video's or track's ID on its service; null for OTHER. */
+  value: string | null;
+  label: string;
+  startSeconds: number | null;
+  visibility: AttachmentVisibilityValue;
+  visibleToTeamId: string | null;
+  addedBy: { id: string; displayName: string } | null;
+  /** The viewer added it: they change it and choose who sees it. */
+  mine: boolean;
+  /** The viewer may change or remove it (theirs, or they manage the song). */
+  canChange: boolean;
+  createdAt: string;
 }
 
 export interface ArrangementDetail extends ArrangementSummary {
@@ -2861,7 +2887,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** Omitted fields are left alone; `updatedAt` (as loaded) refuses a save over a newer one (409). */
     updateArrangement: (
       arrangementId: string,
-      data: { name?: string; description?: string | null; document?: ArrangementDocumentV2; isTeamDefault?: boolean; updatedAt?: string },
+      data: { name?: string; description?: string | null; document?: ArrangementDocumentV2; isTeamDefault?: boolean; linkId?: string | null; multitrackId?: string | null; updatedAt?: string },
     ) => request<ArrangementDetail>(`/arrangements/${arrangementId}`, { method: "PATCH", body: JSON.stringify(data) }),
     markArrangementReviewed: (arrangementId: string) => request<ArrangementDetail>(`/arrangements/${arrangementId}/reviewed`, { method: "POST" }),
     deleteArrangement: (arrangementId: string) => request<void>(`/arrangements/${arrangementId}`, { method: "DELETE" }),
@@ -3006,6 +3032,13 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       }),
     removeStreamingLink: (songVersionId: string, type: StreamingLinkType) =>
       request<void>(`/song-versions/${songVersionId}/links/${type}`, { method: "DELETE" }),
+    /** The song's reference recordings the viewer sees (issue #346). */
+    listSongLinks: (songVersionId: string) => request<SongLink[]>(`/song-versions/${songVersionId}/references`),
+    addSongLink: (songVersionId: string, data: CreateSongLinkRequest) =>
+      request<SongLink>(`/song-versions/${songVersionId}/references`, { method: "POST", body: JSON.stringify(data) }),
+    updateSongLink: (songVersionId: string, linkId: string, data: UpdateSongLinkRequest) =>
+      request<SongLink>(`/song-versions/${songVersionId}/references/${linkId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    removeSongLink: (songVersionId: string, linkId: string) => request<void>(`/song-versions/${songVersionId}/references/${linkId}`, { method: "DELETE" }),
     listTagCategories: () => request<TagCategory[]>("/tags/categories"),
     listTags: () => request<Tag[]>("/tags"),
     /** Auto detect's search across the metadata providers that are on, merged and ranked (issue #22). */

@@ -62,7 +62,7 @@ On a smart list, change the filters and **Save changes to the list** keeps the n
 
 Choose **+ Add a song**. A **song name** and at least one **artist** are all it needs; everything else can come later.
 
-- **Already in your library?** As you type the name, Songverse shows songs you already have with that title. You can open the existing one, **Use as base** (start from its details), or **Link it to this song** - when yours is a translation or adaptation of it (see [Linked songs](/library/#linked-songs)). An acoustic or youth-band take isn't a new song: that's a [version](/versions/).
+- **Already in your library?** As you type the name, Songverse shows songs you already have with that title. You can open the existing one, **Use as base** (start from its details), or **Link it to this song** - when yours is a translation or adaptation of it (see [Translations and adaptations](/library/#translations-and-adaptations)). An acoustic or youth-band take isn't a new song: that's a [version](/versions/).
 - **Auto detect** looks the song up online - on MusicBrainz, Apple Music, Deezer and Spotify, as your admin set them up - and fills in what's missing, like the artist, the album and the year. Choose **Find song info**, then **Use this** on the right match. The same release found on several of them is one match, naming them all. The closest to the title and artist come first; among those, the song's first release before later ones (a compilation, a live album) and before versions like karaoke. Once the song is saved, the match's Apple Music, Deezer and Spotify links are added to **Links** (unless it has them already), and its release's artwork becomes the song's image. Matches from Spotify, and from Apple Music when your admin has set up its API, also bring the song's ISRC - and Apple Music's who wrote it (as **Writer**) - where those are still empty.
 - **The chart**: paste the words and chords, or upload a file (`.cho`, `.txt` or `.pdf`). Songverse recognises ChordPro, chords written above the lyrics, and plain lyrics. You can then work on it in the [song editor](/song-editor/) - where, once the song is saved, **Replace from a file or paste…** reads a new chart in (see [Replacing the chart](/song-editor/#replacing-the-chart)). A PDF is kept under **Files**, and when it has text (not a scan), its words and chords fill the text box: each chord goes on the syllable it's printed over, so check a few before saving. A scanned PDF has no text to read: paste the words.
 
@@ -81,7 +81,7 @@ A song has tabs:
 - **Versions** - how you and your teams play it. See [Versions](/versions/).
 - **Files** - sheet music, the original chart file, images (up to 25 MB each unless your admin set other limits; the tab says). PDFs, images, audio, video and plain text open in the browser; anything else (a web page, say) is downloaded, so it can never run inside Songverse.
 - **Audio** - recordings to learn or rehearse with (MP3, Opus, M4A, WAV, OGG… up to 50 MB each unless your admin set another limit), and the song's stems (see below). Uploading audio files needs a role that allows it (see [Roles](/admin/#roles)); without one, the tab says so, and you can still [record a part](/library/#recording-a-part) in Songverse.
-- **Links** - the song on Spotify, Apple Music, Deezer and YouTube. Paste a link, or find it: the magnifying glass beside a service (**Search Spotify**…) looks the song up there by its title and first artist and lists a few results, with their artwork, artist and album (a video's channel, on YouTube); pick one and it's saved as the link. Apple Music and Deezer can always be searched; Spotify and YouTube once your admin has set them up.
+- **Links** - the song on Spotify, Apple Music, Deezer and YouTube. Paste a link, or find it: the magnifying glass beside a service (**Search Spotify**…) looks the song up there by its title and first artist and lists a few results, with their artwork, artist and album (a video's channel, on YouTube); pick one and it's saved as the link. Apple Music and Deezer can always be searched; Spotify and YouTube once your admin has set them up. Below them, the song's [reference recordings](/library/#reference-recordings).
 
 Edits on **Song info** and **Editor** are saved together by **Save song**; files, audio and links are saved as you add them. **Discard changes** takes back what you haven't saved. The **⋯** menu can **Export as ChordPro** or **Delete song**.
 
@@ -107,11 +107,17 @@ If a song isn't yours to change (a global song, or a team song when you're not o
 
 **Move to the bin** takes the song out of everyone's sight - the library, sets, songbooks - for 30 days. Sets keep its place, empty, until it's back. The **Bin**, under **Library** in the sidebar, lists what you deleted and your own and your teams' songs someone else deleted, with when each goes for good. **Put back** brings a song back where it was, with its files, versions, notes and history; **Delete for good** deletes it now, once you've confirmed. After 30 days it's deleted for good on its own.
 
-## Linked songs
+## Translations and adaptations
 
-A translation or an adaptation (simpler words, kids' words) is a song of its own - its own title, language, owner, [versions](/versions/) and files - linked to the song it comes from. Its page says so ("Translation of Amazing Grace"), and **Linked songs** on **Song info** lists the songs linked to this one. **Add a translation** starts a new song linked to it. You can translate a catalogue song and keep your translation to yourself, or put it in the catalogue too.
+A translation or an adaptation (simpler words, kids' words) is a song of its own - its own title, language, owner, [versions](/versions/) and files - linked to the song it comes from. Its page says so ("Translation of Amazing Grace"), and **Translations and adaptations** on **Song info** lists the songs linked to this one. **Add a translation** starts a new song linked to it. You can translate a catalogue song and keep your translation to yourself, or put it in the catalogue too.
 
-In a set, a song with linked songs can switch to one of them (its **Translation**).
+In a set, a song with translations or adaptations can switch to one of them (its **Translation**).
+
+## Reference recordings
+
+Besides its one link per service, a song can have several **reference recordings** to play along to: a live video, an acoustic take, a rehearsal. On the **Links** tab, under **Reference recordings**, paste its **Address** (YouTube, Spotify, Apple Music, Deezer or any web address), give it a **Name** ("Live 2019"), and, if it should, where it starts (**Start at**, in seconds; a YouTube address with `t=` already says). **Add recording** keeps it. Like a file, it's yours: only you see it unless you share it with one of your teams, and who manages the song can show it to everyone who sees the song (see [Who sees a file](/library/#who-sees-a-file)).
+
+A [version](/versions/) can pick one as its **Reference recording**, and one of the song's multitracks as its **Stems**: that's what plays when a set plays the song in that version.
 
 ## Who sees a file
 

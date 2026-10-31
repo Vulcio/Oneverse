@@ -10,6 +10,7 @@ import {
   type AttachmentType,
   type MusicBrainzWorkMatch,
   type LinkSearchServices,
+  type SongLink,
   type SongVersionDetail,
   type StemSeparation,
   type StemSeparationParts,
@@ -34,6 +35,7 @@ import { downloadBlob } from "#/lib/download";
 import { formatBytes } from "#/lib/format-bytes";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Input } from "@oneverse/ui/components/input";
+import { Label } from "@oneverse/ui/components/label";
 import { KeySelect } from "#/components/key-select";
 import { setMode, useMode } from "#/lib/mode";
 import { stemsOf } from "#/lib/stem-engine";
@@ -1188,6 +1190,153 @@ export function LinksTab({
           )}
         </CardContent>
       </Card>
+      <ReferenceRecordings songVersionId={version.id} canEdit={version.canManage} canShare={version.canManage && version.ownerScope !== "GLOBAL"} />
     </div>
+  );
+}
+
+/** "1:30", "1:02:03". */
+function clockTime(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const sec = String(seconds % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+}
+
+const SERVICE_NAMES: Record<SongLink["service"], string> = { YOUTUBE: "YouTube", SPOTIFY: "Spotify", APPLE_MUSIC: "Apple Music", DEEZER: "Deezer", OTHER: "" };
+
+/**
+ * A song's reference recordings (issue #346): several, labelled, from an
+ * optional start; anyone who sees the song adds their own and chooses who
+ * sees it, as with files.
+ */
+function ReferenceRecordings({ songVersionId, canEdit, canShare }: { songVersionId: string; canEdit: boolean; canShare: boolean }) {
+  const { t } = useTranslation();
+  const [links, setLinks] = useState<SongLink[] | null>(null);
+  const [teams, setTeams] = useState<TeamSummary[]>([]);
+  const [url, setUrl] = useState("");
+  const [label, setLabel] = useState("");
+  const [start, setStart] = useState("");
+  const [audience, setAudience] = useState<AttachmentAudience>({ visibility: "PRIVATE" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    Promise.all([apiClient.listSongLinks(songVersionId), apiClient.listTeams().catch(() => [])]).then(
+      ([found, mine]) => {
+        if (!live) return;
+        setLinks(found);
+        setTeams(mine);
+      },
+      () => live && setLinks([]),
+    );
+    return () => {
+      live = false;
+    };
+  }, [songVersionId]);
+
+  async function add() {
+    setBusy(true);
+    setError(null);
+    try {
+      const link = await apiClient.addSongLink(songVersionId, {
+        url,
+        label,
+        startSeconds: start.trim() ? Number(start) : undefined,
+        visibility: audience.visibility,
+        teamId: audience.visibility === "TEAM" ? audience.teamId : undefined,
+      });
+      setLinks((current) => [...(current ?? []), link]);
+      setUrl("");
+      setLabel("");
+      setStart("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("songEditor.links.referenceFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="lg:col-span-2" data-testid="reference-recordings">
+      <CardHeader>
+        <CardTitle>{t("songEditor.links.references")}</CardTitle>
+        <CardDescription>{t("songEditor.links.referencesDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {links && links.length === 0 ? <p className="text-sm text-muted-foreground">{t("songEditor.links.noReferences")}</p> : null}
+        {links && links.length > 0 ? (
+          <ul className="flex flex-col divide-y">
+            {links.map((link) => (
+              <li key={link.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <a href={link.url} target="_blank" rel="noreferrer" className="font-medium text-primary hover:underline">
+                  {link.label}
+                </a>
+                <span className="text-sm text-muted-foreground">
+                  {[SERVICE_NAMES[link.service], link.startSeconds ? t("songEditor.links.startsAt", { time: clockTime(link.startSeconds) }) : null].filter(Boolean).join(" · ")}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {link.visibility === "PRIVATE"
+                    ? link.mine
+                      ? t("fileVisibility.private")
+                      : t("fileVisibility.privateOf", { name: link.addedBy?.displayName ?? "" })
+                    : link.visibility === "TEAM"
+                      ? t("fileVisibility.team", { team: teams.find((team) => team.id === link.visibleToTeamId)?.name ?? "…" })
+                      : link.visibility === "SHARED"
+                        ? t("fileVisibility.shared")
+                        : t("fileVisibility.song")}
+                </span>
+                {link.canChange ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="ml-auto"
+                    aria-label={t("songEditor.links.removeReference", { label: link.label })}
+                    onClick={() =>
+                      void apiClient.removeSongLink(songVersionId, link.id).then(
+                        () => setLinks((current) => (current ?? []).filter((one) => one.id !== link.id)),
+                        (err: Error) => setError(err.message),
+                      )
+                    }
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {/* Not a form: the song editor around it is one. Enter in a field adds it. */}
+        <div
+          className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_7rem]"
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || !(event.target instanceof HTMLInputElement)) return;
+            event.preventDefault();
+            if (url.trim() && label.trim() && !busy) void add();
+          }}
+        >
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="reference-url">{t("songEditor.links.referenceUrl")}</Label>
+            <Input id="reference-url" value={url} placeholder={t("songEditor.links.referenceUrlPlaceholder")} onChange={(event) => setUrl(event.target.value)} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="reference-label">{t("songEditor.links.referenceLabel")}</Label>
+            <Input id="reference-label" maxLength={80} value={label} placeholder={t("songEditor.links.referenceLabelPlaceholder")} onChange={(event) => setLabel(event.target.value)} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="reference-start">{t("songEditor.links.referenceStart")}</Label>
+            <Input id="reference-start" type="number" min={0} max={36000} value={start} onChange={(event) => setStart(event.target.value)} />
+          </div>
+          <div className="flex flex-wrap items-center gap-3 sm:col-span-3">
+            <AudienceSelect value={audience} teams={teams} canShowToSong={canEdit} canShowToShared={canShare} label={t("fileVisibility.label")} onChange={setAudience} />
+            <Button type="button" size="sm" disabled={busy || !url.trim() || !label.trim()} onClick={() => void add()}>
+              {t("songEditor.links.addReference")}
+            </Button>
+          </div>
+          {error ? <p className="text-sm text-destructive sm:col-span-3">{error}</p> : null}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

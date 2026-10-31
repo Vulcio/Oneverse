@@ -83,6 +83,8 @@ export class UserDeletionService {
       await tx.accessGrant.updateMany({ where: { grantedByUserId: fromUserId }, data: { grantedByUserId: toUserId } });
       // The new owner's storage limit now covers these files.
       await tx.attachment.updateMany({ where: { uploadedByUserId: fromUserId }, data: { uploadedByUserId: toUserId } });
+      // Their reference recordings (issue #346) follow the songs too.
+      await tx.songLink.updateMany({ where: { addedByUserId: fromUserId }, data: { addedByUserId: toUserId } });
       return this.removeAccount(tx, fromUserId);
     }, TRANSACTION_OPTIONS);
     await this.storage.deleteUnreferenced(releasedKeys);
@@ -124,6 +126,8 @@ export class UserDeletionService {
       select: { id: true, storageKey: true, originalStorageKey: true },
     });
     await tx.attachment.deleteMany({ where: { id: { in: privateFiles.map((file) => file.id) } } });
+    // So do their private reference recordings (issue #346).
+    await tx.songLink.deleteMany({ where: { addedByUserId: userId, visibility: "PRIVATE" } });
 
     // Arrangements they own, plus any arrangement (anyone's) of a version
     // that's about to disappear - an arrangement can't outlive its version.

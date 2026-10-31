@@ -3,7 +3,7 @@ title: Versions
 description: How you or your band play and sing a song - its order, key, capo and changes - and each player's own view of a chart.
 ---
 
-A **version** is how you or your band play and sing a song: its order, key, capo and tempo, and chords, words or lines changed on some passes. **The song itself never changes**, so you can make your version of songs you can't edit, like global catalogue songs. (A translation is something else: a song of its own, linked to its original - see [Linked songs](/library/#linked-songs).)
+A **version** is how you or your band play and sing a song: its order, key, capo and tempo, and chords, words or lines changed on some passes. **The song itself never changes**, so you can make your version of songs you can't edit, like global catalogue songs. (A translation is something else: a song of its own, linked to its original - see [Translations and adaptations](/library/#translations-and-adaptations).)
 
 ## Making one
 
@@ -17,7 +17,9 @@ A team's versions are seen by the team's members and changed by its admins.
 
 ![The version editor](../../assets/screenshots/en/version-editor.jpg)
 
-- **Settings** - its **Key** (from the song's), **Capo**, **Tempo** and a description.
+- **Settings** - its **Key** (from the song's), **Capo**, **Tempo**, what it plays along to, and a description:
+  - **Reference recording** - one of the song's [reference recordings](/library/#reference-recordings) ("Live 2019", "Acoustic"), or **The song's own**. In a set played in this version, a YouTube video plays in the player from its start, and any other link shows under the song's title (**Reference: Live 2019**).
+  - **Stems** - one of the song's [multitracks](/library/#multitracks), or **The song's own**. In a set, a multitrack recorded for that set still comes first, then this one, then the song's own.
 - **Song order** - which passes are played, in what order, with key changes and notes, like [the song's own order](/song-editor/#the-song-order).
 - **Passes** - the chart as this version plays it, in the key each pass is played in:
   - **click a chord** to replace it on that pass (type it in the key it's played in), **hide** it for the band, or put it back **as in the song**. **Move** puts it on another character: click the one it goes on;

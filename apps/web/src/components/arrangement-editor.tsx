@@ -19,10 +19,14 @@ import {
   type SongVersionDetail,
   passName,
   sectionNumbers,
+  multitracksOf,
+  type Attachment,
+  type Multitrack,
+  type SongLink,
 } from "@oneverse/core";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Eye, EyeOff, MessageSquare, MoveHorizontal, Pencil, Plus, RotateCcw, Star, Trash2 } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { nameKeyChanges } from "#/components/song-editor/song-form";
@@ -35,6 +39,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
+import { useMultitrackName } from "#/lib/multitrack-name";
 import { setlistTitle, transposeLabel } from "#/lib/setlists";
 import { cn } from "@oneverse/ui/lib/utils";
 
@@ -65,6 +70,11 @@ export function ArrangementEditor({
   const [doc, setDoc] = useState<ArrangementDocumentV2>(initial.document);
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description ?? "");
+  // What it plays along to (issue #346): one of the song's reference recordings, one of its multitracks.
+  const [linkId, setLinkId] = useState(initial.linkId ?? null);
+  const [multitrackId, setMultitrackId] = useState(initial.multitrackId ?? null);
+  const media = useSongMedia(version.id);
+  const nameOf = useMultitrackName();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const readOnly = !detail.canEdit;
@@ -73,7 +83,11 @@ export function ArrangementEditor({
   const steps = doc.defaults.transposeSteps ?? 0;
   const arrangementKey = songKey ? (transposeKey(songKey, steps) ?? songKey) : "";
   const dirty =
-    JSON.stringify(doc) !== JSON.stringify(detail.document) || name.trim() !== detail.name || description.trim() !== (detail.description ?? "");
+    JSON.stringify(doc) !== JSON.stringify(detail.document) ||
+    name.trim() !== detail.name ||
+    description.trim() !== (detail.description ?? "") ||
+    linkId !== (detail.linkId ?? null) ||
+    multitrackId !== (detail.multitrackId ?? null);
 
   function change(next: ArrangementDocumentV2) {
     setDoc(next);
@@ -91,6 +105,8 @@ export function ArrangementEditor({
       setDoc(updated.document);
       setName(updated.name);
       setDescription(updated.description ?? "");
+      setLinkId(updated.linkId ?? null);
+      setMultitrackId(updated.multitrackId ?? null);
       setMessage({ kind: "ok", text: done });
     } catch (err) {
       setMessage({ kind: "error", text: err instanceof Error ? err.message : String(err) });
@@ -100,7 +116,7 @@ export function ArrangementEditor({
   }
   const save = () =>
     run(
-      () => apiClient.updateArrangement(detail.id, { name: name.trim(), description: description.trim() || null, document: doc, updatedAt: detail.updatedAt }),
+      () => apiClient.updateArrangement(detail.id, { name: name.trim(), description: description.trim() || null, document: doc, linkId, multitrackId, updatedAt: detail.updatedAt }),
       t("arrangements.saved"),
     );
 
@@ -277,6 +293,34 @@ export function ArrangementEditor({
                   onChange={(event) => setDefaults({ tempo: event.target.value ? Number(event.target.value) : null })}
                 />
               </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="arrangement-reference">{t("arrangements.reference")}</Label>
+                <NativeSelect id="arrangement-reference" value={linkId ?? ""} onChange={(event) => setLinkId(event.target.value || null)}>
+                  <option value="">{t("arrangements.referenceSong")}</option>
+                  {media.links.map((link) => (
+                    <option key={link.id} value={link.id}>
+                      {link.label}
+                    </option>
+                  ))}
+                  {/* One the viewer doesn't see (someone else's) still shows as chosen. */}
+                  {linkId && !media.links.some((link) => link.id === linkId) ? <option value={linkId}>…</option> : null}
+                </NativeSelect>
+                {media.links.length === 0 && !readOnly ? <p className="text-xs text-muted-foreground">{t("arrangements.referenceHint")}</p> : null}
+              </div>
+              {media.multitracks.length > 0 || multitrackId ? (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="arrangement-stems">{t("arrangements.stems")}</Label>
+                  <NativeSelect id="arrangement-stems" value={multitrackId ?? ""} onChange={(event) => setMultitrackId(event.target.value || null)}>
+                    <option value="">{t("arrangements.stemsSong")}</option>
+                    {media.multitracks.map((multitrack) => (
+                      <option key={multitrack.id} value={multitrack.id!}>
+                        {nameOf(multitrack, multitrack.index)}
+                      </option>
+                    ))}
+                    {multitrackId && !media.multitracks.some((multitrack) => multitrack.id === multitrackId) ? <option value={multitrackId}>…</option> : null}
+                  </NativeSelect>
+                </div>
+              ) : null}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="arrangement-description">{t("arrangements.descriptionLabel")}</Label>
                 <Textarea id="arrangement-description" rows={3} maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} />
@@ -843,4 +887,24 @@ function PassEditor({
       ) : null}
     </div>
   );
+}
+
+/** The song's reference recordings and multitracks the viewer sees, for a version to pick from (issue #346). */
+function useSongMedia(songVersionId: string): { links: SongLink[]; multitracks: (Multitrack<Attachment> & { index: number })[] } {
+  const [media, setMedia] = useState<{ links: SongLink[]; multitracks: (Multitrack<Attachment> & { index: number })[] }>({ links: [], multitracks: [] });
+  useEffect(() => {
+    let live = true;
+    Promise.all([apiClient.listSongLinks(songVersionId).catch(() => []), apiClient.listAttachments(songVersionId).catch(() => [])]).then(([links, files]) => {
+      // The song's original stems (no id) are what "The song's own" plays.
+      if (live) setMedia({ links, multitracks: multitracksOf(files)
+            // Numbered as the stem player numbers them.
+            .map((multitrack, index) => ({ ...multitrack, index }))
+            .filter((multitrack) => multitrack.id && multitrack.files.length > 0),
+        });
+    });
+    return () => {
+      live = false;
+    };
+  }, [songVersionId]);
+  return media;
 }

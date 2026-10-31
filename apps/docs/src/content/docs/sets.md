@@ -20,7 +20,7 @@ Choose **Sets** > **New set**:
 - **Add songs** by searching for them as the search box at the top does: by title, subtitle, version, artist, CCLI number or songbook number ("HY 42", "42"), and in their words with **In lyrics**. With nothing typed, it lists the songs edited last. A team set includes the team's own songs, songs [shared with the team](/people/#with-a-team) and approved global songs, so everyone in the team can open them. Your own personal songs are listed too: adding one asks you to **Share with** the team (it stays yours) or **Move to** the team (it becomes the team's song), then adds it.
 - **Reorder** by dragging a song's handle (or focus the handle and use Space and the arrow keys).
 - For each song, choose:
-  - its **Translation**, when the song has [linked songs](/library/#linked-songs) (the same song in another language, say);
+  - its **Translation**, when the song has [translations or adaptations](/library/#translations-and-adaptations) (the same song in another language, say);
   - its **Version** - **As written**, or one of your or your team's [versions](/versions/). In a team set, the team's usual version is picked for you;
   - its **Key** - moves the song from the version's key ("a tone lower this Sunday") without changing the version;
   - **After this song** - what happens next: **Stop** (the end, wait for the leader), **Go to next** (straight into the next song), **Segue (no pause)** (the next song's count-in on the last bar) or **Transition**, a bridge into the next song with a note beside it ("Pad under the prayer") and [chords to play into it](/sets/#chords-into-the-next-song). Live says it before the song ends, with the change of key and tempo when the next song has another one.
