@@ -1,8 +1,9 @@
-// Folding a song published as a copy (before #73) into its catalogue song
-// (issue #75): one song left; its arrangements fit the catalogue song; how
+// Folding a song into its catalogue song (issue #75), as merging a duplicate
+// at review does: one song left; its arrangements fit the catalogue song; how
 // its owner had it is their arrangement of it; its files stay theirs; its
-// set, pin and tags follow; its details become a suggestion. And merging a
-// duplicate at review does the same.
+// set, pin and tags follow; its details become a suggestion. (Songs once
+// published as copies, linked by an UpstreamLink, were folded the same way
+// at startup until #347 dropped the table.)
 import { API, api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 
 const admin = await user("Fold admin");
@@ -13,11 +14,10 @@ const [globalTag] = sql(`select id from "Tag" where scope='GLOBAL' and "isApprov
 const title = `Folded ${stamp}`;
 const CHART = "{start_of_verse}\n[G]Amazing [G7]grace, how [C]sweet the [G]sound\nThat [G]saved a [Em]wretch like [D]me\n{end_of_verse}\n\n{start_of_chorus}\n[C]My chains are [G]gone\n{end_of_chorus}\n";
 
-// --- the song as it was published before #73: Alice's, and a catalogue copy with the same chart (same IDs)
+// --- Alice's song, and a catalogue song with the same chart (same IDs)
 const song = await api(alice, "POST", "/song-versions", { title, language: "en", artists: ["Alice Band"], key: "G", content: CHART, tagIds: [globalTag] });
 const copy = await api(admin, "POST", "/song-versions", { title, language: "en", artists: ["Alice Band"], key: "G" });
 sql(`update "SongVersion" s set "documentJson" = (select "documentJson" from "SongVersion" where id='${song.id}'), "ownerScope"='GLOBAL', "ownerUserId"=null, "publicationState"='APPROVED', "contributedByUserId"='${alice.id}' where s.id='${copy.id}'`);
-sql(`insert into "UpstreamLink" (id, "localVersionId", "globalVersionId") values ('ul${stamp}', '${song.id}', '${copy.id}')`);
 
 // Alice's layer on her song: an arrangement, a file, a set, a pin, her notes.
 let doc = (await api(alice, "GET", `/song-versions/${song.id}`)).documentJson;
@@ -45,12 +45,12 @@ await api(alice, "PATCH", `/song-versions/${song.id}`, {
 await api(admin, "PATCH", `/song-versions/${copy.id}`, { content: CHART.replace("[C]My chains", "[Am]My chains") });
 
 // --- the fold
-let r = await call(alice, "POST", "/admin/fold-copies");
-check("only global admins run it", r.status === 403, String(r.status));
-r = await call(admin, "POST", "/admin/fold-copies");
-check("run (it runs at startup too)", r.status === 200 && r.body.folded >= 1, JSON.stringify(r.body));
+const sent = await api(alice, "POST", `/song-versions/${song.id}/submissions`, { duplicateReason: "The same song" });
+let r = await call(alice, "POST", `/submissions/${sent.id}/merge`, { targetId: copy.id });
+check("only reviewers merge it", r.status === 403, String(r.status));
+r = await call(admin, "POST", `/submissions/${sent.id}/merge`, { targetId: copy.id });
+check("merged into the catalogue song", r.status === 201 && r.body.state === "APPROVED", JSON.stringify(r.body).slice(0, 200));
 check("Alice's copy is gone", (await call(alice, "GET", `/song-versions/${song.id}`)).status === 404);
-check("the link with it", sql(`select count(*) from "UpstreamLink" where "localVersionId"='${song.id}'`) === "0");
 const listed = (await api(alice, "GET", `/song-versions?q=${encodeURIComponent(title)}`)).items;
 check("her library lists the song once, the catalogue one", listed.length === 1 && listed[0].id === copy.id, JSON.stringify(listed.map((s) => s.id)));
 
@@ -87,8 +87,6 @@ check("its tag too", (await api(alice, "GET", `/song-versions/${copy.id}`)).tags
 const suggestion = (await api(alice, "GET", `/song-versions/${copy.id}/suggestions`))[0];
 check("her details are suggested to the reviewers", suggestion?.state === "OPEN" && suggestion.changes.join() === "details", JSON.stringify(suggestion));
 check("the catalogue chorus keeps the admin's change", (await api(bob, "GET", `/song-versions/${copy.id}`)).documentJson.sections[1].lines[0].chords[0].raw === "Am");
-r = await call(admin, "POST", "/admin/fold-copies");
-check("nothing left to fold", r.body.folded === 0, JSON.stringify(r.body));
 
 // --- merging a duplicate at review folds it too
 const catalogue = await api(admin, "POST", "/song-versions", { title: `Merge ${stamp}`, language: "en", artists: ["Band"], key: "G", content: CHART });

@@ -77,9 +77,6 @@ const fold = (text: string) => foldForSearch(text).trim().replace(/\s+/g, " ");
  * song, their way of singing it becoming their arrangement of it. Global
  * admins can also publish a song straight away - only when they choose
  * to, never automatically. Copyright and CCLI details aren't required.
- *
- * Songs published before #73 were copied: their original is linked to the
- * copy by an UpstreamLink.
  */
 @Injectable()
 export class PublishingService {
@@ -115,20 +112,16 @@ export class PublishingService {
   /** What the song page shows: the latest submission, the global song it's linked to, and look-alikes. */
   async status(user: AuthenticatedUser, songVersionId: string) {
     const song = await this.editableSong(user, songVersionId);
-    const [latest, link, merged, matches] = await Promise.all([
+    const [latest, merged, matches] = await Promise.all([
       this.prisma.client.submission.findFirst({
         where: { songVersionId },
         orderBy: { createdAt: "desc" },
         select: SUBMISSION_SELECT,
       }),
-      this.prisma.client.upstreamLink.findFirst({
-        where: { localVersionId: songVersionId },
-        select: { globalVersion: { select: { id: true, title: true } } },
-      }),
       this.mergedInto(songVersionId),
       song.ownerScope === "GLOBAL" ? Promise.resolve([]) : this.findMatches(songVersionId),
     ]);
-    const published = link?.globalVersion ?? merged;
+    const published = merged;
     return {
       submission: latest ? toSubmission(latest) : null,
       published,
@@ -402,12 +395,11 @@ export class PublishingService {
   }
 
   private async assertNotPublished(songVersionId: string) {
-    const [song, link, merged] = await Promise.all([
+    const [song, merged] = await Promise.all([
       this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { ownerScope: true } }),
-      this.prisma.client.upstreamLink.count({ where: { localVersionId: songVersionId } }),
       this.mergedInto(songVersionId),
     ]);
-    if (song?.ownerScope === "GLOBAL" || link > 0 || merged) throw new ConflictException("This song is already in the global catalogue");
+    if (song?.ownerScope === "GLOBAL" || merged) throw new ConflictException("This song is already in the global catalogue");
   }
 
   /** The catalogue song an approved submission merged this one into, if any. */

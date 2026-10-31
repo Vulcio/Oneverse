@@ -1,4 +1,4 @@
-import { Injectable, Logger, type OnApplicationBootstrap } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import {
   arrangementFromChart,
   generateId,
@@ -38,45 +38,11 @@ const FOLD_LOCK = 7_502_075;
  * deleted, with its history.
  */
 @Injectable()
-export class SongFoldService implements OnApplicationBootstrap {
-  private readonly logger = new Logger(SongFoldService.name);
-
+export class SongFoldService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly history: SongHistoryService,
   ) {}
-
-  /** Songs published as copies before #73 (each with an UpstreamLink) are folded into their catalogue song, once. */
-  async onApplicationBootstrap(): Promise<void> {
-    await this.foldCopies();
-  }
-
-  /** Folds every song still linked to a catalogue copy of it; how many were. */
-  async foldCopies(): Promise<number> {
-    let folded = 0;
-    const links = await this.prisma.client.upstreamLink.findMany({
-      where: { localVersion: { ownerScope: { not: "GLOBAL" } }, globalVersion: { ownerScope: "GLOBAL" } },
-      select: { localVersionId: true, globalVersionId: true },
-    });
-    for (const link of links) {
-      try {
-        await this.prisma.client.$transaction(
-          async (tx) => {
-            await tx.$executeRaw`SELECT pg_advisory_xact_lock(${FOLD_LOCK})`;
-            // Another process may have folded it meanwhile.
-            const still = await tx.upstreamLink.count({ where: { localVersionId: link.localVersionId, globalVersionId: link.globalVersionId } });
-            if (still > 0) await this.fold(tx, link.localVersionId, link.globalVersionId, null);
-          },
-          { timeout: 60_000 },
-        );
-        folded++;
-        this.logger.log(`Folded ${link.localVersionId} into ${link.globalVersionId}`);
-      } catch (error) {
-        this.logger.error(`Couldn't fold ${link.localVersionId} into ${link.globalVersionId}: ${String(error)}`);
-      }
-    }
-    return folded;
-  }
 
   /**
    * Folds `songId` into `targetId`, in `tx`. `proposerId` suggests its
@@ -281,7 +247,6 @@ export class SongFoldService implements OnApplicationBootstrap {
 
     // References that don't cascade, then the song, and its Work if nothing's left in it.
     await tx.work.updateMany({ where: { preferredOriginalVersionId: songId }, data: { preferredOriginalVersionId: null } });
-    await tx.importJob.updateMany({ where: { draftVersionId: songId }, data: { draftVersionId: null } });
     await tx.auditEvent.updateMany({ where: { songVersionId: songId }, data: { songVersionId: targetId } });
     await tx.songVersion.delete({ where: { id: songId } });
     await tx.work.deleteMany({ where: { id: song.workId, versions: { none: {} } } });

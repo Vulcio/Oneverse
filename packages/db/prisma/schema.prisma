@@ -36,15 +36,6 @@ enum SongIdentifierType {
   METADATA_MATCH // The song info chosen in Auto detect (issue #22): details holds the match, value its first source.
 }
 
-enum ImportFormat {
-  CHORDPRO
-  CHORDS_OVER_LYRICS // Ultimate Guitar style — chords on line above lyrics
-  RAW_TEXT // Plain lyrics, no chords
-  LRC // Timestamped lyrics [MM:SS.ms]
-  MUSICXML
-  ABC_NOTATION
-}
-
 enum InstrumentType {
   GUITAR_STANDARD // 6-string E A D G B E
   GUITAR_ALTERNATE // Any non-standard guitar tuning
@@ -325,7 +316,6 @@ model User {
   noteReplies               NoteReply[]              @relation("NoteReplyAuthor")
   auditEvents               AuditEvent[]
   accessGrants              AccessGrant[]
-  shareLinks                ShareLink[]
   inkAnnotations            InkAnnotation[]
   midiConfigs               UserArrangementMidi[]
   ownedTags                 Tag[]
@@ -342,7 +332,6 @@ model User {
   ownedSongbooks            Songbook[]               @relation("SongbookOwnerUser")
   songbookShares            SongbookShare[]          @relation("SongbookShareUser")
   songbooksShared           SongbookShare[]          @relation("SongbookShareBy")
-  importJobs                ImportJob[]
   uploadedAttachments       Attachment[]             @relation("AttachmentUploader")
   addedSongLinks            SongLink[]               @relation("SongLinkAddedBy")
   ownedSetlists             Setlist[]                @relation("SetlistOwnerUser")
@@ -672,7 +661,6 @@ model Team {
   ownedArrangements    Arrangement[]          @relation("ArrangementOwnerTeam")
   notes                Note[]
   accessGrants         AccessGrant[]
-  shareLinks           ShareLink[]
   ownedTags            Tag[]
   ownedSongbooks       Songbook[]             @relation("SongbookOwnerTeam")
   songbookShares       SongbookShare[]        @relation("SongbookShareTeam")
@@ -858,7 +846,6 @@ model Work {
 
   // Relations
   versions    SongVersion[]    @relation("WorkVersions")
-  workTags    WorkTag[]
   identifiers WorkIdentifier[]
 }
 
@@ -939,29 +926,12 @@ model Tag {
   category    TagCategory      @relation(fields: [categoryId], references: [id])
   ownerUser   User?            @relation(fields: [ownerUserId], references: [id])
   ownerTeam   Team?            @relation(fields: [ownerTeamId], references: [id])
-  workTags    WorkTag[]
   versionTags SongVersionTag[]
 
   @@index([categoryId])
   @@index([scope])
   @@index([ownerUserId])
   @@index([ownerTeamId])
-}
-
-// WorkTag: tags applied at the Work level.
-// All versions of a Work inherit these tags by default.
-model WorkTag {
-  id        String   @id @default(cuid())
-  workId    String
-  tagId     String
-  createdAt DateTime @default(now())
-
-  work Work @relation(fields: [workId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@unique([workId, tagId])
-  @@index([workId])
-  @@index([tagId])
 }
 
 // SongVersionTag: tags applied at the Song Version level.
@@ -1102,12 +1072,8 @@ model SongVersion {
   links             SongLink[]
   submissions       Submission[]            @relation("SubmissionSong")
   publishedFrom     Submission[]            @relation("SubmissionPublished")
-  importJobs        ImportJob[]
   proposals         ChangeProposal[]
-  upstreamLinks     UpstreamLink[]          @relation("UpstreamLinkLocal")
-  downstreamLinks   UpstreamLink[]          @relation("UpstreamLinkGlobal")
   accessGrants      AccessGrant[]
-  shareLinks        ShareLink[]
   auditEvents       AuditEvent[]
   setlistItems      SetlistItem[]
   ownershipRequests SongOwnershipRequest[]
@@ -2241,25 +2207,6 @@ model ChangeProposal {
 }
 
 // ============================================================
-// UPSTREAM LINKS (fork/copy tracking)
-// ============================================================
-
-model UpstreamLink {
-  id                 String    @id @default(cuid())
-  localVersionId     String // The fork/copy
-  globalVersionId    String // The upstream global original
-  forkedAt           DateTime  @default(now())
-  lastSyncedAt       DateTime?
-  hasUpstreamChanges Boolean   @default(false)
-
-  localVersion  SongVersion @relation("UpstreamLinkLocal", fields: [localVersionId], references: [id], onDelete: Cascade)
-  globalVersion SongVersion @relation("UpstreamLinkGlobal", fields: [globalVersionId], references: [id], onDelete: Cascade)
-
-  @@unique([localVersionId, globalVersionId])
-  @@index([globalVersionId])
-}
-
-// ============================================================
 // ACCESS GRANTS (explicit sharing)
 // ============================================================
 
@@ -2297,32 +2244,6 @@ model AccessGrant {
   @@index([songVersionId])
   @@index([grantedToTeamId])
   @@index([grantedToUserId])
-}
-
-// ============================================================
-// SHARE LINKS (external sharing)
-// ============================================================
-
-model ShareLink {
-  id              String    @id @default(cuid())
-  songVersionId   String
-  createdByUserId String
-  token           String    @unique @default(cuid())
-  createdAt       DateTime  @default(now())
-  expiresAt       DateTime?
-
-  canDownload Boolean @default(false)
-  viewCount   Int     @default(0)
-
-  // Optional team context
-  teamId String?
-
-  songVersion   SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
-  createdByUser User        @relation(fields: [createdByUserId], references: [id])
-  team          Team?       @relation(fields: [teamId], references: [id])
-
-  @@index([token])
-  @@index([songVersionId])
 }
 
 // ============================================================
@@ -2422,31 +2343,6 @@ model ChordVoicing {
   @@index([instrument, root, suffix, tuningPresetId])
   @@index([instrument, isDefault])
   @@index([source])
-}
-
-// ============================================================
-// IMPORT JOBS
-// ============================================================
-
-// Tracks URL-based scrape and import jobs initiated by users.
-// Scraping runs in the BullMQ worker, not the API process.
-model ImportJob {
-  id             String       @id @default(cuid())
-  userId         String
-  sourceUrl      String? // URL scraped, if URL-based
-  sourceFormat   ImportFormat
-  state          String       @default("pending") // pending | processing | needs_review | complete | failed
-  errorMessage   String? // Set on failure — instructs user to try clipboard paste
-  rawContent     String? // Extracted raw text from scraper (before format parsing)
-  draftVersionId String? // SongVersion created as draft, awaiting user review
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  draftVersion SongVersion? @relation(fields: [draftVersionId], references: [id])
-
-  @@index([userId])
-  @@index([state])
 }
 
 // ============================================================

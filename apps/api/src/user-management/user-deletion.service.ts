@@ -151,8 +151,6 @@ export class UserDeletionService {
     await tx.songVersion.updateMany({ where: { parentVersionId: { in: versionIds } }, data: { parentVersionId: null } });
     await tx.submission.deleteMany({ where: { songVersionId: { in: versionIds } } });
     await tx.changeProposal.deleteMany({ where: { songVersionId: { in: versionIds } } });
-    await tx.upstreamLink.deleteMany({ where: { globalVersionId: { in: versionIds } } });
-    await tx.importJob.updateMany({ where: { draftVersionId: { in: versionIds } }, data: { draftVersionId: null } });
     await tx.auditEvent.updateMany({ where: { songVersionId: { in: versionIds } }, data: { songVersionId: null } });
 
     await tx.songVersion.deleteMany({ where: { id: { in: versionIds } } });
@@ -182,7 +180,6 @@ export class UserDeletionService {
     await tx.submission.deleteMany({ where: { submitterId: userId } });
     await tx.changeProposal.deleteMany({ where: { proposerId: userId } });
     await tx.accessGrant.deleteMany({ where: { OR: [{ grantedByUserId: userId }, { grantedToUserId: userId }] } });
-    await tx.shareLink.deleteMany({ where: { createdByUserId: userId } });
     await tx.auditEvent.updateMany({ where: { actorUserId: userId }, data: { actorUserId: null } });
 
     // Credits survive as plain text: name-only when there was no text source.
