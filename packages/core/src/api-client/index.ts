@@ -2137,6 +2137,29 @@ export interface SongMoveResult {
   moved: boolean;
 }
 
+/** Where a song is used beyond its owner, before deleting it (issue #340). */
+export interface SongUsage {
+  sets: { id: string; name: string | null; eventDate: string | null; team: { id: string; name: string } | null }[];
+  songbooks: { id: string; name: string }[];
+  othersFiles: number;
+  othersVersions: number;
+  othersNotes: number;
+  /** Teams it could be given to instead of deleted. */
+  teams: { id: string; name: string }[];
+}
+
+/** A song in the bin (issue #340). */
+export interface BinnedSong {
+  id: string;
+  title: string;
+  artist: string | null;
+  team: { id: string; name: string } | null;
+  deletedAt: string;
+  deletedBy: string | null;
+  /** When it's deleted for good. */
+  purgeAt: string;
+}
+
 export type StreamingLinkType = "SPOTIFY" | "APPLE_MUSIC" | "DEEZER" | "YOUTUBE";
 
 export interface SongVersionLink {
@@ -2913,8 +2936,14 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<SongVersionSummary>("/song-versions", { method: "POST", body: JSON.stringify(data) }),
     updateSongVersion: (songVersionId: string, data: UpdateSongVersionInput) =>
       request<SongVersionDetail>(`/song-versions/${songVersionId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    /** Puts the song in the bin (issue #340): back with restoreSong, gone for good after 30 days. */
     deleteSongVersion: (songVersionId: string) =>
       request<void>(`/song-versions/${songVersionId}`, { method: "DELETE" }),
+    /** Where the song is used beyond its owner, before deleting it (issue #340). */
+    getSongUsage: (songVersionId: string) => request<SongUsage>(`/song-versions/${songVersionId}/usage`),
+    listSongBin: () => request<BinnedSong[]>("/song-bin"),
+    restoreSong: (songVersionId: string) => request<void>(`/song-bin/${songVersionId}/restore`, { method: "POST" }),
+    deleteSongForGood: (songVersionId: string) => request<void>(`/song-bin/${songVersionId}`, { method: "DELETE" }),
     /** A change to a catalogue song, made as the song editor would save it, for a reviewer to accept (issue #74). */
     suggestChange: (songVersionId: string, data: UpdateSongVersionInput & { message?: string }) =>
       request<Suggestion>(`/song-versions/${songVersionId}/suggestions`, { method: "POST", body: JSON.stringify(data) }),

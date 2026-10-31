@@ -104,10 +104,13 @@ sql(`update "SongVersion" set "ownerScope"='USER', "ownerUserId"='${admin.id}', 
 r = await call(member, "GET", `/setlists/${teamSet.id}`);
 check("song no longer visible to a viewer is hidden, not leaked", r.body.items.some((i) => i.song === null), r.body.items.map((i) => i.song?.title ?? "(hidden)").join(" | "));
 
-// Deleting a song removes it from sets instead of failing.
+// Deleting a song puts it in the bin (issue #340): the set keeps its place, without the song, until it's put back or deleted for good.
 r = await call(admin, "DELETE", `/song-versions/${teamSong.id}`);
-const after = (await call(admin, "GET", `/setlists/${teamSet.id}`)).body;
-check("deleting a song removes it from sets", (r.status === 204 || r.status === 200) && after.items.length === 1, `${r.status}, ${after.items.length} left`);
+let after = (await call(admin, "GET", `/setlists/${teamSet.id}`)).body;
+check("deleting a song keeps its place in sets, without it", (r.status === 204 || r.status === 200) && after.items.length === 2 && after.items.some((i) => i.song === null), `${r.status}, ${after.items.length} left`);
+r = await call(admin, "DELETE", `/song-bin/${teamSong.id}`);
+after = (await call(admin, "GET", `/setlists/${teamSet.id}`)).body;
+check("…and deleting it for good removes it from sets", r.status === 204 && after.items.length === 1, `${r.status}, ${after.items.length} left`);
 
 r = await call(admin, "DELETE", `/setlists/${teamSet.id}`);
 check("delete a set", r.status === 204 && sql(`select count(*) from "Setlist" where id='${teamSet.id}'`) === "0" && sql(`select count(*) from "SetlistItem" where "setlistId"='${teamSet.id}'`) === "0");

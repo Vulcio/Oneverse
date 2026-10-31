@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { Prisma } from "@oneverse/db";
+import { BINNED_TOO, type Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
 
@@ -109,7 +109,7 @@ export class UserDeletionService {
 
   /** Deletes everything the user personally owns. Returns storage keys that may now be unreferenced. */
   private async purgeOwnedContent(tx: Tx, userId: string): Promise<string[]> {
-    const versions = await tx.songVersion.findMany({ where: { ownerUserId: userId }, select: { id: true, workId: true, imageStorageKey: true } });
+    const versions = await tx.songVersion.findMany({ where: { ownerUserId: userId, ...BINNED_TOO }, select: { id: true, workId: true, imageStorageKey: true } });
     const versionIds = versions.map((version) => version.id);
     const workIds = [...new Set(versions.map((version) => version.workId))];
 

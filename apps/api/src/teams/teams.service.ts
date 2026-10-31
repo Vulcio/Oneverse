@@ -6,6 +6,7 @@ import { NotificationsService } from "../notifications/notifications.service.js"
 import { joinTeamOrganization } from "../organizations/organizations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
+import { destroySong } from "../song-versions/song-bin.service.js";
 import { leaveTeams } from "./leave-teams.js";
 import type { CreateInviteLinkDto } from "./dto/create-invite-link.dto.js";
 import type { CreateTeamDto } from "./dto/create-team.dto.js";
@@ -202,6 +203,9 @@ export class TeamsService {
         `This team still owns content (${songbookCount} songbook(s), ${songVersionCount} song(s), ${arrangementCount} arrangement(s)) - move or delete it first.`,
       );
     }
+    // Its songs in the bin (issue #340) go for good with it.
+    const binned = await this.prisma.client.songVersion.findMany({ where: { ownerTeamId: teamId, deletedAt: { not: null } }, select: { id: true } });
+    for (const { id } of binned) await destroySong(this.prisma, this.storage, id);
 
     // Its screen templates and their parts go with it (issues #194, #281, cascading), and their files with those.
     const themeFiles = await this.prisma.client.screenThemeAsset.findMany({ where: { OR: [{ theme: { ownerTeamId: teamId } }, { part: { ownerTeamId: teamId } }] }, select: { storageKey: true } });

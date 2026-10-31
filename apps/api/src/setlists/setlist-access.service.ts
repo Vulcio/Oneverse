@@ -13,6 +13,8 @@ export const SONG_SELECT = {
   ownerUserId: true,
   ownerTeamId: true,
   publicationState: true,
+  // In the bin (issue #340): its set items show as placeholders until it's put back.
+  deletedAt: true,
   documentJson: true,
   capo: true,
   ownerTeam: { select: { name: true } },
@@ -107,6 +109,7 @@ export class SetlistAccessService {
     const approvedGlobal: Prisma.SongVersionWhereInput = { ownerScope: "GLOBAL", publicationState: "APPROVED" };
     if (set.ownerTeamId) {
       return {
+        deletedAt: null,
         OR: [
           approvedGlobal,
           { ownerScope: "TEAM", ownerTeamId: set.ownerTeamId },
@@ -145,6 +148,7 @@ export class SetlistAccessService {
         ])
       : new Set<string>();
     return (song) => {
+      if (song.deletedAt) return false;
       if (song.ownerScope === "GLOBAL") return song.publicationState === "APPROVED";
       if (!set.ownerTeamId && shared.has(song.id)) return true;
       if (set.ownerTeamId && teamShared.has(song.id)) return true;

@@ -101,6 +101,12 @@ Un chant peut aussi vous être partagé par une de vos [personnes](/fr/people/) 
 
 Si un chant n'est pas à vous (un chant global, ou un chant d'équipe dont vous n'êtes pas administrateur), vous pouvez le lire, en faire votre version et y ajouter vos propres fichiers (voir [Qui voit un fichier](/fr/library/#qui-voit-un-fichier)), mais pas le modifier.
 
+## Supprimer un chant
+
+**Supprimer le chant**, dans le menu **⋯** d'un chant que vous pouvez modifier, dit d'abord où d'autres l'utilisent : leurs listes de chants et celles de leurs équipes, les recueils qui ne sont pas les vôtres, et les fichiers, versions et notes que d'autres y ont. S'il est dans une liste de chants de l'une de vos équipes ou partagé avec l'une d'elles, **Le donner à** cette équipe à la place : le chant devient celui de l'équipe (ou est proposé à ses administrateurs, si vous n'en êtes pas un), et reste là où il est utilisé.
+
+**Mettre à la corbeille** retire le chant de la vue de tous - la bibliothèque, les listes de chants, les recueils - pendant 30 jours. Les listes de chants gardent sa place, vide, jusqu'à son retour. La **Corbeille**, sous **Bibliothèque** dans la barre latérale, liste ce que vous avez supprimé et les chants à vous ou à vos équipes que quelqu'un d'autre a supprimés, avec la date où chacun part pour de bon. **Remettre** remet un chant là où il était, avec ses fichiers, versions, notes et historique ; **Supprimer pour de bon** le supprime tout de suite, après confirmation. Après 30 jours, il est supprimé pour de bon de lui-même.
+
 ## Chants liés
 
 Une traduction ou une adaptation (paroles simplifiées, pour enfants) est un chant à part entière - son propre titre, sa langue, son propriétaire, ses [versions](/fr/versions/) et ses fichiers - lié au chant dont il vient. Sa page le dit (« Traduction de Amazing Grace »), et **Chants liés**, dans **Infos**, liste les chants liés à celui-ci. **Ajouter une traduction** commence un nouveau chant lié à lui. Vous pouvez traduire un chant du catalogue et garder votre traduction pour vous, ou la proposer au catalogue elle aussi.

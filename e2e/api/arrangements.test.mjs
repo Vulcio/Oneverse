@@ -185,8 +185,10 @@ const mySong = (await call(member, "POST", "/song-versions", { title: `Mine ${st
 const onMine = (await call(member, "POST", `/song-versions/${mySong.id}/arrangements`, { name: "Short" })).body;
 await call(member, "PUT", "/chart-preferences", { songVersionId: mySong.id, arrangementId: onMine.id, preferences: { simplifyChords: true } });
 r = await call(member, "DELETE", `/song-versions/${mySong.id}`);
+// In the bin first (issue #340), then deleted for good.
+if (r.status === 204) r = await call(member, "DELETE", `/song-bin/${mySong.id}`);
 check(
-  "deleting a song takes its arrangements and preferences with it",
+  "deleting a song (for good) takes its arrangements and preferences with it",
   r.status === 204 && sql(`select count(*) from "Arrangement" where id='${onMine.id}'`) === "0" && sql(`select count(*) from "ChartPreference" where "songVersionId"='${mySong.id}'`) === "0",
   `${r.status}`,
 );

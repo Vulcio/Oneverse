@@ -43,6 +43,7 @@ import {
   BookText,
   Check,
   ListChecks,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -398,6 +399,8 @@ function MainNav({
                 isActive: pathname === "/library/songs" && listId === list.id,
                 link: { to: "/library/songs" as const, search: smartListSearch(list) },
               })),
+              // Deleted songs, for 30 days (issue #340).
+              { key: "bin", label: t("bin.open"), icon: <Trash2 />, isActive: pathname === "/library/bin", link: { to: "/library/bin" as const } },
             ]}
           />
           <NavGroup

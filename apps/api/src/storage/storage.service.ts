@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import type { StorageSettings } from "@oneverse/db";
+import { BINNED_TOO, type StorageSettings } from "@oneverse/db";
 import { decryptSecret, encryptSecret, maskSecret } from "@oneverse/secret-crypto";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
@@ -147,7 +147,7 @@ export class StorageService {
         this.prisma.client.attachment.count({ where: { OR: [{ storageKey: hash }, { originalStorageKey: hash }] } }),
         this.prisma.client.user.count({ where: { avatarStorageKey: hash } }),
         // Song artwork (issue #85): the same album's is often shared by several songs.
-        this.prisma.client.songVersion.count({ where: { imageStorageKey: hash } }),
+        this.prisma.client.songVersion.count({ where: { imageStorageKey: hash, ...BINNED_TOO } }),
         // Artist pictures (issue #86).
         this.prisma.client.artist.count({ where: { imageStorageKey: hash } }),
         // Teams' and songbooks' pictures (issue #161).

@@ -100,6 +100,9 @@ check("bob's, newest first", r.status === 200 && r.body.length === 2 && r.body[0
 // --- deleting the song takes its suggestions
 r = await call(admin, "DELETE", `/song-versions/${song.id}`);
 check("a catalogue song with suggestions can be deleted", r.status === 204, String(r.status));
+// In the bin first (issue #340), then deleted for good.
+r = await call(admin, "DELETE", `/song-bin/${song.id}`);
+check("…and deleted for good from the bin", r.status === 204, String(r.status));
 check("and its suggestions go", sql(`select count(*) from "ChangeProposal" where "songVersionId"='${song.id}'`) === "0");
 
 finish();

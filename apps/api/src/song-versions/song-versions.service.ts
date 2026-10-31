@@ -1463,39 +1463,6 @@ export class SongVersionsService {
   }
 
   /**
-   * Deletes a Song Version. A Work has no content of its own — if this
-   * was its only version, the Work is deleted with it rather than left
-   * behind empty.
-   */
-  async remove(id: string): Promise<void> {
-    const version = await this.prisma.client.songVersion.findUnique({
-      where: { id },
-      select: { workId: true, imageStorageKey: true, attachments: { select: { storageKey: true, originalStorageKey: true } } },
-    });
-    if (!version) throw new NotFoundException("Song version not found");
-
-    const siblingCount = await this.prisma.client.songVersion.count({
-      where: { workId: version.workId, NOT: { id } },
-    });
-
-    await this.prisma.client.$transaction(async (tx) => {
-      // Clear the Work's preferredOriginalVersionId FK before deleting the
-      // version it points to, whether or not the Work itself survives.
-      await tx.work.updateMany({
-        where: { id: version.workId, preferredOriginalVersionId: id },
-        data: { preferredOriginalVersionId: null },
-      });
-      await tx.songVersion.delete({ where: { id } });
-      if (siblingCount === 0) {
-        await tx.work.delete({ where: { id: version.workId } });
-      }
-    });
-    // Its files and image, unless another song (or someone's avatar) has the same bytes.
-    const keys = [...version.attachments.flatMap((attachment) => [attachment.storageKey, attachment.originalStorageKey]), version.imageStorageKey].filter((key): key is string => !!key);
-    await this.storage.deleteUnreferenced(keys);
-  }
-
-  /**
    * Links the song info chosen in Auto detect (issue #22), looked up again
    * from its sources: kept with the song, its artist added (see
    * replaceAutoAttachedArtist), its Apple Music and Deezer tracks as the

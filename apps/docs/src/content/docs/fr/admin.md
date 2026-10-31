@@ -27,6 +27,8 @@ La page **Relecture** liste aussi les **Modifications proposées** pour les chan
 
 Les administrateurs globaux gèrent tout le serveur depuis **Tableau de bord**, dans la section **Administration** de la barre latérale (les relecteurs y trouvent **Relecture**).
 
+Les administrateurs globaux voient et modifient le catalogue global, et les chants qui y sont envoyés en relecture. Les chants personnels et ceux des équipes restent à leurs propriétaires : un administrateur global n'en voit un que comme n'importe qui (partagé avec lui, ou dans une de ses équipes ou listes de chants), dans les listes comme par son lien.
+
 ### Utilisateurs
 
 Tous les comptes, avec leur statut, leurs rôles (ceux de leurs équipes en contour), leurs chants et leur stockage. Pour chaque personne, vous pouvez :

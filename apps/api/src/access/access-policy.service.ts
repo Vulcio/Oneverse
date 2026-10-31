@@ -43,6 +43,11 @@ export const OPEN_SUBMISSION_STATES = ["SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANG
  *   changes its chart, details and credits (canEditContent), not the rest
  *   (deleting, publishing, sharing it…); shared with a team to edit, the
  *   team's admins do, as for the team's own songs (#331).
+ * - Global admins (issue #340): the whole catalogue and global songbooks,
+ *   to see and change, and songs sent for review; people's and teams'
+ *   songs, songbooks and arrangements are as private from them as from
+ *   anyone - the same in lists and by link.
+ * - A song in the bin (issue #340) is seen by nobody.
  */
 @Injectable()
 export class AccessPolicyService {
@@ -75,6 +80,8 @@ export class AccessPolicyService {
   /** Songs `viewer` can see, given the teams they're in. */
   songsVisibleWhere(viewer: Viewer, teamIds: string[]): Prisma.SongVersionWhereInput {
     return {
+      // Not in the bin (issue #340): said here too, for where this is a relation's filter.
+      deletedAt: null,
       OR: [
         viewer.isGlobalAdmin ? { ownerScope: "GLOBAL" } : { ownerScope: "GLOBAL", publicationState: "APPROVED" },
         { ownerScope: "USER", ownerUserId: viewer.id },
@@ -134,12 +141,15 @@ export class AccessPolicyService {
     return this.songsVisibleWhere(viewer, await this.teamIds(viewer.id));
   }
 
-  async canSeeSong(viewer: Viewer, song: OwnedSong & { id?: string }): Promise<boolean> {
+  async canSeeSong(viewer: Viewer, song: OwnedSong & { id?: string; deletedAt?: Date | null }): Promise<boolean> {
+    if (song.deletedAt) return false;
     if (song.ownerScope === "GLOBAL") return viewer.isGlobalAdmin || song.publicationState === "APPROVED";
     if (await this.ownsOrBelongsTo(viewer, song)) return true;
-    if (song.id && (await this.prisma.client.accessGrant.count({ where: { songVersionId: song.id, ...this.grantTo(viewer.id, await this.teamIds(viewer.id)) } })) > 0) return true;
-    if (song.id && (await this.inSharedSongbook(viewer.id, song.id))) return true;
-    return !!viewer.isReviewer && !!song.id && (await this.isAwaitingReview(song.id));
+    if (!song.id) return false;
+    const teamIds = await this.teamIds(viewer.id);
+    if ((await this.prisma.client.accessGrant.count({ where: { songVersionId: song.id, ...this.grantTo(viewer.id, teamIds) } })) > 0) return true;
+    if ((await this.prisma.client.songbookEntry.count({ where: { songVersionId: song.id, songbook: { shares: { some: this.shareTo(viewer.id, teamIds) } } } })) > 0) return true;
+    return (!!viewer.isReviewer || viewer.isGlobalAdmin) && (await this.isAwaitingReview(song.id));
   }
 
   /**
@@ -162,9 +172,9 @@ export class AccessPolicyService {
   }
 
   /** canSeeSong for many songs at once, given the viewer's teams (see teamIds) and the songs shared with them (see sharedWith). */
-  songVisibleGivenTeams(viewer: Viewer, teamIds: ReadonlySet<string>, song: OwnedSong & { id?: string }, shared: ReadonlyMap<string, unknown> = new Map()): boolean {
-    if (viewer.isGlobalAdmin) return true;
-    if (song.ownerScope === "GLOBAL") return song.publicationState === "APPROVED";
+  songVisibleGivenTeams(viewer: Viewer, teamIds: ReadonlySet<string>, song: OwnedSong & { id?: string; deletedAt?: Date | null }, shared: ReadonlyMap<string, unknown> = new Map()): boolean {
+    if (song.deletedAt) return false;
+    if (song.ownerScope === "GLOBAL") return viewer.isGlobalAdmin || song.publicationState === "APPROVED";
     if (song.id && shared.has(song.id)) return true;
     if (song.ownerScope === "USER") return song.ownerUserId === viewer.id;
     return !!song.ownerTeamId && teamIds.has(song.ownerTeamId);
@@ -174,21 +184,14 @@ export class AccessPolicyService {
   async assertCanSeeSong(viewer: Viewer, songVersionId: string): Promise<void> {
     const song = await this.prisma.client.songVersion.findUnique({
       where: { id: songVersionId },
-      select: { id: true, ownerScope: true, ownerUserId: true, ownerTeamId: true, publicationState: true },
+      select: { id: true, ownerScope: true, ownerUserId: true, ownerTeamId: true, publicationState: true, deletedAt: true },
     });
     if (!song) throw new NotFoundException("Song version not found");
     if (!(await this.canSeeSong(viewer, song))) throw new ForbiddenException("Not visible to you");
   }
 
-  /** Whether the song is in a songbook shared with the user or their teams (issue #211). */
-  private async inSharedSongbook(userId: string, songVersionId: string): Promise<boolean> {
-    const teamIds = await this.teamIds(userId);
-    return (await this.prisma.client.songbookEntry.count({ where: { songVersionId, songbook: { shares: { some: this.shareTo(userId, teamIds) } } } })) > 0;
-  }
-
-  /** Songbooks `viewer` can see (a global admin, all of them). */
+  /** Songbooks `viewer` can see. */
   async songbooksVisibleTo(viewer: Viewer): Promise<Prisma.SongbookWhereInput> {
-    if (viewer.isGlobalAdmin) return {};
     const teamIds = await this.teamIds(viewer.id);
     return {
       OR: [
@@ -224,7 +227,6 @@ export class AccessPolicyService {
 
   /** Arrangements `viewer` can see (their own and their teams'), of a song they can see. */
   async arrangementsVisibleTo(viewer: Viewer): Promise<Prisma.ArrangementWhereInput> {
-    if (viewer.isGlobalAdmin) return {};
     return {
       OR: [
         { ownerScope: "USER", ownerUserId: viewer.id },
@@ -250,7 +252,7 @@ export class AccessPolicyService {
 
   /** Whether `viewer` can change a song, songbook or arrangement (see the class comment). */
   async canEdit(viewer: Viewer, record: OwnedRecord): Promise<boolean> {
-    if (viewer.isGlobalAdmin) return true;
+    if (record.ownerScope === "GLOBAL") return viewer.isGlobalAdmin;
     if (record.ownerScope === "USER") return record.ownerUserId === viewer.id;
     if (record.ownerScope === "TEAM" && record.ownerTeamId) return (await this.teamRole(viewer.id, record.ownerTeamId)) === "ADMIN";
     return false;
@@ -261,11 +263,10 @@ export class AccessPolicyService {
    * are looked up once, then each record is decided without a query.
    */
   async editChecker(viewer: Viewer): Promise<(record: OwnedRecord) => boolean> {
-    if (viewer.isGlobalAdmin) return () => true;
     const admin = await this.prisma.client.teamMembership.findMany({ where: { userId: viewer.id, role: "ADMIN" }, select: { teamId: true } });
     const adminTeams = new Set(admin.map((membership) => membership.teamId));
     return (record) =>
-      record.ownerScope === "USER" ? record.ownerUserId === viewer.id : record.ownerScope === "TEAM" && !!record.ownerTeamId && adminTeams.has(record.ownerTeamId);
+      record.ownerScope === "GLOBAL" ? viewer.isGlobalAdmin : record.ownerScope === "USER" ? record.ownerUserId === viewer.id : record.ownerScope === "TEAM" && !!record.ownerTeamId && adminTeams.has(record.ownerTeamId);
   }
 
   /** Throws the reason `viewer` can't change `record` (a "song version", a "songbook"), if they can't. */
@@ -276,9 +277,9 @@ export class AccessPolicyService {
     throw new ForbiddenException(`Team admin role required to edit this ${noun}`);
   }
 
-  /** The owner, or anyone in the owning team (global admins count as both). */
+  /** The owner, or anyone in the owning team; for a global record, a global admin. */
   private async ownsOrBelongsTo(viewer: Viewer, record: OwnedRecord): Promise<boolean> {
-    if (viewer.isGlobalAdmin) return true;
+    if (record.ownerScope === "GLOBAL") return viewer.isGlobalAdmin;
     if (record.ownerScope === "USER") return record.ownerUserId === viewer.id;
     if (record.ownerScope === "TEAM" && record.ownerTeamId) return (await this.teamRole(viewer.id, record.ownerTeamId)) !== null;
     return false;

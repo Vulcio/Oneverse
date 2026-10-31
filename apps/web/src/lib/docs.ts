@@ -11,6 +11,8 @@ const PAGES: [RegExp, string][] = [
   [/^\/library\/artists/, "library"],
   [/^\/library\/progressions/, "library"],
   [/^\/library\/songs/, "library"],
+  // The bin (issue #340).
+  [/^\/library\/bin/, "library"],
   [/^\/library\/[^/]+/, "song-editor"],
   [/^\/library/, "library"],
   [/^\/sets\/[^/]+\/operate/, "screens"],

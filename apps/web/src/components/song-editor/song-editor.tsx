@@ -56,6 +56,7 @@ import { Textarea } from "@oneverse/ui/components/textarea";
 import { ArrangementsTab } from "./arrangements-tab";
 import { HistoryTab } from "./history-tab";
 import { ShareDialog } from "./share-dialog";
+import { DeleteSongDialog } from "./delete-song-dialog";
 import { ArtworkCard } from "./artwork-card";
 import { AttachmentsTab, LinksTab, SaveFirst } from "./song-tabs";
 import type { SongNotice, SongTab } from "./song-tabs-list";
@@ -186,7 +187,6 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   // The More menu asking for the notes (issue #256), on a screen too narrow for their button.
   const [notesAsked, setNotesAsked] = useState(0);
-  const [deleting, setDeleting] = useState(false);
   const leaving = useRef(false);
 
   const errors = showErrors ? validate(form) : {};
@@ -491,18 +491,10 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
     setMessage(null);
   }
 
-  async function remove() {
-    if (!edit) return;
-    setDeleting(true);
-    try {
-      await apiClient.deleteSongVersion(edit.version.id);
-      leaving.current = true;
-      await navigate({ to: "/library" });
-    } catch (err) {
-      setDeleting(false);
-      setConfirmingDelete(false);
-      setMessage({ kind: "error", text: err instanceof Error ? err.message : t("songEditor.deleteFailed") });
-    }
+  /** In the bin (issue #340): off to the Bin, where it can be put back. */
+  async function binned() {
+    leaving.current = true;
+    await navigate({ to: "/library/bin" });
   }
 
   const attachments = edit?.attachments ?? [];
@@ -884,22 +876,19 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       {startedOver ? <StartedOver onDismiss={() => setStartedOver(false)} /> : null}
       {savedElsewhere ? <SavedElsewhere by={savedElsewhere.by} dirty={dirty} onLoad={loadTheirs} onDismiss={() => setSavedElsewhere(null)} /> : null}
 
-      <Dialog open={confirmingDelete} onOpenChange={(open) => !deleting && setConfirmingDelete(open)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("songEditor.deleteTitle")}</DialogTitle>
-            <DialogDescription>{t("songEditor.deleteDescription", { title: edit?.version.title ?? "" })}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirmingDelete(false)} disabled={deleting}>
-              {t("songEditor.cancel")}
-            </Button>
-            <Button type="button" variant="destructive" onClick={() => void remove()} disabled={deleting}>
-              {deleting ? t("songEditor.deleting") : t("songEditor.deleteSong")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {edit ? (
+        <DeleteSongDialog
+          songVersionId={edit.version.id}
+          title={edit.version.title}
+          open={confirmingDelete}
+          onOpenChange={setConfirmingDelete}
+          onBinned={binned}
+          onGiven={async (text) => {
+            setMessage({ kind: "ok", text });
+            await router.invalidate();
+          }}
+        />
+      ) : null}
 
       <Dialog open={blocker.status === "blocked"} onOpenChange={(open) => !open && blocker.reset?.()}>
         <DialogContent>

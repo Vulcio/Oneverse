@@ -27,6 +27,8 @@ The **Review** page also lists **Suggested changes** to catalogue songs (see [Su
 
 Global admins manage the whole server from **Dashboard**, in the sidebar's **Admin** section (reviewers find **Review** there).
 
+Global admins see and change the global catalogue, and songs sent to it for review. People's own songs and their teams' stay theirs: a global admin sees one only as anyone else would (shared with them, or in a team or set of theirs), in lists and by its link alike.
+
 ### Users
 
 Everyone with an account, with their status, roles (their teams' in outline), songs and storage. For each user you can:

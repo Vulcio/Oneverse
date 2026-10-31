@@ -363,6 +363,7 @@ model User {
   smartLists           SmartList[]
   songRevisions        SongVersionRevision[]
   contributedVersions  SongVersion[]         @relation("VersionContributedBy")
+  binnedVersions       SongVersion[]         @relation("VersionDeletedBy")
   songsSharedWithMe    AccessGrant[]         @relation("AccessGrantTo")
   favoriteSongs        FavoriteSong[]
   quickSelection       QuickSelectionSong[]
@@ -1057,6 +1058,14 @@ model SongVersion {
   // here until arrangements exist, then seeds each song's default one.
   capo         Int?
 
+  // In the bin (issue #340): deleted by `deletedByUserId` at this time,
+  // seen by nobody, restorable by who could delete it, deleted for good
+  // by the Worker 30 days on. The shared Prisma client leaves binned songs
+  // out of every SongVersion read unless the query names `deletedAt`.
+  deletedAt       DateTime?
+  deletedByUserId String?
+  deletedBy       User?     @relation("VersionDeletedBy", fields: [deletedByUserId], references: [id], onDelete: SetNull)
+
   // Version relationship (relationship to parent/source)
   relationshipType VersionRelationshipType?
   parentVersionId  String?
@@ -1111,6 +1120,7 @@ model SongVersion {
   @@index([ownerScope, publicationState])
   @@index([language])
   @@index([ccli])
+  @@index([deletedAt])
   // Trigram (pg_trgm) indexes for "contains"/"ignoring case" searches.
   @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([lyricsText(ops: raw("gin_trgm_ops"))], type: Gin)

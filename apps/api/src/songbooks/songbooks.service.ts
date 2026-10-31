@@ -26,6 +26,8 @@ import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 
 const DETAIL_INCLUDE = {
   entries: {
+    // Not those in the bin (issue #340): back when the song's put back.
+    where: { songVersion: { deletedAt: null } },
     include: { songVersion: { select: { title: true } } },
   },
 } satisfies Prisma.SongbookInclude;

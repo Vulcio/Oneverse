@@ -101,6 +101,12 @@ A song can also be shared with you by one of your [people](/people/): it's marke
 
 If a song isn't yours to change (a global song, or a team song when you're not one of the team's admins), you can read it, make your own version of it and add files of your own to it (see [Who sees a file](/library/#who-sees-a-file)), but not edit it.
 
+## Deleting a song
+
+**Delete song**, in the **⋯** menu of a song you can change, first says where others use it: their sets and their teams' sets, songbooks that aren't yours, and the files, versions and notes other people have on it. If it's in one of your teams' sets or shared with one of your teams, **Give it to** that team instead: the song becomes the team's (or is offered to its admins, if you aren't one), and stays where it's used.
+
+**Move to the bin** takes the song out of everyone's sight - the library, sets, songbooks - for 30 days. Sets keep its place, empty, until it's back. The **Bin**, under **Library** in the sidebar, lists what you deleted and your own and your teams' songs someone else deleted, with when each goes for good. **Put back** brings a song back where it was, with its files, versions, notes and history; **Delete for good** deletes it now, once you've confirmed. After 30 days it's deleted for good on its own.
+
 ## Linked songs
 
 A translation or an adaptation (simpler words, kids' words) is a song of its own - its own title, language, owner, [versions](/versions/) and files - linked to the song it comes from. Its page says so ("Translation of Amazing Grace"), and **Linked songs** on **Song info** lists the songs linked to this one. **Add a translation** starts a new song linked to it. You can translate a catalogue song and keep your translation to yourself, or put it in the catalogue too.

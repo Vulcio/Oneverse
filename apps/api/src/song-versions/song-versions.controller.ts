@@ -20,6 +20,7 @@ import { AccessPolicyService } from "../access/access-policy.service.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import { SongVersionEditorGuard } from "../common/guards/song-version-editor.guard.js";
 import { LookupsService } from "../lookups/lookups.service.js";
+import { SongBinService } from "./song-bin.service.js";
 import { SongVersionOwnerGuard } from "../common/guards/song-version-owner.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { LinkMetadataDto } from "./dto/link-metadata.dto.js";
@@ -52,6 +53,7 @@ export class SongVersionsController {
     private readonly history: SongHistoryService,
     private readonly repeats: SongRepeatsService,
     private readonly lookups: LookupsService,
+    private readonly bin: SongBinService,
   ) {}
 
   @Get()
@@ -176,8 +178,10 @@ export class SongVersionsController {
   @Delete(":songVersionId")
   @UseGuards(SongVersionOwnerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param("songVersionId") songVersionId: string) {
-    return this.songVersionsService.remove(songVersionId);
+  remove(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string) {
+    // Into the bin (issue #340), for BIN_DAYS: SongBinController puts it back or deletes it for good.
+    if (!user) throw new UnauthorizedException();
+    return this.bin.bin(user, songVersionId);
   }
 
   /** The song's history, newest first (issue #71). */
