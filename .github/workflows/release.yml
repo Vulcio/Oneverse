@@ -1,0 +1,103 @@
+name: Release
+
+# A release (issue #164) is a tag on main, `v0.9.0` (or `v0.9.0-rc.1` for a
+# release candidate), whose version is the workspace package.json's: tagging
+# builds every image with that version in it, pushes them to ghcr.io tagged
+# with it (and `latest`, for a release that isn't a candidate), and drafts the
+# GitHub Release from the issues closed since the previous tag
+# (scripts/release-notes.mjs). The draft is published by hand once read.
+# How to cut one: docs/releases.md.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          prepared=$(node -p "require('./package.json').version")
+          # The tag is the version being prepared, or a candidate for it.
+          if [ "${tag%%-*}" != "$prepared" ]; then
+            echo "The tag $GITHUB_REF_NAME isn't package.json's version ($prepared): set it there first (docs/releases.md)"; exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "$GITHUB_REF_NAME isn't on main"; exit 1
+          fi
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+          [ "$tag" != "${tag%%-*}" ] && echo "prerelease=true" >> "$GITHUB_OUTPUT" || echo "prerelease=false" >> "$GITHUB_OUTPUT"
+
+  images:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [api, songverse, planiverse, oneverse, screen, docs, site]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: tags
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+          PRERELEASE: ${{ needs.check.outputs.prerelease }}
+        run: |
+          name="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/oneverse-${{ matrix.image }}"
+          tags="$name:$VERSION"
+          # A pinned minor (0.9) follows its patches; latest, the newest release.
+          if [ "$PRERELEASE" = false ]; then tags="$tags,$name:${VERSION%.*},$name:latest"; fi
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.${{ matrix.image }}
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            ONEVERSE_VERSION=${{ needs.check.outputs.version }}
+            ONEVERSE_COMMIT=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.check.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+
+  notes:
+    needs: [check, images]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Draft the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.check.outputs.version }}
+          PRERELEASE: ${{ needs.check.outputs.prerelease }}
+        run: |
+          node scripts/release-notes.mjs "$GITHUB_REF_NAME" > /tmp/notes.md
+          flags=(--draft --verify-tag --title "Oneverse $VERSION" --notes-file /tmp/notes.md)
+          if [ "$PRERELEASE" = true ]; then flags+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" "${flags[@]}"

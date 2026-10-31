@@ -1,5 +1,6 @@
 {
   "name": "oneverse",
+  "version": "0.9.0",
   "private": true,
   "license": "AGPL-3.0-only",
   "type": "module",
