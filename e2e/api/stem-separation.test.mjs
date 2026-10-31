@@ -83,7 +83,7 @@ try {
   const fastIds = files.map((file) => file.id).sort();
 
   // --- Tonight: the HQ pass's stems in their place
-  const jobId = sent && demucs.received.length && (await call(admin, "GET", `/song-versions/${song.id}/stem-separations`)).body.separations[0] && sql(`select "jobId" from "StemSeparation" where id='${first.id}'`);
+  const jobId = sent && demucs.received.length && (await call(singer, "GET", `/song-versions/${song.id}/stem-separations`)).body.separations[0] && sql(`select "jobId" from "StemSeparation" where id='${first.id}'`);
   await demucs.completeHq(jobId);
   list = await waitFor(singer, song.id, (body) => body.separations[0]?.status === "COMPLETED");
   files = (await api(singer, "GET", `/song-versions/${song.id}/attachments`)).filter((file) => file.multitrackId === multitrackId);

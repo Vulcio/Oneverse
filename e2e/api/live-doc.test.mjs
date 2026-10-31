@@ -131,7 +131,8 @@ try {
   r = await behind.join(saved - 1);
   behind.close();
   check("…at its revision now (a device that loaded before it is told)", r?.type === "doc-state" && r.revision === saved && r.state !== null, JSON.stringify(r));
-  await call(admin, "PATCH", `/song-versions/${song.id}`, { contentFormat: "CHORDPRO", content: "[G]Restored\n" });
+  // The team's other admin, from outside the room (a global admin no longer changes a team's song, issue #340).
+  await call(coAdmin, "PATCH", `/song-versions/${song.id}`, { contentFormat: "CHORDPRO", content: "[G]Restored\n" });
   r = await Promise.all([ownerOne.next((m) => m.type === "doc-reset", 6000), ownerTwo.next((m) => m.type === "doc-reset", 6000)]);
   check("a save from elsewhere starts the room over, for everyone in it", r.every((one) => one !== null));
   const fresh = await typist(owner);
