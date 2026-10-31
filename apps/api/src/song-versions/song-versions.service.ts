@@ -548,7 +548,8 @@ export class SongVersionsService {
   async searchProgressions(user: AuthenticatedUser, text: string): Promise<{ query: string[] | null; songs: (ListItem & { sections: SectionProgression[] })[] }> {
     const query = parseProgressionQuery(text);
     if (!query) return { query: null, songs: [] };
-    const visible = await this.prisma.client.songVersion.findMany({ where: await this.access.songsVisibleTo(user), select: { id: true } });
+    const visibleWhere = await this.access.songsVisibleTo(user);
+    const visible = await this.prisma.client.songVersion.findMany({ where: visibleWhere, select: { id: true } });
     const ids = visible.map((row) => row.id);
     await this.refreshProgressions(ids);
     // The runs of 3 and 4 in the query must all be in a song's runs; shorter queries are checked one by one.
@@ -559,21 +560,28 @@ export class SongVersionsService {
       break;
     }
     const rows = await this.prisma.client.songProgression.findMany({
-      where: { songVersionId: { in: ids }, ...(runs.size > 0 && { grams: { hasEvery: [...runs] } }) },
+      // The songs seen as a condition, not a list of their IDs: a big library is more than a query's 32,767 values.
+      where: { songVersion: visibleWhere, ...(runs.size > 0 && { grams: { hasEvery: [...runs] } }) },
       select: { songVersionId: true, sections: true },
     });
     const found = rows
       .map((row) => ({ id: row.songVersionId, sections: findProgression(row.sections as unknown as SectionProgression[], query) }))
       .filter((match) => match.sections.length > 0);
-    const versions = await this.prisma.client.songVersion.findMany({ where: { id: { in: found.map((match) => match.id) } }, select: LIST_SELECT });
+    // The most sections first, then by title: the titles of a short query's many songs read in parts, under the 32,767 values a query takes.
+    const titles = new Map<string, string>();
+    for (let i = 0; i < found.length; i += 10_000) {
+      const part = await this.prisma.client.songVersion.findMany({ where: { id: { in: found.slice(i, i + 10_000).map((match) => match.id) } }, select: { id: true, title: true } });
+      for (const row of part) titles.set(row.id, row.title);
+    }
+    const best = found
+      .filter((match) => titles.has(match.id))
+      .sort((a, b) => b.sections.length - a.sections.length || titles.get(a.id)!.localeCompare(titles.get(b.id)!))
+      .slice(0, 100);
+    const versions = await this.prisma.client.songVersion.findMany({ where: { id: { in: best.map((match) => match.id) } }, select: LIST_SELECT });
     const byId = new Map(versions.map((version) => [version.id, version]));
     const seesTag = await this.seesTag(user);
     const shared = await this.sharedByOf(user, versions.map((version) => version.id));
-    const songs = found
-      .filter((match) => byId.has(match.id))
-      .map((match) => ({ ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null), sections: match.sections }))
-      .sort((a, b) => b.sections.length - a.sections.length || a.title.localeCompare(b.title))
-      .slice(0, 100);
+    const songs = best.filter((match) => byId.has(match.id)).map((match) => ({ ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null), sections: match.sections }));
     return { query, songs };
   }
 
@@ -585,10 +593,14 @@ export class SongVersionsService {
    */
   async progressionsOf(user: AuthenticatedUser, id: string) {
     await this.access.assertCanSeeSong(user, id);
-    const visible = await this.prisma.client.songVersion.findMany({ where: await this.access.songsVisibleTo(user), select: { id: true } });
+    const visibleWhere = await this.access.songsVisibleTo(user);
+    const visible = await this.prisma.client.songVersion.findMany({ where: visibleWhere, select: { id: true } });
     const ids = [...new Set([id, ...visible.map((row) => row.id)])];
     await this.refreshProgressions(ids);
-    const rows = await this.prisma.client.songProgression.findMany({ where: { songVersionId: { in: ids } }, select: { songVersionId: true, sections: true, grams: true } });
+    const rows = await this.prisma.client.songProgression.findMany({
+      where: { OR: [{ songVersionId: id }, { songVersion: visibleWhere }] },
+      select: { songVersionId: true, sections: true, grams: true },
+    });
     const own = rows.find((row) => row.songVersionId === id);
     const sections = (own?.sections as unknown as SectionProgression[] | undefined) ?? [];
     if (!own || own.grams.length === 0) return { sections, similar: [] };
