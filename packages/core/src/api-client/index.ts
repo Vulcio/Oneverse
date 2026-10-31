@@ -2774,6 +2774,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** Starts finding artwork for songs without one, as a background job (issue #92); false when one is already waiting or running. */
     backfillArtwork: () => request<{ queued: boolean; jobId: string | null }>("/admin/artwork/backfill", { method: "POST" }),
     backfillRepeats: (data: RepeatsBackfillRequest) => request<{ queued: boolean; jobId: string | null }>("/admin/repeats/backfill", { method: "POST", body: JSON.stringify(data) }),
+    /** What's running: the version, commit and latest migration (GET /health, issue #164). */
+    getServerVersion: () => request<ServerVersionInfo & { status: string }>("/health"),
     /** Who runs background jobs, each queue's counts and the last jobs (issue #92). */
     getJobsStatus: () => request<JobsStatus>("/admin/jobs"),
     /** Clears the failed jobs, once their errors have been read (issue #93). */

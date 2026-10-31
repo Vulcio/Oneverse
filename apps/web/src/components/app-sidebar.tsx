@@ -47,6 +47,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { AdminVersion } from "#/components/admin-version";
 import { useTranslation } from "react-i18next";
 import type { AppSession } from "@oneverse/app/server-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
@@ -624,6 +625,7 @@ function AdminNav({ pathname }: { pathname: string }) {
           ))}
         </SidebarMenu>
       </SidebarGroup>
+      <AdminVersion className="mt-auto group-data-[collapsible=icon]:hidden" />
     </SidebarContent>
   );
 }

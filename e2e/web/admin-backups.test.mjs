@@ -1,6 +1,6 @@
 // Admin > Backups (issue #119): nothing set means no backups, said plainly; a
 // bucket saved here, "Back up now" run by the Worker and listed with what it
-// copied; then back to the environment. The version shows in Background jobs (issue #164).
+// copied; then back to the environment. The version shows in Background jobs and Admin's sidebar (issue #164).
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { startFakeS3 } from "../lib/fake-s3.mjs";
@@ -52,6 +52,14 @@ await step("back to the environment", async () => {
   await page.getByRole("button", { name: "Revert to environment variables" }).click();
   await page.getByRole("button", { name: "Confirm revert" }).click();
   await page.getByTestId("backups-source").getByText("Nothing configured").waitFor();
+});
+
+await step("the version is at the foot of Admin's sidebar, and opens Metadata", async () => {
+  await page.goto(`${WEB}/admin/backups`);
+  const version = page.getByTestId("admin-version").filter({ visible: true }).first();
+  await version.getByText(/Oneverse \d+\.\d+\.\d+/).waitFor();
+  await version.click();
+  await page.waitForURL(/\/admin\/metadata/);
 });
 
 await step("Background jobs says which version runs, and the database's migration", async () => {

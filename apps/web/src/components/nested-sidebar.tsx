@@ -42,6 +42,7 @@ import { bibleTurnedOn } from "#/lib/bible";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AccountMenuContent } from "#/components/app-sidebar";
+import { AdminVersion } from "#/components/admin-version";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { TransitionPicker, TransitionSymbol } from "#/components/set-transition";
@@ -270,6 +271,7 @@ function SectionPanel({
           { to: "/admin/bibles", label: t("nav.adminBibles"), icon: <BookMarked /> },
           { to: "/library", label: t("nav.backToApp"), icon: <ArrowLeft /> },
         ]}
+        footer={<AdminVersion className="mt-auto" />}
       />
     ) : null}
     </>
@@ -961,7 +963,7 @@ function PeoplePanel({ title }: { title: string }) {
   );
 }
 
-function LinksPanel({ title, pathname, links }: { title: string; pathname: string; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles"; label: string; icon: ReactNode }[] }) {
+function LinksPanel({ title, pathname, links, footer }: { title: string; pathname: string; footer?: ReactNode; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles"; label: string; icon: ReactNode }[] }) {
   return (
     <>
       <PanelHeader title={title} />
@@ -981,6 +983,7 @@ function LinksPanel({ title, pathname, links }: { title: string; pathname: strin
           </Link>
         ))}
       </nav>
+      {footer}
     </>
   );
 }
