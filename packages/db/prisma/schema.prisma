@@ -1120,7 +1120,10 @@ model SongVersion {
   @@index([ownerScope, publicationState])
   @@index([language])
   @@index([ccli])
-  @@index([deletedAt])
+  // The library's sorts (issue #341): a page of 50 read in order, not all of them sorted.
+  @@index([updatedAt])
+  @@index([createdAt])
+  @@index([title], map: "SongVersion_title_sort_idx")
   // Trigram (pg_trgm) indexes for "contains"/"ignoring case" searches.
   @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([lyricsText(ops: raw("gin_trgm_ops"))], type: Gin)
