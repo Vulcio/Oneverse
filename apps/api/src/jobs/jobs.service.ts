@@ -6,6 +6,10 @@ import { BULK_UPLOAD_QUEUE } from "../bulk-upload/bulk-upload.types.js";
 import { USER_MAINTENANCE_QUEUE } from "../user-management/transfer-expiry.processor.js";
 import { BACKFILLS_QUEUE, HEARTBEAT_KEY, jobsInApi, LOOKUPS_QUEUE, RECORDINGS_QUEUE, settingsKeyCheck, STEM_SEPARATION_QUEUE, TEAM_EVENTS_QUEUE, NOTIFICATIONS_QUEUE, LIVE_SESSIONS_QUEUE } from "./jobs.constants.js";
 import { redis } from "./redis.js";
+import { BACKUPS_QUEUE } from "./jobs.constants.js";
+import { latestMigration } from "../common/database-migration.js";
+import { serverVersion } from "../common/version.js";
+import { PrismaService } from "../prisma/prisma.service.js";
 
 interface Beat {
   at: string;
@@ -17,9 +21,13 @@ interface Beat {
   settingsKey: "missing" | "different" | "same" | null;
   /** Its ffmpeg's version, "" when it has none (recorded takes stay WAV, issue #127), or null from a process too old to say. */
   ffmpeg: string | null;
+  /** Its version (issue #164), or null from a process too old to say: a Worker not redeployed with the API differs. */
+  version: string | null;
 }
 
 export interface JobsStatus {
+  /** This API's version and commit (issue #164), and the database's latest migration. */
+  server: { version: string; commit: string | null; migration: string | null };
   /** The Worker's last heartbeat (every 15 seconds; gone after a minute), or null. */
   worker: Beat | null;
   /** An API process that runs jobs itself (JOBS_IN_API), or null. */
@@ -60,10 +68,12 @@ export class JobsService {
     @InjectQueue(NOTIFICATIONS_QUEUE) private readonly notifications: Queue,
     @InjectQueue(SCRIPTURES_QUEUE) private readonly scriptures: Queue,
     @InjectQueue(LIVE_SESSIONS_QUEUE) private readonly liveSessions: Queue,
+    @InjectQueue(BACKUPS_QUEUE) private readonly backups: Queue,
+    private readonly prisma: PrismaService,
   ) {}
 
   private get queues(): Queue[] {
-    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications, this.scriptures, this.liveSessions];
+    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications, this.scriptures, this.liveSessions, this.backups];
   }
 
   async status(): Promise<JobsStatus> {
@@ -71,17 +81,18 @@ export class JobsService {
       try {
         const raw = await redis().get(HEARTBEAT_KEY(role));
         if (!raw) return null;
-        const { at, host, settingsKey, ffmpeg } = JSON.parse(raw) as { at: string; host: string; settingsKey?: string | null; ffmpeg?: string | null };
+        const { at, host, settingsKey, ffmpeg, version } = JSON.parse(raw) as { at: string; host: string; settingsKey?: string | null; ffmpeg?: string | null; version?: string };
         const mine = settingsKeyCheck();
         const key = settingsKey === undefined ? null : settingsKey === null ? "missing" : settingsKey === mine ? "same" : "different";
         // Only the verdict: the hash stays in Redis.
-        return { at, host, settingsKey: key, ffmpeg: ffmpeg === undefined ? null : (ffmpeg ?? "") } satisfies Beat;
+        return { at, host, settingsKey: key, ffmpeg: ffmpeg === undefined ? null : (ffmpeg ?? ""), version: version ?? null } satisfies Beat;
       } catch {
         return null;
       }
     };
     const queues = this.queues;
-    const [worker, api, counts, completed, failedJobs] = await Promise.all([
+    const [migration, worker, api, counts, completed, failedJobs] = await Promise.all([
+      latestMigration(this.prisma.client),
       beat("worker"),
       beat("api"),
       Promise.all(queues.map((queue) => queue.getJobCounts("waiting", "active", "delayed", "failed", "completed", "prioritized"))),
@@ -108,6 +119,7 @@ export class JobsService {
     // A queue counts failed jobs by their IDs; one whose details were removed isn't listed.
     const failedWithoutDetails = counts.reduce((sum, c, index) => sum + Math.max(0, (c.failed ?? 0) - Math.min(failedJobs[index]!.length, 20)), 0);
     return {
+      server: { ...serverVersion(), migration },
       worker,
       api,
       thisApiRunsJobs: jobsInApi(),

@@ -20,6 +20,7 @@ import {
   Metronome,
   Gauge,
   HelpCircle,
+  ArchiveRestore,
   Database,
   FileStack,
   GripVertical,
@@ -262,6 +263,7 @@ function SectionPanel({
           { to: "/admin/notifications", label: t("nav.adminNotifications"), icon: <Bell /> },
           { to: "/admin/collaboration", label: t("nav.adminCollaboration"), icon: <Handshake /> },
           { to: "/admin/storage", label: t("nav.adminStorage"), icon: <Database /> },
+          { to: "/admin/backups", label: t("nav.adminBackups"), icon: <ArchiveRestore /> },
           { to: "/admin/stem-separation", label: t("nav.adminStemSeparation"), icon: <AudioWaveform /> },
           { to: "/admin/catalogs", label: t("nav.adminCatalogs"), icon: <FileStack /> },
           { to: "/admin/metadata", label: t("nav.adminMetadata"), icon: <LayoutDashboard /> },
@@ -959,7 +961,7 @@ function PeoplePanel({ title }: { title: string }) {
   );
 }
 
-function LinksPanel({ title, pathname, links }: { title: string; pathname: string; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles"; label: string; icon: ReactNode }[] }) {
+function LinksPanel({ title, pathname, links }: { title: string; pathname: string; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles"; label: string; icon: ReactNode }[] }) {
   return (
     <>
       <PanelHeader title={title} />

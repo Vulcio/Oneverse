@@ -48,9 +48,24 @@ ENV NODE_ENV=production
 # ffmpeg (and its ffprobe): the Worker turns recorded takes into Opus with it (issue #127), and uploads above 320 kbps (#182).
 # Only the runtime image needs it; without it, takes stay as recorded (WAV).
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+# pg_dump and pg_restore for the backups (issue #119), from PostgreSQL's own
+# packages: Debian's are another major version than the server's, and pg_dump
+# refuses a server newer than itself. POSTGRES_CLIENT is the server's major.
+ARG POSTGRES_CLIENT=16
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-common ca-certificates \
+ && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
+ && apt-get install -y --no-install-recommends postgresql-client-${POSTGRES_CLIENT} \
+ && rm -rf /var/lib/apt/lists/*
 COPY --from=build /repo/node_modules /repo/node_modules
 COPY --from=build /repo/packages /repo/packages
 COPY --from=build /repo/apps/api /repo/apps/api
+# The workspace's package.json holds the version being prepared (issue #164).
+COPY --from=build /repo/package.json /repo/package.json
+# A release's image is told its version and commit (.github/workflows/release.yml);
+# any other build reports the package.json's as "-dev".
+ARG ONEVERSE_VERSION=
+ARG ONEVERSE_COMMIT=
+ENV ONEVERSE_VERSION=${ONEVERSE_VERSION} ONEVERSE_COMMIT=${ONEVERSE_COMMIT}
 WORKDIR /repo/apps/api
 EXPOSE 3001
 # Applies pending Prisma migrations before the API starts, so a deploy never

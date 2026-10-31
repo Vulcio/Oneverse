@@ -19,6 +19,8 @@ export const TEAM_EVENTS_QUEUE = "team-events";
 export const NOTIFICATIONS_QUEUE = "notifications";
 /** Live sessions nobody changed for a while, ended (issue #247). */
 export const LIVE_SESSIONS_QUEUE = "live-sessions";
+/** The server's backups (issue #119): the nightly one, and "Back up now". */
+export const BACKUPS_QUEUE = "backups";
 
 /**
  * A short hash of this process's SETTINGS_ENCRYPTION_KEY, or null without

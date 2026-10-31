@@ -304,7 +304,18 @@ song images, artist pictures, team and songbook pictures, Bible files
 waiting to be imported, screen themes' and brands' files with identical
 bytes are one object). Delete them only
 through `StorageService.deleteUnreferenced()`, which checks every one of
-them - a new kind of stored file needs adding there too.
+them - a new kind of stored file needs adding there too, and to
+`StorageService.storedKeys()`, the list the backups copy (issue #119).
+
+## Versions and backups
+
+One version for the whole product (issue #164, `docs/releases.md`): the root
+`package.json`'s, reported by `/health` and Admin as `x.y.z-dev` unless the image
+was built for a release tag (`.github/workflows/release.yml`). The server's
+backups (issue #119, `apps/api/src/backups/`, Deploy.md's "Backups") are a Worker
+job: the database dumped and encrypted with `SETTINGS_ENCRYPTION_KEY`, the
+stored files copied once, restored with `dist/backups/restore.js`. A new table
+is in the dump on its own; a new kind of stored file needs `storedKeys()`.
 
 ## Requests
 

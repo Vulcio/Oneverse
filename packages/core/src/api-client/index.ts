@@ -42,6 +42,7 @@ import type { SetItemPassage } from "../screens/index.js";
 import type { BibleSourceFormat } from "../scriptures/bible.js";
 import type { PassageChapter } from "../scriptures/references.js";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
+import type { SaveBackupConfigRequest } from "../requests/backups.js";
 import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
@@ -1006,6 +1007,50 @@ export interface AdminTeamSummary {
 export interface CollaborationSettingsSummary {
   source: "database" | "env" | "none";
   settings: { liveCoEditing: SecuritySetting<boolean> };
+}
+
+/** Admin > Backups (issue #119): where the server's backups go, when, and the last runs. */
+export interface BackupSummary {
+  destination: {
+    kind: "s3" | "dir" | "none";
+    source: "database" | "env" | "none";
+    endpoint: string | null;
+    region: string | null;
+    bucket: string | null;
+    prefix: string;
+    accessKeyIdMasked: string | null;
+    /** BACKUP_DIR, a folder on the Worker (env only). */
+    dir: string | null;
+  };
+  /** What's saved in the database, to fill the form; the secret only as whether there is one. */
+  saved: { endpoint: string | null; region: string | null; bucket: string | null; prefix: string | null; accessKeyIdMasked: string | null; hasDatabaseSecret: boolean };
+  hasDatabaseConfig: boolean;
+  settings: {
+    enabled: SecuritySetting<boolean>;
+    hourUtc: SecuritySetting<number>;
+    keepDaily: SecuritySetting<number>;
+    keepWeekly: SecuritySetting<number>;
+    keepMonthly: SecuritySetting<number>;
+    fileRetentionDays: SecuritySetting<number>;
+  };
+  runs: BackupRun[];
+}
+
+export interface BackupRun {
+  id: string;
+  trigger: "schedule" | "manual";
+  status: "running" | "ok" | "failed";
+  startedAt: string;
+  finishedAt: string | null;
+  databaseKey: string | null;
+  databaseBytes: number | null;
+  filesCopied: number;
+  filesBytes: number;
+  filesKept: number;
+  filesMissing: number;
+  filesRemoved: number;
+  dumpsRemoved: number;
+  error: string | null;
 }
 
 export interface SecuritySettingsSummary {
@@ -2001,9 +2046,23 @@ export interface JobsHeartbeat {
   settingsKey: "missing" | "different" | "same" | null;
   /** Its ffmpeg's version, "" without one (recorded takes stay WAV, issue #127); null from a process too old to say. */
   ffmpeg: string | null;
+  /** Its version (issue #164); null from a process too old to say. */
+  version: string | null;
+}
+
+/** What's running (issue #164): GET /health's answer, and Admin's. */
+export interface ServerVersionInfo {
+  /** The release's version (`0.9.0`), or the one being prepared as `0.9.0-dev` for a build that isn't a release. */
+  version: string;
+  /** The commit it was built from, when the build was told. */
+  commit: string | null;
+  /** The database's latest migration. */
+  migration: string | null;
 }
 
 export interface JobsStatus {
+  /** This API's version, and the database's latest migration (issue #164). */
+  server: ServerVersionInfo;
   /** The Worker's last heartbeat (every 15 seconds; gone after a minute), or null. */
   worker: JobsHeartbeat | null;
   /** An API process that runs jobs itself (JOBS_IN_API), or null. */
@@ -3269,6 +3328,11 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminGetCollaborationSettings: () => request<CollaborationSettingsSummary>("/admin/collaboration"),
     adminSaveCollaborationSettings: (data: SaveCollaborationSettingsRequest) => request<void>("/admin/collaboration", { method: "PUT", body: JSON.stringify(data) }),
     adminClearCollaborationSettings: () => request<void>("/admin/collaboration", { method: "DELETE" }),
+    adminGetBackups: () => request<BackupSummary>("/admin/backups"),
+    adminSaveBackupConfig: (data: SaveBackupConfigRequest) => request<void>("/admin/backups/config", { method: "PUT", body: JSON.stringify(data) }),
+    adminClearBackupConfig: () => request<void>("/admin/backups/config", { method: "DELETE" }),
+    /** "Back up now": queued for the Worker; 409 while one is running. */
+    adminRunBackup: () => request<{ queued: true }>("/admin/backups/run", { method: "POST" }),
     adminGetSecuritySettings: () => request<SecuritySettingsSummary>("/admin/security"),
     adminSaveSecuritySettings: (data: SaveSecuritySettingsRequest) => request<void>("/admin/security", { method: "PUT", body: JSON.stringify(data) }),
     adminClearSecuritySettings: () => request<void>("/admin/security", { method: "DELETE" }),

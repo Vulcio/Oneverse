@@ -88,6 +88,19 @@ export function BackgroundJobsCard() {
         ) : null}
         {status ? (
           <>
+            {/* What's running (issue #164): a Worker not redeployed with the API runs other code. */}
+            <div className="flex flex-col gap-1 text-sm" data-testid="server-version">
+              <p>
+                {t("jobs.version", { version: status.server.version })}
+                {status.server.commit ? <span className="text-muted-foreground"> ({status.server.commit})</span> : null}
+              </p>
+              {status.server.migration ? <p className="text-muted-foreground">{t("jobs.migration", { name: status.server.migration })}</p> : null}
+              {status.worker?.version && status.worker.version !== status.server.version ? (
+                <p className="text-destructive" data-testid="worker-version">
+                  {t("jobs.workerVersionDifferent", { version: status.worker.version })}
+                </p>
+              ) : null}
+            </div>
             <div className="flex flex-col gap-1 text-sm" data-testid="jobs-runner">
               {status.worker ? (
                 <p>{t("jobs.workerSeen", { ago: ago(status.worker.at, now), host: status.worker.host })}</p>

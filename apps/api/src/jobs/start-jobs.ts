@@ -12,11 +12,13 @@ import { TeamEventsProcessor } from "../team-events/team-events.processor.js";
 import { BibleImportProcessor } from "../scriptures/bibles.processor.js";
 import { TransferExpiryProcessor } from "../user-management/transfer-expiry.processor.js";
 import { LiveSessionsProcessor } from "../sync/live-sessions.js";
+import { BackupsProcessor } from "../backups/backups.processor.js";
 import { HEARTBEAT_KEY, settingsKeyCheck } from "./jobs.constants.js";
 import { redis } from "./redis.js";
+import { serverVersion } from "../common/version.js";
 
 /** Every job processor: a new one needs adding here, or no process runs its jobs. */
-const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor, LiveSessionsProcessor];
+const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor, LiveSessionsProcessor, BackupsProcessor];
 
 const logger = new Logger("Jobs");
 
@@ -36,7 +38,7 @@ export function startJobs(app: INestApplicationContext, role: "worker" | "api"):
   let ffmpeg: string | null | undefined;
   const beat = () =>
     redis()
-      .set(HEARTBEAT_KEY(role), JSON.stringify({ at: new Date().toISOString(), host: hostname(), pid: process.pid, settingsKey: settingsKeyCheck(), ffmpeg }), "EX", 60)
+      .set(HEARTBEAT_KEY(role), JSON.stringify({ at: new Date().toISOString(), host: hostname(), pid: process.pid, settingsKey: settingsKeyCheck(), ffmpeg, version: serverVersion().version }), "EX", 60)
       .catch(() => undefined);
   void ffmpegVersion().then((version) => {
     ffmpeg = version;

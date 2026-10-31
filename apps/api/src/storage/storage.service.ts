@@ -166,6 +166,35 @@ export class StorageService {
     }
   }
 
+  /**
+   * Every stored object something references (issue #119): what a backup copies
+   * and a restore brings back. The same columns deleteUnreferenced() checks - a
+   * new kind of stored file goes in both. Binned songs' artwork too.
+   */
+  async storedKeys(): Promise<string[]> {
+    const rows = await this.prisma.client.$queryRaw<{ key: string }[]>`
+      SELECT key FROM (
+        SELECT "storageKey" AS key FROM "Attachment"
+        UNION SELECT "originalStorageKey" FROM "Attachment"
+        UNION SELECT "avatarStorageKey" FROM "User"
+        UNION SELECT "imageStorageKey" FROM "SongVersion"
+        UNION SELECT "imageStorageKey" FROM "Artist"
+        UNION SELECT "avatarStorageKey" FROM "Team"
+        UNION SELECT "avatarStorageKey" FROM "Songbook"
+        UNION SELECT "storageKey" FROM "ScreenThemeAsset"
+        UNION SELECT "storageKey" FROM "BrandAsset"
+        UNION SELECT "sourceStorageKey" FROM "Bible"
+      ) keys WHERE key IS NOT NULL ORDER BY key`;
+    return rows.map((row) => row.key);
+  }
+
+  /** An object put back under its key, from a backup (issue #119): refused unless the bytes are the ones the key names. */
+  async restoreObject(hash: string, body: Buffer): Promise<void> {
+    if (createHash("sha256").update(body).digest("hex") !== hash) throw new Error(`The backup's copy of ${hash} doesn't match its key`);
+    const { driver } = await this.resolveDriver();
+    await driver.putObject(hash, body, "application/octet-stream");
+  }
+
   async describe(): Promise<{ driver: StorageDriverName; source: StorageConfigSource }> {
     const { name, source } = await this.resolveDriver();
     return { driver: name, source };

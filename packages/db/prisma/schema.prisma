@@ -3409,3 +3409,51 @@ model Location {
   @@index([ownerTeamId])
   @@index([ownerOrganizationId])
 }
+
+// Server backups (issue #119), edited in Admin > Backups: where the Worker
+// copies the database (a nightly pg_dump, encrypted with SETTINGS_ENCRYPTION_KEY)
+// and the stored files, an S3-compatible bucket apart from the main one. A
+// null field falls back to its BACKUP_* env var, then to the default
+// (apps/api/src/backups/backup-settings.ts); with no bucket, nothing runs.
+model BackupSettings {
+  id                 String   @id @default("singleton")
+  enabled            Boolean?
+  endpoint           String?
+  region             String?
+  bucket             String?
+  // A folder in the bucket, so one bucket can hold several servers' backups.
+  prefix             String?
+  accessKeyId        String?
+  secretAccessKeyEnc String?
+  // The hour of the day (UTC) the nightly backup starts at.
+  hourUtc            Int?
+  // How many daily, weekly and monthly database dumps are kept.
+  keepDaily          Int?
+  keepWeekly         Int?
+  keepMonthly        Int?
+  // How long a file deleted from the main storage stays in the backup.
+  fileRetentionDays  Int?
+  updatedAt          DateTime @updatedAt
+}
+
+// One backup, scheduled or asked for in Admin (issue #119): what it copied, or why it failed.
+model BackupRun {
+  id            String    @id @default(cuid())
+  trigger       String // "schedule" | "manual"
+  status        String // "running" | "ok" | "failed"
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  // The database dump's key in the backup bucket, and its size.
+  databaseKey   String?
+  databaseBytes BigInt?
+  // Files copied this time, their bytes, those already there, those that couldn't be read, those removed after their retention.
+  filesCopied   Int       @default(0)
+  filesBytes    BigInt    @default(0)
+  filesKept     Int       @default(0)
+  filesMissing  Int       @default(0)
+  filesRemoved  Int       @default(0)
+  dumpsRemoved  Int       @default(0)
+  error         String?
+
+  @@index([startedAt])
+}

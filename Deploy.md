@@ -197,6 +197,8 @@ changed in Dokploy only reaches the container on the next deploy.
 
 It doesn't need `BETTER_AUTH_SECRET`, `AUTH_URL`, `WEB_URL`, the
 Resend/Google vars or `PORT`: it serves no HTTP traffic and signs nothing.
+The Worker also makes the nightly backups (#119): the image has `pg_dump` for
+them; see [5. Backups](#5-backups).
 Leave `JOBS_IN_API` unset (or `false`) on the API when you run a Worker.
 
 ### Oneverse app
@@ -370,7 +372,7 @@ Don't use `pnpm --filter @oneverse/db exec ...` there: the image doesn't include
 
 ## 4. Verify
 
-- `https://api.oneverse.top/health` → `{"status":"ok"}`
+- `https://api.oneverse.top/health` → `{"status":"ok","version":"0.9.0","commit":"…","migration":"…"}`: the version running (#164) and the database's latest migration
 - `https://api.oneverse.top/api/docs` → interactive API documentation
 - `https://oneverse.top` → the website, in English (`/fr/` in French); `https://songverse.one` too
 - `https://songverse.top` → Oneverse's sign-in page, at `https://account.oneverse.top/sign-in` (and `https://songverse.one/library` redirects to the app)
@@ -380,6 +382,125 @@ Don't use `pnpm --filter @oneverse/db exec ...` there: the image doesn't include
 - On a set, **Sync** → **Turn sync on** → it says who's leading (or that no one is) rather than "Connecting…": the WebSocket gets through
 
 If all of those work, the deployment is healthy end to end: DNS → HTTPS → Songverse → Oneverse → Auth → API → Database.
+
+## 5. Backups
+
+Nothing is safe until it's backed up somewhere else (#119). The Worker does it
+every night, on its own, once it's told where:
+
+| What | How |
+|---|---|
+| **The database** - accounts, songs and their history, sets, every setting saved in Admin | `pg_dump` (custom format, compressed), encrypted with `SETTINGS_ENCRYPTION_KEY`, uploaded as `db/<time>.dump.enc`. Kept: 7 daily, 4 weekly, 12 monthly. |
+| **The stored files** - attachments, audio and stems, pictures, themes' and brands' files | Copied to `files/<hash>`. A file's key is the hash of its bytes, so each is copied once. A file deleted from the main storage stays 30 days, then goes. |
+| Redis | Not backed up: queues and sync sessions rebuild on their own. |
+| **The keys** - `SETTINGS_ENCRYPTION_KEY`, `BETTER_AUTH_SECRET`, the backup bucket's keys | **Not** in the backup: keep them in your password manager. Without `SETTINGS_ENCRYPTION_KEY` a dump can't be opened, nor the secrets saved in Admin. |
+
+**Where.** A second S3-compatible bucket, on another account or provider than
+the main storage (Backblaze B2, Amazon S3, a second Cloudflare account's R2), so
+one problem can't take both. Its keys need read, write, list and delete on it.
+Set it in **Admin > Backups** (saved in the database, the secret encrypted), or
+with environment variables on **both the API and the Worker** (the Worker makes
+the backups; the API shows them in Admin and queues **Back up now**):
+```
+BACKUP_S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com   # or https://s3.<region>.backblazeb2.com…; unset for AWS S3
+BACKUP_S3_REGION=auto                 # optional
+BACKUP_S3_BUCKET=oneverse-backups
+BACKUP_S3_PREFIX=songverse-top        # optional: a folder, for several servers in one bucket
+BACKUP_S3_ACCESS_KEY_ID=...
+BACKUP_S3_SECRET_ACCESS_KEY=...
+# Or, instead of a bucket, a folder on the Worker (a mounted disk or network share):
+# BACKUP_DIR=/backups
+# Optional, also in Admin > Backups:
+# BACKUP_ENABLED=true          # on by default once there's a destination
+# BACKUP_HOUR_UTC=3
+# BACKUP_KEEP_DAILY=7 BACKUP_KEEP_WEEKLY=4 BACKUP_KEEP_MONTHLY=12
+# BACKUP_FILE_RETENTION_DAYS=30
+```
+Admin's settings win over these. Admin > Backups shows the last runs - when,
+how big, what was copied, or why one failed - and has **Back up now**. A run
+that fails is retried 12 hours later; one missed while the Worker was down runs
+as soon as it's back.
+
+**pg_dump's version.** `Dockerfile.api` installs PostgreSQL's own client for
+major version 16 (the server's): `pg_dump` refuses a server newer than itself.
+After upgrading Postgres, rebuild with `--build-arg POSTGRES_CLIENT=<major>`
+(in Dokploy: the app's build arguments), or the backups fail with "server
+version mismatch" in Admin > Backups.
+
+The users' own copies of their songs (an archive each person can download and
+import again) are another feature, #351.
+
+### Restoring from a backup
+
+Tried once on 2026-10-31 (#119): a whole server backed up, restored into a new
+database and empty storage, an API started on it, someone signed in and opened
+a song and its file. The e2e suite `api/backups` does the same on every change.
+
+1. **Create an empty database** (in Dokploy, a new Postgres, or `createdb` in
+   the existing one). Never restore over the one in use: if it's damaged, keep
+   it until the restore is checked.
+2. **Run the restore** from the API's image (a one-off container, or a shell
+   in the API app's container), with the backup's address and the old
+   `SETTINGS_ENCRYPTION_KEY`:
+   ```
+   SETTINGS_ENCRYPTION_KEY=<the old one> \
+   BACKUP_S3_ENDPOINT=... BACKUP_S3_BUCKET=... BACKUP_S3_PREFIX=... \
+   BACKUP_S3_ACCESS_KEY_ID=... BACKUP_S3_SECRET_ACCESS_KEY=... \
+   node dist/backups/restore.js --list          # the dumps, and the newest backup's version
+   node dist/backups/restore.js --database-url postgresql://…/new_db [--at 2026-10-31]
+   ```
+   It restores the newest dump (or the newest on or before `--at`, a day or a
+   time) with `pg_restore`, refusing a database that has any table, then puts
+   back every file that database references and the main storage lacks: into
+   the bucket the restored Admin > Storage names (or `R2_*`). `--skip-files` or
+   `--skip-database` does one half only.
+3. **Point the API and the Worker at the new database** (`DATABASE_URL`), with
+   the same `SETTINGS_ENCRYPTION_KEY` and `BETTER_AUTH_SECRET`, and redeploy.
+   The API applies any migration newer than the dump as it starts. Sign-in
+   sessions made after the dump are gone: people sign in again.
+
+Without Oneverse's code, a dump opens with OpenSSL, then `pg_restore`:
+```
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -md sha256 -pass env:SETTINGS_ENCRYPTION_KEY -in 2026-10-31T03-00-12Z.dump.enc -out oneverse.dump
+pg_restore --no-owner --no-acl -d postgresql://…/new_db oneverse.dump
+```
+The files are plain copies, named by the SHA-256 of their bytes.
+
+## 6. Versions, upgrading and rolling back
+
+Oneverse has one version for the whole product (#164): the API, the Worker,
+the web apps and the database's migrations ship together. `/health` and Admin >
+Metadata > **Background jobs** say which one runs (a build that isn't a release
+says `0.9.0-dev`), with the database's latest migration; Background jobs warns
+when the Worker runs another version than the API. Releases start at `0.9.0`;
+`1.0` means a solid foundation, not a promise that nothing changes after it -
+each release's notes say what changed and what to do. How a release is made:
+[docs/releases.md](docs/releases.md).
+
+**Pinning a version.** Each release's images are on GitHub's registry:
+`ghcr.io/vulcio/oneverse-api:0.9.0` (and `oneverse-songverse`,
+`oneverse-planiverse`, `oneverse-oneverse`, `oneverse-screen`, `oneverse-docs`,
+`oneverse-site`), also tagged with the minor version (`0.9`, which follows its
+fixes) and `latest`. In Dokploy, an app built from a **Docker image** instead
+of the repository runs exactly that version: give it the image, keep the same
+environment, and for the Worker the same command override. Building from the
+repository instead follows `main` (or a tag, set as the branch).
+
+**Upgrading.**
+1. Read the release's notes on GitHub, above all "Changes that need attention".
+2. **Back up now** in Admin > Backups, and wait for it to say done.
+3. Deploy the API and the Worker at the new version, together (the same
+   image), then the web apps. The API applies the new migrations as it starts
+   ([3](#3-database-migrations-automatic)); if one fails, the API doesn't start
+   and the old version keeps the database as it was.
+4. Check `/health` says the new version, and Background jobs that the Worker
+   does too.
+
+**Rolling back.** Deploy the previous version's images again. Migrations only
+go forward, so this works when the newer release changed no tables, or only
+added some (its notes say). When it changed them, restore the backup made
+before the upgrade into a new database (above) and point the old version at it;
+what was done since is lost, so roll back early or fix forward.
 
 ## Gotchas already hit (and fixed in the repo)
 

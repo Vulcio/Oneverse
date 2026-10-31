@@ -9,6 +9,7 @@
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "worker": "node dist/worker.js",
+    "restore": "node dist/backups/restore.js",
     "lint": "vp lint src --deny-warnings",
     "type-check": "tsc --noEmit -p tsconfig.json",
     "test": "vp test"

@@ -22,3 +22,4 @@ export * from "./notes.js";
 export * from "./brands.js";
 export * from "./locations.js";
 export * from "./scriptures.js";
+export * from "./backups.js";
