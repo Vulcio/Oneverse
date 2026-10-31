@@ -548,6 +548,11 @@ export class SetlistsService {
    * viewer's private notes on it and its neighbours in the set.
    */
   async songView(user: AuthenticatedUser, setlistId: string, itemId: string, passages: PassageUse = "read") {
+    return this.songViewIn(user, await this.songViewContext(user, setlistId), itemId, passages);
+  }
+
+  /** What every song view of a set needs, read once: a set kept offline reads it once, not per song (issue #341). */
+  private async songViewContext(user: AuthenticatedUser, setlistId: string) {
     const { access } = await this.sets.findViewable(user, setlistId);
     const set = await this.prisma.client.setlist.findUniqueOrThrow({
       where: { id: setlistId },
@@ -558,16 +563,26 @@ export class SetlistsService {
         items: { orderBy: { position: "asc" }, include: ITEM_INCLUDE },
       },
     });
+    const [readable, inViewersLibrary, viewer] = await Promise.all([
+      this.sets.readableItems(set, set.items.filter(hasSong)),
+      this.sets.visibilityFor(user),
+      this.prisma.client.user.findUnique({ where: { id: user.id }, select: { chordNotation: true, capoDisplayMode: true, liveView: true, chordDiagrams: true, chordColors: true, leftHanded: true, guitarTuning: true, ukuleleTuning: true, pianoSmooth: true, pianoHands: true, pianoNoteNames: true, displaySettings: true } }),
+    ]);
+    return { access, set, readable, inViewersLibrary, viewer };
+  }
+
+  /** One item's song view, from its set's context; `references`: the songbook references, when read for the whole set. */
+  private async songViewIn(
+    user: AuthenticatedUser,
+    { access, set, readable, inViewersLibrary, viewer }: Awaited<ReturnType<SetlistsService["songViewContext"]>>,
+    itemId: string,
+    passages: PassageUse,
+    references?: Map<string, string[]>,
+  ) {
     const index = set.items.findIndex((item) => item.id === itemId);
     if (index === -1) throw new NotFoundException("Item not found");
     const item = set.items[index]!;
     const next = set.items[index + 1];
-
-    const [readable, inViewersLibrary, viewer] = await Promise.all([
-      this.sets.readableItems(set, [item, ...(next ? [next] : [])].filter(hasSong)),
-      this.sets.visibilityFor(user),
-      this.prisma.client.user.findUnique({ where: { id: user.id }, select: { chordNotation: true, capoDisplayMode: true, liveView: true, chordDiagrams: true, chordColors: true, leftHanded: true, guitarTuning: true, ukuleleTuning: true, pianoSmooth: true, pianoHands: true, pianoNoteNames: true, displaySettings: true } }),
-    ]);
     const song = item.songVersion;
     const shown = !!song && (readable.has(item.id) || inViewersLibrary(song));
     const document = shown ? readSongDocument(song.documentJson) : null;
@@ -629,7 +644,7 @@ export class SetlistsService {
       sharedBy: shown && item.sharedBy ? { id: item.sharedBy.id, displayName: item.sharedBy.displayName } : null,
       previousItemId: set.items[index - 1]?.id ?? null,
       // "JEM 855 · JEM3", for Live's header (issue #59).
-      songbookReferences: shown ? ((await this.songbookReferences(user, [song.id])).get(song.id) ?? []) : [],
+      songbookReferences: shown ? ((references ?? (await this.songbookReferences(user, [song.id]))).get(song.id) ?? []) : [],
       nextItemId: next?.id ?? null,
       // What's coming, for Perform mode - unless the viewer can't read that song.
       nextTitle,
@@ -668,9 +683,11 @@ export class SetlistsService {
    */
   async offlineCopy(user: AuthenticatedUser, setlistId: string, { withNotes = true, passages = "offline" as PassageUse } = {}) {
     const set = await this.findOne(user, setlistId);
+    // What every song's view needs, read once for the whole set (issue #341).
+    const context = await this.songViewContext(user, setlistId);
+    const references = await this.songbookReferences(user, context.set.items.flatMap((item) => (item.songVersionId ? [item.songVersionId] : [])));
     const songs = [];
-    // One at a time: a set is a handful of songs, and each view checks access itself.
-    for (const item of set.items) songs.push(await this.songView(user, setlistId, item.id, passages));
+    for (const item of set.items) songs.push(await this.songViewIn(user, context, item.id, passages, references));
     // The notes one sees on each song in this set (issue #256), by song.
     const notes: Record<string, SongNotes> = {};
     if (withNotes) for (const view of songs) if (view.song && !notes[view.song.id]) notes[view.song.id] = await this.notes.list(user, view.song.id, { setlistId });

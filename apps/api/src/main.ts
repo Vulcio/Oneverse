@@ -14,6 +14,7 @@ import { getAuth } from "./auth/better-auth.js";
 import { registerOAuthClients } from "./auth/oauth-clients.js";
 import { webOrigins } from "./common/utils/web-apps.js";
 import { apiDocsAllowed } from "./security/security-settings.js";
+import { requestMemoMiddleware } from "./common/request-memo.js";
 
 async function bootstrap() {
   // rawBody: a webhook's signature is checked against the bytes it came as (the Demucs API's, issue #63).
@@ -21,6 +22,8 @@ async function bootstrap() {
   // Above Express's 100kb default: a songbook catalogue file is imported as
   // JSON text (see ImportCatalogEntriesDto's own 10 MB cap).
   app.useBodyParser("json", { limit: "12mb" });
+  // What a reading request asks for more than once, read once (issue #341).
+  app.use(requestMemoMiddleware);
 
   // Registered via `app.enableCors()` rather than `NestFactory.create`'s
   // `cors` option: the option only takes effect once Nest actually

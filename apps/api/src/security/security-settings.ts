@@ -1,5 +1,6 @@
 import { prisma } from "@oneverse/db";
 import type { SaveSecuritySettingsRequest } from "@oneverse/core";
+import { requestMemo } from "../common/request-memo.js";
 
 const SINGLETON_ID = "singleton";
 
@@ -71,7 +72,8 @@ async function row() {
  * share no memory, and an admin's save must hold on all of them at once.
  */
 export async function getEffectiveSecuritySettings(): Promise<EffectiveSecuritySettings> {
-  const stored = await row();
+  // Once per reading request (issue #341), fresh for the next.
+  const stored = await requestMemo("securitySettings", row);
   const out = {} as Record<Key, unknown>;
   for (const key of Object.keys(FIELDS) as Key[]) out[key] = resolve(key, (stored?.[key] ?? null) as EffectiveSecuritySettings[typeof key] | null).value;
   return out as unknown as EffectiveSecuritySettings;

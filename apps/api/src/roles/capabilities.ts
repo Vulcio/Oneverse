@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@oneverse/db";
+import { requestMemo } from "../common/request-memo.js";
 
 /**
  * What someone may do beyond their own and their teams' songs (issue #160),
@@ -98,12 +99,15 @@ export function monthlyLimitOf(capabilities: Capabilities, defaultLimit: number 
 
 /** A user's roles: their own, and those of every team they're a member of - those given everywhere, not on one team or organisation. */
 export async function capabilitiesOf(prisma: PrismaClient, userId: string): Promise<Capabilities> {
-  const roles = await prisma.role.findMany({
-    where: { assignments: { some: { scopeKey: "", OR: [{ userId }, { team: { memberships: { some: { userId } } } }] } } },
-    select: ROLE_FIELDS,
-    orderBy: { name: "asc" },
+  // Once per reading request (issue #341).
+  return requestMemo(`capabilities:${userId}`, async () => {
+    const roles = await prisma.role.findMany({
+      where: { assignments: { some: { scopeKey: "", OR: [{ userId }, { team: { memberships: { some: { userId } } } }] } } },
+      select: ROLE_FIELDS,
+      orderBy: { name: "asc" },
+    });
+    return combineRoles(roles);
   });
-  return combineRoles(roles);
 }
 
 /**

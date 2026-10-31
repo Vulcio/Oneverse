@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { requestMemo } from "../common/request-memo.js";
 
 /** Who's asking: enough of a user to decide what they can see and change. */
 export interface Viewer {
@@ -55,8 +56,10 @@ export class AccessPolicyService {
 
   /** The teams the user belongs to. */
   async teamIds(userId: string): Promise<string[]> {
-    const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true } });
-    return memberships.map((m) => m.teamId);
+    return requestMemo(`teamIds:${userId}`, async () => {
+      const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId }, select: { teamId: true } });
+      return memberships.map((m) => m.teamId);
+    });
   }
 
   /**
@@ -70,11 +73,13 @@ export class AccessPolicyService {
 
   /** The user's role in a team, or null when they're not in it. */
   async teamRole(userId: string, teamId: string): Promise<"ADMIN" | "MEMBER" | null> {
-    const membership = await this.prisma.client.teamMembership.findUnique({
-      where: { teamId_userId: { teamId, userId } },
-      select: { role: true },
+    return requestMemo(`teamRole:${userId}:${teamId}`, async () => {
+      const membership = await this.prisma.client.teamMembership.findUnique({
+        where: { teamId_userId: { teamId, userId } },
+        select: { role: true },
+      });
+      return membership?.role ?? null;
     });
-    return membership?.role ?? null;
   }
 
   /** Songs `viewer` can see, given the teams they're in. */

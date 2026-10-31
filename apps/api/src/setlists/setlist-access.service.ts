@@ -3,6 +3,7 @@ import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { requestMemo } from "../common/request-memo.js";
 
 export const SONG_SELECT = {
   id: true,
@@ -69,10 +70,13 @@ export class SetlistAccessService {
 
   /** 404 unless the user can open the set (not telling apart "doesn't exist" and "not yours"). */
   async findViewable(user: AuthenticatedUser, setlistId: string): Promise<{ set: SetRow; access: SetAccess }> {
-    const set = await this.prisma.client.setlist.findUnique({
-      where: { id: setlistId },
-      select: { id: true, ownerUserId: true, ownerTeamId: true },
-    });
+    // Once per reading request (issue #341): a set kept offline asks for each of its songs.
+    const set = await requestMemo(`set:${setlistId}`, () =>
+      this.prisma.client.setlist.findUnique({
+        where: { id: setlistId },
+        select: { id: true, ownerUserId: true, ownerTeamId: true },
+      }),
+    );
     if (!set) throw new NotFoundException("Set not found");
     const access = await this.access(user, set);
     if (!access.canView) throw new NotFoundException("Set not found");
@@ -139,13 +143,16 @@ export class SetlistAccessService {
     // Songs shared with a personal set's owner (issue #77) are theirs to put in it.
     const shared = set.ownerTeamId ? new Map() : await this.policy.sharedWith(set.ownerUserId!);
     // A team set: the songs shared with the team (issue #331), and those of the songbooks shared with it (#211).
-    const teamShared = set.ownerTeamId
-      ? new Set([
-          ...(await this.prisma.client.accessGrant.findMany({ where: { grantedToTeamId: set.ownerTeamId }, select: { songVersionId: true } })).map((grant) => grant.songVersionId),
-          ...(await this.prisma.client.songbookEntry.findMany({ where: { songbook: { shares: { some: { teamId: set.ownerTeamId } } } }, select: { songVersionId: true } })).map(
-            (entry) => entry.songVersionId,
-          ),
-        ])
+    const teamId = set.ownerTeamId;
+    const teamShared = teamId
+      ? await requestMemo(
+          `teamShared:${teamId}`,
+          async () =>
+            new Set([
+              ...(await this.prisma.client.accessGrant.findMany({ where: { grantedToTeamId: teamId }, select: { songVersionId: true } })).map((grant) => grant.songVersionId),
+              ...(await this.prisma.client.songbookEntry.findMany({ where: { songbook: { shares: { some: { teamId } } } }, select: { songVersionId: true } })).map((entry) => entry.songVersionId),
+            ]),
+        )
       : new Set<string>();
     return (song) => {
       if (song.deletedAt) return false;
