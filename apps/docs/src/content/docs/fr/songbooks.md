@@ -26,6 +26,8 @@ Qui gère un recueil lui donne une **Couleur** et une image sous **Détails**, d
 
 Sous **Chansons**, **Ajouter une chanson** en la cherchant et, dans un recueil numéroté, en indiquant son numéro.
 
+Le recueil d'une équipe contient des chants que tous ses membres peuvent ouvrir : ceux de l'équipe, ceux du catalogue global, et ceux partagés avec l'équipe. Ajoutez l'un de vos chants et la question vous est posée d'abord : **Partager avec** l'équipe (il reste à vous, ses membres le voient) ou **Déplacer vers** l'équipe (il devient celui de l'équipe). Le chant de quelqu'un d'autre que l'équipe ne peut pas ouvrir ne peut pas y entrer.
+
 Les chants sont listés dans l'ordre des numéros (1, 2, 10, 100), et un numéro simple est gardé sans zéros devant : « 0245 » est 245.
 
 Un recueil numéroté peut avoir des **sections** : des plages de numéros avec un libellé, comme les volumes imprimés d'un recueil (1-371 « JEM1 », 372-721 « JEM2 »…). Vous pouvez ensuite filtrer le recueil par section.

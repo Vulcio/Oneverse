@@ -26,6 +26,8 @@ Whoever manages a songbook gives it a **Colour** and a picture under **Details**
 
 Under **Entries**, **Add a song** by searching for it and, in a numbered songbook, giving its number.
 
+A team's songbook holds songs everyone in the team can open: the team's, the global catalogue's, and those shared with the team. Add one of your own songs and you're asked first: **Share with** the team (it stays yours, its members view it) or **Move to** the team (it becomes the team's). Someone else's song the team can't open can't go in.
+
 Songs are listed in number order (1, 2, 10, 100), and a plain number is kept without leading zeros: "0245" is 245.
 
 A numbered songbook can have **sections**: ranges of numbers with a label, like a hymnal's printed volumes (1-371 is "JEM1", 372-721 "JEM2"…). You can then filter the songbook by section.

@@ -1928,6 +1928,7 @@ const fr: typeof en = {
     year: "Année",
     ownership: "Propriété",
     personal: "Personnel",
+    teamAccessDescription: "C'est votre chant personnel : tous les membres de {{team}} doivent le voir pour le trouver dans le recueil de l'équipe.",
     teamOwned: "Équipe",
     global: "Global (tout le monde)",
     creating: "Création…",

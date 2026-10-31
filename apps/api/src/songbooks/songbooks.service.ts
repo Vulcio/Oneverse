@@ -23,6 +23,7 @@ import type { CreateSongbookDto } from "./dto/create-songbook.dto.js";
 import type { ImportSongbookFromCatalogDto } from "./dto/import-songbook-from-catalog.dto.js";
 import type { UpdateSongbookDto } from "./dto/update-songbook.dto.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
+import { SongOwnershipService } from "../setlists/song-ownership.service.js";
 
 const DETAIL_INCLUDE = {
   entries: {
@@ -65,6 +66,7 @@ export class SongbooksService {
     private readonly access: AccessPolicyService,
     private readonly storage: StorageService,
     private readonly sets: SetlistAccessService,
+    private readonly ownership: SongOwnershipService,
   ) {}
 
   /**
@@ -417,9 +419,11 @@ export class SongbooksService {
     await this.access.assertCanSeeSong(user, dto.songVersionId);
     const songbook = await this.prisma.client.songbook.findUnique({
       where: { id: songbookId },
-      select: { kind: true, sections: true },
+      select: { kind: true, sections: true, ownerTeamId: true },
     });
     if (!songbook) throw new NotFoundException("Songbook not found");
+    if (songbook.ownerTeamId) await this.forTeam(user, songbook.ownerTeamId, dto.songVersionId, dto.teamAccess);
+    else if (dto.teamAccess) throw new BadRequestException("teamAccess is only for one of your personal songs in a team's songbook");
     if (songbook.kind === "NUMBERED" && !dto.entryCode) {
       throw new BadRequestException("entryCode is required for a NUMBERED songbook");
     }
@@ -449,6 +453,28 @@ export class SongbooksService {
       songVersionTitle: songVersion.title,
       sectionLabel: computeSectionLabel(entry.entryCode, songbook.sections as SongbookSection[] | null),
     };
+  }
+
+  /**
+   * A team's songbook takes only songs everyone in the team can open, as a
+   * team's set does (issue #340): the team's, approved catalogue songs, and
+   * those shared with it. One of the user's own personal songs is shared
+   * with the team or moved to it, as `teamAccess` says; without it, refused
+   * with SONG_NOT_SHARED so the app can ask.
+   */
+  private async forTeam(user: AuthenticatedUser, teamId: string, songVersionId: string, teamAccess: "share" | "move" | undefined): Promise<void> {
+    const teamSees = await this.sets.addableWhere({ id: "", ownerUserId: null, ownerTeamId: teamId });
+    if ((await this.prisma.client.songVersion.count({ where: { AND: [{ id: songVersionId }, teamSees] } })) > 0) {
+      if (teamAccess) throw new BadRequestException("teamAccess is only for one of your personal songs in a team's songbook");
+      return;
+    }
+    const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { ownerScope: true, ownerUserId: true } });
+    const team = await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { id: true, name: true } });
+    const teamName = team?.name ?? "the team";
+    if (song?.ownerScope !== "USER" || song.ownerUserId !== user.id) throw new BadRequestException(`Only songs everyone in ${teamName} can open go in its songbook`);
+    if (!teamAccess) throw new ConflictException({ code: "SONG_NOT_SHARED", message: `Share this song with ${teamName} to add it to the team's songbook`, team });
+    if (teamAccess === "share") await this.ownership.shareWithTeam(user, songVersionId, teamId, false);
+    else await this.ownership.move(user, songVersionId, teamId);
   }
 
   async removeEntry(songbookId: string, entryId: string): Promise<void> {

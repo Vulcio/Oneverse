@@ -2593,10 +2593,11 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<SongbookEntry>(`/songbooks/${songbookId}/catalog-entries/${catalogEntryId}/materialize`, {
         method: "POST",
       }),
-    addSongbookEntry: (songbookId: string, songVersionId: string, entryCode?: string) =>
+    /** `teamAccess`: one's own personal song into a team's songbook, shared with the team or moved to it (issue #340). */
+    addSongbookEntry: (songbookId: string, songVersionId: string, entryCode?: string, teamAccess?: "share" | "move") =>
       request<SongbookEntry>(`/songbooks/${songbookId}/entries`, {
         method: "POST",
-        body: JSON.stringify({ songVersionId, entryCode }),
+        body: JSON.stringify({ songVersionId, entryCode, ...(teamAccess && { teamAccess }) }),
       }),
     previewBulkUpload: (songbookId: string, filenames: string[], type?: BulkUploadContentType) =>
       request<BulkUploadFileMatch[]>(`/songbooks/${songbookId}/bulk-upload/preview`, {

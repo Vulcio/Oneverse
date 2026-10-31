@@ -37,6 +37,9 @@ export const AddSongbookEntrySchema = z.strictObject({
   entryCode: optional(z.string().min(1).max(30)).describe(
     'The number/code this song has in the book, e.g. "245", "A-17". Required for NUMBERED songbooks, ignored for SIMPLE ones.',
   ),
+  teamAccess: optional(z.enum(["share", "move"])).describe(
+    "One of your own personal songs in a team's songbook (issue #340): share it with the songbook's team to view, or move it to the team, then add it. Without it, such a song is refused with code SONG_NOT_SHARED",
+  ),
 });
 
 export const ImportSongbookFromCatalogSchema = z.strictObject({

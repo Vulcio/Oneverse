@@ -44,37 +44,76 @@ export function useAddSongToSet(onAdded: (set: SetlistDetail) => void) {
 
   const team = asking?.set.teamName ?? "";
   const dialog: ReactNode = (
-    <Dialog open={asking !== null} onOpenChange={(open) => !open && setAsking(null)}>
-      <DialogContent data-testid="set-team-access">
+    <TeamAccessDialog
+      testId="set-team-access"
+      song={asking?.title ?? null}
+      team={team}
+      description={t("sets.teamAccess.description", { team })}
+      busy={addingId !== null}
+      error={asking ? error : null}
+      onChoose={(access) => asking && void add(asking.set, asking.songVersionId, asking.title, access)}
+      onCancel={() => setAsking(null)}
+    />
+  );
+
+  return { add, addingId, error, dialog };
+}
+
+/**
+ * Asks whether one's own personal song going where a team uses it - its set,
+ * its songbook (issue #340) - is shared with the team or moved to it.
+ * Open while `song` is set.
+ */
+export function TeamAccessDialog({
+  testId,
+  song,
+  team,
+  description,
+  busy,
+  error,
+  onChoose,
+  onCancel,
+}: {
+  testId: string;
+  song: string | null;
+  team: string;
+  description: string;
+  busy: boolean;
+  error: string | null;
+  onChoose: (access: "share" | "move") => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Dialog open={song !== null} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent data-testid={testId}>
         <DialogHeader>
-          <DialogTitle>{t("sets.teamAccess.title", { song: asking?.title ?? "", team })}</DialogTitle>
-          <DialogDescription>{t("sets.teamAccess.description", { team })}</DialogDescription>
+          <DialogTitle>{t("sets.teamAccess.title", { song: song ?? "", team })}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <Button type="button" disabled={addingId !== null} onClick={() => asking && void add(asking.set, asking.songVersionId, asking.title, "share")} data-testid="set-team-access-share">
+            <Button type="button" disabled={busy} onClick={() => onChoose("share")} data-testid={`${testId}-share`}>
               {t("sets.teamAccess.share", { team })}
             </Button>
             <p className="text-xs text-muted-foreground">{t("sets.teamAccess.shareHint")}</p>
           </div>
           <div className="flex flex-col gap-1">
-            <Button type="button" variant="outline" disabled={addingId !== null} onClick={() => asking && void add(asking.set, asking.songVersionId, asking.title, "move")} data-testid="set-team-access-move">
+            <Button type="button" variant="outline" disabled={busy} onClick={() => onChoose("move")} data-testid={`${testId}-move`}>
               {t("sets.teamAccess.move", { team })}
             </Button>
             <p className="text-xs text-muted-foreground">{t("sets.teamAccess.moveHint")}</p>
           </div>
-          {asking && error ? (
+          {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
             </p>
           ) : null}
-          <Button type="button" variant="ghost" className="self-end" onClick={() => setAsking(null)}>
+          <Button type="button" variant="ghost" className="self-end" onClick={onCancel}>
             {t("sets.teamAccess.cancel")}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
-
-  return { add, addingId, error, dialog };
 }

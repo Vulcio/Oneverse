@@ -1925,6 +1925,7 @@ const en = {
     year: "Year",
     ownership: "Ownership",
     personal: "Personal",
+    teamAccessDescription: "It's your personal song: everyone in {{team}} needs to see it to find it in the team's songbook.",
     teamOwned: "Team",
     global: "Global (everyone)",
     creating: "Creating…",

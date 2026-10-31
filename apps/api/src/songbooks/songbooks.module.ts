@@ -5,11 +5,13 @@ import { SongbookEntriesController, SongbooksController } from "./songbooks.cont
 import { SongbooksService } from "./songbooks.service.js";
 import { SongbookSharesController } from "./songbook-shares.controller.js";
 import { SongbookSharesService } from "./songbook-shares.service.js";
+import { SongOwnershipService } from "../setlists/song-ownership.service.js";
 
 @Module({
   imports: [SongVersionsModule, StorageModule],
   controllers: [SongbooksController, SongbookEntriesController, SongbookSharesController],
-  providers: [SongbooksService, SongbookSharesService],
+  // SongOwnershipService: one's own song shared with or moved to the team whose songbook it goes in (issue #340).
+  providers: [SongbooksService, SongbookSharesService, SongOwnershipService],
   exports: [SongbooksService],
 })
 export class SongbooksModule {}

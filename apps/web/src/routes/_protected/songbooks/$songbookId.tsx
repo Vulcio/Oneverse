@@ -1,4 +1,4 @@
-import { BULK_UPLOAD_EXTENSIONS, isNetworkError, keptSongbook, onlineOrKept, type BulkUploadContentType, type BulkUploadFileMatch, type LanguageCode, type SongbookSection, type SongVersionSummary } from "@oneverse/core";
+import { ApiError, BULK_UPLOAD_EXTENSIONS, isNetworkError, keptSongbook, onlineOrKept, type BulkUploadContentType, type BulkUploadFileMatch, type LanguageCode, type SongbookSection, type SongVersionSummary } from "@oneverse/core";
 import { createFileRoute, Link, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronDown, Settings2, Share2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -15,6 +15,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Badge } from "@oneverse/ui/components/badge";
 import { SongbookShareDialog } from "#/components/songbook-share-dialog";
+import { TeamAccessDialog } from "#/components/set-team-access";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 import { SectionsEditor } from "#/components/sections-editor";
 import { deviceStorage } from "#/lib/offline-data";
@@ -76,6 +77,8 @@ function SongbookDetail() {
   const [entryCode, setEntryCode] = useState("");
   const [addingEntry, setAddingEntry] = useState(false);
   const [entryError, setEntryError] = useState<string | null>(null);
+  // One's own song into a team's songbook: shared with the team or moved to it first (issue #340).
+  const [askingTeam, setAskingTeam] = useState<{ title: string; team: string } | null>(null);
   const [sectionFilter, setSectionFilter] = useState("");
 
   const [sections, setSections] = useState<SongbookSection[]>(songbook.sections ?? []);
@@ -151,17 +154,23 @@ function SongbookDetail() {
     }
   }
 
-  async function addEntry() {
+  async function addEntry(teamAccess?: "share" | "move") {
     if (!selectedSongVersionId || (isNumbered && !entryCode.trim())) return;
     setAddingEntry(true);
     setEntryError(null);
     try {
-      await apiClient.addSongbookEntry(songbook.id, selectedSongVersionId, isNumbered ? entryCode.trim() : undefined);
+      await apiClient.addSongbookEntry(songbook.id, selectedSongVersionId, isNumbered ? entryCode.trim() : undefined, teamAccess);
+      setAskingTeam(null);
       setSelectedSongVersionId("");
       setEntryCode("");
       setEntryFilter("");
       await router.invalidate();
     } catch (err) {
+      if (err instanceof ApiError && err.code === "SONG_NOT_SHARED") {
+        // Picking a song writes its title in the search box.
+        setAskingTeam({ title: entryFilter, team: teams.find((team) => team.id === songbook.ownerTeamId)?.name ?? "" });
+        return;
+      }
       setEntryError(err instanceof Error ? err.message : String(err));
     } finally {
       setAddingEntry(false);
@@ -259,6 +268,16 @@ function SongbookDetail() {
   return (
     <div className="flex flex-col gap-6">
       {owns ? <SongbookShareDialog songbookId={songbook.id} open={sharing} onOpenChange={setSharing} /> : null}
+      <TeamAccessDialog
+        testId="songbook-team-access"
+        song={askingTeam?.title ?? null}
+        team={askingTeam?.team ?? ""}
+        description={t("songbooks.teamAccessDescription", { team: askingTeam?.team ?? "" })}
+        busy={addingEntry}
+        error={askingTeam ? entryError : null}
+        onChoose={(access) => void addEntry(access)}
+        onCancel={() => setAskingTeam(null)}
+      />
       <div>
         <div className="flex min-w-0 items-center gap-3">
           <EntityAvatar name={songbook.name} color={songbook.color} avatarUrl={songbook.avatarUrl} size={40} />
