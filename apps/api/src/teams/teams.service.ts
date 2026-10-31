@@ -6,6 +6,7 @@ import { NotificationsService } from "../notifications/notifications.service.js"
 import { joinTeamOrganization } from "../organizations/organizations.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
+import { leaveTeams } from "./leave-teams.js";
 import type { CreateInviteLinkDto } from "./dto/create-invite-link.dto.js";
 import type { CreateTeamDto } from "./dto/create-team.dto.js";
 import type { UpdateTeamDto } from "./dto/update-team.dto.js";
@@ -174,9 +175,7 @@ export class TeamsService {
     if (membership.role === "ADMIN") {
       await this.assertNotLastAdmin(teamId, memberUserId);
     }
-    await this.prisma.client.teamMembership.delete({
-      where: { teamId_userId: { teamId, userId: memberUserId } },
-    });
+    await this.prisma.client.$transaction((tx) => leaveTeams(tx, memberUserId, [teamId]));
   }
 
   leaveTeam(teamId: string, userId: string) {

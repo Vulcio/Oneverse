@@ -6,6 +6,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import type { CreateInviteLinkDto } from "../teams/dto/create-invite-link.dto.js";
 import type { UpdateOrganizationDto } from "./dto/update-organization.dto.js";
 import { getEffectiveOrganizationSettings } from "./organization-settings.js";
+import { leaveTeams } from "../teams/leave-teams.js";
 
 type Viewer = Pick<AuthenticatedUser, "id" | "isGlobalAdmin">;
 type Db = PrismaClient | Prisma.TransactionClient;
@@ -234,10 +235,10 @@ export class OrganizationsService {
       const others = await this.prisma.client.teamMembership.count({ where: { teamId: team.teamId, role: "ADMIN", userId: { not: userId } } });
       if (others === 0) throw new ConflictException(`They're the only admin of ${team.team.name}: make someone else its admin first`);
     }
-    await this.prisma.client.$transaction([
-      this.prisma.client.teamMembership.deleteMany({ where: { userId, teamId: { in: teams.map((team) => team.teamId) } } }),
-      this.prisma.client.organizationMembership.delete({ where: { id: membership.id } }),
-    ]);
+    await this.prisma.client.$transaction(async (tx) => {
+      await leaveTeams(tx, userId, teams.map((team) => team.teamId));
+      await tx.organizationMembership.delete({ where: { id: membership.id } });
+    });
   }
 
   async removeMember(viewer: Viewer, organizationId: string, userId: string) {
