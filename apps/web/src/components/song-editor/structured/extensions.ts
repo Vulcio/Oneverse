@@ -11,8 +11,8 @@ import {
   type SectionType,
 } from "@oneverse/core";
 import { Extension, InputRule, Node } from "@tiptap/core";
-import { isHistoryTransaction } from "@tiptap/pm/history";
-import { ySyncPluginKey } from "@tiptap/y-tiptap";
+import { closeHistory, isHistoryTransaction } from "@tiptap/pm/history";
+import { ySyncPluginKey, yUndoPluginKey } from "@tiptap/y-tiptap";
 import { Fragment, Slice, type Node as PMNode, type ResolvedPos } from "@tiptap/pm/model";
 import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from "@tiptap/pm/state";
 import { Mapping } from "@tiptap/pm/transform";
@@ -1120,7 +1120,9 @@ function handlePaste(view: EditorView, event: ClipboardEvent, events: ChordViewE
     else if (atEnd) tr.insert(current.pos + current.node.nodeSize, parsed.content);
     else tr.replaceSelection(new Slice(parsed.content, 0, 0));
   }
-  view.dispatch(tr.scrollIntoView().setMeta("uiEvent", "paste"));
+  // A paste is one undo step of its own (issue #31), never merged with typing or another paste just before it.
+  (yUndoPluginKey.getState(state) as { undoManager?: { stopCapturing: () => void } } | undefined)?.undoManager?.stopCapturing();
+  view.dispatch(closeHistory(tr).scrollIntoView().setMeta("uiEvent", "paste"));
   return true;
 }
 
