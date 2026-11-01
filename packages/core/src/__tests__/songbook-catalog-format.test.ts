@@ -9,6 +9,7 @@ import {
   parseCatalogJson,
   parseDuration,
   parseOriginalSongReference,
+  readCatalogLinks,
   serializeCatalogCsv,
   serializeCatalogJson,
   splitNames,
@@ -103,6 +104,7 @@ describe("CSV and JSON round trips", () => {
   const entry = {
     ...emptyCatalogEntry("12a", 'Quote " and, comma'),
     tags: ["a", "b c"],
+    links: ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"],
     tempo: 100,
     notes: "Line one\nline two",
   };
@@ -239,5 +241,41 @@ describe("splitNames", () => {
   it("splits on semicolons, trims and drops repeats", () => {
     expect(splitNames(" Hillsong Worship ;Brooke Ligertwood; hillsong worship;; ")).toEqual(["Hillsong Worship", "Brooke Ligertwood"]);
     expect(splitNames(null)).toEqual([]);
+  });
+});
+
+describe("Links (issue #210)", () => {
+  it("reads each address by its host, rebuilt from its ID, repeats dropped", () => {
+    const { links, refused } = readCatalogLinks("https://youtu.be/dQw4w9WgXcQ; https://www.youtube.com/watch?v=dQw4w9WgXcQ  deezer.com/track/3135556");
+    expect(links).toEqual([
+      { service: "YOUTUBE", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+      { service: "DEEZER", url: "https://www.deezer.com/track/3135556" },
+    ]);
+    expect(refused).toEqual([]);
+    expect(readCatalogLinks(["https://example.com/song", "not a link"]).refused).toEqual(["https://example.com/song", "not", "a", "link"]);
+  });
+
+  it("merges a Links column with each service's own, and refuses another site per row", () => {
+    const parsed = parseCatalogCsv(
+      [
+        "Number,Title,YouTube,Spotify,Links",
+        "1,One,https://youtu.be/dQw4w9WgXcQ,https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC,https://www.deezer.com/track/3135556",
+        "2,Two,https://example.com/two,,",
+        "3,Three,,,",
+      ].join("\n"),
+    );
+    expect(parsed.fields).toEqual(["entryCode", "title", "links"]);
+    expect(parsed.rows.map((row) => row.data.links)).toEqual([
+      ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC", "https://www.deezer.com/track/3135556"],
+      [],
+    ]);
+    expect(parsed.problems).toEqual([{ row: 3, message: `Links: "https://example.com/two" isn't a YouTube, Spotify, Apple Music or Deezer address` }]);
+  });
+
+  it("takes a JSON list, and a service's own key alongside", () => {
+    const parsed = parseCatalogJson(JSON.stringify([{ number: "1", title: "One", links: ["https://youtu.be/dQw4w9WgXcQ"], deezer: "https://www.deezer.com/track/3135556" }]));
+    expect(parsed.problems).toEqual([]);
+    expect(parsed.rows[0]!.data.links).toEqual(["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://www.deezer.com/track/3135556"]);
+    expect(validateCatalogEntryPatch({ links: "https://vimeo.com/1" }).problems).toHaveLength(1);
   });
 });

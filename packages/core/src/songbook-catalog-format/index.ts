@@ -14,8 +14,9 @@
  */
 
 import { validateSongbookSections, type SongbookSection } from "../songbook-sections/index.js";
+import { readReferenceLink } from "../streaming-links/reference.js";
 
-export type CatalogFieldKind = "text" | "int" | "list" | "duration";
+export type CatalogFieldKind = "text" | "int" | "list" | "duration" | "links";
 
 export interface CatalogFieldDef {
   key: CatalogEntryFieldKey;
@@ -55,11 +56,35 @@ export const CATALOG_ENTRY_FIELD_KEYS = [
   "isrc",
   "reference",
   "tags",
+  "links",
   "notes",
 ] as const;
 export type CatalogEntryFieldKey = (typeof CATALOG_ENTRY_FIELD_KEYS)[number];
 
 const TAG_MAX_LENGTH = 50;
+const LINKS_MAX = 10;
+
+/** What the Links field takes (issue #210): a recording on one of these. */
+export const CATALOG_LINK_SERVICES = ["YOUTUBE", "SPOTIFY", "APPLE_MUSIC", "DEEZER"] as const;
+export type CatalogLinkService = (typeof CATALOG_LINK_SERVICES)[number];
+
+/**
+ * An entry's links as written in a file (issue #210): addresses separated
+ * by semicolons, spaces or new lines (or a JSON list), each read for its
+ * service by its host. Kept as the address to open, rebuilt from the ID,
+ * repeats dropped; one on any other site is refused, by its address.
+ */
+export function readCatalogLinks(raw: string | readonly string[]): { links: { service: CatalogLinkService; url: string }[]; refused: string[] } {
+  const parts = (typeof raw === "string" ? [raw] : raw).flatMap((item) => item.split(/[;\s]+/)).filter(Boolean);
+  const links: { service: CatalogLinkService; url: string }[] = [];
+  const refused: string[] = [];
+  for (const part of parts) {
+    const link = readReferenceLink(part);
+    if (!link || link.service === "OTHER") refused.push(part);
+    else if (!links.some((existing) => existing.url === link.url)) links.push({ service: link.service, url: link.url });
+  }
+  return { links, refused };
+}
 
 /** In export column order. */
 export const CATALOG_ENTRY_FIELDS: readonly CatalogFieldDef[] = [
@@ -101,6 +126,15 @@ export const CATALOG_ENTRY_FIELDS: readonly CatalogFieldDef[] = [
   },
   { key: "reference", header: "Reference", jsonKey: "reference", aliases: ["Scripture", "BibleReference"], kind: "text", maxLength: 300 },
   { key: "tags", header: "Tags", jsonKey: "tags", aliases: ["Themes", "Keywords"], kind: "list", maxLength: 30 },
+  {
+    key: "links",
+    header: "Links",
+    jsonKey: "links",
+    // Each service's column is one more Links column: they're all read together (issue #210).
+    aliases: ["Link", "Listen", "YouTube", "Spotify", "AppleMusic", "Apple", "iTunes", "Deezer"],
+    kind: "links",
+    maxLength: LINKS_MAX,
+  },
   { key: "notes", header: "Notes", jsonKey: "notes", aliases: ["Comments"], kind: "text", maxLength: 2000 },
 ];
 
@@ -109,7 +143,7 @@ export const CATALOG_FIELD_BY_KEY = Object.fromEntries(CATALOG_ENTRY_FIELDS.map(
   CatalogFieldDef
 >;
 
-/** Every field of an entry; optional ones are null (or [] for tags) when unset. */
+/** Every field of an entry; optional ones are null (or [] for tags and links) when unset. */
 export interface CatalogEntryData {
   entryCode: string;
   title: string;
@@ -133,6 +167,8 @@ export interface CatalogEntryData {
   isrc: string | null;
   reference: string | null;
   tags: string[];
+  /** Recordings on YouTube, Spotify, Apple Music or Deezer (issue #210), as addresses to open. */
+  links: string[];
   notes: string | null;
 }
 
@@ -206,7 +242,19 @@ export function normalizeCatalogValue(field: CatalogFieldDef, raw: unknown): Nor
   const label = field.header;
   if (raw === null || raw === undefined || (typeof raw === "string" && raw.trim() === "")) {
     if (field.required) return { ok: false, message: `${label} is required` };
-    return { ok: true, value: field.kind === "list" ? [] : null };
+    return { ok: true, value: field.kind === "list" || field.kind === "links" ? [] : null };
+  }
+
+  if (field.kind === "links") {
+    const items = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : null;
+    if (!items || !items.every((item) => typeof item === "string")) return { ok: false, message: `${label} must be a list of addresses` };
+    const { links, refused } = readCatalogLinks(items);
+    if (refused.length > 0) {
+      const shown = refused[0]!.length > 60 ? `${refused[0]!.slice(0, 60)}…` : refused[0]!;
+      return { ok: false, message: `${label}: "${shown}" isn't a YouTube, Spotify, Apple Music or Deezer address` };
+    }
+    if (field.maxLength && links.length > field.maxLength) return { ok: false, message: `${label}: at most ${field.maxLength}` };
+    return { ok: true, value: links.map((link) => link.url) };
   }
 
   if (field.kind === "list") {
@@ -357,6 +405,8 @@ export function parseCatalogCsv(input: string): ParsedCatalogFile {
     if (!field) {
       if (name.trim()) result.unknownColumns.push(name.trim());
       columns.push(null);
+    } else if (result.fields.includes(field.key) && field.kind === "links") {
+      columns.push(field);
     } else if (result.fields.includes(field.key)) {
       result.problems.push({ row: null, message: `Two columns are both ${field.header} ("${name.trim()}")` });
       columns.push(null);
@@ -381,7 +431,14 @@ export function parseCatalogCsv(input: string): ParsedCatalogFile {
 function collectRow(result: ParsedCatalogFile, row: number, values: readonly (readonly [CatalogFieldDef | null, unknown])[]): void {
   const data: Record<string, unknown> = {};
   const messages: string[] = [];
+  // Several Links columns (or YouTube, Spotify...) are one field: their addresses read together.
+  const grouped: (readonly [CatalogFieldDef | null, unknown])[] = [];
   for (const [field, raw] of values) {
+    const earlier = field?.kind === "links" ? grouped.findIndex(([other]) => other === field) : -1;
+    if (earlier < 0) grouped.push([field, raw]);
+    else grouped[earlier] = [field, [grouped[earlier]![1], raw].flat().filter((item) => item !== null && item !== undefined)];
+  }
+  for (const [field, raw] of grouped) {
     if (!field) continue;
     const normalized = normalizeCatalogValue(field, raw);
     if (normalized.ok) data[field.key] = normalized.value;
@@ -462,7 +519,7 @@ export function parseCatalogJson(text: string): ParsedCatalogFile {
         unknown.add(name);
         continue;
       }
-      if (seen.has(field.key)) continue;
+      if (seen.has(field.key) && field.kind !== "links") continue;
       seen.add(field.key);
       if (!result.fields.includes(field.key)) result.fields.push(field.key);
       values.push([field, raw]);
@@ -609,6 +666,7 @@ export function emptyCatalogEntry(entryCode: string, title: string): CatalogEntr
     isrc: null,
     reference: null,
     tags: [],
+    links: [],
     notes: null,
   };
 }

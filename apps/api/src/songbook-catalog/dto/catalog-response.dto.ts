@@ -33,7 +33,10 @@ export class CatalogEntryResponseDto {
   @ApiProperty({ nullable: true }) isrc!: string | null;
   @ApiProperty({ nullable: true }) reference!: string | null;
   @ApiProperty({ type: [String] }) tags!: string[];
+  @ApiProperty({ type: [String], description: "YouTube, Spotify, Apple Music or Deezer addresses (issue #210)" }) links!: string[];
   @ApiProperty({ nullable: true }) notes!: string | null;
+  @ApiProperty({ type: [CatalogEntryOriginalDto], required: false, description: "Entries whose original song this is (on a catalogue's page)" })
+  translations?: CatalogEntryOriginalDto[];
 }
 
 export class CatalogResponseDto {

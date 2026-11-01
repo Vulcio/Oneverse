@@ -44,6 +44,16 @@ export class SongbooksController {
     return this.songbooksService.importFromCatalog(user, dto);
   }
 
+  /** A catalogue's entries already songs in the songbooks you can see started from it (issue #210). */
+  @Get("from-catalog/:catalogId")
+  catalogLibrary(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Param("catalogId") catalogId: string,
+  ): ReturnType<SongbooksService["catalogLibrary"]> {
+    if (!user) throw new UnauthorizedException();
+    return this.songbooksService.catalogLibrary(user, catalogId);
+  }
+
   @Get(":songbookId")
   @ApiOkResponse({ type: SongbookResponseDto })
   findOne(

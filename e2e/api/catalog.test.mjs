@@ -80,7 +80,7 @@ r = await raw(admin, "GET", `/songbook-catalogs/${catA.id}/export?format=csv`);
 check("CSV export", r.status === 200 && r.text.startsWith("﻿Number,Title,SortTitle") && /attachment; filename="ta\d+\.csv"/i.test(r.headers.get("content-disposition")) && r.headers.get("content-type").startsWith("text/csv"), `${r.headers.get("content-type")} ${[...r.bytes.slice(0, 3)]} ${r.text.slice(0, 20)}`);
 const exportedCsv = r.text;
 r = await importInto(catB, exportedCsv, { filename: "a.csv" });
-const strip = (e) => { const { id, original, ...rest } = e; return rest; };
+const strip = (e) => { const { id, original, translations, ...rest } = e; return rest; };
 const aEntries = (await entries(catA)).map(strip);
 check("a CSV export imports into another catalogue identically", r.body.created === aEntries.length && JSON.stringify((await entries(catB)).map(strip)) === JSON.stringify(aEntries), JSON.stringify(r.body).slice(0, 200));
 r = await raw(admin, "GET", `/songbook-catalogs/${catA.id}/export?format=json`);

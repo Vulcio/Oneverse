@@ -117,6 +117,48 @@ export class SongbooksService {
   }
 
   /**
+   * A catalogue's entries already songs in the songbooks the user can see
+   * that were started from it (issue #210), matched by number; and those
+   * songbooks, for "Start" on the rest.
+   */
+  async catalogLibrary(user: AuthenticatedUser, catalogId: string) {
+    const [songbooks, accessOf] = await Promise.all([
+      this.prisma.client.songbook.findMany({
+        where: { AND: [await this.access.songbooksVisibleTo(user), { sourceCatalogId: catalogId }] },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, ownerScope: true, ownerUserId: true, ownerTeamId: true },
+      }),
+      this.accessChecker(user),
+    ]);
+    const withAccess = songbooks
+      .map((songbook) => ({ id: songbook.id, name: songbook.name, access: accessOf(songbook) }))
+      // The ones they may add to first: that's where Start makes the song.
+      .sort((a, b) => Number(a.access === "view") - Number(b.access === "view"));
+    if (songbooks.length === 0) return { songbooks: withAccess, songs: [] };
+    const [entries, catalogEntries] = await Promise.all([
+      this.prisma.client.songbookEntry.findMany({
+        where: { songbookId: { in: songbooks.map((songbook) => songbook.id) }, entryCode: { not: null } },
+        select: { entryCode: true, songbookId: true, songVersion: { select: { id: true, title: true } } },
+      }),
+      this.prisma.client.songbookCatalogEntry.findMany({ where: { catalogId }, select: { id: true, entryCode: true } }),
+    ]);
+    const idOf = new Map(catalogEntries.map((entry) => [entry.entryCode, entry.id]));
+    const order = new Map(withAccess.map((songbook, index) => [songbook.id, index]));
+    const songs = entries
+      .filter((entry) => idOf.has(entry.entryCode!))
+      .sort((a, b) => order.get(a.songbookId)! - order.get(b.songbookId)!)
+      .map((entry) => ({
+        catalogEntryId: idOf.get(entry.entryCode!)!,
+        entryCode: entry.entryCode!,
+        songbookId: entry.songbookId,
+        songbookName: withAccess[order.get(entry.songbookId)!]!.name,
+        songVersionId: entry.songVersion.id,
+        title: entry.songVersion.title,
+      }));
+    return { songbooks: withAccess, songs };
+  }
+
+  /**
    * What the user may do with each songbook (issue #211): "own" it (change,
    * share and delete it - its owner, its team's admins), "edit" it (shared
    * to edit: its entries and details), or only "view" it.

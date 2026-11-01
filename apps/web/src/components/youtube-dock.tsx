@@ -35,7 +35,7 @@ const EDGES = "pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-ar
  * won't play a video that isn't shown, minimising pauses it, and Play there
  * expands it.
  */
-export function YouTubeDock({ video }: { video: YouTubeVideo }) {
+export function YouTubeDock({ video, autoPlay = false }: { video: YouTubeVideo; /** Plays it straight away, shown: opened by a press on Play elsewhere (a catalogue entry's, issue #210). */ autoPlay?: boolean }) {
   const slot = useContext(StemDockSlot);
   const { t } = useTranslation();
   const yt = useYouTube();
@@ -46,7 +46,7 @@ export function YouTubeDock({ video }: { video: YouTubeVideo }) {
   const duration = current ? yt.duration : 0;
   const loading = current && yt.status === "loading";
 
-  const [expanded, setExpanded] = useState(() => playing);
+  const [expanded, setExpanded] = useState(() => playing || autoPlay);
   // Played from elsewhere (the corner player's way back): shown.
   useEffect(() => {
     if (playing) setExpanded(true);
@@ -71,9 +71,20 @@ export function YouTubeDock({ video }: { video: YouTubeVideo }) {
   }, [current, speed]);
 
   useEffect(() => {
-    showYouTube(video);
+    if (autoPlay) playYouTube(video);
+    else showYouTube(video);
     // Once per video; `video` is a new object on every render.
   }, [video.videoId]);
+  // The player may only be made once the page has its host: played then, once.
+  const autoPlayed = useRef(false);
+  useEffect(() => {
+    if (!autoPlay || autoPlayed.current || !current) return;
+    if (playing) autoPlayed.current = true;
+    else if (yt.status === "ready") {
+      autoPlayed.current = true;
+      playYouTube(video);
+    }
+  }, [autoPlay, current, playing, yt.status]);
 
   useEffect(() => {
     if (!current || !expanded || !anchor.current) return;

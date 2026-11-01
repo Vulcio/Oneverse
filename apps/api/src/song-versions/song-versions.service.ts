@@ -9,6 +9,7 @@ import {
   flowItemId,
   parseSongDocumentV2,
   parseStreamingLink,
+  readReferenceLink,
   readSongDocument,
   safeParseSongDocumentV2,
   snapshotChanges,
@@ -86,6 +87,8 @@ type CreateExtras = {
   capo?: number | null;
   credits?: { source: string; roles: ContributorRole[] }[];
   tagIds?: string[];
+  /** Recordings to link it to (a catalogue entry's, issue #210): the first on each service. */
+  links?: string[];
   /** Add to this existing Work. */
   workId?: string;
   /** Derived from this version (e.g. a translation of it): joins its Work. */
@@ -1186,6 +1189,7 @@ export class SongVersionsService {
           ...splitNames(entry.lyricist).map((name) => [name, "LYRICIST"] as const),
         ]),
         tagIds: await this.matchTagIds(owner, entry.tags),
+        links: entry.links,
         parent: original ? { ...original, relationshipType: "DIRECT_TRANSLATION" } : undefined,
       },
     );
@@ -1281,6 +1285,14 @@ export class SongVersionsService {
       }
       if (extras.tagIds?.length) {
         await tx.songVersionTag.createMany({ data: extras.tagIds.map((tagId) => ({ songVersionId: created.id, tagId })) });
+      }
+      const links = new Map<StreamingIdentifierType, { value: string; sourceUrl: string }>();
+      for (const url of extras.links ?? []) {
+        const link = readReferenceLink(url);
+        if (link && link.service !== "OTHER" && link.value && !links.has(link.service)) links.set(link.service, { value: link.value, sourceUrl: link.url });
+      }
+      if (links.size > 0) {
+        await tx.songVersionIdentifier.createMany({ data: [...links].map(([type, link]) => ({ songVersionId: created.id, type, ...link })) });
       }
       if (!existingWorkId) {
         await tx.work.update({ where: { id: workId }, data: { preferredOriginalVersionId: created.id } });

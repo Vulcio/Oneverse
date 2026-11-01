@@ -32,7 +32,7 @@ export interface CatalogEntryOriginal {
   title: string;
 }
 
-export type CatalogEntryResponse = { id: string } & CatalogEntryData & { original: CatalogEntryOriginal | null };
+export type CatalogEntryResponse = { id: string } & CatalogEntryData & { original: CatalogEntryOriginal | null; translations?: CatalogEntryOriginal[] };
 
 export interface CatalogChange {
   entryCode: string;
@@ -76,7 +76,42 @@ export class SongbookCatalogService {
     const catalog = await this.prisma.client.songbookCatalog.findUnique({ where: { id: catalogId } });
     if (!catalog) throw new NotFoundException("Songbook catalog not found");
     const entries = await this.prisma.client.songbookCatalogEntry.findMany({ where: { catalogId } });
-    return { ...catalog, entries: await this.toResponses(catalogId, sortEntries(entries)) };
+    const translations = await this.translationsOf(catalog, entries);
+    const responses = await this.toResponses(catalogId, sortEntries(entries));
+    return { ...catalog, entries: responses.map((entry) => ({ ...entry, translations: translations.get(entry.entryCode) ?? [] })) };
+  }
+
+  /**
+   * The entries, in any catalogue, whose "Original song" is one of this
+   * catalogue's (issue #210), by the number they point to: "JEM 245" from
+   * another catalogue, or just "245" from this one.
+   */
+  private async translationsOf(catalog: { id: string; abbreviation: string | null }, entries: EntryRow[]): Promise<Map<string, CatalogEntryOriginal[]>> {
+    const codes = new Set(entries.map((entry) => entry.entryCode));
+    const candidates = await this.prisma.client.songbookCatalogEntry.findMany({
+      where: { originalSong: { not: null }, ...(catalog.abbreviation ? {} : { catalogId: catalog.id }) },
+      select: { id: true, entryCode: true, title: true, originalSong: true, catalog: { select: { id: true, name: true, abbreviation: true } } },
+    });
+    const byCode = new Map<string, CatalogEntryOriginal[]>();
+    for (const candidate of candidates) {
+      const reference = parseOriginalSongReference(candidate.originalSong!);
+      if (!reference || !codes.has(reference.entryCode)) continue;
+      const here = reference.abbreviation
+        ? reference.abbreviation.toLowerCase() === catalog.abbreviation?.toLowerCase()
+        : candidate.catalog.id === catalog.id;
+      if (!here || (candidate.catalog.id === catalog.id && candidate.entryCode === reference.entryCode)) continue;
+      const list = byCode.get(reference.entryCode) ?? [];
+      list.push({
+        catalogId: candidate.catalog.id,
+        catalogName: candidate.catalog.name,
+        catalogAbbreviation: candidate.catalog.abbreviation,
+        entryId: candidate.id,
+        entryCode: candidate.entryCode,
+        title: candidate.title,
+      });
+      byCode.set(reference.entryCode, list);
+    }
+    return byCode;
   }
 
   create(dto: CreateCatalogDto) {

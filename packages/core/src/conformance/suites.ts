@@ -28,6 +28,7 @@ import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
 import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, slideAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
+import { readCatalogLinks } from "../songbook-catalog-format/index.js";
 import { findBibleBook } from "../scriptures/books.js";
 import { formatBibleReference, parseBibleReferences, type BibleReference } from "../scriptures/references.js";
 import { lyricsLines, lyricsSearchText, matchLyrics, parseLyricsQuery } from "../search-text/lyrics.js";
@@ -2191,6 +2192,18 @@ export const CONFORMANCE: ConformanceArea[] = [
     area: "songbooks",
     about: "Finding a song by the number people call out (issues #48, #213): how a search reads as a songbook reference, and the order songbook entries come in for it.",
     functions: {
+      readCatalogLinks: {
+        about:
+          "A catalogue entry's Links as written in a file (issue #210): addresses split on semicolons, spaces and new lines, each read for its service by its host (YouTube, Spotify, Apple Music, Deezer) and kept as the address rebuilt from its ID, repeats dropped; any other is refused.",
+        params: ["text"],
+        run: readCatalogLinks,
+        cases: [
+          "https://youtu.be/dQw4w9WgXcQ?t=30; https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC https://music.apple.com/us/album/x/1440833098?i=1440833530",
+          "https://www.deezer.com/fr/track/3135556\nhttps://example.com/song",
+          "",
+        ].map((text) => ({ name: JSON.stringify(text), args: [text] })),
+      },
       songbookReferences: {
         about: "The ways a search reads as a songbook entry, most likely first: a book (abbreviation or part of its name) and a code; none without a digit.",
         params: ["query"],

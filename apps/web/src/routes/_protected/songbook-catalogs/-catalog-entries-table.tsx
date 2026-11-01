@@ -1,6 +1,6 @@
 import { CATALOG_ENTRY_FIELDS, compareEntryCodes, foldForSearch, formatDuration, type CatalogEntryFieldKey, type SongbookCatalogEntry } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
-import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Columns3, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Columns3, Info, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -28,6 +28,7 @@ const WIDTH: Partial<Record<CatalogEntryFieldKey, string>> = {
   isrc: "min-w-36",
   ccli: "min-w-24",
   tags: "min-w-44",
+  links: "min-w-64",
   notes: "min-w-64",
 };
 
@@ -85,11 +86,14 @@ export function CatalogEntriesTable({
   entries: initialEntries,
   canEdit,
   initialSearch,
+  onOpen,
 }: {
   catalogId: string;
   entries: SongbookCatalogEntry[];
   canEdit: boolean;
   initialSearch: string;
+  /** Opens an entry's details (issue #210). */
+  onOpen: (entryId: string) => void;
 }) {
   const { t } = useTranslation();
   const [entries, setEntries] = useState(initialEntries);
@@ -218,7 +222,7 @@ export function CatalogEntriesTable({
                   </button>
                 </th>
               ))}
-              {canEdit ? <th className="w-12" aria-hidden /> : null}
+              <th className={canEdit ? "w-20" : "w-10"} aria-hidden />
             </tr>
           </thead>
           <tbody>
@@ -265,9 +269,17 @@ export function CatalogEntriesTable({
                     )}
                   </td>
                 ))}
-                {canEdit ? (
-                  <td className="p-1 text-right whitespace-nowrap">
-                    {confirmingDelete === entry.id ? (
+                <td className="p-1 text-right whitespace-nowrap">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-7"
+                    aria-label={t("songbookCatalog.openEntry", { code: entry.entryCode })}
+                    onClick={() => onOpen(entry.id)}
+                  >
+                    <Info />
+                  </Button>
+                  {!canEdit ? null : confirmingDelete === entry.id ? (
                       <Button size="sm" variant="destructive" className="h-7" onClick={() => void remove(entry)} onBlur={() => setConfirmingDelete(null)} autoFocus>
                         {t("songbookCatalog.confirmDeleteEntry")}
                       </Button>
@@ -282,8 +294,7 @@ export function CatalogEntriesTable({
                         <Trash2 />
                       </Button>
                     )}
-                  </td>
-                ) : null}
+                </td>
               </tr>
             ))}
           </tbody>

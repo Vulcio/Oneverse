@@ -55,6 +55,18 @@ A catalog can list its printed volumes, the same way as a songbook's sections. S
 
 Starting a songbook from a catalog gives you every entry at once. Entries whose song isn't in your library yet are listed under **Pending entries**: **Start** one to create the song with the catalog's details filled in, then add its words and chords.
 
+A catalog's page shows its entries as a **List** to read, or as a **Table** to edit many at once; your choice is remembered on the device, and a phone always shows the list. Search finds words in any field, and the lists beside it show only one tag, one key, one language or one volume.
+
+An entry that's already a song in one of your songbooks started from the catalog is marked **In** and the songbook's name, with a link to the song. The others have **Start**, which makes the song in the first of those songbooks you can change (create one first with **Create songbook**, under **Import into Songverse**).
+
+Click an entry (or its info button in the table) to see everything it holds: its credits, key, tempo, scripture reference, tags and notes, the song it translates and the entries that translate it (**Translated as**). Its recordings are buttons: **Play on YouTube** plays the video at the bottom of the screen without leaving the catalog; Spotify, Apple Music and Deezer open in a new tab. When the entry becomes a song, its links become the song's.
+
+<div data-audience="admin">
+
+Admins change an entry from there too, with **Edit**. Links are added in the catalog file's `Links` column, or its `YouTube`, `Spotify`, `AppleMusic` and `Deezer` columns. An address on another site is listed with its row in the import's preview, and that row is skipped.
+
+</div>
+
 ## Song details
 
 **Edit song details** shows every song in the songbook in one table: its name, artist, album, year, key, tempo, time signature, CCLI number and copyright. Change a cell and it's saved when you leave it ("Saved" on its row); **Open** goes to the song. A catalogue song you can't change takes your change as a suggestion for its editors instead ("Suggestion sent", see [Suggesting a change](/library/#suggesting-a-change)).

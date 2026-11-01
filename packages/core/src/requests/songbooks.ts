@@ -93,10 +93,13 @@ export const CatalogEntryInputSchema = z.strictObject({
   key: z.unknown().optional(),
   timeSignature: z.unknown().optional(),
   tempo: z.unknown().optional(),
+  durationSeconds: z.unknown().optional(),
   copyright: z.unknown().optional(),
   ccli: z.unknown().optional(),
+  isrc: z.unknown().optional(),
   reference: z.unknown().optional(),
   tags: z.unknown().optional(),
+  links: z.unknown().optional().describe("YouTube, Spotify, Apple Music or Deezer addresses"),
   notes: z.unknown().optional(),
 });
 

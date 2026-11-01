@@ -12,7 +12,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { downloadBlob } from "#/lib/download";
-import { CatalogEntriesTable } from "./-catalog-entries-table";
+import { CatalogBrowser } from "./-catalog-browser";
 import { CatalogImportDialog } from "./-catalog-import-dialog";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -175,7 +175,7 @@ function SongbookCatalogDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <CatalogEntriesTable catalogId={catalog.id} entries={catalog.entries} canEdit={canEdit} initialSearch={q ?? ""} />
+          <CatalogBrowser catalogId={catalog.id} entries={catalog.entries} sections={catalog.sections} canEdit={canEdit} initialSearch={q ?? ""} />
         </CardContent>
       </Card>
 

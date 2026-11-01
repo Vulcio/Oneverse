@@ -55,6 +55,18 @@ Un catalogue peut indiquer ses volumes imprimés, comme les sections d'un recuei
 
 Commencer un recueil à partir d'un catalogue vous donne toutes ses entrées d'un coup. Celles dont le chant n'est pas encore dans votre bibliothèque sont listées dans **Entrées en attente** : **Démarrer** l'une d'elles crée le chant avec les détails du catalogue, puis vous ajoutez paroles et accords.
 
+La page d'un catalogue montre ses entrées en **Liste** pour les lire, ou en **Tableau** pour en modifier beaucoup à la fois ; votre choix est retenu sur l'appareil, et un téléphone montre toujours la liste. La recherche trouve des mots dans tous les champs, et les listes à côté n'en gardent qu'un mot-clé, une tonalité, une langue ou un volume.
+
+Une entrée qui est déjà un chant dans l'un de vos recueils commencés à partir du catalogue est marquée **Dans** et le nom du recueil, avec un lien vers le chant. Les autres ont **Démarrer**, qui crée le chant dans le premier de ces recueils que vous pouvez modifier (créez-en un d'abord avec **Créer le recueil**, sous **Importer dans Songverse**).
+
+Cliquez sur une entrée (ou sur son bouton d'infos dans le tableau) pour voir tout ce qu'elle contient : ses crédits, sa tonalité, son tempo, sa référence biblique, ses mots-clés et ses notes, le chant qu'elle traduit et les entrées qui la traduisent (**Traduit en**). Ses enregistrements sont des boutons : **Écouter sur YouTube** joue la vidéo en bas de l'écran sans quitter le catalogue ; Spotify, Apple Music et Deezer s'ouvrent dans un nouvel onglet. Quand l'entrée devient un chant, ses liens deviennent ceux du chant.
+
+<div data-audience="admin">
+
+Les admins modifient aussi une entrée depuis là, avec **Modifier**. Les liens s'ajoutent dans la colonne `Links` du fichier du catalogue, ou ses colonnes `YouTube`, `Spotify`, `AppleMusic` et `Deezer`. Une adresse d'un autre site est listée avec sa ligne dans l'aperçu de l'import, et cette ligne est ignorée.
+
+</div>
+
 ## Infos des chants
 
 **Modifier les infos des chants** montre tous les chants du recueil dans un tableau : titre, artiste, album, année, tonalité, tempo, mesure, numéro CCLI et copyright. Modifiez une case, elle est enregistrée quand vous la quittez (« Enregistré » sur sa ligne) ; **Ouvrir** mène au chant. Un chant du catalogue que vous ne pouvez pas modifier reçoit votre changement comme suggestion pour ses éditeurs (« Suggestion envoyée », voir [Proposer une modification](/fr/library/#proposer-une-modification)).

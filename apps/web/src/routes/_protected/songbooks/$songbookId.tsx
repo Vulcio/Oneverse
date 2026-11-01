@@ -648,7 +648,7 @@ function SongbookDetail() {
                     e.target.value = "";
                     void selectBulkUploadFiles(files);
                   }}
-                  className="text-sm"
+                  className="w-full min-w-0 text-sm"
                 />
               </div>
               {/* A whole folder at once (issue #40): every file in it, its folders' too; the preview leaves out the other kinds. */}
@@ -664,7 +664,7 @@ function SongbookDetail() {
                     e.target.value = "";
                     void selectBulkUploadFiles(files);
                   }}
-                  className="text-sm"
+                  className="w-full min-w-0 text-sm"
                 />
               </div>
             </div>

@@ -32,6 +32,9 @@ const cell = (code, field) => row(code).locator(`[data-field="${field}"]`);
 async function open() {
   await page.goto(`${WEB}/songbook-catalogs/${cat.id}`);
   await page.waitForLoadState("networkidle");
+  // The list is for reading (issue #210); the table, for editing, is remembered once chosen.
+  const tableView = page.getByRole("button", { name: "Table", exact: true });
+  if ((await tableView.getAttribute("aria-pressed")) !== "true") await tableView.click();
   await table().waitFor();
 }
 
@@ -188,9 +191,11 @@ await step("export as JSON, and create a new catalogue from it", async () => {
   await page.getByText("1–100 of 251").first().waitFor();
 });
 
-await step("the page fits a phone; the table scrolls in its own box", async () => {
+await step("the page fits a phone, with the list (issue #210)", async () => {
   await page.setViewportSize({ width: 360, height: 780 });
-  await open();
+  await page.goto(`${WEB}/songbook-catalogs/${cat.id}`);
+  await page.waitForLoadState("networkidle");
+  await page.getByTestId("catalog-list").waitFor();
   const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (over > 0) throw new Error(`overflows by ${over}px`);
   await page.screenshot({ path: `${SP}/catalog-mobile.png` });
@@ -224,6 +229,7 @@ await signIn(readerPage, reader);
 await step("non-admins can read and export, but not edit", async () => {
   await readerPage.goto(`${WEB}/songbook-catalogs/${cat.id}`);
   await readerPage.waitForLoadState("networkidle");
+  await readerPage.getByRole("button", { name: "Table", exact: true }).click();
   await readerPage.getByTestId("catalog-entries").waitFor();
   if ((await readerPage.getByRole("button", { name: "New entry" }).count()) > 0) throw new Error("can add");
   if ((await readerPage.getByRole("button", { name: "Import file" }).count()) > 0) throw new Error("can import");

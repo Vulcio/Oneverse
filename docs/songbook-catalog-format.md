@@ -39,6 +39,7 @@ them.
 | `ISRC` | `isrc` | Recording code | 12 characters, e.g. `USRC17607839`; dashes and spaces are dropped |
 | `Reference` | `reference` | A reference to go with the song — for Christian songs, usually the scripture it draws on: `Psalm 23; John 10:11` | Up to 300 |
 | `Tags` | `tags` | Themes or keywords | CSV: separated by `;` (`grace; hope`). JSON: a list. Up to 30, each up to 50 characters |
+| `Links` | `links` | Recordings to listen to: YouTube videos (`youtube.com/watch?v=…`, `youtu.be/…`), Spotify tracks, Apple Music songs, Deezer tracks | CSV: separated by `;` (spaces and line breaks work too). JSON: a list. Each is recognised by its host and kept as the address rebuilt from its ID; an address on any other site is a problem with its row. Up to 10 |
 | `Notes` | `notes` | Anything else | Up to 2000; may span lines |
 
 Column names are matched loosely — case, spaces and punctuation don't
@@ -46,7 +47,10 @@ matter (`Sort Title`, `sort_title` and `SortTitle` are the same) — and some
 common alternatives are accepted: `SongNumber`, `No`, `Nr` for `Number`;
 `Author`, `Words` for `Lyricist`; `Music` for `Composer`; `BPM` for
 `Tempo`; `TimeSignature` for `Time`; `Runtime` for `Duration`;
-`Scripture` for `Reference`… Columns
+`Scripture` for `Reference`… `YouTube`, `Spotify`, `AppleMusic` and
+`Deezer` columns (one address each, or several) are more `Links`: a file
+can have any number of them, and all their addresses are read together
+(in JSON, a `youtube` key beside `links` the same way). Columns
 Songverse doesn't know are listed in the import preview and ignored.
 
 ## Importing
@@ -74,7 +78,9 @@ the "New catalogue" page.
 When a songbook imported from a catalogue turns one of its entries into a
 real song, the song starts with every field of the entry: title, subtitle,
 sort title, language, album, year, key, time signature, tempo, duration,
-copyright, CCLI, ISRC, reference and notes as song fields; artists,
+copyright, CCLI, ISRC, reference and notes as song fields; its links as
+the song's YouTube, Spotify, Apple Music and Deezer links (the first of
+each, so Practice offers the video straight away); artists,
 composers and lyricists as credits (one per name); tags that match
 existing tags (by name, in any language, ignoring case and accents — the
 others are left out); and, when the "Original song" entry has itself

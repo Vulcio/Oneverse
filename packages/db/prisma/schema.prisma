@@ -2013,6 +2013,9 @@ model SongbookCatalogEntry {
   // e.g. the scripture a song draws on.
   reference        String?
   tags             String[] @default([])
+  // Recordings on YouTube, Spotify, Apple Music or Deezer (issue #210), as
+  // addresses to open; they become the song's links when it's started.
+  links            String[] @default([])
   notes            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

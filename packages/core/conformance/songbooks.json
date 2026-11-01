@@ -3,6 +3,75 @@
   "area": "songbooks",
   "about": "Finding a song by the number people call out (issues #48, #213): how a search reads as a songbook reference, and the order songbook entries come in for it.",
   "functions": {
+    "readCatalogLinks": {
+      "about": "A catalogue entry's Links as written in a file (issue #210): addresses split on semicolons, spaces and new lines, each read for its service by its host (YouTube, Spotify, Apple Music, Deezer) and kept as the address rebuilt from its ID, repeats dropped; any other is refused.",
+      "params": [
+        "text"
+      ],
+      "cases": [
+        {
+          "name": "\"https://youtu.be/dQw4w9WgXcQ?t=30; https://www.youtube.com/watch?v=dQw4w9WgXcQ\"",
+          "args": [
+            "https://youtu.be/dQw4w9WgXcQ?t=30; https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+          ],
+          "expected": {
+            "links": [
+              {
+                "service": "YOUTUBE",
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+              }
+            ],
+            "refused": []
+          }
+        },
+        {
+          "name": "\"open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC https://music.apple.com/us/album/x/1440833098?i=1440833530\"",
+          "args": [
+            "open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC https://music.apple.com/us/album/x/1440833098?i=1440833530"
+          ],
+          "expected": {
+            "links": [
+              {
+                "service": "SPOTIFY",
+                "url": "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"
+              },
+              {
+                "service": "APPLE_MUSIC",
+                "url": "https://music.apple.com/us/album/x/1440833098?i=1440833530"
+              }
+            ],
+            "refused": []
+          }
+        },
+        {
+          "name": "\"https://www.deezer.com/fr/track/3135556\\nhttps://example.com/song\"",
+          "args": [
+            "https://www.deezer.com/fr/track/3135556\nhttps://example.com/song"
+          ],
+          "expected": {
+            "links": [
+              {
+                "service": "DEEZER",
+                "url": "https://www.deezer.com/track/3135556"
+              }
+            ],
+            "refused": [
+              "https://example.com/song"
+            ]
+          }
+        },
+        {
+          "name": "\"\"",
+          "args": [
+            ""
+          ],
+          "expected": {
+            "links": [],
+            "refused": []
+          }
+        }
+      ]
+    },
     "songbookReferences": {
       "about": "The ways a search reads as a songbook entry, most likely first: a book (abbreviation or part of its name) and a code; none without a digit.",
       "params": [

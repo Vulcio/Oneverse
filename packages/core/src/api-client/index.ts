@@ -1852,6 +1852,15 @@ export interface SongbookCatalogEntry extends CatalogEntryData {
     entryCode: string;
     title: string;
   } | null;
+  /** The entries whose original song this is, in any catalogue (issue #210); on a catalogue's page. */
+  translations?: NonNullable<SongbookCatalogEntry["original"]>[];
+}
+
+/** A catalogue's entries already songs in songbooks someone can see, started from it (issue #210). */
+export interface SongbookCatalogLibrary {
+  /** Their songbooks started from this catalogue; "Start" makes the song in the first they may edit. */
+  songbooks: { id: string; name: string; access: "own" | "edit" | "view" }[];
+  songs: { catalogEntryId: string; entryCode: string; songbookId: string; songbookName: string; songVersionId: string; title: string }[];
 }
 
 export interface SongbookCatalogSummary {
@@ -2935,6 +2944,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     deleteSongbook: (songbookId: string) => request<void>(`/songbooks/${songbookId}`, { method: "DELETE" }),
     importSongbookFromCatalog: (data: ImportSongbookFromCatalogInput) =>
       request<SongbookSummary>("/songbooks/import-from-catalog", { method: "POST", body: JSON.stringify(data) }),
+    getSongbookCatalogLibrary: (catalogId: string) => request<SongbookCatalogLibrary>(`/songbooks/from-catalog/${catalogId}`),
     materializeSongbookCatalogEntry: (songbookId: string, catalogEntryId: string) =>
       request<SongbookEntry>(`/songbooks/${songbookId}/catalog-entries/${catalogEntryId}/materialize`, {
         method: "POST",
