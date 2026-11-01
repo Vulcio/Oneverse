@@ -34,8 +34,8 @@ export type SaveOwnStorageRequest = z.input<typeof SaveOwnStorageSchema>;
 
 /** PUT /organizations/:id/storage/limits (its admins): what may go into its own bucket; null clears a limit, left out keeps it. */
 export const OwnStorageLimitsSchema = z.strictObject({
-  teamLimitMb: clearableInt(1, 10_000_000).describe("What each of its teams may keep there, in MB"),
-  memberLimitMb: clearableInt(1, 10_000_000).describe("What each person may upload there, in MB"),
+  teamLimitMb: clearableInt(1, 10_000_000).describe("What each of its teams may keep there, in MB, unless one of its roles given to the team has a storage tier"),
+  memberLimitMb: clearableInt(1, 10_000_000).describe("What each of its roles' holders may upload there, in MB, unless a role of theirs has a storage tier"),
   maxFileMb: clearableInt(1, 500).describe("The largest file, in MB; the server's own limits still apply"),
 });
 export type OwnStorageLimitsRequest = z.input<typeof OwnStorageLimitsSchema>;

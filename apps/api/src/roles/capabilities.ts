@@ -24,6 +24,8 @@ export interface Capabilities {
   canManageScreens: boolean;
   /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
   canUseOwnStorage: boolean;
+  /** An organisation's own roles: keeps files in its own bucket (issue #206). */
+  canStoreFiles: boolean;
   /** Each separating role's monthly limit; null: the one set in Admin > Stem separation. See monthlyLimitOf. */
   stemSeparationMonthlyLimits: (number | null)[];
   /** Their own storage limit; null: the default one. */
@@ -45,6 +47,7 @@ type RoleRow = {
   canRoute: boolean;
   canManageScreens: boolean;
   canUseOwnStorage: boolean;
+  canStoreFiles: boolean;
   stemSeparationMonthlyLimit: number | null;
   storageLimitMb: number | null;
   permissions: string[];
@@ -61,6 +64,7 @@ const ROLE_FIELDS = {
   canRoute: true,
   canManageScreens: true,
   canUseOwnStorage: true,
+  canStoreFiles: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,
   permissions: true,
@@ -84,6 +88,7 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canRoute: roles.some((role) => role.canRoute),
     canManageScreens: roles.some((role) => role.canManageScreens),
     canUseOwnStorage: roles.some((role) => role.canUseOwnStorage),
+    canStoreFiles: roles.some((role) => role.canStoreFiles),
     stemSeparationMonthlyLimits: separating.map((role) => role.stemSeparationMonthlyLimit),
     storageLimitMb: largest(roles.map((role) => role.storageLimitMb)),
     permissions: [...new Set(roles.flatMap((role) => role.permissions))].sort(),
@@ -128,7 +133,8 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
   const team = await prisma.team.findUnique({ where: { id: teamId }, select: { organizationId: true } });
   if (!team) return everywhere;
   const scoped = await prisma.role.findMany({
-    where: { teamAssignable: true, assignments: { some: { userId, OR: [{ scopeTeamId: teamId }, ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId }] : [])] } } },
+    // The server's roles teams may give, and the team's or its organisation's own (only ever given there).
+    where: { OR: [{ teamAssignable: true }, { ownerKey: { not: "" } }], assignments: { some: { userId, OR: [{ scopeTeamId: teamId }, ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId }] : [])] } } },
     select: { id: true, canOperateScreens: true, canCue: true, canRoute: true },
   });
   return {
@@ -147,7 +153,7 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
 export async function screenManagerScope(prisma: PrismaClient, userId: string, memberOf: { teams: Set<string>; organizations: Set<string> }): Promise<{ teams: Set<string>; organizations: Set<string> }> {
   if ((await capabilitiesOf(prisma, userId)).canManageScreens) return { teams: new Set(memberOf.teams), organizations: new Set(memberOf.organizations) };
   const given = await prisma.roleAssignment.findMany({
-    where: { userId, scopeKey: { not: "" }, role: { teamAssignable: true, canManageScreens: true } },
+    where: { userId, scopeKey: { not: "" }, role: { OR: [{ teamAssignable: true }, { ownerKey: { not: "" } }], canManageScreens: true } },
     select: { scopeTeamId: true, scopeOrganizationId: true },
   });
   const organizations = new Set(given.flatMap((one) => (one.scopeOrganizationId ? [one.scopeOrganizationId] : [])));
@@ -159,5 +165,38 @@ export async function screenManagerScope(prisma: PrismaClient, userId: string, m
 /** A team's own roles: what its pool may hold. */
 export async function teamStorageLimitMb(prisma: PrismaClient, teamId: string): Promise<number | null> {
   const roles = await prisma.role.findMany({ where: { assignments: { some: { teamId, scopeKey: "" } } }, select: { storageLimitMb: true } });
+  return largest(roles.map((role) => role.storageLimitMb));
+}
+
+/** Who made a role (issue #206, #300): a team or an organisation; the server's have none. */
+export type RoleOwner = { teamId: string } | { organizationId: string };
+
+/** A role's owner as its key: "team:<id>" or "organization:<id>", also the scope it's given at. */
+export function ownerKeyOf(owner: RoleOwner): string {
+  return "teamId" in owner ? `team:${owner.teamId}` : `organization:${owner.organizationId}`;
+}
+
+/**
+ * What a team's or an organisation's own roles let someone do with what it
+ * runs - its bucket, its Sonic server: those given them there, and (an
+ * organisation's) those given to a team of theirs. The server's roles don't
+ * count here, nor these anywhere else.
+ */
+export async function ownCapabilities(prisma: PrismaClient, userId: string, owner: RoleOwner): Promise<Capabilities> {
+  const key = ownerKeyOf(owner);
+  return requestMemo(`own-capabilities:${userId}:${key}`, async () => {
+    const roles = await prisma.role.findMany({
+      where: { ownerKey: key, assignments: { some: { scopeKey: key, OR: [{ userId }, { team: { memberships: { some: { userId } } } }] } } },
+      select: ROLE_FIELDS,
+      orderBy: { name: "asc" },
+    });
+    return combineRoles(roles);
+  });
+}
+
+/** An organisation's own roles given to one of its teams: what the team may keep in its bucket (null: the default). */
+export async function ownTeamStorageLimitMb(prisma: PrismaClient, organizationId: string, teamId: string): Promise<number | null> {
+  const key = ownerKeyOf({ organizationId });
+  const roles = await prisma.role.findMany({ where: { ownerKey: key, assignments: { some: { teamId, scopeKey: key } } }, select: { storageLimitMb: true } });
   return largest(roles.map((role) => role.storageLimitMb));
 }

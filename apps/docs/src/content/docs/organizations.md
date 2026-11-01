@@ -30,7 +30,7 @@ Its admins also:
 
 **Leave organisation** takes you out of it and its teams; its only admin makes someone else an admin first.
 
-Under **Roles**, its admins give its members the roles Admin lets teams give, on all its teams, such as the **Media operator**, who runs their screens (see [Teams](/teams/#roles-on-the-team)).
+Under **Roles**, its admins give its members the roles Admin lets teams give, on all its teams, such as the **Media operator**, who runs their screens (see [Teams](/teams/#roles-on-the-team)) - and its own roles (see [Its own roles](/organizations/#its-own-roles)).
 
 Under **Bible**, its admins tick **Show the Bible in the sidebar** for the members of all its teams (see [Bible](/bible/)).
 
@@ -79,6 +79,17 @@ Its admins make one with **New event**: its **Title**, first date, start time, l
 
 Where the organisation's events take place - a church, a hall, a campus: its admins add them under **Locations** on its page, with **Add location** (a **Name**, an **Address (optional)**, a **Time zone**), **Edit** and **Remove**. Its events pick one with **Location** in their dialog, which fills the place and the time zone, and each group's part follows it; a preset keeps it too. Its groups' own events can use them as well, beside the team's own (see [Locations](/teams/#locations)).
 
+## Its own roles
+
+Its admins make roles of their own under **Roles** on its page, with **New role** - the same editor as [Admin > Roles](/admin/#roles), with only what's the organisation's to allow, and counting only in it:
+
+- **Keep files in its own storage**, with an optional **Storage (MB)**: how much each holder may keep in its bucket, else the default under **Own storage**;
+- **Upload audio files** and **Keep lossless originals**, for its teams' songs kept in its own storage;
+- **Split recordings into stems**, on its own Songverse Sonic server (see [Your own stem separation server](/sonic/)), with its own **Separations per person in 30 days** or, empty, the server's;
+- running, moving on, routing and managing its teams' screens.
+
+Tick who has each under the role. A role that keeps files can also be given to **whole teams**: their members have it, and its storage tier is the team's share. Its names are its own; this server's admins don't see them in Admin > Roles, and they count nowhere else. A team's admins make roles of their own too, for its own Sonic server and its screens (see [Teams](/teams/#roles-on-the-team)).
+
 ## Its own storage
 
 An organisation can keep the files of its teams' songs - recordings, stems, PDFs and the other attachments - in a bucket of its own rather than on this server: its space, its bill. Its admins see **Own storage** on its page when the server's admin has ticked **Organisations may use their own storage** (see [Admin](/admin/#organisations)) and one of their roles allows **Own storage for organisations** (see [Admin](/admin/#roles)); otherwise the card says who to ask.
@@ -89,7 +100,8 @@ Once it's connected:
 
 - the files already on its teams' songs are moved there in the background, each one checked byte for byte before it leaves this server; the card counts the files there and those being moved;
 - new files on its teams' songs go straight there. People's own songs, and pictures (avatars, song and team images), stay on this server;
-- its files don't count toward its teams' storage pools: its admins set their own limits instead, under **Limits**, in MB - **Per team** (what each team's songs may keep there), **Per person** (what each person may upload there) and the **Largest file** (up to 500 MB; this server's own limits per file type still apply). A field left empty is no limit; **Save limits** keeps them. They hold for new uploads and stems, not for files already there or moved in;
+- only its admins, and those it gives one of its own roles that ticks **Keep files in its own storage** (see [Its own roles](/organizations/#its-own-roles)), add files to its teams' songs. Anyone else is told to ask its admins;
+- its files don't count toward its teams' storage pools here. Under **Defaults**, in MB, its admins set **Per team** (what each team's songs may keep there), **Per person** (what each role holder may upload there) and the **Largest file** (up to 500 MB; this server's own limits per file type still apply). A role's own storage tier wins over them, as on this server. A field left empty is no limit; **Save defaults** keeps them. They hold for new uploads and stems, not for files already there or moved in;
 - a team that leaves the organisation, or a song that moves to someone else, takes its files back to this server.
 
 If the bucket stops answering, the card says so: new files are kept on this server meanwhile and moved there once it answers again (it's tried every ten minutes). Its bucket can't be changed while files are in it.

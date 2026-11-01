@@ -1,7 +1,8 @@
 // An organisation's own bucket in the browser (issue #206): its admin, with a
 // role that allows it, connects one from the organisation's page (tried when
-// saved), sees how many files are there, sets limits on what goes in, and
-// stops using it with a confirm step; without the server admin's go-ahead the card only says who to ask.
+// saved), sees how many files are there, sets the defaults for what goes in,
+// makes a role of its own that keeps files there, and stops using it with a
+// confirm step; without the server admin's go-ahead the card only says who to ask.
 import { chromium } from "playwright";
 import { WEB, api, call, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -57,6 +58,28 @@ try {
     await card.getByTestId("own-storage-limits-saved").waitFor();
     const now = await api(me, "GET", `/organizations/${org.id}/storage`);
     if (now.teamLimitMb !== 200 || now.maxFileMb !== 20 || now.memberLimitMb !== null) throw new Error(JSON.stringify(now));
+  });
+
+  await step("its own role, made on its page with the same editor as Admin > Roles: keeps files there, with a tier", async () => {
+    const card = page.getByTestId("scoped-roles-card");
+    await card.getByTestId("own-role-new").click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByTestId("role-name").fill(`Keeper ${stamp}`);
+    if (await dialog.getByTestId("role-review").count()) throw new Error("review offered to an organisation");
+    await dialog.getByTestId("role-store-files").check();
+    await dialog.getByTestId("role-storage-mb").fill("50");
+    await dialog.getByTestId("role-save").click();
+    await dialog.waitFor({ state: "detached" });
+    const roles = await api(me, "GET", `/organizations/${org.id}/roles`);
+    const role = roles.own.find((one) => one.name === `Keeper ${stamp}`);
+    if (!role?.canStoreFiles || role.storageLimitMb !== 50) throw new Error(JSON.stringify(roles.own));
+    await card.getByTestId(`own-role-${role.id}`).getByText("Keeps files in its storage (50 MB)").waitFor();
+    await card.getByTestId(`scoped-role-${role.id}-${me.id}`).check();
+    for (let i = 0; i < 20; i++) {
+      if ((await api(me, "GET", `/organizations/${org.id}/roles`)).members.find((one) => one.userId === me.id)?.roleIds.includes(role.id)) return;
+      await page.waitForTimeout(250);
+    }
+    throw new Error("not given");
   });
 
   await step("stopped, with a confirm step: disconnected", async () => {

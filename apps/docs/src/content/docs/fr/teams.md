@@ -109,11 +109,13 @@ Les administrateurs d'une équipe lui donnent une **Couleur** et une image sur s
 
 ## Serveur de séparation en pistes
 
-Quand ce Songverse le permet, les admins d'une équipe peuvent connecter son propre serveur Songverse Sonic dans **Séparation en pistes** sur sa page : les chants de l'équipe y sont alors séparés en pistes, par ses membres. Voir [Votre propre serveur de séparation](/fr/sonic/).
+Quand ce Songverse le permet, les admins d'une équipe peuvent connecter son propre serveur Songverse Sonic dans **Séparation en pistes** sur sa page : les chants de l'équipe y sont alors séparés en pistes, par ses administrateurs et les membres qui ont l'un de ses rôles qui sépare les enregistrements. Voir [Votre propre serveur de séparation](/fr/sonic/).
 
 ## Rôles dans l'équipe
 
-Sous **Rôles**, les administrateurs de l'équipe donnent à ses membres les rôles que l'administration permet aux équipes de donner, dans cette équipe seulement. Le rôle intégré **Media operator** (opérateur média) gère les écrans des listes de l'équipe - présenter, le minuteur, les messages, les calques - sans modifier les listes (voir [L'opérateur média](/fr/screens/#lopérateur-média)). Cochez un rôle sous le nom d'un membre pour le donner, décochez-le pour le reprendre. Les administrateurs d'une organisation font de même sur sa page pour toutes ses équipes. Rien ne s'affiche quand l'administration ne permet aux équipes de donner aucun rôle.
+Sous **Rôles**, les administrateurs de l'équipe donnent à ses membres les rôles que l'administration permet aux équipes de donner, dans cette équipe seulement. Le rôle intégré **Media operator** (opérateur média) gère les écrans des listes de l'équipe - présenter, le minuteur, les messages, les calques - sans modifier les listes (voir [L'opérateur média](/fr/screens/#lopérateur-média)). Cochez un rôle sous le nom d'un membre pour le donner, décochez-le pour le reprendre. Les administrateurs d'une organisation font de même sur sa page pour toutes ses équipes.
+
+Les administrateurs de l'équipe y créent aussi des rôles propres à l'équipe, avec **Nouveau rôle** : le même éditeur que [Administration > Rôles](/fr/admin/#rôles), avec seulement ce qu'il revient à l'équipe de permettre - **Séparer des enregistrements en pistes** sur son propre serveur Songverse Sonic (avec ses propres **Séparations par personne sur 30 jours**, sinon celle du serveur), et gérer, avancer, orienter et administrer les écrans de ses listes. Ils ne valent que dans cette équipe. Seuls ses administrateurs et les membres qui ont l'un de ses rôles qui sépare les enregistrements utilisent son propre serveur Sonic (voir [Votre propre serveur de séparation](/fr/sonic/#quel-serveur-pour-quel-chant)).
 
 ## Bible
 

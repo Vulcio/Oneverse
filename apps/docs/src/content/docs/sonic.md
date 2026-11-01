@@ -3,7 +3,7 @@ title: Your own stem separation server
 description: Run Songverse Sonic with Docker or on Proxmox, and connect it to your team or organisation.
 ---
 
-Songverse splits recordings into stems (see [Separating a recording into stems](/library/#separating-a-recording-into-stems)) on a **Songverse Sonic** server: Demucs, which does the separating, and an analysis of each recording - its tempo, beats and bars, key and sections. A team or an organisation can run its own, on its own computer or server, and connect it. Its songs are then split there, by its members, without needing a role from this Songverse's admin.
+Songverse splits recordings into stems (see [Separating a recording into stems](/library/#separating-a-recording-into-stems)) on a **Songverse Sonic** server: Demucs, which does the separating, and an analysis of each recording - its tempo, beats and bars, key and sections. A team or an organisation can run its own, on its own computer or server, and connect it. Its songs are then split there, by its admins and the members they give one of its own roles that splits recordings, without needing a role from this Songverse's admin.
 
 ## Before you start
 
@@ -56,7 +56,7 @@ On the team's page - or the organisation's - its admins find **Stem separation**
 
 - **Server address** and **API key**, then **Connect**;
 - **Then a finer pass**: a slower, better separation that replaces the first stems when the server has time;
-- **Separations per person in 30 days**: empty for no limit.
+- **Separations per person in 30 days**: for those whose role has no limit of its own; empty for no limit.
 
 **Test connection** checks the address and the key: **Connected: songverse-sonic 1.6.0. Models: …**. If its version doesn't find beats and bars, it says to update it. The key is never shown again: leave it blank to keep it. **Disconnect** stops using the server: anything still being split there fails, and the stems already split stay.
 
@@ -64,6 +64,6 @@ On the team's page - or the organisation's - its admins find **Stem separation**
 
 - **A team's song:** the team's own server, else its organisation's, else this Songverse's own, if it has one.
 - **Your own songs:** this Songverse's own server.
-- **Who can separate:** on a team's or an organisation's server, the team's members, within its limit. On this Songverse's own server, whoever its admin allowed.
+- **Who can separate:** on a team's or an organisation's server, its admins and the song's team's members who have one of its own roles that splits recordings (made under **Roles** on its page: see [Teams](/teams/#roles-on-the-team) and [Organisations](/organizations/#its-own-roles)), within the role's limit, else the server's. On this Songverse's own server, whoever its admin allowed.
 
 When you separate a recording, the window names the server it goes to: **On Grace Church's Sonic server**.

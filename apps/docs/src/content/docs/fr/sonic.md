@@ -3,7 +3,7 @@ title: Votre propre serveur de séparation
 description: Installer Songverse Sonic avec Docker ou sur Proxmox, et le connecter à votre équipe ou votre organisation.
 ---
 
-Songverse sépare les enregistrements en pistes (voir [Séparer un enregistrement en pistes](/fr/library/#séparer-un-enregistrement-en-pistes)) sur un serveur **Songverse Sonic** : Demucs, qui fait la séparation, et une analyse de chaque enregistrement - son tempo, ses temps et ses mesures, sa tonalité et ses sections. Une équipe ou une organisation peut avoir le sien, sur son propre ordinateur ou serveur, et le connecter. Ses chants y sont alors séparés, par ses membres, sans qu'il faille un rôle donné par l'admin de ce Songverse.
+Songverse sépare les enregistrements en pistes (voir [Séparer un enregistrement en pistes](/fr/library/#séparer-un-enregistrement-en-pistes)) sur un serveur **Songverse Sonic** : Demucs, qui fait la séparation, et une analyse de chaque enregistrement - son tempo, ses temps et ses mesures, sa tonalité et ses sections. Une équipe ou une organisation peut avoir le sien, sur son propre ordinateur ou serveur, et le connecter. Ses chants y sont alors séparés, par ses administrateurs et les membres à qui ils donnent l'un de ses rôles propres qui sépare les enregistrements, sans qu'il faille un rôle donné par l'admin de ce Songverse.
 
 ## Avant de commencer
 
@@ -56,7 +56,7 @@ Sur la page de l'équipe - ou de l'organisation - ses admins trouvent **Séparat
 
 - **Adresse du serveur** et **Clé d'API**, puis **Connecter** ;
 - **Puis une passe plus fine** : une séparation plus lente et meilleure qui remplace les premières pistes quand le serveur a le temps ;
-- **Séparations par personne sur 30 jours** : vide pour aucune limite.
+- **Séparations par personne sur 30 jours** : pour ceux dont le rôle n'a pas de limite propre ; vide pour aucune limite.
 
 **Tester la connexion** vérifie l'adresse et la clé : **Connecté : songverse-sonic 1.6.0. Modèles : …**. Si sa version ne trouve pas les temps et les mesures, il dit de la mettre à jour. La clé n'est plus jamais affichée : laissez-la vide pour la garder. **Déconnecter** arrête d'utiliser le serveur : ce qui y était encore en cours de séparation échoue, et les pistes déjà séparées restent.
 
@@ -64,6 +64,6 @@ Sur la page de l'équipe - ou de l'organisation - ses admins trouvent **Séparat
 
 - **Un chant d'une équipe :** le serveur de l'équipe, sinon celui de son organisation, sinon celui de ce Songverse, s'il en a un.
 - **Vos propres chants :** le serveur de ce Songverse.
-- **Qui peut séparer :** sur le serveur d'une équipe ou d'une organisation, les membres de l'équipe, dans sa limite. Sur celui de ce Songverse, ceux que son admin a autorisés.
+- **Qui peut séparer :** sur le serveur d'une équipe ou d'une organisation, ses administrateurs et les membres de l'équipe du chant qui ont l'un de ses rôles propres qui sépare les enregistrements (créés sous **Rôles** sur sa page : voir [Équipes](/fr/teams/#rôles-dans-léquipe) et [Organisations](/fr/organizations/#ses-rôles-propres)), dans la limite du rôle, sinon celle du serveur. Sur celui de ce Songverse, ceux que son admin a autorisés.
 
 Quand vous séparez un enregistrement, la fenêtre nomme le serveur où il part : **Sur le serveur Sonic de Grace Church**.

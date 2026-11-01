@@ -51,6 +51,7 @@ export const SaveSonicServerSchema = z.strictObject({
   fastModel: modelName.nullable().optional(),
   hqModel: modelName.nullable().optional(),
   hqEnabled: optional(z.boolean()),
+  /** In 30 days, for who has one of its owner's own roles that separates without a limit of its own. */
   monthlyLimit: z.number().int().min(1).max(10_000).nullable().optional(),
 });
 export type SaveSonicServerRequest = z.input<typeof SaveSonicServerSchema>;

@@ -537,7 +537,7 @@ export function AttachmentsTab({
   const [canUploadAudio, setCanUploadAudio] = useState(true);
   useEffect(() => {
     apiClient
-      .getUploadLimits()
+      .getUploadLimits(songVersionId)
       .then((limits) => {
         setLimitsMb(limits.limitsMb);
         setCanUploadAudio(limits.canUploadAudio !== false);
@@ -545,7 +545,7 @@ export function AttachmentsTab({
       .catch(() => {
         // Offline: the API says so if a file's too big.
       });
-  }, []);
+  }, [songVersionId]);
   const filesLimitMb = limitsMb ? Math.max(...Object.entries(limitsMb).filter(([fileType]) => fileType !== "AUDIO").map(([, mb]) => mb)) : null;
 
   // Splitting a recording into stems on the Demucs server (issue #63), for who's allowed to.

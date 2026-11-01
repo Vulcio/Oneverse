@@ -78,6 +78,8 @@ The one place that says what people may do beyond their own and their teams' son
 
 **Reviewer**, **Stem separation**, **Audio uploads** and **Media operator** (runs the screens; teams can give it) are built in: they can be edited but not deleted. **New role** adds your own, such as "Storage 10 GB". Give roles to people in **Users** and to teams in **Teams**. Someone can do what any of their roles allows - their own and their teams' - and the largest limit wins; without a storage tier, the defaults in **Storage** apply. Global admins can do everything. Changes take effect straight away.
 
+Teams and organisations also make roles of their own, on their pages, with the same editor: for their own bucket, their own Sonic server and their screens, counting only there (see [Its own roles](/organizations/#its-own-roles)). They aren't listed here, and can't be given here.
+
 ### Instruments
 
 The instruments people can pick as what they play (see [Roles](/account/#roles)). Under **Added**, add one the list lacks with its **Name** and, if it differs, its name **In French** (**Add instrument**); **Rename** changes it, **Remove** takes it away, and off whoever had picked it. **On the list already** shows the built-in ones.

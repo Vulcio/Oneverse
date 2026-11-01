@@ -267,8 +267,8 @@ model User {
 
   // What they do on a team: keys from INSTRUMENTS / TECH_ROLES in
   // packages/core, validated by the API.
-  instruments String[] @default([])
-  techRoles   String[] @default([])
+  instruments            String[]  @default([])
+  techRoles              String[]  @default([])
   /// When they last skipped "What do you play or do?" (issue #109): asked again a while later, or on joining a team.
   profilePromptSkippedAt DateTime?
 
@@ -379,9 +379,9 @@ model User {
   liveSessionsStarted  LiveSession[]
   liveSessionCommands  LiveSessionCommand[]
   // Archives of what they own (issue #351), and the ones they asked for or imported.
-  contentArchives      ContentArchive[]       @relation("ContentArchiveUser")
-  archivesRequested    ContentArchive[]       @relation("ContentArchiveRequestedBy")
-  archiveSchedule      ArchiveSchedule?       @relation("ArchiveScheduleUser")
+  contentArchives      ContentArchive[]      @relation("ContentArchiveUser")
+  archivesRequested    ContentArchive[]      @relation("ContentArchiveRequestedBy")
+  archiveSchedule      ArchiveSchedule?      @relation("ArchiveScheduleUser")
 
   @@index([email])
 }
@@ -678,6 +678,7 @@ model Team {
   // What its members may do (issue #160), and its storage pool's limit.
   roleAssignments      RoleAssignment[]
   scopedRoles          RoleAssignment[]       @relation("RoleScopeTeam")
+  ownRoles             Role[]                 @relation("TeamOwnRoles")
   // Its screens' looks (issue #194), for every member to pick.
   screenThemes         ScreenTheme[]
   screenParts          ScreenPart[]
@@ -747,27 +748,28 @@ model Organization {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  memberships  OrganizationMembership[]
-  inviteLinks  OrganizationInviteLink[]
-  teams        Team[]
-  events       OrganizationEvent[]
-  eventPresets OrganizationEventPreset[]
+  memberships     OrganizationMembership[]
+  inviteLinks     OrganizationInviteLink[]
+  teams           Team[]
+  events          OrganizationEvent[]
+  eventPresets    OrganizationEventPreset[]
   // Its screens (issue #222): the church's projector, its stage monitor.
-  screens      Screen[]
+  screens         Screen[]
   // Its brands (issue #279): logos, colours, fonts, backgrounds, links.
-  brands       Brand[]
+  brands          Brand[]
   // Where its events take place (issue #320), offered to its groups' events too.
-  locations    Location[]
+  locations       Location[]
   // Its own Songverse Sonic server for its teams' songs' stems (issue #300).
-  sonicServer  SonicServer?
+  sonicServer     SonicServer?
   // A Bible in its teams' members' sidebar (issue #310), turned on by its admins.
-  bible        Boolean                   @default(false)
-  scopedRoles  RoleAssignment[]          @relation("RoleScopeOrganization")
+  bible           Boolean                   @default(false)
+  scopedRoles     RoleAssignment[]          @relation("RoleScopeOrganization")
+  ownRoles        Role[]                    @relation("OrganizationOwnRoles")
   // Songs shared with everyone in it (issue #350), to view; it never owns them.
-  songGrants   AccessGrant[]
+  songGrants      AccessGrant[]
   // Archives of its teams' songs, songbooks and sets (issue #351).
-  contentArchives ContentArchive[]       @relation("ContentArchiveOrganization")
-  archiveSchedule ArchiveSchedule?       @relation("ArchiveScheduleOrganization")
+  contentArchives ContentArchive[]          @relation("ContentArchiveOrganization")
+  archiveSchedule ArchiveSchedule?          @relation("ArchiveScheduleOrganization")
   // Its own bucket for its teams' songs' files (issue #206).
   ownStorage      OrganizationStorage?
 }
@@ -2650,7 +2652,9 @@ model SonicServer {
   fastModel         String?
   hqModel           String?
   hqEnabled         Boolean  @default(true)
-  // Separations each member may start in 30 days; null: no limit.
+  // Separations in 30 days for who has one of its owner's own roles that
+  // separates without a limit of its own; null: no limit. Only those roles'
+  // holders (and the owner's admins) use it.
   monthlyLimit      Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -3015,7 +3019,8 @@ model SongView {
 // largest limit wins. Global admins can do everything, whatever their roles.
 model Role {
   id                         String   @id @default(cuid())
-  name                       String   @unique
+  // Unique among its owner's: the server's, or one team's or organisation's.
+  name                       String
   description                String   @default("")
   // The ones that came with Songverse ("REVIEWER", "STEM_SEPARATION",
   // "AUDIO_UPLOADS"): kept, so they can be edited but not deleted.
@@ -3054,10 +3059,28 @@ model Role {
   storageLimitMb             Int?
   // Granted by plugins later (issue #157).
   permissions                String[] @default([])
+  // An organisation's own role (issue #206): may keep files in its own
+  // bucket - only its roles' holders (and its admins) do, within the role's
+  // storage tier, else its default.
+  canStoreFiles              Boolean  @default(false)
+  // A team's or an organisation's own role: made and given by its admins, to
+  // its members (and, an organisation's, to its teams), only there. It counts
+  // for what they run: their own bucket, their own Sonic server, their sets'
+  // screens. Null for the server's roles (Admin > Roles).
+  ownerTeamId                String?
+  ownerOrganizationId        String?
+  // "", "team:<id>" or "organization:<id>": a name is unique per owner.
+  ownerKey                   String   @default("")
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
 
-  assignments RoleAssignment[]
+  assignments       RoleAssignment[]
+  ownerTeam         Team?            @relation("TeamOwnRoles", fields: [ownerTeamId], references: [id], onDelete: Cascade)
+  ownerOrganization Organization?    @relation("OrganizationOwnRoles", fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerKey, name])
+  @@index([ownerTeamId])
+  @@index([ownerOrganizationId])
 }
 
 // A role given to a user or to a team (exactly one of the two).
@@ -3572,8 +3595,8 @@ enum ArchiveScope {
 // files are kept there. Only known providers: the address is made from the
 // provider and its account or region, never typed in.
 model OrganizationStorage {
-  id                 String                   @id @default(cuid())
-  organizationId     String                   @unique
+  id                 String             @id @default(cuid())
+  organizationId     String             @unique
   provider           OwnStorageProvider
   // R2's account ID; the others' region.
   accountId          String?
@@ -3583,18 +3606,20 @@ model OrganizationStorage {
   // Encrypted with SETTINGS_ENCRYPTION_KEY; never sent back.
   secretAccessKeyEnc String
   // ACTIVE: files go there. LEAVING: being moved back, then it's removed.
-  state              OwnStorageState          @default(ACTIVE)
+  state              OwnStorageState    @default(ACTIVE)
   // Whether it answered the last time it was tried, and why not.
-  reachable          Boolean                  @default(true)
+  reachable          Boolean            @default(true)
   lastError          String?
   checkedAt          DateTime?
-  // Its admins' limits on what goes into it (null: none): per team, per person, per file.
+  // Its admins' defaults for what goes into it (null: none) - per team, and
+  // per person for its roles' holders without a tier of their own - and the
+  // largest file.
   teamLimitMb        Int?
   memberLimitMb      Int?
   maxFileMb          Int?
   createdByUserId    String?
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }

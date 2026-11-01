@@ -92,6 +92,8 @@ Le seul endroit qui dit ce que chacun peut faire au-delà de ses chants et de ce
 
 **Reviewer** (relecteur), **Stem separation** (séparation en pistes), **Audio uploads** (import audio) et **Media operator** (opérateur média, qui gère les écrans et que les équipes peuvent donner) sont intégrés, avec ces noms, que vous pouvez changer : ils se modifient mais ne se suppriment pas. **Nouveau rôle** ajoute les vôtres, comme « Stockage 10 Go ». Donnez les rôles aux personnes dans **Utilisateurs** et aux équipes dans **Équipes**. On peut faire ce que permet l'un de ses rôles - les siens et ceux de ses équipes - et la plus grande limite l'emporte ; sans palier de stockage, les valeurs par défaut de **Stockage** s'appliquent. Les administrateurs globaux peuvent tout faire. Les changements s'appliquent tout de suite.
 
+Les équipes et les organisations créent aussi des rôles propres, sur leur page, avec le même éditeur : pour leur propre bucket, leur propre serveur Sonic et leurs écrans, valables seulement chez elles (voir [Ses rôles propres](/fr/organizations/#ses-rôles-propres)). Ils ne sont pas listés ici et ne se donnent pas ici.
+
 ### Instruments
 
 Les instruments que chacun peut choisir comme ce qu'il joue (voir [Rôles](/fr/account/#rôles)). Sous **Ajoutés**, ajoutez-en un qui manque à la liste avec son **Nom** et, s'il diffère, son nom **En français** (**Ajouter l'instrument**) ; **Renommer** le change, **Retirer** l'enlève, ainsi qu'à ceux qui l'avaient choisi. **Déjà dans la liste** montre ceux qui y sont d'office.

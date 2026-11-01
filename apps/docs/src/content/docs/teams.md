@@ -109,11 +109,13 @@ A team's admins give it a **Colour** and a picture on its page, in **Colour and 
 
 ## Stem separation server
 
-When this Songverse allows it, a team's admins can connect the team's own Songverse Sonic server under **Stem separation** on its page: the team's songs are then split into stems there, by its members. See [Your own stem separation server](/sonic/).
+When this Songverse allows it, a team's admins can connect the team's own Songverse Sonic server under **Stem separation** on its page: the team's songs are then split into stems there, by its admins and the members given one of its roles that splits recordings. See [Your own stem separation server](/sonic/).
 
 ## Roles on the team
 
-Under **Roles**, the team's admins give its members the roles Admin lets teams give, on this team only. The built-in **Media operator** runs the screens of the team's sets - presenting, the timer, messages, layers - without editing the sets (see [The media operator](/screens/#the-media-operator)). Tick a role under a member's name to give it, untick it to take it back. An organisation's admins do the same on its page for all its teams. Nothing shows when Admin lets teams give no role.
+Under **Roles**, the team's admins give its members the roles Admin lets teams give, on this team only. The built-in **Media operator** runs the screens of the team's sets - presenting, the timer, messages, layers - without editing the sets (see [The media operator](/screens/#the-media-operator)). Tick a role under a member's name to give it, untick it to take it back. An organisation's admins do the same on its page for all its teams.
+
+The team's admins also make roles of its own there, with **New role**: the same editor as [Admin > Roles](/admin/#roles), with only what's the team's to allow - **Split recordings into stems** on its own Songverse Sonic server (with its own **Separations per person in 30 days**, else the server's), and running, moving on, routing and managing its sets' screens. They count only on this team. Only its admins and the members given one that splits recordings use its own Sonic server (see [Your own stem separation server](/sonic/#which-server-a-song-uses)).
 
 ## Bible
 

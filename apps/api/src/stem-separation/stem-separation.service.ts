@@ -7,7 +7,7 @@ import { AccessPolicyService, type Viewer } from "../access/access-policy.servic
 import { AttachmentsService } from "../attachments/attachments.service.js";
 import { STEM_SEPARATION_QUEUE } from "../jobs/jobs.constants.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { capabilitiesOf, monthlyLimitOf } from "../roles/capabilities.js";
+import { capabilitiesOf, monthlyLimitOf, ownCapabilities } from "../roles/capabilities.js";
 import type { SubmitSeparationJob } from "./stem-separation.processor.js";
 import { serverById, serverForSong, serverOfSeparation, type SeparationServer } from "./sonic-servers.js";
 import { callbackSecret } from "./stem-separation-settings.js";
@@ -54,12 +54,29 @@ export class StemSeparationService {
     if (!server) return { server, refusal: "not-configured" };
     if (viewer.isGlobalAdmin) return { server, refusal: null };
     const teamMember = song.ownerScope === "TEAM" && song.ownerTeamId ? Boolean(await this.access.teamRole(viewer.id, song.ownerTeamId)) : false;
-    // A team's or an organisation's own server: the song's team's members, no role needed.
-    if (server.owner) return { server, refusal: teamMember ? null : "not-granted" };
+    // A team's or an organisation's own server: the song's team's members, with one of its owner's own roles
+    // that separates (issue #300) - none of the server's needed - or its owner's admins.
+    if (server.owner) {
+      if (!teamMember) return { server, refusal: "not-granted" };
+      if ((await this.ownRoles(viewer.id, server.owner)).canSeparateStems || (await this.ownerAdmin(viewer.id, server.owner))) return { server, refusal: null };
+      return { server, refusal: "not-granted" };
+    }
     const { canSeparateStems } = await capabilitiesOf(this.prisma.client, viewer.id);
     if (!canSeparateStems) return { server, refusal: "not-granted" };
     if (teamMember || (await this.access.canEditContent(viewer, song))) return { server, refusal: null };
     return { server, refusal: "not-granted" };
+  }
+
+  /** A team's or an organisation's own roles, for its own server: only those that separate count, as on the instance. */
+  private ownRoles(userId: string, owner: { kind: "team" | "organization"; id: string }) {
+    return ownCapabilities(this.prisma.client, userId, owner.kind === "team" ? { teamId: owner.id } : { organizationId: owner.id });
+  }
+
+  /** Whether they're an admin of a team's or an organisation's own server's owner: they run it, and give its roles. */
+  private async ownerAdmin(userId: string, owner: { kind: "team" | "organization"; id: string }): Promise<boolean> {
+    if (owner.kind === "team") return (await this.access.teamRole(userId, owner.id)) === "ADMIN";
+    const membership = await this.prisma.client.organizationMembership.findUnique({ where: { organizationId_userId: { organizationId: owner.id, userId } }, select: { role: true } });
+    return membership?.role === "ADMIN";
   }
 
   async list(viewer: Viewer, songVersionId: string) {
@@ -102,9 +119,14 @@ export class StemSeparationService {
     if (refusal) throw new ForbiddenException("Splitting recordings into stems needs a role that allows it: an admin gives it");
     const source = await this.attachments.find(viewer, songVersionId, attachmentId);
     if (source.type !== "AUDIO") throw new BadRequestException("Only a recording can be split into stems");
-    // On a team's or an organisation's server, the limit its admins set, counted there; on the instance's, the largest
-    // the viewer's roles allow, a role without its own counting as Admin > Stem separation's.
-    const limit = viewer.isGlobalAdmin ? null : server.owner ? server.monthlyLimit : monthlyLimitOf(await capabilitiesOf(this.prisma.client, viewer.id), server.monthlyLimit);
+    // The largest the viewer's roles allow, a role without its own counting as the server's limit: on the instance's,
+    // the server's roles and Admin > Stem separation's; on a team's or an organisation's, its own roles and its limit.
+    // On a team's or an organisation's own server, its own roles' the same way, its monthly limit the default.
+    const limit = viewer.isGlobalAdmin
+      ? null
+      : server.owner
+        ? monthlyLimitOf(await this.ownRoles(viewer.id, server.owner), server.monthlyLimit)
+        : monthlyLimitOf(await capabilitiesOf(this.prisma.client, viewer.id), server.monthlyLimit);
     if (limit !== null) {
       const used = await this.prisma.client.stemSeparation.count({ where: { requestedByUserId: viewer.id, sonicServerId: server.id, ownServer: Boolean(server.owner), status: { not: "FAILED" }, createdAt: { gte: new Date(Date.now() - MONTH_MS) } } });
       if (used >= limit) throw new HttpException({ statusCode: 429, message: [`You've reached the limit of ${limit} separations in 30 days: try again later`] }, HttpStatus.TOO_MANY_REQUESTS);
@@ -181,3 +203,4 @@ export class StemSeparationService {
     if (separation) await this.queue.add("sync", { separationId: separation.id }, { removeOnComplete: { count: 200 }, removeOnFail: { count: 200 }, attempts: 3, backoff: { type: "exponential", delay: 30000 } });
   }
 }
+

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Put, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { SaveFileSizeLimitsSchema } from "@oneverse/core";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
@@ -6,7 +6,8 @@ import { zodDto } from "../common/zod-validation.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { capabilitiesOf } from "../roles/capabilities.js";
+import { audioRights } from "../roles/audio-rights.js";
+import { StorageService } from "../storage/storage.service.js";
 import { fileSizeLimitsFor, getFileSizeLimits, saveFileSizeLimits } from "./file-size-limits.js";
 
 class SaveFileSizeLimitsDto extends zodDto(SaveFileSizeLimitsSchema) {}
@@ -20,11 +21,15 @@ class SaveFileSizeLimitsDto extends zodDto(SaveFileSizeLimitsSchema) {}
 @ApiBearerAuth()
 @Controller("uploads")
 export class UploadsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
+  /** `songVersionId`: for that song, whose organisation's own roles may allow audio uploads too (issue #206). */
   @Get("limits")
-  async limits(@CurrentUser() user: AuthenticatedUser | undefined) {
-    const canUploadAudio = !!user && (user.isGlobalAdmin || (await capabilitiesOf(this.prisma.client, user.id)).canUploadAudio);
+  async limits(@CurrentUser() user: AuthenticatedUser | undefined, @Query("songVersionId") songVersionId?: string) {
+    const canUploadAudio = !!user && (user.isGlobalAdmin || (await audioRights(this.prisma.client, this.storage, user.id, typeof songVersionId === "string" && songVersionId ? songVersionId : null)).canUploadAudio);
     return { limitsMb: await fileSizeLimitsFor(user), canUploadAudio };
   }
 }

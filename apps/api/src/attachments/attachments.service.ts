@@ -11,7 +11,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { RECORDINGS_QUEUE } from "../jobs/jobs.constants.js";
-import { capabilitiesOf } from "../roles/capabilities.js";
+import { audioRights } from "../roles/audio-rights.js";
 import { MAX_UPLOAD_BITRATE } from "../recordings/ffmpeg.js";
 import type { ProcessTakeJob, ShrinkUploadJob } from "../recordings/recordings.processor.js";
 import type { AttachmentTypeValue } from "./dto/upload-attachment.dto.js";
@@ -121,7 +121,7 @@ export class AttachmentsService {
   ) {
     if (stemPart && type !== "AUDIO") throw new BadRequestException("Only audio files can be stems");
     // Uploading audio files is a role's (issue #183); what's recorded in Songverse (a take it processes) isn't.
-    if (type === "AUDIO" && !take.process && !viewer.isGlobalAdmin && !(await capabilitiesOf(this.prisma.client, viewer.id)).canUploadAudio) {
+    if (type === "AUDIO" && !take.process && !viewer.isGlobalAdmin && !(await audioRights(this.prisma.client, this.storage, viewer.id, songVersionId)).canUploadAudio) {
       throw new ForbiddenException("Uploading audio files needs a role that allows it: ask an admin. You can still record in Songverse");
     }
     const details = recordingData(recording);
@@ -179,7 +179,7 @@ export class AttachmentsService {
     // Above 320 kbps, an upload is made Opus by the Worker (issue #182); it checks.
     if (shrinks !== false) {
       // A lossless original kept beside it for who may (a role, issue #182).
-      const keepOriginal = viewer.isGlobalAdmin || (await capabilitiesOf(this.prisma.client, viewer.id)).canKeepLosslessAudio;
+      const keepOriginal = viewer.isGlobalAdmin || (await audioRights(this.prisma.client, this.storage, viewer.id, songVersionId)).canKeepLosslessAudio;
       await this.recordings.add("shrink-upload", { attachmentId: row.id, filename, keepOriginal }, { attempts: 2, backoff: { type: "exponential", delay: 10000 }, removeOnComplete: { count: 200 }, removeOnFail: { count: 200 } });
     }
     return present(row, viewer, canEditSong);

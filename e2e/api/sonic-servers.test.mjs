@@ -73,7 +73,16 @@ try {
   check("a wrong key: the test says so", r.body.ok === false && /refused the key/.test(r.body.error), JSON.stringify(r.body));
   await call(leader, "PUT", `/teams/${team.id}/sonic-server`, { apiKey: teams.key });
 
-  // --- Its songs go there, for its members, no role needed
+  // --- Its songs go there: for its admins, and the members given one of its own roles that separates (none of the server's needed)
+  r = await call(singer, "GET", `/song-versions/${song.id}/stem-separations`);
+  check("a member without one of the team's roles can't", r.body.available === false && r.body.refusal === "not-granted" && r.body.server?.kind === "team", JSON.stringify(r.body));
+  r = await call(leader, "GET", `/song-versions/${song.id}/stem-separations`);
+  check("its admin may, who runs it", r.body.available === true, JSON.stringify(r.body));
+  r = await call(singer, "POST", `/teams/${team.id}/roles`, { name: "Splitter", canSeparateStems: true });
+  check("only its admins make its roles", r.status === 403, String(r.status));
+  const splitter = (await call(leader, "POST", `/teams/${team.id}/roles`, { name: "Splitter", canSeparateStems: true })).body;
+  r = await call(leader, "PUT", `/teams/${team.id}/members/${singer.id}/roles`, { roleIds: [splitter.id] });
+  check("its admin gives a member its own role that separates", r.status === 204, JSON.stringify(r.body));
   r = await call(singer, "GET", `/song-versions/${song.id}/stem-separations`);
   check("a member may, on the team's server", r.body.available && r.body.server?.kind === "team" && r.body.server.name === team.name, JSON.stringify(r.body));
   r = await call(outsider, "POST", `/song-versions/${song.id}/attachments/${recording.id}/separate`, { parts: "4" });
@@ -88,7 +97,7 @@ try {
   const instanceSecretHook = await teams.forge(teams.received[0].callbackUrl.replace(/\/[^/]+$/, ""), "job-1");
   check("…and its jobs aren't the instance's", instanceSecretHook === 403, String(instanceSecretHook));
 
-  // --- Its limit
+  // --- Its limit, for whose role has none of its own
   await call(leader, "PUT", `/teams/${team.id}/sonic-server`, { monthlyLimit: 1 });
   r = await call(singer, "POST", `/song-versions/${song.id}/attachments/${recording.id}/separate`, { parts: "2" });
   check("the team's limit, counted on its server", r.status === 429, JSON.stringify(r.body));

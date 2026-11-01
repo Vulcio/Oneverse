@@ -1,5 +1,5 @@
 import { InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { ForbiddenException, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
 import { UnrecoverableError, type Job, type Queue } from "bullmq";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -211,8 +211,9 @@ export class StemSeparationProcessor extends WorkerHost {
         // in its organisation's own bucket, the limits its admins set there (issue #206).
         if (location) await this.quota.assertCanStoreInOrganization(location, separation.requestedByUserId, bytes, separation.songVersionId, { wholeFile: false });
         else await this.quota.assertCanStore(separation.requestedByUserId, bytes, separation.songVersionId);
-      } catch {
-        return this.fail(separation.id, "The stems would go over the storage limit");
+      } catch (error) {
+        // Not allowed to keep files in the organisation's own bucket (issue #206): says so; else over a limit.
+        return this.fail(separation.id, error instanceof ForbiddenException ? error.message : "The stems would go over the storage limit");
       }
     }
     // The earlier separation's multitrack, if this one replaces it and it's still there.

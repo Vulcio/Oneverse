@@ -1,7 +1,7 @@
-import { Injectable, PayloadTooLargeException } from "@nestjs/common";
+import { ForbiddenException, Injectable, PayloadTooLargeException } from "@nestjs/common";
 import type { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { capabilitiesOf, teamStorageLimitMb } from "../roles/capabilities.js";
+import { capabilitiesOf, ownCapabilities, ownTeamStorageLimitMb, teamStorageLimitMb } from "../roles/capabilities.js";
 
 /** Used when no role and no Admin > Storage setting gives a limit. */
 export const BUILT_IN_DEFAULT_USER_STORAGE_LIMIT_MB = 50;
@@ -158,7 +158,10 @@ export class StorageQuotaService {
   /**
    * Throws 413 if a file going into an organisation's own bucket (issue #206)
    * is over the limits its admins set there: the largest file, what the
-   * song's team keeps there, what the uploader has put there. Global admins
+   * song's team keeps there, what the uploader has put there. Only its own
+   * roles' holders keep files there (and its admins, who give them): a role's
+   * storage tier, given to the person or to the team, wins, else its
+   * defaults - as the server's roles and Admin > Storage's do. Global admins
    * aren't held to them, as with the server's own. `wholeFile: false` when
    * `incomingBytes` is several files (stems), held to the pools only.
    */
@@ -169,6 +172,13 @@ export class StorageQuotaService {
       this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { ownerTeamId: true } }),
     ]);
     if (!limits || uploader?.isGlobalAdmin) return;
+    const [own, membership] = await Promise.all([
+      ownCapabilities(this.prisma.client, userId, { organizationId }),
+      this.prisma.client.organizationMembership.findUnique({ where: { organizationId_userId: { organizationId, userId } }, select: { role: true } }),
+    ]);
+    if (!own.canStoreFiles && membership?.role !== "ADMIN") {
+      throw new ForbiddenException("Files on this team's songs are kept in its organisation's own storage: that needs one of the organisation's roles, which its admins give");
+    }
     if (wholeFile && limits.maxFileMb != null && incomingBytes > limits.maxFileMb * BYTES_PER_MB) {
       throw new PayloadTooLargeException({
         code: "ORGANIZATION_FILE_TOO_LARGE",
@@ -180,9 +190,10 @@ export class StorageQuotaService {
       const sum = await this.prisma.client.attachment.aggregate({ where: { storedInOrganizationId: organizationId, ...where }, _sum: { sizeBytes: true, originalSizeBytes: true } });
       return (sum._sum.sizeBytes ?? 0) + (sum._sum.originalSizeBytes ?? 0);
     };
-    if (limits.teamLimitMb != null && song?.ownerTeamId) {
+    const teamLimitMb = song?.ownerTeamId ? ((await ownTeamStorageLimitMb(this.prisma.client, organizationId, song.ownerTeamId)) ?? limits.teamLimitMb) : null;
+    if (teamLimitMb != null && song?.ownerTeamId) {
       const usedBytes = await used({ songVersion: { ownerTeamId: song.ownerTeamId } });
-      const limitBytes = limits.teamLimitMb * BYTES_PER_MB;
+      const limitBytes = teamLimitMb * BYTES_PER_MB;
       if (usedBytes + incomingBytes > limitBytes) {
         throw new PayloadTooLargeException({
           code: "TEAM_STORAGE_LIMIT_EXCEEDED",
@@ -192,9 +203,10 @@ export class StorageQuotaService {
         });
       }
     }
-    if (limits.memberLimitMb != null) {
+    const memberLimitMb = own.storageLimitMb ?? limits.memberLimitMb;
+    if (memberLimitMb != null) {
       const usedBytes = await used({ uploadedByUserId: userId });
-      const limitBytes = limits.memberLimitMb * BYTES_PER_MB;
+      const limitBytes = memberLimitMb * BYTES_PER_MB;
       if (usedBytes + incomingBytes > limitBytes) {
         throw new PayloadTooLargeException({
           code: "STORAGE_LIMIT_EXCEEDED",
@@ -217,3 +229,4 @@ export class StorageQuotaService {
 function formatMb(bytes: number): string {
   return `${(bytes / BYTES_PER_MB).toFixed(1)} MB`;
 }
+

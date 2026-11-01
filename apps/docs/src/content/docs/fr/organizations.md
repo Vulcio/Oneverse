@@ -30,7 +30,7 @@ Ses administrateurs peuvent aussi :
 
 **Quitter l'organisation** vous retire d'elle et de ses équipes ; son seul administrateur nomme d'abord quelqu'un d'autre administrateur.
 
-Sous **Rôles**, ses administrateurs donnent à ses membres les rôles que l'administration permet aux équipes de donner, sur toutes ses équipes, comme le **Media operator** (opérateur média), qui gère leurs écrans (voir [Équipes](/fr/teams/#rôles-dans-léquipe)).
+Sous **Rôles**, ses administrateurs donnent à ses membres les rôles que l'administration permet aux équipes de donner, sur toutes ses équipes, comme le **Media operator** (opérateur média), qui gère leurs écrans (voir [Équipes](/fr/teams/#rôles-dans-léquipe)) - et ses rôles propres (voir [Ses rôles propres](/fr/organizations/#ses-rôles-propres)).
 
 Sous **Bible**, ses administrateurs cochent **Montrer la Bible dans la barre latérale** pour les membres de toutes ses équipes (voir [Bible](/fr/bible/)).
 
@@ -79,6 +79,17 @@ Les **Modèles** gardent ce dont un événement a habituellement besoin : dans l
 
 Où ont lieu les événements de l'organisation - une église, une salle, un campus : ses administrateurs les ajoutent sous **Sites** sur sa page, avec **Ajouter un site** (un **Nom**, une **Adresse (facultatif)**, un **Fuseau horaire**), **Modifier** et **Retirer**. Ses événements en choisissent un avec **Site** dans leur fenêtre, ce qui remplit le lieu et le fuseau horaire, et la part de chaque groupe le suit ; un modèle le garde aussi. Les événements propres à ses groupes peuvent aussi les utiliser, à côté de ceux de l'équipe (voir [Sites](/fr/teams/#sites)).
 
+## Ses rôles propres
+
+Ses administrateurs créent des rôles à elle sous **Rôles** sur sa page, avec **Nouveau rôle** - le même éditeur que [Administration > Rôles](/fr/admin/#rôles), avec seulement ce qu'il revient à l'organisation de permettre, et valable seulement chez elle :
+
+- **Garder des fichiers dans son propre stockage**, avec un **Stockage (Mo)** facultatif : ce que chaque titulaire peut garder dans son bucket, sinon la valeur par défaut sous **Stockage propre** ;
+- **Importer des fichiers audio** et **Garder les originaux sans perte**, pour les chants de ses équipes gardés dans son propre stockage ;
+- **Séparer des enregistrements en pistes**, sur son propre serveur Songverse Sonic (voir [Votre propre serveur de séparation](/fr/sonic/)), avec ses propres **Séparations par personne sur 30 jours** ou, vide, celle du serveur ;
+- gérer, avancer, orienter et administrer les écrans de ses équipes.
+
+Cochez qui a chacun sous le rôle. Un rôle qui garde des fichiers peut aussi être donné à des **équipes entières** : leurs membres l'ont, et son palier de stockage est la part de l'équipe. Ses noms sont les siens ; les administrateurs de ce serveur ne les voient pas dans Administration > Rôles, et ils ne valent nulle part ailleurs. Les administrateurs d'une équipe créent aussi des rôles à elle, pour son propre serveur Sonic et ses écrans (voir [Équipes](/fr/teams/#rôles-dans-léquipe)).
+
 ## Son propre stockage
 
 Une organisation peut garder les fichiers des chants de ses équipes - enregistrements, pistes, PDF et autres pièces jointes - dans un bucket à elle plutôt que sur ce serveur : son espace, sa facture. Ses administrateurs voient **Stockage propre** sur sa page quand l'administrateur du serveur a coché **Les organisations peuvent utiliser leur propre stockage** (voir [Administration](/fr/admin/#organisations)) et qu'un de leurs rôles permet le **Stockage propre des organisations** (voir [Administration](/fr/admin/#rôles)) ; sinon la carte dit à qui le demander.
@@ -89,7 +100,8 @@ Une fois connecté :
 
 - les fichiers déjà sur les chants de ses équipes y sont déplacés en arrière-plan, chacun vérifié octet par octet avant de quitter ce serveur ; la carte compte les fichiers qui y sont et ceux en cours de déplacement ;
 - les nouveaux fichiers des chants de ses équipes y vont directement. Les chants personnels, et les images (avatars, images des chants et des équipes), restent sur ce serveur ;
-- ses fichiers ne comptent pas dans l'espace de stockage de ses équipes : ses administrateurs fixent leurs propres limites, sous **Limites**, en Mo - **Par équipe** (ce que les chants de chaque équipe peuvent y garder), **Par personne** (ce que chacun peut y importer) et le **Plus gros fichier** (jusqu'à 500 Mo ; les limites de ce serveur par type de fichier s'appliquent toujours). Un champ laissé vide ne limite pas ; **Enregistrer les limites** les garde. Elles valent pour les nouveaux imports et les pistes, pas pour les fichiers déjà là ou qui y sont déplacés ;
+- seuls ses administrateurs, et ceux à qui elle donne l'un de ses rôles propres qui coche **Garder des fichiers dans son propre stockage** (voir [Ses rôles propres](/fr/organizations/#ses-rôles-propres)), ajoutent des fichiers aux chants de ses équipes. Les autres sont invités à demander à ses administrateurs ;
+- ses fichiers ne comptent pas ici dans l'espace de stockage de ses équipes. Sous **Par défaut**, en Mo, ses administrateurs fixent **Par équipe** (ce que les chants de chaque équipe peuvent y garder), **Par personne** (ce que chaque titulaire d'un rôle peut y importer) et le **Plus gros fichier** (jusqu'à 500 Mo ; les limites de ce serveur par type de fichier s'appliquent toujours). Le palier de stockage d'un rôle l'emporte, comme sur ce serveur. Un champ laissé vide ne limite pas ; **Enregistrer les valeurs par défaut** les garde. Elles valent pour les nouveaux imports et les pistes, pas pour les fichiers déjà là ou qui y sont déplacés ;
 - une équipe qui quitte l'organisation, ou un chant qui passe à quelqu'un d'autre, ramène ses fichiers sur ce serveur.
 
 Si le bucket ne répond plus, la carte le dit : les nouveaux fichiers sont gardés sur ce serveur en attendant, puis déplacés quand il répond à nouveau (il est réessayé toutes les dix minutes). Son bucket ne peut pas changer tant que des fichiers y sont.

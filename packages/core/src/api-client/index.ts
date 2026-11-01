@@ -51,7 +51,7 @@ import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js"
 import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
-import type { AssignRolesRequest, CreateInstrumentRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateRoleRequest } from "../requests/roles.js";
+import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateOwnRoleRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, AttachmentVisibilityValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
 import type { CreateSongLinkRequest, UpdateSongLinkRequest } from "../requests/song-links.js";
 import type { SongLinkService } from "../streaming-links/reference.js";
@@ -193,6 +193,10 @@ export interface OwnStorageSummary {
   maxFileMb: number | null;
   usedBytes: number;
 }
+
+/** A team's or an organisation's address in the API. */
+const ownerPath = (owner: { teamId: string } | { organizationId: string }) =>
+  "teamId" in owner ? `/teams/${encodeURIComponent(owner.teamId)}` : `/organizations/${encodeURIComponent(owner.organizationId)}`;
 
 export type ArchiveOwnerRef = { scope: "user" } | { scope: "team" | "organization"; id: string };
 
@@ -1002,8 +1006,31 @@ export interface ScreenCurrent {
  * only (issue #270): those Admin made team-assignable, and who has which.
  */
 export interface ScopedRolesView {
+  /** The server's roles teams may give. */
   roles: { id: string; name: string; description: string; canOperateScreens: boolean; canCue: boolean; canRoute: boolean; canManageScreens: boolean }[];
+  /** The team's or organisation's own (issue #206). */
+  own: OwnRole[];
   members: { userId: string; roleIds: string[] }[];
+  /** An organisation's teams, and which of its own roles each has (a team's: none). */
+  teams: { teamId: string; name: string; roleIds: string[] }[];
+}
+
+/** A team's or an organisation's own role (issue #206): what it allows, there only. */
+export interface OwnRole {
+  id: string;
+  name: string;
+  description: string;
+  canSeparateStems: boolean;
+  canKeepLosslessAudio: boolean;
+  canUploadAudio: boolean;
+  canOperateScreens: boolean;
+  canCue: boolean;
+  canRoute: boolean;
+  canManageScreens: boolean;
+  /** An organisation's: keeps files in its own bucket. */
+  canStoreFiles: boolean;
+  stemSeparationMonthlyLimit: number | null;
+  storageLimitMb: number | null;
 }
 
 /** Admin > Roles (issue #160): what a role allows, and how many have it. */
@@ -3323,7 +3350,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminGetStorageLimits: () => request<StorageLimits>("/admin/storage/limits"),
     /** The largest song file of each type, in MB (issue #163). */
     /** What the viewer may upload (issues #163, #183): each type's largest file, and whether audio files at all (recording in Songverse needs no role). */
-    getUploadLimits: () => request<{ limitsMb: Record<AttachmentTypeValue, number>; canUploadAudio: boolean }>("/uploads/limits"),
+    /** For a song (`songVersionId`): its organisation's own roles may allow audio uploads too (issue #206). */
+    getUploadLimits: (songVersionId?: string) =>
+      request<{ limitsMb: Record<AttachmentTypeValue, number>; canUploadAudio: boolean }>(`/uploads/limits${songVersionId ? `?songVersionId=${encodeURIComponent(songVersionId)}` : ""}`),
     adminGetFileSizeLimits: () => request<FileSizeLimits>("/admin/storage/file-size-limits"),
     adminSaveFileSizeLimits: (data: SaveFileSizeLimitsRequest) =>
       request<void>("/admin/storage/file-size-limits", { method: "PUT", body: JSON.stringify(data) }),
@@ -3433,6 +3462,13 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getOrganizationScopedRoles: (organizationId: string) => request<ScopedRolesView>(`/organizations/${organizationId}/roles`),
     setOrganizationMemberRoles: (organizationId: string, userId: string, data: AssignRolesRequest) =>
       request<void>(`/organizations/${organizationId}/members/${userId}/roles`, { method: "PUT", body: JSON.stringify(data) }),
+    /** A team's or an organisation's own roles (issue #206). */
+    createOwnRole: (owner: { teamId: string } | { organizationId: string }, data: CreateOwnRoleRequest) => request<OwnRole>(`${ownerPath(owner)}/roles`, { method: "POST", body: JSON.stringify(data) }),
+    updateOwnRole: (owner: { teamId: string } | { organizationId: string }, roleId: string, data: UpdateOwnRoleRequest) =>
+      request<OwnRole>(`${ownerPath(owner)}/roles/${encodeURIComponent(roleId)}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteOwnRole: (owner: { teamId: string } | { organizationId: string }, roleId: string) => request<void>(`${ownerPath(owner)}/roles/${encodeURIComponent(roleId)}`, { method: "DELETE" }),
+    setOrganizationTeamRoles: (organizationId: string, teamId: string, data: AssignRolesRequest) =>
+      request<void>(`/organizations/${encodeURIComponent(organizationId)}/teams/${encodeURIComponent(teamId)}/roles`, { method: "PUT", body: JSON.stringify(data) }),
     adminGetCollaborationSettings: () => request<CollaborationSettingsSummary>("/admin/collaboration"),
     adminSaveCollaborationSettings: (data: SaveCollaborationSettingsRequest) => request<void>("/admin/collaboration", { method: "PUT", body: JSON.stringify(data) }),
     adminClearCollaborationSettings: () => request<void>("/admin/collaboration", { method: "DELETE" }),

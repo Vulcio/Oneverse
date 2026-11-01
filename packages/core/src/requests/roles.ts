@@ -63,6 +63,36 @@ export const UpdateRoleSchema = z.strictObject({
 export type UpdateRoleRequest = z.input<typeof UpdateRoleSchema>;
 export type UpdateRoleInput = z.output<typeof UpdateRoleSchema>;
 
+/**
+ * POST /teams/:id/roles and /organizations/:id/roles (their admins, issues
+ * #206 and #300): a role of their own, given only there. What the server's
+ * roles allow that's theirs to run: separating stems on their own Sonic
+ * server, the screens of their sets, and - an organisation's - room in its
+ * own bucket and uploading audio there. Reviewing and the server's own
+ * rights stay Admin > Roles'.
+ */
+export const CreateOwnRoleSchema = z.strictObject({
+  name: roleFields.name,
+  description: optional(roleFields.description),
+  canSeparateStems: optional(roleFields.canSeparateStems),
+  canKeepLosslessAudio: optional(roleFields.canKeepLosslessAudio),
+  canUploadAudio: optional(roleFields.canUploadAudio),
+  canOperateScreens: optional(roleFields.canOperateScreens),
+  canCue: optional(roleFields.canCue),
+  canRoute: optional(roleFields.canRoute),
+  canManageScreens: optional(roleFields.canManageScreens),
+  canStoreFiles: optional(z.boolean().describe("An organisation's: keeps files in its own bucket (issue #206), within its storage tier, else the organisation's default")),
+  stemSeparationMonthlyLimit: roleFields.stemSeparationMonthlyLimit.optional(),
+  storageLimitMb: roleFields.storageLimitMb.optional(),
+});
+export type CreateOwnRoleRequest = z.input<typeof CreateOwnRoleSchema>;
+export type CreateOwnRoleInput = z.output<typeof CreateOwnRoleSchema>;
+
+/** PATCH /teams/:id/roles/:roleId and /organizations/:id/roles/:roleId: a field left out keeps its value. */
+export const UpdateOwnRoleSchema = CreateOwnRoleSchema.partial();
+export type UpdateOwnRoleRequest = z.input<typeof UpdateOwnRoleSchema>;
+export type UpdateOwnRoleInput = z.output<typeof UpdateOwnRoleSchema>;
+
 /** PUT /admin/users/:id/roles and /admin/teams/:id/roles: the roles they have from now on. */
 export const AssignRolesSchema = z.strictObject({
   roleIds: z.array(z.string().min(1).max(40)).max(100),
