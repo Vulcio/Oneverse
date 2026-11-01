@@ -1,6 +1,7 @@
 import type { SyncTimer } from "../screens/timers.js";
 import { SCREEN_SWITCHABLE_LAYERS, type ScreenSwitchableLayer } from "../screens/theme.js";
 import type { MetronomeSettings } from "../metronome/index.js";
+import type { PlaybackSource } from "../playback/index.js";
 import type { LiveCommandOp, LiveSessionState } from "../live/index.js";
 import type { LiveHandback } from "../live/engine.js";
 
@@ -52,6 +53,8 @@ export interface SyncStems {
   songVersionId: string;
   /** Which of the song's multitracks (issue #123); null or left out, its original stems. */
   multitrackId?: string | null;
+  /** What the leader plays of it (issue #366): STEMS leaves the takes recorded into the multitrack out. Left out: all its files. */
+  source?: "MASTER" | "STEMS" | "TAKES";
   /** Transposed by this many semitones (issue #129); 0 or left out, as recorded. */
   transpose?: number;
   /** By file, which parts are transposed when not as their part says (issue #135). */
@@ -127,6 +130,12 @@ export interface SyncSession {
    * a minute for their console to take them back, then are the leader's again.
    */
   screens?: { id: string; name: string; exclusive: boolean; online?: boolean } | null;
+  /**
+   * What plays with the set's songs, as the leader chose it for everyone
+   * (issue #366), by item: each device plays that rather than its own
+   * choice. Left out or missing an item: each person's own.
+   */
+  playback?: Record<string, PlaybackSource>;
 }
 
 /**
@@ -402,7 +411,7 @@ export type SyncClientMessage =
    * was decided from; refused ("stale") when the screens have moved on since.
    */
   | { type: "present"; presenting: SyncPresenting | null; basedOn?: number }
-  | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null; presentingBasedOn?: number }
+  | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null; presentingBasedOn?: number; playback?: Record<string, PlaybackSource | null> }
   /** The leader hands presenting to someone in the set, live, or takes it back (issue #305). */
   | { type: "presenter"; userId: string; allow: boolean }
   | { type: "end" }

@@ -1,5 +1,6 @@
 import {
   clockOffset,
+  filesForSource,
   LiveCommands,
   PulseDoor,
   resumeScreens,
@@ -16,6 +17,8 @@ import {
   type SyncSession,
   type SyncStage,
   type SyncStageCommand,
+  type SyncStems,
+  type PlaybackSource,
 } from "@oneverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { apiToken, forgetApiToken } from "#/lib/api-client";
@@ -328,16 +331,17 @@ function applySession() {
 /** A song's stems as this device sees them (its own files of it), online or kept on the device; null when it has none. */
 const stemSongs = new Map<string, Promise<StemSong | null>>();
 /** The leader's multitrack of the song (issue #123), when this device sees it; its original stems (or recording) for null. */
-function stemSongFor(songVersionId: string, multitrackId: string | null, title: string): Promise<StemSong | null> {
-  const key = `${songVersionId}|${multitrackId ?? ""}`;
+function stemSongFor(songVersionId: string, multitrackId: string | null, title: string, source?: SyncStems["source"]): Promise<StemSong | null> {
+  const key = `${songVersionId}|${multitrackId ?? ""}|${source ?? ""}`;
   let song = stemSongs.get(key);
   if (!song) {
     const returnTo = `${window.location.pathname}${window.location.search}`;
     song = songFiles(songVersionId)
       .then(({ attachments, offline }) => {
-        const stems = playableOf(attachments, multitrackId, true);
+        // Without the takes when the leader plays the stems alone (issue #366).
+        const stems = filesForSource(playableOf(attachments, multitrackId, true), source ?? "TAKES");
         if (stems.length === 0) return null;
-        return { songVersionId, title, returnTo, stems, multitrackId, load: fileLoader(songVersionId, offline) } satisfies StemSong;
+        return { songVersionId, title, returnTo, stems, multitrackId, source, load: fileLoader(songVersionId, offline) } satisfies StemSong;
       })
       .catch(() => null);
     stemSongs.set(key, song);
@@ -350,10 +354,10 @@ function applyStems(leader: string) {
   const stems = state.session?.stems;
   if (!stems || state.offset === null) return void followStems(null, null, leader);
   const timeline = { playing: stems.playing, position: stems.position, epoch: stems.anchorAt - state.offset };
-  void stemSongFor(stems.songVersionId, stems.multitrackId ?? null, stems.title).then((song) => {
+  void stemSongFor(stems.songVersionId, stems.multitrackId ?? null, stems.title, stems.source).then((song) => {
     // Still the leader's, once the files are listed.
     const now = state.session?.stems;
-    if (now?.songVersionId !== stems.songVersionId || (now.multitrackId ?? null) !== (stems.multitrackId ?? null) || state.leading) return;
+    if (now?.songVersionId !== stems.songVersionId || (now.multitrackId ?? null) !== (stems.multitrackId ?? null) || now.source !== stems.source || state.leading) return;
     // Transposed as the leader's (issue #129).
     const transpose = stems.transpose ?? 0;
     const transposeParts = stems.transposeParts ?? {};
@@ -375,6 +379,7 @@ function publishStems(stems: StemState) {
       ? {
           songVersionId: stems.songVersionId,
           multitrackId: stems.multitrackId,
+          ...(stems.source ? { source: stems.source } : {}),
           transpose: stems.transpose,
           transposeParts: stems.transposeParts,
           ...(stems.speed !== 1 ? { speed: stems.speed } : {}),
@@ -562,6 +567,12 @@ export function sendStage(command: SyncStageCommand) {
 /** Leading: the set's song the leader has open, for the others to follow. */
 export function publishSyncItem(itemId: string) {
   if (state.leading && state.session?.itemId !== itemId) send({ type: "update", itemId });
+}
+
+/** Leading: what plays with a song of the set, for everyone (issue #366); null leaves it to each person again. */
+export function publishPlayback(itemId: string, source: PlaybackSource | null) {
+  if (!state.leading || (state.session?.playback?.[itemId] ?? null) === source) return;
+  send({ type: "update", playback: { [itemId]: source } });
 }
 
 /** Sync's state now, outside React. */

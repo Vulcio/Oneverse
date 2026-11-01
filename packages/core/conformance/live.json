@@ -481,6 +481,268 @@
           }
         },
         {
+          "name": "the leader chooses what plays with two songs for everyone",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "playback": {
+                "item_1": "STEMS",
+                "item_2": "METRONOME"
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null,
+              "playback": {
+                "item_1": "STEMS",
+                "item_2": "METRONOME"
+              }
+            }
+          }
+        },
+        {
+          "name": "the leader leaves a song's playback to each person again",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null,
+              "playback": {
+                "item_1": "STEMS",
+                "item_2": "METRONOME"
+              }
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "playback": {
+                "item_1": null
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null,
+              "playback": {
+                "item_2": "METRONOME"
+              }
+            }
+          }
+        },
+        {
+          "name": "someone else can't choose what plays for everyone",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "playback": {
+                "item_1": "NONE"
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Only the leader changes the session"
+          }
+        },
+        {
+          "name": "a source that isn't one is refused",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "playback": {
+                "item_1": "LOUD"
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "bad-request",
+            "message": "Invalid command"
+          }
+        },
+        {
           "name": "Next pressed twice from the same slide: the second is stale",
           "args": [
             {

@@ -142,6 +142,23 @@ An audio file above 320 kbps - its size for its length: a WAV, FLAC or AIFF - is
 
 With a role that keeps lossless originals (see [Roles](/admin/#roles)), the original is kept too, as FLAC - a WAV at its own sample rate and bit depth, a FLAC file as it was - beside the Opus copy that's played. **FLAC**, beside the file's download button, downloads it; stems are separated from it rather than from the copy. Both count toward your storage.
 
+## What plays
+
+In **Practice**, **What plays** at the top of a song's page, and of its page in a set, chooses what plays with the song:
+
+- **Master** - its recording, one file: the quickest to load.
+- **YouTube** - its video (the version's reference recording when it's a YouTube video, else the song's own).
+- **Stems** - its stems, without the parts people recorded into them.
+- **Stems + takes** - its stems with those recordings (see [Recording a part](/library/#recording-a-part)).
+- **Metronome only** - the metronome at the song's tempo and time signature, with your pattern and sound.
+- **Nothing**.
+
+Only what the song has is listed. Until you choose, the master plays when there is one, else the stems (with the takes), else the video, else the metronome when the song has a tempo. Songverse keeps your choice on your account, for the song and for each set's song page, so it follows you to your other devices. What you choose is all that's downloaded: stems you didn't choose wait for **Play**. Choosing something else while the song plays carries on from where it was. On a set's song page, the next song of the set is fetched ahead while you're there, so its **Play** is quick.
+
+The stems start as soon as the first part has arrived: the others join in, in time, as they come (**Playing what's in; the other parts join as they arrive…**). Recording a part waits until they're all in.
+
+Playing in sync, the leader's choice is everyone's: the others' **What plays** shows it, and the leader's name (see [Playing in sync](/sets/#playing-in-sync)).
+
 ## Stems
 
 Stems are the song's parts as separate recordings: vocals, drums, bass and so on. Upload them on the **Audio** tab. A file named after its part ("Vocals.mp3", "03 drums.opus", "Basse.mp3", "Alto.wav") becomes that stem on its own. For any other file, choose its part under it, in two steps:
@@ -154,7 +171,7 @@ Stems are the song's parts as separate recordings: vocals, drums, bass and so on
 
 If the stems (or any recording) aren't in the song's key or at its tempo, a live version a tone up for example, set the recording's own in the stems' box above the files (or under the file): **Key** and **BPM**, and **Time** for its time signature. Left as **Song's key**, empty and **Song's**, they're the song's. **First beat at (s)** is where its first beat falls, in seconds from its start (empty: at 0:00): with the tempo, it places the metronome on the recording. Tick **Free intro** when what comes before that first beat is played freely, off the beat: the metronome then waits for it.
 
-In **Practice** mode (see [Edit, Practice and Live](/getting-started/#edit-practice-and-live)), a song with a recording or stems has the stem player docked at the bottom of its page, and of its page in a set. It opens minimized, one row: **Play**, and what it plays - the recording's name, or the multitrack's and its number of parts. When the song has a recording, that's what loads first: one file, quick to load. If it has stems too, **Multitrack** switches to them, and only then are they downloaded. A song with only stems loads them. The parts' own controls - muting, solo, the mixer - are in the expanded player.
+In **Practice** mode (see [Edit, Practice and Live](/getting-started/#edit-practice-and-live)), a song with a recording or stems has the stem player docked at the bottom of its page, and of its page in a set. It opens minimized, one row: **Play**, and what it plays - the recording's name, or the multitrack's and its number of parts. What it plays is chosen with [What plays](/library/#what-plays). The parts' own controls - muting, solo, the mixer - are in the expanded player.
 
 Beside **Play**, **Stop, back to the start** (the square) stops the stems and takes them back to the beginning. Where the screen is wide enough, the minimized player also shows the waveform of what's heard, the parts combined, beside what it plays: click it to go there.
 
@@ -196,7 +213,7 @@ The song keeps playing while you go to another page or leave Practice, and on a 
 
 ![The button back to the song playing](../../assets/screenshots/en/stems-return.jpg)
 
-A song without stems plays its latest recording in the same player, as one part. A song with no audio at all but a YouTube link (on the **Links** tab) plays its YouTube video there instead, and the parts can't be separated. The player opens minimized, one row: **Play** expands it and plays, since YouTube only plays a video that's shown - beside the controls, or above them as wide as a phone's screen. **Minimize the player** (the arrow) pauses the video for the same reason. **Speed** works as for the stems, but a YouTube video can't be transposed: YouTube's player doesn't let its sound be changed. To play the song in another key, add its recording to the **Audio** tab. The line along the top edge is its playhead too: click or drag it to go elsewhere in the video. It keeps playing in a small window at the bottom right while you go to other pages; the song's name there takes you back. YouTube stops when the phone locks and doesn't play offline, so for those, add the recording to the **Audio** tab.
+The master, the song's latest recording, plays in the same player, as one part. **YouTube** in [What plays](/library/#what-plays) - the default for a song with no audio but a YouTube link (on the **Links** tab) - plays its video there instead, and the parts can't be separated. The player opens minimized, one row: **Play** expands it and plays, since YouTube only plays a video that's shown - beside the controls, or above them as wide as a phone's screen. **Minimize the player** (the arrow) pauses the video for the same reason. **Speed** works as for the stems, but a YouTube video can't be transposed: YouTube's player doesn't let its sound be changed. To play the song in another key, add its recording to the **Audio** tab. The line along the top edge is its playhead too: click or drag it to go elsewhere in the video. It keeps playing in a small window at the bottom right while you go to other pages; the song's name there takes you back. YouTube stops when the phone locks and doesn't play offline, so for those, add the recording to the **Audio** tab.
 
 Stems kept on your device for offline use (**Include audio**, see [Working offline](/offline/)) play offline too.
 
@@ -204,7 +221,7 @@ Stems kept on your device for offline use (**Include audio**, see [Working offli
 
 A song can have more than one set of stems: its **Original stems**, and multitracks - parts recorded together, another version or your own layers (see [Recording a part](/library/#recording-a-part)). Each has its box on the **Audio** tab, with its **Name**, its number of parts (and of other takes), the set it was recorded for if any (**Not for a set** takes it off), and what its parts were recorded in: its key, tempo, time signature and first beat, which they share. Its files are listed in its box: its stems first - uploaded or separated - then **Recordings**, the parts people recorded into it in Songverse, each saying who and when, so they're never mixed up with the stems. They still play with that multitrack's stems. Under a stem, the **Multitrack** list moves it into another one, or into a **New multitrack** of its own: upload the files of another version, then put them together that way.
 
-In **Practice**, the stem player plays one multitrack at a time: when a song has more than one, the list beside the time switches between them (**Recording**, when the song has one, **Original stems**, then the others by name, or **Multitrack 2**...). Songverse remembers your choice for each song on the device, and for each set's song page. Playing in sync, everyone plays the leader's multitrack, with their own files of it.
+In **Practice**, the stem player plays one multitrack at a time: when a song has more than one, the list beside the time switches between them (**Original stems**, then the others by name, or **Multitrack 2**...; the song's recording is the **Master** in [What plays](/library/#what-plays)). Songverse remembers your choice for each song on the device, and for each set's song page. Playing in sync, everyone plays the leader's multitrack, with their own files of it.
 
 <div data-audience="stems admin">
 

@@ -174,6 +174,13 @@ export function StemDock({ song: page }: { song: StemSong }) {
   const multitrackName = useMultitrackName();
   const offersRecording = !!song.recording && multitracks.length > 0;
   const switchTo = (multitrackId: string | null) => {
+    // Chosen with what plays (issue #366): the recording is the master, a multitrack the stems - from where it was.
+    if (song.switchSource) {
+      if (multitrackId === RECORDING_CHOICE) return song.switchSource("MASTER");
+      chooseMultitrack(song.choiceKey ?? song.songVersionId, multitrackId);
+      if (song.source === "MASTER") song.switchSource("STEMS");
+      return;
+    }
     if (playing) pauseStems();
     chooseMultitrack(song.choiceKey ?? song.songVersionId, multitrackId);
   };
@@ -397,9 +404,9 @@ export function StemDock({ song: page }: { song: StemSong }) {
     return () => undockStems(song.songVersionId);
   }, [song.songVersionId]);
 
-  // Downloaded as the page opens in Practice, so Play is usually instant.
+  // Downloaded as the page opens in Practice, so Play is usually instant - when the person chose it, or it's one quick file (issue #366).
   useEffect(() => {
-    prefetchStems(song);
+    if (song.prefetch !== false) prefetchStems(song);
     // Once per set of stems (`key`); `song` is a new object on every render.
   }, [key]);
 
@@ -567,6 +574,11 @@ export function StemDock({ song: page }: { song: StemSong }) {
       <p className="text-xs text-muted-foreground" role="status">
         {t("stems.loading", { percent: Math.round(engine.downloaded * 100) })}
       </p>
+    ) : active && engine.status === "ready" && !engine.complete ? (
+      // Playing before every part's in (issue #366): the rest join as they arrive.
+      <p className="text-xs text-muted-foreground" role="status" data-testid="stem-joining">
+        {t("stems.joining", { percent: Math.round(engine.downloaded * 100) })}
+      </p>
     ) : active && engine.transposeFailed ? (
       <p className="text-xs text-destructive" role="alert">
         {chosenSpeed !== 1 ? t("stems.speedFailed") : t("stems.transposeFailed")}
@@ -585,6 +597,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
       aria-label={t("stems.title")}
       data-testid="stem-player"
       data-state={playing ? "playing" : active ? engine.status : "idle"}
+      data-complete={active && engine.complete ? "true" : "false"}
       data-view={expanded ? "expanded" : "compact"}
     >
       {/* How far through, along the top edge. */}
@@ -657,7 +670,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
               // Placing them: a handle on each, as in a video editor (issue #110).
               editing={cueEditor && canPlaceCues && active && engine.status === "ready" ? { beat: engine.beat, onMove: (index, at) => setDraftCues(cues.map((cue, i) => (i === index ? { ...cue, at } : cue))) } : null}
             /> : null}
-          {recordPanel && recordable && active && engine.status === "ready" ? <StemRecordPanel
+          {recordPanel && recordable && active && engine.status === "ready" && engine.complete ? <StemRecordPanel
               song={song}
               into={recordInto}
               onClose={closeRecordPanel}

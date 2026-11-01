@@ -1,16 +1,15 @@
 import { ApiError, cueSectionsOf, keptSetSong, onlineOrKept, transposeKey, type Attachment, type SetlistSongView, type SongLink } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MetronomeSongButton } from "#/components/metronome";
 import { PlayerChart } from "#/components/player-chart";
 import { SyncControl } from "#/components/sync-control";
-import { StemDock } from "#/components/stem-dock";
-import { YouTubeDock } from "#/components/youtube-dock";
+import { useSongPlayback } from "#/components/song-playback";
+import { setPlaybackStore, usePrefetchSetItem } from "#/lib/playback";
 import { fileLoader, songFiles } from "#/lib/song-files";
 import { ChartOrPdf, setSongViewStore } from "#/components/chart-or-pdf";
-import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
@@ -85,6 +84,39 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
     .join(" · ");
 
   const reference = useVersionReference(song?.id ?? null, view.arrangement?.linkId ?? null);
+  const { mode } = useMode();
+  const files = useSetSongFiles(song?.id ?? null, mode === "practice");
+  const returnTo = `/sets/${set.id}/songs/${item.id}`;
+  const timeSignature = arrangement?.timeSignature ?? song?.document.defaults.timeSignature ?? null;
+  const setName = setlistTitle(set, t, i18n.language);
+  // What plays with it (issue #366): the person's choice for the song in this set, or the Sync play leader's for everyone.
+  const playbackStore = useMemo(() => setPlaybackStore(set.id, item.id, view.view.preferences?.playback), [set.id, item.id]);
+  const playback = useSongPlayback({
+    songVersionId: song?.id ?? "",
+    title: song?.title ?? "",
+    returnTo,
+    attachments: files.attachments,
+    load: fileLoader(song?.id ?? "", files.offline),
+    // The version's reference video (issue #346), from its start; else the song's own.
+    youtube: youtubeOf(reference, files.songVideo),
+    tempo,
+    timeSignature,
+    store: playbackStore,
+    set: { id: set.id, itemId: item.id, name: setName },
+    versionMultitrackId: view.arrangement?.multitrackId ?? null,
+    // Chosen for the song in this set: the set's own multitrack by default (issue #127).
+    choiceKey: song ? `${song.id}@${set.id}` : undefined,
+    stems: {
+      songKey: song?.key,
+      // The key the set plays it in: its arrangement's, with the set's own transposition on top.
+      targetKey: song?.key ? transposeKey(song.key, (arrangement?.transposeSteps ?? 0) + item.transposeSteps) : null,
+      cueSections: files.cueSections,
+      record: files.offline ? undefined : { attachments: files.attachments, setlist: { id: set.id, name: setName }, onSaved: files.reload },
+    },
+    docked: !!song && mode === "practice",
+  });
+  // The next song's, fetched ahead while this one's open (issue #366).
+  usePrefetchSetItem(set.id, view.nextItemId ?? null, mode === "practice");
 
   return (
     <div className="flex flex-col gap-6">
@@ -115,7 +147,8 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SyncControl setId={set.id} className="h-8" />
-          {song ? (
+          {song && mode === "practice" ? playback.control : null}
+          {song && !(mode === "practice" && playback.source === "METRONOME") ? (
             <MetronomeSongButton
               songId={item.id}
               tempo={tempo}
@@ -132,21 +165,8 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
         </div>
       </div>
 
-      {song ? (
-        <SetSongStems
-          songVersionId={song.id}
-          title={song.title}
-          returnTo={`/sets/${set.id}/songs/${item.id}`}
-          tempo={tempo}
-          timeSignature={arrangement?.timeSignature ?? song.document.defaults.timeSignature}
-          setlist={{ id: set.id, name: setlistTitle(set, t, i18n.language) }}
-          // What its version plays along to (issue #346).
-          version={view.arrangement ? { link: reference, multitrackId: view.arrangement.multitrackId ?? null } : null}
-          songKey={song.key}
-          // The key the set plays it in: its arrangement's, with the set's own transposition on top.
-          targetKey={song.key ? transposeKey(song.key, (arrangement?.transposeSteps ?? 0) + item.transposeSteps) : null}
-        />
-      ) : null}
+      {/* What plays with it, docked at the bottom (issues #64, #66, #366). */}
+      {playback.dock}
 
       {song ? (
         // The chart, its chord grid (issue #238) or the song's PDF (issue #152).
@@ -215,39 +235,8 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
   );
 }
 
-/**
- * Practice: the song's stems (issue #64), for someone who can open the song
- * itself - from the API, or from the device's copy when offline.
- */
-function SetSongStems({
-  songVersionId,
-  title,
-  returnTo,
-  tempo,
-  timeSignature,
-  setlist,
-  songKey,
-  targetKey,
-  version,
-}: {
-  songVersionId: string;
-  title: string;
-  returnTo: string;
-  /** The set: a multitrack recorded for it is what plays here by default (issue #127), and one recorded here can be its. */
-  setlist: { id: string; name: string };
-  /** The song's key, and the one the set plays it in: the stems are transposed to it by default (issue #129). */
-  songKey: string | null | undefined;
-  targetKey: string | null;
-  /** The version's, for the metronome with the recording (issue #100). */
-  tempo: number | null | undefined;
-  timeSignature: { numerator: number; denominator: number } | null | undefined;
-  /** What the version the set plays it in plays along to (issue #346): its reference recording and multitrack. */
-  version: { link: SongLink | null; multitrackId: string | null } | null;
-}) {
-  const { mode } = useMode();
-  // Chosen for the song in this set: the set's own multitrack by default.
-  const choiceKey = `${songVersionId}@${setlist.id}`;
-  const chosen = useChosenMultitrack(choiceKey);
+/** A set's song's files, for what plays with it (issue #366): from the API, or the device's copy offline; listed in Practice only. */
+function useSetSongFiles(songVersionId: string | null, listed: boolean) {
   // Bumped when a part's recorded here, to list the files again.
   const [reload, setReload] = useState(0);
   const [files, setFiles] = useState<{ attachments: Attachment[]; offline: boolean; songVideo: string | null; cueSections?: ReturnType<typeof cueSectionsOf> }>({
@@ -255,10 +244,8 @@ function SetSongStems({
     offline: false,
     songVideo: null,
   });
-  const link = version?.link ?? null;
-
   useEffect(() => {
-    if (mode !== "practice") return;
+    if (!listed || !songVersionId) return;
     let cancelled = false;
     Promise.all([songFiles(songVersionId), apiClient.getSongVersion(songVersionId).catch(() => null)])
       .then(([files, version]) => ({
@@ -274,34 +261,8 @@ function SetSongStems({
     return () => {
       cancelled = true;
     };
-  }, [mode, songVersionId, reload]);
-  // The version's reference video (issue #346), from its start; else the song's own.
-  const youtube = youtubeOf(link, files.songVideo);
-
-  const playable = stemFilesOf(files.attachments, chosen, setlist.id, version?.multitrackId);
-  if (mode !== "practice") return null;
-  // No audio of its own: its YouTube video, if it has one (issue #66).
-  if (playable.stems.length === 0) {
-    return youtube ? <YouTubeDock video={{ songVersionId, videoId: youtube.id, start: youtube.start, title, returnTo }} /> : null;
-  }
-  return (
-    <StemDock
-      song={{
-        songVersionId,
-        title,
-        returnTo,
-        ...playable,
-        load: fileLoader(songVersionId, files.offline),
-        choiceKey,
-        songKey,
-        targetKey,
-        record: files.offline ? undefined : { attachments: files.attachments, setlist, onSaved: () => setReload((n) => n + 1) },
-        tempo,
-        timeSignature,
-        cueSections: files.cueSections,
-      }}
-    />
-  );
+  }, [listed, songVersionId, reload]);
+  return { ...files, reload: () => setReload((n) => n + 1) };
 }
 
 /** The video a set's song plays: its version's reference recording when it's a YouTube video (issue #346), else the song's own. */

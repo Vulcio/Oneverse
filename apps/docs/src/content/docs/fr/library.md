@@ -142,6 +142,23 @@ Un fichier audio au-delà de 320 kb/s - sa taille pour sa durée : un WAV, FLAC 
 
 Avec un rôle qui garde les originaux sans perte (voir [Rôles](/fr/admin/#rôles)), l'original est gardé aussi, en FLAC - un WAV à sa fréquence d'échantillonnage et sa résolution, un FLAC tel quel - à côté de la copie Opus qui est jouée. **FLAC**, à côté du bouton de téléchargement du fichier, le télécharge ; les pistes en sont séparées plutôt que de la copie. Les deux comptent dans votre stockage.
 
+## Ce qui joue
+
+En mode **Session**, **Ce qui joue** en haut de la page d'un chant, et de sa page dans une liste, choisit ce qui joue avec le chant :
+
+- **Master** - son enregistrement, un seul fichier : le plus rapide à charger.
+- **YouTube** - sa vidéo (l'enregistrement de référence de la version quand c'est une vidéo YouTube, sinon celle du chant).
+- **Pistes** - ses pistes, sans les parties que d'autres y ont enregistrées.
+- **Pistes + prises** - ses pistes avec ces enregistrements (voir [Enregistrer une piste](/fr/library/#enregistrer-une-piste)).
+- **Métronome seul** - le métronome au tempo et à la mesure du chant, avec votre motif et votre son.
+- **Rien**.
+
+Seul ce que le chant a est proposé. Tant que vous n'avez rien choisi, le master joue quand il y en a un, sinon les pistes (avec les prises), sinon la vidéo, sinon le métronome quand le chant a un tempo. Songverse garde votre choix sur votre compte, pour le chant et pour chaque page de chant d'une liste : il vous suit sur vos autres appareils. Seul ce que vous choisissez est téléchargé : les pistes que vous n'avez pas choisies attendent **Lecture**. Choisir autre chose pendant la lecture reprend là où on en était. Sur la page d'un chant d'une liste, le chant suivant est récupéré à l'avance pendant que vous y êtes, pour que sa **Lecture** soit rapide.
+
+Les pistes démarrent dès que la première est arrivée : les autres les rejoignent, en rythme, à mesure qu'elles arrivent (**Lecture de ce qui est arrivé ; les autres pistes suivent dès leur arrivée…**). Enregistrer une piste attend qu'elles soient toutes là.
+
+En jeu synchronisé, le choix du meneur est celui de tous : le **Ce qui joue** des autres l'affiche, avec le nom du meneur (voir [Jouer en synchro](/fr/sets/#jouer-synchronisé)).
+
 ## Pistes
 
 Les pistes (ou stems) sont les parties du chant enregistrées séparément : voix, batterie, basse, etc. Importez-les dans l'onglet **Audio**. Un fichier nommé d'après sa partie (« Voix.mp3 », « 03 drums.opus », « Basse.mp3 », « Alto.wav ») devient cette piste tout seul. Pour les autres fichiers, choisissez sa partie sous le fichier, en deux temps :
@@ -154,7 +171,7 @@ Les pistes (ou stems) sont les parties du chant enregistrées séparément : voi
 
 Si les pistes (ou un enregistrement) ne sont pas dans la tonalité du chant ou à son tempo, une version live un ton plus haut par exemple, indiquez les leurs dans le cadre des pistes au-dessus des fichiers (ou sous le fichier) : **Tonalité** et **BPM**, et **Mesure** pour sa mesure. Laissés sur **Tonalité du chant**, vides et sur **Celle du chant**, ce sont ceux du chant. **Premier temps à (s)** indique où tombe son premier temps, en secondes depuis son début (vide : à 0:00) : avec le tempo, il place le métronome sur l'enregistrement. Cochez **Intro libre** quand ce qui précède ce premier temps est joué librement, hors du temps : le métronome l'attend alors.
 
-En mode **Session** (voir [Édition, Session et Live](/fr/getting-started/#édition-session-et-live)), un chant qui a un enregistrement ou des pistes affiche le lecteur de pistes en bas de sa page, et de sa page dans une liste. Il s'ouvre réduit, sur une ligne : **Lecture**, et ce qu'il joue - le nom de l'enregistrement, ou celui du multipiste et son nombre de pistes. Quand le chant a un enregistrement, c'est lui qui est chargé d'abord : un seul fichier, rapide à charger. S'il a aussi des pistes, **Multipiste** passe à elles, et elles ne sont téléchargées qu'à ce moment. Un chant qui n'a que des pistes les charge. Les commandes propres aux pistes - couper, solo, le mixage - sont dans le lecteur agrandi.
+En mode **Session** (voir [Édition, Session et Live](/fr/getting-started/#édition-session-et-live)), un chant qui a un enregistrement ou des pistes affiche le lecteur de pistes en bas de sa page, et de sa page dans une liste. Il s'ouvre réduit, sur une ligne : **Lecture**, et ce qu'il joue - le nom de l'enregistrement, ou celui du multipiste et son nombre de pistes. Ce qu'il joue se choisit avec [Ce qui joue](/fr/library/#ce-qui-joue). Les commandes propres aux pistes - couper, solo, le mixage - sont dans le lecteur agrandi.
 
 À côté de **Lecture**, **Arrêter, retour au début** (le carré) arrête les pistes et les ramène au début. Quand l'écran est assez large, le lecteur réduit montre aussi la forme d'onde de ce qui est entendu, les pistes combinées, à côté de ce qu'il joue : cliquez dessus pour vous y rendre.
 
@@ -196,7 +213,7 @@ Le chant continue de jouer quand vous allez sur une autre page ou quittez le mod
 
 ![Le bouton pour revenir au chant en lecture](../../../assets/screenshots/fr/stems-return.jpg)
 
-Un chant sans pistes joue son dernier enregistrement dans le même lecteur, comme une seule partie. Un chant sans aucun audio mais avec un lien YouTube (onglet **Liens**) y joue sa vidéo YouTube, et les parties ne peuvent pas être séparées. Le lecteur s'ouvre réduit, sur une ligne : **Lecture** l'agrandit et joue, car YouTube ne joue qu'une vidéo affichée - à côté des commandes, ou au-dessus d'elles, de toute la largeur d'un téléphone. **Réduire le lecteur** (la flèche) met la vidéo en pause pour la même raison. **Vitesse** fonctionne comme pour les pistes, mais une vidéo YouTube ne peut pas être transposée : le lecteur de YouTube ne laisse pas modifier son son. Pour jouer le chant dans une autre tonalité, ajoutez son enregistrement à l'onglet **Audio**. La ligne en haut est aussi sa tête de lecture : cliquez ou faites-la glisser pour aller ailleurs dans la vidéo. Elle continue dans une petite fenêtre en bas à droite quand vous allez sur d'autres pages ; le nom du chant vous y ramène. YouTube s'arrête quand le téléphone se verrouille et ne joue pas hors ligne : dans ces cas, ajoutez l'enregistrement dans l'onglet **Audio**.
+Le master, le dernier enregistrement du chant, joue dans le même lecteur, comme une seule partie. **YouTube** dans [Ce qui joue](/fr/library/#ce-qui-joue) - le choix par défaut d'un chant sans audio mais avec un lien YouTube (onglet **Liens**) - y joue sa vidéo, et les parties ne peuvent pas être séparées. Le lecteur s'ouvre réduit, sur une ligne : **Lecture** l'agrandit et joue, car YouTube ne joue qu'une vidéo affichée - à côté des commandes, ou au-dessus d'elles, de toute la largeur d'un téléphone. **Réduire le lecteur** (la flèche) met la vidéo en pause pour la même raison. **Vitesse** fonctionne comme pour les pistes, mais une vidéo YouTube ne peut pas être transposée : le lecteur de YouTube ne laisse pas modifier son son. Pour jouer le chant dans une autre tonalité, ajoutez son enregistrement à l'onglet **Audio**. La ligne en haut est aussi sa tête de lecture : cliquez ou faites-la glisser pour aller ailleurs dans la vidéo. Elle continue dans une petite fenêtre en bas à droite quand vous allez sur d'autres pages ; le nom du chant vous y ramène. YouTube s'arrête quand le téléphone se verrouille et ne joue pas hors ligne : dans ces cas, ajoutez l'enregistrement dans l'onglet **Audio**.
 
 Les pistes gardées sur votre appareil pour le hors ligne (**Avec l'audio**, voir [Hors ligne](/fr/offline/)) se lisent aussi hors ligne.
 
@@ -204,7 +221,7 @@ Les pistes gardées sur votre appareil pour le hors ligne (**Avec l'audio**, voi
 
 Un chant peut avoir plus d'un jeu de pistes : ses **Pistes d'origine**, et des multipistes - des pistes enregistrées ensemble, une autre version ou vos propres couches (voir [Enregistrer une piste](/fr/library/#enregistrer-une-piste)). Chacun a son cadre dans l'onglet **Audio**, avec son **Nom**, son nombre de pistes (et d'autres prises), la liste pour laquelle il a été enregistré s'il y en a une (**Pour aucune liste** l'en retire), et ce dans quoi ses pistes ont été enregistrées : tonalité, tempo, mesure et premier temps, qu'elles partagent. Ses fichiers sont listés dans son cadre : ses pistes d'abord - importées ou séparées - puis **Enregistrements**, les pistes que des personnes y ont enregistrées dans Songverse, chacune disant qui et quand, pour ne jamais les confondre avec les pistes. Elles se jouent toujours avec les pistes de ce multipiste. Sous une piste, la liste **Multipiste** la déplace dans un autre, ou dans un **Nouveau multipiste** à elle : importez les fichiers d'une autre version, puis rassemblez-les ainsi.
 
-En mode **Session**, le lecteur de pistes joue un multipiste à la fois : quand un chant en a plusieurs, la liste à côté du temps passe de l'un à l'autre (**Enregistrement**, quand le chant en a un, **Pistes d'origine**, puis les autres par leur nom, ou **Multipiste 2**…). Songverse retient votre choix pour chaque chant sur l'appareil, et pour chaque page de chant d'une liste. En jeu synchronisé, chacun joue le multipiste du meneur, avec ses propres fichiers.
+En mode **Session**, le lecteur de pistes joue un multipiste à la fois : quand un chant en a plusieurs, la liste à côté du temps passe de l'un à l'autre (**Pistes d'origine**, puis les autres par leur nom, ou **Multipiste 2**… ; l'enregistrement du chant est le **Master** de [Ce qui joue](/fr/library/#ce-qui-joue)). Songverse retient votre choix pour chaque chant sur l'appareil, et pour chaque page de chant d'une liste. En jeu synchronisé, chacun joue le multipiste du meneur, avec ses propres fichiers.
 
 <div data-audience="stems admin">
 

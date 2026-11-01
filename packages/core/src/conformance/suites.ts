@@ -45,6 +45,8 @@ import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeRemi
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
+import type { StemPart } from "../stems/index.js";
+import { defaultPlaybackSource, filesForSource, playbackSourcesOf, resolvePlaybackSource, type PlaybackSource } from "../playback/index.js";
 
 /**
  * The shared test cases (issue #170): what @oneverse/core does, by area,
@@ -70,6 +72,15 @@ export interface ConformanceArea {
   about: string;
   functions: Record<string, ConformanceFunction>;
 }
+
+// --- Playback (issue #366): a song's audio files.
+type PlaybackFileCase = { type: string; stemPart: StemPart | null; filename: string; createdAt: string; multitrackId?: string | null; origin?: "UPLOADED" | "SEPARATED" | "RECORDED" };
+const PLAYBACK_MASTER: PlaybackFileCase = { type: "AUDIO", stemPart: null, filename: "Master.opus", createdAt: "2026-01-01T00:00:00Z", origin: "UPLOADED" };
+const PLAYBACK_STEMS: PlaybackFileCase[] = [
+  { type: "AUDIO", stemPart: "DRUMS", filename: "Drums.opus", createdAt: "2026-01-02T00:00:00Z", origin: "SEPARATED" },
+  { type: "AUDIO", stemPart: "BASS", filename: "Bass.opus", createdAt: "2026-01-02T00:00:00Z", origin: "SEPARATED" },
+];
+const PLAYBACK_TAKE: PlaybackFileCase = { type: "AUDIO", stemPart: "VOCALS", filename: "Ana - Vocals.webm", createdAt: "2026-01-03T00:00:00Z", origin: "RECORDED" };
 
 // --- A song and an arrangement of it, the documents most cases use.
 
@@ -2689,6 +2700,10 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the leader's metronome, read", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", metronome: { settings: { tempo: 72, numerator: 4, denominator: 4, beats: ["accent", "normal", "normal", "normal"], countIn: 1 }, playing: true, anchorAt: 900, anchorPosition: 0 } }, 1000] },
           { name: "a metronome that can't be read is refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", metronome: { playing: true } }, 1000] },
           { name: "stems played 3 times as fast are refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", stems: { songVersionId: "sv_1", title: "Grace", playing: true, position: 0, anchorAt: 0, speed: 3 } }, 1000] },
+          { name: "the leader chooses what plays with two songs for everyone", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", playback: { item_1: "STEMS", item_2: "METRONOME" } }, 1000] },
+          { name: "the leader leaves a song's playback to each person again", args: [{ ...LIVE_SESSION, playback: { item_1: "STEMS", item_2: "METRONOME" } }, LIVE_EDITOR, { kind: "tempo", playback: { item_1: null } }, 1000] },
+          { name: "someone else can't choose what plays for everyone", args: [LIVE_SESSION, LIVE_SINGER, { kind: "tempo", playback: { item_1: "NONE" } }, 1000] },
+          { name: "a source that isn't one is refused", args: [LIVE_SESSION, LIVE_EDITOR, { kind: "tempo", playback: { item_1: "LOUD" } }, 1000] },
           { name: "Next pressed twice from the same slide: the second is stale", args: [LIVE_SESSION, LIVE_OPERATOR, { kind: "present", presenting: { itemId: "item_1", slide: 3, black: false }, basedOn: 3 }, 1000] },
           { name: "a presenter moves the screens", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "present", presenting: { itemId: "item_1", slide: 3, black: false }, basedOn: 4 }, 1000] },
           { name: "the same slide again is no change", args: [LIVE_SESSION, LIVE_PRESENTER, { kind: "present", presenting: { itemId: "item_1", slide: 2, black: false } }, 1000] },
@@ -2803,6 +2818,56 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a singer", args: [LIVE_SESSION, LIVE_SINGER] },
           { name: "the leader, while someone else has them locked", args: [LIVE_LOCKED, LIVE_EDITOR] },
           { name: "no session: who may lead or run screens", args: [null, LIVE_OPERATOR] },
+        ],
+      },
+    },
+  },
+  {
+    area: "playback",
+    about: "What plays with a song (issue #366): the sources it offers, the default, and the files each plays",
+    functions: {
+      playbackSourcesOf: {
+        about: "The sources a song offers, in the order they're listed",
+        params: ["material"],
+        run: playbackSourcesOf,
+        cases: [
+          { name: "nothing at all", args: [{ files: [], youtube: false }] },
+          { name: "a master and a video", args: [{ files: [PLAYBACK_MASTER], youtube: true, tempo: 72 }] },
+          { name: "stems only", args: [{ files: PLAYBACK_STEMS, youtube: false }] },
+          { name: "stems with a take", args: [{ files: [...PLAYBACK_STEMS, PLAYBACK_TAKE], youtube: false }] },
+          { name: "a multitrack of takes only", args: [{ files: [{ ...PLAYBACK_TAKE, multitrackId: "mt_new" }], youtube: false }] },
+        ],
+      },
+      defaultPlaybackSource: {
+        about: "What plays when nothing's chosen: master, then stems (with takes), then the video, then the metronome when the tempo is known",
+        params: ["material"],
+        run: defaultPlaybackSource,
+        cases: [
+          { name: "a master and stems", args: [{ files: [PLAYBACK_MASTER, ...PLAYBACK_STEMS], youtube: true }] },
+          { name: "stems with a take", args: [{ files: [...PLAYBACK_STEMS, PLAYBACK_TAKE], youtube: true }] },
+          { name: "a video", args: [{ files: [], youtube: true, tempo: 72 }] },
+          { name: "a tempo only", args: [{ files: [], youtube: false, tempo: 72 }] },
+          { name: "nothing", args: [{ files: [], youtube: false }] },
+        ],
+      },
+      resolvePlaybackSource: {
+        about: "The first choice the song still offers (the leader's, then the person's), else the default",
+        params: ["material", "first", "second"],
+        run: resolvePlaybackSource,
+        cases: [
+          { name: "the person's choice", args: [{ files: [PLAYBACK_MASTER, ...PLAYBACK_STEMS], youtube: false }, null, "STEMS"] },
+          { name: "the leader's before the person's", args: [{ files: [PLAYBACK_MASTER, ...PLAYBACK_STEMS], youtube: false }, "METRONOME", "STEMS"] },
+          { name: "a choice the song no longer offers", args: [{ files: [PLAYBACK_MASTER], youtube: false }, null, "TAKES"] },
+        ],
+      },
+      filesForSource: {
+        about: "A multitrack's files as a source plays them: STEMS without the takes, unless it has nothing else",
+        params: ["files", "source"],
+        run: (files: PlaybackFileCase[], source: PlaybackSource) => filesForSource(files, source).map((file) => file.filename),
+        cases: [
+          { name: "stems leave the take out", args: [[...PLAYBACK_STEMS, PLAYBACK_TAKE], "STEMS"] },
+          { name: "takes keep it", args: [[...PLAYBACK_STEMS, PLAYBACK_TAKE], "TAKES"] },
+          { name: "only takes", args: [[PLAYBACK_TAKE], "STEMS"] },
         ],
       },
     },

@@ -875,6 +875,18 @@ const fr: typeof en = {
     followingShort: "Suit {{name}}",
     followingMetronome: "{{name}} mène le métronome : vous l'entendez en rythme avec les autres. Votre son et votre volume restent les vôtres.",
   },
+  playback: {
+    label: "Ce qui joue",
+    leaderChose: "{{name}} a choisi ce qui joue pour tout le monde en jeu synchronisé",
+    sources: {
+      MASTER: "Master",
+      YOUTUBE: "YouTube",
+      STEMS: "Pistes",
+      TAKES: "Pistes + prises",
+      METRONOME: "Métronome seul",
+      NONE: "Rien",
+    },
+  },
   metronome: {
     title: "Métronome",
     description: "Réglez le tempo, la mesure et les temps qui sonnent. Il garde le tempo pendant que vous naviguez dans l'application.",
@@ -3242,6 +3254,7 @@ const fr: typeof en = {
     play: "Lecture",
     pause: "Pause",
     loading: "Chargement des pistes… {{percent}} %",
+    joining: "Lecture de ce qui est arrivé ; les autres pistes suivent dès leur arrivée… {{percent}} %",
     position: "Position",
     mute: "Couper {{part}}",
     solo: "Solo {{part}}",

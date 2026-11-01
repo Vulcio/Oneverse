@@ -201,6 +201,8 @@ differently.
 | `hiddenChordIds` | Chords this player doesn't want to see: the song's or the arrangement's inserted ones. Hidden from the preview and the performance chart; a quick tap brings them back. |
 | `simplifyChords` | Every chord shown as its basic triad (Gmaj7 → G, Bm7b5 → Bdim) via `simplifyChord()`. |
 | `hideBassNotes` | D/F# shown as D. |
+| `view`, `pdfId` | How the song reads in Live and Practice (issue #155): its chart, its chord grid or one of its PDFs. |
+| `playback` | What plays with it (issue #366): `MASTER`, `YOUTUBE`, `STEMS`, `TAKES`, `METRONOME` or `NONE`. Left out, what the song has decides (`defaultPlaybackSource()` in core); a choice the song no longer offers falls back the same way. In Sync play, the leader's choice for a set's song (`SyncSession.playback`) comes first for everyone. |
 
 This is for the player who knows a chord belongs there but can't change
 that fast yet. The arrangement's `hide_chord` is the band-wide equivalent.

@@ -221,8 +221,8 @@ export class SetSessions {
 
   /** The leader's metronome, stems, open item and what's presented. */
   async update(connection: Connection, message: Extract<SyncClientMessage, { type: "update" }>) {
-    const { metronome, stems, itemId, presenting, presentingBasedOn } = message;
-    await this.command(connection, { kind: "tempo", metronome, stems, itemId, presenting, basedOn: presentingBasedOn }, "Only the leader changes the session", "forbidden");
+    const { metronome, stems, itemId, presenting, presentingBasedOn, playback } = message;
+    await this.command(connection, { kind: "tempo", metronome, stems, itemId, presenting, basedOn: presentingBasedOn, playback }, "Only the leader changes the session", "forbidden");
   }
 
   /**

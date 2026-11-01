@@ -1,5 +1,5 @@
 import { decodeAudio } from "#/lib/decode-audio";
-import { multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
+import { filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
@@ -49,6 +49,12 @@ export interface StemSong {
   songKey?: string | null;
   /** The key the page plays the song in (a set's): with nothing chosen, the stems are transposed to it. */
   targetKey?: string | null;
+  /** What plays (issue #366): the master, the stems, or the stems with the takes - shared with Sync play's followers. Left out: as the files say. */
+  source?: "MASTER" | "STEMS" | "TAKES";
+  /** Switches what plays (issue #366) from the player's own list: to the master, or to the stems (with the takes when the song has them). */
+  switchSource?: (to: "MASTER" | "STEMS") => void;
+  /** Loaded as the page opens (issue #366): when the person chose this (or it's one quick file). Left out: true. */
+  prefetch?: boolean;
   /** The song's sections and the order they're sung in (issue #110): what cue points name and place. */
   cueSections?: { sections: CueSection[]; flow: string[] };
   /** Recording a part from the player (issue #127): what the recorder needs; left out where it can't (offline). */
@@ -109,7 +115,14 @@ export interface StemState {
   multitrackId: string | null;
   title: string;
   returnTo: string;
+  /** "ready" as soon as a part can play (issue #366): the others join in as they arrive - `complete` once they all have. */
   status: "idle" | "loading" | "ready" | "error";
+  /** Every file has arrived (or failed): what recording a part over them needs. */
+  complete: boolean;
+  /** What plays (issue #366), as the page chose it; null: as the files say. */
+  source: "MASTER" | "STEMS" | "TAKES" | null;
+  /** From the press on Play to the first sound (ms, issue #366), for the last start that had to load or wake the audio; null before. */
+  firstSoundMs: number | null;
   /** How much of the stems has downloaded, 0-1, while loading. */
   downloaded: number;
   tracks: StemTrack[];
@@ -159,6 +172,9 @@ const EMPTY: StemState = {
   title: "",
   returnTo: "",
   status: "idle",
+  complete: false,
+  source: null,
+  firstSoundMs: null,
   downloaded: 0,
   tracks: [],
   playing: false,
@@ -223,6 +239,8 @@ let latency = 0;
 let sources: AudioBufferSourceNode[] = [];
 // The context's time at which the song's 0:00 is (or would be) playing.
 let startedAt = 0;
+// The audio clock's time the last start is heard at (issue #366: time to first sound).
+let lastStartAt = 0;
 let offset = 0;
 let timer: ReturnType<typeof setInterval> | null = null;
 // Looping (issue #162): the next pass, scheduled ahead of the loop's end on the audio clock -
@@ -304,6 +322,44 @@ export function stemFilesOf(
     recording: recording ? { name: recording.filename } : null,
     // Playing the recording (issue #182): the multitrack a press switches to - the set's, else the first.
     upgrade: playingRecording && multitracks.length > 0 ? (forSet ?? multitracks[0]!).id : undefined,
+  };
+}
+
+/**
+ * A song's files for what plays (issue #366): its whole recording for
+ * MASTER; for STEMS and TAKES the multitrack chosen (or the set's, the
+ * version's, the first) among those that have something for it - the
+ * takes left out for STEMS.
+ */
+export function sourceFilesOf(
+  attachments: Attachment[],
+  source: "MASTER" | "STEMS" | "TAKES",
+  multitrackId: string | null | undefined,
+  setlistId?: string,
+  versionMultitrackId?: string | null,
+): Pick<StemSong, "stems" | "multitrackId" | "multitracks" | "recording" | "upgrade" | "source"> {
+  const recording = wholeRecordingOf(attachments);
+  const all = multitracksOf(attachments).filter((multitrack) => multitrack.files.length > 0);
+  const listed = (list: typeof all) => list.map((multitrack) => ({ id: multitrack.id, name: multitrack.name, parts: filesForSource(multitrack.files, source).length, setlistId: multitrack.setlistId }));
+  const preferred = (list: typeof all) =>
+    list.find((multitrack) => multitrack.id === multitrackId) ??
+    (setlistId ? list.find((multitrack) => multitrack.setlistId === setlistId) : undefined) ??
+    (versionMultitrackId ? list.find((multitrack) => multitrack.id === versionMultitrackId) : undefined) ??
+    list[0];
+  if (source === "MASTER") {
+    // Its multitracks listed beside it, and the one a press switches to (issue #182).
+    const upgrade = preferred(all);
+    return { stems: recording ? [recording] : [], multitrackId: RECORDING_CHOICE, multitracks: listed(all), recording: recording ? { name: recording.filename } : null, upgrade: upgrade ? upgrade.id : undefined, source };
+  }
+  // STEMS: the multitracks with stems of their own, not just takes.
+  const offered = all.filter((multitrack) => source === "TAKES" || multitrack.files.some((file) => !isTake(file)));
+  const chosen = preferred(offered);
+  return {
+    stems: chosen ? (filesForSource(chosen.files, source) as StemFile[]) : [],
+    multitrackId: chosen?.id ?? null,
+    multitracks: listed(offered),
+    recording: recording ? { name: recording.filename } : null,
+    source,
   };
 }
 
@@ -420,6 +476,11 @@ function choiceOf(songVersionId: string): string | null | undefined {
     // Storage blocked.
   }
   return undefined;
+}
+
+/** The multitrack chosen for the song, outside React (undefined: none was). */
+export function chosenMultitrack(songVersionId: string): string | null | undefined {
+  return choiceOf(songVersionId);
 }
 
 /** Plays that multitrack of the song from now on (null: its original stems). */
@@ -640,6 +701,7 @@ function startAt(from: number, at?: number, anchor?: { epoch: number; position: 
   // or a restart (a transposition's) puts it a few ms behind its own.
   if (at !== undefined && when > at) from = Math.min(state.duration, from + (when - at) * state.speed);
   sources = startSources(from, when);
+  lastStartAt = when;
   startedAt = when - from / state.speed;
   const heard = { epoch: clock ? clock.epochOf(when) : Number.NaN, position: from };
   probe()?.push({ zeroAt: heard.epoch - (from / state.speed) * 1000, at: deviceNow() });
@@ -836,6 +898,8 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
     title: song.title,
     returnTo: song.returnTo,
     status: "loading",
+    complete: false,
+    source: song.source ?? null,
     downloaded: 0,
     tracks: tracksOf(song.stems),
     muted,
@@ -858,44 +922,101 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
     const all = [...sizes.values()].reduce((sum, size) => sum + size, 0);
     if (all) set({ downloaded: Math.min(1, [...received.values()].reduce((sum, size) => sum + size, 0) / all) });
   };
-  const decoded = await Promise.all(
-    song.stems.map(async (stem) => {
-      let buffer: AudioBuffer | null = null;
-      let empty = false;
-      try {
-        const blob = await song.load(stem, (bytes, total) => progress(stem.id, bytes, total));
-        progress(stem.id, blob.size, blob.size, true);
-        // A few hundred bytes: headers, no sound.
-        empty = blob.size < 1024;
-        // Ogg Opus where Safari can't read it (before 18.4): rewrapped as WebM (issue #185).
-        buffer = await decodeAudio(ctx, await blob.arrayBuffer());
-      } catch {
-        // Shown on its row; the other parts still play.
-      }
-      return { stem, buffer, empty };
-    }),
-  );
-  if (mine !== generation) return false;
-  for (const { stem, buffer } of decoded) {
-    if (!buffer) continue;
-    const gain = ctx.createGain();
-    tracksInfo.set(stem.id, { part: stem.stemPart, offset: stem.pitchOffset ?? 0 });
-    gain.connect(plain);
-    buffers.set(stem.id, buffer);
-    gains.set(stem.id, gain);
-  }
-  const peaks = new Map(decoded.map(({ stem, buffer }) => [stem.id, buffer ? peaksOf(buffer) : null]));
-  const lengths = new Map(decoded.map(({ stem, buffer }) => [stem.id, buffer?.duration ?? 0]));
-  const empties = new Set(decoded.filter((item) => item.empty && !item.buffer).map((item) => item.stem.id));
-  const tracks = state.tracks.map((track) => ({ ...track, peaks: peaks.get(track.id) ?? null, length: lengths.get(track.id) ?? 0, failed: !peaks.get(track.id), empty: empties.has(track.id) }));
-  if (buffers.size === 0) {
-    set({ status: "error", tracks });
-    return false;
-  }
+  // Fetched a few at a time, the parts heard first first (issue #366): the
+  // first can play while the rest arrive - all at once, they'd all arrive
+  // together, at the end. Each joins in, in time, as it's decoded.
+  const order = [...song.stems].sort((a, b) => loadRank(a, muted, soloed) - loadRank(b, muted, soloed));
+  const settled = new Map<string, { buffer: AudioBuffer | null; empty: boolean }>();
+  let playable: (ok: boolean) => void = () => {};
+  const firstPlayable = new Promise<boolean>((resolve) => (playable = resolve));
+  // Joining one at a time: each waits for the routing of the one before.
+  let joining = Promise.resolve();
+  const fetchOne = async (stem: StemFile) => {
+    let buffer: AudioBuffer | null = null;
+    let empty = false;
+    try {
+      const blob = await song.load(stem, (bytes, total) => progress(stem.id, bytes, total));
+      progress(stem.id, blob.size, blob.size, true);
+      // A few hundred bytes: headers, no sound.
+      empty = blob.size < 1024;
+      // Ogg Opus where Safari can't read it (before 18.4): rewrapped as WebM (issue #185).
+      buffer = await decodeAudio(ctx, await blob.arrayBuffer());
+    } catch {
+      // Shown on its row; the other parts still play.
+    }
+    if (mine !== generation) return;
+    settled.set(stem.id, { buffer, empty });
+    joining = joining.then(() => join(stem, buffer, empty, mine));
+    await joining;
+    if (mine !== generation) return;
+    if (buffer && state.status === "ready") playable(true);
+  };
+  const queue = [...order];
+  const worker = async () => {
+    for (let stem = queue.shift(); stem; stem = queue.shift()) await fetchOne(stem);
+  };
+  const all = Promise.all(Array.from({ length: Math.min(LOAD_AT_ONCE, queue.length) }, worker)).then(() => {
+    if (mine !== generation) return;
+    if (buffers.size === 0) {
+      set({ status: "error", complete: true });
+      playable(false);
+      return;
+    }
+    set({ complete: true });
+    playable(true);
+  });
+  void all;
+  return firstPlayable;
+}
+
+/** How many of a song's files are fetched at once (issue #366). */
+const LOAD_AT_ONCE = 2;
+
+/** Which parts are fetched first: those heard (soloed, then not muted), then by the player's order of parts. */
+function loadRank(stem: StemFile, muted: ReadonlySet<string>, soloed: ReadonlySet<string>): number {
+  const heard = soloed.size > 0 ? (soloed.has(stem.id) ? 0 : 2) : muted.has(stem.id) ? 2 : 0;
+  // The click last: the app's metronome can stand in for it meanwhile.
+  const part = stem.stemPart === "CLICK" ? 1 : 0;
+  return (heard + part) * 1000 + (stem.stemPart ? STEM_PARTS.indexOf(stem.stemPart) : 0);
+}
+
+/**
+ * A part that's just arrived (issue #366): wired in, routed for the
+ * transposition, and - while playing - started where the others are, a
+ * moment ahead on the same clock. The first makes the player ready.
+ */
+async function join(stem: StemFile, buffer: AudioBuffer | null, empty: boolean, mine: number) {
+  const ctx = context;
+  if (mine !== generation || !ctx || !plain) return;
+  const track = (changes: Partial<StemTrack>) => set({ tracks: state.tracks.map((item) => (item.id === stem.id ? { ...item, ...changes } : item)) });
+  if (!buffer) return track({ failed: true, empty, peaks: null, length: 0 });
+  const gain = ctx.createGain();
+  tracksInfo.set(stem.id, { part: stem.stemPart, offset: stem.pitchOffset ?? 0 });
+  gain.connect(plain);
+  buffers.set(stem.id, buffer);
+  gains.set(stem.id, gain);
+  track({ peaks: peaksOf(buffer), length: buffer.duration, failed: false, empty: false });
+  const before = latency;
   await route();
-  if (mine !== generation) return false;
-  set({ status: "ready", tracks, duration: Math.max(...[...buffers.values()].map((buffer) => buffer.duration)) });
-  return true;
+  if (mine !== generation) return;
+  const duration = Math.max(...[...buffers.values()].map((item) => item.duration));
+  if (state.status !== "ready") return set({ status: "ready", duration });
+  set({ duration });
+  applyGains(true);
+  if (!state.playing || !context) return;
+  // The transposing's latency changed: everything again, in place.
+  if (latency !== before) return replay();
+  const when = context.currentTime + 0.05 + latency;
+  const from = (when - startedAt) * state.speed;
+  if (from >= buffer.duration) return;
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.playbackRate.value = state.speed;
+  source.connect(gain);
+  source.start(when - latency, Math.max(0, from));
+  sources.push(source);
+  // Looping: its end, and the next pass, with the others.
+  if (state.loop) armLoop();
 }
 
 // --- transposing (issue #129)
@@ -1108,12 +1229,14 @@ export function prefetchStems(song: StemSong) {
 /** Other players (YouTube, #66) paused when the stems start: one thing plays at a time. */
 export const otherPlayers = new Set<() => void>();
 
-/** Plays `song`, loading it first (and stopping another one) if it isn't what's loaded. */
-export async function playStems(song: StemSong) {
+/** Plays `song`, loading it first (and stopping another one) if it isn't what's loaded; `from` (s): there rather than where it was - another source of the song taking over (issue #366). */
+export async function playStems(song: StemSong, from?: number) {
   // Following Sync play's leader: theirs to start; a press only lets the browser make sound.
   if (state.following) return unlockStemsAudio();
   lastSong = song;
   for (const pause of otherPlayers) pause();
+  // From the press to the first sound (issue #366).
+  const pressed = performance.now();
   // load() sets up the audio before its first wait: start it here, still inside the tap,
   // which is the only time iOS lets sound start.
   const loaded = load(song);
@@ -1124,12 +1247,25 @@ export async function playStems(song: StemSong) {
   await starting;
   // Gains before the first sound, so a part muted while loading stays silent.
   applyGains(true);
+  if (from !== undefined) offset = Math.max(0, Math.min(from, state.duration));
   startAt(offset);
-  set({ playing: true, returnTo: song.returnTo, title: song.title });
+  noteFirstSound(pressed);
+  set({ playing: true, position: offset, returnTo: song.returnTo, title: song.title });
   // Only now playing: the loop, if there is one, from here.
   armLoop();
   setMediaActions();
   updateMediaSession();
+}
+
+/** How long from `pressed` (performance.now()) until the start just scheduled is heard: kept in the state, and for the end-to-end suites. */
+function noteFirstSound(pressed: number) {
+  if (!context) return;
+  const ahead = Math.max(0, lastStartAt - context.currentTime) + (context.outputLatency || 0);
+  const ms = Math.round(performance.now() - pressed + ahead * 1000);
+  set({ firstSoundMs: ms });
+  const w = window as unknown as { songverseStems?: { starts: unknown[]; firstSoundMs?: number } };
+  w.songverseStems ??= { starts: [] };
+  w.songverseStems.firstSoundMs = ms;
 }
 
 /**

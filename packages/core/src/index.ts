@@ -54,6 +54,7 @@ export * from "./search-text/index.js";
 export * from "./search-text/lyrics.js";
 export * from "./song-document/pass.js";
 export * from "./stems/index.js";
+export * from "./playback/index.js";
 export * from "./recording/index.js";
 export * from "./recording/cues.js";
 export * from "./recording/ogg-webm.js";

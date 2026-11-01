@@ -8,9 +8,10 @@ import { chartDisplayProps, displayModeOf, useDiagramPlayer, useDisplaySettings 
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
-import { StemDock } from "#/components/stem-dock";
 import { downloadBlob } from "#/lib/download";
-import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
+import { useSongPlayback } from "#/components/song-playback";
+import { songPlaybackStore } from "#/lib/playback";
+import { fileLoader } from "#/lib/song-files";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { formatBytes } from "#/lib/format-bytes";
@@ -55,7 +56,21 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
     void keysOffline("files").then((keys) => setKeptFiles(new Set(keys)));
   }, [song.songVersionId]);
 
-  const playable = stemFilesOf(song.attachments.filter((file) => keptFiles.has(file.id)), useChosenMultitrack(song.songVersionId));
+  // What plays with it (issue #366): of the files kept on the device ("Include audio").
+  const playbackStore = useMemo(() => songPlaybackStore(song.songVersionId), [song.songVersionId]);
+  const playback = useSongPlayback({
+    songVersionId: song.songVersionId,
+    title: song.title,
+    returnTo: `/library/${song.songVersionId}`,
+    attachments: song.attachments.filter((file) => keptFiles.has(file.id)),
+    load: fileLoader(song.songVersionId, true),
+    youtube: null,
+    tempo: chart.tempo,
+    timeSignature: chart.timeSignature,
+    store: playbackStore,
+    stems: { cueSections: cueSectionsOf(song.document) },
+    docked: mode === "practice",
+  });
 
   async function open(file: Attachment) {
     const blob = await keptFile<Blob>(deviceStorage(), file.id);
@@ -81,6 +96,7 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
         <div className="flex items-center gap-2">
         <DisplayPanel mode={displayMode} settings={display} player={player} className="h-9" />
         {notes.button}
+        {mode === "practice" ? playback.control : null}
         <Button onClick={() => setMode("live")} render={<Link to="/library/$songVersionId/live" params={{ songVersionId: song.songVersionId }} />}>
             <Mic />
             {t("live.start")}
@@ -88,23 +104,8 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
         </div>
       </div>
 
-      {/* Practice: the stems kept on the device (with "Include audio"), docked at the bottom. */}
-      {mode === "practice" && playable.stems.length > 0 ? (
-        <StemDock
-          song={{
-            songVersionId: song.songVersionId,
-            title: song.title,
-            returnTo: `/library/${song.songVersionId}`,
-            ...playable,
-            load: async (file) => {
-              const blob = await keptFile<Blob>(deviceStorage(), file.id);
-              if (!blob) throw new Error("not kept");
-              return blob;
-            },
-            cueSections: cueSectionsOf(song.document),
-          }}
-        />
-      ) : null}
+      {/* Practice: what plays, of the files kept on the device, docked at the bottom. */}
+      {playback.dock}
 
       <Card>
         <CardContent>
