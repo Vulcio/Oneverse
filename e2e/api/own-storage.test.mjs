@@ -1,0 +1,144 @@
+// An organisation's own bucket (issue #206): allowed by Admin > Organisations
+// and a role, connected by the organisation's admins (tried before it's kept,
+// the secret never shown again), its teams' songs' files moved in by the
+// Worker and new ones written there, read from where each file is, and moved
+// back out when a team leaves or the organisation stops using it. A bucket
+// that stops answering gets nothing new until it does. The suites' "buckets"
+// are folders under OWN_STORAGE_LOCAL_DIR.
+import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { API, STORAGE_DIR, api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
+
+const BUCKETS = process.env.OWN_STORAGE_LOCAL_DIR;
+if (!BUCKETS) {
+  console.log("SKIP own-storage: OWN_STORAGE_LOCAL_DIR isn't set");
+  process.exit(0);
+}
+
+const admin = await user("Own storage admin");
+sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
+const orgAdmin = await user("Own storage org admin");
+const outsider = await user("Own storage outsider");
+
+const org = `ows${stamp}`;
+sql(`insert into "Organization" (id, name, slug, "createdAt", "updatedAt") values ('${org}', 'Own storage ${stamp}', 'own-storage-${stamp}', now(), now())`);
+sql(`insert into "OrganizationMembership" (id, "organizationId", "userId", role, "joinedAt", "updatedAt") values ('owsm${stamp}', '${org}', '${orgAdmin.id}', 'ADMIN', now(), now())`);
+const team = await api(orgAdmin, "POST", "/teams", { name: `Own storage team ${stamp}` });
+sql(`update "Team" set "organizationId" = '${org}' where id = '${team.id}'`);
+const teamSong = await api(orgAdmin, "POST", "/song-versions", { artists: ["Band"], title: `Own storage song ${stamp}`, language: "en", content: "[G]Hi\n", teamId: team.id });
+const ownSong = await api(orgAdmin, "POST", "/song-versions", { artists: ["Band"], title: `Own storage mine ${stamp}`, language: "en", content: "[G]Hi\n" });
+
+let n = 0;
+async function upload(songId) {
+  const bytes = Buffer.from(`Own storage ${stamp} ${++n}\n`.repeat(100));
+  const form = new FormData();
+  form.append("type", "TEXT");
+  form.append("file", new Blob([bytes], { type: "text/plain" }), `sheet-${n}.txt`);
+  const res = await fetch(`${API}/song-versions/${songId}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${orgAdmin.bearer}` }, body: form });
+  return { ...(await res.json()), bytes, sha: createHash("sha256").update(bytes).digest("hex") };
+}
+const bucket = `org-bucket-${stamp}`;
+const inBucket = (file) => existsSync(path.join(BUCKETS, bucket, file.sha));
+const onServer = (file) => existsSync(path.join(STORAGE_DIR, file.sha));
+const where = (file) => sql(`select coalesce("storedInOrganizationId", '') from "Attachment" where id = '${file.id}'`);
+const reads = async (file, songId = teamSong.id) => {
+  const res = await fetch(`${API}/song-versions/${songId}/attachments/${file.id}/download`, { headers: { Authorization: `Bearer ${orgAdmin.bearer}` } });
+  return res.status === 200 && Buffer.from(await res.arrayBuffer()).equals(file.bytes);
+};
+const storage = () => api(orgAdmin, "GET", `/organizations/${org}/storage`);
+/** Runs the Worker's tick and waits until nothing is on the move. */
+async function settle() {
+  await api(admin, "POST", "/admin/jobs/run/own-storage-tick");
+  for (let i = 0; i < 60; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const now = await storage();
+    if (now.moving === 0 && now.state !== "LEAVING") return now;
+  }
+  return storage();
+}
+const connect = { provider: "S3", region: "eu-central-1", bucket, accessKeyId: `AKIA${stamp}`, secretAccessKey: `secret-${stamp}` };
+
+// --- who may
+let r = await call(outsider, "GET", `/organizations/${org}/storage`);
+check("only the organisation's admins see its storage", r.status === 403, String(r.status));
+r = await call(orgAdmin, "GET", `/organizations/${org}/storage`);
+check("nothing connected, and not allowed until the server's admin allows it", r.status === 200 && r.body.allowed === false && r.body.configured === false, JSON.stringify(r.body));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, connect);
+check("…so connecting one is refused", r.status === 403, String(r.status));
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+r = await call(admin, "PUT", "/admin/organizations/settings", { ownStorage: true });
+check("Admin > Organisations allows organisations their own storage", r.status === 204, String(r.status));
+check("…which still needs a role that allows it", (await storage()).allowed === false);
+const role = await api(admin, "POST", "/admin/roles", { name: `Own storage ${stamp}`, canUseOwnStorage: true });
+check("a role allows using one's own storage", (await api(admin, "GET", "/admin/roles")).find((each) => each.id === role.id)?.canUseOwnStorage === true);
+await api(admin, "PUT", `/admin/users/${orgAdmin.id}/roles`, { roleIds: [role.id, "role_audio_uploads"] });
+check("…and with it, they may", (await storage()).allowed === true);
+
+// --- connecting it
+const before = await upload(teamSong.id);
+check("before, a team's file is on the server's storage", where(before) === "" && onServer(before));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, { provider: "R2", bucket, accessKeyId: "key", secretAccessKey: "secret" });
+check("R2 needs its account ID", r.status === 400, JSON.stringify(r.body));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, { ...connect, endpoint: "https://169.254.169.254" });
+check("an address can't be given: it's worked out from the provider", r.status === 400, JSON.stringify(r.body));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, { ...connect, secretAccessKey: undefined });
+check("the first time needs the secret", r.status === 400, JSON.stringify(r.body));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, connect);
+check(
+  "its admin connects a bucket: tried, kept, the key masked and the secret never shown",
+  r.status === 200 && r.body.configured && r.body.state === "ACTIVE" && r.body.bucket === bucket && r.body.accessKeyIdMasked !== connect.accessKeyId && !JSON.stringify(r.body).includes(connect.secretAccessKey),
+  JSON.stringify(r.body),
+);
+check("…the secret encrypted where it's kept", !sql(`select "secretAccessKeyEnc" from "OrganizationStorage" where "organizationId"='${org}'`).includes(connect.secretAccessKey));
+let now = await settle();
+check("the team's files are moved into it", now.files === 1 && where(before) === org && inBucket(before) && !onServer(before), JSON.stringify(now));
+check("…and read from there", await reads(before));
+
+const after = await upload(teamSong.id);
+check("a new file of a team's song goes straight there", where(after) === org && inBucket(after) && !onServer(after));
+check("…and reads back", await reads(after));
+const mine = await upload(ownSong.id);
+check("someone's own song's files stay on the server's storage", where(mine) === "" && onServer(mine) && !inBucket(mine));
+check("…and read from there", await reads(mine, ownSong.id));
+
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, { provider: "S3", region: "eu-central-1", bucket });
+check("saved again without the keys, it keeps them", r.status === 200 && r.body.accessKeyIdMasked === now.accessKeyIdMasked, JSON.stringify(r.body));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, { ...connect, bucket: `${bucket}-other` });
+check("its bucket can't change while files are in it", r.status === 409, String(r.status));
+r = await call(admin, "DELETE", `/admin/organizations/${org}`);
+check("the organisation can't be deleted while it uses its own storage", r.status === 409, String(r.status));
+
+// --- a bucket that stops answering
+sql(`update "OrganizationStorage" set reachable = false, "lastError" = 'test' where "organizationId" = '${org}'`);
+const meanwhile = await upload(teamSong.id);
+check("while it isn't answering, new files are kept on the server", where(meanwhile) === "" && onServer(meanwhile));
+check("…and the admin is told", (await storage()).reachable === false);
+now = await settle();
+check("once it answers again, they're moved in", now.reachable === true && where(meanwhile) === org && inBucket(meanwhile) && !onServer(meanwhile), JSON.stringify(now));
+
+// --- a team leaving the organisation takes its files back
+const leavingTeam = await api(orgAdmin, "POST", "/teams", { name: `Own storage leaving ${stamp}` });
+sql(`update "Team" set "organizationId" = '${org}' where id = '${leavingTeam.id}'`);
+const leavingSong = await api(orgAdmin, "POST", "/song-versions", { artists: ["Band"], title: `Own storage leaving ${stamp}`, language: "en", content: "[G]Hi\n", teamId: leavingTeam.id });
+const leavingFile = await upload(leavingSong.id);
+check("(another team's file, in the bucket)", where(leavingFile) === org && inBucket(leavingFile));
+r = await call(orgAdmin, "DELETE", `/organizations/${org}/teams/${leavingTeam.id}`);
+check("(the team leaves the organisation)", r.status === 204, String(r.status));
+await settle();
+check("…and its files are moved back to the server", where(leavingFile) === "" && onServer(leavingFile) && !inBucket(leavingFile));
+check("…still read", await reads(leavingFile, leavingSong.id));
+
+// --- stopping
+r = await call(outsider, "POST", `/organizations/${org}/storage/stop`);
+check("only its admins stop it", r.status === 403, String(r.status));
+r = await call(orgAdmin, "POST", `/organizations/${org}/storage/stop`);
+check("its admin stops using it: files on their way back", r.status === 201 && (r.body.state === "LEAVING" || r.body.configured === false), JSON.stringify(r.body));
+now = await settle();
+check("…moved back, then it's disconnected", now.configured === false && [before, after, meanwhile].every((file) => where(file) === "" && onServer(file) && !inBucket(file)), JSON.stringify(now));
+check("…every file still read", (await reads(before)) && (await reads(after)) && (await reads(meanwhile)));
+r = await call(admin, "DELETE", `/admin/organizations/${org}`);
+check("then the organisation can be deleted", r.status === 204, String(r.status));
+
+await call(admin, "DELETE", "/admin/organizations/settings");
+finish();

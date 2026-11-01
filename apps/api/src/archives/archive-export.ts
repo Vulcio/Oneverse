@@ -60,9 +60,10 @@ export async function exportArchive(prisma: PrismaService, storage: StorageServi
       attachments: { where: { processing: null }, orderBy: { createdAt: "asc" } },
     },
   });
-  const files = new Map<string, { mimeType: string }>();
-  const keep = (sha: string | null | undefined, mimeType: string) => {
-    if (sha) files.set(sha, { mimeType });
+  // Each file, and where it's stored (an organisation's own bucket, issue #206).
+  const files = new Map<string, { mimeType: string; location: string | null }>();
+  const keep = (sha: string | null | undefined, mimeType: string, location: string | null = null) => {
+    if (sha) files.set(sha, { mimeType, location });
     return sha ?? null;
   };
   // Another person's private file or link on these songs is theirs, not the owner's.
@@ -109,9 +110,9 @@ export async function exportArchive(prisma: PrismaService, storage: StorageServi
           type: file.type,
           filename: file.filename,
           mimeType: file.mimeType,
-          sha256: keep(file.storageKey, file.mimeType)!,
+          sha256: keep(file.storageKey, file.mimeType, file.storedInOrganizationId)!,
           sizeBytes: file.sizeBytes ?? 0,
-          originalSha256: keep(file.originalStorageKey, file.originalMimeType ?? "application/octet-stream"),
+          originalSha256: keep(file.originalStorageKey, file.originalMimeType ?? "application/octet-stream", file.storedInOrganizationId),
           originalMimeType: file.originalMimeType,
           originalSizeBytes: file.originalSizeBytes,
           stemPart: file.stemPart,
@@ -280,8 +281,8 @@ export async function exportArchive(prisma: PrismaService, storage: StorageServi
       });
       await writer.addText(`chordpro/${fileName(song.title)}-${song.id}.cho`, chordPro);
     }
-    for (const sha of files.keys()) {
-      const body = await storage.stream(sha).catch(() => null);
+    for (const [sha, { location }] of files) {
+      const body = await storage.stream(sha, undefined, location).catch(() => null);
       // A file storage lost is left out; the import says so.
       if (body) await writer.addStream(archiveFilePath(sha), body);
     }

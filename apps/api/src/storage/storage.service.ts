@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { BINNED_TOO, type StorageSettings } from "@oneverse/db";
 import { decryptSecret, encryptSecret, maskSecret } from "@oneverse/secret-crypto";
@@ -9,6 +9,10 @@ import { LocalDiskStorageDriver } from "./local-disk-storage.driver.js";
 import type { ByteRange, ObjectStorageDriver } from "./object-storage-driver.js";
 import type { Readable } from "node:stream";
 import { S3StorageDriver } from "./s3-storage.driver.js";
+import { ownStorageDriver } from "./own-storage.js";
+
+/** Where an object is: the server's storage (null), or an organisation's own bucket by its id (issue #206). */
+export type StorageLocation = string | null;
 
 export interface StoredObject {
   hash: string;
@@ -106,39 +110,99 @@ export class StorageService {
     };
   }
 
-  async put(body: Buffer, contentType: string): Promise<StoredObject> {
+  /**
+   * The driver for `location`: the server's storage (null), or an
+   * organisation's own bucket (its id, issue #206). A bucket that fails is
+   * marked unreachable for its admins; one that's gone is an error.
+   */
+  private async driverFor(location: StorageLocation): Promise<ObjectStorageDriver> {
+    if (!location) return (await this.resolveDriver()).driver;
+    const row = await this.prisma.client.organizationStorage.findUnique({ where: { organizationId: location } });
+    if (!row) throw new ServiceUnavailableException("This organisation's own storage isn't set up any more");
+    return ownStorageDriver(row, this.config.get<string>("SETTINGS_ENCRYPTION_KEY"));
+  }
+
+  /** Runs `work` on `location`'s driver; an organisation's bucket that fails is marked unreachable (issue #206). */
+  private async on<T>(location: StorageLocation, work: (driver: ObjectStorageDriver) => Promise<T>): Promise<T> {
+    const driver = await this.driverFor(location);
+    if (!location) return work(driver);
+    try {
+      return await work(driver);
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) await this.markUnreachable(location, error);
+      throw error;
+    }
+  }
+
+  /** Records that an organisation's bucket failed, and why, for its admins. */
+  async markUnreachable(organizationId: string, error: unknown): Promise<void> {
+    const message = error instanceof Error ? error.message : String(error);
+    await this.prisma.client.organizationStorage
+      .updateMany({ where: { organizationId }, data: { reachable: false, lastError: message.slice(0, 500), checkedAt: new Date() } })
+      .catch(() => undefined);
+  }
+
+  async put(body: Buffer, contentType: string, location: StorageLocation = null): Promise<StoredObject> {
     const hash = createHash("sha256").update(body).digest("hex");
-    const { driver } = await this.resolveDriver();
-    await driver.putObject(hash, body, contentType);
+    await this.on(location, (driver) => driver.putObject(hash, body, contentType));
     return { hash, sizeBytes: body.length };
   }
 
   /** A file on disk, stored by the hash of its bytes (given: taken as it was written), streamed (issue #351). */
-  async putFile(path: string, sha256: string, sizeBytes: number, contentType: string): Promise<StoredObject> {
-    const { driver } = await this.resolveDriver();
-    await driver.putFile(sha256, path, sizeBytes, contentType);
+  async putFile(path: string, sha256: string, sizeBytes: number, contentType: string, location: StorageLocation = null): Promise<StoredObject> {
+    await this.on(location, (driver) => driver.putFile(sha256, path, sizeBytes, contentType));
     return { hash: sha256, sizeBytes };
   }
 
-  async get(hash: string): Promise<Buffer> {
-    const { driver } = await this.resolveDriver();
-    return driver.getObject(hash);
+  async get(hash: string, location: StorageLocation = null): Promise<Buffer> {
+    return this.on(location, (driver) => driver.getObject(hash));
   }
 
   /** The object, or bytes of it, as a stream (issue #33): for downloads, which never load a file whole. */
-  async stream(hash: string, range?: ByteRange): Promise<Readable> {
-    const { driver } = await this.resolveDriver();
-    return driver.streamObject(hash, range);
+  async stream(hash: string, range?: ByteRange, location: StorageLocation = null): Promise<Readable> {
+    return this.on(location, (driver) => driver.streamObject(hash, range));
   }
 
-  async size(hash: string): Promise<number> {
-    const { driver } = await this.resolveDriver();
-    return driver.objectSize(hash);
+  async size(hash: string, location: StorageLocation = null): Promise<number> {
+    return this.on(location, (driver) => driver.objectSize(hash));
   }
 
-  async delete(hash: string): Promise<void> {
-    const { driver } = await this.resolveDriver();
-    return driver.deleteObject(hash);
+  async delete(hash: string, location: StorageLocation = null): Promise<void> {
+    return this.on(location, (driver) => driver.deleteObject(hash));
+  }
+
+  /**
+   * Where a song's new files go (issue #206): its team's organisation's own
+   * bucket while it's in use and answering, else the server's storage. A file
+   * stored elsewhere is moved by the Worker (OwnStorageService.relocate).
+   */
+  async locationForSong(songVersionId: string): Promise<StorageLocation> {
+    const song = await this.prisma.client.songVersion.findFirst({
+      where: { id: songVersionId, deletedAt: undefined },
+      select: { ownerTeam: { select: { organization: { select: { ownStorage: { select: { organizationId: true, state: true, reachable: true } } } } } } },
+    });
+    const own = song?.ownerTeam?.organization?.ownStorage;
+    return own && own.state === "ACTIVE" && own.reachable ? own.organizationId : null;
+  }
+
+  /** deleteUnreferenced() for files that were somewhere: each where it was (issue #206). */
+  async deleteUnreferencedFiles(files: { storageKey: string; originalStorageKey?: string | null; storedInOrganizationId?: string | null }[]): Promise<void> {
+    const byLocation = new Map<StorageLocation, string[]>();
+    for (const file of files) {
+      const location = file.storedInOrganizationId ?? null;
+      byLocation.set(location, [...(byLocation.get(location) ?? []), file.storageKey, ...(file.originalStorageKey ? [file.originalStorageKey] : [])]);
+    }
+    for (const [location, keys] of byLocation) await this.deleteUnreferenced(keys, location);
+  }
+
+  /** Tries an organisation's bucket (issue #206): writes, reads back and deletes a small object; throws why it can't. */
+  async tryOwnStorage(driver: ObjectStorageDriver): Promise<void> {
+    const body = Buffer.from(`Oneverse checks it can use this bucket: ${new Date().toISOString()}`);
+    const hash = createHash("sha256").update(body).digest("hex");
+    await driver.putObject(hash, body, "text/plain");
+    const back = await driver.getObject(hash);
+    await driver.deleteObject(hash);
+    if (!back.equals(body)) throw new Error("What was written didn't come back the same");
   }
 
   /** Which driver/source is actually serving uploads - surfaced in the admin Storage panel. */
@@ -147,11 +211,17 @@ export class StorageService {
    * content-addressed and shared, so an attachment and an avatar (or two
    * attachments) with identical bytes point at the same object.
    */
-  async deleteUnreferenced(hashes: string[]): Promise<void> {
+  async deleteUnreferenced(hashes: string[], location: StorageLocation = null): Promise<void> {
     for (const hash of new Set(hashes)) {
+      // In an organisation's bucket (issue #206), only its files are there.
+      if (location) {
+        const files = await this.prisma.client.attachment.count({ where: { storedInOrganizationId: location, OR: [{ storageKey: hash }, { originalStorageKey: hash }] } });
+        if (files === 0) await this.delete(hash, location);
+        continue;
+      }
       const [attachments, avatars, songImages, artistPictures, teamPictures, songbookPictures, themeFiles, brandFiles, bibleFiles, archives] = await Promise.all([
         // A file, or a lossless original kept beside one (issue #182).
-        this.prisma.client.attachment.count({ where: { OR: [{ storageKey: hash }, { originalStorageKey: hash }] } }),
+        this.prisma.client.attachment.count({ where: { storedInOrganizationId: null, OR: [{ storageKey: hash }, { originalStorageKey: hash }] } }),
         this.prisma.client.user.count({ where: { avatarStorageKey: hash } }),
         // Song artwork (issue #85): the same album's is often shared by several songs.
         this.prisma.client.songVersion.count({ where: { imageStorageKey: hash, ...BINNED_TOO } }),
@@ -183,12 +253,14 @@ export class StorageService {
    * Not people's archives (issue #351, ContentArchive): each is a copy of
    * files the backup already has, made again weekly, and kept two weeks -
    * a restored server shows them as gone, and the next ones are made.
+   * Nor files in an organisation's own bucket (issue #206): the
+   * organisation keeps those.
    */
   async storedKeys(): Promise<string[]> {
     const rows = await this.prisma.client.$queryRaw<{ key: string }[]>`
       SELECT key FROM (
-        SELECT "storageKey" AS key FROM "Attachment"
-        UNION SELECT "originalStorageKey" FROM "Attachment"
+        SELECT "storageKey" AS key FROM "Attachment" WHERE "storedInOrganizationId" IS NULL
+        UNION SELECT "originalStorageKey" FROM "Attachment" WHERE "storedInOrganizationId" IS NULL
         UNION SELECT "avatarStorageKey" FROM "User"
         UNION SELECT "imageStorageKey" FROM "SongVersion"
         UNION SELECT "imageStorageKey" FROM "Artist"

@@ -768,6 +768,8 @@ model Organization {
   // Archives of its teams' songs, songbooks and sets (issue #351).
   contentArchives ContentArchive[]       @relation("ContentArchiveOrganization")
   archiveSchedule ArchiveSchedule?       @relation("ArchiveScheduleOrganization")
+  // Its own bucket for its teams' songs' files (issue #206).
+  ownStorage      OrganizationStorage?
 }
 
 model OrganizationMembership {
@@ -808,6 +810,8 @@ model OrganizationSettings {
   mode          String?
   // With several: anyone may create one, not only global admins (ORGANIZATIONS_OPEN).
   anyoneCreates Boolean?
+  // Organisations may keep their teams' files in their own bucket (issue #206; ORGANIZATIONS_OWN_STORAGE).
+  ownStorage    Boolean?
   updatedAt     DateTime @updatedAt
 }
 
@@ -1970,6 +1974,10 @@ model Attachment {
   filename               String
   mimeType               String
   storageKey             String // S3 object key
+  // Where its bytes are (and its original's): an organisation's own bucket
+  // (issue #206), or the server's storage when null. Moved by the Worker to
+  // where its song's owner keeps files; read from where this says.
+  storedInOrganizationId String?
   sizeBytes              Int?
   stemPart               StemPart?
   // How many semitones above its multitrack it was recorded (issue #135):
@@ -2046,6 +2054,7 @@ model Attachment {
   multitrackSetlist Setlist?    @relation("AttachmentMultitrackSetlist", fields: [multitrackSetlistId], references: [id], onDelete: SetNull)
 
   @@index([songVersionId])
+  @@index([storedInOrganizationId])
   @@index([uploadedByUserId])
 }
 
@@ -3033,6 +3042,9 @@ model Role {
   // and Pulses of the teams and organisations it's given for, without being
   // their admin - nothing over the sets they show or who owns them.
   canManageScreens           Boolean  @default(false)
+  // Connects an organisation's own bucket for its teams' files (issue #206),
+  // as one of its admins, when Admin > Organisations allows it.
+  canUseOwnStorage           Boolean  @default(false)
   // A team's or an organisation's admins may give it to their own members,
   // only on their team or organisation (issue #270).
   teamAssignable             Boolean  @default(false)
@@ -3554,4 +3566,43 @@ enum ArchiveScope {
   USER
   TEAM
   ORGANIZATION
+}
+
+// An organisation's own S3-compatible bucket (issue #206): its teams' songs'
+// files are kept there. Only known providers: the address is made from the
+// provider and its account or region, never typed in.
+model OrganizationStorage {
+  id                 String                   @id @default(cuid())
+  organizationId     String                   @unique
+  provider           OwnStorageProvider
+  // R2's account ID; the others' region.
+  accountId          String?
+  region             String?
+  bucket             String
+  accessKeyId        String
+  // Encrypted with SETTINGS_ENCRYPTION_KEY; never sent back.
+  secretAccessKeyEnc String
+  // ACTIVE: files go there. LEAVING: being moved back, then it's removed.
+  state              OwnStorageState          @default(ACTIVE)
+  // Whether it answered the last time it was tried, and why not.
+  reachable          Boolean                  @default(true)
+  lastError          String?
+  checkedAt          DateTime?
+  createdByUserId    String?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+enum OwnStorageProvider {
+  R2
+  S3
+  B2
+  WASABI
+}
+
+enum OwnStorageState {
+  ACTIVE
+  LEAVING
 }

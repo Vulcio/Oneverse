@@ -25,7 +25,8 @@ function AdminOrganizationsPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const summary = Route.useLoaderData();
-  const { mode: modeSetting, anyoneCreates: anyoneSetting } = summary.settings;
+  const { mode: modeSetting, anyoneCreates: anyoneSetting, ownStorage: ownStorageSetting } = summary.settings;
+  const [ownStorage, setOwnStorage] = useState(ownStorageSetting.value);
   const [mode, setMode] = useState<OrganizationMode>(modeSetting.value);
   const [anyoneCreates, setAnyoneCreates] = useState(anyoneSetting.value);
   useEffect(() => {
@@ -101,6 +102,16 @@ function AdminOrganizationsPage() {
               </span>
             </label>
           ) : null}
+          {mode !== "NONE" ? (
+            <label className="flex items-start gap-3">
+              <input type="checkbox" className="mt-1 size-4" checked={ownStorage} onChange={(event) => setOwnStorage(event.target.checked)} data-testid="organization-own-storage" />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">{t("organizations.ownStorageAllowed")}</span>
+                <span className="text-xs text-muted-foreground">{t("organizations.ownStorageAllowedHint")}</span>
+                <span className="text-xs text-muted-foreground">{sourceOf(ownStorageSetting)}</span>
+              </span>
+            </label>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -112,6 +123,7 @@ function AdminOrganizationsPage() {
                 // Only what changed: the rest keeps coming from where it does.
                 ...(mode !== modeSetting.value ? { mode } : {}),
                 ...(anyoneCreates !== anyoneSetting.value ? { anyoneCreates } : {}),
+                ...(ownStorage !== ownStorageSetting.value ? { ownStorage } : {}),
               }),
             )
           }

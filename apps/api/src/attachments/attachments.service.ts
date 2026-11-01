@@ -135,8 +135,10 @@ export class AttachmentsService {
     const song = await this.songRights(viewer, songVersionId);
     const canEditSong = song.canEditSong;
     const audience = await this.audience(viewer, song, visibility, teamId);
-    await this.quota.assertCanStore(viewer.id, body.length, songVersionId);
-    const { hash, sizeBytes } = await this.storage.put(body, mimeType);
+    // In its organisation's own bucket (issue #206), it counts against no pool here.
+    const location = await this.storage.locationForSong(songVersionId);
+    if (!location) await this.quota.assertCanStore(viewer.id, body.length, songVersionId);
+    const { hash, sizeBytes } = await this.storage.put(body, mimeType, location);
     // Made Opus by the Worker above 320 kbps (issue #182): a WAV says its rate in its header, so it's known now;
     // a FLAC or AIFF always is, for music; anything else, the Worker finds out (null: maybe).
     const shrinks = type !== "AUDIO" || take.process ? false : wavBitrate(body) !== null ? wavBitrate(body)! > MAX_UPLOAD_BITRATE : LOSSLESS_TYPES.has(mimeType) ? true : null;
@@ -147,6 +149,7 @@ export class AttachmentsService {
         filename,
         mimeType,
         storageKey: hash,
+        storedInOrganizationId: location,
         sizeBytes,
         uploadedByUserId: viewer.id,
         stemPart,
@@ -293,7 +296,7 @@ export class AttachmentsService {
     if (attachment.type !== "IMAGE" && !attachment.mimeType.startsWith("image/")) {
       throw new UnsupportedMediaTypeException("This attachment isn't an image");
     }
-    return this.images.resize(attachment.storageKey, () => this.storage.get(attachment.storageKey), width);
+    return this.images.resize(attachment.storageKey, () => this.storage.get(attachment.storageKey, attachment.storedInOrganizationId), width);
   }
 
   /**
@@ -308,7 +311,7 @@ export class AttachmentsService {
     if (!present(attachment, viewer, canEditSong).canChange) throw new ForbiddenException("Only its uploader or the song's editors can remove this file");
     if (attachment.locked) throw new ForbiddenException("This file is locked: its uploader can unlock it on the Audio tab");
     await this.prisma.client.attachment.delete({ where: { id: attachment.id } });
-    await this.storage.deleteUnreferenced([attachment.storageKey, ...(attachment.originalStorageKey ? [attachment.originalStorageKey] : [])]);
+    await this.storage.deleteUnreferencedFiles([attachment]);
   }
 
   private async canEditSong(viewer: Viewer, songVersionId: string): Promise<boolean> {

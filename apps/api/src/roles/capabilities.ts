@@ -22,6 +22,8 @@ export interface Capabilities {
   canRoute: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations (issue #322), without being their admin. */
   canManageScreens: boolean;
+  /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
+  canUseOwnStorage: boolean;
   /** Each separating role's monthly limit; null: the one set in Admin > Stem separation. See monthlyLimitOf. */
   stemSeparationMonthlyLimits: (number | null)[];
   /** Their own storage limit; null: the default one. */
@@ -42,6 +44,7 @@ type RoleRow = {
   canCue: boolean;
   canRoute: boolean;
   canManageScreens: boolean;
+  canUseOwnStorage: boolean;
   stemSeparationMonthlyLimit: number | null;
   storageLimitMb: number | null;
   permissions: string[];
@@ -57,6 +60,7 @@ const ROLE_FIELDS = {
   canCue: true,
   canRoute: true,
   canManageScreens: true,
+  canUseOwnStorage: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,
   permissions: true,
@@ -79,6 +83,7 @@ export function combineRoles(roles: RoleRow[]): Capabilities {
     canCue: roles.some((role) => role.canCue),
     canRoute: roles.some((role) => role.canRoute),
     canManageScreens: roles.some((role) => role.canManageScreens),
+    canUseOwnStorage: roles.some((role) => role.canUseOwnStorage),
     stemSeparationMonthlyLimits: separating.map((role) => role.stemSeparationMonthlyLimit),
     storageLimitMb: largest(roles.map((role) => role.storageLimitMb)),
     permissions: [...new Set(roles.flatMap((role) => role.permissions))].sort(),

@@ -20,7 +20,7 @@ await api(admin, "DELETE", "/admin/artwork");
 let status = await api(admin, "GET", "/admin/jobs");
 check("the Worker is running: its heartbeat under a minute old", !!status.worker && Date.now() - Date.parse(status.worker.at) < 60000, JSON.stringify(status.worker));
 check("this API doesn't run jobs itself (JOBS_IN_API=false, as in production)", status.thisApiRunsJobs === false && status.api === null, JSON.stringify(status));
-check("the queues", status.queues.map((q) => q.name).join() === "lookups,backfills,bulk-upload,user-maintenance,recordings,stem-separation,team-events,notifications,scriptures,live-sessions,backups,archives", JSON.stringify(status.queues));
+check("the queues", status.queues.map((q) => q.name).join() === "lookups,backfills,bulk-upload,user-maintenance,recordings,stem-separation,team-events,notifications,scriptures,live-sessions,backups,archives,own-storage", JSON.stringify(status.queues));
 // Recorded takes are turned into Opus with it (issue #127).
 check("the Worker has ffmpeg, and says which", /^\d/.test(status.worker?.ffmpeg ?? ""), JSON.stringify(status.worker));
 check("admins only", (await call(someone, "GET", "/admin/jobs")).status === 403);

@@ -229,6 +229,8 @@ jobs:
       YOUVERSION_API_URL: "http://localhost:3999/youversion"
       # A stand-in push service (e2e/lib/fake-push.mjs) the API may post to, besides the real ones (issue #236).
       PUSH_TEST_ORIGINS: "http://localhost:3997"
+      # Organisations' own buckets (issue #206) as folders here, so the suites need no provider.
+      OWN_STORAGE_LOCAL_DIR: /tmp/e2e-own-storage
     steps:
       - uses: actions/checkout@v4
 

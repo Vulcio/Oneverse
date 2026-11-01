@@ -27,6 +27,9 @@ const TRANSACTION_OPTIONS = { timeout: 60_000, maxWait: 10_000 };
  * created) is removed, audit entries lose their actor, and contributor
  * credits keep their name as plain text.
  */
+/** A file in an organisation's own bucket (issue #206). */
+type OwnStorageFile = { storageKey: string; originalStorageKey: string | null; storedInOrganizationId: string | null };
+
 @Injectable()
 export class UserDeletionService {
   constructor(
@@ -35,12 +38,15 @@ export class UserDeletionService {
   ) {}
 
   async deleteAccountAndContent(userId: string): Promise<void> {
+    // Files in an organisation's own bucket (issue #206): released there.
+    const ownStorageFiles: OwnStorageFile[] = [];
     const releasedKeys = await this.prisma.client.$transaction(async (tx) => {
-      const contentKeys = await this.purgeOwnedContent(tx, userId);
+      const contentKeys = await this.purgeOwnedContent(tx, userId, ownStorageFiles);
       const accountKeys = await this.removeAccount(tx, userId);
       return [...contentKeys, ...accountKeys];
     }, TRANSACTION_OPTIONS);
     await this.storage.deleteUnreferenced(releasedKeys);
+    await this.storage.deleteUnreferencedFiles(ownStorageFiles);
   }
 
   /**
@@ -110,21 +116,22 @@ export class UserDeletionService {
   }
 
   /** Deletes everything the user personally owns. Returns storage keys that may now be unreferenced. */
-  private async purgeOwnedContent(tx: Tx, userId: string): Promise<string[]> {
+  private async purgeOwnedContent(tx: Tx, userId: string, ownStorageFiles: OwnStorageFile[]): Promise<string[]> {
     const versions = await tx.songVersion.findMany({ where: { ownerUserId: userId, ...BINNED_TOO }, select: { id: true, workId: true, imageStorageKey: true } });
     const versionIds = versions.map((version) => version.id);
     const workIds = [...new Set(versions.map((version) => version.workId))];
 
     const attachments = await tx.attachment.findMany({
       where: { songVersionId: { in: versionIds } },
-      select: { storageKey: true, originalStorageKey: true },
+      select: { storageKey: true, originalStorageKey: true, storedInOrganizationId: true },
     });
     // Their private files on other people's songs (issue #72) would have no
     // one left to see them: they go too. Files they shared stay.
     const privateFiles = await tx.attachment.findMany({
       where: { uploadedByUserId: userId, visibility: "PRIVATE", songVersionId: { notIn: versionIds } },
-      select: { id: true, storageKey: true, originalStorageKey: true },
+      select: { id: true, storageKey: true, originalStorageKey: true, storedInOrganizationId: true },
     });
+    ownStorageFiles.push(...[...attachments, ...privateFiles].filter((file) => file.storedInOrganizationId));
     await tx.attachment.deleteMany({ where: { id: { in: privateFiles.map((file) => file.id) } } });
     // So do their private reference recordings (issue #346).
     await tx.songLink.deleteMany({ where: { addedByUserId: userId, visibility: "PRIVATE" } });
@@ -164,7 +171,7 @@ export class UserDeletionService {
     await tx.setlist.deleteMany({ where: { ownerUserId: userId } });
 
     return [
-      ...[...attachments, ...privateFiles].flatMap((attachment) => (attachment.originalStorageKey ? [attachment.storageKey, attachment.originalStorageKey] : [attachment.storageKey])),
+      ...[...attachments, ...privateFiles].filter((file) => !file.storedInOrganizationId).flatMap((attachment) => (attachment.originalStorageKey ? [attachment.storageKey, attachment.originalStorageKey] : [attachment.storageKey])),
       // Their songs' images (issue #85).
       ...versions.flatMap((version) => (version.imageStorageKey ? [version.imageStorageKey] : [])),
       ...songbookPictures.flatMap((songbook) => (songbook.avatarStorageKey ? [songbook.avatarStorageKey] : [])),

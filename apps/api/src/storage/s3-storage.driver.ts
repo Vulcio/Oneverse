@@ -30,6 +30,10 @@ export interface S3StorageConfig {
   secretAccessKey: string;
   bucket: string;
   endpoint?: string;
+  /** "auto" for R2; another provider's own (an organisation's bucket, issue #206). */
+  region?: string;
+  /** How long to wait to connect, and for an answer to go quiet (an organisation's bucket: PROVIDER_TIMEOUT_MS). */
+  timeouts?: { connectMs: number; idleMs: number };
 }
 
 /**
@@ -43,7 +47,8 @@ export class S3StorageDriver implements ObjectStorageDriver {
   constructor(config: S3StorageConfig) {
     this.bucket = config.bucket;
     this.client = new S3Client({
-      region: "auto",
+      region: config.region ?? "auto",
+      ...(config.timeouts && { requestHandler: { connectionTimeout: config.timeouts.connectMs, requestTimeout: config.timeouts.idleMs }, maxAttempts: 2 }),
       endpoint: config.endpoint || `https://${config.accountId}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId: config.accessKeyId,

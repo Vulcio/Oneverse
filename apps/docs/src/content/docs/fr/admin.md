@@ -69,6 +69,8 @@ Si le serveur a des organisations - une église, un club - qui regroupent des é
 
 La page indique d'où vient chaque réglage - enregistré ici, les variables d'environnement `ORGANIZATION_MODE` et `ORGANIZATIONS_OPEN`, ou la valeur par défaut - avec **Enregistrer la configuration** et **Revenir aux variables d'environnement**. **Toutes les organisations** les liste avec leurs équipes, membres et administrateurs ; **Supprimer l'organisation** laisse leurs équipes à part entière.
 
+**Les organisations peuvent utiliser leur propre stockage** (ou la variable d'environnement `ORGANIZATIONS_OWN_STORAGE`) permet aux administrateurs d'une organisation dont un rôle le permet de garder les fichiers des chants de ses équipes dans le bucket de l'organisation (voir [Son propre stockage](/fr/organizations/#son-propre-stockage)) ; ces fichiers quittent le stockage de ce serveur, ses quotas et ses sauvegardes.
+
 Sous le titre de la page, elle indique où se trouve [Planiverse](/fr/planiverse/), quand il est déployé à côté de Songverse (une adresse réglée là où il est déployé, `PLANIVERSE_URL`), ou qu'il ne l'est pas.
 
 ### Rôles
@@ -83,6 +85,7 @@ Le seul endroit qui dit ce que chacun peut faire au-delà de ses chants et de ce
 - **Avancer les écrans** - passer les écrans de toute liste que l'on peut ouvrir au chant ou à la partie suivante ou précédente, depuis le menu Synchro de Live, sans présenter d'autre diapositive : pour les chanteurs qui font avancer la liste (voir [Avancer les écrans](/fr/screens/#avancer-les-écrans)) ;
 - **Orienter les écrans** - changer ce que dessinent les écrans de toute liste que l'on peut ouvrir - masquer, afficher ou effacer leurs calques et la carte de titre, pour tous ou pour l'un d'eux - depuis la vue opérateur, sans présenter ni toucher au minuteur ou aux messages : pour la technique à la régie (voir [Écrans et calques](/fr/screens/#écrans-et-calques)) ;
 - **Administrer les écrans** - associer, modifier et déconnecter les écrans et les Pulse de ses équipes et organisations sans en être administrateur, sans droit sur les listes qu'ils affichent ni sur qui les possède (voir [À qui est l'écran](/fr/screens/#à-qui-est-lécran)) ;
+- **Stockage propre des organisations** - en tant qu'administrateur d'une organisation, connecter son propre bucket pour les fichiers de ses équipes, quand **Organisations** le permet (voir [Son propre stockage](/fr/organizations/#son-propre-stockage)) ;
 - **Un palier de stockage** - combien une personne peut stocker, ou l'espace d'une équipe.
 
 **Les équipes peuvent le donner** permet aux administrateurs d'une équipe ou d'une organisation de donner le rôle à leurs propres membres, dans leur équipe ou organisation seulement (voir [Équipes](/fr/teams/#rôles-dans-léquipe)). Donné ainsi, il leur permet d'y gérer les écrans, de les avancer, de les orienter ou de les administrer, rien d'autre : stockage, envois audio, pistes et relecture restent ce que vous donnez ici. Décochez-le et les rôles donnés par les équipes ne comptent plus.

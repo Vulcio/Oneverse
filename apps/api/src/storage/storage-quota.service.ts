@@ -72,7 +72,7 @@ export class StorageQuotaService {
       SELECT "teamId", SUM(bytes) AS bytes FROM (
         SELECT sv."ownerTeamId" AS "teamId", COALESCE(a."sizeBytes", 0) + COALESCE(a."originalSizeBytes", 0) AS bytes
         FROM "Attachment" a JOIN "SongVersion" sv ON sv.id = a."songVersionId"
-        WHERE sv."ownerTeamId" IS NOT NULL
+        WHERE sv."ownerTeamId" IS NOT NULL AND a."storedInOrganizationId" IS NULL
         UNION ALL
         SELECT b."ownerTeamId" AS "teamId", ba."sizeBytes" AS bytes
         FROM "BrandAsset" ba JOIN "Brand" b ON b.id = ba."brandId"
@@ -109,7 +109,8 @@ export class StorageQuotaService {
   async getTeamUsage(teamId: string): Promise<StorageUsage> {
     const [aggregate, brands] = await Promise.all([
       this.prisma.client.attachment.aggregate({
-        where: { songVersion: { ownerTeamId: teamId } },
+        // Not what's in its organisation's own bucket (issue #206): that's theirs to pay for.
+        where: { songVersion: { ownerTeamId: teamId }, storedInOrganizationId: null },
         _sum: { sizeBytes: true, originalSizeBytes: true },
       }),
       // Its brands' logos, backgrounds and fonts (issue #279).

@@ -71,7 +71,8 @@ export class RecordingsProcessor extends WorkerHost {
       return { skipped: reason };
     };
     try {
-      const body = await this.storage.get(file.storageKey);
+      const location = file.storedInOrganizationId;
+      const body = await this.storage.get(file.storageKey, location);
       await writeFile(path.join(dir, "probe"), body);
       const probe = await probeAudio(path.join(dir, "probe"));
       if (!probe) return keep("its length can't be read");
@@ -79,12 +80,13 @@ export class RecordingsProcessor extends WorkerHost {
       if (bitrate <= MAX_UPLOAD_BITRATE) return keep(`${Math.round(bitrate / 1000)} kbps: kept as uploaded`);
       const opus = await encodeUpload(body, dir, probe.channels);
       const original = job.data.keepOriginal && isLosslessCodec(probe.codec) ? await losslessOriginal(body, dir, probe.codec) : null;
-      const { hash, sizeBytes } = await this.storage.put(opus, "audio/ogg");
-      const kept = original ? await this.storage.put(original, "audio/flac") : null;
+      // Where the upload is (an organisation's own bucket, issue #206): the Worker doesn't move one being processed.
+      const { hash, sizeBytes } = await this.storage.put(opus, "audio/ogg", location);
+      const kept = original ? await this.storage.put(original, "audio/flac", location) : null;
       // As it is now (its details may have changed while it was encoded).
       const current = await this.prisma.client.attachment.findUnique({ where: { id: file.id } });
-      if (!current || current.storageKey !== file.storageKey) {
-        await this.storage.deleteUnreferenced([hash, ...(kept ? [kept.hash] : [])]);
+      if (!current || current.storageKey !== file.storageKey || current.storedInOrganizationId !== location) {
+        await this.storage.deleteUnreferenced([hash, ...(kept ? [kept.hash] : [])], location);
         return { skipped: "changed while it was encoded" };
       }
       // Everything about it but its id and file, the same: a new id, so offline copies and caches fetch it again.
@@ -96,7 +98,7 @@ export class RecordingsProcessor extends WorkerHost {
         }),
         this.prisma.client.attachment.delete({ where: { id: file.id } }),
       ]);
-      await this.storage.deleteUnreferenced([file.storageKey]);
+      await this.storage.deleteUnreferenced([file.storageKey], location);
       this.logger.log(`Made ${file.filename} Opus (${Math.round(bitrate / 1000)} kbps): ${body.length} to ${sizeBytes} bytes${kept ? `, its original kept as FLAC (${kept.sizeBytes} bytes)` : ""}`);
       return { attachmentId: made.id, bytes: sizeBytes };
     } catch (error) {
@@ -115,8 +117,8 @@ export class RecordingsProcessor extends WorkerHost {
     if (!take || take.processing !== "PENDING") return { skipped: "gone or already done" };
     const dir = await mkdtemp(path.join(tmpdir(), "songverse-take-"));
     try {
-      const opus = await processTake(await this.storage.get(take.storageKey), dir, { level: job.data.level, noise: job.data.noise, voice: job.data.voice, quietFor: job.data.quietFor });
-      const { hash, sizeBytes } = await this.storage.put(opus, "audio/ogg");
+      const opus = await processTake(await this.storage.get(take.storageKey, take.storedInOrganizationId), dir, { level: job.data.level, noise: job.data.noise, voice: job.data.voice, quietFor: job.data.quietFor });
+      const { hash, sizeBytes } = await this.storage.put(opus, "audio/ogg", take.storedInOrganizationId);
       // Everything about it but its id and file, the same.
       const rest: Partial<typeof take> = { ...take };
       delete rest.id;
@@ -126,7 +128,7 @@ export class RecordingsProcessor extends WorkerHost {
         }),
         this.prisma.client.attachment.delete({ where: { id: take.id } }),
       ]);
-      await this.storage.deleteUnreferenced([take.storageKey]);
+      await this.storage.deleteUnreferenced([take.storageKey], take.storedInOrganizationId);
       this.logger.log(`Processed ${take.filename}: ${take.sizeBytes ?? 0} to ${sizeBytes} bytes`);
       return { attachmentId: processed.id, bytes: sizeBytes };
     } catch (error) {

@@ -9,6 +9,8 @@ export interface StoredFile {
   mimeType: string;
   filename: string;
   sizeBytes: number | null;
+  /** In an organisation's own bucket (issue #206); the server's storage when null or left out. */
+  storedInOrganizationId?: string | null;
 }
 
 /**
@@ -32,7 +34,7 @@ export async function sendFile(
   disposition: "attachment" | "inline",
   options: { cleanSvg?: boolean } = {},
 ): Promise<void> {
-  const size = file.sizeBytes ?? (await storage.size(file.storageKey));
+  const size = file.sizeBytes ?? (await storage.size(file.storageKey, file.storedInOrganizationId ?? null));
   const etag = `"${file.storageKey}"`;
   const safe = options.cleanSvg && file.mimeType === "image/svg+xml" ? "image/svg+xml" : inlineSafeType(file.mimeType);
   res.set({
@@ -64,7 +66,7 @@ export async function sendFile(
     res.end();
     return;
   }
-  const body = await storage.stream(file.storageKey, range ?? undefined);
+  const body = await storage.stream(file.storageKey, range ?? undefined, file.storedInOrganizationId ?? null);
   try {
     await pipeline(body, res);
   } catch {

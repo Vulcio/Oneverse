@@ -93,7 +93,7 @@ export class StemSeparationProcessor extends WorkerHost {
       const fastModel = parts === "6" ? "htdemucs_6s" : settings.fastModel;
       const hqModel = separation.hqRequested ? settings.hqModel : null;
       // Its lossless original when one was kept (issue #182): separated from the best copy there is.
-      const submitted = await submitDemucsJob(settings, await this.storage.get(source.originalStorageKey ?? source.storageKey), source.originalStorageKey ? source.filename.replace(/\.[a-z0-9]{1,5}$/i, ".flac") : source.filename, source.originalStorageKey ? (source.originalMimeType ?? "audio/flac") : source.mimeType, {
+      const submitted = await submitDemucsJob(settings, await this.storage.get(source.originalStorageKey ?? source.storageKey, source.storedInOrganizationId), source.originalStorageKey ? source.filename.replace(/\.[a-z0-9]{1,5}$/i, ".flac") : source.filename, source.originalStorageKey ? (source.originalMimeType ?? "audio/flac") : source.mimeType, {
         model: fastModel,
         twoStems: twoStemsOf(parts),
         hq: hqModel ? { model: hqModel } : undefined,
@@ -247,7 +247,9 @@ export class StemSeparationProcessor extends WorkerHost {
     // Seen by whoever sees the recording it came from (or the stems it replaces); the requester's alone if both are gone.
     const audience = source ?? earlierFirst;
     const stored = [];
-    for (const stem of stems) stored.push({ ...stem, ...(await this.storage.put(stem.body, stem.mimeType)) });
+    // Where the song keeps its files (an organisation's own bucket, issue #206).
+    const location = await this.storage.locationForSong(separation.songVersionId);
+    for (const stem of stems) stored.push({ ...stem, ...(await this.storage.put(stem.body, stem.mimeType, location)) });
     await this.prisma.client.$transaction([
       ...stored.map((stem) =>
         this.prisma.client.attachment.create({
@@ -257,6 +259,7 @@ export class StemSeparationProcessor extends WorkerHost {
             filename: `${base} - ${stem.part.label}.${stem.extension}`,
             mimeType: stem.mimeType,
             storageKey: stem.hash,
+            storedInOrganizationId: location,
             sizeBytes: stem.sizeBytes,
             stemPart: stem.part.stemPart,
             partName: stem.part.partName,
@@ -293,7 +296,7 @@ export class StemSeparationProcessor extends WorkerHost {
         data: { multitrackId, status: separation.hqRequested ? "FAST_READY" : "COMPLETED", error: null },
       }),
     ]);
-    if (earlierStems.length) await this.storage.deleteUnreferenced(earlierStems.map((file) => file.storageKey));
+    if (earlierStems.length) await this.storage.deleteUnreferencedFiles(earlierStems);
     this.logger.log(`Separated ${base}: ${stems.length} stems (${bytes} bytes)${earlierStems.length ? `, replacing ${earlierStems.length}` : ""}`);
     return { imported: stems.length, replaced: earlierStems.length };
   }
@@ -309,11 +312,13 @@ export class StemSeparationProcessor extends WorkerHost {
     const current = await this.prisma.client.attachment.findMany({ where: { songVersionId: separation.songVersionId, multitrackId: separation.multitrackId ?? "-", origin: "SEPARATED" } });
     const stems = await this.fetchStems(server, files, separation.parts);
     const replaced: string[] = [];
+    const replacedFiles: typeof current = [];
     for (const stem of stems) {
       const fast = current.find((file) => file.stemPart === stem.part.stemPart && (file.partName ?? null) === stem.part.partName && !replaced.includes(file.storageKey));
       // Deleted since: not brought back.
       if (!fast) continue;
-      const { hash, sizeBytes } = await this.storage.put(stem.body, stem.mimeType);
+      // Beside the fast one, where it is (issue #206).
+      const { hash, sizeBytes } = await this.storage.put(stem.body, stem.mimeType, fast.storedInOrganizationId);
       const rest: Partial<typeof fast> = { ...fast };
       delete rest.id;
       await this.prisma.client.$transaction([
@@ -323,8 +328,9 @@ export class StemSeparationProcessor extends WorkerHost {
         this.prisma.client.attachment.delete({ where: { id: fast.id } }),
       ]);
       replaced.push(fast.storageKey);
+      replacedFiles.push({ ...fast, originalStorageKey: null });
     }
-    await this.storage.deleteUnreferenced(replaced);
+    await this.storage.deleteUnreferencedFiles(replacedFiles);
     await this.prisma.client.stemSeparation.update({ where: { id: separation.id }, data: { status: "COMPLETED", hqDone: true, error: null } });
     this.logger.log(`High-quality stems in: ${replaced.length} replaced`);
     return { replaced: replaced.length };

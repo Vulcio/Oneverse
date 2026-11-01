@@ -14,7 +14,23 @@ export type OrganizationMode = (typeof ORGANIZATION_MODES)[number];
 export const SaveOrganizationSettingsSchema = z.strictObject({
   mode: z.enum(ORGANIZATION_MODES).nullable().optional().describe("None, one or several organisations (ORGANIZATION_MODE)"),
   anyoneCreates: z.boolean().nullable().optional().describe("With several, anyone may create one, not only global admins (ORGANIZATIONS_OPEN)"),
+  ownStorage: z.boolean().nullable().optional().describe("Organisations may keep their teams' files in their own bucket, set up by an admin with a role that allows it (ORGANIZATIONS_OWN_STORAGE, issue #206)"),
 });
+
+/**
+ * PUT /organizations/:id/storage (issue #206): an organisation's own bucket,
+ * at a known provider. Like PATCH for the secret: left out keeps it.
+ */
+export const OWN_STORAGE_PROVIDER_NAMES = ["R2", "S3", "B2", "WASABI"] as const;
+export const SaveOwnStorageSchema = z.strictObject({
+  provider: z.enum(OWN_STORAGE_PROVIDER_NAMES).describe("Cloudflare R2, Amazon S3, Backblaze B2 or Wasabi"),
+  accountId: optional(z.string().trim().toLowerCase().max(64)).describe("R2: the Cloudflare account's ID"),
+  region: optional(z.string().trim().toLowerCase().max(40)).describe("S3, B2, Wasabi: the bucket's region, like eu-central-1 or us-west-004"),
+  bucket: z.string().trim().min(3).max(63),
+  accessKeyId: optional(z.string().trim().min(1).max(200)).describe("Needed the first time; left out, the one saved is kept"),
+  secretAccessKey: optional(z.string().trim().min(1).max(500)).describe("Needed the first time; left out, the one saved is kept"),
+});
+export type SaveOwnStorageRequest = z.input<typeof SaveOwnStorageSchema>;
 export type SaveOrganizationSettingsRequest = z.input<typeof SaveOrganizationSettingsSchema>;
 
 /** POST /organizations, POST /admin/organizations. */

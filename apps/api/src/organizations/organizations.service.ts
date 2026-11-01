@@ -364,6 +364,10 @@ export class OrganizationsService {
 
   /** Its teams on their own again, out of its tree. */
   private async deleteOrganization(organizationId: string) {
+    // Its teams' files in its own bucket (issue #206) would be lost: moved back first.
+    if (await this.prisma.client.organizationStorage.count({ where: { organizationId } })) {
+      throw new ConflictException("This organisation keeps its teams' files in its own storage: stop using it first, so they're moved back, then delete it");
+    }
     await this.prisma.client.$transaction(async (tx) => {
       const teams = await tx.team.findMany({ where: { organizationId }, select: { id: true } });
       await leaveOrganization(tx, teams.map((team) => team.id));

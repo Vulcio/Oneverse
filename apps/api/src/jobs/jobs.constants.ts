@@ -23,6 +23,8 @@ export const LIVE_SESSIONS_QUEUE = "live-sessions";
 export const BACKUPS_QUEUE = "backups";
 /** People's, teams' and organisations' archives, made and imported (issue #351). */
 export const ARCHIVES_QUEUE = "archives";
+/** Files moved to and from organisations' own buckets (issue #206). */
+export const OWN_STORAGE_QUEUE = "own-storage";
 
 /**
  * A short hash of this process's SETTINGS_ENCRYPTION_KEY, or null without

@@ -154,7 +154,7 @@ export class SongBinService {
 export async function destroySong(prisma: PrismaService, storage: StorageService, id: string): Promise<void> {
   const version = await prisma.client.songVersion.findUnique({
     where: { id, ...BINNED_TOO },
-    select: { workId: true, imageStorageKey: true, attachments: { select: { storageKey: true, originalStorageKey: true } } },
+    select: { workId: true, imageStorageKey: true, attachments: { select: { storageKey: true, originalStorageKey: true, storedInOrganizationId: true } } },
   });
   if (!version) throw new NotFoundException("Song version not found");
   const siblingCount = await prisma.client.songVersion.count({ where: { workId: version.workId, NOT: { id }, ...BINNED_TOO } });
@@ -165,8 +165,9 @@ export async function destroySong(prisma: PrismaService, storage: StorageService
     await tx.songVersion.delete({ where: { id } });
     if (siblingCount === 0) await tx.work.delete({ where: { id: version.workId } });
   });
-  const keys = [...version.attachments.flatMap((attachment) => [attachment.storageKey, attachment.originalStorageKey]), version.imageStorageKey].filter((key): key is string => !!key);
-  await storage.deleteUnreferenced(keys);
+  // Each file where it was: the server's storage, or an organisation's own bucket (issue #206).
+  await storage.deleteUnreferencedFiles(version.attachments);
+  if (version.imageStorageKey) await storage.deleteUnreferenced([version.imageStorageKey]);
 }
 
 /** Deletes for good the songs binned more than BIN_DAYS ago (the Worker, hourly); how many. */

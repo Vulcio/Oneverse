@@ -209,6 +209,7 @@ export class AttachmentsController {
         mimeType: attachment.originalMimeType ?? "audio/flac",
         filename: attachment.filename.replace(/\.[a-z0-9]{1,5}$/i, "") + ".flac",
         sizeBytes: attachment.originalSizeBytes,
+        storedInOrganizationId: attachment.storedInOrganizationId,
       },
       req,
       res,

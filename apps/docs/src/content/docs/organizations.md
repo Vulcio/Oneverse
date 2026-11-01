@@ -25,7 +25,8 @@ Its admins also:
 - **Take out** a team: it carries on, on its own, with its members and songs;
 - make **Invite links**: with a role, an expiry and a number of uses, like a team's (see [Teams](/teams/#creating-a-team-and-inviting-people)). Whoever opens one joins the organisation, after signing in or creating an account - even on a server where only invited people can sign up;
 - connect its own Songverse Sonic server under **Stem separation**, when this Songverse allows it: its teams' songs are split into stems there, unless a team connects its own (see [Your own stem separation server](/sonic/));
-- **Delete organisation**: its teams stay, on their own.
+- keep its teams' songs' files in its own bucket under **Own storage**, when this Songverse allows it (see [Its own storage](/organizations/#its-own-storage));
+- **Delete organisation**: its teams stay, on their own (not while it uses its own storage: stop that first).
 
 **Leave organisation** takes you out of it and its teams; its only admin makes someone else an admin first.
 
@@ -77,3 +78,22 @@ Its admins make one with **New event**: its **Title**, first date, start time, l
 ## Locations
 
 Where the organisation's events take place - a church, a hall, a campus: its admins add them under **Locations** on its page, with **Add location** (a **Name**, an **Address (optional)**, a **Time zone**), **Edit** and **Remove**. Its events pick one with **Location** in their dialog, which fills the place and the time zone, and each group's part follows it; a preset keeps it too. Its groups' own events can use them as well, beside the team's own (see [Locations](/teams/#locations)).
+
+## Its own storage
+
+An organisation can keep the files of its teams' songs - recordings, stems, PDFs and the other attachments - in a bucket of its own rather than on this server: its space, its bill. Its admins see **Own storage** on its page when the server's admin has ticked **Organisations may use their own storage** (see [Admin](/admin/#organisations)) and one of their roles allows **Own storage for organisations** (see [Admin](/admin/#roles)); otherwise the card says who to ask.
+
+Choose the **Provider** - **Cloudflare R2**, **Amazon S3**, **Backblaze B2** or **Wasabi** - then its **Account ID** (R2) or the bucket's **Region** (the others, such as `eu-central-1` or `us-west-004`), the **Bucket**, the **Access key ID** and the **Secret access key**. Use a key that can only read and write this bucket. **Save and try it** writes, reads back and deletes a small file there, and keeps the settings only if that works; the secret is kept encrypted and never shown again (leave it blank to keep the current one).
+
+Once it's connected:
+
+- the files already on its teams' songs are moved there in the background, each one checked byte for byte before it leaves this server; the card counts the files there and those being moved;
+- new files on its teams' songs go straight there. People's own songs, and pictures (avatars, song and team images), stay on this server;
+- its files don't count toward its teams' storage pools;
+- a team that leaves the organisation, or a song that moves to someone else, takes its files back to this server.
+
+If the bucket stops answering, the card says so: new files are kept on this server meanwhile and moved there once it answers again (it's tried every ten minutes). Its bucket can't be changed while files are in it.
+
+**Stop using it**, then **Move the files back and disconnect**, brings every file back to this server, then disconnects the bucket; the files left in the bucket are deleted from it as they're moved. Until then, the organisation can't be deleted.
+
+What's in its bucket is the organisation's to back up: this server's own backups don't copy it, though a [backup of the organisation](/backups/) still holds its teams' files.

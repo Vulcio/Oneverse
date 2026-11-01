@@ -43,7 +43,7 @@ import type { BibleSourceFormat } from "../scriptures/bible.js";
 import type { PassageChapter } from "../scriptures/references.js";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
 import type { SaveBackupConfigRequest } from "../requests/backups.js";
-import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
+import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, SaveOwnStorageRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
@@ -170,6 +170,23 @@ export interface ArchiveImportSummary {
   kept: Record<"songs" | "arrangements" | "songbooks" | "sets", number>;
   leftOut: string[];
   leftOutCount: number;
+}
+
+/** An organisation's own bucket for its teams' files (issue #206), as its admins see it. */
+export interface OwnStorageSummary {
+  allowed: boolean;
+  configured: boolean;
+  provider: "R2" | "S3" | "B2" | "WASABI" | null;
+  accountId: string | null;
+  region: string | null;
+  bucket: string | null;
+  accessKeyIdMasked: string | null;
+  state: "ACTIVE" | "LEAVING" | null;
+  reachable: boolean;
+  lastError: string | null;
+  checkedAt: string | null;
+  files: number;
+  moving: number;
 }
 
 export type ArchiveOwnerRef = { scope: "user" } | { scope: "team" | "organization"; id: string };
@@ -1005,6 +1022,8 @@ export interface AdminRole {
   canRoute: boolean;
   /** Pairs, changes and disconnects the screens of their teams and organisations, without being their admin (issue #322). */
   canManageScreens: boolean;
+  /** Connects an organisation's own bucket for its teams' files, as its admin (issue #206). */
+  canUseOwnStorage: boolean;
   /** A team's or an organisation's admins give it to their own members, on their team or organisation only (issue #270). */
   teamAssignable: boolean;
   /** Null: Admin > Stem separation's. */
@@ -1247,6 +1266,8 @@ export interface AdminOrganizations {
   settings: {
     mode: SecuritySetting<OrganizationMode>;
     anyoneCreates: SecuritySetting<boolean>;
+    /** Organisations may keep their teams' files in their own bucket (issue #206). */
+    ownStorage: SecuritySetting<boolean>;
   };
   /** Planiverse's address (PLANIVERSE_URL, set where it's deployed), or null: not deployed. */
   planiverseUrl: string | null;
@@ -2567,6 +2588,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       return request<ContentArchive>("/archives/import", { method: "POST", body: form });
     },
     deleteArchive: (archiveId: string) => request<void>(`/archives/${encodeURIComponent(archiveId)}`, { method: "DELETE" }),
+    getOwnStorage: (organizationId: string) => request<OwnStorageSummary>(`/organizations/${encodeURIComponent(organizationId)}/storage`),
+    saveOwnStorage: (organizationId: string, data: SaveOwnStorageRequest) =>
+      request<OwnStorageSummary>(`/organizations/${encodeURIComponent(organizationId)}/storage`, { method: "PUT", body: JSON.stringify(data) }),
+    stopOwnStorage: (organizationId: string) => request<OwnStorageSummary>(`/organizations/${encodeURIComponent(organizationId)}/storage/stop`, { method: "POST" }),
     /** An archive's download address, from its downloadPath: opened as it is (it's signed). */
     archiveDownloadUrl: (downloadPath: string) => `${baseUrl}${downloadPath}`,
     uploadAvatar: (file: Blob, filename = "avatar") => {

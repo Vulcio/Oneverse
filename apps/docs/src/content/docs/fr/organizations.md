@@ -25,7 +25,8 @@ Ses administrateurs peuvent aussi :
 - **Retirer** une équipe : elle continue à part entière, avec ses membres et ses chants ;
 - créer des **liens d'invitation** : avec un rôle, une expiration et un nombre d'utilisations, comme ceux d'une équipe (voir [Équipes](/fr/teams/#créer-une-équipe-et-inviter)). Qui en ouvre un rejoint l'organisation, après s'être connecté ou avoir créé un compte - même sur un serveur où seules les personnes invitées peuvent s'inscrire ;
 - connecter son propre serveur Songverse Sonic dans **Séparation en pistes**, quand ce Songverse le permet : les chants de ses équipes y sont séparés en pistes, sauf si une équipe connecte le sien (voir [Votre propre serveur de séparation](/fr/sonic/)) ;
-- **Supprimer l'organisation** : ses équipes restent, à part entière.
+- garder les fichiers des chants de ses équipes dans son propre bucket sous **Stockage propre**, quand ce Songverse le permet (voir [Son propre stockage](/fr/organizations/#son-propre-stockage)) ;
+- **Supprimer l'organisation** : ses équipes restent, à part entière (pas tant qu'elle utilise son propre stockage : arrêtez-le d'abord).
 
 **Quitter l'organisation** vous retire d'elle et de ses équipes ; son seul administrateur nomme d'abord quelqu'un d'autre administrateur.
 
@@ -77,3 +78,22 @@ Les **Modèles** gardent ce dont un événement a habituellement besoin : dans l
 ## Sites
 
 Où ont lieu les événements de l'organisation - une église, une salle, un campus : ses administrateurs les ajoutent sous **Sites** sur sa page, avec **Ajouter un site** (un **Nom**, une **Adresse (facultatif)**, un **Fuseau horaire**), **Modifier** et **Retirer**. Ses événements en choisissent un avec **Site** dans leur fenêtre, ce qui remplit le lieu et le fuseau horaire, et la part de chaque groupe le suit ; un modèle le garde aussi. Les événements propres à ses groupes peuvent aussi les utiliser, à côté de ceux de l'équipe (voir [Sites](/fr/teams/#sites)).
+
+## Son propre stockage
+
+Une organisation peut garder les fichiers des chants de ses équipes - enregistrements, pistes, PDF et autres pièces jointes - dans un bucket à elle plutôt que sur ce serveur : son espace, sa facture. Ses administrateurs voient **Stockage propre** sur sa page quand l'administrateur du serveur a coché **Les organisations peuvent utiliser leur propre stockage** (voir [Administration](/fr/admin/#organisations)) et qu'un de leurs rôles permet le **Stockage propre des organisations** (voir [Administration](/fr/admin/#rôles)) ; sinon la carte dit à qui le demander.
+
+Choisissez le **Fournisseur** - **Cloudflare R2**, **Amazon S3**, **Backblaze B2** ou **Wasabi** - puis son **ID du compte** (R2) ou la **Région** du bucket (les autres, comme `eu-central-1` ou `us-west-004`), le **Bucket**, l'**ID de clé d'accès** et la **Clé d'accès secrète**. Utilisez une clé qui ne peut lire et écrire que ce bucket. **Enregistrer et essayer** y écrit, relit et supprime un petit fichier, et ne garde les réglages que si cela marche ; la clé secrète est gardée chiffrée et n'est plus jamais affichée (laissez-la vide pour garder l'actuelle).
+
+Une fois connecté :
+
+- les fichiers déjà sur les chants de ses équipes y sont déplacés en arrière-plan, chacun vérifié octet par octet avant de quitter ce serveur ; la carte compte les fichiers qui y sont et ceux en cours de déplacement ;
+- les nouveaux fichiers des chants de ses équipes y vont directement. Les chants personnels, et les images (avatars, images des chants et des équipes), restent sur ce serveur ;
+- ses fichiers ne comptent pas dans l'espace de stockage de ses équipes ;
+- une équipe qui quitte l'organisation, ou un chant qui passe à quelqu'un d'autre, ramène ses fichiers sur ce serveur.
+
+Si le bucket ne répond plus, la carte le dit : les nouveaux fichiers sont gardés sur ce serveur en attendant, puis déplacés quand il répond à nouveau (il est réessayé toutes les dix minutes). Son bucket ne peut pas changer tant que des fichiers y sont.
+
+**Arrêter de l'utiliser**, puis **Ramener les fichiers et déconnecter**, ramène chaque fichier sur ce serveur, puis déconnecte le bucket ; les fichiers sont supprimés du bucket à mesure qu'ils sont déplacés. D'ici là, l'organisation ne peut pas être supprimée.
+
+Ce qui est dans son bucket est à l'organisation de le sauvegarder : les sauvegardes de ce serveur ne le copient pas, même si une [sauvegarde de l'organisation](/fr/backups/) contient bien les fichiers de ses équipes.

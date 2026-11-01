@@ -22,6 +22,7 @@ const ROLE_SELECT = {
   canCue: true,
   canRoute: true,
   canManageScreens: true,
+  canUseOwnStorage: true,
   teamAssignable: true,
   stemSeparationMonthlyLimit: true,
   storageLimitMb: true,

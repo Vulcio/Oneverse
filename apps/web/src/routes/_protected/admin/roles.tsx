@@ -136,6 +136,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
   const [canCue, setCanCue] = useState(role?.canCue ?? false);
   const [canRoute, setCanRoute] = useState(role?.canRoute ?? false);
   const [canManageScreens, setCanManageScreens] = useState(role?.canManageScreens ?? false);
+  const [canUseOwnStorage, setCanUseOwnStorage] = useState(role?.canUseOwnStorage ?? false);
   const [teamAssignable, setTeamAssignable] = useState(role?.teamAssignable ?? false);
   const [monthlyLimit, setMonthlyLimit] = useState(role?.stemSeparationMonthlyLimit?.toString() ?? "");
   const [hasStorage, setHasStorage] = useState(role?.storageLimitMb != null);
@@ -157,6 +158,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
       canCue,
       canRoute,
       canManageScreens,
+      canUseOwnStorage,
       teamAssignable,
       stemSeparationMonthlyLimit: canSeparateStems && monthlyLimit.trim() ? Number(monthlyLimit) : null,
       storageLimitMb: hasStorage && storageMb.trim() ? Number(storageMb) : null,
@@ -221,6 +223,7 @@ function RoleEditor({ role, onClose, onSaved }: { role: AdminRole | null; onClos
             {check(canCue, setCanCue, t("admin.roleCue"), t("admin.roleCueHint"), "role-cue")}
             {check(canRoute, setCanRoute, t("admin.roleRoute"), t("admin.roleRouteHint"), "role-route")}
             {check(canManageScreens, setCanManageScreens, t("admin.roleManageScreens"), t("admin.roleManageScreensHint"), "role-manage-screens")}
+            {check(canUseOwnStorage, setCanUseOwnStorage, t("admin.roleOwnStorage"), t("admin.roleOwnStorageHint"), "role-own-storage")}
             {check(teamAssignable, setTeamAssignable, t("admin.roleTeamAssignable"), t("admin.roleTeamAssignableHint"), "role-team-assignable")}
             {check(hasStorage, setHasStorage, t("admin.roleStorageTier"), t("admin.roleStorageTierHint"), "role-storage")}
             {hasStorage ? (

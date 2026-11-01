@@ -55,6 +55,8 @@ Whether the server has organisations - a church, a club - grouping teams to plan
 
 It shows where each setting comes from - saved here, the `ORGANIZATION_MODE` and `ORGANIZATIONS_OPEN` environment variables, or the default - with **Save configuration** and **Revert to environment variables**. **All organisations** lists them with their teams, members and admins; **Delete organisation** leaves their teams on their own.
 
+**Organisations may use their own storage** (or the `ORGANIZATIONS_OWN_STORAGE` environment variable) lets an organisation's admins whose role allows it keep its teams' songs' files in the organisation's own bucket (see [Its own storage](/organizations/#its-own-storage)); those files leave this server's storage, its quotas and its backups.
+
 Below the page's title, it says where [Planiverse](/planiverse/) is, when it's deployed beside Songverse (an address set where it's deployed, `PLANIVERSE_URL`), or that it isn't.
 
 ### Roles
@@ -69,6 +71,7 @@ The one place that says what people may do beyond their own and their teams' son
 - **Move the screens on** - move the screens of any set they can open to the next or previous song or section, from Live's Sync menu, without presenting any other slide: for singers who lead the set on (see [Moving the screens on](/screens/#moving-the-screens-on));
 - **Route the screens** - change what the screens of any set they can open draw - hide, show or clear their layers and the title card, for all of them or one - from the operator view, without presenting, the timer or messages: for the tech at the desk (see [Screens and layers](/screens/#screens-and-layers));
 - **Manage screens** - pair, change and disconnect the screens and Pulses of their teams and organisations without being their admin, with no say over the sets on them or who owns them (see [Whose screen it is](/screens/#whose-screen-it-is));
+- **Own storage for organisations** - as an organisation's admin, connect its own bucket for its teams' files, when **Organisations** allows it (see [Its own storage](/organizations/#its-own-storage));
 - **A storage tier** - how much a person may store, or a team's pool.
 
 **Teams can give it** lets a team's or an organisation's admins give the role to their own members, on their team or organisation only (see [Teams](/teams/#roles-on-the-team)). Given that way, it lets them run the screens, move them on, route them or manage them, there and nothing else: storage, uploads, stems and review stay what you give here. Untick it and the roles teams gave stop counting.

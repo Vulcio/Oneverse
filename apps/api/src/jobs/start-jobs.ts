@@ -14,12 +14,13 @@ import { TransferExpiryProcessor } from "../user-management/transfer-expiry.proc
 import { LiveSessionsProcessor } from "../sync/live-sessions.js";
 import { BackupsProcessor } from "../backups/backups.processor.js";
 import { ArchivesProcessor } from "../archives/archives.processor.js";
+import { OwnStorageProcessor } from "../own-storage/own-storage.processor.js";
 import { HEARTBEAT_KEY, settingsKeyCheck } from "./jobs.constants.js";
 import { redis } from "./redis.js";
 import { serverVersion } from "../common/version.js";
 
 /** Every job processor: a new one needs adding here, or no process runs its jobs. */
-const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor, LiveSessionsProcessor, BackupsProcessor, ArchivesProcessor];
+const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor, LiveSessionsProcessor, BackupsProcessor, ArchivesProcessor, OwnStorageProcessor];
 
 const logger = new Logger("Jobs");
 
