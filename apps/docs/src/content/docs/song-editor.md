@@ -102,7 +102,7 @@ A song written before keeps its sections twice. Above the editor, its editors se
 
 ## Pasting a chart
 
-Paste a whole chart anywhere - ChordPro, or chords written above the lyrics - and it's turned into sections with chords in place. Pasting plain words just types them. Section names on a line of their own ("Verse 1", "[Chorus]", "Refrain", "Pont", "Coro") start a section of that kind, in English, French, Spanish, German, Italian or Portuguese. A name that only says what the section would be called anyway ("Verse 2" on the second verse) isn't kept as its own name, so it follows the reader's language and the numbering.
+Paste a whole chart anywhere - ChordPro, or chords written above the lyrics - and it's turned into sections with chords in place. Pasting plain words just types them. Section names on a line of their own ("Verse 1", "[Chorus]", "Refrain", "Pont", "Coro") start a section of that kind, in English, French, Spanish, German, Italian or Portuguese. A name that only says what the section would be called anyway ("Verse 2" on the second verse) isn't kept as its own name, so it follows the reader's language and the numbering. A `{chorus}` line - the chorus sung again - adds the repeat to the song's order as a linked copy, as a file read in does, and **Undo** takes the whole paste back in one step.
 
 A part with no words - an intro, an instrumental - can be written in bars: `| G | C | D | G |`, one bar between each pair of bar lines. It comes in as a line of chords with its bars, ready in the [chord grid](/metronome/#chord-grid). Within a bar, dots or slashes mark the beats (`| C . D . |` puts D on beat 3), `%` repeats the bar before, repeat signs (`||: … :||`) are read as bar lines, and `x2` at the end plays the line twice. A line of chords alone, without bar lines, keeps the room between its chords.
 
@@ -132,6 +132,8 @@ Where an admin has turned on **Live co-editing** (see [Admin](/admin/#collaborat
 - **Undo** takes back your own changes only, not what others typed meanwhile.
 - **Save song** saves the song as everyone has it. After someone saves, the others carry on without being told it was saved elsewhere, and any of them can save again.
 - **Discard changes** drops the changes nobody saved, for everyone in the song.
+- The details (**Song info**: title, credits, tempo…) aren't typed together: each person's are their own until they save. Someone else's save brings theirs in where you hadn't changed them. Where you both changed the same one, yours is kept and a message names it and who saved: **Keep mine** (your save replaces theirs) or **Use theirs**.
+- Leaving the Editor for another tab keeps you in the song: a save from **Song info** saves the chart as everyone has it, never an older one.
 - While someone else is in the song, **Text** mode only shows the chart; change it in **Visual**.
 - If the song is changed somewhere else meanwhile (a version restored from **History**, a suggestion accepted), everyone in it gets the song as saved now, and changes nobody had saved are dropped. A message over the page says so.
 

@@ -19,7 +19,7 @@ import {
 } from "@oneverse/core";
 import { useBlocker, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PrivateMark } from "#/components/library-home";
-import { PresenceChip, SavedElsewhere, StartedOver } from "#/components/presence";
+import { DetailClash, PresenceChip, SavedElsewhere, StartedOver } from "#/components/presence";
 import { sendDoc, usePresence, useSongPresence, watchSong } from "#/lib/live-notes";
 import { useChartNotes } from "#/components/notes";
 import { useDisplaySettings } from "#/lib/display-settings";
@@ -100,8 +100,19 @@ type BasedOn = { id: string; label: string; copied: boolean };
  * then Files, Audio and Links. Song Info and Editor are saved together by
  * "Save song"; files and links are saved as they're added.
  */
+/** What the room shares as it's typed (issue #27): the chart, its order and key; the rest is saved by each page. */
+const ROOM_FIELDS = new Set<keyof SongForm>(["sections", "flow", "key"]);
+/** The chart as text, which follows the chart: never a clash of its own. */
+const CHART_TEXT_FIELDS = new Set<keyof SongForm>(["content", "contentFormat"]);
+
 export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab: SongTab; onTabChange: (tab: SongTab) => void }) {
   const { tags, tab, onTabChange } = props;
+  // Opened once, the Editor stays (hidden) while another tab shows (issue #354): typing together, the chart stays the
+  // room's - live - so a save from Info or Links never sends an old one over what the others typed since.
+  const [editorOpened, setEditorOpened] = useState(tab === "editor");
+  useEffect(() => {
+    if (tab === "editor") setEditorOpened(true);
+  }, [tab]);
   const edit = props.mode === "edit" ? props : null;
   const version = edit?.version ?? null;
   const canEdit = version ? version.canEdit : true;
@@ -137,20 +148,33 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   const [inRoom, setInRoom] = useState(false);
   const inRoomRef = useRef(false);
   inRoomRef.current = inRoom;
+  // In a room, someone else's save changed details this page changed too (issue #354): theirs, to take or leave.
+  const [detailClash, setDetailClash] = useState<{ by: string | null; theirs: Partial<SongForm> } | null>(null);
+  const lastSaverRef = useRef<string | null>(null);
   useEffect(() => {
     const base = baseline.current;
     baseline.current = loaded;
     setInitial(loaded);
+    if (!inRoomRef.current) {
+      setForm((current) => (isDirty(current, base) ? current : loaded));
+      return;
+    }
+    // In a room, someone else's save: their details where this page didn't change them, the chart as the room has it.
+    const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
     setForm((current) => {
-      if (!inRoomRef.current) return isDirty(current, base) ? current : loaded;
-      // In a room, someone else's save: their details where this page didn't change them, the chart as the room has it.
       const merged = { ...current };
       for (const field of Object.keys(loaded) as (keyof SongForm)[]) {
-        if (field === "sections" || field === "flow" || field === "key") continue;
-        if (JSON.stringify(current[field]) === JSON.stringify(base[field])) (merged as Record<string, unknown>)[field] = loaded[field];
+        if (!ROOM_FIELDS.has(field) && same(current[field], base[field])) (merged as Record<string, unknown>)[field] = loaded[field];
       }
       return merged;
     });
+    const clash: Partial<SongForm> = {};
+    for (const field of Object.keys(loaded) as (keyof SongForm)[]) {
+      if (ROOM_FIELDS.has(field) || CHART_TEXT_FIELDS.has(field)) continue;
+      if (!same(form[field], base[field]) && !same(loaded[field], base[field]) && !same(loaded[field], form[field])) (clash as Record<string, unknown>)[field] = loaded[field];
+    }
+    // Both changed it, differently: kept as typed here, and said, so neither is lost without knowing.
+    setDetailClash(Object.keys(clash).length > 0 ? { by: lastSaverRef.current, theirs: clash } : null);
   }, [loaded]);
 
   const [showErrors, setShowErrors] = useState(false);
@@ -228,7 +252,9 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         onSaved: (saved) => {
           // In a room, a save is everyone's: the page takes the revision quietly (a save from elsewhere starts the room over).
           if (inRoomRef.current) {
-            if (saved.revision > revisionRef.current && !savingRef.current) void router.invalidate();
+            lastSaverRef.current = saved.byId === session.userId ? null : saved.by;
+            // A details-only save leaves the chart's revision as it was: read the song again all the same.
+            if (!savingRef.current && (saved.revision > revisionRef.current || saved.byId !== session.userId)) void router.invalidate();
             return;
           }
           if (saved.revision <= revisionRef.current || (savingRef.current && saved.byId === session.userId)) return;
@@ -830,7 +856,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           ) : null}
         </TabsList>
         <TabsContent value="info">{songInfo}</TabsContent>
-        <TabsContent value="editor">
+        <TabsContent value="editor" keepMounted={editorOpened && inRoom}>
           <fieldset disabled={saving} className="min-w-0">
             {/* Sections written out again (issue #231): linked as passes of the one they repeat. */}
             {edit && canChangeChart && !suggesting ? <RepeatsCard songVersionId={edit.version.id} revision={edit.version.documentJson.revision} sections={form.sections} dirty={dirty} /> : null}
@@ -936,6 +962,17 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         />
       ) : null}
       {startedOver ? <StartedOver onDismiss={() => setStartedOver(false)} /> : null}
+      {detailClash ? (
+        <DetailClash
+          by={detailClash.by}
+          fields={Object.keys(detailClash.theirs).map((field) => t(`songEditor.fields.${field === "tagIds" ? "tags" : field}`))}
+          onKeepMine={() => setDetailClash(null)}
+          onUseTheirs={() => {
+            setForm((current) => ({ ...current, ...detailClash.theirs }));
+            setDetailClash(null);
+          }}
+        />
+      ) : null}
       {savedElsewhere ? <SavedElsewhere by={savedElsewhere.by} dirty={dirty} onLoad={loadTheirs} onDismiss={() => setSavedElsewhere(null)} /> : null}
 
       {edit ? (

@@ -171,7 +171,9 @@ function EditorBody({
     onFlowChangeRef.current(next);
   };
   // In a room (issue #27), a pass's details are the room's: a pass someone else added comes with theirs.
-  const previousFlow = () => (room ? roomFlow(room) : flowRef.current);
+  // A pasted chart's passes (issue #31), kept for the update its paste makes.
+  const pastedPasses = useRef<SectionInstance[]>([]);
+  const previousFlow = () => [...(room ? roomFlow(room) : flowRef.current), ...pastedPasses.current];
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   // The pass the user moved the cursor into (not a reload's), chosen in the song order (issue #251).
@@ -195,6 +197,9 @@ function EditorBody({
         onChordPointerDown: (event, pos) => events.current.onChordPointerDown(event, pos),
         onBarPointerDown: (event, pos) => events.current.onBarPointerDown(event, pos),
         onEditChord: () => events.current.onEditChord(),
+        onPastePasses: (passes) => {
+          pastedPasses.current = passes;
+        },
         beatLabel: (beat, placed) => tRef.current(placed ? "structuredEditor.bars.beatPlaced" : "structuredEditor.bars.beat", { n: beat }),
       }),
       // Together (issue #27): the chart is the room's document; undo takes back one's own changes only; the others' carets show.
@@ -227,6 +232,7 @@ function EditorBody({
       const key = (current.state.doc.attrs.key as string | null) ?? "";
       if (key !== keyRef.current) onSongKeyChangeRef.current(key);
       const next = editorToSong(current.state.doc, previousFlow());
+      pastedPasses.current = [];
       if (room) remember(next.sections, next.flow);
       emitted.current = next.sections;
       onChangeRef.current(next.sections);

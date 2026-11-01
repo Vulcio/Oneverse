@@ -85,3 +85,33 @@ export function StartedOver({ onDismiss }: { onDismiss: () => void }) {
     </div>
   );
 }
+
+/**
+ * Someone else in the room saved details this page changed too, to
+ * something else (issue #354): kept as they're typed here unless theirs is
+ * taken - saving here would otherwise replace theirs without anyone knowing.
+ */
+export function DetailClash({ by, fields, onKeepMine, onUseTheirs }: { by: string | null; fields: string[]; onKeepMine: () => void; onUseTheirs: () => void }) {
+  const { t, i18n } = useTranslation();
+  const list = new Intl.ListFormat(i18n.language, { style: "long", type: "conjunction" }).format(fields);
+  return (
+    <div
+      className="fixed inset-x-4 bottom-[calc(var(--save-bar-h,0px)+1rem)] z-50 mx-auto flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-popover p-3 text-sm text-popover-foreground shadow-lg"
+      role="alert"
+      data-testid="detail-clash"
+    >
+      <p className="min-w-0 flex-1">
+        {by ? t("presence.clashBy", { name: by, fields: list }) : t("presence.clash", { fields: list })}
+        <span className="block text-xs text-muted-foreground">{t("presence.clashHint")}</span>
+      </p>
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" onClick={onKeepMine}>
+          {t("presence.keepMine")}
+        </Button>
+        <Button size="sm" onClick={onUseTheirs}>
+          {t("presence.useTheirs")}
+        </Button>
+      </div>
+    </div>
+  );
+}

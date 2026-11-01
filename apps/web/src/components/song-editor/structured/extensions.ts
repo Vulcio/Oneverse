@@ -5,8 +5,9 @@ import {
   ID_PREFIXES,
   parseChord,
   placeRhythmBeat,
-  sectionsFromText,
+  songFromText,
   suggestedBarLines,
+  type SectionInstance,
   type SectionType,
 } from "@oneverse/core";
 import { Extension, InputRule, Node } from "@tiptap/core";
@@ -19,7 +20,7 @@ import { Decoration, DecorationSet, type EditorView, type NodeView } from "@tipt
 import { joinBackward, joinForward } from "@tiptap/pm/commands";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { cn } from "@oneverse/ui/lib/utils";
-import { lineFromNode, linePosition, sectionBeatPlaces, sectionFromNode, sectionsToEditorJSON } from "./document";
+import { lineFromNode, linePosition, sectionBeatPlaces, sectionFromNode, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { SectionView } from "./section-view";
 import { LinkedView } from "./linked-view";
 
@@ -53,6 +54,12 @@ export interface ChordViewEvents {
   onEditChord: () => void;
   /** What a beat's dot under the words says to a screen reader and on hover (issue #238); its number alone without. */
   beatLabel?: (beat: number, placed: boolean) => string;
+  /**
+   * A pasted chart's passes (issue #31): its repeats ("{chorus}") and their
+   * details - a key change, a label - told just before the paste lands, so
+   * the song order takes them with it.
+   */
+  onPastePasses?: (passes: SectionInstance[]) => void;
 }
 
 // --- nodes
@@ -1073,7 +1080,7 @@ function handleKeyDown(view: EditorView, event: KeyboardEvent, events: ChordView
  * turns it into lines and chords at the cursor - new sections when it has
  * several. Plain words, and copies from this editor, paste as usual.
  */
-function handlePaste(view: EditorView, event: ClipboardEvent): boolean {
+function handlePaste(view: EditorView, event: ClipboardEvent, events: ChordViewEvents): boolean {
   const html = event.clipboardData?.getData("text/html") ?? "";
   if (html.includes("data-sv-line") || html.includes("data-sv-chord")) return false;
   const text = event.clipboardData?.getData("text/plain") ?? "";
@@ -1081,18 +1088,22 @@ function handlePaste(view: EditorView, event: ClipboardEvent): boolean {
   const format = detectImportFormat(text);
   const multiline = text.trim().includes("\n");
   if (format === "RAW_TEXT" && !multiline) return false;
-  let sections;
+  let song;
   try {
-    sections = sectionsFromText(text, format);
+    song = songFromText(text, format);
   } catch {
     return false;
   }
+  const { sections, flow } = song;
   if (sections.length === 0) return false;
   const { state } = view;
-  const parsed = state.schema.nodeFromJSON(sectionsToEditorJSON(sections));
   const current = currentSection(state);
   const tr = state.tr;
   const headed = sections.length > 1 || /^\s*(\{|\[?(verse|chorus|bridge|intro|outro|pre-?chorus|tag|refrain|couplet|pont)\b)/im.test(text);
+  // Sections pasted in the order they're sung (issue #31): a "{chorus}" is a linked copy of the chorus, its details with it.
+  const inOrder = headed && current !== null;
+  const parsed = state.schema.nodeFromJSON(inOrder ? songToEditorJSON(sections, flow) : sectionsToEditorJSON(sections));
+  if (inOrder) events.onPastePasses?.(flow);
 
   if (!headed || !current) {
     // Lines at the cursor: the first joins the line it's pasted into, the last carries on with the rest of it.
@@ -1129,7 +1140,7 @@ export function songEditorExtensions(events: ChordViewEvents) {
           key: new PluginKey("songverseKeys"),
           props: {
             handleKeyDown: (view, event) => handleKeyDown(view, event, events),
-            handlePaste: (view, event) => handlePaste(view, event),
+            handlePaste: (view, event) => handlePaste(view, event, events),
             // "|" typed in the lyrics is a bar line (issue #238).
             handleTextInput: (view, from, to, text) => {
               if (text !== "|") return false;
