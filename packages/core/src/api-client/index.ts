@@ -1817,6 +1817,8 @@ export interface SongVersionSummary {
   contributedByTeam: { id: string; name: string } | null;
   /** Shared with the viewer by its owner (issue #77): who by, and whether to edit. */
   sharedBy?: SharedBy | null;
+  /** Only the viewer can see it (issue #172): theirs, shared with nobody, in no team's or shared set, not sent to the catalogue. Left out by an older API. */
+  private?: boolean;
   /** Its image (issue #85), at an address signed for the viewer that works for a day or two; add `&w=` for a width. */
   imageUrl?: string | null;
   createdAt: string;
@@ -2187,6 +2189,8 @@ export interface SharedBy {
   canEdit: boolean;
   /** Shared with one of the viewer's teams (issue #331), rather than with them: which. */
   team?: { id: string; name: string };
+  /** Shared with one of the viewer's organisations (issue #350), to view: which. */
+  organization?: { id: string; name: string };
 }
 
 /** Someone in Songverse (People, issue #77). */
@@ -2215,6 +2219,11 @@ export interface SongShare {
 export interface SongTeamShare {
   team: { id: string; name: string };
   canEdit: boolean;
+}
+
+/** An organisation a song is shared with (issue #350): everyone in it views it. */
+export interface SongOrganizationShare {
+  organization: { id: string; name: string };
 }
 
 /** Moving a song to a team (issue #331): done, or offered to the team's admins. */
@@ -3062,6 +3071,12 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     shareSongWithTeam: (songVersionId: string, teamId: string, canEdit: boolean) =>
       request<SongTeamShare[]>(`/song-versions/${songVersionId}/shares/teams/${teamId}`, { method: "PUT", body: JSON.stringify({ canEdit }) }),
     unshareSongWithTeam: (songVersionId: string, teamId: string) => request<SongTeamShare[]>(`/song-versions/${songVersionId}/shares/teams/${teamId}`, { method: "DELETE" }),
+    /** The organisations a song is shared with (issue #350), to view. */
+    getSongOrganizationShares: (songVersionId: string) => request<SongOrganizationShare[]>(`/song-versions/${songVersionId}/shares/organizations`),
+    shareSongWithOrganization: (songVersionId: string, organizationId: string) =>
+      request<SongOrganizationShare[]>(`/song-versions/${songVersionId}/shares/organizations/${organizationId}`, { method: "PUT" }),
+    unshareSongWithOrganization: (songVersionId: string, organizationId: string) =>
+      request<SongOrganizationShare[]>(`/song-versions/${songVersionId}/shares/organizations/${organizationId}`, { method: "DELETE" }),
     /** Makes a personal song a team's (issue #331): at once for one of its admins, else offered to its admins. */
     moveSongToTeam: (songVersionId: string, teamId: string) => request<SongMoveResult>(`/song-versions/${songVersionId}/move-to-team`, { method: "POST", body: JSON.stringify({ teamId }) }),
     getSongbookShares: (songbookId: string) => request<SongbookShare[]>(`/songbooks/${songbookId}/shares`),

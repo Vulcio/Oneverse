@@ -38,6 +38,10 @@ Someone a song is shared with can take it out of their library: **Remove from my
 
 Pick one of your teams under **Share with** to share a song with everyone in it, now and as people join. It shows in their library, marked **Shared with** the team, and the team's [sets](/sets/) can include it. **Can view** lets them open it, play it and put it in the team's sets; **Can edit** lets the team's admins change its chart, details and credits too, as they would the team's own songs. The song stays yours: stop sharing it (**×**) and it leaves their library, and the team's sets show it as no longer available.
 
+### With an organisation
+
+If you're in an [organisation](/organizations/), it's under **Share with** too, under **Organisations**: the song shows in the library of everyone in it, now and as people join, marked **Shared with** the organisation, and the sets of its teams can include it. An organisation's share is always **Can view**: nobody edits the song through it, not even the organisation's admins, and the organisation never owns it. A team's admins share the team's songs with the team's organisation the same way. Stop sharing it (**×**) and it leaves their libraries.
+
 ### Moving a song to a team
 
 To make a personal song the team's for good, use **Move to a team** at the bottom of **Share**: choose the team, then **Move**, and confirm. It becomes the team's song: its members use it and its admins change it. You can't undo this yourself, so you're asked to confirm.

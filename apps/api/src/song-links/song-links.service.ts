@@ -29,7 +29,7 @@ export class SongLinksService {
         { visibility: "SONG" },
         { addedByUserId: viewer.id },
         { visibility: "TEAM", visibleToTeamId: { in: teamIds } },
-        { visibility: "SHARED", songVersion: { accessGrants: { some: { OR: [{ grantedToUserId: viewer.id }, { grantedToTeamId: { in: teamIds } }] } } } },
+        { visibility: "SHARED", songVersion: { accessGrants: { some: { OR: [{ grantedToUserId: viewer.id }, { grantedToTeamId: { in: teamIds } }, { grantedToOrganization: { memberships: { some: { userId: viewer.id } } } }] } } } },
       ],
     };
   }

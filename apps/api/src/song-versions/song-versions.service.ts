@@ -44,7 +44,7 @@ import type { ContributorRole, Prisma, VersionRelationshipType } from "@oneverse
 import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { AccessPolicyService } from "../access/access-policy.service.js";
+import { AccessPolicyService, OPEN_SUBMISSION_STATES } from "../access/access-policy.service.js";
 import { songbookReferencesOf } from "../songbooks/songbook-references.js";
 import { setOrder } from "../common/utils/set-order.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
@@ -358,6 +358,8 @@ export type ListItem = Omit<ListRow, "contributors" | "versionTags" | "imageStor
   tags: ListRow["versionTags"][number]["tag"][];
   /** Shared with the viewer by its owner (issue #77). */
   sharedBy: SharedBy | null;
+  /** Only the viewer can see it (issue #172): theirs, shared with nobody, in no team's or shared set, not sent to the catalogue. */
+  private?: boolean;
   /** Where it is in the viewer's numbered songbooks, when asked (issue #213). */
   songbookReferences?: string[];
   /** Found by its words (issue #221): the line, and the words in it. */
@@ -379,13 +381,20 @@ function tagsVisibleWhere(userId: string, teamIds: string[]): Prisma.TagWhereInp
 // don't share a field name that means two different things, and so the
 // join row (versionTags' own `id`, not useful to the client) doesn't leak
 // into what's otherwise just a list of tags.
-function toListItem({ contributors, versionTags, imageStorageKey, ...rest }: ListRow, seesTag: SeesTag = ALL_TAGS, sharedBy: SharedBy | null = null): ListItem {
-  return { ...rest, imageUrl: songImageUrl(rest.id, imageStorageKey), artists: contributors, tags: versionTags.map((vt) => vt.tag).filter(seesTag), sharedBy };
+function toListItem({ contributors, versionTags, imageStorageKey, ...rest }: ListRow, seesTag: SeesTag = ALL_TAGS, sharedBy: SharedBy | null = null, privateIds?: ReadonlySet<string>): ListItem {
+  return {
+    ...rest,
+    imageUrl: songImageUrl(rest.id, imageStorageKey),
+    artists: contributors,
+    tags: versionTags.map((vt) => vt.tag).filter(seesTag),
+    sharedBy,
+    ...(privateIds && { private: privateIds.has(rest.id) }),
+  };
 }
 
 /** Someone who shared the song with the viewer (issue #77), and whether to edit. */
 /** Who shared a song with the viewer; `team`, when it's shared with one of their teams (issue #331). */
-type SharedBy = { id: string; displayName: string; canEdit: boolean; team?: { id: string; name: string } };
+type SharedBy = { id: string; displayName: string; canEdit: boolean; team?: { id: string; name: string }; organization?: { id: string; name: string } };
 
 /** What the viewer may do with a song (see AccessPolicyService). */
 interface Rights {
@@ -408,6 +417,8 @@ type DetailItem = Omit<DetailRow, "versionTags" | "documentJson" | "imageStorage
   /** Whether they may delete, publish or share it, or change its links (see SongVersionOwnerGuard). */
   canManage: boolean;
   sharedBy: SharedBy | null;
+  /** Only the viewer can see it (issue #172), as in lists. */
+  private?: boolean;
 };
 
 function toDetailItem(version: DetailRow, { canEdit, canManage, sharedBy }: Rights, seesTag: SeesTag = ALL_TAGS): DetailItem {
@@ -531,11 +542,11 @@ export class SongVersionsService {
   /** A page's songs as listed: their images signed, who shared them, and where they are in the user's songbooks when asked. */
   private async pageItems(user: AuthenticatedUser, versions: ListRow[], query: ListSongVersionsQueryDto): Promise<ListItem[]> {
     const seesTag = await this.seesTag(user);
-    const shared = await this.sharedByOf(user, versions.map((version) => version.id));
+    const [shared, privateIds] = await Promise.all([this.sharedByOf(user, versions.map((version) => version.id)), this.privateAmong(user, versions)]);
     // Where each is in the user's songbooks, when asked (issue #213: beside the songs a search finds).
     const references = query.references ? await songbookReferencesOf(this.prisma, await this.access.songbooksVisibleTo(user), versions.map((version) => version.id)) : null;
     return versions.map((version) => ({
-      ...toListItem(version, seesTag, shared.get(version.id) ?? null),
+      ...toListItem(version, seesTag, shared.get(version.id) ?? null, privateIds),
       ...(references && { songbookReferences: references.get(version.id) ?? [] }),
     }));
   }
@@ -580,8 +591,8 @@ export class SongVersionsService {
     const versions = await this.prisma.client.songVersion.findMany({ where: { id: { in: best.map((match) => match.id) } }, select: LIST_SELECT });
     const byId = new Map(versions.map((version) => [version.id, version]));
     const seesTag = await this.seesTag(user);
-    const shared = await this.sharedByOf(user, versions.map((version) => version.id));
-    const songs = best.filter((match) => byId.has(match.id)).map((match) => ({ ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null), sections: match.sections }));
+    const [shared, privateIds] = await Promise.all([this.sharedByOf(user, versions.map((version) => version.id)), this.privateAmong(user, versions)]);
+    const songs = best.filter((match) => byId.has(match.id)).map((match) => ({ ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null, privateIds), sections: match.sections }));
     return { query, songs };
   }
 
@@ -621,11 +632,11 @@ export class SongVersionsService {
     const versions = await this.prisma.client.songVersion.findMany({ where: { id: { in: scored.map((match) => match.id) } }, select: LIST_SELECT });
     const byId = new Map(versions.map((version) => [version.id, version]));
     const seesTag = await this.seesTag(user);
-    const shared = await this.sharedByOf(user, versions.map((version) => version.id));
+    const [shared, privateIds] = await Promise.all([this.sharedByOf(user, versions.map((version) => version.id)), this.privateAmong(user, versions)]);
     const similar = scored
       .filter((match) => byId.has(match.id))
       .map((match) => ({
-        ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null),
+        ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null, privateIds),
         score: Math.round(match.score * 100) / 100,
         // The longest runs they share, the rarest first: what makes them alike.
         shared: match.shared.sort((a, b) => b.split("-").length - a.split("-").length || weight(b) - weight(a)).slice(0, 3),
@@ -787,7 +798,8 @@ export class SongVersionsService {
     if (!version) throw new NotFoundException("Song version not found");
     if (!(await this.access.canSeeSong(user, version))) throw new ForbiddenException("Not visible to you");
     const isFavorite = (await this.prisma.client.favoriteSong.count({ where: { userId: user.id, songVersionId: id } })) > 0;
-    return { ...toDetailItem(version, await this.rightsOn(user, version), await this.seesTag(user)), isFavorite };
+    const privateIds = await this.privateAmong(user, [version]);
+    return { ...toDetailItem(version, await this.rightsOn(user, version), await this.seesTag(user)), private: privateIds.has(version.id), isFavorite };
   }
 
   /**
@@ -806,12 +818,13 @@ export class SongVersionsService {
     ]);
     const versions = await this.prisma.client.songVersion.findMany({ where: { AND: [visible, { id: { in: ids } }] }, select: DETAIL_SELECT });
     const favorite = new Set(favorites.map((row) => row.songVersionId));
+    const privateIds = await this.privateAmong(user, versions);
     return new Map(
       versions.map((version) => {
         const canManage = canEdit(version);
         const sharedBy = canManage ? null : (shared.get(version.id) ?? null);
         const rights: Rights = { canManage, canEdit: canManage || !!sharedBy?.canEdit, sharedBy };
-        return [version.id, { ...toDetailItem(version, rights, seesTag), isFavorite: favorite.has(version.id) }];
+        return [version.id, { ...toDetailItem(version, rights, seesTag), private: privateIds.has(version.id), isFavorite: favorite.has(version.id) }];
       }),
     );
   }
@@ -823,9 +836,34 @@ export class SongVersionsService {
       where: { AND: [await this.access.songsVisibleTo(user), { id: { in: ids } }] },
       select: LIST_SELECT,
     });
-    const [seesTag, shared] = await Promise.all([this.seesTag(user), this.sharedByOf(user, rows.map((row) => row.id))]);
-    const byId = new Map(rows.map((row) => [row.id, toListItem(row, seesTag, shared.get(row.id) ?? null)]));
+    const [seesTag, shared, privateIds] = await Promise.all([this.seesTag(user), this.sharedByOf(user, rows.map((row) => row.id)), this.privateAmong(user, rows)]);
+    const byId = new Map(rows.map((row) => [row.id, toListItem(row, seesTag, shared.get(row.id) ?? null, privateIds)]));
     return ids.flatMap((id) => byId.get(id) ?? []);
+  }
+
+  /**
+   * Which of `songs` only `user` can see (issue #172): their personal songs
+   * not shared with anyone (a person, a team, an organisation), in no
+   * shared songbook, in no team's set nor one shared by link or with
+   * guests, and with no submission to the catalogue open.
+   */
+  private async privateAmong(user: AuthenticatedUser, songs: Pick<ListRow, "id" | "ownerScope" | "ownerUserId">[]): Promise<Set<string>> {
+    const own = songs.filter((song) => song.ownerScope === "USER" && song.ownerUserId === user.id).map((song) => song.id);
+    if (own.length === 0) return new Set();
+    const seen = await this.prisma.client.songVersion.findMany({
+      where: {
+        id: { in: own },
+        OR: [
+          { accessGrants: { some: {} } },
+          { songbookEntries: { some: { songbook: { shares: { some: {} } } } } },
+          { setlistItems: { some: { setlist: { OR: [{ ownerTeamId: { not: null } }, { shareLink: { isNot: null } }, { guests: { some: {} } }] } } } },
+          { submissions: { some: { state: { in: [...OPEN_SUBMISSION_STATES] } } } },
+        ],
+      },
+      select: { id: true },
+    });
+    const shown = new Set(seen.map((row) => row.id));
+    return new Set(own.filter((id) => !shown.has(id)));
   }
 
   /** What `user` may do with the song, and who shared it with them if someone did. */
@@ -844,17 +882,43 @@ export class SongVersionsService {
     if (ids.length === 0) return new Map();
     const memberships = await this.prisma.client.teamMembership.findMany({ where: { userId: user.id }, select: { teamId: true, role: true } });
     const adminOf = new Set(memberships.filter((membership) => membership.role === "ADMIN").map((membership) => membership.teamId));
+    const teamIds = memberships.map((membership) => membership.teamId);
     const grants = await this.prisma.client.accessGrant.findMany({
-      where: { songVersionId: { in: ids }, OR: [{ grantedToUserId: user.id }, { grantedToTeamId: { in: memberships.map((membership) => membership.teamId) } }] },
-      select: { songVersionId: true, canEdit: true, grantedByUser: { select: { id: true, displayName: true } }, grantedToTeam: { select: { id: true, name: true } } },
-      orderBy: { grantedToUserId: { sort: "asc", nulls: "last" } },
+      where: {
+        songVersionId: { in: ids },
+        OR: [
+          { grantedToUserId: user.id },
+          { grantedToTeamId: { in: teamIds } },
+          // An organisation's (issue #350), for those who don't see the song as theirs or their team's already.
+          {
+            grantedToOrganization: { memberships: { some: { userId: user.id } } },
+            songVersion: { NOT: { OR: [{ ownerScope: "USER", ownerUserId: user.id }, { ownerScope: "TEAM", ownerTeamId: { in: teamIds } }] } },
+          },
+        ],
+      },
+      select: {
+        songVersionId: true,
+        canEdit: true,
+        grantedByUser: { select: { id: true, displayName: true } },
+        grantedToTeam: { select: { id: true, name: true } },
+        grantedToOrganization: { select: { id: true, name: true } },
+      },
+      // Theirs first, then a team's, then an organisation's (issue #350).
+      orderBy: [{ grantedToUserId: { sort: "asc", nulls: "last" } }, { grantedToTeamId: { sort: "asc", nulls: "last" } }],
     });
     const shared = new Map<string, SharedBy>();
     for (const grant of grants) {
-      const canEdit = grant.canEdit && (!grant.grantedToTeam || adminOf.has(grant.grantedToTeam.id));
+      // An organisation's share is to view (issue #350).
+      const canEdit = grant.canEdit && !grant.grantedToOrganization && (!grant.grantedToTeam || adminOf.has(grant.grantedToTeam.id));
       const first = shared.get(grant.songVersionId);
       if (first) first.canEdit ||= canEdit;
-      else shared.set(grant.songVersionId, { ...grant.grantedByUser, canEdit, ...(grant.grantedToTeam && { team: grant.grantedToTeam }) });
+      else
+        shared.set(grant.songVersionId, {
+          ...grant.grantedByUser,
+          canEdit,
+          ...(grant.grantedToTeam && { team: grant.grantedToTeam }),
+          ...(grant.grantedToOrganization && { organization: grant.grantedToOrganization }),
+        });
     }
     return shared;
   }

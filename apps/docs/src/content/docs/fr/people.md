@@ -38,6 +38,10 @@ Une personne avec qui un chant est partagé peut le retirer de sa bibliothèque 
 
 Choisissez une de vos équipes sous **Partager avec** pour partager un chant avec tous ses membres, actuels et futurs. Il apparaît dans leur bibliothèque, marqué **Partagé avec** l'équipe, et les [listes](/fr/sets/) de l'équipe peuvent le contenir. **Peut lire** leur permet de l'ouvrir, de le jouer et de le mettre dans les listes de l'équipe ; **Peut modifier** permet aussi aux administrateurs de l'équipe de changer sa grille, ses détails et ses crédits, comme pour les chants de l'équipe. Le chant reste à vous : arrêtez de le partager (**×**) et il quitte leur bibliothèque, et les listes de l'équipe l'indiquent comme plus disponible.
 
+### Avec une organisation
+
+Si vous faites partie d'une [organisation](/fr/organizations/), elle est aussi sous **Partager avec**, dans **Organisations** : le chant apparaît dans la bibliothèque de tous ses membres, actuels et futurs, marqué **Partagé avec** l'organisation, et les listes de ses équipes peuvent le contenir. Le partage avec une organisation est toujours **Peut lire** : personne ne modifie le chant par ce partage, pas même les administrateurs de l'organisation, et l'organisation n'en devient jamais propriétaire. Les administrateurs d'une équipe partagent de la même façon les chants de l'équipe avec son organisation. Arrêtez de le partager (**×**) et il quitte leurs bibliothèques.
+
 ### Déplacer un chant vers une équipe
 
 Pour qu'un chant personnel devienne celui de l'équipe pour de bon, utilisez **Déplacer vers une équipe** en bas de **Partager** : choisissez l'équipe, puis **Déplacer**, et confirmez. Il devient un chant de l'équipe : ses membres l'utilisent et ses administrateurs le modifient. Vous ne pourrez pas l'annuler vous-même, d'où la confirmation.

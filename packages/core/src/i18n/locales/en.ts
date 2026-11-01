@@ -1148,6 +1148,7 @@ const en = {
     statusPersonal: "Personal",
     statusSharedBy: "Shared by {{name}}",
     statusSharedWithTeam: "Shared with {{team}}",
+    private: "Private - only you can see it",
     statusPublishedByYou: "Published by you",
     statusTeam: "Team",
     statusDraft: "Draft",
@@ -3771,6 +3772,10 @@ const en = {
     sharedByEdit: "Shared by {{name}} · you can edit it",
     sharedWithTeamView: "Shared with {{team}} by {{name}} · you can view it",
     sharedWithTeamEdit: "Shared with {{team}} by {{name}} · you can edit it",
+    sharedWithOrganization: "Shared with {{organization}} by {{name}} · you can view it",
+    organizations: "Organisations",
+    organization: "Organisation",
+    organizationHint: "Shared with an organisation, it's to view: everyone in it, now and later, sees the song in their library, and its teams' sets can include it. The organisation never owns it.",
     leave: "Remove from my library",
     move: {
       title: "Move to a team",

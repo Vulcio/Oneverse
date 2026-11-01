@@ -72,6 +72,8 @@ Then **Save song**.
 
 ![A song's details](../../assets/screenshots/en/song-info.jpg)
 
+A lock on a song's cover, and beside its title on its page, says it's **private - only you can see it**: it's yours, shared with nobody (a person, a team or an organisation), in none of a team's sets nor a set you've shared, and not sent to the [global catalogue](/library/#submitting-to-the-global-catalogue). Share it and the lock goes.
+
 Opened from a list - **Songs** as you searched and sorted it, your **Favorites**, a smart list, an artist's songs or a [songbook](/songbooks/) - a song's page shows where it is in it ("2 of 12 · Favorites"), with the songs before and after it on either side: one tap goes to the next, still in the same list.
 
 A song has tabs:

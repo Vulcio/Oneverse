@@ -125,6 +125,7 @@ export function useLibraryColumns(currentUserId: string): ColumnDef<SongVersionS
 function statusLabel(version: Pick<SongVersionSummary, "publicationState" | "ownerScope" | "contributedBy" | "sharedBy">, t: TFunction, currentUserId: string): string {
   if (version.ownerScope === "GLOBAL" && version.contributedBy?.id === currentUserId) return t("library.statusPublishedByYou");
   // Shared with the user by its owner (issue #77), or with one of their teams (#331).
+  if (version.sharedBy?.organization) return t("library.statusSharedWithTeam", { team: version.sharedBy.organization.name });
   if (version.sharedBy?.team) return t("library.statusSharedWithTeam", { team: version.sharedBy.team.name });
   if (version.sharedBy) return t("library.statusSharedBy", { name: version.sharedBy.displayName });
   switch (version.publicationState) {

@@ -1,6 +1,6 @@
-import type { PeopleOverview, SongShare, SongTeamShare, TeamSummary } from "@oneverse/core";
+import type { OrganizationSummary, PeopleOverview, SongOrganizationShare, SongShare, SongTeamShare, TeamSummary } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
-import { Users, X } from "lucide-react";
+import { Building2, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -12,7 +12,8 @@ import { apiClient } from "#/lib/api-client";
  * Sharing a song with one of your people (issue #77) or one of your teams
  * (#331): who and which teams it's shared with, each able to view or edit
  * it; changing that, stopping it, adding someone or a team. People come
- * from the People page. A personal song can also be moved to a team (#331):
+ * from the People page. It can be shared with a whole organisation one is in
+ * too (issue #350), to view. A personal song can also be moved to a team (#331):
  * at once for one of its admins, else offered to them.
  */
 export function ShareDialog({
@@ -38,6 +39,8 @@ export function ShareDialog({
   const { t } = useTranslation();
   const [shares, setShares] = useState<SongShare[] | null>(null);
   const [teamShares, setTeamShares] = useState<SongTeamShare[]>([]);
+  const [organizationShares, setOrganizationShares] = useState<SongOrganizationShare[]>([]);
+  const [organizations, setOrganizations] = useState<OrganizationSummary[]>([]);
   const [people, setPeople] = useState<PeopleOverview["people"]>([]);
   const [teams, setTeams] = useState<TeamSummary[]>([]);
   const [who, setWho] = useState("");
@@ -53,10 +56,19 @@ export function ShareDialog({
     setError(null);
     setNotice(null);
     setConfirmingMove(false);
-    Promise.all([apiClient.getSongShares(songVersionId), apiClient.getSongTeamShares(songVersionId), apiClient.getPeople(), apiClient.listTeams()])
-      .then(([current, currentTeams, overview, mine]) => {
+    Promise.all([
+      apiClient.getSongShares(songVersionId),
+      apiClient.getSongTeamShares(songVersionId),
+      apiClient.getSongOrganizationShares(songVersionId),
+      apiClient.getPeople(),
+      apiClient.listTeams(),
+      apiClient.listMyOrganizations(),
+    ])
+      .then(([current, currentTeams, currentOrganizations, overview, mine, myOrganizations]) => {
         setShares(current);
         setTeamShares(currentTeams);
+        setOrganizationShares(currentOrganizations);
+        setOrganizations(myOrganizations.organizations);
         setPeople(overview.people);
         setTeams(mine.filter((team) => team.id !== ownerTeamId && team.usesSongverse !== false));
       })
@@ -68,9 +80,14 @@ export function ShareDialog({
     setError(null);
     try {
       await action();
-      const [next, nextTeams] = await Promise.all([apiClient.getSongShares(songVersionId), apiClient.getSongTeamShares(songVersionId)]);
+      const [next, nextTeams, nextOrganizations] = await Promise.all([
+        apiClient.getSongShares(songVersionId),
+        apiClient.getSongTeamShares(songVersionId),
+        apiClient.getSongOrganizationShares(songVersionId),
+      ]);
       setShares(next);
       setTeamShares(nextTeams);
+      setOrganizationShares(nextOrganizations);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -98,17 +115,35 @@ export function ShareDialog({
     }
   }
 
-  // "user:<id>" or "team:<id>", for one select.
-  const taken = new Set([...(shares ?? []).map((share) => `user:${share.user.id}`), ...teamShares.map((share) => `team:${share.team.id}`)]);
+  // "user:<id>", "team:<id>" or "org:<id>", for one select.
+  const taken = new Set([
+    ...(shares ?? []).map((share) => `user:${share.user.id}`),
+    ...teamShares.map((share) => `team:${share.team.id}`),
+    ...organizationShares.map((share) => `org:${share.organization.id}`),
+  ]);
   const availablePeople = people.filter((person) => !taken.has(`user:${person.id}`));
   const availableTeams = teams.filter((team) => !taken.has(`team:${team.id}`));
+  const availableOrganizations = organizations.filter((organization) => !taken.has(`org:${organization.id}`));
   const rows = [
-    ...teamShares.map((share) => ({ key: `team:${share.team.id}`, name: share.team.name, team: true, canEdit: share.canEdit })),
-    ...(shares ?? []).map((share) => ({ key: `user:${share.user.id}`, name: share.user.displayName, team: false, canEdit: share.canEdit })),
+    ...organizationShares.map((share) => ({ key: `org:${share.organization.id}`, name: share.organization.name, kind: "org" as const, canEdit: false })),
+    ...teamShares.map((share) => ({ key: `team:${share.team.id}`, name: share.team.name, kind: "team" as const, canEdit: share.canEdit })),
+    ...(shares ?? []).map((share) => ({ key: `user:${share.user.id}`, name: share.user.displayName, kind: "user" as const, canEdit: share.canEdit })),
   ];
+  const [kindOf, idOf] = [(key: string) => key.slice(0, key.indexOf(":")), (key: string) => key.slice(key.indexOf(":") + 1)];
   const shareWith = (key: string, edit: boolean) =>
-    key.startsWith("team:") ? apiClient.shareSongWithTeam(songVersionId, key.slice(5), edit) : apiClient.shareSong(songVersionId, key.slice(5), edit);
-  const stopSharing = (key: string) => (key.startsWith("team:") ? apiClient.unshareSongWithTeam(songVersionId, key.slice(5)) : apiClient.unshareSong(songVersionId, key.slice(5)));
+    kindOf(key) === "org"
+      ? apiClient.shareSongWithOrganization(songVersionId, idOf(key))
+      : kindOf(key) === "team"
+        ? apiClient.shareSongWithTeam(songVersionId, idOf(key), edit)
+        : apiClient.shareSong(songVersionId, idOf(key), edit);
+  const stopSharing = (key: string) =>
+    kindOf(key) === "org"
+      ? apiClient.unshareSongWithOrganization(songVersionId, idOf(key))
+      : kindOf(key) === "team"
+        ? apiClient.unshareSongWithTeam(songVersionId, idOf(key))
+        : apiClient.unshareSong(songVersionId, idOf(key));
+  // An organisation's share is to view (issue #350).
+  const choosingOrganization = who.startsWith("org:");
   const rights = (value: boolean) => (value ? "edit" : "view");
   const moveTeam = teams.find((team) => team.id === moveTo);
   const asAdmin = moveTeam?.currentUserRole === "ADMIN";
@@ -125,8 +160,12 @@ export function ShareDialog({
             <ul className="flex flex-col divide-y rounded-md border" data-testid="song-shares">
               {rows.map((row) => (
                 <li key={row.key} className="flex items-center gap-2 px-3 py-2 text-sm" data-share={row.key}>
-                  {row.team ? <Users className="size-4 shrink-0 text-muted-foreground" aria-label={t("sharing.team")} /> : null}
+                  {row.kind === "team" ? <Users className="size-4 shrink-0 text-muted-foreground" aria-label={t("sharing.team")} /> : null}
+                  {row.kind === "org" ? <Building2 className="size-4 shrink-0 text-muted-foreground" aria-label={t("sharing.organization")} /> : null}
                   <span className="min-w-0 flex-1 truncate font-medium">{row.name}</span>
+                  {row.kind === "org" ? (
+                    <span className="text-xs text-muted-foreground">{t("sharing.canView")}</span>
+                  ) : (
                   <NativeSelect
                     compact
                     value={rights(row.canEdit)}
@@ -137,6 +176,7 @@ export function ShareDialog({
                     <option value="view">{t("sharing.canView")}</option>
                     <option value="edit">{t("sharing.canEdit")}</option>
                   </NativeSelect>
+                  )}
                   <Button type="button" variant="ghost" size="icon" disabled={busy} aria-label={t("sharing.stop", { name: row.name })} onClick={() => void run(() => stopSharing(row.key))}>
                     <X />
                   </Button>
@@ -147,10 +187,19 @@ export function ShareDialog({
             <p className="text-sm text-muted-foreground">{t("sharing.none")}</p>
           ) : null}
 
-          {availablePeople.length > 0 || availableTeams.length > 0 ? (
+          {availablePeople.length > 0 || availableTeams.length > 0 || availableOrganizations.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2">
               <NativeSelect value={who} onChange={(event) => setWho(event.target.value)} aria-label={t("sharing.with")} className="min-w-0 flex-1" data-testid="song-share-with">
                 <option value="">{t("sharing.choose")}</option>
+                {availableOrganizations.length > 0 ? (
+                  <optgroup label={t("sharing.organizations")}>
+                    {availableOrganizations.map((organization) => (
+                      <option key={organization.id} value={`org:${organization.id}`}>
+                        {organization.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
                 {availableTeams.length > 0 ? (
                   <optgroup label={t("sharing.teams")}>
                     {availableTeams.map((team) => (
@@ -170,7 +219,13 @@ export function ShareDialog({
                   </optgroup>
                 ) : null}
               </NativeSelect>
-              <NativeSelect value={rights(canEdit)} onChange={(event) => setCanEdit(event.target.value === "edit")} aria-label={t("sharing.rights")} data-testid="song-share-rights">
+              <NativeSelect
+                value={choosingOrganization ? "view" : rights(canEdit)}
+                disabled={choosingOrganization}
+                onChange={(event) => setCanEdit(event.target.value === "edit")}
+                aria-label={t("sharing.rights")}
+                data-testid="song-share-rights"
+              >
                 <option value="view">{t("sharing.canView")}</option>
                 <option value="edit">{t("sharing.canEdit")}</option>
               </NativeSelect>
@@ -198,6 +253,7 @@ export function ShareDialog({
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">{t("sharing.rightsHint")}</p>
+          {organizations.length > 0 ? <p className="text-xs text-muted-foreground">{t("sharing.organizationHint")}</p> : null}
 
           {/* Moving a personal song to a team (issue #331): a step of its own, confirmed, since its owner can't undo it. */}
           {personal && teams.length > 0 ? (

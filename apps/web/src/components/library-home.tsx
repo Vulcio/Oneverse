@@ -1,13 +1,13 @@
 import type { LibraryHome, SongVersionSummary } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Music2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, Music2 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /** A song as a card shows it; `imageUrl` for when songs have images of their own. */
-type CardSong = Pick<SongVersionSummary, "id" | "title" | "artists"> & { workId?: string; imageUrl?: string | null };
+type CardSong = Pick<SongVersionSummary, "id" | "title" | "artists"> & { workId?: string; imageUrl?: string | null; private?: boolean };
 
 /** The same colour for the same song, every time: a hue from its title. */
 function hueOf(text: string): number {
@@ -34,6 +34,28 @@ function initialsOf(title: string): string {
  * shelf never shows an empty box.
  */
 export function SongCover({ song, className, size = "card" }: { song: CardSong; className?: string; size?: "card" | "small" | "large" }) {
+  if (!song.private) return <CoverImage song={song} className={className} size={size} />;
+  // Only its owner can see it (issue #172): a lock in a corner.
+  return (
+    <span className="relative block w-full">
+      <CoverImage song={song} className={className} size={size} />
+      <PrivateMark className={cn("absolute rounded-full bg-black/55 text-white", size === "small" ? "-top-1 -right-1 p-0.5" : "top-1.5 right-1.5 p-1")} iconClassName={size === "small" ? "size-2.5" : "size-3.5"} />
+    </span>
+  );
+}
+
+/** "Private - only you can see it" (issue #172): a lock, with its words on hover and for screen readers. */
+export function PrivateMark({ className, iconClassName }: { className?: string; iconClassName?: string }) {
+  const { t } = useTranslation();
+  return (
+    <span className={cn("inline-flex items-center", className)} title={t("library.private")} data-testid="private-mark">
+      <Lock className={cn("size-3.5", iconClassName)} aria-hidden />
+      <span className="sr-only">{t("library.private")}</span>
+    </span>
+  );
+}
+
+function CoverImage({ song, className, size }: { song: CardSong; className?: string; size: "card" | "small" | "large" }) {
   const width = size === "small" ? 64 : size === "large" ? 640 : 320;
   if (song.imageUrl) {
     return <img src={`${song.imageUrl}&w=${width}`} alt="" loading="lazy" data-testid="song-image" className={cn("aspect-square w-full rounded-lg object-cover", className)} />;

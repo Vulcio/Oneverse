@@ -29,7 +29,8 @@ export const OPEN_SUBMISSION_STATES = ["SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANG
  *
  * - Songs: anyone sees approved global songs (global admins, every global
  *   song), a user's own songs, their teams' songs, songs shared with them
- *   (AccessGrant, issue #77) or with one of their teams (#331), and the songs of a songbook shared with them
+ *   (AccessGrant, issue #77), with one of their teams (#331) or one of their
+ *   organisations (#350, to view), and the songs of a songbook shared with them
  *   or their teams, while they're in it (issue #211). Reviewers can also
  *   open a song while it's submitted to the global catalogue.
  * - Songbooks: anyone sees global songbooks, plus their own, their teams',
@@ -98,9 +99,15 @@ export class AccessPolicyService {
     };
   }
 
-  /** An AccessGrant to the user or one of their teams (issue #331). */
-  private grantTo(userId: string, teamIds: string[]): Prisma.AccessGrantWhereInput {
-    return { OR: [{ grantedToUserId: userId }, ...(teamIds.length > 0 ? [{ grantedToTeamId: { in: teamIds } }] : [])] };
+  /** An AccessGrant to the user, one of their teams (issue #331) or one of their organisations (#350). */
+  grantTo(userId: string, teamIds: string[]): Prisma.AccessGrantWhereInput {
+    return {
+      OR: [
+        { grantedToUserId: userId },
+        ...(teamIds.length > 0 ? [{ grantedToTeamId: { in: teamIds } }] : []),
+        { grantedToOrganization: { memberships: { some: { userId } } } },
+      ],
+    };
   }
 
   /**
@@ -109,7 +116,8 @@ export class AccessPolicyService {
    */
   private async editGrantTo(userId: string): Promise<Prisma.AccessGrantWhereInput> {
     const adminTeams = await this.prisma.client.teamMembership.findMany({ where: { userId, role: "ADMIN" }, select: { teamId: true } });
-    return { canEdit: true, ...this.grantTo(userId, adminTeams.map((membership) => membership.teamId)) };
+    // A share with an organisation is to view only (issue #350).
+    return { canEdit: true, grantedToOrganizationId: null, ...this.grantTo(userId, adminTeams.map((membership) => membership.teamId)) };
   }
 
   /** A SongbookShare to the user or one of their teams. */
@@ -127,7 +135,7 @@ export class AccessPolicyService {
     const teamIds = memberships.map((membership) => membership.teamId);
     const adminOf = new Set(memberships.filter((membership) => membership.role === "ADMIN").map((membership) => membership.teamId));
     const [grants, entries] = await Promise.all([
-      this.prisma.client.accessGrant.findMany({ where: this.grantTo(userId, teamIds), select: { songVersionId: true, canEdit: true, grantedToTeamId: true } }),
+      this.prisma.client.accessGrant.findMany({ where: this.grantTo(userId, teamIds), select: { songVersionId: true, canEdit: true, grantedToTeamId: true, grantedToOrganizationId: true } }),
       this.prisma.client.songbookEntry.findMany({
         where: { songbook: { shares: { some: this.shareTo(userId, teamIds) } }, songVersion: { ownerScope: { not: "GLOBAL" } } },
         select: { songVersionId: true },
@@ -135,7 +143,7 @@ export class AccessPolicyService {
     ]);
     const shared = new Map<string, { canEdit: boolean }>(entries.map((entry) => [entry.songVersionId, { canEdit: false }]));
     for (const grant of grants) {
-      const canEdit = grant.canEdit && (!grant.grantedToTeamId || adminOf.has(grant.grantedToTeamId));
+      const canEdit = grant.canEdit && !grant.grantedToOrganizationId && (!grant.grantedToTeamId || adminOf.has(grant.grantedToTeamId));
       shared.set(grant.songVersionId, { canEdit: canEdit || (shared.get(grant.songVersionId)?.canEdit ?? false) });
     }
     return shared;

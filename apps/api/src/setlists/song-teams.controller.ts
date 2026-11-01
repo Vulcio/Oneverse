@@ -10,7 +10,7 @@ import { SongOwnershipService } from "./song-ownership.service.js";
 
 class MoveSongToTeamDto extends zodDto(MoveSongToTeamSchema) {}
 
-/** A song and teams (issue #331, see SongOwnershipService): sharing it with them, moving it to one. */
+/** A song and teams (issue #331, see SongOwnershipService): sharing it with them or an organisation (#350), moving it to one. */
 @ApiTags("song-versions")
 @ApiBearerAuth()
 @Controller("song-versions/:songVersionId")
@@ -34,6 +34,26 @@ export class SongTeamsController {
   async unshare(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string, @Param("teamId") teamId: string) {
     await this.ownership.unshareTeam(requireUser(user), songVersionId, teamId);
     return this.ownership.teamShares(songVersionId);
+  }
+
+  /** The organisations it's shared with (issue #350; who manages it). */
+  @Get("shares/organizations")
+  async organizationShares(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string) {
+    await this.ownership.assertManages(requireUser(user), songVersionId);
+    return this.ownership.organizationShares(songVersionId);
+  }
+
+  /** Shares it with everyone in an organisation one is in, to view. */
+  @Put("shares/organizations/:organizationId")
+  async shareWithOrganization(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string, @Param("organizationId") organizationId: string) {
+    await this.ownership.shareWithOrganization(requireUser(user), songVersionId, organizationId);
+    return this.ownership.organizationShares(songVersionId);
+  }
+
+  @Delete("shares/organizations/:organizationId")
+  async unshareOrganization(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string, @Param("organizationId") organizationId: string) {
+    await this.ownership.unshareOrganization(requireUser(user), songVersionId, organizationId);
+    return this.ownership.organizationShares(songVersionId);
   }
 
   /** Makes a personal song the team's: `moved`, or offered to the team's admins. */

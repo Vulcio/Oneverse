@@ -72,6 +72,8 @@ Puis **Enregistrer le chant**.
 
 ![Les détails d'un chant](../../../assets/screenshots/fr/song-info.jpg)
 
+Un cadenas sur la pochette d'un chant, et à côté de son titre sur sa page, indique qu'il est **privé - vous seul·e le voyez** : il est à vous, partagé avec personne (une personne, une équipe ou une organisation), dans aucune liste d'une équipe ni une liste que vous avez partagée, et pas envoyé au [catalogue global](/fr/library/#proposer-au-catalogue-global). Partagez-le et le cadenas disparaît.
+
 Ouverte depuis une liste - **Chants** tels que vous les avez cherchés et triés, vos **Favoris**, une liste intelligente, les chants d'un artiste ou un [recueil](/fr/songbooks/) - la page d'un chant montre où il se trouve (« 2 sur 12 · Favoris »), avec les chants d'avant et d'après de chaque côté : une touche mène au suivant, toujours dans la même liste.
 
 Un chant a des onglets :

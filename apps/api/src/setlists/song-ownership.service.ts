@@ -9,8 +9,8 @@ import { SetlistAccessService } from "./setlist-access.service.js";
 type Tx = Prisma.TransactionClient;
 
 /**
- * Songs and teams: sharing a song with a team, and handing a personal song
- * over to one.
+ * Songs and teams: sharing a song with a team or a whole organisation, and
+ * handing a personal song over to a team.
  *
  * - Shared with a team (issue #331, an AccessGrant to it): everyone in it
  *   sees the song, joining later too, and the team's sets can hold it; to
@@ -69,6 +69,38 @@ export class SongOwnershipService {
   async unshareTeam(user: AuthenticatedUser, songVersionId: string, teamId: string): Promise<void> {
     await this.assertManages(user, songVersionId);
     await this.prisma.client.accessGrant.deleteMany({ where: { songVersionId, grantedToTeamId: teamId } });
+  }
+
+  /** The organisations a song is shared with (issue #350), to view. */
+  async organizationShares(songVersionId: string) {
+    const grants = await this.prisma.client.accessGrant.findMany({
+      where: { songVersionId, grantedToOrganizationId: { not: null } },
+      select: { grantedToOrganization: { select: { id: true, name: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+    return grants.map((grant) => ({ organization: grant.grantedToOrganization! }));
+  }
+
+  /**
+   * Shares the song with everyone in an organisation the user is in (issue
+   * #350), to view: they see it in their library and its teams' sets can
+   * hold it. The organisation never owns it.
+   */
+  async shareWithOrganization(user: AuthenticatedUser, songVersionId: string, organizationId: string): Promise<void> {
+    await this.assertManages(user, songVersionId);
+    if (!(await this.prisma.client.organization.count({ where: { id: organizationId } }))) throw new NotFoundException("Organisation not found");
+    const member = await this.prisma.client.organizationMembership.count({ where: { organizationId, userId: user.id } });
+    if (!member) throw new ForbiddenException("Share with an organisation you're in");
+    await this.prisma.client.accessGrant.upsert({
+      where: { songVersionId_grantedToOrganizationId: { songVersionId, grantedToOrganizationId: organizationId } },
+      create: { songVersionId, grantedToOrganizationId: organizationId, grantedByUserId: user.id },
+      update: {},
+    });
+  }
+
+  async unshareOrganization(user: AuthenticatedUser, songVersionId: string, organizationId: string): Promise<void> {
+    await this.assertManages(user, songVersionId);
+    await this.prisma.client.accessGrant.deleteMany({ where: { songVersionId, grantedToOrganizationId: organizationId } });
   }
 
   /**

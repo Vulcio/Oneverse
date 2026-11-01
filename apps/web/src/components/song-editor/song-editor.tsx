@@ -14,6 +14,7 @@ import {
   type Tag,
 } from "@oneverse/core";
 import { useBlocker, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
+import { PrivateMark } from "#/components/library-home";
 import { PresenceChip, SavedElsewhere, StartedOver } from "#/components/presence";
 import { sendDoc, usePresence, useSongPresence, watchSong } from "#/lib/live-notes";
 import { useChartNotes } from "#/components/notes";
@@ -580,7 +581,9 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         getLanguageDisplayName(edit.version.language, i18n.language),
         contributor ? t("songEditor.contributedBy", { name: contributor }) : null,
         // Shared with them by its owner (#77), or with one of their teams (#331).
-        edit.version.sharedBy?.team
+        edit.version.sharedBy?.organization
+          ? t("sharing.sharedWithOrganization", { name: edit.version.sharedBy.displayName, organization: edit.version.sharedBy.organization.name })
+          : edit.version.sharedBy?.team
           ? t(edit.version.sharedBy.canEdit ? "sharing.sharedWithTeamEdit" : "sharing.sharedWithTeamView", { name: edit.version.sharedBy.displayName, team: edit.version.sharedBy.team.name })
           : edit.version.sharedBy
             ? t(edit.version.sharedBy.canEdit ? "sharing.sharedByEdit" : "sharing.sharedByView", { name: edit.version.sharedBy.displayName })
@@ -614,6 +617,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         <div className="min-w-0">
           <h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold">
             <span className="min-w-0 break-words">{heading}</span>
+            {edit?.version.private ? <PrivateMark className="text-muted-foreground" iconClassName="size-4" /> : null}
             {edit?.version.versionName ? (
               <span className="rounded-full border px-2.5 py-0.5 text-sm font-medium text-muted-foreground">{edit.version.versionName}</span>
             ) : null}
@@ -688,7 +692,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                   </DropdownMenuItem>
                 ) : null}
                 {/* A team's share is the team's, not theirs to leave. */}
-                {edit.version.sharedBy && !edit.version.sharedBy.team ? (
+                {edit.version.sharedBy && !edit.version.sharedBy.team && !edit.version.sharedBy.organization ? (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => void leaveShared()}>{t("sharing.leave")}</DropdownMenuItem>

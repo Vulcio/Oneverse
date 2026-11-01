@@ -99,6 +99,11 @@ export class SetlistAccessService {
     if ((await this.policy.teamRole(user.id, teamId)) !== "ADMIN") throw new ForbiddenException("Team admin role required");
   }
 
+  /** The organisation a team is part of, if any (issue #241). */
+  private async organizationOf(teamId: string): Promise<string | null> {
+    return requestMemo(`teamOrganization:${teamId}`, async () => (await this.prisma.client.team.findUnique({ where: { id: teamId }, select: { organizationId: true } }))?.organizationId ?? null);
+  }
+
   async teamIdsOf(userId: string): Promise<Set<string>> {
     return new Set(await this.policy.teamIds(userId));
   }
@@ -112,12 +117,15 @@ export class SetlistAccessService {
   async addableWhere(set: SetRow): Promise<Prisma.SongVersionWhereInput> {
     const approvedGlobal: Prisma.SongVersionWhereInput = { ownerScope: "GLOBAL", publicationState: "APPROVED" };
     if (set.ownerTeamId) {
+      const organizationId = await this.organizationOf(set.ownerTeamId);
       return {
         deletedAt: null,
         OR: [
           approvedGlobal,
           { ownerScope: "TEAM", ownerTeamId: set.ownerTeamId },
           { ownerScope: { not: "GLOBAL" }, accessGrants: { some: { grantedToTeamId: set.ownerTeamId } } },
+          // Shared with the team's organisation (issue #350): its members are all in it.
+          ...(organizationId ? [{ ownerScope: { not: "GLOBAL" as const }, accessGrants: { some: { grantedToOrganizationId: organizationId } } }] : []),
           // In a songbook shared with the team (issue #211).
           { ownerScope: { not: "GLOBAL" }, songbookEntries: { some: { songbook: { shares: { some: { teamId: set.ownerTeamId } } } } } },
         ],
@@ -149,7 +157,12 @@ export class SetlistAccessService {
           `teamShared:${teamId}`,
           async () =>
             new Set([
-              ...(await this.prisma.client.accessGrant.findMany({ where: { grantedToTeamId: teamId }, select: { songVersionId: true } })).map((grant) => grant.songVersionId),
+              ...(
+                await this.prisma.client.accessGrant.findMany({
+                  where: { OR: [{ grantedToTeamId: teamId }, { grantedToOrganization: { teams: { some: { id: teamId } } } }] },
+                  select: { songVersionId: true },
+                })
+              ).map((grant) => grant.songVersionId),
               ...(await this.prisma.client.songbookEntry.findMany({ where: { songbook: { shares: { some: { teamId } } } }, select: { songVersionId: true } })).map((entry) => entry.songVersionId),
             ]),
         )

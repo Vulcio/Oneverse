@@ -754,6 +754,8 @@ model Organization {
   // A Bible in its teams' members' sidebar (issue #310), turned on by its admins.
   bible        Boolean                   @default(false)
   scopedRoles  RoleAssignment[]          @relation("RoleScopeOrganization")
+  // Songs shared with everyone in it (issue #350), to view; it never owns them.
+  songGrants   AccessGrant[]
 }
 
 model OrganizationMembership {
@@ -2226,21 +2228,26 @@ model AccessGrant {
   // Granted to (one of these). A team's (issue #331) is everyone in it, as
   // they join; canEdit there lets the team's admins edit it, as a team's own
   // song.
-  grantedToUserId String?
-  grantedToTeamId String?
+  grantedToUserId         String?
+  grantedToTeamId         String?
+  // An organisation's (issue #350): everyone in it sees it, to view only.
+  grantedToOrganizationId String?
 
   // Permissions
   canView     Boolean @default(true)
   canDownload Boolean @default(false)
   canEdit     Boolean @default(false)
 
-  songVersion   SongVersion @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
-  grantedByUser User        @relation(fields: [grantedByUserId], references: [id])
-  grantedToUser User?       @relation("AccessGrantTo", fields: [grantedToUserId], references: [id], onDelete: Cascade)
-  grantedToTeam Team?       @relation(fields: [grantedToTeamId], references: [id], onDelete: Cascade)
+  songVersion           SongVersion   @relation(fields: [songVersionId], references: [id], onDelete: Cascade)
+  grantedByUser         User          @relation(fields: [grantedByUserId], references: [id])
+  grantedToUser         User?         @relation("AccessGrantTo", fields: [grantedToUserId], references: [id], onDelete: Cascade)
+  grantedToTeam         Team?         @relation(fields: [grantedToTeamId], references: [id], onDelete: Cascade)
+  grantedToOrganization Organization? @relation(fields: [grantedToOrganizationId], references: [id], onDelete: Cascade)
 
   @@unique([songVersionId, grantedToUserId])
   @@unique([songVersionId, grantedToTeamId])
+  @@unique([songVersionId, grantedToOrganizationId])
+  @@index([grantedToOrganizationId])
   @@index([songVersionId])
   @@index([grantedToTeamId])
   @@index([grantedToUserId])

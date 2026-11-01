@@ -1148,6 +1148,7 @@ const fr: typeof en = {
     statusPersonal: "Personnel",
     statusSharedBy: "Partagé par {{name}}",
     statusSharedWithTeam: "Partagé avec {{team}}",
+    private: "Privé - vous seul·e le voyez",
     statusPublishedByYou: "Publié par vous",
     statusTeam: "Équipe",
     statusDraft: "Brouillon",
@@ -3774,6 +3775,10 @@ const fr: typeof en = {
     sharedByEdit: "Partagé par {{name}} · vous pouvez le modifier",
     sharedWithTeamView: "Partagé avec {{team}} par {{name}} · en lecture",
     sharedWithTeamEdit: "Partagé avec {{team}} par {{name}} · vous pouvez le modifier",
+    sharedWithOrganization: "Partagé avec {{organization}} par {{name}} · en lecture",
+    organizations: "Organisations",
+    organization: "Organisation",
+    organizationHint: "Partagé avec une organisation, c'est en lecture : tous ses membres, actuels et futurs, voient le chant dans leur bibliothèque, et les listes de ses équipes peuvent le contenir. L'organisation n'en devient jamais propriétaire.",
     leave: "Retirer de ma bibliothèque",
     move: {
       title: "Déplacer vers une équipe",
