@@ -202,6 +202,9 @@ await step("Sync play: the leader chooses for everyone, the others' control says
   await choose(leader, "Turn sync on");
   await leader.locator('[data-testid="sync-control"][data-state-sync="on"]').first().waitFor();
   await choose(leader, "Lead the set");
+  // Only once it leads is its choice everyone's.
+  await leader.locator('[data-testid="sync-control"][data-state-sync="leading"]').first().waitFor();
+  await other.locator('[data-testid="sync-control"][data-state-sync="following"]').first().waitFor({ timeout: 10000 });
   await control(leader).selectOption("METRONOME");
   page = other;
   await other.waitForFunction(() => document.querySelector('[data-testid="playback-source"]')?.dataset.leader === "METRONOME", null, { timeout: 10000 });
