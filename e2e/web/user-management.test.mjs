@@ -18,7 +18,10 @@ async function signUpVerified(tag, name) {
     link = readFileSync(LOG, "utf8").slice(offset).match(/https?:\/\/[^\s]+?\/api\/auth\/verify-email\?token=[^\s&]+/)?.[0];
   }
   await fetch(link, { redirect: "manual" });
-  return { email, name, id: sql(`select id from "User" where email='${email}'`) };
+  const id = sql(`select id from "User" where email='${email}'`);
+  // A returning user's: "What do you play or do?" (issue #109) would cover the pages tested.
+  sql(`update "User" set "profilePromptSkippedAt" = now() where id = '${id}'`);
+  return { email, name, id };
 }
 
 async function bearerFor(email) {

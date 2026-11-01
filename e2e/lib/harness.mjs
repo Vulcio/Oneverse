@@ -104,7 +104,11 @@ export async function user(name) {
 }
 
 /** Lets "What do you play or do?" (issue #109) ask `who` again, as for someone who just signed up. */
-export const askProfileAgain = (who) => sql(`update "User" set "profilePromptSkippedAt" = null where id = '${who.id}'`);
+export const askProfileAgain = (who) => {
+  // Joining a team asks again too; a suite testing the prompt keeps that.
+  who.wantsProfilePrompt = true;
+  sql(`update "User" set "profilePromptSkippedAt" = null where id = '${who.id}'`);
+};
 
 /** An API call as `who`; returns the status and parsed body. */
 export async function call(who, method, path, body) {
@@ -114,6 +118,10 @@ export async function call(who, method, path, body) {
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
+  // Joining a team asks "What do you play or do?" again (issue #109): skipped, as for every user(), unless a suite wants it.
+  if (method === "POST" && path.startsWith("/teams/join/") && res.ok && who.id && !who.wantsProfilePrompt) {
+    sql(`update "User" set "profilePromptSkippedAt" = now() where id = '${who.id}'`);
+  }
   return { status: res.status, body: text ? JSON.parse(text) : undefined };
 }
 

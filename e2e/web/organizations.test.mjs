@@ -39,7 +39,10 @@ try {
 
   await step("…and puts their team in it, from the team's page", async () => {
     await page.goto(`${WEB}/teams/${team.id}`);
+    // Picked once the page is hydrated, or the choice doesn't reach React and Save stays off.
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("team-organization-select").selectOption({ label: name });
+    await page.getByTestId("team-organization-save").and(page.locator(":enabled")).waitFor();
     await page.getByTestId("team-organization-save").click();
     await page.getByTestId("team-organization").getByText(`Part of ${name}`).waitFor();
   });

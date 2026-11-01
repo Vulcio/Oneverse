@@ -71,6 +71,7 @@ await step("…and the dashboard's card is gone", async () => {
 
 // The team's admin: who hasn't said yet.
 const lateMember = await user("Silent Prompt");
+lateMember.wantsProfilePrompt = true;
 await call(lateMember, "POST", `/teams/join/${link.token}`);
 const adminContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 page = await adminContext.newPage();

@@ -2,7 +2,7 @@
 import { chromium } from "playwright";
 import sharp from "sharp";
 import { readFileSync, writeFileSync } from "node:fs";
-import { API, LOG, ONEVERSE, SP, WEB, finish, stamp, stepper } from "../lib/harness.mjs";
+import { API, LOG, ONEVERSE, SP, WEB, finish, sql, stamp, stepper } from "../lib/harness.mjs";
 
 
 let page;
@@ -21,6 +21,8 @@ for (let i = 0; i < 30 && !link; i++) {
   link = readFileSync(LOG, "utf8").slice(offset).match(/https?:\/\/[^\s]+?\/api\/auth\/verify-email\?token=[^\s&]+/)?.[0];
 }
 await fetch(link, { redirect: "manual" });
+// A returning user's: "What do you play or do?" (issue #109) would cover the account page.
+sql(`update "User" set "profilePromptSkippedAt" = now() where email = '${email}'`);
 const signIn = await fetch(`${API}/api/auth/sign-in/email`, {
   method: "POST",
   headers: { "Content-Type": "application/json", Origin: WEB },
