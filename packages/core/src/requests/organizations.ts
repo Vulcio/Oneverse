@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { ENTITY_COLORS } from "../constants/index.js";
-import { clearableText, optional, queryBoolean } from "./fields.js";
+import { clearableInt, clearableText, optional, queryBoolean } from "./fields.js";
 
 /**
  * Organisations (issue #241, Planiverse): whether an instance has none
@@ -31,6 +31,14 @@ export const SaveOwnStorageSchema = z.strictObject({
   secretAccessKey: optional(z.string().trim().min(1).max(500)).describe("Needed the first time; left out, the one saved is kept"),
 });
 export type SaveOwnStorageRequest = z.input<typeof SaveOwnStorageSchema>;
+
+/** PUT /organizations/:id/storage/limits (its admins): what may go into its own bucket; null clears a limit, left out keeps it. */
+export const OwnStorageLimitsSchema = z.strictObject({
+  teamLimitMb: clearableInt(1, 10_000_000).describe("What each of its teams may keep there, in MB"),
+  memberLimitMb: clearableInt(1, 10_000_000).describe("What each person may upload there, in MB"),
+  maxFileMb: clearableInt(1, 500).describe("The largest file, in MB; the server's own limits still apply"),
+});
+export type OwnStorageLimitsRequest = z.input<typeof OwnStorageLimitsSchema>;
 export type SaveOrganizationSettingsRequest = z.input<typeof SaveOrganizationSettingsSchema>;
 
 /** POST /organizations, POST /admin/organizations. */

@@ -1,7 +1,7 @@
 // An organisation's own bucket in the browser (issue #206): its admin, with a
 // role that allows it, connects one from the organisation's page (tried when
-// saved), sees how many files are there, and stops using it with a confirm
-// step; without the server admin's go-ahead the card only says who to ask.
+// saved), sees how many files are there, sets limits on what goes in, and
+// stops using it with a confirm step; without the server admin's go-ahead the card only says who to ask.
 import { chromium } from "playwright";
 import { WEB, api, call, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -47,6 +47,16 @@ try {
     await card.locator('[data-testid="own-storage-status"][data-state="ACTIVE"]').waitFor();
     await card.getByTestId("own-storage-files").getByText("0 files there").waitFor();
     if ((await card.getByTestId("own-storage-secret").inputValue()) !== "") throw new Error("secret left in the form");
+  });
+
+  await step("limits set: per team and the largest file, the rest left without", async () => {
+    const card = page.getByTestId("own-storage-card");
+    await card.getByTestId("own-storage-teamLimitMb").fill("200");
+    await card.getByTestId("own-storage-maxFileMb").fill("20");
+    await card.getByTestId("own-storage-limits-save").click();
+    await card.getByTestId("own-storage-limits-saved").waitFor();
+    const now = await api(me, "GET", `/organizations/${org.id}/storage`);
+    if (now.teamLimitMb !== 200 || now.maxFileMb !== 20 || now.memberLimitMb !== null) throw new Error(JSON.stringify(now));
   });
 
   await step("stopped, with a confirm step: disconnected", async () => {

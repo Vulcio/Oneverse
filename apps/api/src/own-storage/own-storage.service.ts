@@ -1,7 +1,7 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import type { SaveOwnStorageRequest } from "@oneverse/core";
+import type { OwnStorageLimitsRequest, SaveOwnStorageRequest } from "@oneverse/core";
 import { encryptSecret, maskSecret } from "@oneverse/secret-crypto";
 import type { Queue } from "bullmq";
 import { createHash, randomUUID } from "node:crypto";
@@ -40,6 +40,11 @@ export interface OwnStorageSummary {
   /** Files there now, and files on their way in or out. */
   files: number;
   moving: number;
+  /** Its admins' limits on what goes into it, in MB (null: none), and how much is there. */
+  teamLimitMb: number | null;
+  memberLimitMb: number | null;
+  maxFileMb: number | null;
+  usedBytes: number;
 }
 
 /** A file to move, where it is and where it should be. */
@@ -86,10 +91,10 @@ export class OwnStorageService {
 
   async summary(user: AuthenticatedUser, organizationId: string): Promise<OwnStorageSummary> {
     await this.assertAdmin(user, organizationId);
-    const [row, allowed, files, moving] = await Promise.all([
+    const [row, allowed, stored, moving] = await Promise.all([
       this.prisma.client.organizationStorage.findUnique({ where: { organizationId } }),
       this.allowed(user),
-      this.prisma.client.attachment.count({ where: { storedInOrganizationId: organizationId } }),
+      this.prisma.client.attachment.aggregate({ where: { storedInOrganizationId: organizationId }, _count: true, _sum: { sizeBytes: true, originalSizeBytes: true } }),
       this.movingCount(organizationId),
     ]);
     return {
@@ -104,8 +109,12 @@ export class OwnStorageService {
       reachable: row?.reachable ?? true,
       lastError: row?.lastError ?? null,
       checkedAt: row?.checkedAt?.toISOString() ?? null,
-      files,
+      files: stored._count,
       moving,
+      teamLimitMb: row?.teamLimitMb ?? null,
+      memberLimitMb: row?.memberLimitMb ?? null,
+      maxFileMb: row?.maxFileMb ?? null,
+      usedBytes: (stored._sum.sizeBytes ?? 0) + (stored._sum.originalSizeBytes ?? 0),
     };
   }
 
@@ -141,6 +150,19 @@ export class OwnStorageService {
       update: { ...settings, state: "ACTIVE", reachable: true, lastError: null, checkedAt: new Date() },
     });
     await this.kick();
+    return this.summary(user, organizationId);
+  }
+
+  /** Its admins' limits on what goes into it: null clears one, left out keeps it. */
+  async setLimits(user: AuthenticatedUser, organizationId: string, input: OwnStorageLimitsRequest): Promise<OwnStorageSummary> {
+    await this.assertAdmin(user, organizationId);
+    const data = {
+      ...(input.teamLimitMb !== undefined && { teamLimitMb: input.teamLimitMb }),
+      ...(input.memberLimitMb !== undefined && { memberLimitMb: input.memberLimitMb }),
+      ...(input.maxFileMb !== undefined && { maxFileMb: input.maxFileMb }),
+    };
+    const updated = await this.prisma.client.organizationStorage.updateMany({ where: { organizationId }, data });
+    if (updated.count === 0) throw new NotFoundException("This organisation doesn't use its own storage");
     return this.summary(user, organizationId);
   }
 

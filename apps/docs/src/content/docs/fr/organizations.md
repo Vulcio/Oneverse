@@ -89,7 +89,7 @@ Une fois connecté :
 
 - les fichiers déjà sur les chants de ses équipes y sont déplacés en arrière-plan, chacun vérifié octet par octet avant de quitter ce serveur ; la carte compte les fichiers qui y sont et ceux en cours de déplacement ;
 - les nouveaux fichiers des chants de ses équipes y vont directement. Les chants personnels, et les images (avatars, images des chants et des équipes), restent sur ce serveur ;
-- ses fichiers ne comptent pas dans l'espace de stockage de ses équipes ;
+- ses fichiers ne comptent pas dans l'espace de stockage de ses équipes : ses administrateurs fixent leurs propres limites, sous **Limites**, en Mo - **Par équipe** (ce que les chants de chaque équipe peuvent y garder), **Par personne** (ce que chacun peut y importer) et le **Plus gros fichier** (jusqu'à 500 Mo ; les limites de ce serveur par type de fichier s'appliquent toujours). Un champ laissé vide ne limite pas ; **Enregistrer les limites** les garde. Elles valent pour les nouveaux imports et les pistes, pas pour les fichiers déjà là ou qui y sont déplacés ;
 - une équipe qui quitte l'organisation, ou un chant qui passe à quelqu'un d'autre, ramène ses fichiers sur ce serveur.
 
 Si le bucket ne répond plus, la carte le dit : les nouveaux fichiers sont gardés sur ce serveur en attendant, puis déplacés quand il répond à nouveau (il est réessayé toutes les dix minutes). Son bucket ne peut pas changer tant que des fichiers y sont.

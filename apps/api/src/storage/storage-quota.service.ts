@@ -1,4 +1,5 @@
 import { Injectable, PayloadTooLargeException } from "@nestjs/common";
+import type { Prisma } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesOf, teamStorageLimitMb } from "../roles/capabilities.js";
 
@@ -151,6 +152,57 @@ export class StorageQuotaService {
         usedBytes,
         limitBytes,
       });
+    }
+  }
+
+  /**
+   * Throws 413 if a file going into an organisation's own bucket (issue #206)
+   * is over the limits its admins set there: the largest file, what the
+   * song's team keeps there, what the uploader has put there. Global admins
+   * aren't held to them, as with the server's own. `wholeFile: false` when
+   * `incomingBytes` is several files (stems), held to the pools only.
+   */
+  async assertCanStoreInOrganization(organizationId: string, userId: string, incomingBytes: number, songVersionId: string, { wholeFile = true } = {}): Promise<void> {
+    const [limits, uploader, song] = await Promise.all([
+      this.prisma.client.organizationStorage.findUnique({ where: { organizationId }, select: { teamLimitMb: true, memberLimitMb: true, maxFileMb: true } }),
+      this.prisma.client.user.findUnique({ where: { id: userId }, select: { isGlobalAdmin: true } }),
+      this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { ownerTeamId: true } }),
+    ]);
+    if (!limits || uploader?.isGlobalAdmin) return;
+    if (wholeFile && limits.maxFileMb != null && incomingBytes > limits.maxFileMb * BYTES_PER_MB) {
+      throw new PayloadTooLargeException({
+        code: "ORGANIZATION_FILE_TOO_LARGE",
+        message: `This file is larger than your organisation allows (${limits.maxFileMb} MB).`,
+        limitBytes: limits.maxFileMb * BYTES_PER_MB,
+      });
+    }
+    const used = async (where: Prisma.AttachmentWhereInput) => {
+      const sum = await this.prisma.client.attachment.aggregate({ where: { storedInOrganizationId: organizationId, ...where }, _sum: { sizeBytes: true, originalSizeBytes: true } });
+      return (sum._sum.sizeBytes ?? 0) + (sum._sum.originalSizeBytes ?? 0);
+    };
+    if (limits.teamLimitMb != null && song?.ownerTeamId) {
+      const usedBytes = await used({ songVersion: { ownerTeamId: song.ownerTeamId } });
+      const limitBytes = limits.teamLimitMb * BYTES_PER_MB;
+      if (usedBytes + incomingBytes > limitBytes) {
+        throw new PayloadTooLargeException({
+          code: "TEAM_STORAGE_LIMIT_EXCEEDED",
+          message: `This upload would exceed the team's storage limit in your organisation (${formatMb(usedBytes)} of ${formatMb(limitBytes)} used).`,
+          usedBytes,
+          limitBytes,
+        });
+      }
+    }
+    if (limits.memberLimitMb != null) {
+      const usedBytes = await used({ uploadedByUserId: userId });
+      const limitBytes = limits.memberLimitMb * BYTES_PER_MB;
+      if (usedBytes + incomingBytes > limitBytes) {
+        throw new PayloadTooLargeException({
+          code: "STORAGE_LIMIT_EXCEEDED",
+          message: `This upload would exceed your storage limit in your organisation (${formatMb(usedBytes)} of ${formatMb(limitBytes)} used).`,
+          usedBytes,
+          limitBytes,
+        });
+      }
     }
   }
 

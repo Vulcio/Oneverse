@@ -30,13 +30,14 @@ const teamSong = await api(orgAdmin, "POST", "/song-versions", { artists: ["Band
 const ownSong = await api(orgAdmin, "POST", "/song-versions", { artists: ["Band"], title: `Own storage mine ${stamp}`, language: "en", content: "[G]Hi\n" });
 
 let n = 0;
-async function upload(songId) {
-  const bytes = Buffer.from(`Own storage ${stamp} ${++n}\n`.repeat(100));
+async function upload(songId, size = 0) {
+  const line = `Own storage ${stamp} ${++n}\n`;
+  const bytes = Buffer.from(line.repeat(Math.max(100, Math.ceil(size / line.length))));
   const form = new FormData();
   form.append("type", "TEXT");
   form.append("file", new Blob([bytes], { type: "text/plain" }), `sheet-${n}.txt`);
   const res = await fetch(`${API}/song-versions/${songId}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${orgAdmin.bearer}` }, body: form });
-  return { ...(await res.json()), bytes, sha: createHash("sha256").update(bytes).digest("hex") };
+  return { ...(await res.json()), status: res.status, bytes, sha: createHash("sha256").update(bytes).digest("hex") };
 }
 const bucket = `org-bucket-${stamp}`;
 const inBucket = (file) => existsSync(path.join(BUCKETS, bucket, file.sha));
@@ -108,6 +109,30 @@ r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, { ...connect, b
 check("its bucket can't change while files are in it", r.status === 409, String(r.status));
 r = await call(admin, "DELETE", `/admin/organizations/${org}`);
 check("the organisation can't be deleted while it uses its own storage", r.status === 409, String(r.status));
+
+// --- its admins' limits on what goes into it
+const MB = 1024 * 1024;
+r = await call(outsider, "PUT", `/organizations/${org}/storage/limits`, { maxFileMb: 1 });
+check("only its admins set its limits", r.status === 403, String(r.status));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage/limits`, { maxFileMb: 501 });
+check("a largest file over the server's own maximum is refused", r.status === 400, JSON.stringify(r.body));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage/limits`, { maxFileMb: 1 });
+check("its admin sets the largest file", r.status === 200 && r.body.maxFileMb === 1 && r.body.teamLimitMb === null && r.body.usedBytes > 0, JSON.stringify(r.body));
+let big = await upload(teamSong.id, 1.5 * MB);
+check("…and a larger file of a team's song is refused", big.status === 413 && big.code === "ORGANIZATION_FILE_TOO_LARGE", JSON.stringify({ status: big.status, code: big.code }));
+big = await upload(ownSong.id, 1.5 * MB);
+check("…not someone's own song's, kept on the server", big.status === 201, String(big.status));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage/limits`, { maxFileMb: null, memberLimitMb: 1 });
+check("a limit cleared, another set, the rest kept", r.body.maxFileMb === null && r.body.memberLimitMb === 1, JSON.stringify(r.body));
+const fits = await upload(teamSong.id, 0.6 * MB);
+check("a person uploads within their limit there", fits.status === 201 && where(fits) === org, String(fits.status));
+big = await upload(teamSong.id, 0.6 * MB);
+check("…and not past it", big.status === 413 && big.code === "STORAGE_LIMIT_EXCEEDED", JSON.stringify({ status: big.status, message: big.message }));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage/limits`, { memberLimitMb: null, teamLimitMb: 1 });
+big = await upload(teamSong.id, 0.6 * MB);
+check("a team can't keep more there than its limit", big.status === 413 && big.code === "TEAM_STORAGE_LIMIT_EXCEEDED", JSON.stringify({ status: big.status, message: big.message }));
+r = await call(orgAdmin, "PUT", `/organizations/${org}/storage/limits`, { teamLimitMb: null });
+check("with no limits, it takes it again", (await upload(teamSong.id, 0.6 * MB)).status === 201 && r.body.teamLimitMb === null);
 
 // --- a bucket that stops answering
 sql(`update "OrganizationStorage" set reachable = false, "lastError" = 'test' where "organizationId" = '${org}'`);

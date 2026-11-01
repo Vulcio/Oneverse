@@ -89,7 +89,7 @@ Once it's connected:
 
 - the files already on its teams' songs are moved there in the background, each one checked byte for byte before it leaves this server; the card counts the files there and those being moved;
 - new files on its teams' songs go straight there. People's own songs, and pictures (avatars, song and team images), stay on this server;
-- its files don't count toward its teams' storage pools;
+- its files don't count toward its teams' storage pools: its admins set their own limits instead, under **Limits**, in MB - **Per team** (what each team's songs may keep there), **Per person** (what each person may upload there) and the **Largest file** (up to 500 MB; this server's own limits per file type still apply). A field left empty is no limit; **Save limits** keeps them. They hold for new uploads and stems, not for files already there or moved in;
 - a team that leaves the organisation, or a song that moves to someone else, takes its files back to this server.
 
 If the bucket stops answering, the card says so: new files are kept on this server meanwhile and moved there once it answers again (it's tried every ten minutes). Its bucket can't be changed while files are in it.

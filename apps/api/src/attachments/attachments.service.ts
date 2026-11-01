@@ -135,9 +135,10 @@ export class AttachmentsService {
     const song = await this.songRights(viewer, songVersionId);
     const canEditSong = song.canEditSong;
     const audience = await this.audience(viewer, song, visibility, teamId);
-    // In its organisation's own bucket (issue #206), it counts against no pool here.
+    // In its organisation's own bucket (issue #206), its admins' limits there, not the server's pools.
     const location = await this.storage.locationForSong(songVersionId);
-    if (!location) await this.quota.assertCanStore(viewer.id, body.length, songVersionId);
+    if (location) await this.quota.assertCanStoreInOrganization(location, viewer.id, body.length, songVersionId);
+    else await this.quota.assertCanStore(viewer.id, body.length, songVersionId);
     const { hash, sizeBytes } = await this.storage.put(body, mimeType, location);
     // Made Opus by the Worker above 320 kbps (issue #182): a WAV says its rate in its header, so it's known now;
     // a FLAC or AIFF always is, for music; anything else, the Worker finds out (null: maybe).

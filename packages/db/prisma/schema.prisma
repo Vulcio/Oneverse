@@ -3588,6 +3588,10 @@ model OrganizationStorage {
   reachable          Boolean                  @default(true)
   lastError          String?
   checkedAt          DateTime?
+  // Its admins' limits on what goes into it (null: none): per team, per person, per file.
+  teamLimitMb        Int?
+  memberLimitMb      Int?
+  maxFileMb          Int?
   createdByUserId    String?
   createdAt          DateTime                 @default(now())
   updatedAt          DateTime                 @updatedAt

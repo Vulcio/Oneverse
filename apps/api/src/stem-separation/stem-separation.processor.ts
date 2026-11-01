@@ -204,10 +204,13 @@ export class StemSeparationProcessor extends WorkerHost {
     const source = await this.prisma.client.attachment.findUnique({ where: { id: separation.sourceAttachmentId } });
     const stems = await this.fetchStems(server, files, separation.parts);
     const bytes = stems.reduce((sum, stem) => sum + stem.body.length, 0);
+    const location = await this.storage.locationForSong(separation.songVersionId);
     if (separation.requestedByUserId) {
       try {
-        // The song's team's pool for a team's song (issue #160), else the requester's own.
-        await this.quota.assertCanStore(separation.requestedByUserId, bytes, separation.songVersionId);
+        // The song's team's pool for a team's song (issue #160), else the requester's own;
+        // in its organisation's own bucket, the limits its admins set there (issue #206).
+        if (location) await this.quota.assertCanStoreInOrganization(location, separation.requestedByUserId, bytes, separation.songVersionId, { wholeFile: false });
+        else await this.quota.assertCanStore(separation.requestedByUserId, bytes, separation.songVersionId);
       } catch {
         return this.fail(separation.id, "The stems would go over the storage limit");
       }
@@ -248,7 +251,6 @@ export class StemSeparationProcessor extends WorkerHost {
     const audience = source ?? earlierFirst;
     const stored = [];
     // Where the song keeps its files (an organisation's own bucket, issue #206).
-    const location = await this.storage.locationForSong(separation.songVersionId);
     for (const stem of stems) stored.push({ ...stem, ...(await this.storage.put(stem.body, stem.mimeType, location)) });
     await this.prisma.client.$transaction([
       ...stored.map((stem) =>

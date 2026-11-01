@@ -186,6 +186,7 @@ export function OwnStorageCard({ organizationId }: { organizationId: string }) {
             </div>
           </form>
         ) : null}
+        {summary.configured && !leaving ? <OwnStorageLimits organizationId={organizationId} summary={summary} onSaved={show} /> : null}
         <p className="text-xs text-muted-foreground">{t("organizations.ownStorage.backups")}</p>
         {error ? (
           <p className="text-sm text-destructive" role="alert" data-testid="own-storage-error">
@@ -194,5 +195,86 @@ export function OwnStorageCard({ organizationId }: { organizationId: string }) {
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+const LIMITS = ["teamLimitMb", "memberLimitMb", "maxFileMb"] as const;
+type LimitField = (typeof LIMITS)[number];
+const asText = (value: number | null) => (value == null ? "" : String(value));
+
+/** What its admins let into the bucket: per team, per person, per file; empty is no limit. */
+function OwnStorageLimits({ organizationId, summary, onSaved }: { organizationId: string; summary: OwnStorageSummary; onSaved: (next: OwnStorageSummary) => void }) {
+  const { t } = useTranslation();
+  const [values, setValues] = useState<Record<LimitField, string>>(() => ({
+    teamLimitMb: asText(summary.teamLimitMb),
+    memberLimitMb: asText(summary.memberLimitMb),
+    maxFileMb: asText(summary.maxFileMb),
+  }));
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const changed = LIMITS.some((field) => values[field] !== asText(summary[field]));
+  const usedMb = (summary.usedBytes / (1024 * 1024)).toFixed(1);
+
+  return (
+    <form
+      className="flex flex-col gap-3 border-t pt-3"
+      data-testid="own-storage-limits"
+      onSubmit={(event) => {
+        event.preventDefault();
+        setBusy(true);
+        setError(null);
+        setSaved(false);
+        const body = Object.fromEntries(LIMITS.map((field) => [field, values[field].trim() === "" ? null : Number(values[field])]));
+        apiClient
+          .setOwnStorageLimits(organizationId, body)
+          .then(
+            (next) => {
+              onSaved(next);
+              setSaved(true);
+            },
+            (err: unknown) => setError(err instanceof Error ? err.message : String(err)),
+          )
+          .finally(() => setBusy(false));
+      }}
+    >
+      <div>
+        <p className="text-sm font-medium">{t("organizations.ownStorage.limits")}</p>
+        <p className="text-xs text-muted-foreground">{t("organizations.ownStorage.limitsHint", { used: usedMb })}</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {LIMITS.map((field) => (
+          <div key={field} className="flex flex-col gap-1.5">
+            <Label htmlFor={`own-storage-${field}`}>{t(`organizations.ownStorage.${field}`)}</Label>
+            <Input
+              id={`own-storage-${field}`}
+              type="number"
+              min={1}
+              max={field === "maxFileMb" ? 500 : undefined}
+              inputMode="numeric"
+              value={values[field]}
+              placeholder={t("organizations.ownStorage.noLimit")}
+              onChange={(event) => setValues((current) => ({ ...current, [field]: event.target.value }))}
+              data-testid={`own-storage-${field}`}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" size="sm" variant="outline" disabled={busy || !changed} data-testid="own-storage-limits-save">
+          {t("organizations.ownStorage.limitsSave")}
+        </Button>
+        {saved && !changed ? (
+          <span className="text-sm text-muted-foreground" data-testid="own-storage-limits-saved">
+            {t("organizations.ownStorage.limitsSaved")}
+          </span>
+        ) : null}
+        {error ? (
+          <span className="text-sm text-destructive" role="alert">
+            {error}
+          </span>
+        ) : null}
+      </div>
+    </form>
   );
 }

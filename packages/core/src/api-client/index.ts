@@ -43,7 +43,7 @@ import type { BibleSourceFormat } from "../scriptures/bible.js";
 import type { PassageChapter } from "../scriptures/references.js";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
 import type { SaveBackupConfigRequest } from "../requests/backups.js";
-import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, SaveOwnStorageRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
+import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, SaveOwnStorageRequest, OwnStorageLimitsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
@@ -187,6 +187,11 @@ export interface OwnStorageSummary {
   checkedAt: string | null;
   files: number;
   moving: number;
+  /** Its admins' limits on what goes into it, in MB (null: none), and how much is there. */
+  teamLimitMb: number | null;
+  memberLimitMb: number | null;
+  maxFileMb: number | null;
+  usedBytes: number;
 }
 
 export type ArchiveOwnerRef = { scope: "user" } | { scope: "team" | "organization"; id: string };
@@ -2591,6 +2596,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getOwnStorage: (organizationId: string) => request<OwnStorageSummary>(`/organizations/${encodeURIComponent(organizationId)}/storage`),
     saveOwnStorage: (organizationId: string, data: SaveOwnStorageRequest) =>
       request<OwnStorageSummary>(`/organizations/${encodeURIComponent(organizationId)}/storage`, { method: "PUT", body: JSON.stringify(data) }),
+    setOwnStorageLimits: (organizationId: string, data: OwnStorageLimitsRequest) =>
+      request<OwnStorageSummary>(`/organizations/${encodeURIComponent(organizationId)}/storage/limits`, { method: "PUT", body: JSON.stringify(data) }),
     stopOwnStorage: (organizationId: string) => request<OwnStorageSummary>(`/organizations/${encodeURIComponent(organizationId)}/storage/stop`, { method: "POST" }),
     /** An archive's download address, from its downloadPath: opened as it is (it's signed). */
     archiveDownloadUrl: (downloadPath: string) => `${baseUrl}${downloadPath}`,
