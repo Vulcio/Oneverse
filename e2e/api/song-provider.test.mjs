@@ -3,15 +3,26 @@
 // until turned on; a server added only once it answers the API, its key
 // encrypted and never sent back, a private address refused unless it's on
 // this network; Find chords - search, a ChordPro chart, and a SongDocument
-// v2 turned into one; song info and artwork in Auto detect, looked up again
+// v2 turned into one; a song's versions from two servers, one row, best
+// rated first, each its chart, paired with Deezer's match (issue #369); song info and artwork in Auto detect, looked up again
 // and linked with the artwork downloaded from the server's own address;
 // artists' pictures; the hooks chosen per server; a server that fails is
 // its own failure, shown in Admin.
 import { api, call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
-import { FAKE_SONG_PROVIDER_KEY, startFakeSongProvider } from "../lib/fake-song-provider.mjs";
+import { startFakeProviders } from "../lib/fake-providers.mjs";
+import { EXAMPLE_SONGS, FAKE_SONG_PROVIDER_KEY, startFakeSongProvider } from "../lib/fake-song-provider.mjs";
 
 const port = Number(process.env.FAKE_SONG_PROVIDER_PORT ?? 3993);
 const provider = await startFakeSongProvider({ port, apiKey: FAKE_SONG_PROVIDER_KEY, name: `Example songs ${stamp}` });
+// A second server with the same song (issue #369): one chart, rated 5 by one person - and the music services' stand-ins.
+const grace = EXAMPLE_SONGS.find((song) => song.id === "grace-1");
+const second = await startFakeSongProvider({
+  port: port - 1,
+  apiKey: null,
+  name: `Second songs ${stamp}`,
+  songs: [{ ...grace, id: "g2", versions: [{ id: "g2-only", name: "Live", key: "A", rating: { value: 5, count: 1 }, content: { format: "chordpro", content: "[A]Amazing grace\n" } }] }],
+});
+const services = await startFakeProviders();
 const admin = await user("Plugins admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const someone = await user("Plugin user");
@@ -52,11 +63,24 @@ try {
 
   // Find chords.
   r = await call(someone, "GET", `/plugins/chords/search?${new URLSearchParams({ title: "grace" })}`);
+  const versions = (song) => song?.versions.map((version) => `${version.versionId}:${version.rating?.value ?? "-"}`).join() ?? "";
   check(
-    "searched: the songs with chords, not those without",
-    r.status === 200 && r.body.results.length === 1 && r.body.results[0].title === "Amazing Grace" && r.body.results[0].providerId === source.id && r.body.unavailable.length === 0,
+    "searched: the songs with chords, not those without, each its versions best rated first",
+    r.status === 200 &&
+      r.body.songs.length === 1 &&
+      r.body.songs[0].title === "Amazing Grace" &&
+      r.body.songs[0].versions[0].providerId === source.id &&
+      versions(r.body.songs[0]) === "grace-1-original:4.7,grace-1-simple:4.2,grace-1-capo:-" &&
+      r.body.unavailable.length === 0,
     JSON.stringify(r.body),
   );
+  const simple = r.body.songs[0].versions[1];
+  check(
+    "a version says what sets it apart, who wrote it down and where it comes from",
+    simple.name === "Simplified" && simple.key === "C" && simple.author === "Marie" && simple.rating.count === 15 && simple.source?.name === "Chord Sharers" && simple.source.url === "https://chords.example.org/amazing-grace",
+    JSON.stringify(simple),
+  );
+  check("no music service match while Auto detect asks none of them", r.body.songs[0].match === null, JSON.stringify(r.body.songs[0].match));
   check("the search sent what the API says", provider.requests.some((req) => req.path === "/v1/search" && req.body?.title === "grace" && req.body.limit > 0));
   r = await call(someone, "GET", `/plugins/chords/${source.id}/songs/grace-1`);
   check(
@@ -64,11 +88,58 @@ try {
     r.status === 200 && r.body.content.includes("[G]Amazing grace") && r.body.key === "G" && r.body.tempo === 72 && r.body.rights === "Public domain: free to use." && r.body.writers.join() === "John Newton",
     JSON.stringify(r.body),
   );
+  r = await call(someone, "GET", `/plugins/chords/${source.id}/songs/grace-1?${new URLSearchParams({ version: "grace-1-simple" })}`);
+  check(
+    "a version's own chart, with its key, its source and its rights",
+    r.status === 200 &&
+      r.body.content.includes("[C]Amazing grace") &&
+      r.body.versionId === "grace-1-simple" &&
+      r.body.versionName === "Simplified" &&
+      r.body.key === "C" &&
+      r.body.source?.name === "Chord Sharers" &&
+      r.body.rights === "Shared by its author for worship use." &&
+      r.body.tempo === 72,
+    JSON.stringify(r.body),
+  );
+  r = await call(someone, "GET", `/plugins/chords/${source.id}/songs/grace-1?${new URLSearchParams({ version: "grace-1-capo" })}`);
+  check("a version without a chart of its own: the song's, in its key, with its capo", r.status === 200 && r.body.content.includes("[G]Amazing grace") && r.body.key === "A" && r.body.capo === 2, JSON.stringify(r.body));
+  r = await call(someone, "GET", `/plugins/chords/${source.id}/songs/grace-1?${new URLSearchParams({ version: "nope" })}`);
+  check("a version it doesn't have: 404", r.status === 404, JSON.stringify(r.body));
   r = await call(someone, "GET", `/plugins/chords/${source.id}/songs/holy-2`);
   check("a SongDocument v2, read and written out as ChordPro", r.status === 200 && r.body.content.includes("{start_of_verse}") && r.body.content.includes("[D]Holy, holy, [Bm]holy"), r.body.content ?? JSON.stringify(r.body));
   r = await call(someone, "GET", `/plugins/chords/${source.id}/songs/nothing-here`);
   check("a song it doesn't have: 404", r.status === 404, JSON.stringify(r.body));
   check("a title is needed", (await call(someone, "GET", "/plugins/chords/search")).status === 400);
+
+  // Two servers with the song, and the music services (issue #369).
+  r = await call(admin, "POST", "/admin/plugins/song-provider/sources", { apiUrl: second.url, allowPrivate: true });
+  const secondSource = r.body.plugins?.find((one) => one.id === "song-provider")?.sources.find((one) => one.name === `Second songs ${stamp}`);
+  check("a second server, without a key", r.status === 201 && !!secondSource, JSON.stringify(r.body));
+  await api(admin, "PUT", "/admin/metadata", { providers: [{ key: "song_providers" }, { key: "deezer" }] });
+  r = await call(someone, "GET", `/plugins/chords/search?${new URLSearchParams({ title: "grace" })}`);
+  let row = r.body.songs?.[0];
+  check(
+    "the same song from both: one row, all its versions - one 5-star vote after 4.7 from 120 and 4.2 from 15",
+    r.status === 200 && r.body.songs.length === 1 && versions(row) === "grace-1-original:4.7,grace-1-simple:4.2,g2-only:5,grace-1-capo:-" && row.versions[2].providerName === `Second songs ${stamp}`,
+    JSON.stringify(r.body),
+  );
+  check(
+    "paired with Deezer's match of the song, looked for with the song's artist, the provider's own song in its sources",
+    row.match?.title === "Amazing Grace" &&
+      row.match.album === "Album 1" &&
+      row.match.sources.map((one) => `${one.provider}:${one.id}`).join() === `deezer:5001,song_providers:${source.id}:grace-1`,
+    JSON.stringify(row?.match),
+  );
+  r = await call(someone, "POST", "/metadata/lookup", { sources: row.match.sources.map(({ provider: key, id }) => ({ provider: key, id })) });
+  check(
+    "looked up: Deezer's tempo and length, the provider's writers and ISRC, combined",
+    r.status === 200 && r.body.composers?.join() === "John Newton" && r.body.isrc === "USXXX1900001" && r.body.durationSeconds === 245 && r.body.sources.length === 2,
+    JSON.stringify(r.body),
+  );
+  r = await call(someone, "GET", `/plugins/chords/${secondSource.id}/songs/g2?${new URLSearchParams({ version: "g2-only" })}`);
+  check("the second server's version, from it", r.status === 200 && r.body.content.includes("[A]Amazing grace") && r.body.providerName === `Second songs ${stamp}`, JSON.stringify(r.body));
+  await api(admin, "DELETE", `/admin/plugins/song-provider/sources/${secondSource.id}`);
+  await api(admin, "PUT", "/admin/metadata", { providers: [{ key: "song_providers" }] });
 
   // Song info and artwork, in Auto detect.
   r = await call(someone, "GET", `/metadata/search?${new URLSearchParams({ title: "Amazing Grace", artist: "Example Choir" })}`);
@@ -126,5 +197,7 @@ try {
   await api(admin, "DELETE", "/admin/plugins/song-provider");
   await api(admin, "DELETE", "/admin/metadata");
   await provider.close();
+  await second.close();
+  await services.close();
 }
 finish();

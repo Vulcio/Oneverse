@@ -7,7 +7,13 @@ A **song provider** is a server outside Songverse that has songs: a publisher's 
 
 ## Find chords
 
-When a song provider is connected for chords, a song's **Song content** box (on **Song info**, while adding a song) shows **Find chords**, with the providers it looks in. It looks up the song's name; change what it looks for in its box and **Search**. Each result shows its artist, key and provider. **Use this chart** puts its chords and lyrics in the box, as ChordPro: check them, and change anything before you **Save song**. The details you haven't filled in yet - the artist, writers, key, tempo, time signature, CCLI number and copyright - are taken from the provider too. Under the box, a line says where the chart came from, with what the provider says you may do with it.
+When a song provider is connected for chords, a song's **Song content** box (on **Song info**, while adding a song) shows **Find chords**, with the providers it looks in. It looks up the song's name; change what it looks for in its box and **Search**.
+
+Each song found is one row, even when several providers have it: its artist, album and year, and, when Auto detect's music services have the same song, **Also at** with their names (Apple Music, Deezer, Spotify, MusicBrainz). Under it are its versions - charts in another key, simpler, with a capo, from other people or sites - the best rated first. A rating counts how many people gave it, so a chart rated 4.7 by a hundred people comes before one rated 5 by one person. Each version shows its key, capo, who wrote it down, its rating and where it comes from (**From** a site **at** the provider that found it). The best one shows first; **Show its versions** lists them all.
+
+**Use this chart** puts that version's chords and lyrics in the box, as ChordPro: check them, and change anything before you **Save song**. The details you haven't filled in yet - the artist, writers, key, capo, tempo, time signature, CCLI number and copyright - are taken from the provider too. Under the box, a line says where the chart came from, with what the provider says you may do with it.
+
+When the music services have the song too, Auto detect then shows **What this match fills in**: their details and the provider's, combined (album, release year, length, ISRC, artwork…), in the order the admin chose for them. Tick what you want and **Use selected** or **Use all**; the link to those services is saved with the song, as when you pick a match in [Auto detect](/song-editor/).
 
 On a song that exists, the Editor's **Replace from a file or paste…** has **Find chords** too (see [Replacing the chart](/song-editor/#replacing-the-chart)).
 
@@ -41,10 +47,12 @@ A provider answers five requests, under `/v1`, in JSON, taking the key as `Autho
 | Request | What it answers |
 | --- | --- |
 | `GET /v1/capabilities` | Its `name`, the `apiVersion` it speaks (`1`) and what it `provides`: `songInfo`, `artwork`, `artistPictures`, `chords`. |
-| `POST /v1/search` | The songs matching a `title` (and `artist`, `language`), at most `limit`: each with its `id`, `title`, `artists`, and `hasContent` when it has chords. |
+| `POST /v1/search` | The songs matching a `title` (and `artist`, `language`), at most `limit`: each with its `id`, `title`, `artists`, `hasContent` when it has chords, and its `versions` when it has several charts. |
 | `GET /v1/songs/{id}` | A song's details: writers, album, release date, key, tempo, time signature, length, ISRC, CCLI number, artwork, copyright and links. |
-| `GET /v1/songs/{id}/content` | Its chords and lyrics: `format` `chordpro` with the ChordPro text, or `song-document/v2` with a SongDocument, and its `copyright` and `rights`. |
+| `GET /v1/songs/{id}/content` | Its chords and lyrics: `format` `chordpro` with the ChordPro text, or `song-document/v2` with a SongDocument, and its `copyright` and `rights`. `?version=` asks for one of its versions. |
 | `GET /v1/artists/picture?name=…` | An artist's picture (`url`, `pageUrl`), or 404. |
+
+A song with several charts lists them as `versions`, each with its own `id` (sent back as `?version=`), and when it knows them: a `name` ("Original", "Simplified"), `key`, `capo`, `author`, `rating` (`value` out of 5 and `count`, how many rated) and `source` (`name` and `url` of the site or person it comes from, when your server gathers charts from elsewhere). A song with one chart lists none and says `hasContent`.
 
 An error is a 4xx or 5xx status with `{ "error": { "code": "not-found", "message": "…" } }`. Fields Songverse doesn't know are ignored, so a provider can send its own; an answer that doesn't fit is refused whole, and shown to the admin as that provider's error.
 

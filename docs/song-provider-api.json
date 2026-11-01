@@ -85,7 +85,7 @@
       "post": {
         "operationId": "search",
         "summary": "Songs by title (and artist)",
-        "description": "For Auto detect, the artwork search and Find chords. Best matches first. For Find chords, only songs with `hasContent: true` are shown.",
+        "description": "For Auto detect, the artwork search and Find chords. Best matches first. For Find chords, only songs with chords are shown: `hasContent: true`, or `versions` listed. Versions are shown under their song, the best rated first, with where each comes from.",
         "requestBody": {
           "required": true,
           "content": {
@@ -232,6 +232,16 @@
             "in": "path",
             "required": true,
             "description": "The provider's own ID for the song, as its search gave it.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "description": "One of the song's `versions`, by its ID; left out, the song's default chart.",
             "schema": {
               "type": "string",
               "maxLength": 200
@@ -578,6 +588,154 @@
             "default": false,
             "description": "Whether /v1/songs/{id}/content has its chords and lyrics.",
             "type": "boolean"
+          },
+          "versions": {
+            "description": "Its charts, when it has several, each with its rating and where it comes from. Listed: the song has chords even without hasContent. None listed: one chart, if hasContent.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "description": "Its own ID for this version, sent as ?version= to /v1/songs/{id}/content."
+                },
+                "name": {
+                  "description": "What sets it apart, as people call it: Original, Acoustic, Simplified.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "key": {
+                  "description": "Its key as a chord name: G, Bb, F#m.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "capo": {
+                  "description": "The fret the capo goes on, when the chart is played with one.",
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 12
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "author": {
+                  "description": "Who wrote the chart down.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "rating": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 5,
+                          "description": "Out of 5."
+                        },
+                        "count": {
+                          "description": "How many people rated it; shown, and weighs the rating when versions are ordered.",
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source": {
+                  "description": "Where this version comes from, when the server gathers charts from other sites or people: shown as \"from <name>\".",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "url": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "format": "uri"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "description": "This version's page, for people.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
           }
         },
         "required": [
@@ -704,6 +862,154 @@
                   "default": false,
                   "description": "Whether /v1/songs/{id}/content has its chords and lyrics.",
                   "type": "boolean"
+                },
+                "versions": {
+                  "description": "Its charts, when it has several, each with its rating and where it comes from. Listed: the song has chords even without hasContent. None listed: one chart, if hasContent.",
+                  "maxItems": 50,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "description": "Its own ID for this version, sent as ?version= to /v1/songs/{id}/content."
+                      },
+                      "name": {
+                        "description": "What sets it apart, as people call it: Original, Acoustic, Simplified.",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "key": {
+                        "description": "Its key as a chord name: G, Bb, F#m.",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 10
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "capo": {
+                        "description": "The fret the capo goes on, when the chart is played with one.",
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 12
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "author": {
+                        "description": "Who wrote the chart down.",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "rating": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 5,
+                                "description": "Out of 5."
+                              },
+                              "count": {
+                                "description": "How many people rated it; shown, and weighs the rating when versions are ordered.",
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "value"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "source": {
+                        "description": "Where this version comes from, when the server gathers charts from other sites or people: shown as \"from <name>\".",
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              "url": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "maxLength": 2000,
+                                    "format": "uri"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ]
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "url": {
+                        "description": "This version's page, for people.",
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 2000,
+                            "format": "uri"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  }
                 }
               },
               "required": [
@@ -831,6 +1137,154 @@
             "description": "Whether /v1/songs/{id}/content has its chords and lyrics.",
             "type": "boolean"
           },
+          "versions": {
+            "description": "Its charts, when it has several, each with its rating and where it comes from. Listed: the song has chords even without hasContent. None listed: one chart, if hasContent.",
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "description": "Its own ID for this version, sent as ?version= to /v1/songs/{id}/content."
+                },
+                "name": {
+                  "description": "What sets it apart, as people call it: Original, Acoustic, Simplified.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "key": {
+                  "description": "Its key as a chord name: G, Bb, F#m.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "capo": {
+                  "description": "The fret the capo goes on, when the chart is played with one.",
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 12
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "author": {
+                  "description": "Who wrote the chart down.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "rating": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "value": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 5,
+                          "description": "Out of 5."
+                        },
+                        "count": {
+                          "description": "How many people rated it; shown, and weighs the rating when versions are ordered.",
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "value"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source": {
+                  "description": "Where this version comes from, when the server gathers charts from other sites or people: shown as \"from <name>\".",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "url": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 2000,
+                              "format": "uri"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "description": "This version's page, for people.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
+          },
           "writers": {
             "default": [],
             "description": "Who wrote it.",
@@ -926,6 +1380,149 @@
         "required": [
           "id",
           "title"
+        ]
+      },
+      "Version": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Its own ID for this version, sent as ?version= to /v1/songs/{id}/content."
+          },
+          "name": {
+            "description": "What sets it apart, as people call it: Original, Acoustic, Simplified.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "description": "Its key as a chord name: G, Bb, F#m.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "capo": {
+            "description": "The fret the capo goes on, when the chart is played with one.",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "author": {
+            "description": "Who wrote the chart down.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5,
+                    "description": "Out of 5."
+                  },
+                  "count": {
+                    "description": "How many people rated it; shown, and weighs the rating when versions are ordered.",
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "value"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "description": "Where this version comes from, when the server gathers charts from other sites or people: shown as \"from <name>\".",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "format": "uri"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "description": "This version's page, for people.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id"
         ]
       },
       "Content": {

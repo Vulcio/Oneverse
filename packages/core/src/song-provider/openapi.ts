@@ -9,6 +9,7 @@ import {
   SongProviderSearchSchema,
   SongProviderSongSchema,
   SongProviderSongSummarySchema,
+  SongProviderVersionSchema,
 } from "./index.js";
 
 /** A schema as JSON Schema 2020-12 (OpenAPI 3.1's dialect), as a server writes it: what it sends. */
@@ -65,7 +66,7 @@ export function songProviderOpenApi(): Record<string, unknown> {
         post: {
           operationId: "search",
           summary: "Songs by title (and artist)",
-          description: "For Auto detect, the artwork search and Find chords. Best matches first. For Find chords, only songs with `hasContent: true` are shown.",
+          description: "For Auto detect, the artwork search and Find chords. Best matches first. For Find chords, only songs with chords are shown: `hasContent: true`, or `versions` listed. Versions are shown under their song, the best rated first, with where each comes from.",
           requestBody: { required: true, content: { "application/json": { schema: ref("SearchRequest") } } },
           responses: { "200": answer("The songs found, possibly none.", "SearchResult"), ...errors },
         },
@@ -84,7 +85,10 @@ export function songProviderOpenApi(): Record<string, unknown> {
           operationId: "songContent",
           summary: "A song's chords and lyrics",
           description: "As ChordPro text, or as a SongDocument v2 (https://github.com/Vulcio/Oneverse/blob/main/docs/song-document-v2.md), which Oneverse checks as it checks a stored song. `rights` is shown to the person taking the chart.",
-          parameters: [songId],
+          parameters: [
+            songId,
+            { name: "version", in: "query", required: false, description: "One of the song's `versions`, by its ID; left out, the song's default chart.", schema: { type: "string", maxLength: 200 } },
+          ],
           responses: { "200": answer("The chart.", "Content"), ...errors },
         },
       },
@@ -107,6 +111,7 @@ export function songProviderOpenApi(): Record<string, unknown> {
         SongSummary: schema(SongProviderSongSummarySchema),
         SearchResult: schema(SongProviderSearchResultSchema),
         Song: schema(SongProviderSongSchema),
+        Version: schema(SongProviderVersionSchema),
         Content: schema(SongProviderContentSchema),
         ArtistPicture: schema(SongProviderArtistPictureSchema),
         Error: schema(SongProviderErrorSchema),

@@ -117,8 +117,9 @@ export const songProviderSearch = async (endpoint: SongProviderEndpoint, query: 
 
 export const songProviderSong = (endpoint: SongProviderEndpoint, id: string): Promise<SongProviderSong> => call(endpoint, `/songs/${encodeURIComponent(id)}`, SongProviderSongSchema);
 
-export const songProviderContent = (endpoint: SongProviderEndpoint, id: string): Promise<SongProviderContent> =>
-  call(endpoint, `/songs/${encodeURIComponent(id)}/content`, SongProviderContentSchema);
+/** A song's chart: one of its versions (issue #369), or its default one. */
+export const songProviderContent = (endpoint: SongProviderEndpoint, id: string, versionId?: string | null): Promise<SongProviderContent> =>
+  call(endpoint, `/songs/${encodeURIComponent(id)}/content${versionId ? `?${new URLSearchParams({ version: versionId })}` : ""}`, SongProviderContentSchema);
 
 /** An artist's picture, or null when the provider has none. */
 export async function songProviderArtistPicture(endpoint: SongProviderEndpoint, name: string): Promise<SongProviderArtistPicture | null> {

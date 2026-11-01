@@ -24,6 +24,7 @@ export * from "./schemas/midi.js";
 export * from "./schemas/musicbrainz.js";
 export * from "./schemas/metadata.js";
 export * from "./song-provider/index.js";
+export * from "./song-provider/find-chords.js";
 export * from "./chordpro/parser.js";
 export * from "./chordpro/section-labels.js";
 export * from "./chords-over-lyrics/parser.js";

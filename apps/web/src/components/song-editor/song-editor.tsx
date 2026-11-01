@@ -185,6 +185,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   // A chosen match's review, before anything is used (issue #352).
   const [review, setReview] = useState<{ match: MetadataMatch; proposals: SongInfoProposal[] } | null>(null);
   const [reviewState, setReviewState] = useState<"idle" | "loading" | "failed">("idle");
+  // A chart taken with Find chords, matched at the music services: reviewed once the form has the chart's details.
+  const [chartMatch, setChartMatch] = useState<MetadataMatch | null>(null);
   const [sourceFile, setSourceFile] = useState<SourceFile | null>(null);
   const [replacing, setReplacing] = useState(false);
   const [basedOn, setBasedOn] = useState<BasedOn | null>(props.mode === "create" && props.linkTo ? { ...props.linkTo, copied: false } : null);
@@ -343,6 +345,12 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       setReviewState("failed");
     }
   }
+
+  useEffect(() => {
+    if (!chartMatch) return;
+    setChartMatch(null);
+    void openReview(chartMatch);
+  }, [chartMatch]);
 
   /** What was ticked goes into the form; the link is saved with the song. */
   function applyReview(fields: Set<SongInfoField>) {
@@ -647,17 +655,21 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                     artist: form.artists[0],
                     language: form.language || undefined,
                     // What the provider says of the song, where the form has nothing yet.
-                    onDetails: (chart) =>
+                    onDetails: (chart, match) => {
                       updateForm((current) => ({
                         ...current,
                         key: current.key || chart.key || "",
+                        capo: current.capo || (chart.capo ? String(chart.capo) : ""),
                         tempo: current.tempo || (chart.tempo ? String(Math.round(chart.tempo)) : ""),
                         timeSignature: current.timeSignature || chart.timeSignature || "",
                         ccli: current.ccli || chart.ccli || "",
                         copyright: current.copyright || chart.copyright || "",
                         artists: current.artists.length ? current.artists : chart.artists,
                         writers: current.writers.length || current.composers.length || current.lyricists.length ? current.writers : chart.writers,
-                      })),
+                      }));
+                      // The same song at the music services (issue #369): their details and the provider's, combined, to review.
+                      if (match && canManage) setChartMatch(match);
+                    },
                   }}
                 />
               </CardContent>

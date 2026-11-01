@@ -24,6 +24,7 @@ import type { CatalogEntryData, CatalogEntryFieldKey, CatalogFileProblem } from 
 import type { BulkUploadFileMatch } from "../bulk-upload-matching/index.js";
 import type { MetadataCapability, MetadataMatch, MetadataProviderKey } from "../schemas/metadata.js";
 import type { MusicBrainzWorkMatch } from "../schemas/musicbrainz.js";
+import type { ChordContent, ChordSong } from "../song-provider/find-chords.js";
 import type { SongInfoField, SongInfoProposal } from "../metadata/proposals.js";
 import type { ApplySongInfoRefreshRequest, StartSongInfoRefreshRequest } from "../requests/songbooks.js";
 import type { SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song-document-v2.js";
@@ -1126,30 +1127,6 @@ export interface PluginsSummary {
   plugins: PluginSummary[];
   /** Whether SETTINGS_ENCRYPTION_KEY is set: without it, servers' keys can't be saved. */
   encryptionKey: boolean;
-}
-
-/** Find chords (issue #157): a song with chords and lyrics at a Song provider. */
-export interface ChordSearchResult {
-  providerId: string;
-  providerName: string;
-  id: string;
-  title: string;
-  artists: string[];
-  key: string | null;
-  language: string | null;
-  thumbnailUrl: string | null;
-  url: string | null;
-}
-
-/** A chosen song's chart, as ChordPro, with what its provider says of it. */
-export interface ChordContent extends Omit<ChordSearchResult, "thumbnailUrl" | "language"> {
-  writers: string[];
-  tempo: number | null;
-  timeSignature: string | null;
-  ccli: string | null;
-  copyright: string | null;
-  rights: string | null;
-  content: string;
 }
 
 /** Admin > Backups (issue #119): where the server's backups go, when, and the last runs. */
@@ -3696,10 +3673,11 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** Find chords (issue #157): whether there's anywhere to look, the search, a chosen song's chart. */
     getChordSources: () => request<{ available: boolean; providers: string[] }>("/plugins/chords"),
     searchChords: (query: { title: string; artist?: string; language?: string }) =>
-      request<{ results: ChordSearchResult[]; unavailable: string[] }>(
+      request<{ songs: ChordSong[]; unavailable: string[] }>(
         `/plugins/chords/search?${new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string] => !!entry[1]))}`,
       ),
-    getChordContent: (providerId: string, songId: string) => request<ChordContent>(`/plugins/chords/${encodeURIComponent(providerId)}/songs/${encodeURIComponent(songId)}`),
+    getChordContent: (providerId: string, songId: string, versionId?: string | null) =>
+      request<ChordContent>(`/plugins/chords/${encodeURIComponent(providerId)}/songs/${encodeURIComponent(songId)}${versionId ? `?${new URLSearchParams({ version: versionId })}` : ""}`),
     adminSaveCollaborationSettings: (data: SaveCollaborationSettingsRequest) => request<void>("/admin/collaboration", { method: "PUT", body: JSON.stringify(data) }),
     adminClearCollaborationSettings: () => request<void>("/admin/collaboration", { method: "DELETE" }),
     adminGetBackups: () => request<BackupSummary>("/admin/backups"),

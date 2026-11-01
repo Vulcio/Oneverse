@@ -1,18 +1,16 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { ChordSearchQuerySchema, PluginEnabledSchema, SongProviderOrderSchema, SongProviderSourceSchema, SongProviderSourceUpdateSchema } from "@oneverse/core";
+import { PluginEnabledSchema, SongProviderOrderSchema, SongProviderSourceSchema, SongProviderSourceUpdateSchema } from "@oneverse/core";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import { zodDto } from "../common/zod-validation.js";
 import { RateLimit } from "../security/rate-limit.decorator.js";
 import { PluginsService } from "./plugins.service.js";
-import { SongProviderService } from "./song-provider/song-provider.service.js";
 import { createSource, deleteSource, reorderSources, testSource, updateSource } from "./song-provider/song-provider-sources.js";
 
 export class PluginEnabledDto extends zodDto(PluginEnabledSchema) {}
 export class SongProviderSourceDto extends zodDto(SongProviderSourceSchema) {}
 export class SongProviderSourceUpdateDto extends zodDto(SongProviderSourceUpdateSchema) {}
 export class SongProviderOrderDto extends zodDto(SongProviderOrderSchema) {}
-export class ChordSearchQueryDto extends zodDto(ChordSearchQuerySchema) {}
 
 /** Admin > Plugins (issue #157): the built-in plugins, on or off, and the Song provider plugin's servers. */
 @ApiTags("plugins")
@@ -70,32 +68,5 @@ export class AdminPluginsController {
   @RateLimit("heavy")
   test(@Param("sourceId") sourceId: string) {
     return testSource(sourceId);
-  }
-}
-
-/** The plugins' hooks people use (issue #157): Find chords, at the Song provider plugin's servers. Read only. */
-@ApiTags("plugins")
-@ApiBearerAuth()
-@Controller("plugins")
-export class PluginsController {
-  constructor(private readonly songProviders: SongProviderService) {}
-
-  /** Whether Find chords has anywhere to look. */
-  @Get("chords")
-  chordsAvailable() {
-    return this.songProviders.chordsAvailable();
-  }
-
-  @Get("chords/search")
-  @RateLimit("heavy")
-  searchChords(@Query() query: ChordSearchQueryDto) {
-    return this.songProviders.searchChords(query.title, query.artist, query.language);
-  }
-
-  @Get("chords/:providerId/songs/:songId")
-  @RateLimit("heavy")
-  chordContent(@Param("providerId") providerId: string, @Param("songId") songId: string) {
-    if (!songId.trim() || songId.length > 200) throw new BadRequestException(["songId must be at most 200 characters"]);
-    return this.songProviders.chordContent(providerId, songId);
   }
 }

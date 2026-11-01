@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // An example Song provider API server (issue #157): a few songs in memory,
-// answered the way docs/song-provider-api.yaml says. Dependency-free: run
+// answered the way docs/song-provider-api.json says. Dependency-free: run
 // it with `node examples/song-provider/server.mjs` and add
 // http://localhost:4100 in Admin > Plugins > Song provider (tick "On this
 // network"), key "example-key". Copy it to start your own: replace SONGS
@@ -28,6 +28,30 @@ export const EXAMPLE_SONGS = [
     ccli: "22025",
     copyright: "Public domain",
     links: ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"],
+    // Several charts of it (issue #369): each its rating, where it comes from, and its own chart.
+    versions: [
+      {
+        id: "grace-1-simple",
+        name: "Simplified",
+        key: "C",
+        author: "Marie",
+        rating: { value: 4.2, count: 15 },
+        source: { name: "Chord Sharers", url: "https://chords.example.org/amazing-grace" },
+        content: {
+          format: "chordpro",
+          content: "{start_of_verse: Verse 1}\n[C]Amazing grace, how sweet the [F]sound\nThat saved a wretch like [G]me\n{end_of_verse}\n",
+          rights: "Shared by its author for worship use.",
+        },
+      },
+      {
+        id: "grace-1-original",
+        name: "Original",
+        key: "G",
+        rating: { value: 4.7, count: 120 },
+        source: { name: "Example Chords", url: "https://chords.example.com/amazing-grace" },
+      },
+      { id: "grace-1-capo", name: "Capo 2", key: "A", capo: 2 },
+    ],
     content: {
       format: "chordpro",
       content: "{start_of_verse: Verse 1}\n[G]Amazing grace, how [C]sweet the [G]sound\nThat saved a wretch like [D]me\n{end_of_verse}\n\n{start_of_chorus}\n[C]My chains are [G]gone\n{end_of_chorus}\n\n{chorus}\n",
@@ -89,6 +113,7 @@ function summary(song, origin) {
     artworkUrl: `${origin}/images/${song.id}.png`,
     url: `${origin}/songs/${song.id}`,
     hasContent: !!song.content,
+    versions: (song.versions ?? []).map(({ content: _content, ...version }) => version),
   };
 }
 
@@ -135,8 +160,15 @@ export function startExampleSongProvider({ port = 4100, apiKey = "example-key", 
     if (req.method === "GET" && songPath) {
       const song = songs.find((one) => one.id === decodeURIComponent(songPath[1]));
       if (!song) return fail(res, 404, "not-found", "No such song");
-      if (songPath[2]) return song.content ? json(res, 200, song.content) : fail(res, 404, "not-found", "No chords for this song");
-      const { content: _content, ...details } = song;
+      if (songPath[2]) {
+        // ?version= one of its versions: its own chart, or the song's when it has none of its own.
+        const wanted = url.searchParams.get("version");
+        const version = wanted ? song.versions?.find((one) => one.id === wanted) : null;
+        if (wanted && !version) return fail(res, 404, "not-found", "No such version");
+        const content = version?.content ?? song.content;
+        return content ? json(res, 200, content) : fail(res, 404, "not-found", "No chords for this song");
+      }
+      const { content: _content, versions: _versions, ...details } = song;
       return json(res, 200, { ...summary(song, origin), writers: [], links: [], ...details });
     }
     if (req.method === "GET" && url.pathname === "/v1/artists/picture") {

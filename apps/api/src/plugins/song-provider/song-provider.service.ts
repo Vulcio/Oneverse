@@ -4,6 +4,7 @@ import {
   readSongProviderSourceId,
   songProviderSourceId,
   songToChordPro,
+  type ChordContent,
   type ProviderMatch,
   type SongProviderHook,
   type SongProviderSong,
@@ -11,38 +12,6 @@ import {
 } from "@oneverse/core";
 import { SongProviderError, endpointUrl, songProviderArtistPicture, songProviderContent, songProviderSearch, songProviderSong } from "./song-provider-client.js";
 import { activeSources, noteOutcome, sourceById, type ActiveSongProvider } from "./song-provider-sources.js";
-
-/** A song with chords and lyrics, found at a Song provider (Find chords). */
-export interface ChordSearchResult {
-  providerId: string;
-  providerName: string;
-  id: string;
-  title: string;
-  artists: string[];
-  key: string | null;
-  language: string | null;
-  thumbnailUrl: string | null;
-  url: string | null;
-}
-
-/** A chosen song's chart, as ChordPro, with what the provider says of it. */
-export interface ChordContent {
-  providerId: string;
-  providerName: string;
-  id: string;
-  title: string;
-  artists: string[];
-  writers: string[];
-  key: string | null;
-  tempo: number | null;
-  timeSignature: string | null;
-  ccli: string | null;
-  copyright: string | null;
-  rights: string | null;
-  url: string | null;
-  /** ChordPro: what the song's chart is read from. */
-  content: string;
-}
 
 const SEARCH_LIMIT = 15;
 
@@ -143,37 +112,34 @@ export class SongProviderService {
     return { available: providers.length > 0, providers: providers.map((provider) => provider.name) };
   }
 
-  /** Find chords: the songs with chords and lyrics, from every server asked for them, in their order. */
-  async searchChords(title: string, artist?: string | null, language?: string | null): Promise<{ results: ChordSearchResult[]; unavailable: string[] }> {
+  /**
+   * Find chords: every server asked for chords, at once, each one's songs
+   * as it listed them (their page's address filled in where it gave none);
+   * Find chords puts them together (`chordSongs` in core).
+   */
+  async searchChords(title: string, artist?: string | null, language?: string | null): Promise<{ answers: { provider: { id: string; name: string }; songs: SongProviderSongSummary[] }[]; unavailable: string[] }> {
     const { answers, failed, asked } = await this.fromEach("chords", (provider) =>
       songProviderSearch(provider, { title, ...(artist && { artist }), ...(language && { language }), limit: SEARCH_LIMIT }),
     );
     if (asked === 0) throw new ServiceUnavailableException("No song provider is set up for chords");
     if (answers.length === 0) throw new ServiceUnavailableException("The song providers are unavailable — try again in a moment");
-    const results = answers.flatMap(({ provider, value }) =>
-      value
-        .filter((song) => song.hasContent)
-        .map((song) => ({
-          providerId: provider.id,
-          providerName: provider.name,
-          id: song.id,
-          title: song.title,
-          artists: song.artists,
-          key: song.key,
-          language: song.language,
-          thumbnailUrl: song.thumbnailUrl,
-          url: song.url,
-        })),
-    );
-    return { results, unavailable: failed.map((provider) => provider.name) };
+    return {
+      answers: answers.map(({ provider, value }) => ({
+        provider: { id: provider.id, name: provider.name },
+        songs: value.map((song) => ({ ...song, url: song.url ?? endpointUrl(provider.apiUrl, `/songs/${encodeURIComponent(song.id)}`) })),
+      })),
+      unavailable: failed.map((provider) => provider.name),
+    };
   }
 
-  /** A chosen song's chords and lyrics, as ChordPro, with its details. */
-  async chordContent(providerId: string, songId: string): Promise<ChordContent> {
+  /** A chosen song's chords and lyrics - one of its versions, or its default chart - as ChordPro, with its details. */
+  async chordContent(providerId: string, songId: string, versionId?: string | null): Promise<ChordContent> {
     const provider = (await activeSources("chords")).find((one) => one.id === providerId);
     if (!provider) throw new NotFoundException("That song provider isn't asked for chords");
     try {
-      const [song, content] = await Promise.all([songProviderSong(provider, songId), songProviderContent(provider, songId)]);
+      const [song, content] = await Promise.all([songProviderSong(provider, songId), songProviderContent(provider, songId, versionId)]);
+      // Its details, where the song's own answer lists it (the chart is /content's either way).
+      const version = versionId ? song.versions.find((one) => one.id === versionId) : undefined;
       let chart: string;
       if (content.format === "chordpro") chart = content.content;
       else {
@@ -190,22 +156,26 @@ export class SongProviderService {
         providerId,
         providerName: provider.name,
         id: song.id,
+        versionId: versionId ?? null,
+        versionName: version?.name || null,
         title: song.title,
         artists: song.artists,
         writers: song.writers,
-        key: song.key,
+        key: version?.key ?? song.key,
+        capo: version?.capo ?? null,
         tempo: song.tempo,
         timeSignature: song.timeSignature,
         ccli: song.ccli,
         copyright: content.copyright ?? song.copyright,
         rights: content.rights,
-        url: song.url,
+        source: version?.source ? { name: version.source.name, url: version.source.url } : null,
+        url: version?.url ?? song.url,
         content: chart,
       };
     } catch (error) {
       if (error instanceof SongProviderError) {
         void noteOutcome(provider.id, error.message);
-        if (error.code === "not-found") throw new NotFoundException(`${provider.name} doesn't have that song's chords`);
+        if (error.code === "not-found") throw new NotFoundException(`${provider.name} doesn't have ${versionId ? "that version of the song" : "that song's chords"}`);
         throw new ServiceUnavailableException(`${provider.name}: ${error.message}`);
       }
       throw error;

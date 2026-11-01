@@ -35,3 +35,8 @@ export const ChordSearchQuerySchema = z.strictObject({
   artist: optional(queryText(300)),
   language: optional(queryText(20)),
 });
+
+/** Which of a song's versions Find chords takes the chart of (issue #369); left out, the song's default chart. */
+export const ChordContentQuerySchema = z.strictObject({
+  version: optional(queryText(200)),
+});

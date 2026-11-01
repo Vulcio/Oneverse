@@ -7,7 +7,13 @@ Un **fournisseur de chants** est un serveur extérieur à Songverse qui a des ch
 
 ## Trouver les accords
 
-Quand un fournisseur de chants est connecté pour les accords, la boîte **Contenu du chant** d'un chant (dans **Infos**, quand vous ajoutez un chant) montre **Trouver les accords**, avec les fournisseurs où il cherche. Il cherche le nom du chant ; changez ce qu'il cherche dans sa boîte, puis **Chercher**. Chaque résultat montre son artiste, sa tonalité et son fournisseur. **Utiliser cette grille** met ses accords et paroles dans la boîte, en ChordPro : vérifiez-les, et changez ce qu'il faut avant d'**Enregistrer le chant**. Les détails que vous n'avez pas encore remplis - l'artiste, les auteurs, la tonalité, le tempo, la mesure, le numéro CCLI et le copyright - sont aussi repris du fournisseur. Sous la boîte, une ligne dit d'où vient la grille, avec ce que le fournisseur permet d'en faire.
+Quand un fournisseur de chants est connecté pour les accords, la boîte **Contenu du chant** d'un chant (dans **Infos**, quand vous ajoutez un chant) montre **Trouver les accords**, avec les fournisseurs où il cherche. Il cherche le nom du chant ; changez ce qu'il cherche dans sa boîte, puis **Chercher**.
+
+Chaque chant trouvé est une ligne, même quand plusieurs fournisseurs l'ont : son artiste, son album et son année, et, quand les services de musique de la détection automatique ont le même chant, **Aussi sur** avec leurs noms (Apple Music, Deezer, Spotify, MusicBrainz). En dessous viennent ses versions - des grilles dans une autre tonalité, plus simples, avec un capodastre, d'autres personnes ou d'autres sites - la mieux notée d'abord. Une note compte combien de personnes l'ont donnée : une grille notée 4,7 par cent personnes passe avant une grille notée 5 par une seule. Chaque version montre sa tonalité, son capodastre, qui l'a écrite, sa note et d'où elle vient (**De** un site **chez** le fournisseur qui l'a trouvée). La meilleure s'affiche d'abord ; **Voir ses versions** les montre toutes.
+
+**Utiliser cette grille** met les accords et paroles de cette version dans la boîte, en ChordPro : vérifiez-les, et changez ce qu'il faut avant d'**Enregistrer le chant**. Les détails que vous n'avez pas encore remplis - l'artiste, les auteurs, la tonalité, le capodastre, le tempo, la mesure, le numéro CCLI et le copyright - sont aussi repris du fournisseur. Sous la boîte, une ligne dit d'où vient la grille, avec ce que le fournisseur permet d'en faire.
+
+Quand les services de musique ont aussi le chant, la détection automatique montre ensuite **Ce que ce résultat complète** : leurs détails et ceux du fournisseur, réunis (album, année de sortie, durée, ISRC, pochette…), dans l'ordre que l'administrateur leur a donné. Cochez ce que vous voulez, puis **Utiliser la sélection** ou **Tout utiliser** ; le lien vers ces services est enregistré avec le chant, comme quand vous choisissez un résultat de la [détection automatique](/fr/song-editor/).
 
 Sur un chant qui existe, **Remplacer depuis un fichier ou un collage…** de l'éditeur a aussi **Trouver les accords** (voir [Remplacer la grille](/fr/song-editor/#remplacer-la-grille)).
 
@@ -41,10 +47,12 @@ Un fournisseur répond à cinq requêtes, sous `/v1`, en JSON, en prenant la cl�
 | Requête | Ce qu'il répond |
 | --- | --- |
 | `GET /v1/capabilities` | Son `name`, l'`apiVersion` qu'il parle (`1`) et ce qu'il fournit (`provides`) : `songInfo`, `artwork`, `artistPictures`, `chords`. |
-| `POST /v1/search` | Les chants qui correspondent à un `title` (et `artist`, `language`), au plus `limit` : chacun avec son `id`, son `title`, ses `artists`, et `hasContent` quand il a ses accords. |
+| `POST /v1/search` | Les chants qui correspondent à un `title` (et `artist`, `language`), au plus `limit` : chacun avec son `id`, son `title`, ses `artists`, `hasContent` quand il a ses accords, et ses `versions` quand il a plusieurs grilles. |
 | `GET /v1/songs/{id}` | Les détails d'un chant : auteurs, album, date de sortie, tonalité, tempo, mesure, durée, ISRC, numéro CCLI, pochette, copyright et liens. |
-| `GET /v1/songs/{id}/content` | Ses accords et paroles : `format` `chordpro` avec le texte ChordPro, ou `song-document/v2` avec un SongDocument, et son `copyright` et ses `rights`. |
+| `GET /v1/songs/{id}/content` | Ses accords et paroles : `format` `chordpro` avec le texte ChordPro, ou `song-document/v2` avec un SongDocument, et son `copyright` et ses `rights`. `?version=` demande l'une de ses versions. |
 | `GET /v1/artists/picture?name=…` | La photo d'un artiste (`url`, `pageUrl`), ou 404. |
+
+Un chant qui a plusieurs grilles les liste dans `versions`, chacune avec son propre `id` (renvoyé comme `?version=`) et, quand il les connaît : un `name` (« Original », « Simplifiée »), `key`, `capo`, `author`, `rating` (`value` sur 5 et `count`, combien l'ont notée) et `source` (`name` et `url` du site ou de la personne d'où elle vient, quand votre serveur rassemble des grilles d'ailleurs). Un chant qui n'a qu'une grille n'en liste aucune et dit `hasContent`.
 
 Une erreur est un statut 4xx ou 5xx avec `{ "error": { "code": "not-found", "message": "…" } }`. Les champs que Songverse ne connaît pas sont ignorés, un fournisseur peut donc envoyer les siens ; une réponse qui ne correspond pas est refusée en entier, et montrée à l'administrateur comme une erreur de ce fournisseur.
 

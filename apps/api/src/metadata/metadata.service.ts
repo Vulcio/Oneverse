@@ -507,9 +507,13 @@ export class MetadataService {
     return { source: tokenUrl ? "tokenUrl" : "none", teamId: row?.appleMusicTeamId ?? null, keyId: row?.appleMusicKeyId ?? null, hasDatabasePrivateKey, ...token };
   }
 
-  /** Every provider asked for song info, at once; one that fails or is slow is left out rather than failing the search. */
-  async search(title: string, artist?: string | null): Promise<MetadataSearchResult> {
-    const order = await this.providersFor("songInfo");
+  /**
+   * Every provider asked for song info, at once; one that fails or is slow
+   * is left out rather than failing the search. `except`: providers not to
+   * ask this time (Find chords has the song providers' answers already).
+   */
+  async search(title: string, artist?: string | null, except: MetadataProviderKey[] = []): Promise<MetadataSearchResult> {
+    const order = (await this.providersFor("songInfo")).filter((provider) => !except.includes(provider));
     if (order.length === 0) throw new ServiceUnavailableException("No metadata provider is turned on");
     const artwork = new Set(await this.providersFor("artwork"));
     const settled = await Promise.allSettled(order.map((provider) => withTimeout(this.searchOne(provider, title, artist), provider)));

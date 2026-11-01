@@ -10,7 +10,7 @@ import { formatBytes } from "#/lib/format-bytes";
 import { pdfTextItems } from "#/lib/pdf-text";
 import { isPdf } from "./attachment-types";
 import { FindChords } from "./find-chords";
-import type { ChordContent } from "@oneverse/core";
+import type { ChordContent, MetadataMatch } from "@oneverse/core";
 
 export const SOURCE_FILE_ACCEPT = ".cho,.chordpro,.chopro,.crd,.pro,.txt,.pdf,text/plain,application/pdf";
 const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
@@ -155,7 +155,7 @@ export function SongContentCard({
   sourceFile: SourceFile | null;
   onSourceFile: (file: SourceFile | null) => void;
   /** Find chords at the song providers (issue #157): the song looked for, and what to do with a chart's details. */
-  find?: { title: string; artist?: string; language?: string; onDetails?: (chart: ChordContent) => void };
+  find?: { title: string; artist?: string; language?: string; onDetails?: (chart: ChordContent, match: MetadataMatch | null) => void };
 }) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -200,11 +200,11 @@ export function SongContentCard({
           title={find.title}
           artist={find.artist}
           language={find.language}
-          onChart={(chart) => {
+          onChart={(chart, match) => {
             onContentChange(chart.content);
             onFormatChange("CHORDPRO");
             onSourceFile(null);
-            find.onDetails?.(chart);
+            find.onDetails?.(chart, match);
           }}
         />
       ) : null}

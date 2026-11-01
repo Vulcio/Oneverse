@@ -9,7 +9,7 @@ import { z } from "zod";
  * publisher, a church's own library, a converter for another service).
  *
  * These schemas are the contract: the plugin reads every answer through
- * them, and the published description (docs/song-provider-api.yaml) is
+ * them, and the published description (docs/song-provider-api.json) is
  * written from them. Answers are read leniently - an unknown field is
  * ignored, so a server can add its own - and a field that doesn't fit is
  * a refused answer, never a guess.
@@ -49,6 +49,34 @@ export const SongProviderSearchSchema = z.strictObject({
 });
 export type SongProviderSearch = z.infer<typeof SongProviderSearchSchema>;
 
+/** How people rated a chart: out of 5, and by how many. */
+export const SongProviderRatingSchema = z.object({
+  value: z.number().min(0).max(5).describe("Out of 5."),
+  count: maybe(z.number().int().min(0)).describe("How many people rated it; shown, and weighs the rating when versions are ordered."),
+});
+export type SongProviderRating = z.infer<typeof SongProviderRatingSchema>;
+
+/**
+ * One of a song's charts, when it has several (issue #369): another key, a
+ * simpler or an acoustic one, from someone else or another site.
+ */
+export const SongProviderVersionSchema = z.object({
+  id: text(200).describe("Its own ID for this version, sent as ?version= to /v1/songs/{id}/content."),
+  name: maybe(z.string().trim().max(100)).describe("What sets it apart, as people call it: Original, Acoustic, Simplified."),
+  key: maybe(z.string().max(10)).describe("Its key as a chord name: G, Bb, F#m."),
+  capo: maybe(z.number().int().min(0).max(12)).describe("The fret the capo goes on, when the chart is played with one."),
+  author: maybe(z.string().trim().max(100)).describe("Who wrote the chart down."),
+  rating: maybe(SongProviderRatingSchema),
+  source: maybe(
+    z.object({
+      name: text(100),
+      url: maybe(url),
+    }),
+  ).describe("Where this version comes from, when the server gathers charts from other sites or people: shown as \"from <name>\"."),
+  url: maybe(url).describe("This version's page, for people."),
+});
+export type SongProviderVersion = z.infer<typeof SongProviderVersionSchema>;
+
 /** A song as listed in a search. */
 export const SongProviderSongSummarySchema = z.object({
   /** The provider's own ID for it, used in /v1/songs/{id}. */
@@ -67,6 +95,12 @@ export const SongProviderSongSummarySchema = z.object({
   url: maybe(url).describe("The song's page on its site, for people."),
   /** Whether /v1/songs/{id}/content has its chords and lyrics. */
   hasContent: z.boolean().default(false).describe("Whether /v1/songs/{id}/content has its chords and lyrics."),
+  /** Its charts, when it has several; none listed and hasContent: one chart, /content's. */
+  versions: z
+    .array(SongProviderVersionSchema)
+    .max(50)
+    .default([])
+    .describe("Its charts, when it has several, each with its rating and where it comes from. Listed: the song has chords even without hasContent. None listed: one chart, if hasContent."),
 });
 export type SongProviderSongSummary = z.infer<typeof SongProviderSongSummarySchema>;
 
