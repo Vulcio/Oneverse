@@ -58,3 +58,7 @@ They're where every mode starts: the [Display](/display/) panel changes them for
 ## Storage
 
 Files you upload to your own songs (PDFs, audio, ChordPro files) count toward your storage limit; what you add to a team's songs counts toward the team's pool instead. The **Storage** card shows how much you use. Ask an admin if you need more: they give storage tiers as roles.
+
+## Backups
+
+The **Backups** card makes an archive of everything you own, now or every week, and imports one back: see [Backups](/backups/).

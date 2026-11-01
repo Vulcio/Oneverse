@@ -146,6 +146,34 @@ export interface StorageLimits {
   builtInTeamDefaultMb: number;
 }
 
+/** An archive of what someone, a team or an organisation owns (issue #351): made, or imported. */
+export interface ContentArchive {
+  id: string;
+  kind: "EXPORT" | "IMPORT";
+  status: "PENDING" | "RUNNING" | "DONE" | "FAILED";
+  trigger: "MANUAL" | "WEEKLY";
+  filename: string | null;
+  sizeBytes: number | null;
+  /** An export: how many of each it holds. An import: an ArchiveImportSummary. */
+  summary: Record<string, number> | ArchiveImportSummary | null;
+  error: string | null;
+  createdAt: string;
+  finishedAt: string | null;
+  expiresAt: string | null;
+  /** Under the API, signed (see archiveDownloadUrl): null once it can't be downloaded. */
+  downloadPath: string | null;
+}
+
+/** What an archive's import did. */
+export interface ArchiveImportSummary {
+  created: Record<"songs" | "arrangements" | "songbooks" | "sets" | "notes" | "files" | "teams", number>;
+  kept: Record<"songs" | "arrangements" | "songbooks" | "sets", number>;
+  leftOut: string[];
+  leftOutCount: number;
+}
+
+export type ArchiveOwnerRef = { scope: "user" } | { scope: "team" | "organization"; id: string };
+
 export interface StorageUsage {
   usedBytes: number;
   /** Null means unlimited. */
@@ -2526,6 +2554,21 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     }) =>
       request<UserProfile>("/users/me", { method: "PATCH", body: JSON.stringify(data) }),
     getMyStorage: () => request<StorageUsage>("/users/me/storage"),
+    /** Archives of what you, a team or an organisation own (issue #351), and whether one's made weekly. */
+    listArchives: (owner: ArchiveOwnerRef) => request<{ weekly: boolean; archives: ContentArchive[] }>(`/archives?${new URLSearchParams(owner as Record<string, string>)}`),
+    getArchive: (archiveId: string) => request<ContentArchive>(`/archives/${encodeURIComponent(archiveId)}`),
+    makeArchive: (owner: ArchiveOwnerRef) => request<ContentArchive>("/archives", { method: "POST", body: JSON.stringify(owner) }),
+    setArchiveSchedule: (owner: ArchiveOwnerRef, weekly: boolean) => request<{ weekly: boolean }>("/archives/schedule", { method: "PUT", body: JSON.stringify({ ...owner, weekly }) }),
+    importArchive: (owner: ArchiveOwnerRef, file: Blob, filename = "archive.zip") => {
+      const form = new FormData();
+      form.append("scope", owner.scope);
+      if ("id" in owner) form.append("id", owner.id);
+      form.append("file", file, filename);
+      return request<ContentArchive>("/archives/import", { method: "POST", body: form });
+    },
+    deleteArchive: (archiveId: string) => request<void>(`/archives/${encodeURIComponent(archiveId)}`, { method: "DELETE" }),
+    /** An archive's download address, from its downloadPath: opened as it is (it's signed). */
+    archiveDownloadUrl: (downloadPath: string) => `${baseUrl}${downloadPath}`,
     uploadAvatar: (file: Blob, filename = "avatar") => {
       const form = new FormData();
       form.append("file", file, filename);

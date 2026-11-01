@@ -1,6 +1,6 @@
 import { NotFoundException } from "@nestjs/common";
 import { createReadStream } from "node:fs";
-import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
 import type { ByteRange, ObjectStorageDriver } from "./object-storage-driver.js";
@@ -21,6 +21,11 @@ export class LocalDiskStorageDriver implements ObjectStorageDriver {
   async putObject(hash: string, body: Buffer): Promise<void> {
     await mkdir(this.rootDir, { recursive: true });
     await writeFile(this.pathFor(hash), body);
+  }
+
+  async putFile(hash: string, path: string): Promise<void> {
+    await mkdir(this.rootDir, { recursive: true });
+    await copyFile(path, this.pathFor(hash));
   }
 
   async getObject(hash: string): Promise<Buffer> {

@@ -3,6 +3,7 @@ import { loadTeamPage } from "@oneverse/planning/loaders";
 import { TeamPage } from "@oneverse/planning/pages/team";
 import { AppearanceCard } from "#/components/appearance-card";
 import { BibleCard } from "#/components/bible-card";
+import { ArchivesCard } from "#/components/archives-card";
 import { BrandsCard } from "#/components/brands-card";
 import { RepeatLimitCard } from "#/components/repeat-limit-card";
 import { ScopedRolesCard } from "#/components/scoped-roles-card";
@@ -30,6 +31,8 @@ function TeamDetail() {
         <>
           {/* Its colour and picture (issue #161). */}
           <AppearanceCard owner="teams" id={team.id} name={team.name} color={team.color} avatarUrl={team.avatarUrl} onColor={(color) => apiClient.updateTeam(team.id, { color })} onChanged={() => router.invalidate()} />
+          {/* Its backups (issue #351): what the team owns, as an archive. */}
+          {team.usesSongverse !== false ? <ArchivesCard owner={{ scope: "team", id: team.id }} /> : null}
           {/* Its brands (issue #279), for a team that uses Songverse. */}
           {team.usesSongverse !== false ? <BrandsCard owner={{ teamId: team.id }} /> : null}
           {/* Its own Sonic server for its songs' stems (issue #300). */}

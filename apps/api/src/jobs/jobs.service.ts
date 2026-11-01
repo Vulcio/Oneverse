@@ -6,7 +6,7 @@ import { BULK_UPLOAD_QUEUE } from "../bulk-upload/bulk-upload.types.js";
 import { USER_MAINTENANCE_QUEUE } from "../user-management/transfer-expiry.processor.js";
 import { BACKFILLS_QUEUE, HEARTBEAT_KEY, jobsInApi, LOOKUPS_QUEUE, RECORDINGS_QUEUE, settingsKeyCheck, STEM_SEPARATION_QUEUE, TEAM_EVENTS_QUEUE, NOTIFICATIONS_QUEUE, LIVE_SESSIONS_QUEUE } from "./jobs.constants.js";
 import { redis } from "./redis.js";
-import { BACKUPS_QUEUE } from "./jobs.constants.js";
+import { ARCHIVES_QUEUE, BACKUPS_QUEUE } from "./jobs.constants.js";
 import { latestMigration } from "../common/database-migration.js";
 import { serverVersion } from "../common/version.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -69,11 +69,12 @@ export class JobsService {
     @InjectQueue(SCRIPTURES_QUEUE) private readonly scriptures: Queue,
     @InjectQueue(LIVE_SESSIONS_QUEUE) private readonly liveSessions: Queue,
     @InjectQueue(BACKUPS_QUEUE) private readonly backups: Queue,
+    @InjectQueue(ARCHIVES_QUEUE) private readonly archives: Queue,
     private readonly prisma: PrismaService,
   ) {}
 
   private get queues(): Queue[] {
-    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications, this.scriptures, this.liveSessions, this.backups];
+    return [this.lookups, this.backfills, this.bulkUpload, this.maintenance, this.recordings, this.stemSeparation, this.teamEvents, this.notifications, this.scriptures, this.liveSessions, this.backups, this.archives];
   }
 
   async status(): Promise<JobsStatus> {
@@ -140,7 +141,7 @@ export class JobsService {
    * not one of them.
    */
   async runNow(name: string): Promise<{ queued: string } | null> {
-    const scheduled: Record<string, Queue> = { "make-event-sets": this.teamEvents, "event-reminders": this.teamEvents, "clean-up-notifications": this.notifications, "record-live-sessions": this.liveSessions, "end-gone-live-sessions": this.liveSessions };
+    const scheduled: Record<string, Queue> = { "make-event-sets": this.teamEvents, "event-reminders": this.teamEvents, "clean-up-notifications": this.notifications, "record-live-sessions": this.liveSessions, "end-gone-live-sessions": this.liveSessions, "archive-tick": this.archives };
     const queue = scheduled[name];
     if (!queue) return null;
     await queue.add(name, {}, { removeOnComplete: 100, removeOnFail: 100 });

@@ -113,6 +113,13 @@ export class StorageService {
     return { hash, sizeBytes: body.length };
   }
 
+  /** A file on disk, stored by the hash of its bytes (given: taken as it was written), streamed (issue #351). */
+  async putFile(path: string, sha256: string, sizeBytes: number, contentType: string): Promise<StoredObject> {
+    const { driver } = await this.resolveDriver();
+    await driver.putFile(sha256, path, sizeBytes, contentType);
+    return { hash: sha256, sizeBytes };
+  }
+
   async get(hash: string): Promise<Buffer> {
     const { driver } = await this.resolveDriver();
     return driver.getObject(hash);
@@ -142,7 +149,7 @@ export class StorageService {
    */
   async deleteUnreferenced(hashes: string[]): Promise<void> {
     for (const hash of new Set(hashes)) {
-      const [attachments, avatars, songImages, artistPictures, teamPictures, songbookPictures, themeFiles, brandFiles, bibleFiles] = await Promise.all([
+      const [attachments, avatars, songImages, artistPictures, teamPictures, songbookPictures, themeFiles, brandFiles, bibleFiles, archives] = await Promise.all([
         // A file, or a lossless original kept beside one (issue #182).
         this.prisma.client.attachment.count({ where: { OR: [{ storageKey: hash }, { originalStorageKey: hash }] } }),
         this.prisma.client.user.count({ where: { avatarStorageKey: hash } }),
@@ -159,8 +166,10 @@ export class StorageService {
         this.prisma.client.brandAsset.count({ where: { storageKey: hash } }),
         // Bible files waiting to be imported (issue #301).
         this.prisma.client.bible.count({ where: { sourceStorageKey: hash } }),
+        // People's, teams' and organisations' archives, and ones waiting to be imported (issue #351).
+        this.prisma.client.contentArchive.count({ where: { storageKey: hash } }),
       ]);
-      if (attachments === 0 && avatars === 0 && songImages === 0 && artistPictures === 0 && teamPictures === 0 && songbookPictures === 0 && themeFiles === 0 && brandFiles === 0 && bibleFiles === 0) {
+      if (attachments === 0 && avatars === 0 && songImages === 0 && artistPictures === 0 && teamPictures === 0 && songbookPictures === 0 && themeFiles === 0 && brandFiles === 0 && bibleFiles === 0 && archives === 0) {
         await this.delete(hash);
       }
     }
@@ -170,6 +179,10 @@ export class StorageService {
    * Every stored object something references (issue #119): what a backup copies
    * and a restore brings back. The same columns deleteUnreferenced() checks - a
    * new kind of stored file goes in both. Binned songs' artwork too.
+   *
+   * Not people's archives (issue #351, ContentArchive): each is a copy of
+   * files the backup already has, made again weekly, and kept two weeks -
+   * a restored server shows them as gone, and the next ones are made.
    */
   async storedKeys(): Promise<string[]> {
     const rows = await this.prisma.client.$queryRaw<{ key: string }[]>`

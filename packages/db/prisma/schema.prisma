@@ -378,6 +378,10 @@ model User {
   screenWidgetDefaults ScreenWidgetDefault[]
   liveSessionsStarted  LiveSession[]
   liveSessionCommands  LiveSessionCommand[]
+  // Archives of what they own (issue #351), and the ones they asked for or imported.
+  contentArchives      ContentArchive[]       @relation("ContentArchiveUser")
+  archivesRequested    ContentArchive[]       @relation("ContentArchiveRequestedBy")
+  archiveSchedule      ArchiveSchedule?       @relation("ArchiveScheduleUser")
 
   @@index([email])
 }
@@ -709,6 +713,9 @@ model Team {
   // are counted, and from how many it's flagged when it goes in a set (null: never).
   repeatWeeks          Int                    @default(6)
   repeatLimit          Int?
+  // Archives of the team's songs, songbooks and sets (issue #351).
+  contentArchives      ContentArchive[]       @relation("ContentArchiveTeam")
+  archiveSchedule      ArchiveSchedule?       @relation("ArchiveScheduleTeam")
 
   @@index([slug])
   @@index([organizationId])
@@ -758,6 +765,9 @@ model Organization {
   scopedRoles  RoleAssignment[]          @relation("RoleScopeOrganization")
   // Songs shared with everyone in it (issue #350), to view; it never owns them.
   songGrants   AccessGrant[]
+  // Archives of its teams' songs, songbooks and sets (issue #351).
+  contentArchives ContentArchive[]       @relation("ContentArchiveOrganization")
+  archiveSchedule ArchiveSchedule?       @relation("ArchiveScheduleOrganization")
 }
 
 model OrganizationMembership {
@@ -3465,4 +3475,83 @@ model BackupRun {
   error         String?
 
   @@index([startedAt])
+}
+
+// What a person, a team or an organisation owns, as one archive (issue #351):
+// made by the Worker on demand or weekly, downloaded, and imported back
+// (an IMPORT row is an uploaded archive and what bringing it in did).
+model ContentArchive {
+  id                String               @id @default(cuid())
+  kind              ContentArchiveKind
+  status            ContentArchiveStatus @default(PENDING)
+  // MANUAL or WEEKLY, for an export.
+  trigger           ArchiveTrigger       @default(MANUAL)
+  // Whose: exactly one of these, by scope (an import: where it went).
+  scope             ArchiveScope
+  userId            String?
+  teamId            String?
+  organizationId    String?
+  requestedByUserId String?
+  // The archive's object in storage (content-addressed); null once it's gone.
+  storageKey        String?
+  sizeBytes         BigInt?
+  filename          String?
+  // An export: what's in it. An import: what it created, kept and left out.
+  summary           Json?
+  error             String?
+  createdAt         DateTime             @default(now())
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  // When an export's file is deleted.
+  expiresAt         DateTime?
+
+  user         User?         @relation("ContentArchiveUser", fields: [userId], references: [id], onDelete: Cascade)
+  team         Team?         @relation("ContentArchiveTeam", fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization? @relation("ContentArchiveOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
+  requestedBy  User?         @relation("ContentArchiveRequestedBy", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([organizationId])
+  @@index([storageKey])
+  @@index([status, expiresAt])
+}
+
+// A weekly archive (issue #351), for one person, team or organisation.
+model ArchiveSchedule {
+  id              String       @id @default(cuid())
+  scope           ArchiveScope
+  userId          String?      @unique
+  teamId          String?      @unique
+  organizationId  String?      @unique
+  createdByUserId String?
+  lastRunAt       DateTime?
+  createdAt       DateTime     @default(now())
+
+  user         User?         @relation("ArchiveScheduleUser", fields: [userId], references: [id], onDelete: Cascade)
+  team         Team?         @relation("ArchiveScheduleTeam", fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization? @relation("ArchiveScheduleOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+enum ContentArchiveKind {
+  EXPORT
+  IMPORT
+}
+
+enum ContentArchiveStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum ArchiveTrigger {
+  MANUAL
+  WEEKLY
+}
+
+enum ArchiveScope {
+  USER
+  TEAM
+  ORGANIZATION
 }

@@ -14,6 +14,7 @@ import { ChartDisplayCard, StorageCard } from "./-dashboard/account-cards";
 import { NotificationSettingsCard } from "@oneverse/planning/components/notification-settings-card";
 import { OwnershipRequestsCard } from "./-dashboard/ownership-requests-card";
 import { RolesCard } from "./-dashboard/roles-card";
+import { ArchivesCard } from "#/components/archives-card";
 
 export const Route = createFileRoute("/_protected/dashboard")({
   loader: async ({ context }) => {
@@ -185,6 +186,8 @@ function Dashboard() {
           <RolesCard profile={profile} customInstruments={customInstruments} />
           <OneverseAccountCard email={profile.email} />
           <StorageCard storage={storage} />
+          {/* Your own backups (issue #351). */}
+          <ArchivesCard owner={{ scope: "user" }} />
           <LanguageCard api={apiClient} locale={profile.locale} weekStartsOn={profile.weekStartsOn} />
           <NotificationSettingsCard />
           <ChartDisplayCard profile={profile} />

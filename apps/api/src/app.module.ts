@@ -7,6 +7,7 @@ import { ArrangementsModule } from "./arrangements/arrangements.module.js";
 import { AccessModule } from "./access/access.module.js";
 import { AppController } from "./app.controller.js";
 import { BackupsModule } from "./backups/backups.module.js";
+import { ArchivesModule } from "./archives/archives.module.js";
 import { AttachmentsModule } from "./attachments/attachments.module.js";
 import { SongLinksModule } from "./song-links/song-links.module.js";
 import { AuthModule } from "./auth/auth.module.js";
@@ -58,6 +59,7 @@ import { LookupsModule } from "./lookups/lookups.module.js";
     }),
     PrismaModule,
     BackupsModule,
+    ArchivesModule,
     AccessModule,
     JobsModule,
     LookupsModule,

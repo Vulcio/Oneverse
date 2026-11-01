@@ -21,6 +21,8 @@ export const NOTIFICATIONS_QUEUE = "notifications";
 export const LIVE_SESSIONS_QUEUE = "live-sessions";
 /** The server's backups (issue #119): the nightly one, and "Back up now". */
 export const BACKUPS_QUEUE = "backups";
+/** People's, teams' and organisations' archives, made and imported (issue #351). */
+export const ARCHIVES_QUEUE = "archives";
 
 /**
  * A short hash of this process's SETTINGS_ENCRYPTION_KEY, or null without

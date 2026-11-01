@@ -17,6 +17,8 @@ export interface ByteRange {
 
 export interface ObjectStorageDriver {
   putObject(hash: string, body: Buffer, contentType: string): Promise<void>;
+  /** An object from a file on disk, streamed rather than read whole (an archive, issue #351). */
+  putFile(hash: string, path: string, sizeBytes: number, contentType: string): Promise<void>;
   getObject(hash: string): Promise<Buffer>;
   /**
    * The object (or part of it) as a stream, so a download never holds the

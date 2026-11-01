@@ -58,3 +58,7 @@ C'est le point de départ de chaque mode : le panneau [Affichage](/fr/display/) 
 ## Stockage
 
 Les fichiers que vous ajoutez à vos propres chants (PDF, audio, fichiers ChordPro) comptent dans votre limite de stockage ; ce que vous ajoutez aux chants d'une équipe compte plutôt dans l'espace de l'équipe. La carte **Stockage** montre ce que vous utilisez. Demandez à un administrateur s'il vous en faut plus : il donne des paliers de stockage sous forme de rôles.
+
+## Sauvegardes
+
+La carte **Sauvegardes** fait une archive de tout ce qui est à vous, maintenant ou chaque semaine, et en importe une : voir [Sauvegardes](/fr/backups/).

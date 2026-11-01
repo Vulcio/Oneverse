@@ -40,6 +40,7 @@ export default defineConfig({
           items: [
             { slug: "getting-started" },
             { slug: "account" },
+            { slug: "backups" },
           ],
         },
         {

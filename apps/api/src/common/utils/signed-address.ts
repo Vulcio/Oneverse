@@ -9,7 +9,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
  * each use has its own key, derived from BETTER_AUTH_SECRET, so one kind
  * of address can't be passed off as another.
  */
-export type SignedPurpose = "file-links" | "song-images" | "screen-theme-assets" | "brand-assets";
+export type SignedPurpose = "file-links" | "song-images" | "screen-theme-assets" | "brand-assets" | "archives";
 
 function key(purpose: SignedPurpose): Buffer {
   const secret = process.env.BETTER_AUTH_SECRET;

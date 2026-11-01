@@ -1,13 +1,21 @@
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
+  UploadPartCommand,
 } from "@aws-sdk/client-s3";
+import { createReadStream } from "node:fs";
 import { NotFoundException } from "@nestjs/common";
 import { Readable } from "node:stream";
 import type { ByteRange, ObjectStorageDriver } from "./object-storage-driver.js";
+
+/** A big file is sent in parts of this size. */
+const PART_BYTES = 64 * 1024 * 1024;
 
 const notFound = (error: unknown): never => {
   if (error instanceof Error && (error.name === "NoSuchKey" || error.name === "NotFound")) {
@@ -48,6 +56,33 @@ export class S3StorageDriver implements ObjectStorageDriver {
     await this.client.send(
       new PutObjectCommand({ Bucket: this.bucket, Key: hash, Body: body, ContentType: contentType }),
     );
+  }
+
+  /**
+   * A file, streamed: in one request up to PART_BYTES, in parts above (S3
+   * takes at most 5 GB in one, and R2 likes parts), each read from disk as
+   * it's sent.
+   */
+  async putFile(hash: string, path: string, sizeBytes: number, contentType: string): Promise<void> {
+    if (sizeBytes <= PART_BYTES) {
+      await this.client.send(new PutObjectCommand({ Bucket: this.bucket, Key: hash, Body: createReadStream(path), ContentLength: sizeBytes, ContentType: contentType }));
+      return;
+    }
+    const { UploadId } = await this.client.send(new CreateMultipartUploadCommand({ Bucket: this.bucket, Key: hash, ContentType: contentType }));
+    try {
+      const parts: { ETag: string | undefined; PartNumber: number }[] = [];
+      for (let start = 0, number = 1; start < sizeBytes; start += PART_BYTES, number += 1) {
+        const end = Math.min(start + PART_BYTES, sizeBytes) - 1;
+        const { ETag } = await this.client.send(
+          new UploadPartCommand({ Bucket: this.bucket, Key: hash, UploadId, PartNumber: number, Body: createReadStream(path, { start, end }), ContentLength: end - start + 1 }),
+        );
+        parts.push({ ETag, PartNumber: number });
+      }
+      await this.client.send(new CompleteMultipartUploadCommand({ Bucket: this.bucket, Key: hash, UploadId, MultipartUpload: { Parts: parts } }));
+    } catch (error) {
+      await this.client.send(new AbortMultipartUploadCommand({ Bucket: this.bucket, Key: hash, UploadId })).catch(() => undefined);
+      throw error;
+    }
   }
 
   async getObject(hash: string): Promise<Buffer> {
