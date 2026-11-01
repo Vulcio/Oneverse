@@ -35,11 +35,26 @@ const SELECT = {
   isGlobalAdmin: true,
   instruments: true,
   techRoles: true,
+  profilePromptSkippedAt: true,
 } as const;
 
-/** Stored roles no longer on the lists are dropped, the rest shown in list order. */
-function toProfile<T extends { instruments: string[]; techRoles: string[] }>(user: T, customInstruments: readonly string[]): T {
-  return { ...user, instruments: orderInstruments(user.instruments, customInstruments), techRoles: orderTechRoles(user.techRoles) };
+/** How long a skipped "What do you play or do?" waits before it's asked again (issue #109). */
+export const PROFILE_PROMPT_AGAIN_DAYS = 30;
+
+/**
+ * Whether to ask "What do you play or do?" (issue #109): nothing said yet,
+ * and not skipped lately (joining a team asks again, see TeamsService).
+ */
+function asksProfile(user: { instruments: string[]; techRoles: string[]; profilePromptSkippedAt: Date | null }): boolean {
+  if (user.instruments.length > 0 || user.techRoles.length > 0) return false;
+  return !user.profilePromptSkippedAt || Date.now() - user.profilePromptSkippedAt.getTime() > PROFILE_PROMPT_AGAIN_DAYS * 86_400_000;
+}
+
+/** Stored roles no longer on the lists are dropped, the rest shown in list order; whether to ask what they play (issue #109), not when they skipped it. */
+function toProfile<T extends { instruments: string[]; techRoles: string[]; profilePromptSkippedAt: Date | null }>(user: T, customInstruments: readonly string[]) {
+  const rest: Omit<T, "profilePromptSkippedAt"> & { profilePromptSkippedAt?: Date | null } = { ...user };
+  delete rest.profilePromptSkippedAt;
+  return { ...(rest as Omit<T, "profilePromptSkippedAt">), instruments: orderInstruments(user.instruments, customInstruments), techRoles: orderTechRoles(user.techRoles), askProfile: asksProfile(user) };
 }
 
 @Injectable()
@@ -56,6 +71,11 @@ export class UsersService {
     const user = await this.prisma.client.user.findUnique({ where: { id: userId }, select: SELECT });
     if (!user) throw new NotFoundException("User not found");
     return this.withRoles(toProfile(user, await customInstrumentIds(this.prisma.client)));
+  }
+
+  /** "What do you play or do?" skipped (issue #109): asked again in a while. */
+  async skipProfilePrompt(userId: string): Promise<void> {
+    await this.prisma.client.user.update({ where: { id: userId }, data: { profilePromptSkippedAt: new Date() } });
   }
 
   /** What their roles allow them (issue #160), and which roles they have - their own and their teams'. */

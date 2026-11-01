@@ -1059,6 +1059,15 @@ const en = {
     settings: "Settings",
     settingsDescription: "Your profile, roles, sign-in and preferences.",
     addYourRoles: "Add what you play or do",
+    completeProfile: "Complete your profile",
+    completeProfileHint: "Say what you play or do, and add a photo: your teams see it beside your name, and line-ups and Live use it.",
+  },
+  profilePrompt: {
+    title: "What do you play or do?",
+    description: "Your teams see it beside your name, and sets' line-ups and Live use it. You can change it any time in Settings.",
+    photo: "A photo (optional)",
+    skip: "Skip for now",
+    save: "Save",
   },
   roles: {
     title: "Roles",
@@ -1865,6 +1874,8 @@ const en = {
     adminConfirmDelete: "Delete it? Its teams stay, on their own",
   },
   teams: {
+    noRolesYet: "Hasn't said what they play or do yet",
+    noRolesYetSelf: "You haven't said what you play or do yet",
     createTeam: "Create team",
     details: "Details",
     name: "Name",

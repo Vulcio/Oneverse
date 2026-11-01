@@ -265,6 +265,12 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
                         <p className="text-xs text-muted-foreground">{member.email}</p>
                       </div>
                       <RoleBadges instruments={member.instruments} techRoles={member.techRoles} customInstruments={customInstruments} />
+                      {/* For its admins (issue #109): who hasn't said what they play yet. */}
+                      {isAdmin && member.instruments.length + member.techRoles.length === 0 ? (
+                        <p className="text-xs text-muted-foreground" data-testid="member-no-roles">
+                          {t(isSelf ? "teams.noRolesYetSelf" : "teams.noRolesYet")}
+                        </p>
+                      ) : null}
                       {/* The group's own positions they cover (issue #241): they and its admins tick them. */}
                       <MemberPositions teamId={team.id} userId={member.userId} positions={positions} covered={member.positionIds ?? []} editable={isAdmin || isSelf} onChanged={refresh} onError={setError} />
                     </div>

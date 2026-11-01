@@ -93,7 +93,7 @@ Celui qui fait le changement n'en est pas prévenu. Elles peuvent aussi arriver 
 - Les **Administrateurs** gèrent l'équipe : ils modifient ses chants, ses versions et ses listes, et invitent des personnes.
 - Les **Membres** voient et utilisent tout ce qu'a l'équipe.
 
-À côté de chaque nom, l'équipe montre ce que la personne joue ou fait (voir [Rôles](/fr/account/#rôles)).
+À côté de chaque nom, l'équipe montre ce que la personne joue ou fait (voir [Rôles](/fr/account/#rôles)). Ses administrateurs voient qui ne l'a pas encore dit.
 
 ## Créer une équipe et inviter
 

@@ -4,8 +4,11 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
+  Post,
   Put,
   Query,
   Res,
@@ -49,6 +52,14 @@ export class UsersController {
   updateMe(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: UpdateUserDto) {
     if (!user) throw new UnauthorizedException();
     return this.usersService.updateMe(user.id, dto);
+  }
+
+  /** "What do you play or do?" skipped for now (issue #109). */
+  @Post("me/profile-prompt/skip")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async skipProfilePrompt(@CurrentUser() user: AuthenticatedUser | undefined): Promise<void> {
+    if (!user) throw new UnauthorizedException();
+    await this.usersService.skipProfilePrompt(user.id);
   }
 
   @Get("me/storage")

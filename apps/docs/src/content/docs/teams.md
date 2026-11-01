@@ -93,7 +93,7 @@ Whoever made the change isn't told about it. They can also come by email, as you
 - **Admins** manage the team: they change its songs, versions and sets, and invite people.
 - **Members** see and use everything the team has.
 
-Next to each name, the team shows what they play or do (see [Roles](/account/#roles)).
+Next to each name, the team shows what they play or do (see [Roles](/account/#roles)). Its admins see who hasn't said yet.
 
 ## Creating a team and inviting people
 

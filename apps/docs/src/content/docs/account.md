@@ -29,6 +29,8 @@ Add one on each device you use. You can remove a passkey at any time.
 
 Tell your teams what you play or do - **Instruments** (vocals, guitars, keys, drums, harp, accordion, cajón… and any your admin added) and **Other roles** (technician, media operator, sound engineer). They're shown next to your name in team member lists.
 
+Until you've said, Songverse asks **What do you play or do?** after you sign up, with the instruments and roles to tick and a photo to add. **Skip for now** asks again in a month, or when you join a team. Your dashboard shows **Complete your profile** until you have.
+
 ## Language and calendars
 
 Choose the app's language under **Language**. **First day of the week** sets where every calendar's weeks start: **Automatic (from the language)** - Sunday in English, Monday in French - or always **Monday**, **Sunday** or **Saturday**.

@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { I18nextProvider } from "react-i18next";
 import { AppShell } from "#/components/app-shell";
+import { ProfilePrompt } from "#/components/profile-prompt";
 import { keepAppDataOffline, loadAppData } from "#/lib/app-data";
 import { useOfflineSync } from "#/lib/offline-data";
 import { createI18n, loadLocale } from "@oneverse/app/i18n";
@@ -49,6 +50,8 @@ function RouteComponent() {
         <PlanningProvider host={planningHost}>
           <AppShell session={session} teams={teams} songbooks={songbooks} setlists={setlists}>
             <Outlet />
+            {/* "What do you play or do?" (issue #109), while they haven't said. */}
+            <ProfilePrompt />
           </AppShell>
         </PlanningProvider>
       </WeekStartContext.Provider>

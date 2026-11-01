@@ -675,6 +675,8 @@ export interface UserProfile {
   /** Built-in instruments' keys, then the ids of those an admin added (issue #166). */
   instruments: string[];
   techRoles: TechRoleValue[];
+  /** Ask them what they play or do (issue #109): nothing said yet, and not skipped lately. Left out by an older API. */
+  askProfile?: boolean;
   /** With a capo: chords as they sound, or the shapes a guitarist plays. */
   capoDisplayMode: CapoDisplayModeValue;
   /** Chord names in letters or solfège. */
@@ -2492,6 +2494,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
 
   return {
     getMe: () => request<UserProfile>("/users/me"),
+    /** "What do you play or do?" skipped for now (issue #109): asked again in a while, or on joining a team. */
+    skipProfilePrompt: () => request<void>("/users/me/profile-prompt/skip", { method: "POST" }),
     /** Omitted fields are left as they are; `instruments`/`techRoles` replace the whole list. */
     updateMe: (data: {
       locale?: string;

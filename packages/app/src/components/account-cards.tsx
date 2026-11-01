@@ -29,11 +29,9 @@ const LOCALE_NAMES: Record<LocaleValue, string> = { en: "English", fr: "Françai
 export function ProfileCard({ api, profile }: { api: ApiClient; profile: UserProfile }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const fileInput = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
-  const [cropping, setCropping] = useState<File | null>(null);
 
   async function run(action: () => Promise<unknown>, successText?: string) {
     setPending(true);
@@ -50,16 +48,6 @@ export function ProfileCard({ api, profile }: { api: ApiClient; profile: UserPro
     }
   }
 
-  function onFileChosen(file: File | undefined) {
-    if (!file) return;
-    if (file.size > MAX_AVATAR_SOURCE_BYTES) {
-      setMessage({ kind: "error", text: t("account.avatarTooLarge") });
-      return;
-    }
-    setMessage(null);
-    setCropping(file);
-  }
-
   const trimmedName = displayName.trim();
 
   return (
@@ -69,36 +57,7 @@ export function ProfileCard({ api, profile }: { api: ApiClient; profile: UserPro
         <CardDescription>{t("account.profileDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="size-16">
-            {profile.avatarUrl ? <AvatarImage src={sizedAvatarUrl(profile.avatarUrl, 64)} alt="" /> : null}
-            <AvatarFallback className="text-lg">{initials(profile.displayName)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" disabled={pending} onClick={() => fileInput.current?.click()}>
-                {t("account.uploadAvatar")}
-              </Button>
-              {profile.avatarUrl ? (
-                <Button variant="ghost" size="sm" disabled={pending} onClick={() => void run(() => api.removeAvatar())}>
-                  {t("account.removeAvatar")}
-                </Button>
-              ) : null}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("account.avatarHint")}</p>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              data-testid="avatar-input"
-              onChange={(event) => {
-                onFileChosen(event.target.files?.[0]);
-                event.target.value = "";
-              }}
-            />
-          </div>
-        </div>
+        <AvatarPicker api={api} profile={profile} />
 
         <form
           className="flex flex-col gap-2 border-t pt-4"
@@ -120,26 +79,99 @@ export function ProfileCard({ api, profile }: { api: ApiClient; profile: UserPro
           <p className={message.kind === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{message.text}</p>
         ) : null}
 
-        {cropping ? (
-          <ImageCropDialog
-            file={cropping}
-            maxSize={512}
-            shape="round"
-            title={t("account.cropTitle")}
-            description={t("account.cropDescription")}
-            saveLabel={t("account.saveAvatar")}
-            testId="avatar-cropper"
-            onCancel={() => setCropping(null)}
-            onConfirm={async (cropped) => {
-              await api.uploadAvatar(cropped, "avatar.webp");
-              setCropping(null);
-              // Also reloads the session, so the sidebar picks up the new picture.
-              await router.invalidate();
-            }}
-          />
-        ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * One's picture (issue #109 asks for it too): upload, cropped round, or
+ * remove. Reloads the session after, so the sidebar shows the new one.
+ */
+export function AvatarPicker({ api, profile, onChanged }: { api: ApiClient; profile: Pick<UserProfile, "avatarUrl" | "displayName">; onChanged?: () => void }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [cropping, setCropping] = useState<File | null>(null);
+
+  async function remove() {
+    setPending(true);
+    setError(null);
+    try {
+      await api.removeAvatar();
+      await router.invalidate();
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function onFileChosen(file: File | undefined) {
+    if (!file) return;
+    if (file.size > MAX_AVATAR_SOURCE_BYTES) {
+      setError(t("account.avatarTooLarge"));
+      return;
+    }
+    setError(null);
+    setCropping(file);
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-4">
+        <Avatar className="size-16">
+          {profile.avatarUrl ? <AvatarImage src={sizedAvatarUrl(profile.avatarUrl, 64)} alt="" /> : null}
+          <AvatarFallback className="text-lg">{initials(profile.displayName)}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" disabled={pending} onClick={() => fileInput.current?.click()}>
+              {t("account.uploadAvatar")}
+            </Button>
+            {profile.avatarUrl ? (
+              <Button variant="ghost" size="sm" disabled={pending} onClick={() => void remove()}>
+                {t("account.removeAvatar")}
+              </Button>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted-foreground">{t("account.avatarHint")}</p>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            data-testid="avatar-input"
+            onChange={(event) => {
+              onFileChosen(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+        </div>
+      </div>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {cropping ? (
+        <ImageCropDialog
+          file={cropping}
+          maxSize={512}
+          shape="round"
+          title={t("account.cropTitle")}
+          description={t("account.cropDescription")}
+          saveLabel={t("account.saveAvatar")}
+          testId="avatar-cropper"
+          onCancel={() => setCropping(null)}
+          onConfirm={async (cropped) => {
+            await api.uploadAvatar(cropped, "avatar.webp");
+            setCropping(null);
+            await router.invalidate();
+            onChanged?.();
+          }}
+        />
+      ) : null}
+    </div>
   );
 }
 

@@ -269,6 +269,8 @@ model User {
   // packages/core, validated by the API.
   instruments String[] @default([])
   techRoles   String[] @default([])
+  /// When they last skipped "What do you play or do?" (issue #109): asked again a while later, or on joining a team.
+  profilePromptSkippedAt DateTime?
 
   // Preferences
   locale            String            @default("en") // UI language - see SUPPORTED_LOCALES in packages/core

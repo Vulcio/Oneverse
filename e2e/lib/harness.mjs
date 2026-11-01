@@ -97,8 +97,14 @@ export async function user(name) {
   const id = sql(`select id from "User" where email='${email}'`);
   // Uploading audio files is a role's (issue #183), which people who sign up don't get: the suites' users have it.
   giveRole(id, "AUDIO_UPLOADS");
+  // "What do you play or do?" (issue #109) would cover the page they're tested on: skipped, as a returning user would have.
+  // A suite about it asks again with askProfileAgain().
+  sql(`update "User" set "profilePromptSkippedAt" = now() where id = '${id}'`);
   return { email, bearer, cookie, id };
 }
+
+/** Lets "What do you play or do?" (issue #109) ask `who` again, as for someone who just signed up. */
+export const askProfileAgain = (who) => sql(`update "User" set "profilePromptSkippedAt" = null where id = '${who.id}'`);
 
 /** An API call as `who`; returns the status and parsed body. */
 export async function call(who, method, path, body) {

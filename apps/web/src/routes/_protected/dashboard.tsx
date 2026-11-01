@@ -47,13 +47,24 @@ function Dashboard() {
           </div>
           {profile.instruments.length + profile.techRoles.length > 0 ? (
             <RoleBadges instruments={profile.instruments} techRoles={profile.techRoles} customInstruments={customInstruments} />
-          ) : (
-            <a href="#roles" className="text-sm text-primary hover:underline">
-              {t("dashboard.addYourRoles")}
-            </a>
-          )}
+          ) : null}
         </div>
       </div>
+
+      {/* Until they say what they play or do (issue #109): gone once they have. */}
+      {profile.instruments.length + profile.techRoles.length === 0 ? (
+        <Card data-testid="complete-profile">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="text-sm font-medium">{t("dashboard.completeProfile")}</p>
+              <p className="text-sm text-muted-foreground">{t("dashboard.completeProfileHint")}</p>
+            </div>
+            <Button size="sm" render={<a href="#roles" />}>
+              {t("dashboard.addYourRoles")}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <OwnershipRequestsCard requests={ownershipRequests} />
 

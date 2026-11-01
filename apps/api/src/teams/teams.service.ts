@@ -283,6 +283,8 @@ export class TeamsService {
       await tx.teamInviteLink.update({ where: { id: link.id }, data: { usedCount: { increment: 1 } } });
       // A team's members are its organisation's too (issue #241).
       await joinTeamOrganization(tx, link.teamId, [userId]);
+      // Joining a team asks again what they play or do, if they haven't said (issue #109).
+      await tx.user.updateMany({ where: { id: userId, instruments: { isEmpty: true }, techRoles: { isEmpty: true } }, data: { profilePromptSkippedAt: null } });
     });
     // Its admins told who joined (issue #149).
     const [admins, joiner] = await Promise.all([

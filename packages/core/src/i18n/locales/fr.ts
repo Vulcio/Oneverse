@@ -1059,6 +1059,15 @@ const fr: typeof en = {
     settings: "Paramètres",
     settingsDescription: "Votre profil, vos rôles, votre connexion et vos préférences.",
     addYourRoles: "Indiquez ce que vous jouez ou faites",
+    completeProfile: "Complétez votre profil",
+    completeProfileHint: "Indiquez ce que vous jouez ou faites, et ajoutez une photo : vos équipes le voient à côté de votre nom, et l'équipe du jour et le Live s'en servent.",
+  },
+  profilePrompt: {
+    title: "Que jouez-vous ou que faites-vous ?",
+    description: "Vos équipes le voient à côté de votre nom, et l'équipe du jour des listes et le Live s'en servent. Vous pouvez le changer à tout moment dans les Paramètres.",
+    photo: "Une photo (facultatif)",
+    skip: "Plus tard",
+    save: "Enregistrer",
   },
   roles: {
     title: "Rôles",
@@ -1868,6 +1877,8 @@ const fr: typeof en = {
     adminConfirmDelete: "La supprimer ? Ses équipes restent, à part entière",
   },
   teams: {
+    noRolesYet: "N'a pas encore dit ce qu'il ou elle joue ou fait",
+    noRolesYetSelf: "Vous n'avez pas encore dit ce que vous jouez ou faites",
     createTeam: "Créer une équipe",
     details: "Détails",
     name: "Nom",
