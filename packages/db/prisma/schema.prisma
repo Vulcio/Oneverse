@@ -385,6 +385,7 @@ model User {
   // Organisations asked for, and those reviewed as a global admin (issue #364).
   organizationRequests         OrganizationRequest[] @relation("OrganizationRequestsMade")
   organizationRequestsReviewed OrganizationRequest[] @relation("OrganizationRequestsReviewed")
+  songInfoRefreshes            SongInfoRefresh[]     @relation("SongInfoRefreshRequestedBy")
 
   @@index([email])
 }
@@ -1892,10 +1893,12 @@ model Songbook {
   sourceCatalogId String?
   sourceCatalog   SongbookCatalog? @relation(fields: [sourceCatalogId], references: [id], onDelete: SetNull)
 
-  entries SongbookEntry[]
+  entries           SongbookEntry[]
   // Who else sees it, or changes it too (issue #211).
-  shares  SongbookShare[]
-  notes   Note[]
+  shares            SongbookShare[]
+  notes             Note[]
+  // Its songs looked up again at the metadata providers (issue #353).
+  songInfoRefreshes SongInfoRefresh[]
 
   @@index([ownerUserId])
   @@index([ownerTeamId])
@@ -3689,4 +3692,27 @@ enum OwnStorageProvider {
 enum OwnStorageState {
   ACTIVE
   LEAVING
+}
+
+// A songbook's songs looked up again at the metadata providers (issue
+// #353), by the Worker, one at a time: what each would get, kept to be
+// reviewed and used (or not) in one pass. What a song would change is
+// worked out again when it's read, against the song as it is then.
+model SongInfoRefresh {
+  id            String    @id @default(cuid())
+  songbookId    String
+  requestedById String
+  // "queued", "running", "done", "failed"
+  status        String    @default("queued")
+  total         Int       @default(0)
+  done          Int       @default(0)
+  // [{ songVersionId, outcome, match? }], in the songbook's order.
+  results       Json      @default("[]")
+  createdAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  songbook    Songbook @relation(fields: [songbookId], references: [id], onDelete: Cascade)
+  requestedBy User     @relation("SongInfoRefreshRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  @@index([songbookId, createdAt])
 }

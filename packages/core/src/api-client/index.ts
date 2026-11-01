@@ -24,6 +24,8 @@ import type { CatalogEntryData, CatalogEntryFieldKey, CatalogFileProblem } from 
 import type { BulkUploadFileMatch } from "../bulk-upload-matching/index.js";
 import type { MetadataCapability, MetadataMatch, MetadataProviderKey } from "../schemas/metadata.js";
 import type { MusicBrainzWorkMatch } from "../schemas/musicbrainz.js";
+import type { SongInfoField, SongInfoProposal } from "../metadata/proposals.js";
+import type { ApplySongInfoRefreshRequest, StartSongInfoRefreshRequest } from "../requests/songbooks.js";
 import type { SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song-document-v2.js";
 import type { SongbookSection } from "../songbook-sections/index.js";
 import type { StemPart } from "../stems/index.js";
@@ -1765,6 +1767,57 @@ export interface PendingSongbookEntry {
   title: string;
 }
 
+/** A songbook's song with the details it's known by, for editing them in place (issue #353). */
+export interface SongbookSongInfo {
+  entryId: string;
+  songVersionId: string;
+  entryCode: string | null;
+  title: string;
+  artists: string[];
+  /** Everyone credited with writing it. */
+  writers: string[];
+  album: string | null;
+  year: number | null;
+  key: string | null;
+  tempo: number | null;
+  /** "4/4". */
+  timeSignature: string | null;
+  durationSeconds: number | null;
+  ccli: string | null;
+  copyright: string | null;
+  isrc: string | null;
+  hasImage: boolean;
+  /** Linked to song info (Auto detect). */
+  linked: boolean;
+  /** Whether the viewer changes it; a catalogue song they can't is corrected by a suggestion. */
+  canEdit: boolean;
+  canSuggest: boolean;
+  /** The chart's revision, for saving a change. */
+  revision: number;
+}
+
+/** One song of a refresh (issue #353): what its match would change, against the song as it is now. */
+export interface SongInfoRefreshSong {
+  songVersionId: string;
+  entryCode: string | null;
+  title: string;
+  outcome: "found" | "no-artist" | "no-close-match" | "providers-unavailable" | "failed" | "waiting";
+  match: MetadataMatch | null;
+  proposals: SongInfoProposal[];
+  canEdit: boolean;
+}
+
+/** A songbook's songs looked up again (issue #353): the Worker's progress, then each song to review. */
+export interface SongInfoRefreshView {
+  id: string;
+  status: "queued" | "running" | "done" | "failed";
+  total: number;
+  done: number;
+  createdAt: string;
+  finishedAt: string | null;
+  songs: SongInfoRefreshSong[];
+}
+
 export interface SongbookDetail extends SongbookSummary {
   entries: SongbookEntry[];
   pendingEntries?: PendingSongbookEntry[];
@@ -2864,6 +2917,19 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createSongbook: (data: CreateSongbookInput) =>
       request<SongbookSummary>("/songbooks", { method: "POST", body: JSON.stringify(data) }),
     getSongbook: (songbookId: string) => request<SongbookDetail>(`/songbooks/${songbookId}`),
+    /** Its songs with their details, to edit in place (issue #353). */
+    getSongbookSongInfo: (songbookId: string) => request<SongbookSongInfo[]>(`/songbooks/${songbookId}/song-info`),
+    /** Its songs looked up again at the providers, by the Worker (issue #353): the running one if there is. */
+    startSongInfoRefresh: (songbookId: string, data: StartSongInfoRefreshRequest = {}) =>
+      request<SongInfoRefreshView>(`/songbooks/${songbookId}/song-info/refreshes`, { method: "POST", body: JSON.stringify(data) }),
+    /** The latest refresh, or null. */
+    latestSongInfoRefresh: (songbookId: string) => request<{ refresh: SongInfoRefreshView | null }>(`/songbooks/${songbookId}/song-info/refreshes/latest`),
+    getSongInfoRefresh: (songbookId: string, refreshId: string) => request<SongInfoRefreshView>(`/songbooks/${songbookId}/song-info/refreshes/${refreshId}`),
+    applySongInfoRefresh: (songbookId: string, refreshId: string, data: ApplySongInfoRefreshRequest) =>
+      request<{ applied: { songVersionId: string; fields: SongInfoField[] }[]; refused: string[] }>(`/songbooks/${songbookId}/song-info/refreshes/${refreshId}/apply`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
     updateSongbook: (songbookId: string, data: UpdateSongbookInput) =>
       request<SongbookSummary>(`/songbooks/${songbookId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteSongbook: (songbookId: string) => request<void>(`/songbooks/${songbookId}`, { method: "DELETE" }),

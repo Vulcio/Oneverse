@@ -20,6 +20,7 @@ import { SongbookShareDialog } from "#/components/songbook-share-dialog";
 import { TeamAccessDialog } from "#/components/set-team-access";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 import { SectionsEditor } from "#/components/sections-editor";
+import { SongbookSongInfoCard } from "#/components/songbook-song-info";
 import { deviceStorage } from "#/lib/offline-data";
 
 /** A bulk upload's files go in batches of at most this many files and bytes (issue #202): within the API's limit per request, and its memory. */
@@ -604,6 +605,9 @@ function SongbookDetail() {
           ) : null}
         </CardContent>
       </Card>
+
+      {/* Its songs' details, edited in place and brought up to date in one pass (issue #353). */}
+      {canEdit ? <SongbookSongInfoCard songbookId={songbook.id} /> : null}
 
       {/* A bulk upload writes into its owner's songs: the owner's (issue #211). */}
       {isNumbered && canEdit && owns ? (

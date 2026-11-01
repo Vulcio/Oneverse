@@ -55,6 +55,12 @@ A catalog can list its printed volumes, the same way as a songbook's sections. S
 
 Starting a songbook from a catalog gives you every entry at once. Entries whose song isn't in your library yet are listed under **Pending entries**: **Start** one to create the song with the catalog's details filled in, then add its words and chords.
 
+## Song details
+
+**Edit song details** shows every song in the songbook in one table: its name, artist, album, year, key, tempo, time signature, CCLI number and copyright. Change a cell and it's saved when you leave it ("Saved" on its row); **Open** goes to the song. A catalogue song you can't change takes your change as a suggestion for its editors instead ("Suggestion sent", see [Suggesting a change](/library/#suggesting-a-change)).
+
+Under it, **Bring up to date from online** looks every song up again on MusicBrainz, Apple Music, Deezer and Spotify, as your admin set them up: a song already linked to song info by its link, one that isn't by a match with the same name and artist. **Look the songs up** runs it in the background ("Looking up 12 of 40…"); you can leave the page and come back. Then each song that would change is listed, field by field, from what it has to what the match says: what the song doesn't have yet is ticked, what it has is only replaced if you tick it. **Use 5 changes** saves what's ticked, each in its song's **History**, and links the songs to their matches. Nothing is saved before that.
+
 ## Bulk upload
 
 To fill a numbered songbook quickly, **Bulk upload** many ChordPro or PDF files at once. Each file is matched to a song by the number in its name (`0245.cho` or `JEM_0245.pdf` matches number 245). Check the matches, then **Confirm upload**. Two files with the same number are both marked as a conflict, each naming the other ("Same number as …"), and neither is uploaded. Only files of the kind chosen are matched (a PDF beside a ChordPro file isn't a conflict). System files, like macOS's `._0245.cho` copies or `.DS_Store`, are left out and only counted. A whole songbook can go at once: the files are sent a hundred at a time, and the button counts them ("Uploading 300 of 1199…"). Rather than choosing every file, choose **Or a whole folder**, or drop files or a folder on the box below: every file in it (and in its folders) is matched, and the other kinds are left out.

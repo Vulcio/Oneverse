@@ -4,6 +4,7 @@ import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { SONG_INFO_QUEUE } from "../jobs/jobs.constants.js";
 import { SongInfoProcessor, SongInfoService } from "./song-info.js";
+import { SongbookSongInfoService } from "./songbook-song-info.service.js";
 import { ArtworkModule } from "../artwork/artwork.module.js";
 import { ArtistsModule } from "../artists/artists.module.js";
 import { LookupsModule } from "../lookups/lookups.module.js";
@@ -22,7 +23,7 @@ import { SetlistAccessService } from "../setlists/setlist-access.service.js";
   imports: [BullModule.registerQueue({ name: SONG_INFO_QUEUE }), MusicBrainzModule, StorageModule, ArtworkModule, MetadataModule, ArtistsModule, LookupsModule],
   controllers: [SongVersionsController, SongUsageController, SongBinController, ChordShapesController, ProgressionsController],
   // SetlistAccessService: the songs that can go in a set, for its Add songs (issue #328).
-  providers: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService, SongBinService, SongInfoService, SongInfoProcessor],
-  exports: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService, SongInfoService],
+  providers: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService, SongBinService, SongInfoService, SongInfoProcessor, SongbookSongInfoService],
+  exports: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService, SongInfoService, SongbookSongInfoService],
 })
 export class SongVersionsModule {}

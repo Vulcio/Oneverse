@@ -5,6 +5,7 @@ import type { Job, Queue } from "bullmq";
 import { JOB_WORKER_OPTIONS, SONG_INFO_QUEUE } from "../jobs/jobs.constants.js";
 import { MetadataService } from "../metadata/metadata.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { SongbookSongInfoService } from "./songbook-song-info.service.js";
 import { SongVersionsService } from "./song-versions.service.js";
 
 export interface SongInfoJobData {
@@ -46,12 +47,18 @@ export class SongInfoProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     private readonly metadata: MetadataService,
     private readonly songs: SongVersionsService,
+    private readonly songbooks: SongbookSongInfoService,
   ) {
     super();
   }
 
-  async process(job: Job<SongInfoJobData>): Promise<SongInfoOutcome> {
-    const { songVersionId, authorUserId } = job.data;
+  async process(job: Job<SongInfoJobData | { refreshId: string }>): Promise<unknown> {
+    // A songbook's refresh (issue #353): its songs, one after another.
+    if ("refreshId" in job.data) return this.songbooks.run(job.data.refreshId);
+    return this.fill(job.data);
+  }
+
+  private async fill({ songVersionId, authorUserId }: SongInfoJobData): Promise<SongInfoOutcome> {
     const linked = await this.prisma.client.songVersionIdentifier.findFirst({ where: { songVersionId, type: "METADATA_MATCH" }, select: { id: true } });
     if (linked) return { outcome: "linked-already" };
     const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { id: true } });

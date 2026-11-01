@@ -120,3 +120,20 @@ export const SongbookEntrySearchQuerySchema = z.strictObject({
   addableTo: optional(z.string().max(100)).describe("Only songs that can go in this set, which you can change (issue #328: its Add songs); in a team's set, your own personal songs too, shared with the team as they're added (issue #331)"),
 });
 export type SongbookEntrySearchQuery = z.input<typeof SongbookEntrySearchQuerySchema>;
+
+const SONG_INFO_FIELD_NAMES = ["title", "artists", "writers", "album", "year", "isrc", "tempo", "duration", "artwork"] as const;
+
+/** A songbook's songs looked up again at the providers (issue #353): all of them, or those listed. */
+export const StartSongInfoRefreshSchema = z.strictObject({
+  songVersionIds: optional(z.array(z.string().min(1)).min(1).max(2000)).describe("Only these of its songs; left out, every song in it"),
+});
+export type StartSongInfoRefreshRequest = z.input<typeof StartSongInfoRefreshSchema>;
+
+/** What to use of a refresh (issue #353): per song, the fields ticked in its review. */
+export const ApplySongInfoRefreshSchema = z.strictObject({
+  songs: z
+    .array(z.strictObject({ songVersionId: z.string().min(1), fields: z.array(z.enum(SONG_INFO_FIELD_NAMES)).max(SONG_INFO_FIELD_NAMES.length) }))
+    .min(1)
+    .max(2000),
+});
+export type ApplySongInfoRefreshRequest = z.input<typeof ApplySongInfoRefreshSchema>;

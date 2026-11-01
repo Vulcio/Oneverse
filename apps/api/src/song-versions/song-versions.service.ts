@@ -1636,10 +1636,28 @@ export class SongVersionsService {
    * Worker calls it.
    */
   async fillFromMatch(id: string, match: MetadataMatch, authorUserId: string | null): Promise<SongInfoField[]> {
-    const fill = songInfoProposals(await this.songInfoOf(id), match).filter((p) => p.fillsEmpty && p.field !== "title" && p.field !== "artwork");
-    if (fill.length === 0) return [];
+    const fields = songInfoProposals(await this.songInfoOf(id), match)
+      .filter((p) => p.fillsEmpty && p.field !== "title" && p.field !== "artwork")
+      .map((p) => p.field);
+    return this.applyFromMatch(id, match, fields, authorUserId);
+  }
+
+  /**
+   * Writes the fields chosen of what `match` would change (issue #353: a
+   * songbook's refresh, reviewed), worked out against the song as it is
+   * now: one save in its history, credited to `authorUserId`. Writers
+   * chosen take the place of who it credited with writing it. The artwork
+   * isn't written here (see saveMetadataLink). Returns the fields written.
+   */
+  async applyFromMatch(id: string, match: MetadataMatch, fields: SongInfoField[], authorUserId: string | null): Promise<SongInfoField[]> {
+    const wanted = new Set(fields);
+    const chosen = songInfoProposals(await this.songInfoOf(id), match).filter((p) => wanted.has(p.field) && p.field !== "artwork");
+    if (chosen.length === 0) return [];
     const dto: Record<string, unknown> = {};
-    for (const { field, proposed } of fill) dto[field === "duration" ? "durationSeconds" : field] = proposed;
+    for (const { field, proposed } of chosen) {
+      dto[field === "duration" ? "durationSeconds" : field] = proposed;
+      if (field === "writers") Object.assign(dto, { composers: [], lyricists: [] });
+    }
     const change = dto as UpdateSongVersionDto;
     const prepared = await this.prepareUpdate(null, id, change);
     await this.prisma.client.$transaction(async (tx) => {
@@ -1647,7 +1665,7 @@ export class SongVersionsService {
       await this.writeUpdate(tx, null, id, change, prepared);
       await this.history.record(tx, id, { kind: "EDITED", authorUserId, before });
     });
-    return fill.map((p) => p.field);
+    return chosen.map((p) => p.field);
   }
 
   /** Unlinks it (and its MusicBrainz recording, and artist); the streaming links and image stay. */
