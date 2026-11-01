@@ -43,6 +43,7 @@ import { Route as ProtectedAdminInstrumentsRouteImport } from './routes/_protect
 import { Route as ProtectedAdminMetadataRouteImport } from './routes/_protected/admin/metadata'
 import { Route as ProtectedAdminNotificationsRouteImport } from './routes/_protected/admin/notifications'
 import { Route as ProtectedAdminOrganizationsRouteImport } from './routes/_protected/admin/organizations'
+import { Route as ProtectedAdminPluginsRouteImport } from './routes/_protected/admin/plugins'
 import { Route as ProtectedAdminRolesRouteImport } from './routes/_protected/admin/roles'
 import { Route as ProtectedAdminSecurityRouteImport } from './routes/_protected/admin/security'
 import { Route as ProtectedAdminStemSeparationRouteImport } from './routes/_protected/admin/stem-separation'
@@ -255,6 +256,11 @@ const ProtectedAdminOrganizationsRoute =
     path: '/organizations',
     getParentRoute: () => ProtectedAdminRoute,
   } as any)
+const ProtectedAdminPluginsRoute = ProtectedAdminPluginsRouteImport.update({
+  id: '/plugins',
+  path: '/plugins',
+  getParentRoute: () => ProtectedAdminRoute,
+} as any)
 const ProtectedAdminRolesRoute = ProtectedAdminRolesRouteImport.update({
   id: '/roles',
   path: '/roles',
@@ -497,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
   '/admin/organizations': typeof ProtectedAdminOrganizationsRoute
+  '/admin/plugins': typeof ProtectedAdminPluginsRoute
   '/admin/roles': typeof ProtectedAdminRolesRoute
   '/admin/security': typeof ProtectedAdminSecurityRoute
   '/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
@@ -568,6 +575,7 @@ export interface FileRoutesByTo {
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
   '/admin/organizations': typeof ProtectedAdminOrganizationsRoute
+  '/admin/plugins': typeof ProtectedAdminPluginsRoute
   '/admin/roles': typeof ProtectedAdminRolesRoute
   '/admin/security': typeof ProtectedAdminSecurityRoute
   '/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
@@ -643,6 +651,7 @@ export interface FileRoutesById {
   '/_protected/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/_protected/admin/notifications': typeof ProtectedAdminNotificationsRoute
   '/_protected/admin/organizations': typeof ProtectedAdminOrganizationsRoute
+  '/_protected/admin/plugins': typeof ProtectedAdminPluginsRoute
   '/_protected/admin/roles': typeof ProtectedAdminRolesRoute
   '/_protected/admin/security': typeof ProtectedAdminSecurityRoute
   '/_protected/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
@@ -718,6 +727,7 @@ export interface FileRouteTypes {
     | '/admin/metadata'
     | '/admin/notifications'
     | '/admin/organizations'
+    | '/admin/plugins'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/stem-separation'
@@ -789,6 +799,7 @@ export interface FileRouteTypes {
     | '/admin/metadata'
     | '/admin/notifications'
     | '/admin/organizations'
+    | '/admin/plugins'
     | '/admin/roles'
     | '/admin/security'
     | '/admin/stem-separation'
@@ -863,6 +874,7 @@ export interface FileRouteTypes {
     | '/_protected/admin/metadata'
     | '/_protected/admin/notifications'
     | '/_protected/admin/organizations'
+    | '/_protected/admin/plugins'
     | '/_protected/admin/roles'
     | '/_protected/admin/security'
     | '/_protected/admin/stem-separation'
@@ -1158,6 +1170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAdminOrganizationsRouteImport
       parentRoute: typeof ProtectedAdminRoute
     }
+    '/_protected/admin/plugins': {
+      id: '/_protected/admin/plugins'
+      path: '/plugins'
+      fullPath: '/admin/plugins'
+      preLoaderRoute: typeof ProtectedAdminPluginsRouteImport
+      parentRoute: typeof ProtectedAdminRoute
+    }
     '/_protected/admin/roles': {
       id: '/_protected/admin/roles'
       path: '/roles'
@@ -1437,6 +1456,7 @@ interface ProtectedAdminRouteChildren {
   ProtectedAdminMetadataRoute: typeof ProtectedAdminMetadataRoute
   ProtectedAdminNotificationsRoute: typeof ProtectedAdminNotificationsRoute
   ProtectedAdminOrganizationsRoute: typeof ProtectedAdminOrganizationsRoute
+  ProtectedAdminPluginsRoute: typeof ProtectedAdminPluginsRoute
   ProtectedAdminRolesRoute: typeof ProtectedAdminRolesRoute
   ProtectedAdminSecurityRoute: typeof ProtectedAdminSecurityRoute
   ProtectedAdminStemSeparationRoute: typeof ProtectedAdminStemSeparationRoute
@@ -1456,6 +1476,7 @@ const ProtectedAdminRouteChildren: ProtectedAdminRouteChildren = {
   ProtectedAdminMetadataRoute: ProtectedAdminMetadataRoute,
   ProtectedAdminNotificationsRoute: ProtectedAdminNotificationsRoute,
   ProtectedAdminOrganizationsRoute: ProtectedAdminOrganizationsRoute,
+  ProtectedAdminPluginsRoute: ProtectedAdminPluginsRoute,
   ProtectedAdminRolesRoute: ProtectedAdminRolesRoute,
   ProtectedAdminSecurityRoute: ProtectedAdminSecurityRoute,
   ProtectedAdminStemSeparationRoute: ProtectedAdminStemSeparationRoute,

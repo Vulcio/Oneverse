@@ -2,11 +2,14 @@
  * An image from a music provider - a song's artwork (issue #85) or an
  * artist's picture (#86) - downloaded by the server: only from Apple
  * Music's, Deezer's or Spotify's image hosts over HTTPS (and, in the e2e
- * suites, their stand-ins), still there after any redirect, and no bigger
+ * suites, their stand-ins) or a Song provider's own address (issue #157), still there after any redirect, and no bigger
  * than it may be. The one place the server fetches an address it was given
  * (issue #112: no SSRF).
  */
+import { fetch as guardedFetch } from "undici";
 import { PROVIDER_TIMEOUT_MS } from "../metadata/provider-timeout.js";
+import { songProviderImageRules } from "../plugins/song-provider/song-provider-sources.js";
+import { checkOutsideUrl, outsideDispatcher, type OutsideAddressRules } from "../security/outside-address.js";
 
 export const MAX_PROVIDER_IMAGE_BYTES = 5 * 1024 * 1024;
 const IMAGE_HOSTS = ["mzstatic.com", "dzcdn.net", "scdn.co"];
@@ -40,8 +43,18 @@ export async function fetchProviderImage(url: string): Promise<Buffer> {
   // refused like the address itself would be, and never requested.
   let res: Response | null = null;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    if (!isProviderImageUrl(url)) throw new ProviderImageError("Images come from Apple Music, Deezer or Spotify only");
-    res = await fetch(url, { signal, redirect: "manual" });
+    // Or a Song provider's own address (issue #157), under that server's rules: public unless the admin said otherwise.
+    let rules: OutsideAddressRules | null = null;
+    if (!isProviderImageUrl(url)) {
+      rules = await songProviderImageRules(url);
+      if (!rules) throw new ProviderImageError("Images come from Apple Music, Deezer, Spotify or a song provider only");
+      try {
+        checkOutsideUrl(url, rules);
+      } catch (error) {
+        throw new ProviderImageError(error instanceof Error ? error.message : String(error));
+      }
+    }
+    res = rules ? ((await guardedFetch(url, { signal, redirect: "manual", dispatcher: outsideDispatcher(rules) })) as unknown as Response) : await fetch(url, { signal, redirect: "manual" });
     const location = res.status >= 300 && res.status < 400 ? res.headers.get("location") : null;
     if (!location) break;
     await res.body?.cancel();

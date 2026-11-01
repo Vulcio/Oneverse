@@ -52,6 +52,7 @@ export default defineConfig({
             { slug: "versions" },
             { slug: "display" },
             { slug: "notes" },
+            { slug: "song-providers" },
           ],
         },
         {

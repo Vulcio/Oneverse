@@ -1,0 +1,1079 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Song provider API",
+    "version": "1.0.0",
+    "summary": "What a server answers so that Oneverse can look songs up in it.",
+    "description": "A server to this description can be added in Oneverse's Admin > Plugins > Song provider: Oneverse then asks it for song info (Auto detect), artwork, artists' pictures, and chords with lyrics (Find chords), for the hooks the admin chose among those it answers.\n\n- Oneverse calls it from its server: over HTTPS on a public address, unless the admin said it's on the same network. It never follows a redirect, reads at most 2 MB of an answer, and waits 8 seconds at most.\n- Answers are JSON. Fields Oneverse doesn't know are ignored, so a server can add its own; one that doesn't fit is refused as a whole, never guessed at.\n- Images (artwork, pictures) are downloaded by Oneverse's server only from this server's own address (same origin as the address the admin entered) or a music service's image host.\n- An example server, dependency-free, is in Oneverse's repository: examples/song-provider/server.mjs.",
+    "license": {
+      "name": "AGPL-3.0-only",
+      "identifier": "AGPL-3.0-only"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://songs.example.com",
+      "description": "The address an admin enters, without /v1 (with it works too)."
+    }
+  ],
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "paths": {
+    "/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities",
+        "summary": "Who it is and what it answers",
+        "description": "Asked when the server is added and on Test connection. A hook it doesn't list is never asked.",
+        "responses": {
+          "200": {
+            "description": "Its capabilities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No key, or not one it takes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "It doesn't have that.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests: Oneverse tries again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Anything else: said to the admin as this provider's error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/search": {
+      "post": {
+        "operationId": "search",
+        "summary": "Songs by title (and artist)",
+        "description": "For Auto detect, the artwork search and Find chords. Best matches first. For Find chords, only songs with `hasContent: true` are shown.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The songs found, possibly none.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No key, or not one it takes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "It doesn't have that.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests: Oneverse tries again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Anything else: said to the admin as this provider's error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/songs/{id}": {
+      "get": {
+        "operationId": "song",
+        "summary": "A song's details",
+        "description": "When a match is chosen in Auto detect, and with its chords and lyrics.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The provider's own ID for the song, as its search gave it.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The song.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Song"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No key, or not one it takes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "It doesn't have that.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests: Oneverse tries again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Anything else: said to the admin as this provider's error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/songs/{id}/content": {
+      "get": {
+        "operationId": "songContent",
+        "summary": "A song's chords and lyrics",
+        "description": "As ChordPro text, or as a SongDocument v2 (https://github.com/Vulcio/Oneverse/blob/main/docs/song-document-v2.md), which Oneverse checks as it checks a stored song. `rights` is shown to the person taking the chart.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The provider's own ID for the song, as its search gave it.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The chart.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Content"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No key, or not one it takes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "It doesn't have that.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests: Oneverse tries again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Anything else: said to the admin as this provider's error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/artists/picture": {
+      "get": {
+        "operationId": "artistPicture",
+        "summary": "An artist's picture",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "The artist's name, as songs credit them.",
+            "schema": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Its picture.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistPicture"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No key, or not one it takes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "It doesn't have that.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests: Oneverse tries again later.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Anything else: said to the admin as this provider's error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "The key the admin entered, if any: `Authorization: Bearer <key>`. Kept encrypted by Oneverse."
+      }
+    },
+    "schemas": {
+      "Capabilities": {
+        "type": "object",
+        "properties": {
+          "apiVersion": {
+            "type": "number",
+            "const": 1,
+            "description": "The version of this API it speaks: 1."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Its name, shown in Oneverse unless the admin gives it another."
+          },
+          "provides": {
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "songInfo",
+                "artwork",
+                "artistPictures",
+                "chords"
+              ]
+            },
+            "description": "What it answers: songInfo (search and songs/{id}), artwork (artworkUrl in its songs), artistPictures (artists/picture), chords (songs/{id}/content)."
+          },
+          "languages": {
+            "description": "The languages its songs are in, as BCP 47 tags (\"en\", \"fr\").",
+            "anyOf": [
+              {
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 20
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "homepage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "apiVersion",
+          "name",
+          "provides"
+        ]
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "artist": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "language": {
+            "description": "The language wanted, as a BCP 47 tag, when the person said.",
+            "type": "string",
+            "maxLength": 20
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "description": "At most this many songs; it may send fewer."
+          }
+        },
+        "required": [
+          "title",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "SongSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Its own ID for the song, used in /v1/songs/{id}."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "artists": {
+            "default": [],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "album": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "releaseDate": {
+            "description": "When it came out: 2019, 2019-04 or 2019-04-12.",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "description": "Its key as a chord name: G, Bb, F#m.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "thumbnailUrl": {
+            "description": "A small picture to show among results.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "artworkUrl": {
+            "description": "Its artwork, full size, on this server's own address or a music service's image host.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "description": "The song's page on its site, for people.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hasContent": {
+            "default": false,
+            "description": "Whether /v1/songs/{id}/content has its chords and lyrics.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "SearchResult": {
+        "type": "object",
+        "properties": {
+          "songs": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200,
+                  "description": "Its own ID for the song, used in /v1/songs/{id}."
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "artists": {
+                  "default": [],
+                  "maxItems": 20,
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  }
+                },
+                "album": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 300
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "releaseDate": {
+                  "description": "When it came out: 2019, 2019-04 or 2019-04-12.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "key": {
+                  "description": "Its key as a chord name: G, Bb, F#m.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 10
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "language": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 20
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "thumbnailUrl": {
+                  "description": "A small picture to show among results.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "artworkUrl": {
+                  "description": "Its artwork, full size, on this server's own address or a music service's image host.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "url": {
+                  "description": "The song's page on its site, for people.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "format": "uri"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "hasContent": {
+                  "default": false,
+                  "description": "Whether /v1/songs/{id}/content has its chords and lyrics.",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "title"
+              ]
+            }
+          }
+        },
+        "required": [
+          "songs"
+        ]
+      },
+      "Song": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Its own ID for the song, used in /v1/songs/{id}."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "artists": {
+            "default": [],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "album": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "releaseDate": {
+            "description": "When it came out: 2019, 2019-04 or 2019-04-12.",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "description": "Its key as a chord name: G, Bb, F#m.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "thumbnailUrl": {
+            "description": "A small picture to show among results.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "artworkUrl": {
+            "description": "Its artwork, full size, on this server's own address or a music service's image host.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "description": "The song's page on its site, for people.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hasContent": {
+            "default": false,
+            "description": "Whether /v1/songs/{id}/content has its chords and lyrics.",
+            "type": "boolean"
+          },
+          "writers": {
+            "default": [],
+            "description": "Who wrote it.",
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "isrc": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}-?[A-Z0-9]{3}-?\\d{2}-?\\d{5}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ccli": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{1,10}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tempo": {
+            "description": "Beats per minute.",
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 400
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeSignature": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{1,2}\\/\\d{1,2}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "durationSeconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 86400
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "copyright": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "links": {
+            "default": [],
+            "description": "Where to listen: YouTube, Spotify, Apple Music or Deezer addresses.",
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 2000,
+              "format": "uri"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "Content": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "format": {
+                "type": "string",
+                "const": "chordpro"
+              },
+              "content": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200000,
+                "description": "The chart as ChordPro."
+              },
+              "copyright": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rights": {
+                "description": "What people may do with it, shown to them as written.",
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "format",
+              "content"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "format": {
+                "type": "string",
+                "const": "song-document/v2"
+              },
+              "content": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {},
+                "description": "A SongDocument v2: docs/song-document-v2.md in Oneverse's repository."
+              },
+              "copyright": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rights": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "format",
+              "content"
+            ]
+          }
+        ]
+      },
+      "ArtistPicture": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "format": "uri"
+          },
+          "pageUrl": {
+            "description": "The artist's page, credited under the picture.",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "unauthorized",
+                  "not-found",
+                  "throttled",
+                  "invalid",
+                  "error"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+    }
+  }
+}

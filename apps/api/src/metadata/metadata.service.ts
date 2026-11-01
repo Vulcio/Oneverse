@@ -19,6 +19,8 @@ import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import { artworkAtSize, itunesLookup, itunesSearch, type ITunesSong } from "../artwork/itunes.js";
 import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { SongProviderService } from "../plugins/song-provider/song-provider.service.js";
+import { readyHooks } from "../plugins/song-provider/song-provider-sources.js";
 import { deezerArtistPicture } from "../artists/artist-sources.js";
 import { appleMusicArtistPicture, appleMusicSearch, appleMusicSong, musicKitKeyProblem, type AppleMusicAuth, type MusicKitCredentials } from "./apple-music-api.js";
 import { deezerSearch, deezerTrack } from "./deezer.provider.js";
@@ -163,6 +165,7 @@ export class MetadataService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly musicBrainz: MusicBrainzService,
+    private readonly songProviders: SongProviderService,
   ) {}
 
   /**
@@ -180,7 +183,11 @@ export class MetadataService {
     const musicbrainz = row?.musicbrainzContact
       ? { contact: row.musicbrainzContact, source: "database" as const }
       : { contact: envContact || "https://songverse.one", source: envContact ? ("env" as const) : ("default" as const) };
+    // The Song provider plugin (issue #157): ready for what one of its servers is asked for.
+    const songProviderHooks = await readyHooks();
     const ready = (key: MetadataProviderKey): ProviderCapabilities => {
+      if (key === "song_providers")
+        return { songInfo: songProviderHooks.has("songInfo"), artwork: songProviderHooks.has("artwork"), artistPictures: songProviderHooks.has("artistPictures"), artistBios: false };
       const all = key !== "spotify" || spotify.source !== "none";
       const pictures = key === "apple_music" ? appleMusic.source !== "none" : all;
       return { songInfo: all, artwork: all, artistPictures: pictures, artistBios: all };
@@ -555,8 +562,10 @@ export class MetadataService {
     return match;
   }
 
-  private async searchOne(provider: MetadataProviderKey, title: string, artist?: string | null): Promise<ProviderMatch[]> {
+  private async searchOne(provider: MetadataProviderKey, title: string, artist?: string | null, wanted: "songInfo" | "artwork" = "songInfo"): Promise<ProviderMatch[]> {
     switch (provider) {
+      case "song_providers":
+        return this.songProviders.searchMatches(wanted, title, artist);
       case "musicbrainz":
         return this.musicBrainz.searchMatches(title, artist);
       case "apple_music": {
@@ -578,6 +587,8 @@ export class MetadataService {
 
   private async lookupOne(provider: MetadataProviderKey, id: string): Promise<ProviderMatch | null> {
     switch (provider) {
+      case "song_providers":
+        return this.songProviders.lookupMatch(id);
       case "musicbrainz":
         return this.musicBrainz.match(id);
       case "apple_music": {
@@ -618,7 +629,7 @@ export class MetadataService {
    */
   async artworkSearch(title: string, artist: string | null): Promise<{ candidates: ArtworkCandidate[]; failed: MetadataProviderKey[]; asked: number }> {
     const order = await this.providersFor("artwork");
-    const settled = await Promise.allSettled(order.map((provider) => withTimeout(this.searchOne(provider, title, artist), provider)));
+    const settled = await Promise.allSettled(order.map((provider) => withTimeout(this.searchOne(provider, title, artist, "artwork"), provider)));
     const seen = new Set<string>();
     const candidates: ArtworkCandidate[] = [];
     const failed: MetadataProviderKey[] = [];
@@ -661,7 +672,9 @@ export class MetadataService {
               ? await this.spotifyCredentials().then((credentials) => credentials && spotifyArtistPicture(name, credentials))
               : provider === "apple_music"
                 ? await this.appleMusicAuth().then(async (auth) => auth && appleMusicArtistPicture(name, await this.storefront(), auth))
-                : null;
+                : provider === "song_providers"
+                  ? await this.songProviders.artistPicture(name)
+                  : null;
         if (found) return { found: { provider, ...found }, failed };
       } catch (err) {
         failed.push(provider);

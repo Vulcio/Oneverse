@@ -642,6 +642,23 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                   onFormatChange={(format) => updateForm((current) => withContent(current, current.content, format))}
                   sourceFile={sourceFile}
                   onSourceFile={setSourceFile}
+                  find={{
+                    title: form.title,
+                    artist: form.artists[0],
+                    language: form.language || undefined,
+                    // What the provider says of the song, where the form has nothing yet.
+                    onDetails: (chart) =>
+                      updateForm((current) => ({
+                        ...current,
+                        key: current.key || chart.key || "",
+                        tempo: current.tempo || (chart.tempo ? String(Math.round(chart.tempo)) : ""),
+                        timeSignature: current.timeSignature || chart.timeSignature || "",
+                        ccli: current.ccli || chart.ccli || "",
+                        copyright: current.copyright || chart.copyright || "",
+                        artists: current.artists.length ? current.artists : chart.artists,
+                        writers: current.writers.length || current.composers.length || current.lyricists.length ? current.writers : chart.writers,
+                      })),
+                  }}
                 />
               </CardContent>
             </Card>
@@ -923,6 +940,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       <ReplaceChartDialog
         open={replacing}
         onOpenChange={setReplacing}
+        song={{ title: form.title, artist: form.artists[0], language: form.language || undefined }}
         onReplace={(content, format, file) => {
           updateForm((current) => withContent(current, content, format));
           if (file) setSourceFile(file);

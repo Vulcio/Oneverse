@@ -108,7 +108,7 @@ A part with no words - an intro, an instrumental - can be written in bars: `| G 
 
 ## Replacing the chart
 
-The toolbar's **Replace from a file or paste…** reads a new chart in for the whole song: upload a file (`.cho`, `.txt` or `.pdf`) or paste the words and chords, then **Replace the chart**. What stays the same keeps its place - linked copies, [versions](/versions/) and recordings' sections follow it - and **Discard changes** puts the old chart back until you save. (A new song gets its chart on **Song info** instead.)
+The toolbar's **Replace from a file or paste…** reads a new chart in for the whole song: upload a file (`.cho`, `.txt` or `.pdf`), paste the words and chords, or take a chart from a song provider with **Find chords** where one is connected (see [Song providers](/song-providers/)), then **Replace the chart**. What stays the same keeps its place - linked copies, [versions](/versions/) and recordings' sections follow it - and **Discard changes** puts the old chart back until you save. (A new song gets its chart on **Song info** instead.)
 
 ## Saving
 

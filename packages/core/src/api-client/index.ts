@@ -74,6 +74,8 @@ import type {
 import type { CreateSongbookRequest, UpdateSongbookRequest } from "../requests/songbooks.js";
 import type { CreateSongVersionRequest, LinkRepeatsRequest, RepeatsBackfillRequest, SongSort, UpdateSongVersionRequest } from "../requests/songs.js";
 import type { SongChange, SongSnapshot } from "../song-history/index.js";
+import type { SongProviderSourceInput, SongProviderSourceUpdate } from "../requests/plugins.js";
+import type { SongProviderHook } from "../song-provider/index.js";
 
 export interface ApiClientOptions {
   baseUrl: string;
@@ -1090,6 +1092,64 @@ export interface AdminTeamSummary {
 export interface CollaborationSettingsSummary {
   source: "database" | "env" | "none";
   settings: { liveCoEditing: SecuritySetting<boolean> };
+}
+
+/** A Song provider plugin's server (issue #157), as Admin > Plugins shows it: its key is never sent back. */
+export interface SongProviderSourceSummary {
+  id: string;
+  name: string;
+  apiUrl: string;
+  hasApiKey: boolean;
+  allowPrivate: boolean;
+  hooks: SongProviderHook[];
+  provides: SongProviderHook[];
+  enabled: boolean;
+  lastError: string | null;
+  checkedAt: string | null;
+}
+
+/** A plugin in Admin > Plugins (issue #157): for 1.0, the built-in ones. */
+export interface PluginSummary {
+  id: string;
+  version: string;
+  label: string;
+  description: string;
+  provides: string[];
+  docsPath: string;
+  builtIn: true;
+  enabled: boolean;
+  source: "database" | "env" | "default";
+  sources?: SongProviderSourceSummary[];
+}
+
+export interface PluginsSummary {
+  plugins: PluginSummary[];
+  /** Whether SETTINGS_ENCRYPTION_KEY is set: without it, servers' keys can't be saved. */
+  encryptionKey: boolean;
+}
+
+/** Find chords (issue #157): a song with chords and lyrics at a Song provider. */
+export interface ChordSearchResult {
+  providerId: string;
+  providerName: string;
+  id: string;
+  title: string;
+  artists: string[];
+  key: string | null;
+  language: string | null;
+  thumbnailUrl: string | null;
+  url: string | null;
+}
+
+/** A chosen song's chart, as ChordPro, with what its provider says of it. */
+export interface ChordContent extends Omit<ChordSearchResult, "thumbnailUrl" | "language"> {
+  writers: string[];
+  tempo: number | null;
+  timeSignature: string | null;
+  ccli: string | null;
+  copyright: string | null;
+  rights: string | null;
+  content: string;
 }
 
 /** Admin > Backups (issue #119): where the server's backups go, when, and the last runs. */
@@ -3622,6 +3682,24 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     setOrganizationTeamRoles: (organizationId: string, teamId: string, data: AssignRolesRequest) =>
       request<void>(`/organizations/${encodeURIComponent(organizationId)}/teams/${encodeURIComponent(teamId)}/roles`, { method: "PUT", body: JSON.stringify(data) }),
     adminGetCollaborationSettings: () => request<CollaborationSettingsSummary>("/admin/collaboration"),
+    /** Admin > Plugins (issue #157). */
+    adminGetPlugins: () => request<PluginsSummary>("/admin/plugins"),
+    adminSetPluginEnabled: (id: string, enabled: boolean) => request<PluginsSummary>(`/admin/plugins/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ enabled }) }),
+    adminResetPlugin: (id: string) => request<PluginsSummary>(`/admin/plugins/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    adminAddSongProvider: (data: SongProviderSourceInput) => request<PluginsSummary>("/admin/plugins/song-provider/sources", { method: "POST", body: JSON.stringify(data) }),
+    adminUpdateSongProvider: (id: string, data: SongProviderSourceUpdate) =>
+      request<PluginsSummary>(`/admin/plugins/song-provider/sources/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
+    adminRemoveSongProvider: (id: string) => request<PluginsSummary>(`/admin/plugins/song-provider/sources/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    adminReorderSongProviders: (ids: string[]) => request<PluginsSummary>("/admin/plugins/song-provider/order", { method: "PUT", body: JSON.stringify({ ids }) }),
+    adminTestSongProvider: (id: string) =>
+      request<{ ok: boolean; message: string; source: SongProviderSourceSummary }>(`/admin/plugins/song-provider/sources/${encodeURIComponent(id)}/test`, { method: "POST" }),
+    /** Find chords (issue #157): whether there's anywhere to look, the search, a chosen song's chart. */
+    getChordSources: () => request<{ available: boolean; providers: string[] }>("/plugins/chords"),
+    searchChords: (query: { title: string; artist?: string; language?: string }) =>
+      request<{ results: ChordSearchResult[]; unavailable: string[] }>(
+        `/plugins/chords/search?${new URLSearchParams(Object.entries(query).filter((entry): entry is [string, string] => !!entry[1]))}`,
+      ),
+    getChordContent: (providerId: string, songId: string) => request<ChordContent>(`/plugins/chords/${encodeURIComponent(providerId)}/songs/${encodeURIComponent(songId)}`),
     adminSaveCollaborationSettings: (data: SaveCollaborationSettingsRequest) => request<void>("/admin/collaboration", { method: "PUT", body: JSON.stringify(data) }),
     adminClearCollaborationSettings: () => request<void>("/admin/collaboration", { method: "DELETE" }),
     adminGetBackups: () => request<BackupSummary>("/admin/backups"),

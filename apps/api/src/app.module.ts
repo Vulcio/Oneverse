@@ -1,6 +1,7 @@
 import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { PluginsModule } from "./plugins/plugins.module.js";
 import { APP_GUARD } from "@nestjs/core";
 import { AdminModule } from "./admin/admin.module.js";
 import { ArrangementsModule } from "./arrangements/arrangements.module.js";
@@ -59,6 +60,7 @@ import { LookupsModule } from "./lookups/lookups.module.js";
       }),
     }),
     PrismaModule,
+    PluginsModule,
     BackupsModule,
     ArchivesModule,
     OwnStorageModule,

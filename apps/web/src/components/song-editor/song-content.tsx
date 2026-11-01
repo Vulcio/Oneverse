@@ -9,6 +9,8 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { formatBytes } from "#/lib/format-bytes";
 import { pdfTextItems } from "#/lib/pdf-text";
 import { isPdf } from "./attachment-types";
+import { FindChords } from "./find-chords";
+import type { ChordContent } from "@oneverse/core";
 
 export const SOURCE_FILE_ACCEPT = ".cho,.chordpro,.chopro,.crd,.pro,.txt,.pdf,text/plain,application/pdf";
 const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
@@ -144,6 +146,7 @@ export function SongContentCard({
   onFormatChange,
   sourceFile,
   onSourceFile,
+  find,
 }: {
   content: string;
   format: SupportedImportFormat | null;
@@ -151,6 +154,8 @@ export function SongContentCard({
   onFormatChange: (format: SupportedImportFormat | null) => void;
   sourceFile: SourceFile | null;
   onSourceFile: (file: SourceFile | null) => void;
+  /** Find chords at the song providers (issue #157): the song looked for, and what to do with a chart's details. */
+  find?: { title: string; artist?: string; language?: string; onDetails?: (chart: ChordContent) => void };
 }) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -190,6 +195,19 @@ export function SongContentCard({
 
   return (
     <div className="flex flex-col gap-4">
+      {find ? (
+        <FindChords
+          title={find.title}
+          artist={find.artist}
+          language={find.language}
+          onChart={(chart) => {
+            onContentChange(chart.content);
+            onFormatChange("CHORDPRO");
+            onSourceFile(null);
+            find.onDetails?.(chart);
+          }}
+        />
+      ) : null}
       <div
         className={cn(
           "flex flex-col items-center gap-2 rounded-lg border border-dashed p-4 text-center text-sm transition-colors",

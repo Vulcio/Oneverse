@@ -18,7 +18,8 @@
     "lint": "vp lint src --deny-warnings",
     "type-check": "tsc --noEmit",
     "test": "vp test",
-    "conformance": "tsc -p tsconfig.json && node scripts/conformance.mjs"
+    "conformance": "tsc -p tsconfig.json && node scripts/conformance.mjs",
+    "song-provider-api": "tsc -p tsconfig.json && node scripts/song-provider-api.mjs"
   },
   "dependencies": {
     "zod": "^4.6.5",

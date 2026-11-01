@@ -56,7 +56,7 @@ check("another one chosen", r.status === 204 && chosen.imageUrl && chosen.imageU
 r = await call(owner, "PUT", `/song-versions/${song.id}/artwork`, { url: "https://evil.example.com/cover.png" });
 check("only from Apple Music", r.status === 400, String(r.status));
 r = await call(owner, "PUT", `/song-versions/${song.id}/artwork`, { url: candidates[1].artworkUrl.replace(/\/art\/.*$/, "/art/elsewhere.png") });
-check("nor from where an image host sends it (issue #112), not even asked", r.status === 400 && /Apple Music, Deezer or Spotify/.test(r.body?.message) && imageHost.internalHits === 0, `${JSON.stringify(r.body)} ${imageHost.internalHits}`);
+check("nor from where an image host sends it (issue #112), not even asked", r.status === 400 && /Apple Music, Deezer, Spotify or a song provider/.test(r.body?.message) && imageHost.internalHits === 0, `${JSON.stringify(r.body)} ${imageHost.internalHits}`);
 r = await call(owner, "PUT", `/song-versions/${song.id}/artwork`, { url: candidates[1].artworkUrl.replace(/\/art\/.*$/, "/art/huge.png") });
 check("nor an image over 5 MB", r.status === 400 && /too big/.test(r.body?.message), JSON.stringify(r.body));
 // Shared with someone to view: they see it, can't change it.

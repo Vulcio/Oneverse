@@ -3719,3 +3719,40 @@ model SongInfoRefresh {
 
   @@index([songbookId, createdAt])
 }
+
+// Plugins (issue #157): what Oneverse can be extended with - song info,
+// artwork, artists' pictures, chords and lyrics from outside sources. For
+// 1.0 only built-in plugins exist (brice, 2026-11-01): this row holds
+// whether one is on and its settings; plugins installed from elsewhere
+// come later and will keep their code here too. Off until an admin turns
+// it on.
+model Plugin {
+  id        String   @id
+  enabled   Boolean  @default(false)
+  settings  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// A server speaking the Song provider API (issue #157,
+// docs/song-provider-api.yaml), called by the built-in Song provider
+// plugin: added in Admin > Plugins, its key encrypted at rest, asked for
+// the hooks chosen here among those it says it answers.
+model SongProviderSource {
+  id           String    @id @default(cuid())
+  name         String
+  apiUrl       String
+  apiKeyEnc    String?
+  // On the same network as Oneverse: private and local addresses, and plain http://, allowed.
+  allowPrivate Boolean   @default(false)
+  // What it's asked for: songInfo, artwork, artistPictures, chords.
+  hooks        String[]  @default([])
+  // What it said it answers when last checked.
+  provides     String[]  @default([])
+  enabled      Boolean   @default(true)
+  position     Int       @default(0)
+  lastError    String?
+  checkedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}

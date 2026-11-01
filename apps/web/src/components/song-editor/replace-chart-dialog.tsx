@@ -15,10 +15,13 @@ export function ReplaceChartDialog({
   open,
   onOpenChange,
   onReplace,
+  song,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onReplace: (content: string, format: SupportedImportFormat | null, file: SourceFile | null) => void;
+  /** The song, for Find chords (issue #157). */
+  song?: { title: string; artist?: string; language?: string };
 }) {
   const { t } = useTranslation();
   const [content, setContent] = useState("");
@@ -39,7 +42,7 @@ export function ReplaceChartDialog({
           <DialogTitle>{t("structuredEditor.replaceTitle")}</DialogTitle>
           <DialogDescription>{t("structuredEditor.replaceDescription")}</DialogDescription>
         </DialogHeader>
-        <SongContentCard content={content} format={format} onContentChange={setContent} onFormatChange={setFormat} sourceFile={file} onSourceFile={setFile} />
+        <SongContentCard content={content} format={format} onContentChange={setContent} onFormatChange={setFormat} sourceFile={file} onSourceFile={setFile} find={song} />
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => close(false)}>
             {t("songEditor.cancel")}

@@ -26,6 +26,8 @@ const PAGES: [RegExp, string][] = [
   [/^\/organizations/, "organizations"],
   [/^\/join-organization/, "organizations"],
   [/^\/calendar/, "teams"],
+  // Admin > Plugins (issue #157): the Song provider plugin's page.
+  [/^\/admin\/plugins/, "song-providers"],
   [/^\/(admin|review)/, "admin"],
   [/^\/dashboard/, "account"],
   [/^\/notifications/, "account"],

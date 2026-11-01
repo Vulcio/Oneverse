@@ -6,7 +6,7 @@ import { z } from "zod";
  * answers in the same shape; the same release found by several is one
  * match, listing them all as its sources.
  */
-export const METADATA_PROVIDERS = ["musicbrainz", "apple_music", "deezer", "spotify"] as const;
+export const METADATA_PROVIDERS = ["musicbrainz", "apple_music", "deezer", "spotify", "song_providers"] as const;
 export type MetadataProviderKey = (typeof METADATA_PROVIDERS)[number];
 
 export const METADATA_PROVIDER_NAMES: Record<MetadataProviderKey, string> = {
@@ -14,6 +14,8 @@ export const METADATA_PROVIDER_NAMES: Record<MetadataProviderKey, string> = {
   apple_music: "Apple Music",
   deezer: "Deezer",
   spotify: "Spotify",
+  /** The built-in Song provider plugin (issue #157): the outside servers an admin added in Admin > Plugins. */
+  song_providers: "Song providers",
 };
 
 /**
@@ -30,13 +32,16 @@ export const PROVIDER_CAPABILITIES: Record<MetadataProviderKey, readonly Metadat
   apple_music: ["songInfo", "artwork", "artistPictures"],
   deezer: ["songInfo", "artwork", "artistPictures"],
   spotify: ["songInfo", "artwork", "artistPictures"],
+  song_providers: ["songInfo", "artwork", "artistPictures"],
 };
 
 export const MetadataSourceSchema = z.object({
   provider: z.enum(METADATA_PROVIDERS),
-  /** The provider's own ID: a MusicBrainz recording MBID, an Apple Music or Deezer track ID. */
-  id: z.string().min(1).max(100),
+  /** The provider's own ID: a MusicBrainz recording MBID, an Apple Music or Deezer track ID; a Song provider's "<provider>:<song>" (issue #157). */
+  id: z.string().min(1).max(250),
   url: z.string().url(),
+  /** Its own name, where the provider key covers several (a Song provider's, issue #157). */
+  name: z.string().max(100).optional(),
 });
 export type MetadataSource = z.infer<typeof MetadataSourceSchema>;
 
@@ -64,7 +69,7 @@ export const MetadataMatchSchema = z.object({
 export type MetadataMatch = z.infer<typeof MetadataMatchSchema>;
 
 /** A match chosen in Auto detect (issue #22): its sources, looked up again. The request POST /song-versions/:id/metadata takes. */
-const chosenSources = z.array(z.strictObject(MetadataSourceSchema.pick({ provider: true, id: true }).shape)).min(1).max(METADATA_PROVIDERS.length);
+const chosenSources = z.array(z.strictObject(MetadataSourceSchema.pick({ provider: true, id: true }).shape)).min(1).max(METADATA_PROVIDERS.length + 10);
 
 export const LinkMetadataSchema = z.strictObject({
   sources: chosenSources,

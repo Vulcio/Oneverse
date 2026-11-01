@@ -42,12 +42,12 @@ check("Deezer down: the others' matches, and Deezer named", r.status === 200 && 
 // --- the admin's settings (a list saved with issue #22's `enabled` is song info, issue #89)
 let settings = await api(admin, "GET", "/admin/metadata");
 const songInfo = (list) => list.providers.map((p) => `${p.key}:${p.capabilities.songInfo}`).join();
-check("all of them, in the default order", settings.source === "default" && songInfo(settings) === "musicbrainz:true,apple_music:true,deezer:true,spotify:true", JSON.stringify(settings));
+check("all of them, in the default order", settings.source === "default" && songInfo(settings) === "musicbrainz:true,apple_music:true,deezer:true,spotify:true,song_providers:true", JSON.stringify(settings));
 check("Spotify can't be asked without its app", settings.providers.find((p) => p.key === "spotify").ready.songInfo === false);
 check("admins only", (await call(owner, "GET", "/admin/metadata")).status === 403 && (await call(owner, "PUT", "/admin/metadata", { providers: [] })).status === 403);
 check("no unknown provider", (await call(admin, "PUT", "/admin/metadata", { providers: [{ key: "napster", enabled: true }] })).status === 400);
 settings = await api(admin, "PUT", "/admin/metadata", { providers: [{ key: "deezer", enabled: true }, { key: "musicbrainz", enabled: false }] });
-check("saved: Deezer first, MusicBrainz off, those left out added off", settings.source === "database" && songInfo(settings) === "deezer:true,musicbrainz:false,apple_music:false,spotify:false", JSON.stringify(settings));
+check("saved: Deezer first, MusicBrainz off, those left out added off", settings.source === "database" && songInfo(settings) === "deezer:true,musicbrainz:false,apple_music:false,spotify:false,song_providers:false", JSON.stringify(settings));
 ({ matches } = (await search(owner)).body);
 check("only Deezer asked", matches.length > 0 && matches.every((m) => m.sources.every((s) => s.provider === "deezer")), matches.map(describe).join(" | "));
 settings = await api(admin, "PUT", "/admin/metadata", { providers: [{ key: "deezer", enabled: true }, { key: "apple_music", enabled: true }, { key: "musicbrainz", enabled: true }] });

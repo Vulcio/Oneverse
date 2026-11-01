@@ -8,6 +8,7 @@ import {
   Guitar,
   Handshake,
   BookMarked,
+  Puzzle,
   BookOpen,
   ChevronRight,
   ChevronsUpDown,
@@ -598,6 +599,7 @@ function AdminNav({ pathname }: { pathname: string }) {
     { to: "/admin/catalogs" as const, label: t("nav.adminCatalogs"), icon: FileStack },
     { to: "/admin/metadata" as const, label: t("nav.adminMetadata"), icon: LayoutDashboard },
     { to: "/admin/bibles" as const, label: t("nav.adminBibles"), icon: BookMarked },
+    { to: "/admin/plugins" as const, label: t("nav.adminPlugins"), icon: Puzzle },
   ];
 
   return (

@@ -12,6 +12,7 @@ import {
   Guitar,
   Handshake,
   BookMarked,
+  Puzzle,
   BookOpen,
   ChevronLeft,
   Check,
@@ -269,6 +270,7 @@ function SectionPanel({
           { to: "/admin/catalogs", label: t("nav.adminCatalogs"), icon: <FileStack /> },
           { to: "/admin/metadata", label: t("nav.adminMetadata"), icon: <LayoutDashboard /> },
           { to: "/admin/bibles", label: t("nav.adminBibles"), icon: <BookMarked /> },
+          { to: "/admin/plugins", label: t("nav.adminPlugins"), icon: <Puzzle /> },
           { to: "/library", label: t("nav.backToApp"), icon: <ArrowLeft /> },
         ]}
         footer={<AdminVersion className="mt-auto" />}
@@ -963,7 +965,7 @@ function PeoplePanel({ title }: { title: string }) {
   );
 }
 
-function LinksPanel({ title, pathname, links, footer }: { title: string; pathname: string; footer?: ReactNode; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles"; label: string; icon: ReactNode }[] }) {
+function LinksPanel({ title, pathname, links, footer }: { title: string; pathname: string; footer?: ReactNode; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/storage" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles" | "/admin/plugins"; label: string; icon: ReactNode }[] }) {
   return (
     <>
       <PanelHeader title={title} />

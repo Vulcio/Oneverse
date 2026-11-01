@@ -107,7 +107,7 @@ await step("the admin's providers: reordered, one off, reverted", async () => {
   await card.getByText("Currently using: settings saved here.").waitFor();
   const settings = await api(me, "GET", "/admin/metadata");
   const order = settings.providers.map((p) => `${p.key}:${p.capabilities.songInfo}:${p.capabilities.artwork}`).join();
-  if (order !== "deezer:true:false,musicbrainz:false:false,apple_music:true:true,spotify:true:true") throw new Error(order);
+  if (order !== "deezer:true:false,musicbrainz:false:false,apple_music:true:true,spotify:true:true,song_providers:true:true") throw new Error(order);
   await card.getByRole("button", { name: "Revert to environment variables" }).click();
   await card.getByRole("button", { name: "Revert", exact: true }).click();
   await card.getByText("Currently using: the defaults").waitFor();

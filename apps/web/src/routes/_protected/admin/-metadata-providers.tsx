@@ -107,7 +107,7 @@ export function MetadataProvidersCard() {
                           onChange={(event) => toggle(provider.key, capability, event.target.checked)}
                         />
                         {t(`metadataProviders.capability_${capability}`)}
-                        {!provider.ready[capability] ? <span className="text-xs text-muted-foreground">({t("metadataProviders.needsKey")})</span> : null}
+                        {!provider.ready[capability] ? <span className="text-xs text-muted-foreground">({t(provider.key === "song_providers" ? "metadataProviders.needsServer" : "metadataProviders.needsKey")})</span> : null}
                       </label>
                     ))}
                   </div>
