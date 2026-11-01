@@ -52,6 +52,19 @@ try {
     await page.getByTestId("bulk-upload-conflicts-with").first().getByText("Same number as bb001 copy.chordpro").waitFor();
   });
 
+  await step("a whole folder (issue #40): its files and its folders' files, other kinds left out", async () => {
+    const folder = path.join(SP, `bulk-folder-${stamp}`);
+    mkdirSync(path.join(folder, "more"), { recursive: true });
+    writeFileSync(path.join(folder, "bb002.chordpro"), "{title: two}\n");
+    writeFileSync(path.join(folder, "more", "bb003.chordpro"), "{title: three}\n");
+    writeFileSync(path.join(folder, "notes.pdf"), "%PDF-1.4\n");
+    await page.setInputFiles("#bulk-upload-folder", folder);
+    await page.locator('[data-testid="bulk-upload-row"][data-status="MATCHED"]').nth(1).waitFor();
+    const matched = await page.locator('[data-testid="bulk-upload-row"][data-status="MATCHED"]').count();
+    const rows = await page.locator('[data-testid="bulk-upload-row"]').allInnerTexts();
+    if (matched !== 2 || !rows.some((row) => row.includes("notes.pdf") && row.includes("left out"))) throw new Error(rows.join(" | "));
+  });
+
   await step(`${COUNT} files: sent in batches, every one queued`, async () => {
     await page.setInputFiles("#bulk-upload-files", files);
     await page.locator('[data-testid="bulk-upload-row"][data-status="MATCHED"]').nth(COUNT - 1).waitFor();

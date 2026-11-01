@@ -15,12 +15,14 @@ import {
   songDocumentFromSections,
   songDocumentFromText,
   songFromText,
+  songInfoProposals,
+  type SongInfoCurrent,
+  type SongInfoField,
   songToChordPro,
   splitNames,
   type CatalogEntryData,
   type MetadataMatch,
   type MetadataSource,
-  type MusicBrainzRecordingMatch,
   type SongbookSection,
   type SongDefaultsV2,
   type SongDocumentV2,
@@ -41,7 +43,7 @@ import {
   type SectionProgression,
 } from "@oneverse/core";
 import type { ContributorRole, Prisma, VersionRelationshipType } from "@oneverse/db";
-import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";
+import { recordingAsMatch } from "./metadata-match-backfill.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService, OPEN_SUBMISSION_STATES } from "../access/access-policy.service.js";
@@ -474,7 +476,6 @@ export class SongVersionsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly musicBrainz: MusicBrainzService,
     private readonly access: AccessPolicyService,
     private readonly history: SongHistoryService,
     private readonly storage: StorageService,
@@ -1351,13 +1352,14 @@ export class SongVersionsService {
   }
 
   /** Checks an update and works out its chart, before it's written. */
-  private async prepareUpdate(user: AuthenticatedUser, id: string, dto: UpdateSongVersionDto) {
+  /** `user` is null for the Worker's own changes (issue #352), which never touch tags. */
+  private async prepareUpdate(user: AuthenticatedUser | null, id: string, dto: UpdateSongVersionDto) {
     const existing = await this.prisma.client.songVersion.findUnique({
       where: { id },
       select: { documentJson: true },
     });
     if (!existing) throw new NotFoundException("Song version not found");
-    if (dto.tagIds) await this.assertTagsUsable(user, dto.tagIds);
+    if (dto.tagIds && user) await this.assertTagsUsable(user, dto.tagIds);
 
     const previous = readSongDocument(existing.documentJson);
     if (dto.revision !== undefined && dto.revision !== previous.revision) throw staleRevision();
@@ -1380,7 +1382,7 @@ export class SongVersionsService {
   /** Writes a prepared update: undefined leaves a column alone; null clears it. */
   private async writeUpdate(
     tx: Prisma.TransactionClient,
-    user: AuthenticatedUser,
+    user: AuthenticatedUser | null,
     id: string,
     dto: UpdateSongVersionDto,
     { stored, documentJson }: Awaited<ReturnType<SongVersionsService["prepareUpdate"]>>,
@@ -1407,7 +1409,7 @@ export class SongVersionsService {
       },
     });
     await replaceCredits(tx, id, creditListsFrom(dto));
-    if (dto.tagIds) {
+    if (dto.tagIds && user) {
       const tagIds = [...new Set(dto.tagIds)];
       // Others' own tags on the song (a catalogue song's contributor's, #73) aren't this user's to remove.
       await tx.songVersionTag.deleteMany({
@@ -1561,10 +1563,17 @@ export class SongVersionsService {
    * from its sources: kept with the song, its artist added (see
    * replaceAutoAttachedArtist), its Apple Music and Deezer tracks as the
    * song's streaming links where it has none, and its release's artwork
-   * as the song's image.
+   * as the song's image - unless `artwork` is false (issue #352: the
+   * review left the song's own).
    */
-  async linkMetadata(songVersionId: string, sources: Pick<MetadataSource, "provider" | "id">[]): Promise<MetadataMatch> {
+  async linkMetadata(songVersionId: string, sources: Pick<MetadataSource, "provider" | "id">[], { artwork = true }: { artwork?: boolean } = {}): Promise<MetadataMatch> {
     const match = await this.metadata.lookup(sources);
+    await this.saveMetadataLink(songVersionId, match, { artwork });
+    return match;
+  }
+
+  /** Keeps a looked-up match with the song (see linkMetadata). Returns nothing: the Worker calls it too. */
+  async saveMetadataLink(songVersionId: string, match: MetadataMatch, { artwork }: { artwork: boolean }): Promise<void> {
     const [first] = match.sources;
     const musicBrainz = match.sources.find((source) => source.provider === "musicbrainz");
     await this.prisma.client.$transaction(async (tx) => {
@@ -1592,10 +1601,53 @@ export class SongVersionsService {
       }
       await replaceAutoAttachedArtist(tx, songVersionId, match.artist);
     });
-    if (match.artworkUrl && (await this.artwork.settings()).enabled) {
+    if (artwork && match.artworkUrl && (await this.artwork.settings()).enabled) {
       await this.artwork.setFromUrl(songVersionId, match.artworkUrl).catch((err: Error) => this.logger.warn(`No artwork from the match for ${songVersionId}: ${err.message}`));
     }
-    return match;
+  }
+
+  /** The song as it is, for what a match would change (issue #352). */
+  async songInfoOf(id: string): Promise<SongInfoCurrent> {
+    const version = await this.prisma.client.songVersion.findUnique({
+      where: { id },
+      select: { title: true, album: true, year: true, isrc: true, imageStorageKey: true, documentJson: true, contributors: { select: { source: true, roles: true }, orderBy: { displayOrder: "asc" } } },
+    });
+    if (!version) throw new NotFoundException("Song version not found");
+    const defaults = readSongDocument(version.documentJson).defaults;
+    const named = (roles: ContributorRole[]) => version.contributors.filter((c) => c.source && c.roles.some((role) => roles.includes(role))).map((c) => c.source!);
+    return {
+      title: version.title,
+      artists: named(["PERFORMER"]),
+      writers: named(["AUTHOR", "COMPOSER", "LYRICIST"]),
+      album: version.album,
+      year: version.year,
+      isrc: version.isrc,
+      tempo: defaults.tempo ?? null,
+      durationSeconds: defaults.durationSeconds ?? null,
+      hasImage: !!version.imageStorageKey,
+    };
+  }
+
+  /**
+   * Fills what the song doesn't have from `match` (issue #352, bulk
+   * imports): only empty fields, never its title, as one save in its
+   * history credited to `authorUserId`. The artwork is the link's (see
+   * saveMetadataLink). Returns the fields filled - nothing signed: the
+   * Worker calls it.
+   */
+  async fillFromMatch(id: string, match: MetadataMatch, authorUserId: string | null): Promise<SongInfoField[]> {
+    const fill = songInfoProposals(await this.songInfoOf(id), match).filter((p) => p.fillsEmpty && p.field !== "title" && p.field !== "artwork");
+    if (fill.length === 0) return [];
+    const dto: Record<string, unknown> = {};
+    for (const { field, proposed } of fill) dto[field === "duration" ? "durationSeconds" : field] = proposed;
+    const change = dto as UpdateSongVersionDto;
+    const prepared = await this.prepareUpdate(null, id, change);
+    await this.prisma.client.$transaction(async (tx) => {
+      const before = await this.history.before(tx, id);
+      await this.writeUpdate(tx, null, id, change, prepared);
+      await this.history.record(tx, id, { kind: "EDITED", authorUserId, before });
+    });
+    return fill.map((p) => p.field);
   }
 
   /** Unlinks it (and its MusicBrainz recording, and artist); the streaming links and image stay. */
@@ -1609,8 +1661,8 @@ export class SongVersionsService {
   /**
    * The linked song info, as saved when it was linked - no lookup, so
    * showing a song never waits on a provider. A song linked to MusicBrainz
-   * before there were other providers shows that recording, looked up
-   * once and saved if it was linked before these summaries were kept.
+   * the old way shows what its recording kept; one that kept nothing has
+   * its song info saved by the Worker's backfill (issue #116), not here.
    */
   async getMetadataMatch(songVersionId: string): Promise<MetadataMatch | null> {
     const identifiers = await this.prisma.client.songVersionIdentifier.findMany({
@@ -1622,21 +1674,7 @@ export class SongVersionsService {
     const recording = identifiers.find((identifier) => identifier.type === "MUSICBRAINZ_RECORDING");
     if (!recording) return null;
     const legacy = MusicBrainzRecordingMatchSchema.safeParse(recording.details);
-    let match: MusicBrainzRecordingMatch;
-    if (legacy.success && legacy.data.mbid === recording.value) match = legacy.data;
-    else {
-      match = await this.musicBrainz.getRecording(recording.value);
-      await this.prisma.client.songVersionIdentifier.update({ where: { id: recording.id }, data: { details: match } });
-    }
-    return {
-      title: match.title,
-      artist: match.artist,
-      album: match.releaseTitle,
-      releaseDate: match.releaseDate,
-      artworkUrl: null,
-      thumbnailUrl: null,
-      sources: [{ provider: "musicbrainz", id: match.mbid, url: match.sourceUrl }],
-    };
+    return legacy.success && legacy.data.mbid === recording.value ? recordingAsMatch(legacy.data) : null;
   }
 }
 

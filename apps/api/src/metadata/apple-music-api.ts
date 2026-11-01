@@ -96,6 +96,7 @@ interface AppleMusicSong {
     releaseDate?: string;
     isrc?: string;
     composerName?: string;
+    durationInMillis?: number;
     url?: string;
     artwork?: { url?: string };
   };
@@ -152,6 +153,7 @@ function toMatch(song: AppleMusicSong): ProviderMatch | null {
     artworkUrl: artworkAt(a.artwork?.url, 800),
     thumbnailUrl: artworkAt(a.artwork?.url, 200),
     isrc: a.isrc ?? null,
+    durationSeconds: a.durationInMillis && a.durationInMillis > 0 ? Math.round(a.durationInMillis / 1000) : null,
     ...(composers.length > 0 && { composers }),
     // The same catalogue IDs as the iTunes Search API's track IDs.
     source: { provider: "apple_music", id: song.id, url: a.url ?? `https://music.apple.com/song/${song.id}` },

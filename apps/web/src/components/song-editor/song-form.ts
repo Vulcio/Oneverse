@@ -8,6 +8,7 @@ import {
   songDocumentFromText,
   type CreateSongVersionInput,
   type SectionInstance,
+  type SongInfoCurrent,
   type SectionV2,
   type SongDocumentV2,
   type SongVersionDetail,
@@ -109,6 +110,22 @@ export function formFromVersion(version: SongVersionDetail): SongForm {
     flow: version.documentJson.flow,
     content: sectionsToChordPro(version.documentJson.sections),
     contentFormat: null,
+  };
+}
+
+/** The song as the form has it, for what a match would fill in (issue #352). */
+export function songInfoFromForm(form: SongForm, hasImage: boolean): SongInfoCurrent {
+  const number = (text: string) => (text.trim() && Number.isFinite(Number(text)) ? Number(text) : null);
+  return {
+    title: form.title.trim(),
+    artists: form.artists,
+    writers: [...form.writers, ...form.composers, ...form.lyricists],
+    album: form.album.trim() || null,
+    year: number(form.year),
+    isrc: form.isrc.trim() || null,
+    tempo: number(form.tempo),
+    durationSeconds: form.duration.trim() ? parseDuration(form.duration) : null,
+    hasImage,
   };
 }
 

@@ -23,6 +23,8 @@ export const LIVE_SESSIONS_QUEUE = "live-sessions";
 export const BACKUPS_QUEUE = "backups";
 /** People's, teams' and organisations' archives, made and imported (issue #351). */
 export const ARCHIVES_QUEUE = "archives";
+/** Imported songs looked up at the metadata providers, their empty fields filled (issue #352): one at a time. */
+export const SONG_INFO_QUEUE = "song-info";
 /** Files moved to and from organisations' own buckets (issue #206). */
 export const OWN_STORAGE_QUEUE = "own-storage";
 

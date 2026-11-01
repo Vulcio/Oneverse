@@ -4,6 +4,7 @@ import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { SongbooksService } from "../songbooks/songbooks.service.js";
+import { SongInfoService } from "../song-versions/song-info.js";
 import { SongVersionsService } from "../song-versions/song-versions.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { BULK_UPLOAD_QUEUE, type BulkUploadJobData } from "./bulk-upload.types.js";
@@ -25,6 +26,7 @@ export class BulkUploadProcessor extends WorkerHost {
     private readonly songbooksService: SongbooksService,
     private readonly songVersionsService: SongVersionsService,
     private readonly storage: StorageService,
+    private readonly songInfo: SongInfoService,
   ) {
     super();
   }
@@ -57,5 +59,7 @@ export class BulkUploadProcessor extends WorkerHost {
         uploadedByUserId: uploadedByUserId ?? null,
       },
     });
+    // What the song doesn't have yet, from the metadata providers (issue #352): a job of its own, one at a time.
+    await this.songInfo.fill(target.songVersionId, uploadedByUserId ?? null);
   }
 }

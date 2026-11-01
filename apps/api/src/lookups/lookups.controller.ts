@@ -42,6 +42,12 @@ export class LookupsController {
     return this.lookups.backfill("lyrics-backfill");
   }
 
+  /** Saves the song info of songs linked to MusicBrainz the old way (issue #116); queued by itself when the API starts with any left. */
+  @Post("metadata-matches/backfill")
+  metadataMatchBackfill() {
+    return this.lookups.backfill("metadata-match-backfill");
+  }
+
   /** The library's repeated sections (issue #231): counted, or with `apply`, the same and transposed ones linked. */
   @Post("repeats/backfill")
   repeatsBackfill(@Body() dto: RepeatsBackfillDto) {

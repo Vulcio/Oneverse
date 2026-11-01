@@ -55,12 +55,24 @@ export const MetadataMatchSchema = z.object({
   isrc: z.string().nullable().optional(),
   /** Who wrote it, where the provider says (the Apple Music API's composers, issue #87). */
   composers: z.array(z.string()).optional(),
+  /** Its tempo in BPM, where the provider says (Deezer's track, issue #352). */
+  tempo: z.number().positive().nullable().optional(),
+  /** How long the recording is, in whole seconds (issue #352). */
+  durationSeconds: z.number().int().positive().nullable().optional(),
   sources: z.array(MetadataSourceSchema).min(1),
 });
 export type MetadataMatch = z.infer<typeof MetadataMatchSchema>;
 
 /** A match chosen in Auto detect (issue #22): its sources, looked up again. The request POST /song-versions/:id/metadata takes. */
+const chosenSources = z.array(z.strictObject(MetadataSourceSchema.pick({ provider: true, id: true }).shape)).min(1).max(METADATA_PROVIDERS.length);
+
 export const LinkMetadataSchema = z.strictObject({
-  sources: z.array(z.strictObject(MetadataSourceSchema.pick({ provider: true, id: true }).shape)).min(1).max(METADATA_PROVIDERS.length),
+  sources: chosenSources,
+  /** Whether the match's artwork becomes the song's image (issue #352): left out, it does; false keeps the song's own. */
+  artwork: z.boolean().optional(),
 });
 export type LinkMetadata = z.infer<typeof LinkMetadataSchema>;
+
+/** A match looked up again from its sources, to review before it's used (issue #352): what POST /metadata/lookup takes. */
+export const MetadataLookupSchema = z.strictObject({ sources: chosenSources });
+export type MetadataLookup = z.infer<typeof MetadataLookupSchema>;

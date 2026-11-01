@@ -33,6 +33,8 @@ interface MbRecording {
   "artist-credit"?: MbArtistCredit[];
   releases?: MbRelease[];
   "first-release-date"?: string;
+  /** Milliseconds. */
+  length?: number | null;
 }
 
 interface MbRecordingSearchResponse {
@@ -99,6 +101,7 @@ function metadataMatch(recording: MbRecording): ProviderMatch {
     releaseDate: recording["first-release-date"] || release?.date || null,
     artworkUrl: null,
     thumbnailUrl: null,
+    durationSeconds: recording.length && recording.length > 0 ? Math.round(recording.length / 1000) : null,
     source: { provider: "musicbrainz", id: recording.id, url: `https://musicbrainz.org/recording/${recording.id}` },
   };
 }

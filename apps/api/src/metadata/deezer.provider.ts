@@ -11,6 +11,11 @@ interface DeezerTrack {
   title: string;
   link?: string;
   release_date?: string;
+  /** Seconds. */
+  duration?: number;
+  /** On a track looked up by its ID only, 0 when Deezer doesn't know. */
+  bpm?: number;
+  isrc?: string;
   artist?: { name?: string };
   album?: { id: number; title?: string; cover_medium?: string; cover_xl?: string; release_date?: string };
 }
@@ -35,6 +40,9 @@ function toMatch(track: DeezerTrack, releaseDate: string | null): ProviderMatch 
     releaseDate,
     artworkUrl: track.album?.cover_xl ?? null,
     thumbnailUrl: track.album?.cover_medium ?? null,
+    ...(track.isrc && { isrc: track.isrc }),
+    tempo: track.bpm && track.bpm > 0 ? Math.round(track.bpm * 10) / 10 : null,
+    durationSeconds: track.duration && track.duration > 0 ? Math.round(track.duration) : null,
     source: { provider: "deezer", id: String(track.id), url: track.link ?? `https://www.deezer.com/track/${track.id}` },
   };
 }

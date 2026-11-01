@@ -105,6 +105,8 @@ export function rankMetadataMatches(
         same.match.thumbnailUrl ??= found.thumbnailUrl;
         same.match.isrc ??= found.isrc;
         if (!same.match.composers?.length && found.composers?.length) same.match.composers = found.composers;
+        same.match.tempo ??= found.tempo;
+        same.match.durationSeconds ??= found.durationSeconds;
         same.rank = Math.min(same.rank, rank);
         return;
       }

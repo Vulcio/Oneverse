@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { AppleMusicKeySchema, LinkSearchTypeSchema, MetadataSearchQuerySchema, MetadataSettingsSchema, MusicBrainzContactSchema, SpotifyAppSchema, YouTubeKeySchema } from "@oneverse/core";
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { AppleMusicKeySchema, LinkSearchTypeSchema, MetadataLookupSchema, MetadataSearchQuerySchema, MetadataSettingsSchema, MusicBrainzContactSchema, SpotifyAppSchema, YouTubeKeySchema } from "@oneverse/core";
 import { zodDto } from "../common/zod-validation.js";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
@@ -7,6 +7,8 @@ import { RateLimit } from "../security/rate-limit.decorator.js";
 import { MetadataService } from "./metadata.service.js";
 
 export class MetadataSearchQueryDto extends zodDto(MetadataSearchQuerySchema) {}
+
+export class MetadataLookupDto extends zodDto(MetadataLookupSchema) {}
 
 export class SpotifyAppDto extends zodDto(SpotifyAppSchema) {}
 
@@ -32,6 +34,18 @@ export class MetadataController {
   @Get("metadata/search")
   search(@Query() query: MetadataSearchQueryDto) {
     return this.metadata.search(query.title, query.artist);
+  }
+
+  /**
+   * A match looked up again from its sources, with everything they know
+   * (its tempo, length, writers), for the review before it's used (issue
+   * #352): read only, like the search.
+   */
+  @Post("metadata/lookup")
+  @HttpCode(200)
+  @RateLimit("heavy")
+  lookup(@Body() dto: MetadataLookupDto) {
+    return this.metadata.lookup(dto.sources);
   }
 
   /** Which services a song's links can be searched at (issue #169). */

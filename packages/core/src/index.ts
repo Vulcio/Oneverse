@@ -32,6 +32,7 @@ export * from "./i18n/index.js";
 export * from "./streaming-links/parser.js";
 export * from "./streaming-links/reference.js";
 export * from "./metadata/rank.js";
+export * from "./metadata/proposals.js";
 export * from "./music-keys/transpose.js";
 export * from "./chords/chord.js";
 export * from "./chords/shapes.js";

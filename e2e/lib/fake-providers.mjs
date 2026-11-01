@@ -225,6 +225,8 @@ const qids = new Map();
 
 /** Requests for the address an image host redirected to, which the API must never make (issue #112). */
 export const imageHost = { internalHits: 0 };
+/** Recordings looked up by their ID (issue #116: showing a song asks MusicBrainz nothing). */
+export const musicBrainzHits = { recordings: 0 };
 
 export function startFakeProviders() {
   const server = createServer((req, res) => {
@@ -343,6 +345,7 @@ export function startFakeProviders() {
     }
     const recording = /^\/mb\/ws\/2\/recording\/([\w-]+)$/.exec(path);
     if (recording) {
+      musicBrainzHits.recordings++;
       const found = lastRecordings.get(recording[1]);
       return found ? json(res, found) : json(res, { error: "Not Found" }, 404);
     }
@@ -360,7 +363,8 @@ export function startFakeProviders() {
     const track = /^\/deezer\/track\/(\d+)$/.exec(path);
     if (track) {
       const found = lastDeezer.get(track[1]);
-      return json(res, found ? { ...found, release_date: ALBUM_DATES[found.album.id] } : { error: { type: "DataException", message: "no data", code: 800 } });
+      // Its tempo and length, only on the track itself, as Deezer does (issue #352).
+      return json(res, found ? { ...found, release_date: ALBUM_DATES[found.album.id], bpm: 124.2, duration: 253, isrc: `AUDZR13${String(found.id - 5000).padStart(5, "0")}` } : { error: { type: "DataException", message: "no data", code: 800 } });
     }
     // An image host sending the server elsewhere, and one too big to take (issue #112).
     // Elsewhere: this server, but at an address that isn't allowed (127.0.0.1, not localhost).

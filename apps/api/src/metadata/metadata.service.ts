@@ -549,6 +549,8 @@ export class MetadataService {
       match.thumbnailUrl ??= other.thumbnailUrl;
       match.isrc ??= other.isrc;
       if (!match.composers?.length && other.composers?.length) match.composers = other.composers;
+      match.tempo ??= other.tempo;
+      match.durationSeconds ??= other.durationSeconds;
     }
     return match;
   }

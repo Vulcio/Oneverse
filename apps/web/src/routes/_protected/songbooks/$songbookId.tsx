@@ -1,4 +1,6 @@
 import { ApiError, BULK_UPLOAD_EXTENSIONS, isNetworkError, keptSongbook, onlineOrKept, type BulkUploadContentType, type BulkUploadFileMatch, type LanguageCode, type SongbookSection, type SongVersionSummary } from "@oneverse/core";
+import { cn } from "@oneverse/ui/lib/utils";
+import { droppedFiles } from "#/lib/dropped-files";
 import { createFileRoute, Link, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronDown, Settings2, Share2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -107,6 +109,7 @@ function SongbookDetail() {
   const [bulkUploadResult, setBulkUploadResult] = useState<{ queued: number; skipped: string[] } | null>(null);
   const [bulkUploadError, setBulkUploadError] = useState<string | null>(null);
   const [bulkUploadProgress, setBulkUploadProgress] = useState<{ done: number; of: number } | null>(null);
+  const [bulkUploadDragOver, setBulkUploadDragOver] = useState(false);
 
   // Songs matching what's typed, searched on the server (the whole
   // library, not just what's loaded), minus those already in the book.
@@ -644,6 +647,44 @@ function SongbookDetail() {
                   className="text-sm"
                 />
               </div>
+              {/* A whole folder at once (issue #40): every file in it, its folders' too; the preview leaves out the other kinds. */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="bulk-upload-folder">{t("songbooks.bulkUploadChooseFolder")}</Label>
+                <input
+                  id="bulk-upload-folder"
+                  type="file"
+                  {...({ webkitdirectory: "", directory: "" } as Record<string, string>)}
+                  disabled={previewingBulkUpload || committingBulkUpload}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    e.target.value = "";
+                    void selectBulkUploadFiles(files);
+                  }}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            <div
+              className={cn(
+                "rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground transition-colors",
+                bulkUploadDragOver && "border-primary bg-primary/5 text-foreground",
+              )}
+              data-testid="bulk-upload-drop"
+              onDragOver={(e) => {
+                e.preventDefault();
+                setBulkUploadDragOver(true);
+              }}
+              onDragLeave={() => setBulkUploadDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setBulkUploadDragOver(false);
+                if (previewingBulkUpload || committingBulkUpload) return;
+                void droppedFiles(e.dataTransfer).then((files) => {
+                  if (files.length) void selectBulkUploadFiles(files);
+                });
+              }}
+            >
+              {t("songbooks.bulkUploadDrop")}
             </div>
 
             {previewingBulkUpload ? (

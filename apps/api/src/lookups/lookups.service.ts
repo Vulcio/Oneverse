@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { artistKey } from "../artists/artists.service.js";
 import { BACKFILLS_QUEUE, LOOKUPS_QUEUE } from "../jobs/jobs.constants.js";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { legacyLinkedWhere } from "../song-versions/metadata-match-backfill.js";
 
 /** Kept for Admin > Metadata > Background jobs: the last hundred done, and failed. */
 const KEEP: JobsOptions = { removeOnComplete: { count: 100 }, removeOnFail: { count: 100 } };
@@ -27,6 +28,12 @@ export class LookupsService implements OnApplicationBootstrap {
     } catch (err) {
       this.logger.warn(`Lyrics backfill not queued: ${(err as Error).message}`);
     }
+    // Songs linked to MusicBrainz the old way (issue #116) have their song info saved once.
+    try {
+      if ((await this.prisma.client.songVersionIdentifier.count({ where: legacyLinkedWhere })) > 0) await this.backfill("metadata-match-backfill");
+    } catch (err) {
+      this.logger.warn(`Song info backfill not queued: ${(err as Error).message}`);
+    }
   }
 
   /** A new song's artwork. Never throws: the song is saved either way. */
@@ -47,7 +54,7 @@ export class LookupsService implements OnApplicationBootstrap {
   }
 
   /** A backfill, unless one is already waiting or running: that one's ID then. */
-  async backfill(name: "artwork-backfill" | "artist-backfill" | "lyrics-backfill" | "repeats-backfill", data: object = {}): Promise<{ queued: boolean; jobId: string | null }> {
+  async backfill(name: "artwork-backfill" | "artist-backfill" | "lyrics-backfill" | "repeats-backfill" | "metadata-match-backfill", data: object = {}): Promise<{ queued: boolean; jobId: string | null }> {
     const pending = (await this.backfills.getJobs(["waiting", "active", "delayed", "prioritized"])).find((job) => job?.name === name);
     if (pending) return { queued: false, jobId: pending.id ?? null };
     const job = await this.backfills.add(name, data, KEEP);

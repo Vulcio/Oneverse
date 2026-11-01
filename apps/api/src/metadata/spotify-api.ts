@@ -80,6 +80,7 @@ interface SpotifyTrack {
   artists?: { name: string }[];
   album?: { name?: string; release_date?: string; images?: SpotifyImage[] };
   external_ids?: { isrc?: string };
+  duration_ms?: number;
   external_urls?: { spotify?: string };
 }
 
@@ -100,6 +101,7 @@ function toMatch(track: SpotifyTrack): ProviderMatch {
     artworkUrl: large,
     thumbnailUrl: small,
     isrc: track.external_ids?.isrc ?? null,
+    durationSeconds: track.duration_ms && track.duration_ms > 0 ? Math.round(track.duration_ms / 1000) : null,
     source: { provider: "spotify", id: track.id, url: track.external_urls?.spotify ?? `https://open.spotify.com/track/${track.id}` },
   };
 }

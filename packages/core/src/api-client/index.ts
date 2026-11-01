@@ -3326,11 +3326,15 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
 
     getSongMetadata: (songVersionId: string) => request<MetadataMatch | null>(`/song-versions/${songVersionId}/metadata`),
     /** Links a match (looked up again from its sources): its streaming links and artwork come with it. */
-    linkSongMetadata: (songVersionId: string, match: Pick<MetadataMatch, "sources">) =>
+    /** `artwork: false` keeps the song's own image (issue #352). */
+    linkSongMetadata: (songVersionId: string, match: Pick<MetadataMatch, "sources">, options: { artwork?: boolean } = {}) =>
       request<MetadataMatch>(`/song-versions/${songVersionId}/metadata-link`, {
         method: "POST",
-        body: JSON.stringify({ sources: match.sources.map(({ provider, id }) => ({ provider, id })) }),
+        body: JSON.stringify({ sources: match.sources.map(({ provider, id }) => ({ provider, id })), ...(options.artwork !== undefined && { artwork: options.artwork }) }),
       }),
+    /** A match looked up again from its sources, with all they know, to review before it's used (issue #352). */
+    lookupMetadata: (match: Pick<MetadataMatch, "sources">) =>
+      request<MetadataMatch>("/metadata/lookup", { method: "POST", body: JSON.stringify({ sources: match.sources.map(({ provider, id }) => ({ provider, id })) }) }),
     unlinkSongMetadata: (songVersionId: string) => request<void>(`/song-versions/${songVersionId}/metadata-link`, { method: "DELETE" }),
     getMetadataSettings: () => request<MetadataSettings>("/admin/metadata"),
     saveMetadataSettings: (providers: ({ key: MetadataProviderKey } & Partial<Record<MetadataCapability, boolean>>)[]) =>

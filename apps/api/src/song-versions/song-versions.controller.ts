@@ -246,7 +246,7 @@ export class SongVersionsController {
   @Post(":songVersionId/metadata-link")
   @UseGuards(SongVersionOwnerGuard)
   linkMetadata(@Param("songVersionId") songVersionId: string, @Body() dto: LinkMetadataDto) {
-    return this.songVersionsService.linkMetadata(songVersionId, dto.sources);
+    return this.songVersionsService.linkMetadata(songVersionId, dto.sources, { artwork: dto.artwork ?? true });
   }
 
   @Delete(":songVersionId/metadata-link")

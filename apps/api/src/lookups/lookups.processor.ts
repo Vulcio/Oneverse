@@ -6,6 +6,8 @@ import { ArtworkService } from "../artwork/artwork.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { backfillLyrics } from "../song-versions/lyrics-backfill.js";
 import { backfillRepeats } from "../song-versions/repeats-backfill.js";
+import { backfillMetadataMatches } from "../song-versions/metadata-match-backfill.js";
+import { MusicBrainzService } from "../musicbrainz/musicbrainz.service.js";
 import { BACKFILLS_QUEUE, JOB_WORKER_OPTIONS, LOOKUPS_QUEUE } from "../jobs/jobs.constants.js";
 
 export type LookupJob =
@@ -14,7 +16,8 @@ export type LookupJob =
   | { name: "artwork-backfill"; data: Record<string, never> }
   | { name: "artist-backfill"; data: Record<string, never> }
   | { name: "lyrics-backfill"; data: Record<string, never> }
-  | { name: "repeats-backfill"; data: { apply?: boolean } };
+  | { name: "repeats-backfill"; data: { apply?: boolean } }
+  | { name: "metadata-match-backfill"; data: Record<string, never> };
 
 /**
  * The lookups queue (issue #92): a new song's artwork, a new artist's
@@ -58,12 +61,15 @@ export class BackfillsProcessor extends WorkerHost {
     private readonly artwork: ArtworkService,
     private readonly artists: ArtistsService,
     private readonly prisma: PrismaService,
+    private readonly musicBrainz: MusicBrainzService,
   ) {
     super();
   }
 
   async process(job: Job): Promise<unknown> {
     switch (job.name) {
+      case "metadata-match-backfill":
+        return backfillMetadataMatches(this.prisma, this.musicBrainz);
       case "lyrics-backfill":
         return backfillLyrics(this.prisma);
       case "repeats-backfill":

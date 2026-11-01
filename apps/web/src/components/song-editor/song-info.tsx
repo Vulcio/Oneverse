@@ -1,17 +1,21 @@
 import {
+  formatDuration,
   getLanguageDisplayName,
   resolveTranslation,
   METADATA_PROVIDER_NAMES,
   type LocaleValue,
   type MetadataMatch,
   type MetadataProviderKey,
+  type SongInfoField,
+  type SongInfoProposal,
+  type SongInfoValue,
   type SongMatch,
   type SongVersionSongbookMembership,
   type Tag,
 } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { Check, ChevronDown, Copy, ExternalLink, Library, Sparkles } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSelect } from "#/components/language-select";
 import { Button } from "@oneverse/ui/components/button";
@@ -188,11 +192,107 @@ function MatchSummary({ match }: { match: MetadataMatch }) {
   );
 }
 
+/** A field's value as the review shows it: "3:45", "Joel Houston, Matt Crocker". */
+function shownValue(field: SongInfoField, value: SongInfoValue): string | null {
+  if (value === null || value === false) return null;
+  if (Array.isArray(value)) return value.join(", ");
+  if (field === "duration" && typeof value === "number") return formatDuration(value);
+  return String(value);
+}
+
+/**
+ * The review step (issue #352): what a chosen match would fill in, field by
+ * field - what the song doesn't have ticked, what it has only replaced if
+ * ticked. Nothing is used until "Use selected" or "Use all".
+ */
+export function SongInfoReview({
+  match,
+  proposals,
+  onApply,
+  onCancel,
+}: {
+  match: MetadataMatch;
+  proposals: SongInfoProposal[];
+  onApply: (fields: Set<SongInfoField>) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const [chosen, setChosen] = useState(() => new Set(proposals.filter((p) => p.fillsEmpty).map((p) => p.field)));
+  const label = (field: SongInfoField) => (field === "artwork" ? t("songEditor.artwork") : field === "writers" ? t("songEditor.fields.writers") : t(`songEditor.fields.${field}`));
+  const toggle = (field: SongInfoField, on: boolean) =>
+    setChosen((current) => {
+      const next = new Set(current);
+      if (on) next.add(field);
+      else next.delete(field);
+      return next;
+    });
+  return (
+    <section className="flex flex-col gap-3 rounded-md border border-primary/30 bg-primary/5 p-3" aria-labelledby="song-info-review-title" data-testid="song-info-review">
+      <div className="flex flex-col gap-1">
+        <h3 id="song-info-review-title" className="text-sm font-semibold">
+          {t("songEditor.infoReview")}
+        </h3>
+        <MatchSummary match={match} />
+      </div>
+      {proposals.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("songEditor.infoNothingNew")}</p>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground">{t("songEditor.infoReviewDescription")}</p>
+          <ul className="flex flex-col divide-y rounded-md border bg-background">
+            {proposals.map((proposal) => {
+              const id = `song-info-${proposal.field}`;
+              const now = proposal.field === "artwork" ? (proposal.current ? t("songEditor.infoOwnImage") : null) : shownValue(proposal.field, proposal.current);
+              return (
+                <li key={proposal.field} className="flex items-start gap-3 p-2.5" data-field={proposal.field}>
+                  <input
+                    id={id}
+                    type="checkbox"
+                    className="mt-1 size-4 shrink-0 accent-primary"
+                    checked={chosen.has(proposal.field)}
+                    onChange={(event) => toggle(proposal.field, event.target.checked)}
+                  />
+                  <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-0.5 text-sm">
+                    <span className="text-xs font-medium text-muted-foreground">{label(proposal.field)}</span>
+                    {proposal.field === "artwork" && match.thumbnailUrl ? (
+                      <img src={match.thumbnailUrl} alt="" className="size-12 rounded object-cover" loading="lazy" referrerPolicy="no-referrer" />
+                    ) : (
+                      <span className="break-words">{shownValue(proposal.field, proposal.proposed)}</span>
+                    )}
+                    <span className={cn("text-xs", now ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>
+                      {t("songEditor.infoNow", { value: now ?? t("songEditor.infoEmpty") })}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-xs text-muted-foreground">{t("songEditor.infoLinksToo")}</p>
+        </>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" onClick={() => onApply(chosen)}>
+          {proposals.length === 0 ? t("songEditor.useThis") : t("songEditor.useSelected")}
+        </Button>
+        {proposals.length > 0 ? (
+          <Button type="button" size="sm" variant="outline" onClick={() => onApply(new Set(proposals.map((p) => p.field)))}>
+            {t("songEditor.useAll")}
+          </Button>
+        ) : null}
+        <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
+          {t("songEditor.cancel")}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 /**
  * "Auto detect": look the song up on the metadata providers (issue #22)
- * and take what they know (album, year, an artist if there's none yet)
- * into the empty fields. The link itself is saved with the song, and
- * brings its streaming links and artwork.
+ * and choose a match; its review (issue #352, `review`) says what it fills
+ * in. The link itself is saved with the song, and brings its streaming
+ * links and, if ticked, its artwork. Adding a song, the search runs by
+ * itself once the name has stopped changing (`autoSearch`).
  */
 export function AutoDetectCard({
   title,
@@ -200,6 +300,9 @@ export function AutoDetectCard({
   shown,
   staged,
   onChoose,
+  review,
+  note,
+  autoSearch = false,
 }: {
   title: string;
   artist: string | undefined;
@@ -208,6 +311,11 @@ export function AutoDetectCard({
   /** Whether that differs from what's saved. */
   staged: boolean;
   onChoose: (match: MetadataMatch | null) => void;
+  /** The chosen match's review, while it's open. */
+  review?: ReactNode;
+  /** Said under it without hiding the matches: a lookup that failed. */
+  note?: ReactNode;
+  autoSearch?: boolean;
 }) {
   const { t } = useTranslation();
   const [results, setResults] = useState<MetadataMatch[] | null>(null);
@@ -215,20 +323,34 @@ export function AutoDetectCard({
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(false);
   const [changing, setChanging] = useState(false);
+  const [found, setFound] = useState(false);
+  // What was last searched for: typing on doesn't search the same again.
+  const searched = useRef<string | null>(null);
 
-  async function search() {
+  async function search(automatic = false) {
+    searched.current = `${title.trim().toLowerCase()}|${(artist ?? "").trim().toLowerCase()}`;
     setSearching(true);
     setError(false);
     try {
-      const found = await apiClient.searchMetadata(title, artist);
-      setResults(found.matches);
-      setUnavailable(found.unavailable);
+      const response = await apiClient.searchMetadata(title, artist);
+      setResults(response.matches);
+      setUnavailable(response.unavailable);
+      setFound(automatic);
     } catch {
-      setError(true);
+      // Searched by itself: nothing to say, the button is still there.
+      if (!automatic) setError(true);
     } finally {
       setSearching(false);
     }
   }
+
+  useEffect(() => {
+    if (!autoSearch || shown || title.trim().length < 3) return;
+    const key = `${title.trim().toLowerCase()}|${(artist ?? "").trim().toLowerCase()}`;
+    if (searched.current === key) return;
+    const timer = setTimeout(() => void search(true), 1200);
+    return () => clearTimeout(timer);
+  }, [autoSearch, shown, title, artist]);
 
   return (
     <Card>
@@ -282,7 +404,12 @@ export function AutoDetectCard({
             {t("songEditor.providersUnavailable", { names: unavailable.map((key) => METADATA_PROVIDER_NAMES[key]).join(", ") })}
           </p>
         ) : null}
-        {results && (!shown || changing) ? (
+        {review}
+        {note}
+        {results && found && !review && (!shown || changing) && results.length > 0 ? (
+          <p className="text-xs text-muted-foreground">{t("songEditor.autoFoundHint")}</p>
+        ) : null}
+        {results && !review && (!shown || changing) ? (
           results.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("songEditor.noOnlineMatches")}</p>
           ) : (
@@ -295,7 +422,6 @@ export function AutoDetectCard({
                     size="sm"
                     onClick={() => {
                       onChoose(match);
-                      setResults(null);
                       setChanging(false);
                     }}
                   >

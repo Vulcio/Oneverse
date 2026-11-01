@@ -5,8 +5,12 @@ import {
   renderChart,
   songToChordPro,
   type Attachment,
+  formatDuration,
+  songInfoProposals,
   type MetadataMatch,
   type MusicBrainzWorkMatch,
+  type SongInfoField,
+  type SongInfoProposal,
   type SongDocumentV2,
   type SongMatch,
   type SongVersionDetail,
@@ -41,6 +45,7 @@ import {
   formFromVersion,
   isDirty,
   nameKeyChanges,
+  songInfoFromForm,
   toCreateInput,
   toUpdateInput,
   validate,
@@ -48,7 +53,7 @@ import {
   withSections,
   type SongForm,
 } from "./song-form";
-import { AutoDetectCard, BasicInfoCard, LibraryMatchPanel, MoreDetailsCard, SongbooksCard } from "./song-info";
+import { AutoDetectCard, BasicInfoCard, LibraryMatchPanel, MoreDetailsCard, SongbooksCard, SongInfoReview } from "./song-info";
 import { PublishCard } from "./publish-card";
 import { MySuggestionsCard } from "./my-suggestions-card";
 import { LinkedSongsCard, relationKind } from "./linked-songs-card";
@@ -151,6 +156,11 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   const [showErrors, setShowErrors] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [mbChoice, setMbChoice] = useState<MetadataMatch | null | undefined>(undefined);
+  // Whether the chosen match's artwork becomes the song's image (issue #352).
+  const [mbArtwork, setMbArtwork] = useState(true);
+  // A chosen match's review, before anything is used (issue #352).
+  const [review, setReview] = useState<{ match: MetadataMatch; proposals: SongInfoProposal[] } | null>(null);
+  const [reviewState, setReviewState] = useState<"idle" | "loading" | "failed">("idle");
   const [sourceFile, setSourceFile] = useState<SourceFile | null>(null);
   const [replacing, setReplacing] = useState(false);
   const [basedOn, setBasedOn] = useState<BasedOn | null>(props.mode === "create" && props.linkTo ? { ...props.linkTo, copied: false } : null);
@@ -288,20 +298,50 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       setMbChoice(undefined);
       return;
     }
+    if (!match) {
+      setMbChoice(null);
+      return;
+    }
+    void openReview(match);
+  }
+
+  /** Looks the chosen match up again, with all its sources know, and shows what it would fill in (issue #352). */
+  async function openReview(chosen: MetadataMatch) {
+    setReviewState("loading");
+    setReview(null);
+    try {
+      const match = await apiClient.lookupMetadata(chosen);
+      setReview({ match, proposals: songInfoProposals(songInfoFromForm(form, !!version?.imageUrl), match) });
+      setReviewState("idle");
+    } catch {
+      setReviewState("failed");
+    }
+  }
+
+  /** What was ticked goes into the form; the link is saved with the song. */
+  function applyReview(fields: Set<SongInfoField>) {
+    if (!review) return;
+    const { match, proposals } = review;
+    const value = (field: SongInfoField) => proposals.find((p) => p.field === field)?.proposed;
     setMbChoice(match);
-    if (!match) return;
-    // Fill in what's still empty from what the providers know.
-    setForm((current) => ({
-      ...current,
-      title: current.title.trim() ? current.title : match.title,
-      artists: current.artists.length === 0 && match.artist ? [match.artist] : current.artists,
-      album: current.album.trim() ? current.album : (match.album ?? ""),
-      year: current.year.trim() ? current.year : (match.releaseDate?.slice(0, 4) ?? ""),
-      isrc: current.isrc.trim() ? current.isrc : (match.isrc ?? ""),
-      // Apple Music's composers wrote words and music: writers, unless the song credits someone already.
-      writers:
-        current.writers.length + current.composers.length + current.lyricists.length === 0 && match.composers?.length ? match.composers : current.writers,
-    }));
+    setMbArtwork(fields.has("artwork"));
+    setReview(null);
+    updateForm((current) => {
+      const next = { ...current };
+      for (const field of fields) {
+        const proposed = value(field);
+        if (proposed === undefined || proposed === null) continue;
+        if (field === "title") next.title = String(proposed);
+        else if (field === "artists") next.artists = proposed as string[];
+        // The match's writers wrote words and music: they're the song's writers, in place of who it credited.
+        else if (field === "writers") Object.assign(next, { writers: proposed as string[], composers: [], lyricists: [] });
+        else if (field === "album" || field === "isrc") next[field] = String(proposed);
+        else if (field === "year" || field === "tempo") next[field] = String(proposed);
+        else if (field === "duration") next.duration = formatDuration(proposed as number);
+      }
+      return next;
+    });
+    if ([...fields].some((field) => !["title", "artists", "artwork"].includes(field))) setDetailsOpen(true);
   }
 
   async function useAsBase(base: MatchVersion) {
@@ -383,7 +423,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       if (!edit) {
         const created = await apiClient.createSongVersion({ ...toCreateInput(current), ...(base && { basedOnVersionId: base.id }) });
         const notices: SongNotice[] = [];
-        if (mbChoice) await apiClient.linkSongMetadata(created.id, mbChoice).catch(() => notices.push("linkFailed"));
+        if (mbChoice) await apiClient.linkSongMetadata(created.id, mbChoice, { artwork: mbArtwork }).catch(() => notices.push("linkFailed"));
         await keepSourceFile(created.id).catch(() => notices.push("fileFailed"));
         leaving.current = true;
         await navigate({
@@ -410,7 +450,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       }
       // Saved: edits made from here on are new ones, kept when the song reloads.
       baseline.current = current;
-      if (mbChoice) await apiClient.linkSongMetadata(edit.version.id, mbChoice);
+      if (mbChoice) await apiClient.linkSongMetadata(edit.version.id, mbChoice, { artwork: mbArtwork });
       else if (mbChoice === null) await apiClient.unlinkSongMetadata(edit.version.id);
       setMbChoice(undefined);
       await keepSourceFile(edit.version.id);
@@ -487,6 +527,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
   function discard() {
     setForm(initial);
     setMbChoice(undefined);
+    setReview(null);
     setSourceFile(null);
     setShowErrors(false);
     setMessage(null);
@@ -533,6 +574,23 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
             shown={shownRecording}
             staged={mbChoice !== undefined}
             onChoose={chooseRecording}
+            autoSearch={!edit}
+            review={
+              review ? (
+                <SongInfoReview match={review.match} proposals={review.proposals} onApply={applyReview} onCancel={() => setReview(null)} />
+              ) : reviewState === "loading" ? (
+                <p className="text-sm text-muted-foreground" role="status">
+                  {t("songEditor.infoLookingUp")}
+                </p>
+              ) : null
+            }
+            note={
+              reviewState === "failed" ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {t("songEditor.infoLookupFailed")}
+                </p>
+              ) : null
+            }
           />
         ) : null}
         <MoreDetailsCard form={form} setField={setField} errors={errors} tags={tags} open={detailsOpen} onOpenChange={setDetailsOpen} />

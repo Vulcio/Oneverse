@@ -1,7 +1,9 @@
 // Metadata providers in the browser (issue #22): Auto detect's matches from
 // MusicBrainz, Apple Music and Deezer (stand-ins, lib/fake-providers.mjs),
-// the song's first release first; choosing one fills the empty details and,
-// once saved, links the song to its sources and brings its Deezer link;
+// the song's first release first; choosing one shows what it fills in
+// (issue #352: the empty fields ticked, what the song has only if ticked)
+// and, once saved, links the song to its sources and brings its Deezer
+// link; adding a song, the search runs by itself;
 // the admin's providers card - order, what each is asked for (issue #89) -
 // and in it the Apple Music API's key (issue #87) and Spotify's app.
 import { chromium } from "playwright";
@@ -36,8 +38,26 @@ await step("Auto detect: one match per release, the first release first, from al
   if (!second.includes("Album 2 · 2016")) throw new Error(`second: ${second}`);
 });
 
-await step("chosen: the album and year filled in, and linked once saved", async () => {
+await step("chosen: its review, the empty fields ticked", async () => {
   await page.getByTestId("metadata-matches").getByRole("listitem").first().getByRole("button", { name: "Use this" }).click();
+  const review = page.getByTestId("song-info-review");
+  await review.getByText("What this match fills in").waitFor();
+  const row = (field) => review.locator(`[data-field="${field}"]`);
+  // The same artist isn't offered again; Deezer's tempo, rounded, and the length are.
+  if (await row("artists").count()) throw new Error("the artist it has is offered again");
+  await row("tempo").getByText("124", { exact: true }).waitFor();
+  await row("duration").getByText("4:13", { exact: true }).waitFor();
+  for (const field of ["album", "year", "tempo", "duration"]) if (!(await row(field).getByRole("checkbox").isChecked())) throw new Error(`${field} isn't ticked`);
+  // The song has its own image (found when it was made): kept unless ticked.
+  if (await row("artwork").count()) {
+    if (await row("artwork").getByRole("checkbox").isChecked()) throw new Error("its own image would be replaced");
+    await row("artwork").getByText("Now: its own image").waitFor();
+  }
+  await row("duration").getByRole("checkbox").uncheck();
+  await review.getByRole("button", { name: "Use selected" }).click();
+});
+
+await step("used: the album, year and tempo filled in, and linked once saved", async () => {
   await page.getByText("The link is saved with the song", { exact: false }).waitFor();
   await page.getByRole("button", { name: "Save song" }).click();
   await page.getByText("Saved.", { exact: true }).waitFor();
@@ -46,6 +66,7 @@ await step("chosen: the album and year filled in, and linked once saved", async 
   if (linked?.album !== "Album 1") throw new Error(JSON.stringify(linked));
   const saved = await api(me, "GET", `/song-versions/${song.id}`);
   if (saved.album !== "Album 1" || saved.year !== 2013) throw new Error(`album ${saved.album}, year ${saved.year}`);
+  if (saved.documentJson.defaults.tempo !== 124 || saved.documentJson.defaults.durationSeconds) throw new Error(JSON.stringify(saved.documentJson.defaults));
 });
 
 await step("its Deezer track on Links", async () => {
@@ -53,6 +74,22 @@ await step("its Deezer track on Links", async () => {
   await page.getByLabel("Deezer", { exact: true }).waitFor();
   const value = await page.getByLabel("Deezer", { exact: true }).inputValue();
   if (!value.includes("deezer.com/track/5001")) throw new Error(`Deezer link: ${value}`);
+});
+
+await step("adding a song: the search runs by itself, Use all", async () => {
+  await page.goto(`${WEB}/library/new`);
+  await page.getByLabel("Song name").fill(`Cornerstone ${stamp}`);
+  await page.getByText("Found online for this name", { exact: false }).waitFor({ timeout: 15000 });
+  // No artist typed: every band's song with that name, the oldest first; the one on Album 1 chosen.
+  await page.getByTestId("metadata-matches").getByRole("listitem").filter({ hasText: "Album 1" }).first().getByRole("button", { name: "Use this" }).click();
+  const review = page.getByTestId("song-info-review");
+  await review.getByRole("button", { name: "Use all" }).click();
+  await page.getByText("The link is saved with the song", { exact: false }).waitFor();
+  await page.getByRole("button", { name: "Save song" }).click();
+  await page.waitForURL(/\/library\/(?!new)/);
+  const id = page.url().split("/library/")[1].split(/[?#]/)[0];
+  const saved = await api(me, "GET", `/song-versions/${id}`);
+  if (saved.album !== "Album 1" || saved.documentJson.defaults.tempo !== 124 || !saved.artists?.length) throw new Error(`${saved.album} ${JSON.stringify(saved.documentJson.defaults)} ${JSON.stringify(saved.artists)}`);
 });
 
 await step("the admin's providers: reordered, one off, reverted", async () => {
