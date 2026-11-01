@@ -10,7 +10,7 @@ const admin = await user("groups global admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const alice = await user("groups alice");
 const bob = await user("groups bob");
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const org = (await call(alice, "POST", "/organizations", { name: `Groups church ${stamp}` })).body;
 const other = (await call(bob, "POST", "/organizations", { name: `Other church ${stamp}` })).body;
 const music = (await call(alice, "POST", "/teams", { name: `Music ${stamp}` })).body;

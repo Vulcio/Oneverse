@@ -12,6 +12,24 @@ Une organisation, c'est l'église, le club ou le groupe dont font partie vos éq
 - **Une seule organisation** : toute personne qui se connecte en fait partie. Vous ne pouvez pas la quitter.
 - **Plusieurs** : vous faites partie de celles où l'on vous a invité, ou dont vous êtes dans une équipe. Si le serveur le permet, **Créer une organisation** (un **Nom** et une **Description** facultative, puis **Créer**) en crée une, que vous gérez.
 
+### En demander une
+
+Sur un serveur dont les administrateurs examinent d'abord chaque organisation, **Demander une organisation** prend son **Nom**, **Ce que c'est** (une église, une école, une chorale…), sa **Ville**, une **Personne à contacter** et un **E-mail de contact** - vous, ou quelqu'un qui la dirige - et, si vous voulez, son **Site web**, combien de personnes environ et une **Description**. **Envoyer la demande**, et les administrateurs de ce serveur sont prévenus ; vous l'êtes aussi quand ils l'approuvent - elle est créée, avec vous comme administrateur - ou la refusent, avec leur raison. **Vos demandes** liste celles en attente, que vous pouvez **Retirer**.
+
+Si elle ressemble à une organisation déjà présente, ou qu'un autre a demandée - presque le même nom, dans la même ville - elle n'est pas envoyée : le formulaire liste celles auxquelles elle ressemble. Si l'une d'elles est la vôtre, demandez plutôt un lien d'invitation à ses administrateurs. Si ce n'est pas la même, dites pourquoi sous **Pourquoi ce n'est pas la même** et renvoyez-la : les administrateurs voient votre note à côté de celles auxquelles elle ressemble.
+
+## La mettre en place
+
+Les administrateurs d'une nouvelle organisation trouvent **Mettre en place votre organisation** en haut de sa page : les étapes pour que ses membres planifient ensemble, chacune cochée une fois faite, avec **Y aller** (la carte sur la page) et **Guide** (la page d'ici qui l'explique) :
+
+1. **Invitez vos membres**, avec un lien d'invitation (voir [La page d'une organisation](/fr/organizations/#la-page-dune-organisation)) ;
+2. **Créez vos équipes** : ses groupes (voir [Groupes](/fr/organizations/#groupes)) ;
+3. **Définissez leurs droits** : ses rôles propres, donnés à des personnes ou à des équipes entières (voir [Ses rôles propres](/fr/organizations/#ses-rôles-propres)) ;
+4. **Gardez vos fichiers dans votre propre stockage**, facultatif, là où ce serveur le permet (voir [Votre propre stockage](/fr/own-storage/)) ;
+5. **Faites tourner votre propre Songverse Sonic**, facultatif, là où ce serveur le permet (voir [Votre propre serveur de séparation](/fr/sonic/)).
+
+La croix la range ; **Afficher la liste de démarrage**, sous **Détails**, la fait revenir. Dans [Planiverse](/fr/planiverse/), les trois dernières se font dans Songverse, sur la page de l'organisation.
+
 ## La page d'une organisation
 
 ![La page d'une organisation, pour son administrateur](../../../assets/screenshots/fr/organization.jpg)
@@ -108,4 +126,4 @@ Si le bucket ne répond plus, la carte le dit : les nouveaux fichiers sont gard�
 
 **Arrêter de l'utiliser**, puis **Ramener les fichiers et déconnecter**, ramène chaque fichier sur ce serveur, puis déconnecte le bucket ; les fichiers sont supprimés du bucket à mesure qu'ils sont déplacés. D'ici là, l'organisation ne peut pas être supprimée.
 
-Ce qui est dans son bucket est à l'organisation de le sauvegarder : les sauvegardes de ce serveur ne le copient pas, même si une [sauvegarde de l'organisation](/fr/backups/) contient bien les fichiers de ses équipes.
+Pourquoi l'utiliser, qui peut voir les fichiers, ce qui est à votre charge et comment le mettre en place chez chaque fournisseur : [Votre propre stockage](/fr/own-storage/). Ce qui est dans son bucket est à l'organisation de le sauvegarder : les sauvegardes de ce serveur ne le copient pas, même si une [sauvegarde de l'organisation](/fr/backups/) contient bien les fichiers de ses équipes.

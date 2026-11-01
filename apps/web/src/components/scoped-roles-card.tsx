@@ -94,7 +94,7 @@ export function ScopedRolesCard({ owner, members }: { owner: Owner; members: { u
   );
 
   return (
-    <Card data-testid="scoped-roles-card">
+    <Card id="roles" className="scroll-mt-20" data-testid="scoped-roles-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
           <ShieldCheck className="size-4" aria-hidden />

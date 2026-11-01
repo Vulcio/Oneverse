@@ -24,7 +24,7 @@ r = await call(leader, "PATCH", `/teams/${team.id}`, { bible: false });
 check("and off again", r.status === 200 && r.body.bible === false, JSON.stringify(r.body));
 
 // An organisation's: for its teams' members.
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 try {
   const org = (await call(leader, "POST", "/organizations", { name: `Bible church ${stamp}` })).body;
   r = await call(member, "PATCH", `/organizations/${org.id}`, { bible: true });

@@ -51,7 +51,7 @@ export function OwnStorageCard({ organizationId }: { organizationId: string }) {
   if (!summary) return null;
   if (!summary.allowed && !summary.configured) {
     return (
-      <Card data-testid="own-storage-card">
+      <Card id="own-storage" className="scroll-mt-20" data-testid="own-storage-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm">
             <HardDrive className="size-4" aria-hidden />
@@ -82,7 +82,7 @@ export function OwnStorageCard({ organizationId }: { organizationId: string }) {
 
   const leaving = summary.state === "LEAVING";
   return (
-    <Card data-testid="own-storage-card">
+    <Card id="own-storage" className="scroll-mt-20" data-testid="own-storage-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
           <HardDrive className="size-4" aria-hidden />

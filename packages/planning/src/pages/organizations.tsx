@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/component
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
+import { RequestOrganizationCard } from "../components/organization-request";
 import { HostLink, usePlanning } from "../host";
 import { forgetMyOrganizations } from "../organizations";
 
@@ -94,6 +95,8 @@ export function OrganizationsPage({ data }: { data: MyOrganizations }) {
           </CardContent>
         </Card>
       ) : null}
+      {/* Asked for and reviewed by this server's admins (issue #364). */}
+      {data.canRequest ? <RequestOrganizationCard initial={data.requests ?? []} /> : null}
     </div>
   );
 }

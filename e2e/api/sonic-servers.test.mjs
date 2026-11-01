@@ -109,7 +109,7 @@ try {
   check("a personal song: the instance's server, which needs a role", r.body.available === false && r.body.refusal === "not-granted" && r.body.server === null, JSON.stringify(r.body));
 
   // --- An organisation's server, for its teams without one
-  await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+  await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
   const org = (await call(leader, "POST", "/organizations", { name: `Sonic church ${stamp}` })).body;
   const choir = (await call(leader, "POST", "/teams", { name: `Choir ${stamp}` })).body;
   await call(leader, "PUT", `/teams/${choir.id}/organization`, { organizationId: org.id });

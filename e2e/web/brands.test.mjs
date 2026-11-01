@@ -10,7 +10,7 @@ let page;
 const step = stepper(() => page);
 const admin = await user("Brand web admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const lead = await user("Brand web lead");
 const member = await user("Brand web member");
 const team = await api(lead, "POST", "/teams", { name: `Brand web team ${stamp}` });

@@ -7,6 +7,7 @@ import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { InviteLinksCard } from "../components/invite-links-card";
 import { LocationsCard } from "../components/locations";
+import { OrganizationSetupCard } from "../components/organization-setup";
 import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/avatar";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
@@ -29,7 +30,18 @@ import { forgetMyOrganizations, groupTree } from "../organizations";
  * someone out, and the app's own cards (`adminCards`: Songverse's brands).
  */
 
-export function OrganizationPage({ userId, data, adminCards }: { userId: string; data: NonNullable<Awaited<ReturnType<typeof loadOrganizationPage>>>; adminCards?: ReactNode }) {
+export function OrganizationPage({
+  userId,
+  data,
+  adminCards,
+  setupOnPage = { roles: false, storage: false, sonic: false },
+}: {
+  userId: string;
+  data: NonNullable<Awaited<ReturnType<typeof loadOrganizationPage>>>;
+  adminCards?: ReactNode;
+  /** Which of the setup checklist's steps the app's own cards (`adminCards`) show on this page (issue #364). */
+  setupOnPage?: { roles: boolean; storage: boolean; sonic: boolean };
+}) {
   const { api, links } = usePlanning();
   const { t } = useTranslation();
   const router = useRouter();
@@ -109,9 +121,14 @@ export function OrganizationPage({ userId, data, adminCards }: { userId: string;
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
+      {/* A new organisation's setup, for its admins, until they put it away (issue #364). */}
+      {isAdmin && organization.setup && !organization.setup.dismissed ? (
+        <OrganizationSetupCard setup={organization.setup} onPage={setupOnPage} onDismiss={() => void run("setup", () => api.updateOrganization(organization.id, { onboardingDone: true }))} />
+      ) : null}
+
       <div className="grid grid-cols-1 items-start gap-6 @6xl:grid-cols-2">
         <div className="flex flex-col gap-6">
-          <Card data-testid="organization-teams">
+          <Card id="groups" className="scroll-mt-20" data-testid="organization-teams">
             <CardHeader>
               <CardTitle className="text-sm">{t("organizations.groups")}</CardTitle>
               {isAdmin ? <CardDescription>{t("organizations.addTeamHint")}</CardDescription> : null}
@@ -240,6 +257,11 @@ export function OrganizationPage({ userId, data, adminCards }: { userId: string;
                 >
                   {busy === "details" ? t("organizations.saving") : t("organizations.save")}
                 </Button>
+                {organization.setup?.dismissed ? (
+                  <Button variant="link" size="sm" className="self-start px-0" onClick={() => void run("setup", () => api.updateOrganization(organization.id, { onboardingDone: false }))} data-testid="organization-setup-show">
+                    {t("organizations.setup.bringBack")}
+                  </Button>
+                ) : null}
               </CardContent>
             </Card>
             <InviteLinksCard

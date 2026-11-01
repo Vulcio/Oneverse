@@ -13,7 +13,7 @@ const admin = await user("Planiverse admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const alice = await user("Planiverse alice");
 const bob = await user("Planiverse bob");
-await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const org = await api(alice, "POST", "/organizations", { name: `Planiverse org ${stamp}` });
 const music = await api(alice, "POST", "/teams", { name: `Music ${stamp}` });
 await api(alice, "PUT", `/teams/${music.id}/organization`, { organizationId: org.id });

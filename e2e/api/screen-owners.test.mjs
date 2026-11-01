@@ -10,7 +10,7 @@ sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const lead = await user("Owner lead");
 const member = await user("Owner member");
 const outsider = await user("Owner outsider");
-await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const org = await api(lead, "POST", "/organizations", { name: `Screens church ${stamp}` });
 const team = await api(lead, "POST", "/teams", { name: `Screens band ${stamp}` });
 await api(lead, "PUT", `/teams/${team.id}/organization`, { organizationId: org.id });

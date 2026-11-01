@@ -1,10 +1,12 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { slugify, type CreateOrganizationRequest, type TeamRoleValue } from "@oneverse/core";
+import { slugify, type CreateOrganizationRequest, type DeclineOrganizationRequestRequest, type RequestOrganizationRequest, type TeamRoleValue } from "@oneverse/core";
 import type { Prisma, PrismaClient } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { CreateInviteLinkDto } from "../teams/dto/create-invite-link.dto.js";
 import type { UpdateOrganizationDto } from "./dto/update-organization.dto.js";
+import { ownServersPolicy } from "../stem-separation/sonic-servers.js";
 import { getEffectiveOrganizationSettings } from "./organization-settings.js";
 import { leaveTeams } from "../teams/leave-teams.js";
 
@@ -50,7 +52,10 @@ async function leaveOrganization(db: Db, teamIds: string[]) {
  */
 @Injectable()
 export class OrganizationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async mode() {
     const { mode } = await getEffectiveOrganizationSettings();
@@ -64,12 +69,22 @@ export class OrganizationsService {
     if (only) await this.prisma.client.organizationMembership.createMany({ data: [{ organizationId: only.id, userId }], skipDuplicates: true });
   }
 
-  /** Whether `viewer` may create one: with several, global admins (or anyone, if Admin says so); with one, a global admin while there's none. */
+  /**
+   * Whether `viewer` may create one: with several, global admins (or anyone,
+   * if Admin says so and doesn't review them first, issue #364); with one, a
+   * global admin while there's none.
+   */
   private async canCreate(viewer: Viewer) {
-    const { mode, anyoneCreates } = await getEffectiveOrganizationSettings();
-    if (mode === "MULTI") return viewer.isGlobalAdmin || anyoneCreates;
+    const { mode, anyoneCreates, reviewRequests } = await getEffectiveOrganizationSettings();
+    if (mode === "MULTI") return viewer.isGlobalAdmin || (anyoneCreates && !reviewRequests);
     if (mode === "SINGLE") return viewer.isGlobalAdmin && !(await singleOrganization(this.prisma.client));
     return false;
+  }
+
+  /** Whether `viewer` asks for one instead (issue #364): with several, anyone allowed, and each reviewed by a global admin. */
+  private async canRequest(viewer: Viewer) {
+    const { mode, anyoneCreates, reviewRequests } = await getEffectiveOrganizationSettings();
+    return mode === "MULTI" && anyoneCreates && reviewRequests && !viewer.isGlobalAdmin;
   }
 
   /** The viewer's role in it; a global admin counts as one of its admins. */
@@ -114,7 +129,165 @@ export class OrganizationsService {
       include: { organization: { include: OrganizationsService.counts } },
       orderBy: { organization: { name: "asc" } },
     });
-    return { mode, canCreate: await this.canCreate(viewer), organizations: memberships.map((m) => this.summary(m.organization, m.role)) };
+    const canRequest = await this.canRequest(viewer);
+    return {
+      mode,
+      canCreate: await this.canCreate(viewer),
+      canRequest,
+      organizations: memberships.map((m) => this.summary(m.organization, m.role)),
+      // What they asked for and isn't made yet: waiting, or declined (the last 90 days).
+      requests: await this.prisma.client.organizationRequest.findMany({
+        where: { requestedById: viewer.id, OR: [{ status: "PENDING" }, { status: "DECLINED", reviewedAt: { gte: new Date(Date.now() - 90 * 86_400_000) } }] },
+        orderBy: { createdAt: "desc" },
+        select: OrganizationsService.requestSelect,
+      }),
+    };
+  }
+
+  private static readonly requestSelect = {
+    id: true,
+    name: true,
+    description: true,
+    kind: true,
+    city: true,
+    contactName: true,
+    contactEmail: true,
+    website: true,
+    peopleCount: true,
+    duplicateNote: true,
+    looksLike: true,
+    status: true,
+    declineReason: true,
+    reviewedAt: true,
+    organizationId: true,
+    createdAt: true,
+  } as const;
+
+  /** The most requests someone has waiting at once. */
+  private static readonly MAX_PENDING_REQUESTS = 3;
+
+  /**
+   * Organisations and waiting requests that look like this one (issue #364):
+   * a name near enough (as search compares them: accents, case and
+   * punctuation aside, then pg_trgm) in the same city, near enough too. The
+   * city tells two of the same name apart; an organisation made before
+   * cities were asked has none, so its name alone counts.
+   */
+  private async lookalikes(name: string, city: string, exceptRequestId?: string) {
+    return this.prisma.client.$queryRaw<{ source: "organization" | "request"; id: string; name: string; city: string | null }[]>`
+      WITH q AS (SELECT search_fold(${name}) AS name, search_fold(${city}) AS city)
+      SELECT 'organization' AS source, o.id, o.name, o.city FROM "Organization" o, q
+        WHERE similarity(search_fold(o.name), q.name) >= 0.45
+          AND (o.city IS NULL OR similarity(search_fold(o.city), q.city) >= 0.6)
+      UNION ALL
+      SELECT 'request' AS source, r.id, r.name, r.city FROM "OrganizationRequest" r, q
+        WHERE r.status = 'PENDING' AND r.id <> ${exceptRequestId ?? ""}
+          AND similarity(search_fold(r.name), q.name) >= 0.45
+          AND similarity(search_fold(r.city), q.city) >= 0.6
+      LIMIT 5`;
+  }
+
+  /**
+   * Someone asks for an organisation (issue #364): reviewed by a global
+   * admin, who is told. One that looks like another is refused with those it
+   * looks like (409, `looksLike`) unless `duplicateNote` says why it isn't.
+   */
+  async request(viewer: Viewer, dto: RequestOrganizationRequest) {
+    await this.mode();
+    if (!(await this.canRequest(viewer))) throw new ForbiddenException("Organisations aren't requested here");
+    const waiting = await this.prisma.client.organizationRequest.count({ where: { requestedById: viewer.id, status: "PENDING" } });
+    if (waiting >= OrganizationsService.MAX_PENDING_REQUESTS) throw new ConflictException(`You already have ${waiting} requests waiting for review`);
+    const looksLike = await this.lookalikes(dto.name, dto.city);
+    if (looksLike.length > 0 && !dto.duplicateNote) {
+      throw new ConflictException({ statusCode: 409, code: "ORGANIZATION_LOOKS_LIKE", message: "This looks like an organisation that's already here or asked for: say why it isn't the same to ask anyway", looksLike });
+    }
+    const request = await this.prisma.client.organizationRequest.create({
+      data: {
+        requestedById: viewer.id,
+        name: dto.name,
+        description: dto.description ?? null,
+        kind: dto.kind,
+        city: dto.city,
+        contactName: dto.contactName,
+        contactEmail: dto.contactEmail,
+        website: dto.website ?? null,
+        peopleCount: dto.peopleCount ?? null,
+        duplicateNote: looksLike.length > 0 ? (dto.duplicateNote ?? null) : null,
+        looksLike,
+      },
+      select: OrganizationsService.requestSelect,
+    });
+    const [by, admins] = await Promise.all([
+      this.prisma.client.user.findUnique({ where: { id: viewer.id }, select: { displayName: true } }),
+      this.prisma.client.user.findMany({ where: { isGlobalAdmin: true }, select: { id: true } }),
+    ]);
+    await this.notifications.notify(admins.map((admin) => ({ userId: admin.id, kind: "ORGANIZATION_REQUESTED" as const, data: { by: by?.displayName ?? "", organization: request.name }, url: "/admin/organizations" })));
+    return request;
+  }
+
+  /** Who asked takes it back, while it waits. */
+  async withdrawRequest(viewer: Viewer, requestId: string) {
+    const { count } = await this.prisma.client.organizationRequest.deleteMany({ where: { id: requestId, requestedById: viewer.id, status: "PENDING" } });
+    if (count === 0) throw new NotFoundException("Request not found");
+  }
+
+  /** Admin > Organisations: the requests waiting, oldest first, then the last ones reviewed. */
+  async adminRequests() {
+    const select = { ...OrganizationsService.requestSelect, requestedBy: { select: { id: true, displayName: true, email: true } }, reviewedBy: { select: { id: true, displayName: true } } } as const;
+    const [pending, reviewed] = await Promise.all([
+      this.prisma.client.organizationRequest.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" }, select }),
+      this.prisma.client.organizationRequest.findMany({ where: { status: { not: "PENDING" } }, orderBy: { reviewedAt: "desc" }, take: 20, select }),
+    ]);
+    // What each looks like now: one made since it was sent counts too.
+    const withMatches = await Promise.all(pending.map(async (one) => ({ ...one, looksLike: await this.lookalikes(one.name, one.city, one.id) })));
+    return { pending: withMatches, reviewed };
+  }
+
+  private async pendingRequest(requestId: string) {
+    const request = await this.prisma.client.organizationRequest.findUnique({ where: { id: requestId } });
+    if (!request) throw new NotFoundException("Request not found");
+    if (request.status !== "PENDING") throw new ConflictException("This request was already reviewed");
+    return request;
+  }
+
+  /** Made, run by who asked, with what they told; they're told, and its page shows them its checklist. */
+  async approveRequest(viewer: Viewer, requestId: string) {
+    await this.mode();
+    const request = await this.pendingRequest(requestId);
+    const organization = await this.prisma.client.$transaction(async (tx) => {
+      // Reviewed once: a second admin approving at the same moment finds it taken.
+      const { count } = await tx.organizationRequest.updateMany({ where: { id: requestId, status: "PENDING" }, data: { status: "APPROVED", reviewedById: viewer.id, reviewedAt: new Date() } });
+      if (count === 0) throw new ConflictException("This request was already reviewed");
+      const made = await tx.organization.create({
+        data: {
+          name: request.name,
+          slug: await this.slugFor(request.name),
+          description: request.description,
+          kind: request.kind,
+          city: request.city,
+          contactName: request.contactName,
+          contactEmail: request.contactEmail,
+          website: request.website,
+          memberships: { create: { userId: request.requestedById, role: "ADMIN" } },
+        },
+        select: { id: true, name: true },
+      });
+      await tx.organizationRequest.update({ where: { id: requestId }, data: { organizationId: made.id } });
+      return made;
+    });
+    await this.notifications.notify([{ userId: request.requestedById, kind: "ORGANIZATION_APPROVED", data: { organization: organization.name }, url: `/organizations/${organization.id}` }]);
+    return { organizationId: organization.id };
+  }
+
+  /** Not made; who asked is told why. */
+  async declineRequest(viewer: Viewer, requestId: string, dto: DeclineOrganizationRequestRequest) {
+    const request = await this.pendingRequest(requestId);
+    const { count } = await this.prisma.client.organizationRequest.updateMany({
+      where: { id: requestId, status: "PENDING" },
+      data: { status: "DECLINED", declineReason: dto.reason ?? null, reviewedById: viewer.id, reviewedAt: new Date() },
+    });
+    if (count === 0) throw new ConflictException("This request was already reviewed");
+    await this.notifications.notify([{ userId: request.requestedById, kind: "ORGANIZATION_DECLINED", data: { organization: request.name, note: dto.reason ?? "" }, url: "/organizations" }]);
   }
 
   /** A free slug from its name: "grace-church", then "grace-church-2"… */
@@ -164,6 +337,13 @@ export class OrganizationsService {
     });
     return {
       ...this.summary(organization, role),
+      kind: organization.kind,
+      city: organization.city,
+      contactName: organization.contactName,
+      contactEmail: organization.contactEmail,
+      website: organization.website,
+      // Its admins' setup checklist (issue #364): what's done, until they put it away.
+      setup: role === "ADMIN" ? await this.setup(organizationId, organization.onboardingDismissedAt) : null,
       teams: organization.teams.map((team) => ({
         id: team.id,
         name: team.name,
@@ -178,6 +358,31 @@ export class OrganizationsService {
     };
   }
 
+  /** How far its admins got setting it up: people, teams, rights, its own bucket and Sonic server. */
+  private async setup(organizationId: string, dismissedAt: Date | null) {
+    const [settings, sonicPolicy, members, inviteLinks, teams, ownRoles, storage, sonic] = await Promise.all([
+      getEffectiveOrganizationSettings(),
+      ownServersPolicy(),
+      this.prisma.client.organizationMembership.count({ where: { organizationId } }),
+      this.prisma.client.organizationInviteLink.count({ where: { organizationId } }),
+      this.prisma.client.team.count({ where: { organizationId } }),
+      this.prisma.client.role.count({ where: { ownerOrganizationId: organizationId } }),
+      this.prisma.client.organizationStorage.count({ where: { organizationId } }),
+      this.prisma.client.sonicServer.count({ where: { organizationId } }),
+    ]);
+    return {
+      dismissed: dismissedAt !== null,
+      invited: members > 1 || inviteLinks > 0,
+      teams: teams > 0,
+      roles: ownRoles > 0,
+      storage: storage > 0,
+      sonic: sonic > 0,
+      // The steps this server offers: its own bucket and Sonic server only where Admin allows them.
+      storageAllowed: settings.ownStorage,
+      sonicAllowed: sonicPolicy.allowed,
+    };
+  }
+
   async update(viewer: Viewer, organizationId: string, dto: UpdateOrganizationDto) {
     await this.assertAdmin(viewer, organizationId);
     await this.prisma.client.organization.update({
@@ -187,6 +392,11 @@ export class OrganizationsService {
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.color !== undefined && { color: dto.color }),
         ...(dto.bible !== undefined && { bible: dto.bible }),
+        ...(dto.city !== undefined && { city: dto.city }),
+        ...(dto.contactName !== undefined && { contactName: dto.contactName }),
+        ...(dto.contactEmail !== undefined && { contactEmail: dto.contactEmail || null }),
+        ...(dto.website !== undefined && { website: dto.website || null }),
+        ...(dto.onboardingDone !== undefined && { onboardingDismissedAt: dto.onboardingDone ? new Date() : null }),
       },
     });
     return this.findOne(viewer, organizationId);

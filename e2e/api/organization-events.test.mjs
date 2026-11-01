@@ -16,7 +16,7 @@ const greeter = await user("orgev greeter");
 const host = await user("orgev host");
 const outsider = await user("orgev outsider");
 sql(`update "User" set instruments='{DRUMS}' where id='${drummer.id}'`);
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const org = (await call(alice, "POST", "/organizations", { name: `Events church ${stamp}` })).body;
 const elsewhere = (await call(outsider, "POST", "/organizations", { name: `Elsewhere ${stamp}` })).body;
 const music = (await call(alice, "POST", "/teams", { name: `Music ${stamp}` })).body;

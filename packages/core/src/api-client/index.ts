@@ -43,7 +43,7 @@ import type { BibleSourceFormat } from "../scriptures/bible.js";
 import type { PassageChapter } from "../scriptures/references.js";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
 import type { SaveBackupConfigRequest } from "../requests/backups.js";
-import type { CreateGroupRequest, CreateOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, SaveOwnStorageRequest, OwnStorageLimitsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
+import type { CreateGroupRequest, CreateOrganizationRequest, DeclineOrganizationRequestRequest, OrganizationKind, OrganizationSize, RequestOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, SaveOwnStorageRequest, OwnStorageLimitsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
@@ -1260,7 +1260,63 @@ export interface OrganizationSummary {
 export interface MyOrganizations {
   mode: OrganizationMode;
   canCreate: boolean;
+  /** Ask for one instead (issue #364): a global admin reviews it. */
+  canRequest?: boolean;
   organizations: OrganizationSummary[];
+  /** What one asked for and isn't made yet: waiting, or declined lately. */
+  requests?: OrganizationRequestView[];
+}
+
+/** An organisation asked for (issue #364). */
+export interface OrganizationRequestView {
+  id: string;
+  name: string;
+  description: string | null;
+  kind: OrganizationKind;
+  city: string;
+  contactName: string;
+  contactEmail: string;
+  website: string | null;
+  peopleCount: OrganizationSize | null;
+  duplicateNote: string | null;
+  /** The organisations and waiting requests it looks like. */
+  looksLike: OrganizationLookalike[];
+  status: "PENDING" | "APPROVED" | "DECLINED";
+  declineReason: string | null;
+  reviewedAt: string | null;
+  organizationId: string | null;
+  createdAt: string;
+}
+
+export interface OrganizationLookalike {
+  source: "organization" | "request";
+  id: string;
+  name: string;
+  city: string | null;
+}
+
+/** Admin > Organisations: the requests waiting, and the last ones reviewed. */
+export interface AdminOrganizationRequests {
+  pending: AdminOrganizationRequest[];
+  reviewed: AdminOrganizationRequest[];
+}
+
+export interface AdminOrganizationRequest extends OrganizationRequestView {
+  requestedBy: { id: string; displayName: string; email: string };
+  reviewedBy: { id: string; displayName: string } | null;
+}
+
+/** An organisation's admins' setup checklist (issue #364): what's done. */
+export interface OrganizationSetup {
+  dismissed: boolean;
+  invited: boolean;
+  teams: boolean;
+  roles: boolean;
+  storage: boolean;
+  sonic: boolean;
+  /** Whether this server lets organisations use their own bucket, and their own Sonic server. */
+  storageAllowed: boolean;
+  sonicAllowed: boolean;
 }
 
 /** A team of an organisation, as its members see it. */
@@ -1281,6 +1337,13 @@ export interface OrganizationTeam {
 
 export interface OrganizationDetail extends OrganizationSummary {
   teams: OrganizationTeam[];
+  kind?: string | null;
+  city?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  website?: string | null;
+  /** Its admins' checklist; null for its members. */
+  setup?: OrganizationSetup | null;
 }
 
 export interface OrganizationMember {
@@ -1300,6 +1363,8 @@ export interface AdminOrganizations {
     anyoneCreates: SecuritySetting<boolean>;
     /** Organisations may keep their teams' files in their own bucket (issue #206). */
     ownStorage: SecuritySetting<boolean>;
+    /** With anyone allowed, each is asked for and reviewed first (issue #364). */
+    reviewRequests: SecuritySetting<boolean>;
   };
   /** Planiverse's address (PLANIVERSE_URL, set where it's deployed), or null: not deployed. */
   planiverseUrl: string | null;
@@ -2503,6 +2568,8 @@ export interface SongPublication {
 
 export class ApiError extends Error {
   readonly code?: string;
+  /** The answer's JSON, for what an error carries besides its message (an organisation request's look-alikes). */
+  readonly details?: Record<string, unknown>;
 
   constructor(
     public readonly status: number,
@@ -2514,16 +2581,18 @@ export class ApiError extends Error {
     super(message ?? parsed.message ?? body);
     this.name = "ApiError";
     this.code = parsed.code;
+    this.details = parsed.details;
   }
 }
 
-function parseErrorBody(body: string): { message?: string; code?: string } {
+function parseErrorBody(body: string): { message?: string; code?: string; details?: Record<string, unknown> } {
   try {
     const json = JSON.parse(body) as { message?: unknown; code?: unknown };
     const message = Array.isArray(json.message) ? json.message.join(", ") : json.message;
     return {
       message: typeof message === "string" ? message : undefined,
       code: typeof json.code === "string" ? json.code : undefined,
+      details: json && typeof json === "object" ? (json as Record<string, unknown>) : undefined,
     };
   } catch {
     return {};
@@ -2676,6 +2745,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     // Organisations (issue #241).
     listMyOrganizations: () => request<MyOrganizations>("/organizations"),
     createOrganization: (data: CreateOrganizationRequest) => request<OrganizationSummary>("/organizations", { method: "POST", body: JSON.stringify(data) }),
+    /** Ask for one (issue #364); a 409 ApiError's details.looksLike lists what it looks like. */
+    requestOrganization: (data: RequestOrganizationRequest) => request<OrganizationRequestView>("/organizations/requests", { method: "POST", body: JSON.stringify(data) }),
+    withdrawOrganizationRequest: (requestId: string) => request<void>(`/organizations/requests/${requestId}`, { method: "DELETE" }),
     getOrganization: (organizationId: string) => request<OrganizationDetail>(`/organizations/${organizationId}`),
     updateOrganization: (organizationId: string, data: UpdateOrganizationRequest) =>
       request<OrganizationDetail>(`/organizations/${organizationId}`, { method: "PATCH", body: JSON.stringify(data) }),
@@ -3484,6 +3556,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminSaveOrganizationSettings: (data: SaveOrganizationSettingsRequest) => request<void>("/admin/organizations/settings", { method: "PUT", body: JSON.stringify(data) }),
     adminClearOrganizationSettings: () => request<void>("/admin/organizations/settings", { method: "DELETE" }),
     adminCreateOrganization: (data: CreateOrganizationRequest) => request<AdminOrganization>("/admin/organizations", { method: "POST", body: JSON.stringify(data) }),
+    adminListOrganizationRequests: () => request<AdminOrganizationRequests>("/admin/organizations/requests"),
+    adminApproveOrganizationRequest: (requestId: string) => request<{ organizationId: string }>(`/admin/organizations/requests/${requestId}/approve`, { method: "POST" }),
+    adminDeclineOrganizationRequest: (requestId: string, data: DeclineOrganizationRequestRequest) =>
+      request<void>(`/admin/organizations/requests/${requestId}/decline`, { method: "POST", body: JSON.stringify(data) }),
     adminDeleteOrganization: (organizationId: string) => request<void>(`/admin/organizations/${organizationId}`, { method: "DELETE" }),
     adminGetNotificationSettings: () => request<NotificationServerSettingsSummary>("/admin/notifications"),
     adminSaveNotificationSettings: (data: SaveNotificationServerSettingsRequest) => request<void>("/admin/notifications", { method: "PUT", body: JSON.stringify(data) }),

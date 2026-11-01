@@ -10,6 +10,7 @@ import { CreateInviteLinkDto } from "../teams/dto/create-invite-link.dto.js";
 import { UpdateMemberRoleDto } from "../teams/dto/update-member-role.dto.js";
 import { TeamsService } from "../teams/teams.service.js";
 import { CreateOrganizationDto } from "./dto/create-organization.dto.js";
+import { DeclineOrganizationRequestDto, RequestOrganizationDto } from "./dto/organization-request.dto.js";
 import { SaveOrganizationSettingsDto } from "./dto/save-organization-settings.dto.js";
 import { SetTeamOrganizationDto } from "./dto/set-team-organization.dto.js";
 import { UpdateOrganizationDto } from "./dto/update-organization.dto.js";
@@ -40,6 +41,19 @@ export class OrganizationsController {
   }
 
   @RateLimit("heavy")
+  @Post("requests")
+  @RateLimit("heavy")
+  @ApiOkResponse({ description: "Asked for, reviewed by a global admin (issue #364); 409 with looksLike when it looks like one already here, unless duplicateNote says why it isn't." })
+  request(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: RequestOrganizationDto) {
+    return this.organizations.request(signedIn(user), dto);
+  }
+
+  @Delete("requests/:requestId")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  withdrawRequest(@CurrentUser() user: AuthenticatedUser | undefined, @Param("requestId") requestId: string) {
+    return this.organizations.withdrawRequest(signedIn(user), requestId);
+  }
+
   @Post("join/:token")
   join(@CurrentUser() user: AuthenticatedUser | undefined, @Param("token") token: string) {
     return this.organizations.join(signedIn(user), token);
@@ -154,6 +168,22 @@ export class AdminOrganizationsController {
   @Post()
   create(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: CreateOrganizationDto) {
     return this.organizations.adminCreate(signedIn(user), dto);
+  }
+
+  @Get("requests")
+  requests() {
+    return this.organizations.adminRequests();
+  }
+
+  @Post("requests/:requestId/approve")
+  approve(@CurrentUser() user: AuthenticatedUser | undefined, @Param("requestId") requestId: string) {
+    return this.organizations.approveRequest(signedIn(user), requestId);
+  }
+
+  @Post("requests/:requestId/decline")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  decline(@CurrentUser() user: AuthenticatedUser | undefined, @Param("requestId") requestId: string, @Body() dto: DeclineOrganizationRequestDto) {
+    return this.organizations.declineRequest(signedIn(user), requestId, dto);
   }
 
   @Delete(":organizationId")

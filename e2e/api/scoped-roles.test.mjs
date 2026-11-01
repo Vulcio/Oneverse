@@ -66,7 +66,7 @@ try {
   check("on another team's set: doesn't", seen.canPresent === false, JSON.stringify(seen));
 
   // An organisation's admins give it on all its teams.
-  await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+  await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
   const org = await api(leader, "POST", "/organizations", { name: `Scoped church ${stamp}` });
   await api(leader, "PUT", `/teams/${other.id}/organization`, { organizationId: org.id });
   r = await call(stranger, "GET", `/organizations/${org.id}/roles`);

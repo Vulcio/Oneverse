@@ -7,7 +7,7 @@ import { call, check, finish, sql, stamp, user } from "../lib/harness.mjs";
 const plus = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
 const admin = await user("Locations global admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const lead = await user("Locations lead");
 const member = await user("Locations member");
 const stranger = await user("Locations stranger");

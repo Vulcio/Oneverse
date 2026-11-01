@@ -53,6 +53,8 @@ Whether the server has organisations - a church, a club - grouping teams to plan
 - **One: everyone who signs in is in it** - **Create the organisation** (a **Name**, and **Its admin's email (optional)** if it isn't you), once;
 - **Several, each kept apart** - global admins create them under **New organisation**; with **Anyone can create an organisation** ticked, anyone can, from **Organisations** in the sidebar.
 
+With **Anyone can create an organisation**, **Review each one first** (or `ORGANIZATIONS_REVIEWED`; on unless set) has people ask for one instead - its kind, city, a contact person and their email (see [Asking for one](/organizations/#asking-for-one)) - and global admins are told. **Requests** lists those waiting: what they told, who asked, and the organisations or other requests it looks like, with their note on why it isn't the same. **Approve** makes it, run by who asked; **Decline** tells them your reason, if you give one. One that looks like another is refused unless they explain, so the same church isn't made twice.
+
 It shows where each setting comes from - saved here, the `ORGANIZATION_MODE` and `ORGANIZATIONS_OPEN` environment variables, or the default - with **Save configuration** and **Revert to environment variables**. **All organisations** lists them with their teams, members and admins; **Delete organisation** leaves their teams on their own.
 
 **Organisations may use their own storage** (or the `ORGANIZATIONS_OWN_STORAGE` environment variable) lets an organisation's admins whose role allows it keep its teams' songs' files in the organisation's own bucket (see [Its own storage](/organizations/#its-own-storage)); those files leave this server's storage, its quotas and its backups.

@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_protected/organizations/$organizationId"
       <OrganizationPage
         userId={userId}
         data={data}
+        setupOnPage={{ roles: true, storage: true, sonic: true }}
         adminCards={
           <>
             {/* Its teams' backups (issue #351). */}

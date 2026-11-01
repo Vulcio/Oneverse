@@ -67,7 +67,7 @@ r = await call(orgAdmin, "GET", `/organizations/${org}/storage`);
 check("nothing connected, and not allowed until the server's admin allows it", r.status === 200 && r.body.allowed === false && r.body.configured === false, JSON.stringify(r.body));
 r = await call(orgAdmin, "PUT", `/organizations/${org}/storage`, connect);
 check("…so connecting one is refused", r.status === 403, String(r.status));
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 r = await call(admin, "PUT", "/admin/organizations/settings", { ownStorage: true });
 check("Admin > Organisations allows organisations their own storage", r.status === 204, String(r.status));
 check("…which still needs a role that allows it", (await storage()).allowed === false);

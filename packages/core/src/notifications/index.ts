@@ -61,6 +61,11 @@ export const NOTIFICATION_KINDS = [
   "PART_RECORDED",
   // Someone replies to a note one wrote or replied to (issue #256).
   "NOTE_REPLY",
+  // Someone asks for an organisation (issue #364, to the global admins): review it in Admin.
+  "ORGANIZATION_REQUESTED",
+  // The organisation one asked for is made, or declined (with the reviewer's reason).
+  "ORGANIZATION_APPROVED",
+  "ORGANIZATION_DECLINED",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
@@ -96,6 +101,8 @@ export interface NotificationData {
   canEdit?: boolean;
   /** What the reviewer wrote. */
   note?: string;
+  /** An organisation's name (issue #364). */
+  organization?: string;
   /** The request to connect it's about: accepted or declined from the notification. */
   connectionId?: string;
 }
@@ -145,6 +152,7 @@ export function notificationText(kind: NotificationKind, data: NotificationData,
     // "to edit" or "to view", after what's shared.
     access: data.canEdit === undefined ? "" : data.canEdit ? messages.notifications.toEdit : messages.notifications.toView,
     note: data.note ?? "",
+    organization: data.organization ?? "",
   };
   return { title: fill(words.title, values), body: fill(words.body, values) };
 }

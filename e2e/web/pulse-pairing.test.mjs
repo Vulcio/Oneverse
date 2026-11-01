@@ -8,7 +8,7 @@ let page;
 const step = stepper(() => page);
 const admin = await user("Pulse web global admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const lead = await user("Pulse web lead");
 const org = (await call(lead, "POST", "/organizations", { name: `Pulse web church ${stamp}` })).body;
 const music = (await call(lead, "POST", "/teams", { name: `Pulse web music ${stamp}` })).body;

@@ -32,7 +32,7 @@ r = await call(alice, "GET", "/organizations");
 check("several: only global admins create one, by default", r.body.mode === "MULTI" && r.body.canCreate === false, JSON.stringify(r.body));
 r = await call(alice, "POST", "/organizations", { name: "Grace Church" });
 check("…so not anyone", r.status === 403, String(r.status));
-await settings({ anyoneCreates: true });
+await settings({ anyoneCreates: true, reviewRequests: false });
 r = await call(alice, "POST", "/organizations", { name: `Grace Church ${stamp}`, description: "Sundays at 10" });
 const org = r.body;
 check("anyone may, when Admin says so: its creator its admin", r.status === 201 && org.currentUserRole === "ADMIN" && org.slug.startsWith("grace-church") && org.memberCount === 1, JSON.stringify(r.body));

@@ -344,44 +344,47 @@ model User {
   offlinePins               OfflinePin[]
 
   // BetterAuth
-  sessions             Session[]
-  accounts             Account[]
-  passkeys             Passkey[]
+  sessions                     Session[]
+  accounts                     Account[]
+  passkeys                     Passkey[]
   // Sign in with Oneverse (issue #303): the apps' tokens and consents.
-  oauthClients         OauthClient[]
-  oauthRefreshTokens   OauthRefreshToken[]
-  oauthAccessTokens    OauthAccessToken[]
-  oauthConsents        OauthConsent[]
-  smartLists           SmartList[]
-  songRevisions        SongVersionRevision[]
-  contributedVersions  SongVersion[]         @relation("VersionContributedBy")
-  binnedVersions       SongVersion[]         @relation("VersionDeletedBy")
-  songsSharedWithMe    AccessGrant[]         @relation("AccessGrantTo")
-  favoriteSongs        FavoriteSong[]
-  quickSelection       QuickSelectionSong[]
-  songViews            SongView[]
-  connectionsAsked     Connection[]          @relation("ConnectionRequester")
-  connectionsAnswered  Connection[]          @relation("ConnectionAddressee")
-  reviewedProposals    ChangeProposal[]      @relation("ProposalReviewer")
-  teamEventsCreated    TeamEvent[]           @relation("TeamEventCreatedBy")
-  eventAnswers         TeamEventAnswer[]     @relation("TeamEventAnswerUser")
-  eventAnswersGiven    TeamEventAnswer[]     @relation("TeamEventAnswerBy")
-  awayRanges           UserAway[]
-  calendarFeed         CalendarFeed?
-  notifications        Notification[]
-  pushSubscriptions    PushSubscription[]
-  answerRequestsMade   TeamAnswerRequest[]   @relation("AnswerRequestsMade")
-  assignments          TeamEventAssignment[] @relation("Assignments")
-  assignmentsMade      TeamEventAssignment[] @relation("AssignmentsMade")
+  oauthClients                 OauthClient[]
+  oauthRefreshTokens           OauthRefreshToken[]
+  oauthAccessTokens            OauthAccessToken[]
+  oauthConsents                OauthConsent[]
+  smartLists                   SmartList[]
+  songRevisions                SongVersionRevision[]
+  contributedVersions          SongVersion[]         @relation("VersionContributedBy")
+  binnedVersions               SongVersion[]         @relation("VersionDeletedBy")
+  songsSharedWithMe            AccessGrant[]         @relation("AccessGrantTo")
+  favoriteSongs                FavoriteSong[]
+  quickSelection               QuickSelectionSong[]
+  songViews                    SongView[]
+  connectionsAsked             Connection[]          @relation("ConnectionRequester")
+  connectionsAnswered          Connection[]          @relation("ConnectionAddressee")
+  reviewedProposals            ChangeProposal[]      @relation("ProposalReviewer")
+  teamEventsCreated            TeamEvent[]           @relation("TeamEventCreatedBy")
+  eventAnswers                 TeamEventAnswer[]     @relation("TeamEventAnswerUser")
+  eventAnswersGiven            TeamEventAnswer[]     @relation("TeamEventAnswerBy")
+  awayRanges                   UserAway[]
+  calendarFeed                 CalendarFeed?
+  notifications                Notification[]
+  pushSubscriptions            PushSubscription[]
+  answerRequestsMade           TeamAnswerRequest[]   @relation("AnswerRequestsMade")
+  assignments                  TeamEventAssignment[] @relation("Assignments")
+  assignmentsMade              TeamEventAssignment[] @relation("AssignmentsMade")
   // How each kind of notification reaches them (issue #236): push, email; quiet hours.
-  notificationSettings Json?
-  screenWidgetDefaults ScreenWidgetDefault[]
-  liveSessionsStarted  LiveSession[]
-  liveSessionCommands  LiveSessionCommand[]
+  notificationSettings         Json?
+  screenWidgetDefaults         ScreenWidgetDefault[]
+  liveSessionsStarted          LiveSession[]
+  liveSessionCommands          LiveSessionCommand[]
   // Archives of what they own (issue #351), and the ones they asked for or imported.
-  contentArchives      ContentArchive[]      @relation("ContentArchiveUser")
-  archivesRequested    ContentArchive[]      @relation("ContentArchiveRequestedBy")
-  archiveSchedule      ArchiveSchedule?      @relation("ArchiveScheduleUser")
+  contentArchives              ContentArchive[]      @relation("ContentArchiveUser")
+  archivesRequested            ContentArchive[]      @relation("ContentArchiveRequestedBy")
+  archiveSchedule              ArchiveSchedule?      @relation("ArchiveScheduleUser")
+  // Organisations asked for, and those reviewed as a global admin (issue #364).
+  organizationRequests         OrganizationRequest[] @relation("OrganizationRequestsMade")
+  organizationRequestsReviewed OrganizationRequest[] @relation("OrganizationRequestsReviewed")
 
   @@index([email])
 }
@@ -739,14 +742,23 @@ model TeamPosition {
 // it plans together. An instance has none (Songverse alone), one, or
 // several (Admin > Organisations, OrganizationSettings).
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
+  id                    String    @id @default(cuid())
+  name                  String
+  slug                  String    @unique
+  description           String?
+  // Asked for when someone requests one (issue #364): where it is, who to
+  // reach, what it is. Its city tells two of the same name apart.
+  city                  String?
+  contactName           String?
+  contactEmail          String?
+  website               String?
+  kind                  String?
+  // Its admins' setup checklist (issue #364), put away.
+  onboardingDismissedAt DateTime?
   // A key of ENTITY_COLORS in @oneverse/core (null: one derived from the name).
-  color       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  color                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   memberships     OrganizationMembership[]
   inviteLinks     OrganizationInviteLink[]
@@ -769,6 +781,8 @@ model Organization {
   songGrants      AccessGrant[]
   // Archives of its teams' songs, songbooks and sets (issue #351).
   contentArchives ContentArchive[]          @relation("ContentArchiveOrganization")
+  // The request it was made from (issue #364).
+  request         OrganizationRequest?
   archiveSchedule ArchiveSchedule?          @relation("ArchiveScheduleOrganization")
   // Its own bucket for its teams' songs' files (issue #206).
   ownStorage      OrganizationStorage?
@@ -807,14 +821,55 @@ model OrganizationInviteLink {
 // Whether the instance has organisations (issue #241), set in Admin >
 // Organisations: each field null takes its env var, then the default.
 model OrganizationSettings {
-  id            String   @id @default("singleton")
+  id             String   @id @default("singleton")
   // NONE (Songverse alone), SINGLE (one, everyone in it) or MULTI (ORGANIZATION_MODE).
-  mode          String?
+  mode           String?
   // With several: anyone may create one, not only global admins (ORGANIZATIONS_OPEN).
-  anyoneCreates Boolean?
+  anyoneCreates  Boolean?
   // Organisations may keep their teams' files in their own bucket (issue #206; ORGANIZATIONS_OWN_STORAGE).
-  ownStorage    Boolean?
-  updatedAt     DateTime @updatedAt
+  ownStorage     Boolean?
+  // With anyone creating: each is a request a global admin reviews (issue #364; ORGANIZATIONS_REVIEWED, default on).
+  reviewRequests Boolean?
+  updatedAt      DateTime @updatedAt
+}
+
+enum OrganizationRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+// Someone asks for an organisation (issue #364); a global admin approves it
+// (it's made, they're its admin) or declines it, with why.
+model OrganizationRequest {
+  id             String                    @id @default(cuid())
+  requestedById  String
+  name           String
+  description    String?
+  kind           String
+  city           String
+  contactName    String
+  contactEmail   String
+  website        String?
+  peopleCount    String?
+  // Why it isn't a duplicate of one that looks the same, when it was asked anyway.
+  duplicateNote  String?
+  // The organisations and requests it looked like when it was sent.
+  looksLike      Json                      @default("[]")
+  status         OrganizationRequestStatus @default(PENDING)
+  declineReason  String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  organizationId String?                   @unique
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  requestedBy  User          @relation("OrganizationRequestsMade", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy   User?         @relation("OrganizationRequestsReviewed", fields: [reviewedById], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([requestedById])
 }
 
 model TeamMembership {

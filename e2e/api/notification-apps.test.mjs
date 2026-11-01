@@ -34,7 +34,7 @@ const singer = await user("apps singer");
 const usher = await user("apps usher");
 
 try {
-  await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+  await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
   await call(admin, "POST", "/admin/notifications/vapid-keys");
   await call(admin, "PUT", "/admin/notifications", { emailEnabled: true });
   const org = (await call(admin, "POST", "/organizations", { name: `Apps ${stamp}` })).body;

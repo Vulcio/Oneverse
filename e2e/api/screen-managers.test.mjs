@@ -8,7 +8,7 @@ const admin = await user("Managers admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const lead = await user("Managers lead");
 const tech = await user("Managers tech");
-await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const role = await api(admin, "POST", "/admin/roles", { name: `Screens manager ${stamp}`, canManageScreens: true, teamAssignable: true });
 check("Admin > Roles: a role that manages screens", (await api(admin, "GET", "/admin/roles")).find((one) => one.id === role.id)?.canManageScreens === true);
 

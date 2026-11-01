@@ -11,7 +11,7 @@ const admin = await user("Org web admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const alice = await user("Org web alice");
 const bob = await user("Org web bob");
-await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await api(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const team = await api(alice, "POST", "/teams", { name: `Welcome ${stamp}` });
 const name = `Grace ${stamp}`;
 let inviteUrl;

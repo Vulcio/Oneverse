@@ -1,4 +1,4 @@
-import type { OrganizationMode } from "@oneverse/core";
+import type { AdminOrganizationRequest, OrganizationMode } from "@oneverse/core";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +12,10 @@ import { apiClient } from "#/lib/api-client";
 import { forgetMyOrganizations } from "@oneverse/planning/organizations";
 
 export const Route = createFileRoute("/_protected/admin/organizations")({
-  loader: () => apiClient.adminGetOrganizations(),
+  loader: async () => {
+    const [summary, requests] = await Promise.all([apiClient.adminGetOrganizations(), apiClient.adminListOrganizationRequests()]);
+    return { ...summary, requests };
+  },
   component: AdminOrganizationsPage,
 });
 
@@ -25,13 +28,15 @@ function AdminOrganizationsPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const summary = Route.useLoaderData();
-  const { mode: modeSetting, anyoneCreates: anyoneSetting, ownStorage: ownStorageSetting } = summary.settings;
+  const { mode: modeSetting, anyoneCreates: anyoneSetting, ownStorage: ownStorageSetting, reviewRequests: reviewSetting } = summary.settings;
   const [ownStorage, setOwnStorage] = useState(ownStorageSetting.value);
+  const [reviewRequests, setReviewRequests] = useState(reviewSetting.value);
   const [mode, setMode] = useState<OrganizationMode>(modeSetting.value);
   const [anyoneCreates, setAnyoneCreates] = useState(anyoneSetting.value);
   useEffect(() => {
     setMode(modeSetting.value);
     setAnyoneCreates(anyoneSetting.value);
+    setReviewRequests(reviewSetting.value);
   }, [summary]);
   const [name, setName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -102,6 +107,16 @@ function AdminOrganizationsPage() {
               </span>
             </label>
           ) : null}
+          {mode === "MULTI" && anyoneCreates ? (
+            <label className="flex items-start gap-3 pl-7">
+              <input type="checkbox" className="mt-1 size-4" checked={reviewRequests} onChange={(event) => setReviewRequests(event.target.checked)} data-testid="organization-review-requests" />
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">{t("organizations.reviewRequests")}</span>
+                <span className="text-xs text-muted-foreground">{t("organizations.reviewRequestsHint")}</span>
+                <span className="text-xs text-muted-foreground">{sourceOf(reviewSetting)}</span>
+              </span>
+            </label>
+          ) : null}
           {mode !== "NONE" ? (
             <label className="flex items-start gap-3">
               <input type="checkbox" className="mt-1 size-4" checked={ownStorage} onChange={(event) => setOwnStorage(event.target.checked)} data-testid="organization-own-storage" />
@@ -124,6 +139,7 @@ function AdminOrganizationsPage() {
                 ...(mode !== modeSetting.value ? { mode } : {}),
                 ...(anyoneCreates !== anyoneSetting.value ? { anyoneCreates } : {}),
                 ...(ownStorage !== ownStorageSetting.value ? { ownStorage } : {}),
+                ...(reviewRequests !== reviewSetting.value ? { reviewRequests } : {}),
               }),
             )
           }
@@ -145,6 +161,37 @@ function AdminOrganizationsPage() {
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      {summary.requests.pending.length > 0 || summary.requests.reviewed.length > 0 ? (
+        <Card data-testid="organization-requests">
+          <CardHeader>
+            <CardTitle className="text-sm">{t("organizations.requests.adminTitle", { count: summary.requests.pending.length })}</CardTitle>
+            <CardDescription>{t("organizations.requests.adminHint")}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            {summary.requests.pending.map((request) => (
+              <PendingRequest key={request.id} request={request} busy={busy} run={run} />
+            ))}
+            {summary.requests.reviewed.length > 0 ? (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground">{t("organizations.requests.reviewed", { count: summary.requests.reviewed.length })}</summary>
+                <ul className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
+                  {summary.requests.reviewed.map((request) => (
+                    <li key={request.id}>
+                      {t(request.status === "APPROVED" ? "organizations.requests.approvedBy" : "organizations.requests.declinedBy", {
+                        name: request.name,
+                        city: request.city,
+                        by: request.reviewedBy?.displayName ?? "-",
+                      })}
+                      {request.declineReason ? ` - ${request.declineReason}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {canCreate ? (
         <Card className="max-w-lg">
@@ -214,6 +261,93 @@ function AdminOrganizationsPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/** A request waiting (issue #364): what they told, what it looks like, approve or decline with a reason. */
+function PendingRequest({ request, busy, run }: { request: AdminOrganizationRequest; busy: string | null; run: (key: string, action: () => Promise<unknown>) => Promise<void> }) {
+  const { t } = useTranslation();
+  const [declining, setDeclining] = useState(false);
+  const [reason, setReason] = useState("");
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-3" data-request={request.id}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-sm font-medium">
+          {request.name} <span className="font-normal text-muted-foreground">· {request.city}</span>
+        </p>
+        <span className="text-xs text-muted-foreground">{new Date(request.createdAt).toLocaleDateString()}</span>
+      </div>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+        <dt className="text-muted-foreground">{t("organizations.requests.kind")}</dt>
+        <dd>
+          {t(`organizations.kinds.${request.kind}`)}
+          {request.peopleCount ? ` · ${t(`organizations.sizes.${request.peopleCount}`)}` : ""}
+        </dd>
+        <dt className="text-muted-foreground">{t("organizations.requests.contact")}</dt>
+        <dd>
+          {request.contactName} · <a href={`mailto:${request.contactEmail}`} className="hover:text-primary">{request.contactEmail}</a>
+        </dd>
+        <dt className="text-muted-foreground">{t("organizations.requests.askedBy")}</dt>
+        <dd>
+          {request.requestedBy.displayName} ({request.requestedBy.email})
+        </dd>
+        {request.website ? (
+          <>
+            <dt className="text-muted-foreground">{t("organizations.requests.website")}</dt>
+            <dd>
+              {/* Someone else's address: opened without telling it where from. */}
+              <a href={request.website} target="_blank" rel="noopener noreferrer nofollow" className="break-all hover:text-primary">
+                {request.website}
+              </a>
+            </dd>
+          </>
+        ) : null}
+      </dl>
+      {request.description ? <p className="text-xs">{request.description}</p> : null}
+      {request.looksLike.length > 0 ? (
+        <div className="rounded-md bg-amber-500/10 p-2 text-xs" data-testid="request-looks-like">
+          <p className="font-medium">{t("organizations.requests.looksLike")}</p>
+          <ul className="list-disc pl-4">
+            {request.looksLike.map((one) => (
+              <li key={`${one.source}-${one.id}`}>
+                {one.name}
+                {one.city ? ` · ${one.city}` : ""} ({t(one.source === "organization" ? "organizations.requests.existing" : "organizations.requests.alsoAsked")})
+              </li>
+            ))}
+          </ul>
+          {request.duplicateNote ? <p className="mt-1">{t("organizations.requests.theirNote", { note: request.duplicateNote })}</p> : null}
+        </div>
+      ) : null}
+      {declining ? (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`decline-${request.id}`}>{t("organizations.requests.declineReason")}</Label>
+          <Input id={`decline-${request.id}`} value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} data-testid="request-decline-reason" />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={busy !== null}
+              onClick={() => void run(`decline-${request.id}`, () => apiClient.adminDeclineOrganizationRequest(request.id, reason.trim() ? { reason: reason.trim() } : {}))}
+              data-testid="request-decline-confirm"
+            >
+              {t("organizations.requests.decline")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDeclining(false)}>
+              {t("admin.cancel")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Button size="sm" disabled={busy !== null} onClick={() => void run(`approve-${request.id}`, () => apiClient.adminApproveOrganizationRequest(request.id))} data-testid="request-approve">
+            {busy === `approve-${request.id}` ? t("organizations.creating") : t("organizations.requests.approve")}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setDeclining(true)} data-testid="request-decline">
+            {t("organizations.requests.decline")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

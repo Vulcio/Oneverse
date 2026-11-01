@@ -12,6 +12,24 @@ An organisation is the church, club or group your teams are part of: the music t
 - **One organisation**: everyone who signs in is in it. You can't leave it.
 - **Several**: you're in the ones you were invited to, or whose teams you're in. If the server lets you, **Create an organisation** (a **Name** and an optional **Description**, then **Create**) makes one, run by you.
 
+### Asking for one
+
+On a server whose admins review each organisation first, **Ask for an organisation** takes its **Name**, **What it is** (a church, a school, a choir…), its **City**, a **Contact person** and **Contact email** - you, or someone who runs it - and, if you like, its **Website**, about how many people it has and a **Description**. **Send request**, and this server's admins are told; you're told too when they approve it - it's made, with you as its admin - or decline it, with their reason. **Your requests** lists those waiting, which you can **Withdraw**.
+
+If it looks like an organisation already here, or one someone else asked for - nearly the same name, in the same city - it isn't sent: the form lists those it looks like. If one of them is yours, ask its admins for an invite link instead. If it isn't the same, say why under **Why it isn't the same** and send it again: the admins see your note beside the ones it looks like.
+
+## Setting it up
+
+A new organisation's admins find **Set up your organisation** at the top of its page: the steps to get its people planning together, each ticked once it's done, with **Show me** (the card on the page) and **Guide** (the page here that explains it):
+
+1. **Invite your people**, with an invite link (see [An organisation's page](/organizations/#an-organisations-page));
+2. **Create your teams**: its groups (see [Groups](/organizations/#groups));
+3. **Set up their rights**: its own roles, given to people or to whole teams (see [Its own roles](/organizations/#its-own-roles));
+4. **Keep your files in your own storage**, optional, where this server allows it (see [Your own storage](/own-storage/));
+5. **Run your own Songverse Sonic**, optional, where this server allows it (see [Your own stem separation server](/sonic/)).
+
+The cross puts it away; **Show the setup checklist**, under **Details**, brings it back. In [Planiverse](/planiverse/), the last three are set up in Songverse, on the organisation's page.
+
 ## An organisation's page
 
 ![An organisation's page, for its admin](../../assets/screenshots/en/organization.jpg)
@@ -108,4 +126,4 @@ If the bucket stops answering, the card says so: new files are kept on this serv
 
 **Stop using it**, then **Move the files back and disconnect**, brings every file back to this server, then disconnects the bucket; the files left in the bucket are deleted from it as they're moved. Until then, the organisation can't be deleted.
 
-What's in its bucket is the organisation's to back up: this server's own backups don't copy it, though a [backup of the organisation](/backups/) still holds its teams' files.
+Why you'd use it, who can see the files, what's yours to look after and how to set it up at each provider: [Your own storage](/own-storage/). What's in its bucket is the organisation's to back up: this server's own backups don't copy it, though a [backup of the organisation](/backups/) still holds its teams' files.

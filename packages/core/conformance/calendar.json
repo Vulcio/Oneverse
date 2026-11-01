@@ -712,6 +712,18 @@
             "NOTE_REPLY": {
               "email": true,
               "push": true
+            },
+            "ORGANIZATION_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "ORGANIZATION_APPROVED": {
+              "email": true,
+              "push": true
+            },
+            "ORGANIZATION_DECLINED": {
+              "email": true,
+              "push": true
             }
           }
         },
@@ -843,6 +855,18 @@
               "push": true
             },
             "NOTE_REPLY": {
+              "email": true,
+              "push": true
+            },
+            "ORGANIZATION_REQUESTED": {
+              "email": true,
+              "push": true
+            },
+            "ORGANIZATION_APPROVED": {
+              "email": true,
+              "push": true
+            },
+            "ORGANIZATION_DECLINED": {
               "email": true,
               "push": true
             }
@@ -984,6 +1008,18 @@
                 "push": true
               },
               "NOTE_REPLY": {
+                "email": true,
+                "push": true
+              },
+              "ORGANIZATION_REQUESTED": {
+                "email": true,
+                "push": true
+              },
+              "ORGANIZATION_APPROVED": {
+                "email": true,
+                "push": true
+              },
+              "ORGANIZATION_DECLINED": {
                 "email": true,
                 "push": true
               }

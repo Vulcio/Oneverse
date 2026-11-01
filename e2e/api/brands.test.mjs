@@ -6,7 +6,7 @@ import { API, api, call, check, finish, sql, stamp, user } from "../lib/harness.
 
 const admin = await user("Brands global admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const lead = await user("Brands lead");
 const member = await user("Brands member");
 const stranger = await user("Brands stranger");

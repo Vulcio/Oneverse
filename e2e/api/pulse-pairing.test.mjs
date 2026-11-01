@@ -8,7 +8,7 @@ import { syncDevice } from "../lib/sync-device.mjs";
 
 const admin = await user("Pulse pairing global admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const lead = await user("Pulse pairing lead");
 const org = (await call(lead, "POST", "/organizations", { name: `Pulse church ${stamp}` })).body;
 const music = (await call(lead, "POST", "/teams", { name: `Pulse music ${stamp}` })).body;

@@ -67,7 +67,7 @@ export function InviteLinksCard({
   }
 
   return (
-    <Card data-testid="invite-links">
+    <Card id="invite-links" className="scroll-mt-20" data-testid="invite-links">
       <CardHeader>
         <CardTitle className="text-sm">{t("teams.inviteLinks")}</CardTitle>
         <CardDescription>{description}</CardDescription>

@@ -72,7 +72,7 @@ export function SonicServerCard({ owner }: { owner: SonicServerOwnerRef }) {
       : t("admin.stemTestFailed", { error: result.error });
 
   return (
-    <Card data-testid="sonic-server-card">
+    <Card id="sonic-server" className="scroll-mt-20" data-testid="sonic-server-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
           <AudioLines className="size-4 text-muted-foreground" aria-hidden />

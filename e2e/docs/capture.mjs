@@ -627,7 +627,7 @@ try {
     await api(me, "PUT", `/song-versions/${grace.id}/shares/${guest.id}`, { canEdit: false });
     await shoot("people", "/people", () => page.getByTestId("people-list").waitFor());
     // Organisations (issue #241): on a server with several, one with the team and a welcome team in it.
-    sql(`insert into "OrganizationSettings" (id, mode, "anyoneCreates", "updatedAt") values ('singleton', 'MULTI', true, now()) on conflict (id) do update set mode='MULTI', "anyoneCreates"=true`);
+    sql(`insert into "OrganizationSettings" (id, mode, "anyoneCreates", "reviewRequests", "updatedAt") values ('singleton', 'MULTI', true, false, now()) on conflict (id) do update set mode='MULTI', "anyoneCreates"=true, "reviewRequests"=false`);
     const organization = await api(me, "POST", "/organizations", { name: text.organization });
     await api(me, "PUT", `/teams/${team.id}/organization`, { organizationId: organization.id });
     // A group that only plans, under no one, with its positions; the guest in it, covering one.

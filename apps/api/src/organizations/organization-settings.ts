@@ -12,6 +12,8 @@ export interface EffectiveOrganizationSettings {
   anyoneCreates: boolean;
   /** Organisations may keep their teams' files in their own bucket (issue #206). */
   ownStorage: boolean;
+  /** With anyone creating: each is a request a global admin reviews (issue #364). */
+  reviewRequests: boolean;
 }
 
 type Key = keyof EffectiveOrganizationSettings;
@@ -22,6 +24,7 @@ const FIELDS: { [K in Key]: { env: string; parse: (raw: string) => EffectiveOrga
   mode: { env: "ORGANIZATION_MODE", parse: (raw) => ORGANIZATION_MODES.find((mode) => mode === raw.trim().toUpperCase()), fallback: "NONE" },
   anyoneCreates: { env: "ORGANIZATIONS_OPEN", parse: flag, fallback: false },
   ownStorage: { env: "ORGANIZATIONS_OWN_STORAGE", parse: flag, fallback: false },
+  reviewRequests: { env: "ORGANIZATIONS_REVIEWED", parse: flag, fallback: true },
 };
 
 function resolve<K extends Key>(key: K, stored: EffectiveOrganizationSettings[K] | null | undefined): { value: EffectiveOrganizationSettings[K]; source: OrganizationSettingSource } {
@@ -34,7 +37,7 @@ function resolve<K extends Key>(key: K, stored: EffectiveOrganizationSettings[K]
 
 async function row() {
   const stored = await prisma.organizationSettings.findUnique({ where: { id: SINGLETON_ID } });
-  return { mode: (ORGANIZATION_MODES as readonly string[]).includes(stored?.mode ?? "") ? (stored!.mode as OrganizationMode) : null, anyoneCreates: stored?.anyoneCreates ?? null, ownStorage: stored?.ownStorage ?? null, exists: !!stored };
+  return { mode: (ORGANIZATION_MODES as readonly string[]).includes(stored?.mode ?? "") ? (stored!.mode as OrganizationMode) : null, anyoneCreates: stored?.anyoneCreates ?? null, ownStorage: stored?.ownStorage ?? null, reviewRequests: stored?.reviewRequests ?? null, exists: !!stored };
 }
 
 /**
@@ -44,7 +47,7 @@ async function row() {
  */
 export async function getEffectiveOrganizationSettings(): Promise<EffectiveOrganizationSettings> {
   const stored = await row();
-  return { mode: resolve("mode", stored.mode).value, anyoneCreates: resolve("anyoneCreates", stored.anyoneCreates).value, ownStorage: resolve("ownStorage", stored.ownStorage).value };
+  return { mode: resolve("mode", stored.mode).value, anyoneCreates: resolve("anyoneCreates", stored.anyoneCreates).value, ownStorage: resolve("ownStorage", stored.ownStorage).value, reviewRequests: resolve("reviewRequests", stored.reviewRequests).value };
 }
 
 /** For Admin > Organisations: each setting's value and where it comes from. */
@@ -54,6 +57,7 @@ export async function getOrganizationSettingsSummary() {
     mode: { ...resolve("mode", stored.mode), env: FIELDS.mode.env },
     anyoneCreates: { ...resolve("anyoneCreates", stored.anyoneCreates), env: FIELDS.anyoneCreates.env },
     ownStorage: { ...resolve("ownStorage", stored.ownStorage), env: FIELDS.ownStorage.env },
+    reviewRequests: { ...resolve("reviewRequests", stored.reviewRequests), env: FIELDS.reviewRequests.env },
   };
   const sources = Object.values(settings).map((setting) => setting.source);
   return { source: (stored.exists && sources.includes("database") ? "database" : sources.includes("env") ? "env" : "none") as "database" | "env" | "none", settings };

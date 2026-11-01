@@ -16,7 +16,7 @@ const step = stepper(() => page);
 const admin = await user("Own storage web admin");
 sql(`update "User" set "isGlobalAdmin"=true where id='${admin.id}'`);
 const me = await user("Own storage web");
-await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true });
+await call(admin, "PUT", "/admin/organizations/settings", { mode: "MULTI", anyoneCreates: true, reviewRequests: false });
 const org = await api(me, "POST", "/organizations", { name: `Own storage web ${stamp}` });
 
 const browser = await chromium.launch();
