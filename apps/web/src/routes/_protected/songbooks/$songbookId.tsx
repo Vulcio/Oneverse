@@ -60,6 +60,18 @@ function SongbookDetail() {
   const canEdit = !offline && (owns || songbook.access === "edit");
   const sharedWithMe = songbook.access === "edit" || (songbook.access === "view" && songbook.ownerScope !== "GLOBAL");
   const [sharing, setSharing] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  async function leave() {
+    setLeaving(true);
+    try {
+      await apiClient.leaveSharedSongbook(songbook.id);
+      await router.invalidate();
+      await navigate({ to: "/songbooks" });
+    } finally {
+      setLeaving(false);
+    }
+  }
   const isNumbered = songbook.kind === "NUMBERED";
 
   const [name, setName] = useState(songbook.name);
@@ -267,7 +279,16 @@ function SongbookDetail() {
 
   return (
     <div className="flex flex-col gap-6">
-      {owns ? <SongbookShareDialog songbookId={songbook.id} open={sharing} onOpenChange={setSharing} /> : null}
+      {owns ? (
+        <SongbookShareDialog
+          songbookId={songbook.id}
+          songbookName={songbook.name}
+          personal={songbook.ownerScope === "USER"}
+          open={sharing}
+          onOpenChange={setSharing}
+          onGiven={() => void router.invalidate()}
+        />
+      ) : null}
       <TeamAccessDialog
         testId="songbook-team-access"
         song={askingTeam?.title ?? null}
@@ -312,6 +333,12 @@ function SongbookDetail() {
               <Users className="size-3" />
               {songbook.access === "edit" ? t("songbookSharing.sharedToEdit") : t("songbookSharing.sharedToView")}
             </Badge>
+          ) : null}
+          {/* Shared with them (not through a team): theirs to take out of their songbooks (issue #211). */}
+          {songbook.sharedWithMe && !offline ? (
+            <Button type="button" variant="ghost" size="sm" disabled={leaving} onClick={() => void leave()} data-testid="songbook-leave">
+              {t("songbookSharing.leave")}
+            </Button>
           ) : null}
           {/* Its details, sections and deletion, tucked away: the page is about its entries (issue #148). */}
           <Button type="button" variant="outline" size="sm" aria-expanded={detailsOpen} onClick={() => setDetailsOpen(!detailsOpen)} data-testid="songbook-details-toggle">

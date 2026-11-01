@@ -41,7 +41,11 @@ To let your band use a songbook you started - find its songs by number, see **JE
 - **Can view** - it shows in their songbooks (marked **Shared with you**), with its numbers and the songs in it, read-only: they open them, find them with the search box, add them to their sets and play them. A team's share is for its members, now and later.
 - **Can edit** - they also add, remove and renumber its songs and change its details. They add songs they can see; those songs stay theirs, now readable by everyone the songbook is shared with.
 
-The songs stay yours. Taking a song out of the songbook, or stopping the share, takes that access away. Only you (or your team's admins) share it, delete it and bulk-upload into it. In the same dialog, change what someone can do, or stop sharing with them (**×**). Someone it's shared with can take it out of their songbooks.
+The songs stay yours. Taking a song out of the songbook, or stopping the share, takes that access away. Only you (or your team's admins) share it, delete it and bulk-upload into it. In the same dialog, change what someone can do, or stop sharing with them (**×**). Someone it's shared with can take it out of their songbooks: **Remove from my songbooks**, on the songbook's page (a team's share stays the team's).
+
+### Giving it to a team
+
+When a songbook you started should be your team's, open **Share** and, under **Give to a team**, choose one of the teams you're an admin of and what becomes of your songs in it: **Move my songs to the team** (they become the team's songs too) or **Keep my songs, shared with the team** (they stay yours, and its members read them). **Give** asks you to confirm: it becomes the team's songbook, its admins change it from then on, and you can't undo it yourself. Other people's songs in it stay theirs. Not an admin of the team? Share it with the team instead.
 
 ## From a published songbook's catalog
 

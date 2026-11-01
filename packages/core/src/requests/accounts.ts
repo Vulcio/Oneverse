@@ -216,3 +216,13 @@ export const ShareSchema = z.strictObject({ canEdit: z.boolean() });
 
 /** Moving a personal song to a team (issue #331). */
 export const MoveSongToTeamSchema = z.strictObject({ teamId: z.string().min(1).max(40) });
+
+/**
+ * Giving a personal songbook to a team (issue #211): its songs that are
+ * the giver's own moved to the team too ("move"), or shared with it, to
+ * view, and kept ("share").
+ */
+export const GiveSongbookToTeamSchema = z.strictObject({
+  teamId: z.string().min(1).max(40),
+  songs: z.enum(["move", "share"]).describe("The giver's own songs in it: moved to the team, or shared with it and kept"),
+});

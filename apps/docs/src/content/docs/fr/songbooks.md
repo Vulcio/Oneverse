@@ -41,7 +41,11 @@ Pour que votre groupe utilise un recueil que vous avez commencé - retrouver ses
 - **Peut lire** - il apparaît dans leurs recueils (marqué **Partagé avec vous**), avec ses numéros et ses chants, en lecture seule : ils les ouvrent, les retrouvent avec la recherche, les ajoutent à leurs listes et les jouent. Le partage avec une équipe vaut pour ses membres, actuels et futurs.
 - **Peut modifier** - ils ajoutent aussi, retirent et renumérotent ses chants et changent ses détails. Ils ajoutent des chants qu'ils voient ; ces chants restent à eux, désormais lisibles par tous ceux avec qui le recueil est partagé.
 
-Les chants restent à vous. Retirer un chant du recueil, ou arrêter le partage, retire cet accès. Vous seul (ou les admins de votre équipe) le partagez, le supprimez et y faites un import en masse. Dans la même fenêtre, changez ce que quelqu'un peut faire, ou arrêtez de partager avec lui (**×**). Quelqu'un avec qui il est partagé peut le retirer de ses recueils.
+Les chants restent à vous. Retirer un chant du recueil, ou arrêter le partage, retire cet accès. Vous seul (ou les admins de votre équipe) le partagez, le supprimez et y faites un import en masse. Dans la même fenêtre, changez ce que quelqu'un peut faire, ou arrêtez de partager avec lui (**×**). Quelqu'un avec qui il est partagé peut le retirer de ses recueils : **Retirer de mes recueils**, sur la page du recueil (le partage avec une équipe reste celui de l'équipe).
+
+### Le donner à une équipe
+
+Quand un recueil que vous avez commencé doit être celui de votre équipe, ouvrez **Partager** et, sous **Donner à une équipe**, choisissez une des équipes dont vous êtes administrateur et ce que deviennent vos chants qu'il contient : **Déplacer mes chants vers l'équipe** (ils deviennent aussi ceux de l'équipe) ou **Garder mes chants, partagés avec l'équipe** (ils restent à vous, et ses membres les lisent). **Donner** demande de confirmer : il devient le recueil de l'équipe, ses administrateurs le modifient désormais, et vous ne pourrez pas annuler vous-même. Les chants des autres qu'il contient restent les leurs. Pas administrateur de l'équipe ? Partagez-le plutôt avec l'équipe.
 
 ## À partir du catalogue d'un recueil publié
 

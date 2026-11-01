@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Put, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, UnauthorizedException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { GiveSongbookToTeamSchema } from "@oneverse/core";
+import { zodDto } from "../common/zod-validation.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { ShareDto } from "../people/people.dto.js";
@@ -9,6 +11,8 @@ function requireUser(user: AuthenticatedUser | undefined): AuthenticatedUser {
   if (!user) throw new UnauthorizedException();
   return user;
 }
+
+class GiveSongbookToTeamDto extends zodDto(GiveSongbookToTeamSchema) {}
 
 /** Who a songbook is shared with (issue #211): people and teams, to view or to edit. */
 @ApiTags("songbooks")
@@ -48,5 +52,20 @@ export class SongbookSharesController {
   @Delete("teams/:teamId")
   unshareTeam(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string, @Param("teamId") teamId: string) {
     return this.shares.unshareTeam(requireUser(user), songbookId, teamId);
+  }
+}
+
+/** Giving a personal songbook to a team (issue #211). */
+@ApiTags("songbooks")
+@ApiBearerAuth()
+@Controller("songbooks/:songbookId")
+export class SongbookGiveController {
+  constructor(private readonly shares: SongbookSharesService) {}
+
+  /** For one of the team's admins: the songbook becomes the team's, the giver's own songs in it moved or shared with it. */
+  @Post("give-to-team")
+  @HttpCode(HttpStatus.OK)
+  give(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string, @Body() dto: GiveSongbookToTeamDto) {
+    return this.shares.giveToTeam(requireUser(user), songbookId, dto.teamId, dto.songs);
   }
 }

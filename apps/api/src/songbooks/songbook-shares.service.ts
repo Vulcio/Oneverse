@@ -87,6 +87,51 @@ export class SongbookSharesService {
     return this.list(songbookId);
   }
 
+  /**
+   * Makes a personal songbook a team's (issue #211), for one of the team's
+   * admins: in one transaction, the songbook becomes the team's, and the
+   * giver's own songs in it are moved to the team too ("move", as a song is,
+   * #331) or shared with it to view ("share"), so its members read every
+   * song they could before. Other people's songs in it stay theirs.
+   */
+  async giveToTeam(user: AuthenticatedUser, songbookId: string, teamId: string, songs: "move" | "share"): Promise<{ moved: number; shared: number }> {
+    const songbook = await this.assertManages(user, songbookId);
+    if (songbook.ownerScope !== "USER" || !songbook.ownerUserId) throw new BadRequestException("Only a personal songbook can be given to a team");
+    if (!(await this.prisma.client.team.count({ where: { id: teamId } }))) throw new NotFoundException("Team not found");
+    await this.access.assertSongverseTeam(teamId);
+    if (!user.isGlobalAdmin && (await this.access.teamRole(user.id, teamId)) !== "ADMIN") throw new ForbiddenException("Only the team's admins take a songbook in: share it with the team instead");
+    const ownerId = songbook.ownerUserId;
+    const entries = await this.prisma.client.songbookEntry.findMany({
+      where: { songbookId, songVersion: { ownerScope: "USER", ownerUserId: ownerId, deletedAt: null } },
+      select: { songVersionId: true },
+    });
+    const ids = [...new Set(entries.map((entry) => entry.songVersionId))];
+    await this.prisma.client.$transaction(
+      async (tx) => {
+        await tx.songbook.update({ where: { id: songbookId }, data: { ownerScope: "TEAM", ownerTeamId: teamId, ownerUserId: null } });
+        // The team's own now: no share with it needed.
+        await tx.songbookShare.deleteMany({ where: { songbookId, teamId } });
+        if (ids.length === 0) return;
+        if (songs === "move") {
+          // As SongOwnershipService.handOver does for one song, for all of them.
+          await tx.songVersion.updateMany({ where: { id: { in: ids } }, data: { ownerScope: "TEAM", ownerTeamId: teamId, ownerUserId: null } });
+          await tx.songOwnershipRequest.updateMany({ where: { songVersionId: { in: ids }, status: "PENDING" }, data: { status: "DECLINED", decidedAt: new Date() } });
+          await tx.accessGrant.deleteMany({ where: { songVersionId: { in: ids }, grantedToTeamId: teamId } });
+          await tx.setlistItem.updateMany({ where: { songVersionId: { in: ids }, setlist: { ownerTeamId: teamId } }, data: { sharedByUserId: null } });
+        } else {
+          await tx.accessGrant.createMany({ data: ids.map((songVersionId) => ({ songVersionId, grantedToTeamId: teamId, grantedByUserId: ownerId })), skipDuplicates: true });
+        }
+      },
+      { timeout: 60_000 },
+    );
+    return songs === "move" ? { moved: ids.length, shared: 0 } : { moved: 0, shared: ids.length };
+  }
+
+  /** Whether it's shared with `user` themselves (not only through a team): theirs to leave. */
+  async sharedWithUser(user: AuthenticatedUser, songbookId: string): Promise<boolean> {
+    return (await this.prisma.client.songbookShare.count({ where: { songbookId, userId: user.id } })) > 0;
+  }
+
   /** Someone it's shared with takes it out of their songbooks (a team's share stays the team's). */
   async leave(user: AuthenticatedUser, songbookId: string) {
     const { count } = await this.prisma.client.songbookShare.deleteMany({ where: { songbookId, userId: user.id } });

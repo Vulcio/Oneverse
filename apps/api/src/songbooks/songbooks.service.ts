@@ -175,7 +175,9 @@ export class SongbooksService {
       if (sections?.length && key(sections) !== key(songbook.sections as SongbookSection[] | null)) catalogSections = sections;
     }
 
-    return { ...toDetail(songbook), pendingEntries, catalogSections, access: (await this.accessChecker(user))(songbook) };
+    // Shared with them themselves (not only through a team): theirs to leave (issue #211).
+    const sharedWithMe = (await this.prisma.client.songbookShare.count({ where: { songbookId, userId: user.id } })) > 0;
+    return { ...toDetail(songbook), pendingEntries, catalogSections, access: (await this.accessChecker(user))(songbook), sharedWithMe };
   }
 
   private async assertVisible(

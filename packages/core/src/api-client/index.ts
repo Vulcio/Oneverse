@@ -1600,6 +1600,12 @@ export interface SongbookSummary {
   access?: "own" | "edit" | "view";
 }
 
+/** Giving a songbook to a team (issue #211): how many of the giver's songs in it were moved to the team, or shared with it. */
+export interface SongbookGiveResult {
+  moved: number;
+  shared: number;
+}
+
 /** Someone, or a team, a songbook is shared with (issue #211). */
 export interface SongbookShare {
   canEdit: boolean;
@@ -1618,6 +1624,8 @@ export interface SongbookDetail extends SongbookSummary {
   pendingEntries?: PendingSongbookEntry[];
   /** Imported from a catalogue whose printed volumes differ from the songbook's: offered to use (issue #55). */
   catalogSections?: SongbookSection[] | null;
+  /** Shared with the viewer themselves, not only through a team (issue #211): theirs to leave. Left out by an older API. */
+  sharedWithMe?: boolean;
 }
 
 export type CreateSongbookInput = CreateSongbookRequest;
@@ -3088,6 +3096,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<SongbookShare[]>(`/songbooks/${songbookId}/shares/${"userId" in to ? `users/${to.userId}` : `teams/${to.teamId}`}`, { method: "PUT", body: JSON.stringify({ canEdit }) }),
     unshareSongbook: (songbookId: string, to: { userId: string } | { teamId: string }) =>
       request<SongbookShare[]>(`/songbooks/${songbookId}/shares/${"userId" in to ? `users/${to.userId}` : `teams/${to.teamId}`}`, { method: "DELETE" }),
+    /** Makes a personal songbook a team's (issue #211), for one of its admins: the giver's own songs in it moved to the team, or shared with it. */
+    giveSongbookToTeam: (songbookId: string, teamId: string, songs: "move" | "share") =>
+      request<SongbookGiveResult>(`/songbooks/${songbookId}/give-to-team`, { method: "POST", body: JSON.stringify({ teamId, songs }) }),
     /** Takes a songbook shared with you out of your songbooks. */
     leaveSharedSongbook: (songbookId: string) => request<void>(`/songbooks/${songbookId}/shares/users/me`, { method: "DELETE" }),
     /** Takes a song shared with you out of your library. */
