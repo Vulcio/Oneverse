@@ -1,3 +1,4 @@
+import { PLAYBACK_SOURCES } from "../playback/index.js";
 import "../zod-config.js";
 import { z } from "zod";
 import {
@@ -177,5 +178,7 @@ export const ChartPreferencesSchema = z.object({
   view: z.enum(["CHART", "GRID", "PDF"]).optional(),
   /** Which of the song's PDFs, with the PDF view; left out, its first. */
   pdfId: z.string().min(1).max(64).optional(),
+  /** What plays with the song (issue #366): left out, what it has decides (defaultPlaybackSource). */
+  playback: z.enum(PLAYBACK_SOURCES).optional(),
 });
 export type ChartPreferences = z.infer<typeof ChartPreferencesSchema>;

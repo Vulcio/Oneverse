@@ -13,15 +13,15 @@ import { chartDisplayProps, useDiagramPlayer, useDisplaySettings } from "#/lib/d
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChartOrPdf, songViewStore } from "#/components/chart-or-pdf";
 import { ChordGrid } from "#/components/chord-grid";
-import { StemDock } from "#/components/stem-dock";
 import { Button } from "@oneverse/ui/components/button";
 import { AddToSetButton } from "#/components/add-to-set";
 import { Card, CardContent } from "@oneverse/ui/components/card";
-import { YouTubeDock } from "#/components/youtube-dock";
+import { useSongPlayback } from "#/components/song-playback";
+import { songPlaybackStore } from "#/lib/playback";
 import { apiClient } from "#/lib/api-client";
+import { fileLoader } from "#/lib/song-files";
 import { artistNames } from "#/lib/artists";
 import { setMode } from "#/lib/mode";
-import { stemFilesOf, useChosenMultitrack } from "#/lib/stem-engine";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
 
@@ -91,10 +91,23 @@ export function PracticeSongPage({
     setChanged(false);
     return watchSong({ songVersionId: version.id }, { onSaved: (saved) => setChanged(saved.revision > revision) });
   }, [version.id, revision]);
-  const playable = stemFilesOf(attachments, useChosenMultitrack(version.id));
   const cueSections = useMemo(() => cueSectionsOf(version.documentJson), [version]);
   const youtubeId = version.identifiers.find((identifier) => identifier.type === "YOUTUBE")?.value ?? null;
   const returnTo = `/library/${version.id}`;
+  // What plays with it (issue #366): one control, its choice docked at the bottom.
+  const playbackStore = useMemo(() => songPlaybackStore(version.id), [version.id]);
+  const playback = useSongPlayback({
+    songVersionId: version.id,
+    title: version.title,
+    returnTo,
+    attachments,
+    load: fileLoader(version.id, false),
+    youtube: youtubeId ? { id: youtubeId } : null,
+    tempo: chart.tempo,
+    timeSignature: chart.timeSignature,
+    store: playbackStore,
+    stems: { songKey: chart.key, cueSections, record: { attachments, songKey: chart.key ?? undefined, onSaved: () => void router.invalidate() } },
+  });
   const details = [
     ...references,
     chart.key,
@@ -132,7 +145,8 @@ export function PracticeSongPage({
           ) : null}
           <DisplayPanel mode="PRACTICE" settings={display} player={player} className="h-9" />
           {notes.button}
-          <MetronomeSongButton songId={version.id} tempo={chart.tempo} timeSignature={chart.timeSignature} variant="button" />
+          {playback.control}
+          {playback.source === "METRONOME" ? null : <MetronomeSongButton songId={version.id} tempo={chart.tempo} timeSignature={chart.timeSignature} variant="button" />}
           {/* Into one of one's sets (issue #330). */}
           <AddToSetButton songVersionId={version.id} songTitle={version.title} />
           <Button variant="outline" onClick={() => setMode("edit")}>
@@ -191,25 +205,8 @@ export function PracticeSongPage({
 
       {notes.dialogs}
 
-      {/* Its stems or recording, else its YouTube video, docked at the bottom (issues #64, #66). */}
-      {playable.stems.length > 0 ? (
-        <StemDock
-          song={{
-            songVersionId: version.id,
-            title: version.title,
-            returnTo,
-            ...playable,
-            load: (file, onProgress) => apiClient.downloadAttachment(version.id, file.id, onProgress),
-            tempo: chart.tempo,
-            timeSignature: chart.timeSignature,
-            songKey: chart.key,
-            cueSections,
-            record: { attachments, songKey: chart.key ?? undefined, onSaved: () => void router.invalidate() },
-          }}
-        />
-      ) : youtubeId ? (
-        <YouTubeDock video={{ songVersionId: version.id, videoId: youtubeId, title: version.title, returnTo }} />
-      ) : null}
+      {/* What plays with it, docked at the bottom (issues #64, #66, #366). */}
+      {playback.dock}
     </div>
   );
 }

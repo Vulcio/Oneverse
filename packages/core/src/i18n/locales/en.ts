@@ -875,6 +875,18 @@ const en = {
     followingShort: "Following {{name}}",
     followingMetronome: "{{name}} leads the metronome: you hear it in time with the others. Your sound and volume are your own.",
   },
+  playback: {
+    label: "What plays",
+    leaderChose: "{{name}} chose what plays for everyone in Sync play",
+    sources: {
+      MASTER: "Master",
+      YOUTUBE: "YouTube",
+      STEMS: "Stems",
+      TAKES: "Stems + takes",
+      METRONOME: "Metronome only",
+      NONE: "Nothing",
+    },
+  },
   metronome: {
     title: "Metronome",
     description: "Set the tempo, the time signature and which beats sound. It keeps time while you move around the app.",
@@ -3239,6 +3251,7 @@ const en = {
     play: "Play",
     pause: "Pause",
     loading: "Loading the stems… {{percent}}%",
+    joining: "Playing what's in; the other parts join as they arrive… {{percent}}%",
     position: "Position",
     mute: "Mute {{part}}",
     solo: "Solo {{part}}",

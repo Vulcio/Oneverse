@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PLAYBACK_SOURCES } from "../playback/index.js";
 import { applyLiveOp, LIVE_COMMAND_ID, LIVE_PRESENTERS_MAX, LiveOpSchema, SyncMetronomeSchema, SyncPresentingSchema, SyncStemsSchema, type LiveActor, type LiveCommandOp, type LiveOp, type LiveOpContext, type LiveRefusal, type LiveSessionState } from "./index.js";
 
 /**
@@ -29,6 +30,8 @@ export const LiveSessionStateSchema = z.object({
   presenting: SyncPresentingSchema.nullish(),
   presentingRev: z.int().min(0).optional(),
   presenters: z.array(z.object({ id, name: z.string().max(200) })).max(LIVE_PRESENTERS_MAX).optional(),
+  /** What plays with the set's songs, the leader's choice for everyone (issue #366). */
+  playback: z.record(id, z.enum(PLAYBACK_SOURCES)).optional(),
 });
 
 /** One change the room applied, as it's kept in the record (LiveSessionCommand). */

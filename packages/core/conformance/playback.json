@@ -1,0 +1,437 @@
+{
+  "$schema": "songverse-conformance/v1",
+  "area": "playback",
+  "about": "What plays with a song (issue #366): the sources it offers, the default, and the files each plays",
+  "functions": {
+    "playbackSourcesOf": {
+      "about": "The sources a song offers, in the order they're listed",
+      "params": [
+        "material"
+      ],
+      "cases": [
+        {
+          "name": "nothing at all",
+          "args": [
+            {
+              "files": [],
+              "youtube": false
+            }
+          ],
+          "expected": [
+            "METRONOME",
+            "NONE"
+          ]
+        },
+        {
+          "name": "a master and a video",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": null,
+                  "filename": "Master.opus",
+                  "createdAt": "2026-01-01T00:00:00Z",
+                  "origin": "UPLOADED"
+                }
+              ],
+              "youtube": true,
+              "tempo": 72
+            }
+          ],
+          "expected": [
+            "MASTER",
+            "YOUTUBE",
+            "METRONOME",
+            "NONE"
+          ]
+        },
+        {
+          "name": "stems only",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": "DRUMS",
+                  "filename": "Drums.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "BASS",
+                  "filename": "Bass.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                }
+              ],
+              "youtube": false
+            }
+          ],
+          "expected": [
+            "STEMS",
+            "METRONOME",
+            "NONE"
+          ]
+        },
+        {
+          "name": "stems with a take",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": "DRUMS",
+                  "filename": "Drums.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "BASS",
+                  "filename": "Bass.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "VOCALS",
+                  "filename": "Ana - Vocals.webm",
+                  "createdAt": "2026-01-03T00:00:00Z",
+                  "origin": "RECORDED"
+                }
+              ],
+              "youtube": false
+            }
+          ],
+          "expected": [
+            "STEMS",
+            "TAKES",
+            "METRONOME",
+            "NONE"
+          ]
+        },
+        {
+          "name": "a multitrack of takes only",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": "VOCALS",
+                  "filename": "Ana - Vocals.webm",
+                  "createdAt": "2026-01-03T00:00:00Z",
+                  "origin": "RECORDED",
+                  "multitrackId": "mt_new"
+                }
+              ],
+              "youtube": false
+            }
+          ],
+          "expected": [
+            "TAKES",
+            "METRONOME",
+            "NONE"
+          ]
+        }
+      ]
+    },
+    "defaultPlaybackSource": {
+      "about": "What plays when nothing's chosen: master, then stems (with takes), then the video, then the metronome when the tempo is known",
+      "params": [
+        "material"
+      ],
+      "cases": [
+        {
+          "name": "a master and stems",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": null,
+                  "filename": "Master.opus",
+                  "createdAt": "2026-01-01T00:00:00Z",
+                  "origin": "UPLOADED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "DRUMS",
+                  "filename": "Drums.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "BASS",
+                  "filename": "Bass.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                }
+              ],
+              "youtube": true
+            }
+          ],
+          "expected": "MASTER"
+        },
+        {
+          "name": "stems with a take",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": "DRUMS",
+                  "filename": "Drums.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "BASS",
+                  "filename": "Bass.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "VOCALS",
+                  "filename": "Ana - Vocals.webm",
+                  "createdAt": "2026-01-03T00:00:00Z",
+                  "origin": "RECORDED"
+                }
+              ],
+              "youtube": true
+            }
+          ],
+          "expected": "TAKES"
+        },
+        {
+          "name": "a video",
+          "args": [
+            {
+              "files": [],
+              "youtube": true,
+              "tempo": 72
+            }
+          ],
+          "expected": "YOUTUBE"
+        },
+        {
+          "name": "a tempo only",
+          "args": [
+            {
+              "files": [],
+              "youtube": false,
+              "tempo": 72
+            }
+          ],
+          "expected": "METRONOME"
+        },
+        {
+          "name": "nothing",
+          "args": [
+            {
+              "files": [],
+              "youtube": false
+            }
+          ],
+          "expected": "NONE"
+        }
+      ]
+    },
+    "resolvePlaybackSource": {
+      "about": "The first choice the song still offers (the leader's, then the person's), else the default",
+      "params": [
+        "material",
+        "first",
+        "second"
+      ],
+      "cases": [
+        {
+          "name": "the person's choice",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": null,
+                  "filename": "Master.opus",
+                  "createdAt": "2026-01-01T00:00:00Z",
+                  "origin": "UPLOADED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "DRUMS",
+                  "filename": "Drums.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "BASS",
+                  "filename": "Bass.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                }
+              ],
+              "youtube": false
+            },
+            null,
+            "STEMS"
+          ],
+          "expected": "STEMS"
+        },
+        {
+          "name": "the leader's before the person's",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": null,
+                  "filename": "Master.opus",
+                  "createdAt": "2026-01-01T00:00:00Z",
+                  "origin": "UPLOADED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "DRUMS",
+                  "filename": "Drums.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                },
+                {
+                  "type": "AUDIO",
+                  "stemPart": "BASS",
+                  "filename": "Bass.opus",
+                  "createdAt": "2026-01-02T00:00:00Z",
+                  "origin": "SEPARATED"
+                }
+              ],
+              "youtube": false
+            },
+            "METRONOME",
+            "STEMS"
+          ],
+          "expected": "METRONOME"
+        },
+        {
+          "name": "a choice the song no longer offers",
+          "args": [
+            {
+              "files": [
+                {
+                  "type": "AUDIO",
+                  "stemPart": null,
+                  "filename": "Master.opus",
+                  "createdAt": "2026-01-01T00:00:00Z",
+                  "origin": "UPLOADED"
+                }
+              ],
+              "youtube": false
+            },
+            null,
+            "TAKES"
+          ],
+          "expected": "MASTER"
+        }
+      ]
+    },
+    "filesForSource": {
+      "about": "A multitrack's files as a source plays them: STEMS without the takes, unless it has nothing else",
+      "params": [
+        "files",
+        "source"
+      ],
+      "cases": [
+        {
+          "name": "stems leave the take out",
+          "args": [
+            [
+              {
+                "type": "AUDIO",
+                "stemPart": "DRUMS",
+                "filename": "Drums.opus",
+                "createdAt": "2026-01-02T00:00:00Z",
+                "origin": "SEPARATED"
+              },
+              {
+                "type": "AUDIO",
+                "stemPart": "BASS",
+                "filename": "Bass.opus",
+                "createdAt": "2026-01-02T00:00:00Z",
+                "origin": "SEPARATED"
+              },
+              {
+                "type": "AUDIO",
+                "stemPart": "VOCALS",
+                "filename": "Ana - Vocals.webm",
+                "createdAt": "2026-01-03T00:00:00Z",
+                "origin": "RECORDED"
+              }
+            ],
+            "STEMS"
+          ],
+          "expected": [
+            "Drums.opus",
+            "Bass.opus"
+          ]
+        },
+        {
+          "name": "takes keep it",
+          "args": [
+            [
+              {
+                "type": "AUDIO",
+                "stemPart": "DRUMS",
+                "filename": "Drums.opus",
+                "createdAt": "2026-01-02T00:00:00Z",
+                "origin": "SEPARATED"
+              },
+              {
+                "type": "AUDIO",
+                "stemPart": "BASS",
+                "filename": "Bass.opus",
+                "createdAt": "2026-01-02T00:00:00Z",
+                "origin": "SEPARATED"
+              },
+              {
+                "type": "AUDIO",
+                "stemPart": "VOCALS",
+                "filename": "Ana - Vocals.webm",
+                "createdAt": "2026-01-03T00:00:00Z",
+                "origin": "RECORDED"
+              }
+            ],
+            "TAKES"
+          ],
+          "expected": [
+            "Drums.opus",
+            "Bass.opus",
+            "Ana - Vocals.webm"
+          ]
+        },
+        {
+          "name": "only takes",
+          "args": [
+            [
+              {
+                "type": "AUDIO",
+                "stemPart": "VOCALS",
+                "filename": "Ana - Vocals.webm",
+                "createdAt": "2026-01-03T00:00:00Z",
+                "origin": "RECORDED"
+              }
+            ],
+            "STEMS"
+          ],
+          "expected": [
+            "Ana - Vocals.webm"
+          ]
+        }
+      ]
+    }
+  }
+}

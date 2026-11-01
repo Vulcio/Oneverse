@@ -1,6 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { STEM_SPEED_MAX, STEM_SPEED_MIN } from "../stems/index.js";
+import { PLAYBACK_SOURCES } from "../playback/index.js";
 import type { SyncPresenting, SyncSession } from "../sync/index.js";
 import { cueTarget, type CueItem } from "./cue.js";
 
@@ -77,6 +78,7 @@ export const SyncMetronomeSchema = z.object({
 export const SyncStemsSchema = z.object({
   songVersionId: id,
   multitrackId: z.string().max(40).nullish(),
+  source: z.enum(["MASTER", "STEMS", "TAKES"]).optional(),
   transpose: z.int().min(-12).max(12).optional(),
   transposeParts: z
     .record(id, z.boolean())
@@ -88,6 +90,12 @@ export const SyncStemsSchema = z.object({
   position: z.number().min(0),
   anchorAt: z.number(),
 });
+
+/** The most songs of a set the leader chooses what plays for (issue #366). */
+export const LIVE_PLAYBACK_MAX = 200;
+
+/** What plays with each song of the set, as the leader chose it for everyone (issue #366): by item, null to leave it to each person. */
+export const SyncPlaybackSchema = z.record(id, z.enum(PLAYBACK_SOURCES).nullable()).refine((items) => Object.keys(items).length <= LIVE_PLAYBACK_MAX);
 
 /** The revision of what's presented a command was decided from (issue #305). */
 const basedOn = z.int().min(0).optional();
@@ -105,6 +113,8 @@ export const LiveOpSchema = z.discriminatedUnion("kind", [
     itemId: z.unknown().optional(),
     presenting: SyncPresentingSchema.nullable().optional(),
     basedOn,
+    /** What plays with these songs of the set, for everyone (issue #366): merged into the session's, null taking one back. */
+    playback: SyncPlaybackSchema.optional(),
   }),
   /** The media operator takes the screens, shared or alone (issue #275), or gives them back (null). */
   z.object({ kind: z.literal("screens"), control: z.enum(["shared", "exclusive"]).nullable() }),
@@ -234,6 +244,15 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
       if (op.metronome !== undefined) next.metronome = op.metronome as LiveSessionState["metronome"];
       if (op.stems !== undefined) next.stems = op.stems;
       if (op.itemId !== undefined) next.itemId = typeof op.itemId === "string" ? op.itemId.slice(0, 64) : null;
+      if (op.playback !== undefined) {
+        const playback = { ...current.playback };
+        for (const [itemId, source] of Object.entries(op.playback)) {
+          if (source) playback[itemId] = source;
+          else delete playback[itemId];
+        }
+        if (Object.keys(playback).length > LIVE_PLAYBACK_MAX) return refuse("bad-request", "Too many songs");
+        next.playback = playback;
+      }
       if (op.presenting !== undefined) {
         // Control locked to an operator (issues #275, #305): the leader's Live waits.
         if (lockedBy) return refuse("forbidden", `${lockedBy} runs the screens`);
