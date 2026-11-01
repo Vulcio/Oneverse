@@ -76,12 +76,13 @@ export function ProfilePrompt() {
         if (!next) void skip();
       }}
     >
-      <DialogContent className="max-h-[90dvh] overflow-y-auto" data-testid="profile-prompt">
+      <DialogContent className="max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)_auto]" data-testid="profile-prompt">
         <DialogHeader>
           <DialogTitle>{t("profilePrompt.title")}</DialogTitle>
           <DialogDescription>{t("profilePrompt.description")}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-5">
+        {/* Only the choices scroll: Save and Skip stay in view on a phone. */}
+        <div className="-mx-6 flex flex-col gap-5 overflow-y-auto px-6">
           <ChipGroup
             label={t("roles.instrumentsLabel")}
             options={[...INSTRUMENTS, ...custom.map((instrument) => instrument.id)]}

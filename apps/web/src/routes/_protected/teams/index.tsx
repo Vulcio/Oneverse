@@ -22,7 +22,10 @@ function TeamsIndex() {
       <Card>
         <CardContent>
           {teams.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("teams.noTeamsYet")}</p>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-muted-foreground">{t("teams.noTeamsYet")}</p>
+              <p className="text-sm text-muted-foreground">{t("teams.howToJoin")}</p>
+            </div>
           ) : (
             <ul className="flex flex-col divide-y">
               {teams.map((team) => (

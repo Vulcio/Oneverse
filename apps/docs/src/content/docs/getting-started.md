@@ -13,6 +13,16 @@ If your Songverse offers it, you can also use **Continue with Google** instead o
 
 Some servers only let invited people sign up: **Sign up** then says so. Open the invitation link you were sent (it fills in your email), or a team's invite link or a set's share link someone gave you, and create your account from there.
 
+## Your first steps
+
+Once your email is verified, you land in your library, empty for now. Songverse asks **What do you play or do?** (see [Roles](/account/#roles)), and the library shows **Getting started**, three steps from your first song to a set with your band, each ticked as you do it:
+
+1. **Add a song** - type or paste its chords and words, or import a file (see [Adding a song](/library/#adding-a-song)). Only you see it until you share it: a lock on it says so.
+2. **Join your team, or start one** - your band's team joins you through the invite link one of its admins sends you: open it (signing up there if you haven't yet) and you're in. Or **Create a team** and send your band its link (see [Teams](/teams/)).
+3. **Plan a set with your team** - a team's set is for everyone in it. Add your songs to it: they're shared with the team as you add them (see [Sets](/sets/)).
+
+Each team's page says what you can do there: as a **member**, you open the team's songs, songbooks and sets and play them; as an **admin**, you change them, invite people and run the team. **Put away** (**×**) hides Getting started on this device.
+
 ## Signing in
 
 You sign in at Oneverse, then come back to the app you opened. Once you're signed in there, the other apps sign you in without asking again. **Sign out** in an app signs you out of it and of Oneverse.
@@ -82,4 +92,5 @@ Everything in Songverse belongs to someone:
 
 - **Personal** things are yours alone, unless you share them.
 - **Team** things are seen by the team's members and changed by its admins.
+- **Shared** things stay their owner's: shared with a person, a team or a whole [organisation](/organizations/), they're seen by them too (see [Sharing a song](/people/#sharing-a-song) and [Sharing a songbook](/songbooks/#sharing-a-songbook)).
 - **Global** songs are in the shared catalogue, for everyone. They're checked by a reviewer before they're added (see [Submitting to the global catalogue](/library/#submitting-to-the-global-catalogue)).

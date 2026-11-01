@@ -13,6 +13,16 @@ Si votre Songverse le propose, vous pouvez aussi utiliser **Continuer avec Googl
 
 Certains serveurs n'acceptent que les personnes invitées : **S'inscrire** l'indique alors. Ouvrez le lien d'invitation reçu (il remplit votre adresse e-mail), ou le lien d'invitation d'une équipe ou le lien de partage d'une liste de chants qu'on vous a donné, et créez votre compte depuis là.
 
+## Vos premiers pas
+
+Une fois votre adresse vérifiée, vous arrivez dans votre bibliothèque, vide pour l'instant. Songverse demande **Que jouez-vous ou que faites-vous ?** (voir [Rôles](/fr/account/#rôles)), et la bibliothèque affiche **Pour commencer**, trois étapes de votre premier chant à une liste avec votre groupe, cochées au fur et à mesure :
+
+1. **Ajoutez un chant** - tapez ou collez ses accords et ses paroles, ou importez un fichier (voir [Ajouter un chant](/fr/library/#ajouter-un-chant)). Vous seul·e le voyez tant que vous ne le partagez pas : un cadenas l'indique.
+2. **Rejoignez votre équipe, ou créez-en une** - vous rejoignez l'équipe de votre groupe par le lien d'invitation qu'un de ses administrateurs vous envoie : ouvrez-le (en vous inscrivant là si ce n'est pas fait) et vous en faites partie. Ou **Créer une équipe** et envoyez son lien à votre groupe (voir [Équipes](/fr/teams/)).
+3. **Préparez une liste avec votre équipe** - la liste d'une équipe est pour tous ses membres. Ajoutez-y vos chants : ils sont partagés avec l'équipe en les ajoutant (voir [Listes](/fr/sets/)).
+
+La page de chaque équipe dit ce que vous pouvez y faire : **membre**, vous ouvrez les chants, recueils et listes de l'équipe et les jouez ; **administrateur**, vous les modifiez, invitez des personnes et gérez l'équipe. **Ranger** (**×**) masque Pour commencer sur cet appareil.
+
 ## Se connecter
 
 Vous vous connectez sur Oneverse, puis revenez dans l'application ouverte. Une fois connecté là-bas, les autres applications vous connectent sans redemander. **Se déconnecter** dans une application vous déconnecte d'elle et d'Oneverse.
@@ -82,4 +92,5 @@ Tout, dans Songverse, appartient à quelqu'un :
 
 - ce qui est **personnel** n'est qu'à vous, sauf si vous le partagez ;
 - ce qui appartient à une **équipe** est vu par ses membres et modifié par ses administrateurs ;
+- ce qui est **partagé** reste à son propriétaire : partagé avec une personne, une équipe ou toute une [organisation](/fr/organizations/), elles le voient aussi (voir [Partager un chant](/fr/people/#partager-un-chant) et [Partager un recueil](/fr/songbooks/#partager-un-recueil)) ;
 - les chants **globaux** sont dans le catalogue commun, pour tout le monde. Un relecteur les vérifie avant de les ajouter (voir [Proposer au catalogue global](/fr/library/#proposer-au-catalogue-global)).

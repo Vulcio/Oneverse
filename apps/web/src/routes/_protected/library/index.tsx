@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { ChevronRight, Search } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { GettingStarted } from "#/components/getting-started";
 import { LibraryShelves } from "#/components/library-home";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -26,16 +27,20 @@ export const Route = createFileRoute("/_protected/library/")({
     if (Object.keys(search).length > 0) throw redirect({ to: "/library/songs", search, replace: true });
   },
   loader: async () => {
-    const [home, recent] = await Promise.all([apiClient.getLibraryHome().catch(() => null), apiClient.listSongVersions({ pageSize: PREVIEW })]);
-    return { home, recent };
+    const [home, recent, stats] = await Promise.all([
+      apiClient.getLibraryHome().catch(() => null),
+      apiClient.listSongVersions({ pageSize: PREVIEW }),
+      apiClient.getSongStats().catch(() => null),
+    ]);
+    return { home, recent, stats };
   },
   component: LibraryHomePage,
 });
 
 function LibraryHomePage() {
   const { t } = useTranslation();
-  const { home, recent } = Route.useLoaderData();
-  const { session } = Route.useRouteContext();
+  const { home, recent, stats } = Route.useLoaderData();
+  const { session, teams, setlists } = Route.useRouteContext();
   const columns = useLibraryColumns(session.userId);
   // As chosen for Songs (issue #150).
   const [columnPrefs] = useColumnPrefs();
@@ -61,6 +66,9 @@ function LibraryHomePage() {
           <Button render={<Link to="/library/new" />}>{t("library.addASong")}</Button>
         </div>
       </div>
+
+      {/* The way from signing up to a set with one's team (issue #350). */}
+      {stats?.ownSongCount !== undefined ? <GettingStarted ownSongs={stats.ownSongCount} teams={teams} setlists={setlists} /> : null}
 
       {recent.total === 0 ? (
         <Card>

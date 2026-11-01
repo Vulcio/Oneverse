@@ -2836,7 +2836,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     updateSmartList: (id: string, change: { name?: string; filters?: SmartListFilters }) =>
       request<SmartList>(`/smart-lists/${id}`, { method: "PATCH", body: JSON.stringify(change) }),
     deleteSmartList: (id: string) => request<void>(`/smart-lists/${id}`, { method: "DELETE" }),
-    getSongStats: () => request<{ songCount: number; artistCount: number }>("/song-versions/stats"),
+    /** `ownSongCount`: theirs and their teams' (left out by an older API). */
+    getSongStats: () => request<{ songCount: number; artistCount: number; ownSongCount?: number }>("/song-versions/stats"),
     getSongVersion: (songVersionId: string) => request<SongVersionDetail>(`/song-versions/${songVersionId}`),
     getSongVersionSongbooks: (songVersionId: string) =>
       request<SongVersionSongbookMembership[]>(`/song-versions/${songVersionId}/songbooks`),

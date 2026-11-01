@@ -168,6 +168,10 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
               </div>
             )}
             {team.description ? <p className="text-sm text-muted-foreground">{team.description}</p> : null}
+            {/* What their role here lets them do (issue #350): how people learn it. */}
+            <p className="text-xs text-muted-foreground" data-testid="team-your-role" data-role={team.currentUserRole}>
+              {t(isAdmin ? (team.usesSongverse === false ? "teams.youAreAdminGroup" : "teams.youAreAdmin") : team.usesSongverse === false ? "teams.youAreMemberGroup" : "teams.youAreMember")}
+            </p>
             {team.organization && organizations && organizations.mode !== "NONE" ? (
               <HostLink href={links.organization(team.organization.id)} className="text-xs text-muted-foreground hover:text-primary" data-testid="team-organization">
                 {t("organizations.partOf", { name: team.organization.name })}

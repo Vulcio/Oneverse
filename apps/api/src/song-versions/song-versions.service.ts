@@ -767,17 +767,19 @@ export class SongVersionsService {
   }
 
   /** How many songs, and distinct artists, the user can see - for the dashboard. */
-  async statsForUser(user: AuthenticatedUser): Promise<{ songCount: number; artistCount: number }> {
+  async statsForUser(user: AuthenticatedUser): Promise<{ songCount: number; artistCount: number; ownSongCount: number }> {
     const where = await this.access.songsVisibleTo(user);
-    const [songCount, artists] = await Promise.all([
+    const [songCount, ownSongCount, artists] = await Promise.all([
       this.prisma.client.songVersion.count({ where }),
+      // Theirs and their teams' (issue #350: getting started's first step).
+      this.prisma.client.songVersion.count({ where: { deletedAt: null, OR: [{ ownerScope: "USER", ownerUserId: user.id }, { ownerScope: "TEAM", ownerTeamId: { in: await this.access.teamIds(user.id) } }] } }),
       // Grouped by the database (issue #341): Prisma's `distinct` read every credit and dropped the repeats itself.
       this.prisma.client.versionContributor.groupBy({
         by: ["source"],
         where: { roles: { has: "PERFORMER" }, source: { not: null }, songVersion: where },
       }),
     ]);
-    return { songCount, artistCount: new Set(artists.map((a) => a.source!.trim().toLowerCase())).size };
+    return { songCount, ownSongCount, artistCount: new Set(artists.map((a) => a.source!.trim().toLowerCase())).size };
   }
 
   /**
