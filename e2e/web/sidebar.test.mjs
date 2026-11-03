@@ -155,7 +155,7 @@ await step("sub-items have icons (a team's or a songbook's avatar, issue #161); 
   if (!subItems.length || subItems.some((item) => item.endsWith(":false") && !/^View all/.test(item))) throw new Error(subItems.join(" "));
   await sidebar.getByText("Tools", { exact: true }).waitFor();
   await sidebar.getByRole("link", { name: "Tuner" }).click();
-  await page.getByTestId("tuner").getByText("Coming soon").waitFor();
+  await page.getByTestId("tuner-start").waitFor();
   // Docked: below everything else, above the account.
   const docs = await sidebar.getByTestId("sidebar-docs").boundingBox();
   const tuner = await sidebar.getByRole("link", { name: "Tuner" }).boundingBox();
