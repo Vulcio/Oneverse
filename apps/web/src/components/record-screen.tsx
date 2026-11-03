@@ -573,7 +573,7 @@ export function RecordScreen({
     if (!current) return null;
     if (phase === "recording") return current.position(zeroAt.current);
     if (current.kind === "player" && getStemState().playing) return getStemState().position;
-    return multitrack ? range.from - range.lead : null;
+    return multitrack ? Math.max(0, range.from - range.lead) : null;
   };
   const stripMarks = cues.flatMap((item) => {
     const section = cueSections.find((candidate) => candidate.id === item.sectionId);
