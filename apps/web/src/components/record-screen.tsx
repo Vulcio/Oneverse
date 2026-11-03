@@ -18,7 +18,7 @@ import {
 } from "@oneverse/core";
 import { useRouteContext } from "@tanstack/react-router";
 import { Check, ChevronDown, ChevronUp, Circle, CloudOff, Hand, Headphones, ListPlus, Loader2, Mic, Play, RotateCcw, Square, Trash2, TriangleAlert, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Drawer, DrawerContent, DrawerTitle } from "@oneverse/ui/components/drawer";
@@ -96,6 +96,8 @@ export function RecordScreen({
   setlist,
   cueSections = [],
   player = null,
+  inline = false,
+  onPhase,
   onClose,
   onSaved,
 }: {
@@ -119,6 +121,10 @@ export function RecordScreen({
   player?: StemSong | null;
   onClose: () => void;
   onSaved: () => void;
+  /** In the player (issue #365): a part of it, not a drawer of its own - the player's tracks stay in reach. */
+  inline?: boolean;
+  /** Hears whether a take is being recorded: the player's Record tab says so. */
+  onPhase?: (phase: "opening" | "ready" | "recording" | "saving" | "waiting") => void;
 }) {
   const { t } = useTranslation();
   const { session } = useRouteContext({ from: "/_protected" });
@@ -128,6 +134,7 @@ export function RecordScreen({
   const engine = useRef<RecordEngine | null>(null);
   const [opened, setOpened] = useState<RecordEngine | null>(null);
   const [phase, setPhase] = useState<Phase>("opening");
+  useEffect(() => onPhase?.(phase), [phase]);
   const [error, setError] = useState<string | null>(null);
   const [micRefused, setMicRefused] = useState(false);
   const [target, setTarget] = useState(initialTarget);
@@ -590,21 +597,21 @@ export function RecordScreen({
   });
 
   return (
-    <Drawer open modal={false} disablePointerDismissal swipeDirection="down" onOpenChange={(open) => !open && close()}>
-      <DrawerContent
-        className="max-h-[85dvh] sm:right-4 sm:left-4 sm:mx-auto sm:w-auto sm:max-w-3xl"
-        aria-label={t("recorder.title")}
-        data-testid="recorder"
-        data-phase={phase}
-        data-engine={opened?.kind}
-        data-more={more ? "true" : "false"}
-      >
+    <Shell
+      inline={inline}
+      onDismiss={close}
+      label={t("recorder.title")}
+      data-testid="recorder"
+      data-phase={phase}
+      data-engine={opened?.kind}
+      data-more={more ? "true" : "false"}
+    >
         <div className="flex items-center gap-2 px-4 pb-2">
           <Mic className={cn("size-4 shrink-0", phase === "recording" ? "text-destructive" : "text-muted-foreground")} aria-hidden />
-          <DrawerTitle className="min-w-0 flex-1 truncate">
+          <Title inline={inline}>
             {[partLabel(choice), multitrack ? (range.label ?? (what === "song" ? t("recorder.screen.wholeSong") : null)) : t("stems.newMultitrack")].filter(Boolean).join(" · ")}
             <span className="font-normal text-muted-foreground"> · {songTitle}</span>
-          </DrawerTitle>
+          </Title>
           {phase === "recording" ? (
             <span className="text-sm font-semibold text-destructive tabular-nums" role="status" data-testid="recorder-status">
               {counting
@@ -641,13 +648,13 @@ export function RecordScreen({
             <X />
           </Button>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
+        <div className={cn("flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4", inline && "max-h-[45dvh] px-3")}>
           {/* The take as it's recorded: the microphone left of the playhead, the parts to come right of it. */}
           <TakeStrip recorder={opened?.recorder ?? null} ahead={aheadParts} position={stripPosition} marks={stripMarks} recording={phase === "recording" && !counting} />
           {more ? (
             <div className="flex flex-col gap-4">
               {/* Into what, and which part. */}
-              <div className="grid gap-3 text-sm sm:grid-cols-[7rem_1fr] sm:items-center">
+              <div className="grid gap-3 text-sm sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center">
                 <Label htmlFor="recorder-target">{t("recorder.into")}</Label>
                 <NativeSelect id="recorder-target" value={target} disabled={settled && phase !== "opening"} onChange={(event) => changeTarget(event.target.value)} data-testid="recorder-target">
                   {multitracks.map((candidate, index) => (
@@ -1037,7 +1044,7 @@ export function RecordScreen({
             </div>
           ) : null}
         </div>
-        <div className="flex flex-row flex-wrap items-center justify-end gap-2 border-t bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className={cn("flex flex-row flex-wrap items-center justify-end gap-2 border-t bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", inline && "rounded-b-lg bg-background px-3 pb-3")}>
           {phase === "waiting" ? (
             <Button type="button" onClick={onClose} data-testid="recorder-close">
               {t("recorder.close")}
@@ -1075,7 +1082,27 @@ export function RecordScreen({
             </>
           )}
         </div>
+    </Shell>
+  );
+}
+
+/** A drawer from the bottom, not modal; or, in the player, a part of it. */
+function Shell({ inline, onDismiss, label, children, ...data }: { inline: boolean; onDismiss: () => void; label: string; children: ReactNode } & Record<`data-${string}`, string | undefined>) {
+  if (inline)
+    return (
+      <section className="flex flex-col rounded-lg border bg-background pt-2" aria-label={label} {...data}>
+        {children}
+      </section>
+    );
+  return (
+    <Drawer open modal={false} disablePointerDismissal swipeDirection="down" onOpenChange={(open) => !open && onDismiss()}>
+      <DrawerContent className="max-h-[85dvh] sm:right-4 sm:left-4 sm:mx-auto sm:w-auto sm:max-w-3xl" aria-label={label} {...data}>
+        {children}
       </DrawerContent>
     </Drawer>
   );
+}
+
+function Title({ inline, children }: { inline: boolean; children: ReactNode }) {
+  return inline ? <p className="min-w-0 flex-1 truncate text-sm font-semibold">{children}</p> : <DrawerTitle className="min-w-0 flex-1 truncate">{children}</DrawerTitle>;
 }

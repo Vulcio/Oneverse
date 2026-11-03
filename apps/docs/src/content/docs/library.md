@@ -244,20 +244,20 @@ You can record a part straight into Songverse, on a computer, phone or tablet wi
 - **Record a new multitrack**, at the bottom of the **Audio** tab: the first layer of a song, or another version of it, with the metronome only. Give it a **Name**, a **Tempo (BPM)** and a **Time signature** (the song's to start with). It starts with a bar of count-in, which is kept: the multitrack's first beat is one bar in.
 - **Record a part**, in a multitrack's box: another part of that multitrack, hearing its other parts (untick one under **Hear** to leave it out) and the click, at its tempo, with a bar of count-in before its first beat.
 
-#### The recording drawer
+#### The recorder
 
-**Record a part** opens the recording drawer at the bottom of the screen: the same from a multitrack's box on the **Audio** tab, from **Record a new multitrack**, and from the microphone button in the stem player. It doesn't block the page: the chart, the lyrics and the player's mutes, solos and sections stay usable behind it.
+The recorder is the same wherever you record. In the stem player, the microphone button opens it as the player's **Record** tab, beside its **Mix** tab (the parts, their mutes and solos): on a phone you switch between the two; on a wider screen they're side by side, or one above the other on a tall one such as a tablet held upright. Elsewhere - **Record a part** in a multitrack's box on the **Audio** tab, **Record a new multitrack** - it opens in a drawer at the bottom of the screen. Neither blocks the page: the chart and the lyrics stay usable.
 
-![Recording in the stem player: the drawer over the player](../../assets/screenshots/en/stems-record.jpg)
+![Recording in the stem player: the Mix and Record tabs side by side](../../assets/screenshots/en/stems-record.jpg)
 
 - At its top is what you're recording ("Lead vocal · Chorus"), and under it the take as it's recorded: the line in the middle is the playhead. What the microphone hears draws itself to its left (red while you record, amber where it's too loud), and what's coming in the parts you hear to its right, with the sections marked. Even before you record, it shows whether the microphone hears you.
 - The arrow beside it shows or hides every choice: **Into**, **Part**, **The take**, what to record, **Hear** and **Click**, the **Microphone** level, the delay and the clean-up. They hide while you record, so the page shows; the arrow brings them back.
 - What to record: **Whole song**; **A section**, picked from the sections placed in the player (**Place the sections**); or **From bar**, a punch-in. The count-in is the bar before it, its beats counted down at the top. A section's take stops on its own at the section's end.
 - From the stem player, it records over the player as it is: your mutes, solos and transposition, the metronome if **Click with the recording** is on, from the bar the playhead is in. Recorded while transposed, the take is kept as sung in that key (see above).
-- Every take is kept until you close the drawer, listed under **Takes**: **Listen** plays one with the other parts (in the stem player, as a track called **New take**), **Pick** chooses the one to keep, and **Line up** nudges it. **Record again** records another in one tap.
+- Every take is kept until you close the recorder, listed under **Takes**: **Listen** plays one with the other parts (in the stem player, as a track called **New take**), **Pick** chooses the one to keep, and **Line up** nudges it. **Record again** records another in one tap.
 - **Keep take 2** (the one picked) adds it to the multitrack. To record a part in sections (the verses, then the chorus), press **Keep, next section** instead: it goes into the same part, the next section is chosen, and you record it; **Keep** then saves them all as one file. A take replaces only the time it covers, with a short crossfade at each seam: the part it replaces is kept either side (a punch-in and out), or it's silent.
-- Closing the drawer with takes not kept asks first.
-- Tap the name of a part you recorded or uploaded, unless it's locked (see [Locked files](/library/#locked-files)) - the small arrow after it - to see what can be done with it: **Record into it** opens the drawer on that part, what you record replacing only the time it covers; **Merge with…** mixes another of your parts sung in the same key into it, as one file that plays in their place (both are kept as other takes); **Delete** deletes it, once you've confirmed.
+- Closing the recorder with takes not kept asks first.
+- Tap the name of a part you recorded or uploaded, unless it's locked (see [Locked files](/library/#locked-files)) - the small arrow after it - to see what can be done with it: **Record into it** opens the recorder on that part, what you record replacing only the time it covers; **Merge with…** mixes another of your parts sung in the same key into it, as one file that plays in their place (both are kept as other takes); **Delete** deletes it, once you've confirmed.
 
 #### From the Audio tab
 
@@ -279,18 +279,18 @@ On the **Audio** tab, **Use this take** under an other take plays it instead of 
 
 Audio you upload is locked to start with (the lock button beside the file, pressed): it's kept as uploaded. A locked file can't be deleted, replaced by another take, merged with one or cleaned up, and the stem player shows neither whose it is nor any actions on it; its part, key, tempo and sections can still change. A take recorded beside a locked part plays with it rather than instead. Only whoever uploaded it can unlock it (**Unlock**, the same button) - to replace a stem, say - and lock it again. What you record in Songverse isn't locked.
 
-What you play is lined up with what you heard: Songverse takes off the delay between a sound leaving the device and the microphone hearing it. The drawer shows it - the browser's estimate to start with. For a closer one:
+What you play is lined up with what you heard: Songverse takes off the delay between a sound leaving the device and the microphone hearing it. The recorder shows it - the browser's estimate to start with. For a closer one:
 
 - **Clap along**, with your headphones on: listen to two clicks, then clap on each of the next eight, near the microphone. It measures the whole way round - Bluetooth headphones included.
 - **Measure it**, with the sound on the speakers (headphones off, sound up): Songverse plays a few clicks and listens for them.
 
-Songverse remembers what it measured on this device. Wired headphones are best: Bluetooth adds a delay that's large and can change, so the drawer warns when the sound seems to go to Bluetooth. Clap along again if a take sounds late.
+Songverse remembers what it measured on this device, for each output: plug in other headphones and the recorder says their delay isn't measured yet. Wired headphones are best: Bluetooth adds a delay that's large and can change, so the recorder warns when the sound seems to go to Bluetooth. Clap along again if a take sounds late.
 
 **Listen** plays the take back with the rest. If it's still a little early or late, move **Line up** (in milliseconds) and listen again. **Keep** adds it to the multitrack as that part, only you see it until you choose who else does (see [Who sees a file](/library/#who-sees-a-file)); **Record again** tries again. A take can be up to about nine minutes long.
 
 Nothing you record is lost on the way. A take is written to the device while you record it, and once kept, it stays there until the upload has gone through:
 
-- With no connection when you press **Keep**, the drawer says the take is **Kept on this device**. It uploads on its own as soon as the connection is back, while Songverse is open. Until then it's listed under **Takes on this device**, on the song's **Audio** tab and in the stem player, where **Upload now** sends it straight away.
+- With no connection when you press **Keep**, the recorder says the take is **Kept on this device**. It uploads on its own as soon as the connection is back, while Songverse is open. Until then it's listed under **Takes on this device**, on the song's **Audio** tab and in the stem player, where **Upload now** sends it straight away.
 - If the page reloads or the browser closes in the middle of a take, what was recorded up to then is there too, marked **cut short**: **Listen** to it, then **Keep** it (it's added as another take, never in place of a part) or **Discard** it.
 - If the microphone is unplugged or changed, or the phone takes the sound away (a call, the screen locked), the take stops there, and what was recorded is kept and can be listened to.
 

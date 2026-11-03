@@ -3285,6 +3285,9 @@ const en = {
     },
   },
   stems: {
+    mixTab_one: "Mix · {{count}} part",
+    mixTab_other: "Mix · {{count}} parts",
+    recordTab: "Record",
     stop: "Stop, back to the start",
     previousSection: "Previous section",
     nextSection: "Next section",

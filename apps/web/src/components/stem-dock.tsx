@@ -346,11 +346,15 @@ export function StemDock({ song: page }: { song: StemSong }) {
   // The recording whose actions are open (issue #142).
   const [selected, setSelected] = useState<string | null>(null);
   const [recorderOpen, setRecorderOpen] = useState(false);
+  // Recording in the player (issue #365): on a phone, its tracks or the take; and whether a take is being recorded.
+  const [dockTab, setDockTab] = useState<"mix" | "record">("record");
+  const [recordingNow, setRecordingNow] = useState(false);
   const recordable = !!song.record && !following;
   /** One of the viewer's own parts (uploaded or recorded), loaded: record into it, merge it, delete it (someone else's are theirs, or the Audio tab's). */
   const actionable = (track: StemTrack) => recordable && !whole && !!track.mine && !!track.canChange && !track.locked && track.id !== TAKE_ID && !track.failed && !recordPanel;
   const closeRecordPanel = () => {
     setRecordPanel(false);
+    setRecordingNow(false);
     setRecordInto(null);
     // Made afresh once the recorder's gone (issue #136): loaded again, ready to play and mix.
     setTimeout(() => prefetchStems(song), 0);
@@ -370,6 +374,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
         if (recordPanel) closeRecordPanel();
         else {
           setSelected(null);
+          setDockTab("record");
           setRecordPanel(true);
         }
       }}
@@ -592,104 +597,9 @@ export function StemDock({ song: page }: { song: StemSong }) {
 
   // The playhead line in the sections' colours (issue #110).
   const sectionsLine = duration ? sectionsGradient(cues, cueSections, duration, Math.min(1, position / duration)) : null;
-  const dock = (
-    <section
-      className="relative border-t bg-background shadow-[0_-4px_12px_-8px_rgb(0_0_0/0.3)]"
-      aria-label={t("stems.title")}
-      data-testid="stem-player"
-      data-state={playing ? "playing" : active ? engine.status : "idle"}
-      data-complete={active && engine.complete ? "true" : "false"}
-      data-view={expanded ? "expanded" : "compact"}
-    >
-      {/* How far through, along the top edge. */}
-      {loading ? (
-        <div
-          className="absolute inset-x-0 top-0 h-0.5 bg-muted"
-          role="progressbar"
-          aria-label={t("stems.loading", { percent: Math.round(engine.downloaded * 100) })}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(engine.downloaded * 100)}
-          data-testid="stem-download"
-        >
-          <div className="h-full bg-muted-foreground/60 transition-[width]" style={{ width: `${engine.downloaded * 100}%` }} />
-        </div>
-      ) : (
-        // The playhead: the line along the top edge, in both views - click or drag it to go there (arrow keys too).
-        <input
-          type="range"
-          min={0}
-          max={duration || 0}
-          step={0.1}
-          value={Math.min(position, duration)}
-          disabled={!active || engine.status !== "ready" || !!following}
-          onChange={(event) => seekStems(Number(event.target.value))}
-          aria-label={t("stems.position")}
-          aria-valuetext={`${formatDuration(position)} / ${formatDuration(duration)}`}
-          className="stem-playhead"
-          style={{ "--progress": duration ? `${(position / duration) * 100}%` : "0%", ...(sectionsLine ? { "--sections": sectionsLine } : {}) } as CSSProperties}
-          data-testid="stem-playhead"
-        />
-      )}
-      {expanded ? (
-        <div className={cn("mx-auto flex w-full flex-col gap-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", EDGES)}>
-          {/* On a phone, play, the time, the tools and minimize on one line (the time giving way); the multitrack and the transposition on the next (issue #140). */}
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:gap-x-3">
-            <span className="flex items-center gap-1">
-              {play}
-              {/* The transport (issue #162). */}
-              <span className="hidden sm:contents">{stopButton}</span>
-            </span>
-            {time}
-            <div className="col-span-4 row-start-2 flex flex-wrap items-center gap-1 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:gap-2" data-testid="stem-controls">
-              {sectionControls}
-              {upgradeButton}
-              {picker}
-              {transposeControl}
-              {speedControl}
-              {resetMix}
-            </div>
-            <div className="flex shrink-0 items-center [&>button]:size-8 sm:[&>button]:size-9" data-testid="stem-tools">
-              {whole ? null : combineButton}
-              {whole ? null : mixerButton}
-              {cueButton}
-              {recordButton}
-              {clickButton}
-            </div>
-            <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => expand(false)} aria-label={t("stems.minimize")} data-testid="stem-minimize">
-              <ChevronDown />
-            </Button>
-          </div>
-          {status}
-          {cueEditor && canPlaceCues && active && engine.status === "ready" ? <CueEditor song={song} cues={cues} onChange={setDraftCues} onClose={closeCueEditor} /> : null}
-          {cues.length ? <SectionLane
-              cues={cues}
-              sections={cueSections}
-              duration={duration || Math.max(...cues.map((cue) => cue.at)) + 10}
-              position={position}
-              onSeek={active && engine.status === "ready" && !following ? seekStems : undefined}
-              // Placing them: a handle on each, as in a video editor (issue #110).
-              editing={cueEditor && canPlaceCues && active && engine.status === "ready" ? { beat: engine.beat, onMove: (index, at) => setDraftCues(cues.map((cue, i) => (i === index ? { ...cue, at } : cue))) } : null}
-            /> : null}
-          {recordPanel && recordable && song.record ? (
-            // The recording drawer (issue #365), over the player's own mix and clock: the player stays usable behind it.
-            <RecordScreen
-              songVersionId={song.songVersionId}
-              songTitle={song.title}
-              multitracks={multitracksOf(song.record.attachments)}
-              target={song.multitrackId ?? ""}
-              into={recordInto}
-              songTempo={song.tempo ?? null}
-              songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
-              songKey={song.record.songKey ?? ""}
-              setlist={song.record.setlist}
-              cueSections={cueSections}
-              // Over the player's mix once it's loaded; before, on a context of its own with the parts downloaded.
-              player={active && engine.status === "ready" && engine.complete ? song : null}
-              onClose={closeRecordPanel}
-              onSaved={song.record.onSaved}
-            />
-          ) : null}
+  // The parts, their waveforms and mix (and the takes waiting on this device): beside the recording, or alone.
+  const mixContent = (
+    <>
           {/* Takes of this song not on the server yet (issue #365): waiting to upload, or cut short. */}
           {recordable ? <StoredTakes songVersionId={song.songVersionId} onUploaded={() => song.record?.onSaved()} /> : null}
           {recorded ? (
@@ -804,6 +714,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
                           onRecordInto={() => {
                             setSelected(null);
                             setRecordInto(track.id);
+                            setDockTab("record");
                             setRecordPanel(true);
                           }}
                           onClose={() => setSelected(null)}
@@ -814,6 +725,124 @@ export function StemDock({ song: page }: { song: StemSong }) {
                 );
               })}
             </ul>
+          )}
+    </>
+  );
+  const dock = (
+    <section
+      className="relative border-t bg-background shadow-[0_-4px_12px_-8px_rgb(0_0_0/0.3)]"
+      aria-label={t("stems.title")}
+      data-testid="stem-player"
+      data-state={playing ? "playing" : active ? engine.status : "idle"}
+      data-complete={active && engine.complete ? "true" : "false"}
+      data-view={expanded ? "expanded" : "compact"}
+    >
+      {/* How far through, along the top edge. */}
+      {loading ? (
+        <div
+          className="absolute inset-x-0 top-0 h-0.5 bg-muted"
+          role="progressbar"
+          aria-label={t("stems.loading", { percent: Math.round(engine.downloaded * 100) })}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(engine.downloaded * 100)}
+          data-testid="stem-download"
+        >
+          <div className="h-full bg-muted-foreground/60 transition-[width]" style={{ width: `${engine.downloaded * 100}%` }} />
+        </div>
+      ) : (
+        // The playhead: the line along the top edge, in both views - click or drag it to go there (arrow keys too).
+        <input
+          type="range"
+          min={0}
+          max={duration || 0}
+          step={0.1}
+          value={Math.min(position, duration)}
+          disabled={!active || engine.status !== "ready" || !!following}
+          onChange={(event) => seekStems(Number(event.target.value))}
+          aria-label={t("stems.position")}
+          aria-valuetext={`${formatDuration(position)} / ${formatDuration(duration)}`}
+          className="stem-playhead"
+          style={{ "--progress": duration ? `${(position / duration) * 100}%` : "0%", ...(sectionsLine ? { "--sections": sectionsLine } : {}) } as CSSProperties}
+          data-testid="stem-playhead"
+        />
+      )}
+      {expanded ? (
+        <div className={cn("mx-auto flex w-full flex-col gap-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", EDGES)}>
+          {/* On a phone, play, the time, the tools and minimize on one line (the time giving way); the multitrack and the transposition on the next (issue #140). */}
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:gap-x-3">
+            <span className="flex items-center gap-1">
+              {play}
+              {/* The transport (issue #162). */}
+              <span className="hidden sm:contents">{stopButton}</span>
+            </span>
+            {time}
+            <div className="col-span-4 row-start-2 flex flex-wrap items-center gap-1 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:gap-2" data-testid="stem-controls">
+              {sectionControls}
+              {upgradeButton}
+              {picker}
+              {transposeControl}
+              {speedControl}
+              {resetMix}
+            </div>
+            <div className="flex shrink-0 items-center [&>button]:size-8 sm:[&>button]:size-9" data-testid="stem-tools">
+              {whole ? null : combineButton}
+              {whole ? null : mixerButton}
+              {cueButton}
+              {recordButton}
+              {clickButton}
+            </div>
+            <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => expand(false)} aria-label={t("stems.minimize")} data-testid="stem-minimize">
+              <ChevronDown />
+            </Button>
+          </div>
+          {status}
+          {cueEditor && canPlaceCues && active && engine.status === "ready" ? <CueEditor song={song} cues={cues} onChange={setDraftCues} onClose={closeCueEditor} /> : null}
+          {cues.length ? <SectionLane
+              cues={cues}
+              sections={cueSections}
+              duration={duration || Math.max(...cues.map((cue) => cue.at)) + 10}
+              position={position}
+              onSeek={active && engine.status === "ready" && !following ? seekStems : undefined}
+              // Placing them: a handle on each, as in a video editor (issue #110).
+              editing={cueEditor && canPlaceCues && active && engine.status === "ready" ? { beat: engine.beat, onMove: (index, at) => setDraftCues(cues.map((cue, i) => (i === index ? { ...cue, at } : cue))) } : null}
+            /> : null}
+          {recordPanel && recordable && song.record ? (
+            // Recording (issue #365) is a part of the player, over its own mix and clock: the take and the tracks side by side on a wide screen, one above the other on a tall one (a tablet upright), two tabs on a phone.
+            <div className="flex flex-col gap-2 md:gap-3 md:landscape:grid md:landscape:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] md:landscape:items-start md:landscape:gap-4" data-testid="stem-record-split">
+              <div className="grid grid-cols-2 rounded-md bg-muted p-[3px] text-sm md:hidden" role="tablist" aria-label={t("stems.title")}>
+                <button type="button" role="tab" aria-selected={dockTab === "mix"} className={cn("h-8 rounded-sm", dockTab === "mix" ? "bg-background font-medium shadow-sm" : "text-muted-foreground")} onClick={() => setDockTab("mix")} data-testid="stem-tab-mix">
+                  {t("stems.mixTab", { count: tracks.length })}
+                </button>
+                <button type="button" role="tab" aria-selected={dockTab === "record"} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-sm", dockTab === "record" ? "bg-background font-medium shadow-sm" : "text-muted-foreground", recordingNow && "text-destructive")} onClick={() => setDockTab("record")} data-testid="stem-tab-record">
+                  {recordingNow ? <span className="size-2 animate-pulse rounded-full bg-destructive" aria-hidden /> : null}
+                  {t("stems.recordTab")}
+                </button>
+              </div>
+              <div className={cn("flex min-w-0 flex-col gap-2 md:landscape:col-start-1 md:landscape:row-start-1", dockTab !== "mix" && "hidden md:flex")}>{mixContent}</div>
+              <div className={cn("min-w-0 md:portrait:order-first md:landscape:col-start-2 md:landscape:row-start-1", dockTab !== "record" && "hidden md:block")}>
+            <RecordScreen
+              songVersionId={song.songVersionId}
+              songTitle={song.title}
+              multitracks={multitracksOf(song.record.attachments)}
+              target={song.multitrackId ?? ""}
+              into={recordInto}
+              songTempo={song.tempo ?? null}
+              songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
+              songKey={song.record.songKey ?? ""}
+              setlist={song.record.setlist}
+              cueSections={cueSections}
+              // Over the player's mix once it's loaded; before, on a context of its own with the parts downloaded.
+              player={active && engine.status === "ready" && engine.complete ? song : null}
+              onClose={closeRecordPanel}
+              onSaved={song.record.onSaved}
+              inline
+              onPhase={(phase) => setRecordingNow(phase === "recording")}
+            />
+              </div>
+            </div>
+          ) : (
+            mixContent
           )}
         </div>
       ) : (

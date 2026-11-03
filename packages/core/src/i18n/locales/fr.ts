@@ -3288,6 +3288,9 @@ const fr: typeof en = {
     },
   },
   stems: {
+    mixTab_one: "Mix · {{count}} piste",
+    mixTab_other: "Mix · {{count}} pistes",
+    recordTab: "Enregistrer",
     stop: "Arrêter, retour au début",
     previousSection: "Section précédente",
     nextSection: "Section suivante",

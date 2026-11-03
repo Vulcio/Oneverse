@@ -574,11 +574,11 @@ try {
       await dock.getByTestId("stem-cue-editor").waitFor();
     }, { element: dock });
     await dock.getByTestId("stem-cues").click();
-    // Recording in the player (issues #134, #365): the drawer over the player, which stays usable.
+    // Recording in the player (issues #134, #365): its Record tab, beside the Mix on a wide screen.
     await shoot("stems-record", null, async () => {
       await dock.getByTestId("stem-record").click();
       await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor();
-    });
+    }, { element: dock });
     await page.getByTestId("recorder-dismiss").click();
     await page.getByTestId("recorder").waitFor({ state: "detached" });
     // The mixer (issue #140), at a phone's width: a fader over each part's waveform.
