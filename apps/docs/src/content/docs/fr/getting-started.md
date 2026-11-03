@@ -40,7 +40,7 @@ La barre latérale à gauche mène partout :
 - **Recueils** - des collections de chants, numérotées ou non. Voir [Recueils](/fr/songbooks/).
 - **Équipes** - les groupes dont vous faites partie. Voir [Équipes](/fr/teams/).
 - **Personnes** - les personnes avec qui vous partagez des chants. Voir [Personnes](/fr/people/).
-- **Outils** - le **Métronome** (voir [Métronome](/fr/metronome/)), et bientôt un **Accordeur**.
+- **Outils** - le **Métronome** (voir [Métronome](/fr/metronome/)), et l'**Accordeur** (voir [Accordeur](/fr/tuner/)).
 - **Documentation**, en bas - ces pages, ouvertes sur celle de l'endroit où vous êtes.
 - **Administration**, juste au-dessus, pour les relecteurs et les administrateurs - **Relecture** et le **Tableau de bord** d'administration. Voir [Administration](/fr/admin/).
 

@@ -63,6 +63,7 @@ export default defineConfig({
             { slug: "screens" },
             { slug: "brands" },
             { slug: "metronome" },
+            { slug: "tuner" },
             { slug: "bible" },
             { slug: "songbooks" },
             { slug: "teams" },

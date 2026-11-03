@@ -62,6 +62,7 @@ export * from "./song-history/index.js";
 export * from "./song-document/fold.js";
 export * from "./song-document/repeats.js";
 export * from "./metronome/index.js";
+export * from "./tuner/index.js";
 export * from "./sync/index.js";
 export * from "./live/index.js";
 export * from "./live/engine.js";

@@ -40,7 +40,7 @@ The sidebar on the left takes you everywhere:
 - **Songbooks** - collections of songs, numbered or not. See [Songbooks](/songbooks/).
 - **Teams** - the bands and groups you're part of. See [Teams](/teams/).
 - **People** - the people you share songs with. See [People](/people/).
-- **Tools** - the **Metronome** (see [Metronome](/metronome/)), and soon a **Tuner**.
+- **Tools** - the **Metronome** (see [Metronome](/metronome/)), and the **Tuner** (see [Tuner](/tuner/)).
 - **Documentation**, at the bottom - these pages, opened at the one about where you are.
 - **Admin**, just above it, for reviewers and admins - **Review** and the admin **Dashboard**. See [For admins](/admin/).
 

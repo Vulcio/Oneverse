@@ -602,6 +602,11 @@ try {
     await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
     // The metronome (issue #2): its page, stopped.
     await shoot("metronome", "/metronome", () => page.getByTestId("metronome-beats").waitFor(), { fullPage: true });
+    // The tuner (issue #3), listening to the fake microphone's singing.
+    await shoot("tuner", "/tuner", async () => {
+      await page.getByTestId("tuner-start").click();
+      await page.locator('[data-testid="tuner-readout"]:not([data-note=""])').waitFor({ timeout: 15000 });
+    });
     await shoot("songbook", `/songbooks/${songbook.id}`, null, { fullPage: true });
     // Its calendar (issue #235): a weekly service from next Sunday, a rehearsal every other Thursday.
     const service = nextSunday();
