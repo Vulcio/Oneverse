@@ -110,6 +110,9 @@ const waitFor = async (store, predicate, what) => {
 
 await step("launching keeps your own songs and their files - not the audio", async () => {
   await signIn(page, me);
+  // The service worker the sign-in's pages registered is active before the
+  // next page opens: one opened while it activates is never claimed (as web/offline).
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await page.goto(`${WEB}/dashboard`);
   await page.waitForLoadState("networkidle");
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 30_000 });
