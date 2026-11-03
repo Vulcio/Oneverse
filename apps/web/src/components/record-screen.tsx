@@ -234,6 +234,8 @@ export function RecordScreen({
   const [clapBeat, setClapBeat] = useState(-1);
   const [calibrationFailed, setCalibrationFailed] = useState<"loopback" | "claps" | null>(null);
   const [interrupted, setInterrupted] = useState<"device" | "suspended" | null>(null);
+  // The sound now goes elsewhere (its name): said once, with its delay.
+  const [routeChanged, setRouteChanged] = useState<string | null>(null);
 
   // The take being recorded, and those recorded so far (newest last); the one picked to keep.
   const zeroAt = useRef(0);
@@ -274,6 +276,12 @@ export function RecordScreen({
         engine.current = ready;
         setOpened(ready);
         ready.recorder.onInterrupted = (reason) => setInterrupted(reason);
+        // Headphones plugged in, Bluetooth connected (issue #365): that route's own delay, or measure it.
+        ready.recorder.onRouteChanged = (output) => {
+          setRoundTrip(ready.recorder.roundTrip());
+          setRouteChanged(output || t("recorder.screen.otherOutput"));
+          void ready.recorder.bluetoothOutput().then((yes) => setBluetooth(yes || ready.recorder.context.outputLatency > 0.1));
+        };
         ready.recorder.onBlock = (frame, data) => recording.current?.log?.add(frame, data);
         setHeard(new Set(ready.parts.map((file) => file.id)));
         setRoundTrip(ready.recorder.roundTrip());
@@ -525,6 +533,7 @@ export function RecordScreen({
     setCalibrating(null);
     setClapBeat(-1);
     if (measured === null) setCalibrationFailed(method);
+    else setRouteChanged(null);
     setRoundTrip(current.recorder.roundTrip());
   }
 
@@ -987,7 +996,13 @@ export function RecordScreen({
               ) : null}
             </div>
           ) : null}
-          {interrupted && phase !== "recording" ? (
+          {routeChanged && roundTrip ? (
+          <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400" role="status" data-testid="recorder-route-changed">
+            <Headphones className="mt-0.5 size-4 shrink-0" aria-hidden />
+            {t(roundTrip.measured ? "recorder.screen.routeMeasured" : "recorder.screen.routeNotMeasured", { name: routeChanged, ms: Math.round(roundTrip.seconds * 1000) })}
+          </p>
+        ) : null}
+        {interrupted && phase !== "recording" ? (
             <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400" role="alert" data-testid="recorder-interrupted">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
               {t(interrupted === "device" ? "recorder.interruptedDevice" : "recorder.interruptedSuspended")}

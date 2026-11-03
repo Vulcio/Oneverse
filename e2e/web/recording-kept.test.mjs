@@ -141,6 +141,23 @@ await step("a take recorded and not kept leaves nothing on the device", async ()
   if ((await stored().count()) !== 0) throw new Error("kept");
 });
 
+await step("headphones plugged in: the delay is that output's own, measured again (issue #365)", async () => {
+  await page.getByTestId("record-new").click();
+  await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
+  // Measured on the speakers.
+  await page.evaluate(() => localStorage.removeItem("songverse.recorder.roundTrips"));
+  // The sound now goes to headphones: the browser says so.
+  await page.evaluate(() => {
+    const devices = navigator.mediaDevices;
+    const real = devices.enumerateDevices.bind(devices);
+    devices.enumerateDevices = async () => [...(await real()).filter((device) => device.kind !== "audiooutput"), { kind: "audiooutput", deviceId: "default", label: "Default - Studio headphones", groupId: "x", toJSON: () => ({}) }];
+    devices.dispatchEvent(new Event("devicechange"));
+  });
+  await dialog().getByTestId("recorder-route-changed").getByText(/Studio headphones: its delay isn't measured yet/).waitFor({ timeout: 10000 });
+  await dialog().getByTestId("recorder-dismiss").click();
+  await dialog().waitFor({ state: "detached" });
+});
+
 await step("no page errors", async () => {
   if (errors.length) throw new Error(errors.join("\n"));
 });

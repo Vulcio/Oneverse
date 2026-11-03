@@ -54,26 +54,65 @@ function setAudioSession(type: "playback" | "play-and-record") {
   if (session) session.type = type;
 }
 
+/** The round trip measured before it was kept per route (issue #365): still used where the route can't be told. */
 const ROUND_TRIP_KEY = "songverse.recorder.roundTrip";
+/** Each route's round trip, measured (issue #365): {route: seconds}. */
+const ROUND_TRIPS_KEY = "songverse.recorder.roundTrips";
 /** Clicks are scheduled this far ahead, by a timer. */
 const LOOKAHEAD = 0.4;
 
-/** The round trip measured on this device (s), if it was. */
-export function savedRoundTrip(): number | null {
+const plausible = (seconds: unknown): seconds is number => typeof seconds === "number" && seconds > 0 && seconds < 2;
+
+function savedRoundTrips(): Record<string, number> {
   try {
+    const saved = JSON.parse(localStorage.getItem(ROUND_TRIPS_KEY) ?? "{}") as unknown;
+    return saved && typeof saved === "object" ? (saved as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * The round trip measured on this device (s), if it was: for this route -
+ * where the sound goes and what hears it (issue #365), measured again when
+ * either changes - or, where the route can't be told, the one measured last.
+ */
+export function savedRoundTrip(route = ""): number | null {
+  try {
+    const own = savedRoundTrips()[route];
+    if (route) return plausible(own) ? own : null;
     const saved = Number(localStorage.getItem(ROUND_TRIP_KEY));
-    return saved > 0 && saved < 2 ? saved : null;
+    return plausible(saved) ? saved : null;
   } catch {
     return null;
   }
 }
 
-function saveRoundTrip(seconds: number | null) {
+function saveRoundTrip(route: string, seconds: number | null) {
   try {
+    if (route) {
+      const all = savedRoundTrips();
+      if (seconds === null) delete all[route];
+      else all[route] = seconds;
+      localStorage.setItem(ROUND_TRIPS_KEY, JSON.stringify(all));
+    }
     if (seconds === null) localStorage.removeItem(ROUND_TRIP_KEY);
     else localStorage.setItem(ROUND_TRIP_KEY, String(seconds));
   } catch {
     // Kept for this recording only.
+  }
+}
+
+/** Where the sound goes (the default output's name) and what hears it (the microphone's): "" when the browser won't say. */
+async function currentRoute(stream: MediaStream): Promise<{ key: string; output: string }> {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const outputs = devices.filter((device) => device.kind === "audiooutput");
+    const output = (outputs.find((device) => device.deviceId === "default") ?? (outputs.length === 1 ? outputs[0] : undefined))?.label.replace(/^Default - /, "") ?? "";
+    const input = stream.getAudioTracks()[0]?.label ?? "";
+    return { key: output || input ? `${output}|${input}` : "", output };
+  } catch {
+    return { key: "", output: "" };
   }
 }
 
@@ -118,6 +157,17 @@ export class Recorder {
    */
   onInterrupted: ((reason: "device" | "suspended") => void) | null = null;
   private capturing = false;
+  /** Where the sound goes and what hears it (issue #365): its round trip is its own. */
+  route = { key: "", output: "" };
+  /** Hears the output or the microphone change (headphones plugged in, Bluetooth connected): measure the delay again. */
+  onRouteChanged: ((output: string) => void) | null = null;
+  private watchRoute = () => {
+    void currentRoute(this.stream).then((next) => {
+      if (next.key === this.route.key) return;
+      this.route = next;
+      this.onRouteChanged?.(next.output);
+    });
+  };
 
   private constructor(context: AudioContext, stream: MediaStream, capture: AudioWorkletNode) {
     this.context = context;
@@ -177,6 +227,8 @@ export class Recorder {
       recorder.nodes = [source, capture, silent, meter];
       recorder.meter = meter;
       recorder.meterData = new Float32Array(meter.fftSize);
+      recorder.route = await currentRoute(stream);
+      navigator.mediaDevices.addEventListener?.("devicechange", recorder.watchRoute);
       return recorder;
     } catch (error) {
       for (const track of stream.getTracks()) track.stop();
@@ -207,7 +259,7 @@ export class Recorder {
 
   /** The round trip: measured on this device, else what the browser says of its output and input. */
   roundTrip(): { seconds: number; measured: boolean } {
-    const saved = savedRoundTrip();
+    const saved = savedRoundTrip(this.route.key);
     if (saved !== null) return { seconds: saved, measured: true };
     const input = (this.stream.getAudioTracks()[0]?.getSettings() as (MediaTrackSettings & { latency?: number }) | undefined)?.latency ?? 0;
     return { seconds: (this.context.baseLatency || 0) + (this.context.outputLatency || 0) + input, measured: false };
@@ -407,7 +459,7 @@ export class Recorder {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const take = this.collect(0);
     const measured = roundTripFrom(take.captured, { sampleRate: take.sampleRate, capturedAt: take.capturedAt, playedAt });
-    if (measured !== null) saveRoundTrip(measured);
+    if (measured !== null) saveRoundTrip(this.route.key, measured);
     return measured;
   }
 
@@ -434,7 +486,7 @@ export class Recorder {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const take = this.collect(0);
     const measured = clapDelayFrom(take.captured, { sampleRate: take.sampleRate, capturedAt: take.capturedAt, playedAt: playedAt.slice(2) });
-    if (measured !== null) saveRoundTrip(measured);
+    if (measured !== null) saveRoundTrip(this.route.key, measured);
     return measured;
   }
 
@@ -453,11 +505,12 @@ export class Recorder {
 
   /** Forgets the measured round trip: the browser's estimate again. */
   forgetCalibration() {
-    saveRoundTrip(null);
+    saveRoundTrip(this.route.key, null);
   }
 
   close() {
     this.capturing = false;
+    navigator.mediaDevices.removeEventListener?.("devicechange", this.watchRoute);
     this.stopPlaying();
     this.capture.port.postMessage(false);
     for (const track of this.stream.getTracks()) track.stop();

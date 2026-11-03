@@ -3479,6 +3479,9 @@ const fr: typeof en = {
       strip: "La prise : le micro à gauche de la tête de lecture, les pistes à venir à droite",
       more: "Tous les choix",
       less: "Seulement la prise",
+      otherOutput: "une autre sortie",
+      routeMeasured: "Le son va maintenant vers {{name}} : son retard, déjà mesuré, est compensé ({{ms}} ms).",
+      routeNotMeasured: "Le son va maintenant vers {{name}} : son retard n'est pas encore mesuré ({{ms}} ms estimés). Tapez dans les mains pour le mesurer.",
     },
     stored: {
       title_one: "{{count}} prise sur cet appareil",

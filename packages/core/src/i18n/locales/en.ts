@@ -3476,6 +3476,9 @@ const en = {
       strip: "The take: the microphone left of the playhead, the parts to come right of it",
       more: "All the choices",
       less: "Only the take",
+      otherOutput: "another output",
+      routeMeasured: "The sound now goes to {{name}}: its delay, measured before, is taken off ({{ms}} ms).",
+      routeNotMeasured: "The sound now goes to {{name}}: its delay isn't measured yet ({{ms}} ms estimated). Clap along to measure it.",
     },
     stored: {
       title_one: "{{count}} take on this device",

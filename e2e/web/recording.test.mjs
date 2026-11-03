@@ -128,7 +128,10 @@ await step("the first layer, with the metronome only: a new multitrack at its ow
   await dialog().getByTestId("recorder-latency").getByText(/Delay taken off: \d+ ms \((measured on this device|the browser's estimate)\)/).waitFor();
   await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
   await page.waitForFunction(() => !document.querySelector('[data-testid="recorder-clap"]')?.disabled, null, { timeout: 15000 });
-  await page.evaluate(() => localStorage.removeItem("songverse.recorder.roundTrip"));
+  await page.evaluate(() => {
+    localStorage.removeItem("songverse.recorder.roundTrip");
+    localStorage.removeItem("songverse.recorder.roundTrips");
+  });
   // Evened out by default; the noise left alone unless asked.
   if (!(await dialog().getByTestId("recorder-level").isChecked()) || (await dialog().getByTestId("recorder-noise").isChecked())) throw new Error("processing options");
   // A bar of count-in (2 s at 90 BPM in 3/4) before the take's first beat.
