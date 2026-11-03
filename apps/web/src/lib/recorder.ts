@@ -102,6 +102,8 @@ export class Recorder {
   private clickGain: GainNode;
   /** Hears each block captured (4096 samples or so), for a live waveform. */
   onChunk: ((data: Float32Array) => void) | null = null;
+  /** Hears each block captured with its frame on the context's clock: kept on the device as it comes (take-store.ts, issue #365). */
+  onBlock: ((frame: number, data: Float32Array) => void) | null = null;
   /** Its context is its own (closed with it), not the stem player's. */
   private owned = true;
   private nodes: AudioNode[] = [];
@@ -109,16 +111,32 @@ export class Recorder {
   private meter: AnalyserNode | null = null;
   private meterData: Float32Array<ArrayBuffer> | null = null;
 
+  /**
+   * Hears the microphone or the audio stop under a take (issue #365): the
+   * device unplugged or switched ("device"), or the audio suspended - a call,
+   * the phone locked, the page hidden ("suspended"). What was captured is kept.
+   */
+  onInterrupted: ((reason: "device" | "suspended") => void) | null = null;
+  private capturing = false;
+
   private constructor(context: AudioContext, stream: MediaStream, capture: AudioWorkletNode) {
     this.context = context;
     this.stream = stream;
     this.capture = capture;
+    for (const track of stream.getAudioTracks()) {
+      track.addEventListener("ended", () => this.interrupted("device"));
+    }
+    context.addEventListener("statechange", () => {
+      // Safari says "interrupted" (a call, the lock screen); others "suspended".
+      if ((context.state as string) !== "running") this.interrupted("suspended");
+    });
     this.clickGain = context.createGain();
     this.clickGain.gain.value = 0.6;
     this.clickGain.connect(context.destination);
     capture.port.onmessage = (event: MessageEvent<{ frame: number; data: Float32Array }>) => {
       this.chunks.push(event.data);
       this.onChunk?.(event.data.data);
+      this.onBlock?.(event.data.frame, event.data.data);
     };
   }
 
@@ -166,6 +184,16 @@ export class Recorder {
       setAudioSession("playback");
       throw error;
     }
+  }
+
+  private interrupted(reason: "device" | "suspended") {
+    if (this.capturing) this.onInterrupted?.(reason);
+  }
+
+  /** The microphone in use: its name, and whether it's still there. */
+  get microphone(): { label: string; live: boolean } {
+    const track = this.stream.getAudioTracks()[0];
+    return { label: track?.label ?? "", live: track?.readyState === "live" };
   }
 
   /** The microphone's peak level just now (0-1, 1 is clipping), recording or not. */
@@ -270,6 +298,7 @@ export class Recorder {
     void this.context.resume();
     const zeroAt = this.context.currentTime + 0.2 + options.lead - options.from;
     this.capture.port.postMessage(true);
+    this.capturing = true;
     this.play(zeroAt, options);
     return zeroAt;
   }
@@ -291,10 +320,12 @@ export class Recorder {
     this.stopPlaying();
     this.chunks = [];
     this.capture.port.postMessage(true);
+    this.capturing = true;
   }
 
   /** Ends the take; resolves with what was captured once the last block is in. */
   async finish(zeroAt: number): Promise<Take> {
+    this.capturing = false;
     this.capture.port.postMessage(false);
     this.stopPlaying();
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -414,6 +445,7 @@ export class Recorder {
   }
 
   close() {
+    this.capturing = false;
     this.stopPlaying();
     this.capture.port.postMessage(false);
     for (const track of this.stream.getTracks()) track.stop();

@@ -5,6 +5,7 @@ import { AppShell } from "#/components/app-shell";
 import { ProfilePrompt } from "#/components/profile-prompt";
 import { keepAppDataOffline, loadAppData } from "#/lib/app-data";
 import { useOfflineSync } from "#/lib/offline-data";
+import { useWaitingTakesUpload } from "#/lib/waiting-takes";
 import { createI18n, loadLocale } from "@oneverse/app/i18n";
 import { WeekStartContext } from "@oneverse/ui/lib/dates";
 import { PlanningProvider } from "@oneverse/planning/host";
@@ -33,6 +34,8 @@ function RouteComponent() {
   const { session, teams, songbooks, setlists, offline } = Route.useRouteContext();
   // Upcoming sets downloaded and kept up to date for offline use (issue #51).
   useOfflineSync();
+  // Takes kept on the device until they're uploaded (issue #365).
+  useWaitingTakesUpload();
   // Kept on the device for an offline launch (issue #49), each time it's confirmed online.
   useEffect(() => {
     if (!offline) keepAppDataOffline({ session, teams, songbooks, setlists });

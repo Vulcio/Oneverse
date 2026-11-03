@@ -13,7 +13,7 @@ import {
   type Multitrack,
   type RecordingDetails,
 } from "@oneverse/core";
-import { Circle, Hand, Headphones, Loader2, Mic, Play, RotateCcw, Square, TriangleAlert } from "lucide-react";
+import { Circle, CloudOff, Hand, Headphones, Loader2, Mic, Play, RotateCcw, Square, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -26,6 +26,8 @@ import { apiClient } from "#/lib/api-client";
 import { getMetronomeState, stopMetronome } from "#/lib/metronome-engine";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { Recorder, type Beat, type Take } from "#/lib/recorder";
+import { keepTake, TakeLog, type TakeTarget } from "#/lib/take-store";
+import { useRouteContext } from "@tanstack/react-router";
 import { pauseStems } from "#/lib/stem-engine";
 
 /** A take can be this long at most: its WAV file stays under the upload limit for audio (50 MB). */
@@ -34,7 +36,7 @@ const MAX_BYTES = 50 * 1024 * 1024 - 1024;
 /** The target that starts a new multitrack; an existing one is its id ("" for the original stems). */
 export const NEW_TARGET = "new";
 
-type Phase = "opening" | "ready" | "recording" | "recorded" | "saving";
+type Phase = "opening" | "ready" | "recording" | "recorded" | "saving" | "waiting";
 
 /** What the take does once kept (issue #127): plays instead of another take (kept as another take), plays with the rest, or is kept aside. */
 type Use = { kind: "instead"; id: string } | { kind: "with" } | { kind: "aside" };
@@ -79,8 +81,13 @@ export function RecorderDialog({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
+  const { session } = useRouteContext({ from: "/_protected" });
   const nameOf = useMultitrackName();
   const recorder = useRef<Recorder | null>(null);
+  // The take being recorded, kept on the device as it comes in (issue #365).
+  const log = useRef<TakeLog | null>(null);
+  // A new multitrack's id, the same for the take kept on the device and the one uploaded.
+  const freshMultitrack = useRef(newMultitrackId());
   const [ready, setReady] = useState(false);
   const [phase, setPhase] = useState<Phase>("opening");
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +127,8 @@ export function RecorderDialog({
   const [previewing, setPreviewing] = useState(false);
   const [silent, setSilent] = useState(false);
   const previewRun = useRef(0);
+  // The take stopped by the device (issue #365): the microphone gone, or the audio suspended.
+  const [interrupted, setInterrupted] = useState<"device" | "suspended" | null>(null);
 
   // The beat: an existing multitrack's own (or the song's), a new one's as set here.
   const tempoValue = multitrack ? (first?.recordingTempo ?? songTempo ?? NaN) : Number(tempo);
@@ -151,6 +160,7 @@ export function RecorderDialog({
         if (closed.current) return opened.close();
         recorder.current = opened;
         setOpened(opened);
+        opened.onInterrupted = (reason) => setInterrupted(reason);
         setRoundTrip(opened.roundTrip());
         setBluetooth((await opened.bluetoothOutput()) || opened.context.outputLatency > 0.1);
         setReady(true);
@@ -172,6 +182,9 @@ export function RecorderDialog({
       closed.current = true;
       recorder.current?.close();
       recorder.current = null;
+      // Closed without keeping it: the take goes (kept ones were already handed over).
+      void log.current?.drop();
+      log.current = null;
     };
   }, []);
 
@@ -223,7 +236,14 @@ export function RecorderDialog({
     setNudge(0);
     setPreviewing(false);
     setPosition(punch.from - punch.lead);
-    setZeroAt(current.start({ beat, lead: punch.lead, from: punch.from, click, heard, stopAt }));
+    setInterrupted(null);
+    // A retake: the one before goes.
+    void log.current?.drop();
+    const at = current.start({ beat, lead: punch.lead, from: punch.from, click, heard, stopAt });
+    const next = TakeLog.begin(takeTarget(), { sampleRate: current.context.sampleRate, zeroAt: at, delay: current.roundTrip().seconds, from: punch.from });
+    log.current = next;
+    current.onBlock = next ? (frame, data) => next.add(frame, data) : null;
+    setZeroAt(at);
     setPhase("recording");
   }
 
@@ -231,12 +251,24 @@ export function RecorderDialog({
     const current = recorder.current;
     if (!current) return;
     const done = await current.finish(zeroAt);
+    current.onBlock = null;
+    await log.current?.finish();
     setTake(done);
     setPhase("recorded");
     // Nothing from the microphone (issue #134): said so, and nothing to keep.
     const nothing = !hasSound(done.captured, done.sampleRate);
     setSilent(nothing);
     setError(nothing ? t("recorder.silent") : null);
+  }
+
+  // Stopped by the device: what was recorded is kept, and said why.
+  useEffect(() => {
+    if (interrupted && phase === "recording") void stop();
+  }, [interrupted]);
+
+  /** What the take is, to keep it on the device and upload it: its file's name, part, details and the take it replaces. */
+  function takeTarget(): TakeTarget {
+    return { userId: session.userId, songVersionId, songTitle, name: `${songTitle || t("recorder.recording")} - ${partLabel(choice)}`, part, details: details(), instead: use.kind === "instead" ? use.id : null };
   }
 
   /** The take as it will be kept: lined up (nudged), and spliced into the take it replaces from the punch-in on. */
@@ -278,6 +310,33 @@ export function RecorderDialog({
     setRoundTrip(current.roundTrip());
   }
 
+  /** What the take was recorded in: a new multitrack's, or the existing one's own, shared by its parts. */
+  function details(): RecordingDetails {
+    const result: RecordingDetails = multitrack
+      ? {
+          ...(multitrack.id ? { multitrackId: multitrack.id } : {}),
+          ...(first?.multitrackName ? { multitrackName: first.multitrackName } : {}),
+          ...(first?.recordingKey ? { recordingKey: first.recordingKey } : {}),
+          ...(first?.recordingTempo != null ? { recordingTempo: first.recordingTempo } : {}),
+          ...(first?.recordingTimeSignature ? { recordingTimeSignature: first.recordingTimeSignature } : {}),
+          ...(first?.recordingFirstBeat != null ? { recordingFirstBeat: first.recordingFirstBeat } : {}),
+          ...(first?.recordingFreeIntro ? { recordingFreeIntro: true } : {}),
+          ...(multitrack.setlistId ? { multitrackSetlistId: multitrack.setlistId } : {}),
+        }
+      : {
+          multitrackId: freshMultitrack.current,
+          ...(name.trim() ? { multitrackName: name.trim() } : {}),
+          recordingTempo: tempoValue,
+          recordingTimeSignature: signature,
+          recordingFirstBeat: plan?.firstBeat ?? 0,
+          ...(setlist && forSet ? { multitrackSetlistId: setlist.id } : {}),
+        };
+    result.process = ["encode", isVoice && voiceCleanUp ? "voice" : null, level ? "level" : null, noise ? "noise" : null].filter(Boolean).join(",");
+    if (choice.partName) result.partName = choice.partName;
+    if (use.kind === "aside") result.otherTake = true;
+    return result;
+  }
+
   async function keep() {
     const current = recorder.current;
     if (!current || !take) return;
@@ -286,33 +345,13 @@ export function RecorderDialog({
     setPhase("saving");
     setError(null);
     try {
-      const wav = encodeWav(result(current, take), take.sampleRate);
-      const file = new File([wav as Uint8Array<ArrayBuffer>], `${songTitle || t("recorder.recording")} - ${partLabel(choice)}.wav`, { type: "audio/wav" });
-      // A new multitrack: what it was recorded in. An existing one: its own, shared by its parts.
-      const details: RecordingDetails = multitrack
-        ? {
-            ...(multitrack.id ? { multitrackId: multitrack.id } : {}),
-            ...(first?.multitrackName ? { multitrackName: first.multitrackName } : {}),
-            ...(first?.recordingKey ? { recordingKey: first.recordingKey } : {}),
-            ...(first?.recordingTempo != null ? { recordingTempo: first.recordingTempo } : {}),
-            ...(first?.recordingTimeSignature ? { recordingTimeSignature: first.recordingTimeSignature } : {}),
-            ...(first?.recordingFirstBeat != null ? { recordingFirstBeat: first.recordingFirstBeat } : {}),
-            ...(first?.recordingFreeIntro ? { recordingFreeIntro: true } : {}),
-            ...(multitrack.setlistId ? { multitrackSetlistId: multitrack.setlistId } : {}),
-          }
-        : {
-            multitrackId: newMultitrackId(),
-            ...(name.trim() ? { multitrackName: name.trim() } : {}),
-            recordingTempo: tempoValue,
-            recordingTimeSignature: signature,
-            recordingFirstBeat: plan?.firstBeat ?? 0,
-            ...(setlist && forSet ? { multitrackSetlistId: setlist.id } : {}),
-          };
-      details.process = ["encode", isVoice && voiceCleanUp ? "voice" : null, level ? "level" : null, noise ? "noise" : null].filter(Boolean).join(",");
-      if (choice.partName) details.partName = choice.partName;
-      if (use.kind === "aside") details.otherTake = true;
-      const saved = await apiClient.uploadAttachment(songVersionId, "AUDIO", file, part, { visibility: "PRIVATE" }, details);
-      if (use.kind === "instead") await apiClient.useTake(songVersionId, saved.id, use.id);
+      const wav = new Blob([encodeWav(result(current, take), take.sampleRate) as Uint8Array<ArrayBuffer>], { type: "audio/wav" });
+      // Kept on the device first, then uploaded (issue #365): without a connection, it waits and goes on its own.
+      // Handed over: no longer this dialog's to drop, even if the upload is refused.
+      const handed = log.current;
+      log.current = null;
+      const kept = await keepTake({ log: handed, target: takeTarget(), wav, sampleRate: take.sampleRate }, apiClient);
+      if (kept.waiting) return setPhase("waiting");
       onSaved();
       onClose();
     } catch (err) {
@@ -527,6 +566,18 @@ export function RecorderDialog({
               <p className="text-xs text-muted-foreground">{t("recorder.nudgeHint")}</p>
             </div>
           ) : null}
+          {interrupted && phase !== "recording" ? (
+            <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400" role="alert" data-testid="recorder-interrupted">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {t(interrupted === "device" ? "recorder.interruptedDevice" : "recorder.interruptedSuspended")}
+            </p>
+          ) : null}
+          {phase === "waiting" ? (
+            <p className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm" role="status" data-testid="recorder-waiting">
+              <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {t("recorder.keptOnDevice")}
+            </p>
+          ) : null}
           {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
@@ -541,7 +592,11 @@ export function RecorderDialog({
         </div>
 
         <DialogFooter>
-          {phase === "recording" ? (
+          {phase === "waiting" ? (
+            <Button type="button" onClick={onClose} data-testid="recorder-close">
+              {t("recorder.close")}
+            </Button>
+          ) : phase === "recording" ? (
             <Button type="button" variant="destructive" onClick={() => void stop()} data-testid="recorder-stop">
               <Square />
               {t("recorder.stop")}

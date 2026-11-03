@@ -1,5 +1,5 @@
 import { alignTake, encodeWav, formatDuration, hasSound, mergeTake, partKind, type RecordingDetails } from "@oneverse/core";
-import { Circle, Hand, ListPlus, Loader2, Mic, Square, Trash2, TriangleAlert, X } from "lucide-react";
+import { Circle, CloudOff, Hand, ListPlus, Loader2, Mic, Square, Trash2, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InputLevel } from "#/components/input-level";
@@ -8,6 +8,8 @@ import { Button } from "@oneverse/ui/components/button";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { Recorder, type Take } from "#/lib/recorder";
+import { keepTake, TakeLog, type TakeTarget } from "#/lib/take-store";
+import { useRouteContext } from "@tanstack/react-router";
 import {
   directStemsOutput,
   pauseStems,
@@ -27,7 +29,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 /** A take can be this long at most: its WAV file stays under the upload limit for audio (50 MB). */
 const MAX_BYTES = 50 * 1024 * 1024 - 1024;
 
-type Phase = "arming" | "ready" | "recording" | "recorded" | "saving";
+type Phase = "arming" | "ready" | "recording" | "recorded" | "saving" | "waiting";
 type Use = { kind: "instead"; id: string } | { kind: "with" } | { kind: "aside" };
 const useValue = (use: Use) => (use.kind === "instead" ? `instead:${use.id}` : use.kind);
 const useOf = (value: string): Use => (value.startsWith("instead:") ? { kind: "instead", id: value.slice(8) } : value === "aside" ? { kind: "aside" } : { kind: "with" });
@@ -56,7 +58,13 @@ export function StemRecordPanel({
   onNewMultitrack: () => void;
 }) {
   const { t } = useTranslation();
+  const { session } = useRouteContext({ from: "/_protected" });
   const engine = useStems();
+  // The take being recorded, kept on the device as it comes in (issue #365); blocks before it's ready wait here.
+  const log = useRef<TakeLog | null>(null);
+  const early = useRef<{ frame: number; data: Float32Array }[] | null>(null);
+  // The take stopped by the device: the microphone gone, or the audio suspended.
+  const [interrupted, setInterrupted] = useState<"device" | "suspended" | null>(null);
   const partLabel = usePartLabel();
   const recorder = useRef<Recorder | null>(null);
   // The recorder once it's open, for the microphone's level (issue #141).
@@ -115,6 +123,11 @@ export function StemRecordPanel({
       .then(async (opened) => {
         recorder.current = opened;
         setOpened(opened);
+        opened.onInterrupted = (reason) => setInterrupted(reason);
+        opened.onBlock = (frame, data) => {
+          if (log.current) log.current.add(frame, data);
+          else early.current?.push({ frame, data: data.slice() });
+        };
         opened.onChunk = (data) => {
           let peak = 0;
           for (let i = 0; i < data.length; i += 8) peak = Math.max(peak, Math.abs(data[i]!));
@@ -136,6 +149,9 @@ export function StemRecordPanel({
     return () => {
       recorder.current?.close();
       recorder.current = null;
+      // Closed without keeping it: the take goes.
+      void log.current?.drop();
+      log.current = null;
       if (mutedForTake.current) toggleStemMute(mutedForTake.current);
       void setStemsTake(null);
     };
@@ -166,11 +182,30 @@ export function StemRecordPanel({
     // A bar of count-in (2 s without a tempo), as far back as the song goes.
     pauseStems();
     seekStems(Math.max(0, start - (bar || 2)));
+    setInterrupted(null);
+    void log.current?.drop();
+    log.current = null;
+    early.current = [];
     current.startCapture();
     await playStems(song);
     zeroAt.current = stemsZeroAt() ?? 0;
+    // Kept on the device from now, with what came in while the player started.
+    const next = TakeLog.begin(takeTarget(), { sampleRate: current.context.sampleRate, zeroAt: zeroAt.current, delay: current.roundTrip().seconds, from: start });
+    for (const block of early.current ?? []) next?.add(block.frame, block.data);
+    early.current = null;
+    log.current = next;
     stopping.current = false;
     setPhase("recording");
+  }
+
+  // Stopped by the device: what was recorded is kept, and said why.
+  useEffect(() => {
+    if (interrupted && phase === "recording") void stop();
+  }, [interrupted]);
+
+  /** What the take is, to keep it on the device and upload it. */
+  function takeTarget(): TakeTarget {
+    return { userId: session.userId, songVersionId: song.songVersionId, songTitle: song.title, name: `${song.title} - ${partLabel(choice)}`, part, details: details(), instead: use.kind === "instead" ? use.id : null };
   }
 
   // Stopped once: Stop pauses the player, which would stop it again (and find nothing left captured).
@@ -181,6 +216,7 @@ export function StemRecordPanel({
     stopping.current = true;
     pauseStems();
     const done = await current.finish(zeroAt.current);
+    await log.current?.finish();
     // For the end-to-end suites: what was captured, against when the song's 0:00 was heard.
     (window as unknown as { songverseTake?: object }).songverseTake = { captured: done.captured.length, capturedAt: done.capturedAt, zeroAt: done.zeroAt, sampleRate: done.sampleRate, from };
     setTake(done);
@@ -230,6 +266,26 @@ export function StemRecordPanel({
     if (engine.position - from > limit || !engine.playing) void stop();
   }, [phase, engine.position, engine.playing]);
 
+  /** What the take was recorded in: the multitrack's own, shared by its parts. */
+  function details(): RecordingDetails {
+    const first = song.stems[0];
+    return {
+      ...(song.multitrackId ? { multitrackId: song.multitrackId } : {}),
+      ...(first?.multitrackName ? { multitrackName: first.multitrackName } : {}),
+      ...(first?.recordingKey ? { recordingKey: first.recordingKey } : {}),
+      ...(first?.recordingTempo != null ? { recordingTempo: first.recordingTempo } : {}),
+      ...(first?.recordingTimeSignature ? { recordingTimeSignature: first.recordingTimeSignature } : {}),
+      ...(first?.recordingFirstBeat != null ? { recordingFirstBeat: first.recordingFirstBeat } : {}),
+      ...(first?.recordingFreeIntro ? { recordingFreeIntro: true } : {}),
+      ...(first?.multitrackSetlistId ? { multitrackSetlistId: first.multitrackSetlistId } : {}),
+      // Sung while the player was transposed (issue #135): that far above the multitrack.
+      ...(engine.transpose ? { pitchOffset: engine.transpose } : {}),
+      ...(choice.partName ? { partName: choice.partName } : {}),
+      process: ["encode", partKind(part) === "VOICE" && voiceCleanUp ? "voice" : null, level ? "level" : null, noise ? "noise" : null].filter(Boolean).join(","),
+      ...(use.kind === "aside" ? { otherTake: true } : {}),
+    };
+  }
+
   async function keep() {
     const current = recorder.current;
     // The take just recorded with the sections before it, or those alone.
@@ -240,26 +296,13 @@ export function StemRecordPanel({
     setPhase("saving");
     setError(null);
     try {
-      const wav = encodeWav(merged, take?.sampleRate ?? context.sampleRate);
-      const file = new File([wav as Uint8Array<ArrayBuffer>], `${song.title} - ${partLabel(choice)}.wav`, { type: "audio/wav" });
-      const first = song.stems[0];
-      const details: RecordingDetails = {
-        ...(song.multitrackId ? { multitrackId: song.multitrackId } : {}),
-        ...(first?.multitrackName ? { multitrackName: first.multitrackName } : {}),
-        ...(first?.recordingKey ? { recordingKey: first.recordingKey } : {}),
-        ...(first?.recordingTempo != null ? { recordingTempo: first.recordingTempo } : {}),
-        ...(first?.recordingTimeSignature ? { recordingTimeSignature: first.recordingTimeSignature } : {}),
-        ...(first?.recordingFirstBeat != null ? { recordingFirstBeat: first.recordingFirstBeat } : {}),
-        ...(first?.recordingFreeIntro ? { recordingFreeIntro: true } : {}),
-        ...(first?.multitrackSetlistId ? { multitrackSetlistId: first.multitrackSetlistId } : {}),
-        // Sung while the player was transposed (issue #135): that far above the multitrack.
-        ...(engine.transpose ? { pitchOffset: engine.transpose } : {}),
-        ...(choice.partName ? { partName: choice.partName } : {}),
-        process: ["encode", partKind(part) === "VOICE" && voiceCleanUp ? "voice" : null, level ? "level" : null, noise ? "noise" : null].filter(Boolean).join(","),
-        ...(use.kind === "aside" ? { otherTake: true } : {}),
-      };
-      const saved = await apiClient.uploadAttachment(song.songVersionId, "AUDIO", file, part, { visibility: "PRIVATE" }, details);
-      if (use.kind === "instead") await apiClient.useTake(song.songVersionId, saved.id, use.id);
+      const sampleRate = take?.sampleRate ?? context.sampleRate;
+      const wav = new Blob([encodeWav(merged, sampleRate) as Uint8Array<ArrayBuffer>], { type: "audio/wav" });
+      // Kept on the device first, then uploaded (issue #365): without a connection, it waits and goes on its own.
+      const handed = log.current;
+      log.current = null;
+      const kept = await keepTake({ log: handed, target: takeTarget(), wav, sampleRate }, apiClient);
+      if (kept.waiting) return setPhase("waiting");
       song.record?.onSaved();
       onClose();
     } catch (err) {
@@ -271,6 +314,8 @@ export function StemRecordPanel({
   /** The take just recorded dropped: back to the sections kept, if any. */
   async function discard() {
     pauseStems();
+    void log.current?.drop();
+    log.current = null;
     setTake(null);
     setNudge(0);
     setSilent(false);
@@ -292,6 +337,9 @@ export function StemRecordPanel({
     pauseStems();
     const merged = samples(take, nudge);
     sections.current = merged;
+    // In the sections now (this page's memory); the next take is kept on the device as it's recorded.
+    void log.current?.drop();
+    log.current = null;
     const count = sectionCount + 1;
     setSectionCount(count);
     setTake(null);
@@ -482,6 +530,18 @@ export function StemRecordPanel({
           </div>
         ) : null}
       </div>
+      {interrupted && phase !== "recording" ? (
+        <p className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400" role="alert" data-testid="stem-record-interrupted">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {t(interrupted === "device" ? "recorder.interruptedDevice" : "recorder.interruptedSuspended")}
+        </p>
+      ) : null}
+      {phase === "waiting" ? (
+        <p className="flex items-start gap-2 text-xs" role="status" data-testid="stem-record-waiting">
+          <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {t("recorder.keptOnDevice")}
+        </p>
+      ) : null}
       {error ? (
         <p className="text-xs text-destructive" role="alert">
           {error}

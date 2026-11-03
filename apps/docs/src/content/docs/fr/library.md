@@ -290,6 +290,12 @@ Songverse retient la mesure sur cet appareil. Un casque filaire est préférable
 
 **Écouter** rejoue la prise avec le reste. Si elle est encore un peu en avance ou en retard, déplacez **Caler** (en millisecondes) et réécoutez. **Garder** l'ajoute au multipiste comme cette piste, que vous seul voyez jusqu'à ce que vous choisissiez qui d'autre la voit (voir [Qui voit un fichier](/fr/library/#qui-voit-un-fichier)) ; **Recommencer** refait une prise. Une prise peut durer jusqu'à neuf minutes environ.
 
+Rien de ce que vous enregistrez ne se perd en route. Une prise est écrite sur l'appareil pendant l'enregistrement et, une fois gardée, elle y reste jusqu'à ce que l'envoi soit passé :
+
+- Sans connexion au moment de **Garder**, l'enregistreur indique que la prise est **Gardée sur cet appareil**. Elle s'envoie d'elle-même dès le retour de la connexion, tant que Songverse est ouvert. D'ici là, elle figure dans **Prises sur cet appareil**, dans l'onglet **Audio** du chant et dans le lecteur de pistes, où **Envoyer maintenant** l'envoie tout de suite.
+- Si la page se recharge ou que le navigateur se ferme en pleine prise, ce qui a été enregistré jusque-là y est aussi, marqué **coupée** : **Écoutez**-la, puis **Gardez**-la (elle est ajoutée comme autre prise, jamais à la place d'une piste) ou **Supprimez**-la.
+- Si le micro est débranché ou changé, ou que le téléphone reprend le son (un appel, l'écran verrouillé), la prise s'arrête là, et ce qui a été enregistré est gardé et peut être écouté.
+
 Une prise gardée est enregistrée en WAV, puis convertie en Opus en arrière-plan (mono, 96 kbit/s : environ un huitième de la taille) - **En cours de traitement…** s'affiche dessous jusque-là. Le silence après sa fin est coupé, jamais avant, pour qu'elle reste en place. **Égaliser le niveau** (coché pour commencer) l'amène à un volume standard ; **Réduire le bruit de fond** retire un bruit constant - souffle, ronflement, ventilateur - appris sur le décompte quand c'est possible, en douceur pour ne pas toucher à la musique. Pour une voix, **Nettoyer la voix (RNNoise)** va plus loin : un réseau de neurones entraîné sur des voix garde le chant et retire le reste - la pièce, la rue, un ventilateur - mais il n'est pas fait pour les instruments, qu'il peut hacher.
 
 Pour faire de même après coup, **Nettoyer** sous un fichier audio que vous pouvez modifier propose **Nettoyer la voix (RNNoise)** pour une voix, **Égaliser le niveau** et **Réduire le bruit de fond** : c'est fait en arrière-plan, et le fichier revient en Opus, calé comme avant.

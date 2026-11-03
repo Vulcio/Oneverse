@@ -290,6 +290,12 @@ Songverse remembers what it measured on this device. Wired headphones are best: 
 
 **Listen** plays the take back with the rest. If it's still a little early or late, move **Line up** (in milliseconds) and listen again. **Keep** adds it to the multitrack as that part, only you see it until you choose who else does (see [Who sees a file](/library/#who-sees-a-file)); **Record again** tries again. A take can be up to about nine minutes long.
 
+Nothing you record is lost on the way. A take is written to the device while you record it, and once kept, it stays there until the upload has gone through:
+
+- With no connection when you press **Keep**, the recorder says the take is **Kept on this device**. It uploads on its own as soon as the connection is back, while Songverse is open. Until then it's listed under **Takes on this device**, on the song's **Audio** tab and in the stem player, where **Upload now** sends it straight away.
+- If the page reloads or the browser closes in the middle of a take, what was recorded up to then is there too, marked **cut short**: **Listen** to it, then **Keep** it (it's added as another take, never in place of a part) or **Discard** it.
+- If the microphone is unplugged or changed, or the phone takes the sound away (a call, the screen locked), the take stops there, and what was recorded is kept and can be listened to.
+
 A kept take is recorded as a WAV file, then turned into Opus in the background (mono, 96 kbps: about an eighth of the size) - **Being processed…** shows under it until then. The silence after its end is trimmed, never before it, so it stays in time. **Even out the level** (on to start with) brings it to a standard loudness; **Reduce background noise** takes out steady noise - hiss, hum, a fan - learning it from the count-in when it can, gently so the music is left alone. For a voice, **Clean up the voice (RNNoise)** goes further: a neural network trained on voices keeps the singing and removes what isn't - the room, the street, a fan - but it isn't for instruments, which it can cut into.
 
 To do the same afterwards, **Clean up** under an audio file you can change offers **Clean up the voice (RNNoise)** for a voice, **Even out the level** and **Reduce background noise**: it's done in the background, and the file comes back as Opus, in time as before.

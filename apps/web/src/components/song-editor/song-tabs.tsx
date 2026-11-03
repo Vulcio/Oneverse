@@ -41,6 +41,7 @@ import { setMode, useMode } from "#/lib/mode";
 import { stemsOf } from "#/lib/stem-engine";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { NEW_TARGET, RecorderDialog } from "#/components/recorder-dialog";
+import { StoredTakes } from "#/components/stored-takes";
 import { PartPicker, usePartLabel } from "#/components/part-picker";
 import { CleanUp } from "./clean-up";
 import { HighQuality, SeparateButton, SeparationList, separationModels, useStemSeparations } from "./stem-separation";
@@ -952,6 +953,8 @@ export function AttachmentsTab({
           )}
           <SeparationList separations={separations} attachments={attachments} busy={busyId !== null} onRetry={(id) => void retrySeparation(id)} />
           {kind === "audio" ? <p className="text-xs text-muted-foreground">{t("stems.detectHint")}</p> : null}
+          {/* Takes of this song not on the server yet (issue #365): waiting to upload, or cut short. */}
+          {kind === "audio" ? <StoredTakes songVersionId={songVersionId} onUploaded={() => void router.invalidate()} /> : null}
           {/* The first layer of a song, or another version of it: a new multitrack, with the metronome only (#123). */}
           {kind === "audio" ? (
             <Button type="button" variant="outline" className="self-start" onClick={() => setRecording({ target: NEW_TARGET })} disabled={busyId !== null} data-testid="record-new">

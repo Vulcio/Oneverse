@@ -38,6 +38,7 @@ import { NEW_TARGET, RecorderDialog } from "#/components/recorder-dialog";
 import { StemDockSlot } from "#/components/stem-dock-slot";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
 import { StemRecordPanel } from "#/components/stem-record-panel";
+import { StoredTakes } from "#/components/stored-takes";
 import { CueEditor, SectionLane, sectionsGradient, useCueNames } from "#/components/stem-cues";
 import { StemTrackActions } from "#/components/stem-track-actions";
 import { Button } from "@oneverse/ui/components/button";
@@ -679,6 +680,8 @@ export function StemDock({ song: page }: { song: StemSong }) {
                 setRecorderOpen(true);
               }}
             /> : null}
+          {/* Takes of this song not on the server yet (issue #365): waiting to upload, or cut short. */}
+          {recordable ? <StoredTakes songVersionId={song.songVersionId} onUploaded={() => song.record?.onSaved()} /> : null}
           {recorded ? (
             <p className="text-xs text-muted-foreground" data-testid="stem-recorded">
               {t("stems.recordedIn", { details: recorded })}
