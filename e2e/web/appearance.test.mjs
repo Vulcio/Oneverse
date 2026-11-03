@@ -39,7 +39,10 @@ try {
     await page.getByTestId("songbook-details-toggle").click();
     await page.getByTestId("appearance").getByTestId("appearance-color-amber").click();
     await page.locator('h1').locator("..").locator('[data-color="amber"]').waitFor();
-    if ((await api(me, "GET", "/songbooks")).find((b) => b.id === book.id)?.color !== "amber") throw new Error("not saved");
+    // Its name can give it amber already (the colour a name picks, when none is set): wait for the save itself.
+    const saved = async () => (await api(me, "GET", "/songbooks")).find((b) => b.id === book.id)?.color === "amber";
+    for (let i = 0; i < 25 && !(await saved()); i++) await page.waitForTimeout(200);
+    if (!(await saved())) throw new Error("not saved");
   });
 } finally {
   await call(me, "DELETE", `/songbooks/${book.id}`);
