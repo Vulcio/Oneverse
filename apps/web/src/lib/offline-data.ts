@@ -50,6 +50,8 @@ export function useKeepSet(setlistId: string | null | undefined) {
 // While the app is open, it catches up this often (and on launch, and when the connection is back).
 const SYNC_EVERY_MS = 5 * 60_000;
 let syncing: Promise<void> | null = null;
+// A sync asked for while one runs (a pin changed meanwhile): run once more after it, or that change waits for the next one.
+let again: Promise<void> | null = null;
 
 const DAYS_KEY = "songverse.offline.days";
 export const DEFAULT_OFFLINE_DAYS = 14;
@@ -80,8 +82,15 @@ export function setOfflineDays(days: number): void {
  */
 export function syncOffline(userId: string): Promise<void> {
   if (deviceOffline()) return Promise.resolve();
+  if (syncing) {
+    again ??= syncing.then(() => {
+      again = null;
+      return syncOffline(userId);
+    });
+    return again;
+  }
   const storage = deviceStorage(userId);
-  syncing ??= syncKeptSets(
+  syncing = syncKeptSets(
     storage,
     (known, knownSongs, knownSongbooks) => apiClient.syncOffline({ days: offlineDays(), known, knownSongs, knownSongbooks }),
     new Date(),
