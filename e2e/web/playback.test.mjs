@@ -2,7 +2,7 @@
 // video, the stems, the stems with the takes, the metronome, or nothing -
 // with a default from what the song has, the person's choice kept on their
 // account (so it follows them), loaded only once chosen, the next song of a
-// set fetched ahead, the stems playing before they've all arrived, another
+// set fetched ahead, Play starting every part that's heard together, another
 // source taking over from where the last one was, and Sync play's leader
 // choosing for everyone.
 import { chromium } from "playwright";
@@ -112,10 +112,13 @@ await step("choosing the stems: kept on the account, without the take", async ()
   check("saved with the chart preferences", saved.playback === "STEMS", JSON.stringify(saved));
 });
 
-await step("Play: the stems start before they've all arrived, and the first sound is timed", async () => {
+await step("Play: every part that's heard starts together, and the first sound is timed", async () => {
   await stems().getByRole("button", { name: "Play", exact: true }).click();
   await page.locator('[data-testid="stem-player"][data-state="playing"]').waitFor({ timeout: 15000 });
+  // Nothing muted: both parts in before the first sound, started at once.
   await page.locator('[data-testid="stem-player"][data-complete="true"]').waitFor({ timeout: 15000 });
+  const started = await page.evaluate(() => window.songverseStems?.startedParts);
+  check("both parts started together", started === 2, String(started));
   const ms = await page.evaluate(() => window.songverseStems?.firstSoundMs);
   check("time to first sound measured", typeof ms === "number" && ms >= 0, `${ms} ms`);
   // Generous in CI: a headless browser on a shared machine; real targets are measured on devices.

@@ -115,7 +115,7 @@ export interface StemState {
   multitrackId: string | null;
   title: string;
   returnTo: string;
-  /** "ready" as soon as a part can play (issue #366): the others join in as they arrive - `complete` once they all have. */
+  /** "ready" once every part that's heard has arrived (issue #366): Play starts them together; the muted ones join in as they arrive - `complete` once they all have. */
   status: "idle" | "loading" | "ready" | "error";
   /** Every file has arrived (or failed): what recording a part over them needs. */
   complete: boolean;
@@ -922,13 +922,14 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
     const all = [...sizes.values()].reduce((sum, size) => sum + size, 0);
     if (all) set({ downloaded: Math.min(1, [...received.values()].reduce((sum, size) => sum + size, 0) / all) });
   };
-  // Fetched a few at a time, the parts heard first first (issue #366): the
-  // first can play while the rest arrive - all at once, they'd all arrive
-  // together, at the end. Each joins in, in time, as it's decoded.
+  // Fetched a few at a time, the parts heard first (issue #366). Play starts
+  // once every part that's heard has arrived, all together; one muted then
+  // joins in, in time, when it's decoded.
   const order = [...song.stems].sort((a, b) => loadRank(a, muted, soloed) - loadRank(b, muted, soloed));
   const settled = new Map<string, { buffer: AudioBuffer | null; empty: boolean }>();
+  const heard = song.stems.filter((stem) => isHeard(stem, muted, soloed));
   let playable: (ok: boolean) => void = () => {};
-  const firstPlayable = new Promise<boolean>((resolve) => (playable = resolve));
+  const heardPlayable = new Promise<boolean>((resolve) => (playable = resolve));
   // Joining one at a time: each waits for the routing of the one before.
   let joining = Promise.resolve();
   const fetchOne = async (stem: StemFile) => {
@@ -949,7 +950,11 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
     joining = joining.then(() => join(stem, buffer, empty, mine));
     await joining;
     if (mine !== generation) return;
-    if (buffer && state.status === "ready") playable(true);
+    // Everything that's heard is in (or failed: the rest still play).
+    if (state.status !== "ready" && buffers.size > 0 && heard.every((part) => settled.has(part.id))) {
+      set({ status: "ready" });
+      playable(true);
+    }
   };
   const queue = [...order];
   const worker = async () => {
@@ -962,11 +967,16 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
       playable(false);
       return;
     }
-    set({ complete: true });
+    set({ status: "ready", complete: true });
     playable(true);
   });
   void all;
-  return firstPlayable;
+  return heardPlayable;
+}
+
+/** Whether a part is heard as the player stands: soloed, or (nothing soloed) not muted. */
+function isHeard(stem: StemFile, muted: ReadonlySet<string>, soloed: ReadonlySet<string>): boolean {
+  return soloed.size > 0 ? soloed.has(stem.id) : !muted.has(stem.id);
 }
 
 /** How many of a song's files are fetched at once (issue #366). */
@@ -974,7 +984,7 @@ const LOAD_AT_ONCE = 2;
 
 /** Which parts are fetched first: those heard (soloed, then not muted), then by the player's order of parts. */
 function loadRank(stem: StemFile, muted: ReadonlySet<string>, soloed: ReadonlySet<string>): number {
-  const heard = soloed.size > 0 ? (soloed.has(stem.id) ? 0 : 2) : muted.has(stem.id) ? 2 : 0;
+  const heard = isHeard(stem, muted, soloed) ? 0 : 2;
   // The click last: the app's metronome can stand in for it meanwhile.
   const part = stem.stemPart === "CLICK" ? 1 : 0;
   return (heard + part) * 1000 + (stem.stemPart ? STEM_PARTS.indexOf(stem.stemPart) : 0);
@@ -1000,7 +1010,8 @@ async function join(stem: StemFile, buffer: AudioBuffer | null, empty: boolean, 
   await route();
   if (mine !== generation) return;
   const duration = Math.max(...[...buffers.values()].map((item) => item.duration));
-  if (state.status !== "ready") return set({ status: "ready", duration });
+  // Not ready until every part that's heard is in (load() says when).
+  if (state.status !== "ready") return set({ duration });
   set({ duration });
   applyGains(true);
   if (!state.playing || !context) return;
@@ -1263,9 +1274,11 @@ function noteFirstSound(pressed: number) {
   const ahead = Math.max(0, lastStartAt - context.currentTime) + (context.outputLatency || 0);
   const ms = Math.round(performance.now() - pressed + ahead * 1000);
   set({ firstSoundMs: ms });
-  const w = window as unknown as { songverseStems?: { starts: unknown[]; firstSoundMs?: number } };
+  const w = window as unknown as { songverseStems?: { starts: unknown[]; firstSoundMs?: number; startedParts?: number } };
   w.songverseStems ??= { starts: [] };
   w.songverseStems.firstSoundMs = ms;
+  // How many parts the press started together.
+  w.songverseStems.startedParts = sources.length;
 }
 
 /**

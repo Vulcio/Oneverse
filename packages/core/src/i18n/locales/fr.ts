@@ -3254,7 +3254,7 @@ const fr: typeof en = {
     play: "Lecture",
     pause: "Pause",
     loading: "Chargement des pistes… {{percent}} %",
-    joining: "Lecture de ce qui est arrivé ; les autres pistes suivent dès leur arrivée… {{percent}} %",
+    joining: "Les pistes coupées suivent dès leur arrivée… {{percent}} %",
     position: "Position",
     mute: "Couper {{part}}",
     solo: "Solo {{part}}",

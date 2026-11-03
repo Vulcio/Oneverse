@@ -155,7 +155,7 @@ En mode **Session**, **Ce qui joue** en haut de la page d'un chant, et de sa pag
 
 Seul ce que le chant a est proposé. Tant que vous n'avez rien choisi, le master joue quand il y en a un, sinon les pistes (avec les prises), sinon la vidéo, sinon le métronome quand le chant a un tempo. Songverse garde votre choix sur votre compte, pour le chant et pour chaque page de chant d'une liste : il vous suit sur vos autres appareils. Seul ce que vous choisissez est téléchargé : les pistes que vous n'avez pas choisies attendent **Lecture**. Choisir autre chose pendant la lecture reprend là où on en était. Sur la page d'un chant d'une liste, le chant suivant est récupéré à l'avance pendant que vous y êtes, pour que sa **Lecture** soit rapide.
 
-Les pistes démarrent dès que la première est arrivée : les autres les rejoignent, en rythme, à mesure qu'elles arrivent (**Lecture de ce qui est arrivé ; les autres pistes suivent dès leur arrivée…**). Enregistrer une piste attend qu'elles soient toutes là.
+**Lecture** démarre les pistes dès que toutes celles que vous entendez sont arrivées, ensemble ; la page les télécharge à l'avance pendant que vous lisez, si bien que c'est en général immédiat. Les pistes coupées peuvent être encore en route : elles rejoignent les autres, en rythme, dès leur arrivée (**Les pistes coupées suivent dès leur arrivée…**). Enregistrer une piste attend qu'elles soient toutes là.
 
 En jeu synchronisé, le choix du meneur est celui de tous : le **Ce qui joue** des autres l'affiche, avec le nom du meneur (voir [Jouer en synchro](/fr/sets/#jouer-synchronisé)).
 

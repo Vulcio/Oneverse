@@ -155,7 +155,7 @@ In **Practice**, **What plays** at the top of a song's page, and of its page in 
 
 Only what the song has is listed. Until you choose, the master plays when there is one, else the stems (with the takes), else the video, else the metronome when the song has a tempo. Songverse keeps your choice on your account, for the song and for each set's song page, so it follows you to your other devices. What you choose is all that's downloaded: stems you didn't choose wait for **Play**. Choosing something else while the song plays carries on from where it was. On a set's song page, the next song of the set is fetched ahead while you're there, so its **Play** is quick.
 
-The stems start as soon as the first part has arrived: the others join in, in time, as they come (**Playing what's in; the other parts join as they arrive…**). Recording a part waits until they're all in.
+**Play** starts the stems as soon as every part you hear has arrived, all together; the page fetches them ahead while you read, so it's usually at once. Muted parts can still be on their way: they join in, in time, as they come (**Muted parts join as they arrive…**). Recording a part waits until they're all in.
 
 Playing in sync, the leader's choice is everyone's: the others' **What plays** shows it, and the leader's name (see [Playing in sync](/sets/#playing-in-sync)).
 

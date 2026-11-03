@@ -3251,7 +3251,7 @@ const en = {
     play: "Play",
     pause: "Pause",
     loading: "Loading the stems… {{percent}}%",
-    joining: "Playing what's in; the other parts join as they arrive… {{percent}}%",
+    joining: "Muted parts join as they arrive… {{percent}}%",
     position: "Position",
     mute: "Mute {{part}}",
     solo: "Solo {{part}}",

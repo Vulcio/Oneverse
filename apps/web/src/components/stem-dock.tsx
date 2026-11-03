@@ -575,7 +575,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
         {t("stems.loading", { percent: Math.round(engine.downloaded * 100) })}
       </p>
     ) : active && engine.status === "ready" && !engine.complete ? (
-      // Playing before every part's in (issue #366): the rest join as they arrive.
+      // Every part that's heard is in (issue #366); the muted ones join as they arrive.
       <p className="text-xs text-muted-foreground" role="status" data-testid="stem-joining">
         {t("stems.joining", { percent: Math.round(engine.downloaded * 100) })}
       </p>
