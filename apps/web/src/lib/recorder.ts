@@ -229,6 +229,11 @@ export class Recorder {
     return [...this.backing.keys()];
   }
 
+  /** How long a part to play along with is (s); 0 if it isn't one. */
+  backingDuration(id: string): number {
+    return this.backing.get(id)?.duration ?? 0;
+  }
+
   private click(at: number, accent: boolean) {
     const oscillator = this.context.createOscillator();
     const envelope = this.context.createGain();
@@ -248,17 +253,19 @@ export class Recorder {
    */
   private play(
     zeroAt: number,
-    options: { beat: Beat | null; lead: number; from: number; click: boolean; heard: Set<string>; stopAt?: Map<string, number>; take?: { buffer: AudioBuffer; offset: number } },
+    options: { beat: Beat | null; lead: number; from: number; click: boolean; heard: Set<string>; stopAt?: Map<string, number>; take?: { buffer: AudioBuffer; offset: number }; preroll?: boolean },
   ) {
     const startAt = zeroAt + options.from;
+    // A pre-roll (issue #365): the parts heard through the count-in too, what comes before the take.
+    const partsFrom = options.preroll ? Math.max(0, options.from - options.lead) : options.from;
     for (const [id, buffer] of this.backing) {
-      if (!options.heard.has(id) || options.from >= buffer.duration) continue;
+      if (!options.heard.has(id) || partsFrom >= buffer.duration) continue;
       const stop = options.stopAt?.get(id);
-      if (stop !== undefined && stop <= options.from) continue;
+      if (stop !== undefined && stop <= partsFrom) continue;
       const source = this.context.createBufferSource();
       source.buffer = buffer;
       source.connect(this.context.destination);
-      source.start(startAt, options.from);
+      source.start(zeroAt + partsFrom, partsFrom);
       if (stop !== undefined) source.stop(zeroAt + stop);
       this.sources.push(source);
     }
@@ -292,7 +299,7 @@ export class Recorder {
    * click, capturing all along. Returns when the multitrack's 0:00 is (or
    * would have been), on the audio clock.
    */
-  start(options: { beat: Beat | null; lead: number; from: number; click: boolean; heard: Set<string>; stopAt?: Map<string, number> }): number {
+  start(options: { beat: Beat | null; lead: number; from: number; click: boolean; heard: Set<string>; stopAt?: Map<string, number>; preroll?: boolean }): number {
     this.stopPlaying();
     this.chunks = [];
     void this.context.resume();
