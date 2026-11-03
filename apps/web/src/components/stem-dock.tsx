@@ -34,10 +34,9 @@ import { useContext, useEffect, useId, useMemo, useRef, useState, type CSSProper
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { cueAt, sortedCues, type CuePoint, multitracksOf, semitonesBetween, transposeKey, transposesPart } from "@oneverse/core";
-import { NEW_TARGET, RecorderDialog } from "#/components/recorder-dialog";
+import { NEW_TARGET, RecordScreen } from "#/components/record-screen";
 import { StemDockSlot } from "#/components/stem-dock-slot";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
-import { StemRecordPanel } from "#/components/stem-record-panel";
 import { StoredTakes } from "#/components/stored-takes";
 import { CueEditor, SectionLane, sectionsGradient, useCueNames } from "#/components/stem-cues";
 import { StemTrackActions } from "#/components/stem-track-actions";
@@ -386,7 +385,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
   const speedControl = <SpeedControl speed={heardSpeed} onChange={changeSpeed} disabled={speedLocked} />;
   const recorder =
     recorderOpen && song.record ? (
-      <RecorderDialog
+      <RecordScreen
         songVersionId={song.songVersionId}
         songTitle={song.title}
         multitracks={multitracksOf(song.record.attachments)}
@@ -395,6 +394,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
         songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
         songKey={song.record.songKey ?? ""}
         setlist={song.record.setlist}
+        cueSections={song.cueSections?.sections ?? []}
         onClose={() => setRecorderOpen(false)}
         onSaved={song.record.onSaved}
       />
@@ -671,15 +671,25 @@ export function StemDock({ song: page }: { song: StemSong }) {
               // Placing them: a handle on each, as in a video editor (issue #110).
               editing={cueEditor && canPlaceCues && active && engine.status === "ready" ? { beat: engine.beat, onMove: (index, at) => setDraftCues(cues.map((cue, i) => (i === index ? { ...cue, at } : cue))) } : null}
             /> : null}
-          {recordPanel && recordable && active && engine.status === "ready" && engine.complete ? <StemRecordPanel
-              song={song}
+          {recordPanel && recordable && song.record ? (
+            // The recording drawer (issue #365), over the player's own mix and clock: the player stays usable behind it.
+            <RecordScreen
+              songVersionId={song.songVersionId}
+              songTitle={song.title}
+              multitracks={multitracksOf(song.record.attachments)}
+              target={song.multitrackId ?? ""}
               into={recordInto}
+              songTempo={song.tempo ?? null}
+              songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
+              songKey={song.record.songKey ?? ""}
+              setlist={song.record.setlist}
+              cueSections={cueSections}
+              // Over the player's mix once it's loaded; before, on a context of its own with the parts downloaded.
+              player={active && engine.status === "ready" && engine.complete ? song : null}
               onClose={closeRecordPanel}
-              onNewMultitrack={() => {
-                setRecordPanel(false);
-                setRecorderOpen(true);
-              }}
-            /> : null}
+              onSaved={song.record.onSaved}
+            />
+          ) : null}
           {/* Takes of this song not on the server yet (issue #365): waiting to upload, or cut short. */}
           {recordable ? <StoredTakes songVersionId={song.songVersionId} onUploaded={() => song.record?.onSaved()} /> : null}
           {recorded ? (

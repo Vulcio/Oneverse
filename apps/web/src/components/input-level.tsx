@@ -23,7 +23,7 @@ export function judgeLevel(peaks: number[]): InputLevelVerdict {
 }
 
 /** Where a level (0-1) sits along the meter, 0-1, in decibels. */
-function along(level: number): number {
+export function along(level: number): number {
   if (level <= 0) return 0;
   return Math.max(0, Math.min(1, (20 * Math.log10(level) - FLOOR_DB) / -FLOOR_DB));
 }

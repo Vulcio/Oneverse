@@ -128,7 +128,11 @@ await step("one cut short can be discarded instead", async () => {
 await step("a take recorded and not kept leaves nothing on the device", async () => {
   await record(1);
   await dialog().getByTestId("recorder-stop").click();
-  await page.keyboard.press("Escape");
+  // Closed with a take not kept: it asks first.
+  await dialog().getByTestId("recorder-take").waitFor();
+  await dialog().getByTestId("recorder-dismiss").click();
+  await dialog().getByTestId("recorder-confirm-close").waitFor();
+  await dialog().getByTestId("recorder-discard-close").click();
   await dialog().waitFor({ state: "detached" });
   await page.reload();
   await page.waitForLoadState("networkidle");

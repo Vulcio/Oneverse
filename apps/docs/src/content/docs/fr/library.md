@@ -244,20 +244,20 @@ Vous pouvez enregistrer une piste directement dans Songverse, sur un ordinateur,
 - **Enregistrer un nouveau multipiste**, en bas de l'onglet **Audio** : la première couche d'un chant, ou une autre version, avec le métronome seul. Donnez-lui un **Nom**, un **Tempo (BPM)** et une **Mesure** (ceux du chant pour commencer). Il commence par une mesure de décompte, qui est gardée : le premier temps du multipiste tombe une mesure plus loin.
 - **Enregistrer une piste**, dans le cadre d'un multipiste : une autre piste de ce multipiste, en entendant les autres (décochez-en une sous **Entendre** pour la laisser de côté) et le clic, à son tempo, avec une mesure de décompte avant son premier temps.
 
-#### Dans le lecteur de pistes
+#### Le tiroir d'enregistrement
 
-En mode **Session**, le bouton micro du lecteur de pistes, **Enregistrer une piste**, enregistre dans le multipiste en lecture sans le quitter. Un petit enregistreur s'ouvre au-dessus des pistes, avec les mêmes options **Piste**, **La prise** et de nettoyage, et le retard (**Taper dans les mains**, **Le mesurer**) :
+**Enregistrer une piste** ouvre le tiroir d'enregistrement en bas de l'écran : le même depuis le cadre d'un multipiste dans l'onglet **Audio**, depuis **Enregistrer un nouveau multipiste** et depuis le bouton micro du lecteur de pistes. Il ne bloque pas la page : la grille, les paroles et les coupures, solos et sections du lecteur restent utilisables derrière lui.
 
-![Enregistrer dans le lecteur de pistes : l'enregistreur au-dessus des pistes](../../../assets/screenshots/fr/stems-record.jpg)
+![Enregistrer dans le lecteur de pistes : le tiroir par-dessus le lecteur](../../../assets/screenshots/fr/stems-record.jpg)
 
-- Vous entendez le lecteur tel qu'il est : vos pistes coupées, en solo et la transposition, et le métronome si **Clic avec l'enregistrement** est activé. Enregistrée transposée, la prise est gardée telle que chantée dans cette tonalité (voir plus haut).
-- Dès que le micro est ouvert, **Micro** montre son niveau sur un vumètre, la crête gardée un instant, et dit si c'est **Trop faible**, un **Bon niveau** ou **Trop fort** (ça sature) : vérifiez avant d'enregistrer.
-- Il enregistre à partir de la tête de lecture : placez-la n'importe où dans le chant, et la prise commence au début de cette mesure (« À partir de la mesure 17 (0:42) »), après une mesure de décompte. Elle ne remplace que le passage qu'elle couvre : la piste qu'elle remplace est gardée de part et d'autre (un punch-in et out), ou c'est le silence.
-- Pendant l'enregistrement, la prise se dessine là où elle est enregistrée. **Arrêter** la termine.
-- La prise est ensuite une piste comme les autres, **Nouvelle prise** : écoutez-la, coupez-la ou mettez-la en solo, et déplacez **Caler** pour l'ajuster. **Garder** l'ajoute au multipiste ; **Supprimer** l'abandonne ; **Recommencer** refait une prise.
-- Pour enregistrer une piste en sections (les couplets, puis le refrain), appuyez sur **Ajouter une section** après une prise : placez la tête de lecture au début de la section suivante et **Enregistrer** de nouveau. Chaque section rejoint la même prise, avec un court fondu enchaîné à chaque bout, et le lecteur les compte (« 2 sections »). **Supprimer** n'abandonne que la dernière, **Tout supprimer** toutes, et **Garder** les enregistre toutes en un seul fichier.
-- Touchez le nom d'une piste que vous avez enregistrée ou importée, sauf si elle est verrouillée (voir [Fichiers verrouillés](/fr/library/#fichiers-verrouillés)) - la petite flèche après lui - pour voir ce qu'on peut en faire : **Enregistrer dedans** ouvre l'enregistreur sur cette piste, ce que vous enregistrez ne remplaçant que le passage couvert ; **Fusionner avec…** y mélange une autre de vos pistes chantée dans la même tonalité, en un seul fichier joué à leur place (les deux sont gardés comme autres prises) ; **Supprimer** le supprime, après confirmation.
-- **Nouveau multipiste…** enregistre plutôt la première couche d'un autre multipiste, comme ci-dessous.
+- En haut, ce que vous enregistrez (« Voix principale · Refrain »), et dessous la prise telle qu'elle s'enregistre : le trait au milieu est la tête de lecture. Ce que le micro entend se dessine à sa gauche (en rouge pendant l'enregistrement, en orange là où c'est trop fort), et ce qui arrive dans les pistes que vous entendez à sa droite, avec les sections marquées. Avant même d'enregistrer, vous voyez si le micro vous entend.
+- La flèche à côté affiche ou masque tous les choix : **Dans**, **Piste**, **La prise**, quoi enregistrer, **Entendre** et **Clic**, le niveau du **Micro**, le retard et le nettoyage. Ils se masquent pendant l'enregistrement, pour laisser voir la page ; la flèche les fait revenir.
+- Quoi enregistrer : **Tout le chant** ; **Une section**, choisie parmi les sections placées dans le lecteur (**Placer les sections**) ; ou **À partir de la mesure**, un punch-in. Le décompte est la mesure d'avant, ses temps décomptés en haut. La prise d'une section s'arrête d'elle-même à la fin de la section.
+- Depuis le lecteur de pistes, il enregistre par-dessus le lecteur tel qu'il est : vos coupures, solos et transposition, le métronome si **Clic avec l'enregistrement** est activé, à partir de la mesure où se trouve la tête de lecture. Enregistrée en transposant, la prise est gardée comme chantée dans cette tonalité (voir plus haut).
+- Chaque prise est gardée jusqu'à la fermeture du tiroir, listée sous **Prises** : **Écouter** en joue une avec les autres pistes (dans le lecteur, comme une piste appelée **Nouvelle prise**), **Choisir** désigne celle à garder, et **Caler** l'ajuste. **Recommencer** en enregistre une autre d'une seule touche.
+- **Garder la prise 2** (celle choisie) l'ajoute au multipiste. Pour enregistrer une piste en plusieurs fois (les couplets, puis le refrain), appuyez plutôt sur **Garder, section suivante** : elle va dans la même piste, la section suivante est choisie, et vous l'enregistrez ; **Garder** les enregistre ensuite toutes en un seul fichier. Une prise ne remplace que le passage qu'elle couvre, avec un court fondu enchaîné à chaque jonction : la piste qu'elle remplace est gardée de part et d'autre (un punch-in et out), ou c'est le silence.
+- Fermer le tiroir avec des prises non gardées demande d'abord confirmation.
+- Touchez le nom d'une piste que vous avez enregistrée ou importée, sauf si elle est verrouillée (voir [Fichiers verrouillés](/fr/library/#fichiers-verrouillés)) - la petite flèche après lui - pour voir ce qu'on peut en faire : **Enregistrer dedans** ouvre le tiroir sur cette piste, ce que vous enregistrez ne remplaçant que le passage couvert ; **Fusionner avec…** y mélange une autre de vos pistes chantée dans la même tonalité, en un seul fichier joué à leur place (les deux sont gardés comme autres prises) ; **Supprimer** le supprime, après confirmation.
 
 #### Depuis l'onglet Audio
 
@@ -279,20 +279,18 @@ Dans l'onglet **Audio**, **Utiliser cette prise** sous une autre prise la joue �
 
 L'audio que vous importez est verrouillé au départ (le bouton cadenas à côté du fichier, enfoncé) : il est gardé tel qu'importé. Un fichier verrouillé ne peut pas être supprimé, remplacé par une autre prise, fusionné ni nettoyé, et le lecteur de pistes n'affiche ni à qui il est ni d'actions dessus ; sa piste, sa tonalité, son tempo et ses sections peuvent toujours changer. Une prise enregistrée à côté d'une piste verrouillée joue avec elle plutôt qu'à sa place. Seul qui l'a importé peut le déverrouiller (**Déverrouiller**, le même bouton) - pour remplacer une piste par exemple - et le verrouiller de nouveau. Ce que vous enregistrez dans Songverse n'est pas verrouillé.
 
-**À partir de la mesure** enregistre à partir d'une mesure plutôt que du début - un punch-in : le décompte est la mesure d'avant, et la prise remplacée s'entend jusque-là. Ce qui précède reste tel quel, et ce que vous enregistrez remplace la suite, avec un court fondu enchaîné à la jonction.
-
-Ce que vous jouez est calé sur ce que vous avez entendu : Songverse compense le retard entre un son qui sort de l'appareil et le moment où le micro l'entend. La fenêtre l'indique - estimé par le navigateur pour commencer. Pour une valeur plus juste :
+Ce que vous jouez est calé sur ce que vous avez entendu : Songverse compense le retard entre un son qui sort de l'appareil et le moment où le micro l'entend. Le tiroir l'indique - estimé par le navigateur pour commencer. Pour une valeur plus juste :
 
 - **Taper dans les mains**, casque sur les oreilles : écoutez deux clics, puis tapez dans les mains sur chacun des huit suivants, près du micro. Cela mesure tout le trajet - casque Bluetooth compris.
 - **Le mesurer**, avec le son sur les haut-parleurs (casque retiré, son monté) : Songverse joue quelques clics et les écoute.
 
-Songverse retient la mesure sur cet appareil. Un casque filaire est préférable : le Bluetooth ajoute un retard grand et variable, et la fenêtre prévient quand le son semble aller vers du Bluetooth. Refaites la mesure si une prise sonne en retard.
+Songverse retient la mesure sur cet appareil. Un casque filaire est préférable : le Bluetooth ajoute un retard grand et variable, et le tiroir prévient quand le son semble aller vers du Bluetooth. Refaites la mesure si une prise sonne en retard.
 
 **Écouter** rejoue la prise avec le reste. Si elle est encore un peu en avance ou en retard, déplacez **Caler** (en millisecondes) et réécoutez. **Garder** l'ajoute au multipiste comme cette piste, que vous seul voyez jusqu'à ce que vous choisissiez qui d'autre la voit (voir [Qui voit un fichier](/fr/library/#qui-voit-un-fichier)) ; **Recommencer** refait une prise. Une prise peut durer jusqu'à neuf minutes environ.
 
 Rien de ce que vous enregistrez ne se perd en route. Une prise est écrite sur l'appareil pendant l'enregistrement et, une fois gardée, elle y reste jusqu'à ce que l'envoi soit passé :
 
-- Sans connexion au moment de **Garder**, l'enregistreur indique que la prise est **Gardée sur cet appareil**. Elle s'envoie d'elle-même dès le retour de la connexion, tant que Songverse est ouvert. D'ici là, elle figure dans **Prises sur cet appareil**, dans l'onglet **Audio** du chant et dans le lecteur de pistes, où **Envoyer maintenant** l'envoie tout de suite.
+- Sans connexion au moment de **Garder**, le tiroir indique que la prise est **Gardée sur cet appareil**. Elle s'envoie d'elle-même dès le retour de la connexion, tant que Songverse est ouvert. D'ici là, elle figure dans **Prises sur cet appareil**, dans l'onglet **Audio** du chant et dans le lecteur de pistes, où **Envoyer maintenant** l'envoie tout de suite.
 - Si la page se recharge ou que le navigateur se ferme en pleine prise, ce qui a été enregistré jusque-là y est aussi, marqué **coupée** : **Écoutez**-la, puis **Gardez**-la (elle est ajoutée comme autre prise, jamais à la place d'une piste) ou **Supprimez**-la.
 - Si le micro est débranché ou changé, ou que le téléphone reprend le son (un appel, l'écran verrouillé), la prise s'arrête là, et ce qui a été enregistré est gardé et peut être écouté.
 

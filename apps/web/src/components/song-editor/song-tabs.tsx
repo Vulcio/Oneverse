@@ -17,6 +17,7 @@ import {
   type StorageUsage,
   type StreamingLinkType,
   type TeamSummary,
+  type CueSection,
 } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Download, FileAudio, Lock, LockOpen, Mic, Play, Trash2, Upload } from "lucide-react";
@@ -40,7 +41,7 @@ import { KeySelect } from "#/components/key-select";
 import { setMode, useMode } from "#/lib/mode";
 import { stemsOf } from "#/lib/stem-engine";
 import { useMultitrackName } from "#/lib/multitrack-name";
-import { NEW_TARGET, RecorderDialog } from "#/components/recorder-dialog";
+import { NEW_TARGET, RecordScreen } from "#/components/record-screen";
 import { StoredTakes } from "#/components/stored-takes";
 import { PartPicker, usePartLabel } from "#/components/part-picker";
 import { CleanUp } from "./clean-up";
@@ -489,6 +490,7 @@ export function AttachmentsTab({
   songTempo = "",
   songTimeSignature = "",
   songTitle = "",
+  cueSections = [],
 }: {
   kind: "files" | "audio";
   songVersionId: string;
@@ -503,6 +505,8 @@ export function AttachmentsTab({
   /** "4/4": what a new multitrack's click defaults to (#123). */
   songTimeSignature?: string;
   songTitle?: string;
+  /** The song's sections, to record one of them (issue #365). */
+  cueSections?: CueSection[];
 }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -963,7 +967,7 @@ export function AttachmentsTab({
             </Button>
           ) : null}
           {recording ? (
-            <RecorderDialog
+            <RecordScreen
               songVersionId={songVersionId}
               songTitle={songTitle}
               multitracks={multitracks}
@@ -971,6 +975,7 @@ export function AttachmentsTab({
               songTempo={songTempo ? Number(songTempo) : null}
               songTimeSignature={songTimeSignature}
               songKey={songKey}
+              cueSections={cueSections}
               onClose={() => setRecording(null)}
               onSaved={() => void router.invalidate()}
             />

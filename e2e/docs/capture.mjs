@@ -242,12 +242,12 @@ try {
     await shoot("song-order", null, null, { element: page.getByTestId("song-order") });
     // Who sees each file (issue #72): the stems shared with the band, a recording kept to oneself.
     await shoot("song-files", `/library/${grace.id}?tab=audio`, () => page.getByTestId("audio-list").waitFor());
-    // Recording a part into the stems (issue #123): the dialog, ready.
+    // Recording a part into the stems (issues #123, #365): the drawer, ready.
     await shoot("recorder", null, async () => {
       await page.getByTestId("record-part").first().click();
       await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor();
     }, { element: page.getByTestId("recorder") });
-    await page.keyboard.press("Escape");
+    await page.getByTestId("recorder-dismiss").click();
     await page.getByTestId("recorder").waitFor({ state: "detached" });
     await shoot("song-history", `/library/${grace.id}?tab=history`, () => page.getByTestId("history-chart-diff").waitFor());
     await shoot("versions", `/library/${grace.id}?tab=arrangements`, () => page.getByTestId("arrangement-list").waitFor());
@@ -574,13 +574,13 @@ try {
       await dock.getByTestId("stem-cue-editor").waitFor();
     }, { element: dock });
     await dock.getByTestId("stem-cues").click();
-    // Recording in the player (issue #134): its recorder open above the parts.
+    // Recording in the player (issues #134, #365): the drawer over the player, which stays usable.
     await shoot("stems-record", null, async () => {
       await dock.getByTestId("stem-record").click();
-      await page.locator('[data-testid="stem-record-panel"][data-phase="ready"]').waitFor();
-    }, { element: dock });
-    await dock.getByTestId("stem-record").click();
-    await page.getByTestId("stem-record-panel").waitFor({ state: "detached" });
+      await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor();
+    });
+    await page.getByTestId("recorder-dismiss").click();
+    await page.getByTestId("recorder").waitFor({ state: "detached" });
     // The mixer (issue #140), at a phone's width: a fader over each part's waveform.
     await page.setViewportSize({ width: 390, height: 844 });
     await shoot("stems-mixer", null, async () => {

@@ -4,13 +4,16 @@ import { downloadOnce } from "#/lib/song-files";
 import {
   directStemsOutput,
   getStemState,
+  isAudible,
   pauseStems,
   playStems,
   seekStems,
   setStemsTake,
+  stemBuffer,
   stemMono,
   stemsAudioContext,
   stemsZeroAt,
+  TAKE_ID,
   toggleStemMute,
   type StemSong,
 } from "#/lib/stem-engine";
@@ -43,8 +46,21 @@ export interface RecordEngine {
   /** The part a take replaces, mono on this clock, to splice into. */
   base(id: string): Float32Array | null;
   /** Plays `samples` (a take, from the multitrack's 0:00) with the rest from `from`; null plays the rest alone. */
-  play(samples: Float32Array | null, options: { from: number; beat: Beat | null; click: boolean; heard: Set<string>; replace: string | null; name: string; part: Attachment["stemPart"] }): Promise<void>;
+  play(
+    samples: Float32Array | null,
+    options: {
+      from: number;
+      beat: Beat | null;
+      click: boolean;
+      heard: Set<string>;
+      replace: string | null;
+      name: string;
+      part: Attachment["stemPart"];
+    },
+  ): Promise<void>;
   stopPlaying(): void;
+  /** What's heard with the take, decoded: drawn ahead of the playhead while recording. */
+  ahead(heard: Set<string>, replace: string | null): AudioBuffer[];
   /** Whether it's playing back now. */
   playing(): boolean;
   close(): void;
@@ -57,7 +73,12 @@ export async function openOwnEngine(songVersionId: string, files: Attachment[]):
 }
 
 async function ownEngine(recorder: Recorder, songVersionId: string, files: Attachment[]): Promise<RecordEngine> {
-  const loaded = await Promise.all(files.map(async (file) => ({ id: file.id, blob: await downloadOnce(songVersionId, file).catch(() => null) })));
+  const loaded = await Promise.all(
+    files.map(async (file) => ({
+      id: file.id,
+      blob: await downloadOnce(songVersionId, file).catch(() => null),
+    })),
+  );
   await recorder.setBacking(loaded.filter((file): file is { id: string; blob: Blob } => file.blob !== null));
   const parts = files.filter((file) => recorder.backingIds.includes(file.id));
   let playingUntil = 0;
@@ -66,7 +87,15 @@ async function ownEngine(recorder: Recorder, songVersionId: string, files: Attac
     recorder,
     parts,
     async start({ from, lead, beat, click, heard, replace }) {
-      return recorder.start({ beat, lead, from, click, heard, stopAt: replace ? new Map([[replace, from]]) : undefined, preroll: true });
+      return recorder.start({
+        beat,
+        lead,
+        from,
+        click,
+        heard,
+        stopAt: replace ? new Map([[replace, from]]) : undefined,
+        preroll: true,
+      });
     },
     position: (zeroAt) => recorder.positionOf(zeroAt),
     stop: (zeroAt) => recorder.finish(zeroAt),
@@ -74,7 +103,14 @@ async function ownEngine(recorder: Recorder, songVersionId: string, files: Attac
     async play(samples, { from, beat, click, heard, replace }) {
       const replaced = replace ? new Map([[replace, 0]]) : undefined;
       const take = samples ?? new Float32Array(1);
-      recorder.preview(take, { beat, click, heard, nudge: 0, from, stopAt: replaced });
+      recorder.preview(take, {
+        beat,
+        click,
+        heard,
+        nudge: 0,
+        from,
+        stopAt: replaced,
+      });
       const longest = Math.max(take.length / recorder.context.sampleRate, ...parts.filter((part) => heard.has(part.id)).map((part) => recorder.backingDuration(part.id)));
       playingUntil = recorder.context.currentTime + Math.max(0, longest - from) + 0.2;
     },
@@ -82,6 +118,7 @@ async function ownEngine(recorder: Recorder, songVersionId: string, files: Attac
       playingUntil = 0;
       recorder.stopPlaying();
     },
+    ahead: (heard, replace) => parts.filter((part) => heard.has(part.id) && part.id !== replace).flatMap((part) => recorder.backingBuffer(part.id) ?? []),
     playing: () => recorder.context.currentTime < playingUntil,
     close: () => recorder.close(),
   };
@@ -134,11 +171,25 @@ export async function openPlayerEngine(song: StemSong): Promise<RecordEngine> {
     async play(samples, { from, replace, name, part }) {
       mute(replace);
       pauseStems();
-      await setStemsTake(samples ? { samples, part: part ?? "OTHER", partName: null, name, offset: getStemState().transpose } : null);
+      await setStemsTake(
+        samples
+          ? {
+              samples,
+              part: part ?? "OTHER",
+              partName: null,
+              name,
+              offset: getStemState().transpose,
+            }
+          : null,
+      );
       seekStems(Math.max(0, from));
       await playStems(song);
     },
     stopPlaying: () => pauseStems(),
+    ahead(_heard, replace) {
+      const now = getStemState();
+      return now.tracks.filter((track) => track.id !== TAKE_ID && track.id !== replace && isAudible(now, track.id)).flatMap((track) => stemBuffer(track.id) ?? []);
+    },
     playing: () => getStemState().playing,
     close() {
       pauseStems();

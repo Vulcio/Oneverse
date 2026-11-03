@@ -229,6 +229,11 @@ export class Recorder {
     return [...this.backing.keys()];
   }
 
+  /** A part to play along with, decoded; null if it isn't one. */
+  backingBuffer(id: string): AudioBuffer | null {
+    return this.backing.get(id) ?? null;
+  }
+
   /** How long a part to play along with is (s); 0 if it isn't one. */
   backingDuration(id: string): number {
     return this.backing.get(id)?.duration ?? 0;

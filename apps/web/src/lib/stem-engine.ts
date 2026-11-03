@@ -1586,6 +1586,11 @@ export function stemsZeroAt(): number | null {
 }
 
 /** A part's audio, mono, on the player's clock: what a punch-in keeps the start of. */
+/** A loaded part's audio, as decoded (the take's too); null if it isn't loaded. */
+export function stemBuffer(id: string): AudioBuffer | null {
+  return buffers.get(id) ?? null;
+}
+
 export function stemMono(id: string): Float32Array | null {
   const buffer = buffers.get(id);
   if (!buffer) return null;
