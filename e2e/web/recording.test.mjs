@@ -71,11 +71,12 @@ async function pickPart(kind, which) {
 }
 
 /** Records a take of about `seconds` past the count-in, and keeps it. */
-async function recordAndKeep(seconds) {
+async function recordAndKeep(seconds, during) {
   await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
   await dialog().getByTestId("recorder-start").click();
   await dialog().getByText(/Recording \d:\d\d/).waitFor({ timeout: 15000 });
   await page.waitForTimeout(seconds * 1000);
+  if (during) await during();
   await dialog().getByTestId("recorder-stop").click();
   await dialog().getByTestId("recorder-take").waitFor();
   // Heard back, nudged a little.
@@ -182,7 +183,26 @@ await step("a part added to it: hearing the others, with the multitrack's own te
   // The guitar, to hear or not.
   await dialog().getByRole("checkbox", { name: "Guitar" }).waitFor({ timeout: 15000 });
   if (!(await dialog().getByRole("checkbox", { name: "Guitar" }).isChecked())) throw new Error("the guitar isn't heard");
-  await recordAndKeep(1);
+  // While it records, the guitar it hears is drawn faint behind the red take, left of the playhead (in the gaps between the take's bars).
+  await recordAndKeep(1.5, async () => {
+    const behind = await dialog()
+      .getByTestId("take-strip")
+      .evaluate((canvas) => {
+        const ratio = canvas.width / canvas.clientWidth;
+        const middle = Math.round(canvas.clientWidth / 2);
+        const data = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+        let faint = 0;
+        for (let k = 1; k * 4 < middle; k++) {
+          const x = Math.floor((middle - k * 4 - 0.5) * ratio);
+          for (let y = 0; y < canvas.height; y++) {
+            const i = (y * canvas.width + x) * 4;
+            if (data[i + 3] > 30 && data[i + 3] < 150 && Math.abs(data[i] - data[i + 2]) < 40) faint++;
+          }
+        }
+        return faint;
+      });
+    if (behind < 20) throw new Error(`the guitar isn't drawn behind the take (${behind} pixels)`);
+  });
   const all = await processedFiles(webSong.id);
   const vocals = all.find((file) => file.stemPart === "VOCALS");
   const ok = all.length === 2 && vocals?.multitrackId === first.multitrackId && vocals.multitrackName === "Acoustic" && vocals.recordingTempo === 90 && vocals.recordingTimeSignature === "3/4" && vocals.recordingFirstBeat === 2;

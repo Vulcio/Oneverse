@@ -4,6 +4,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { along } from "#/components/input-level";
 import type { Recorder } from "#/lib/recorder";
 import { COLUMN, liveTake, peaksAhead } from "#/lib/take-strip";
+import { drawShape } from "#/lib/wave-shape";
 
 /** Each column's width and the gap after it (CSS px). */
 const BAR = 3;
@@ -14,8 +15,9 @@ const KEPT = 600;
 
 /**
  * The take as it's recorded (issue #365), small enough to sit in the
- * recording drawer: a playhead in the middle, what the microphone hears
- * growing to its left - red while recording, its height the level, amber
+ * recording drawer: a playhead in the middle, the parts heard as a faint
+ * shape behind it all, what the microphone hears growing to its left over
+ * what was just played - red while recording, its height the level, amber
  * where it clips - and what's coming in the parts that are heard to its
  * right, with the sections' marks. Before a take, the microphone shows too:
  * whether the level's right, at a glance.
@@ -78,6 +80,16 @@ export function TakeStrip({
         context.fillRect(x, (height - size) / 2, BAR, size);
       };
       const { ahead, position, marks, recording } = latest.current;
+      const at = position();
+      // Behind it all, what the parts heard play (a filled shape, as on Tracks): just played to the left, under the take; coming to the right.
+      if (at !== null) {
+        const mix = peaksAhead(ahead, at - half * COLUMN, half * 2);
+        const offset = middle - half * STEP;
+        context.save();
+        context.translate(offset, 0);
+        drawShape(context, width - offset, height, STEP, Array.from(mix), middle - offset, { colour: colours.ahead, alpha: 0.3 }, { colour: colours.ahead, alpha: 0.35 });
+        context.restore();
+      }
       // Left: the microphone, newest at the playhead.
       const recent = heard.current;
       for (let k = 0; k < half && k < recent.length; k++) {
@@ -86,13 +98,9 @@ export function TakeStrip({
         context.globalAlpha = recording || level >= CLIPPING ? 1 : 0.6;
         bar(middle - (k + 1) * STEP, level);
       }
-      // Right: what the other parts play next.
-      const at = position();
+      // The sections' marks.
       if (at !== null) {
         context.fillStyle = colours.ahead;
-        context.globalAlpha = 0.35;
-        const coming = peaksAhead(ahead, at, half);
-        for (let k = 0; k < half; k++) if (coming[k]! > 0) bar(middle + k * STEP + 1, coming[k]!);
         context.globalAlpha = 0.8;
         context.font = "10px system-ui, sans-serif";
         for (const mark of marks) {

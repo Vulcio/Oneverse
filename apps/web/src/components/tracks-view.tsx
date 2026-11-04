@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { cn } from "@oneverse/ui/lib/utils";
-import { along } from "#/components/input-level";
 import { GROUP_COLOURS, useCueNames } from "#/components/stem-cues";
 import { useTrackName } from "#/components/stem-dock";
 import { keepInView } from "#/lib/follow-view";
 import { deviceNow } from "#/lib/output-clock";
 import { getStemState, isAudible, seekStems, stemBuffer, toggleStemMute, toggleStemSolo, useStems, type StemTrack } from "#/lib/stem-engine";
 import { partColour, setTrackColours, useTrackColours } from "#/lib/track-colours";
+import { drawShape } from "#/lib/wave-shape";
 import { COLUMN, columnPeaks, liveTake } from "#/lib/take-strip";
 import { useMarkTracksShown } from "#/lib/tracks-shown";
 
@@ -21,39 +21,6 @@ const DEFAULT_ZOOM = 1;
 const STEP = 2;
 /** The words lit a beat before they're sung, as in the chart. */
 const AHEAD = 1;
-
-/**
- * A waveform as one filled shape, mirrored about the middle (issue #379):
- * calmer than lines while it scrolls. `levels` are 0-1, one every STEP px
- * from x = 0; left of `cut` is drawn as played, the rest as ahead.
- */
-function drawShape(context: CanvasRenderingContext2D, width: number, height: number, levels: number[], cut: number, played: { colour: string; alpha: number }, ahead: { colour: string; alpha: number }) {
-  if (!levels.some((level) => level > 0)) return;
-  const middle = height / 2;
-  const half = (level: number) => (level > 0 ? Math.max(0.5, along(level) * (middle - 2)) : 0);
-  const outline = () => {
-    context.beginPath();
-    context.moveTo(0, middle);
-    levels.forEach((level, i) => context.lineTo(i * STEP, middle - half(level)));
-    for (let i = levels.length - 1; i >= 0; i--) context.lineTo(i * STEP, middle + half(levels[i]!));
-    context.closePath();
-  };
-  for (const [left, right, look] of [
-    [0, cut, played],
-    [cut, width, ahead],
-  ] as const) {
-    if (right <= left || look.alpha <= 0) continue;
-    context.save();
-    context.beginPath();
-    context.rect(left, 0, right - left, height);
-    context.clip();
-    context.globalAlpha = look.alpha;
-    context.fillStyle = look.colour;
-    outline();
-    context.fill();
-    context.restore();
-  }
-}
 
 /** The bar lines between `from` and `to` (s): the recording's own downbeats when they were found, else its tempo from its first beat. */
 function barLines(beat: ReturnType<typeof getStemState>["beat"], from: number, to: number): number[] {
@@ -214,7 +181,7 @@ export function TracksView({
         }
         // A colour per part (issue #379), else the page's ink.
         const tint = coloured && !track.take ? partColour(track.part, index) : null;
-        drawShape(context, width, height, levels, ((at - from) / length) * width, { colour: tint ?? colours.played, alpha: (tint ? 0.9 : 0.75) * (on ? 1 : 0.3) }, { colour: tint ?? colours.ahead, alpha: (tint ? 0.4 : 0.35) * (on ? 1 : 0.3) });
+        drawShape(context, width, height, STEP, levels, ((at - from) / length) * width, { colour: tint ?? colours.played, alpha: (tint ? 0.9 : 0.75) * (on ? 1 : 0.3) }, { colour: tint ?? colours.ahead, alpha: (tint ? 0.4 : 0.35) * (on ? 1 : 0.3) });
         context.globalAlpha = 1;
         context.fillStyle = colours.head;
         context.fillRect(Math.round(head) - 1, 0, 2, height);
@@ -241,7 +208,7 @@ export function TracksView({
           for (let column = Math.max(0, first); column <= Math.min(peaks.length - 1, last); column++) level = Math.max(level, peaks[column]!);
           levels.push(level);
         }
-        drawShape(context, width, height, levels, width, { colour: colours.take, alpha: 1 }, { colour: colours.take, alpha: 0 });
+        drawShape(context, width, height, STEP, levels, width, { colour: colours.take, alpha: 1 }, { colour: colours.take, alpha: 0 });
         context.fillStyle = colours.head;
         context.fillRect(Math.round(head) - 1, 0, 2, height);
       }
