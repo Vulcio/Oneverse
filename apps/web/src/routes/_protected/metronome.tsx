@@ -1,4 +1,4 @@
-import { clampTempo, MAX_BEATS_PER_BAR, MAX_TEMPO, METRONOME_DENOMINATORS, METRONOME_SOUNDS, MIN_TEMPO, tapTempo, type MetronomeSound, type Subdivision } from "@oneverse/core";
+import { clampTempo, defaultTempoUnit, MAX_BEATS_PER_BAR, MAX_TEMPO, METRONOME_DENOMINATORS, METRONOME_SOUNDS, MIN_TEMPO, tapTempo, TEMPO_UNITS, type MetronomeSound, type Subdivision, type TempoUnit } from "@oneverse/core";
 import { createFileRoute } from "@tanstack/react-router";
 import { Minus, Play, Plus, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +11,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { startMetronome, stopMetronome, updateMetronome, useMetronome, useMetronomeBeat } from "#/lib/metronome-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";
+import { tempoUnitKey } from "#/lib/tempo-unit";
 import { cn } from "@oneverse/ui/lib/utils";
 
 export const Route = createFileRoute("/_protected/metronome")({
@@ -50,6 +51,14 @@ function MetronomePage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [playing, settings.tempo, locked]);
+
+  // The tempo's note (issue #377); a new time signature takes its own unless another was chosen.
+  const unit: TempoUnit = settings.tempoUnit ?? defaultTempoUnit(settings);
+  const signature = (change: { numerator?: number; denominator?: number }) => {
+    const next = { numerator: change.numerator ?? settings.numerator, denominator: change.denominator ?? settings.denominator };
+    updateMetronome({ ...change, ...(unit === defaultTempoUnit(settings) && { tempoUnit: defaultTempoUnit(next) }) });
+  };
+  const units = TEMPO_UNITS.filter((option) => option !== "1/16" || settings.denominator === 16 || unit === "1/16");
 
   const tap = () => {
     taps.current = [...taps.current, performance.now()].slice(-12);
@@ -108,7 +117,9 @@ function MetronomePage() {
                 aria-label={t("metronome.tempo")}
                 data-testid="metronome-tempo"
               />
-              <span className="text-xs font-medium text-muted-foreground">{t("metronome.bpm")}</span>
+              <span className="text-xs font-medium text-muted-foreground" data-testid="metronome-bpm-unit">
+                {unit === "1/4" ? t("metronome.bpm") : `${t("metronome.bpm")} · ${t(tempoUnitKey(unit))}`}
+              </span>
             </label>
             <Button type="button" variant="outline" size="icon" className="size-12 rounded-full" onClick={() => updateMetronome({ tempo: settings.tempo + 1 })} aria-label={t("metronome.faster")} disabled={locked || settings.tempo >= MAX_TEMPO}>
               <Plus />
@@ -150,7 +161,7 @@ function MetronomePage() {
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 text-sm font-medium">{t("metronome.timeSignature")}</legend>
             <div className="flex items-center gap-2">
-              <NativeSelect disabled={locked} value={settings.numerator} onChange={(event) => updateMetronome({ numerator: Number(event.target.value) })} aria-label={t("metronome.beatsPerBar")} data-testid="metronome-numerator">
+              <NativeSelect disabled={locked} value={settings.numerator} onChange={(event) => signature({ numerator: Number(event.target.value) })} aria-label={t("metronome.beatsPerBar")} data-testid="metronome-numerator">
                 {Array.from({ length: MAX_BEATS_PER_BAR }, (_, i) => i + 1).map((n) => (
                   <option key={n} value={n}>
                     {n}
@@ -158,7 +169,7 @@ function MetronomePage() {
                 ))}
               </NativeSelect>
               <span className="text-lg text-muted-foreground">/</span>
-              <NativeSelect disabled={locked} value={settings.denominator} onChange={(event) => updateMetronome({ denominator: Number(event.target.value) })} aria-label={t("metronome.beatUnit")} data-testid="metronome-denominator">
+              <NativeSelect disabled={locked} value={settings.denominator} onChange={(event) => signature({ denominator: Number(event.target.value) })} aria-label={t("metronome.beatUnit")} data-testid="metronome-denominator">
                 {METRONOME_DENOMINATORS.map((n) => (
                   <option key={n} value={n}>
                     {n}
@@ -167,6 +178,18 @@ function MetronomePage() {
               </NativeSelect>
             </div>
           </fieldset>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="metronome-tempo-unit">{t("metronome.tempoUnit")}</Label>
+            <NativeSelect id="metronome-tempo-unit" disabled={locked} value={unit} onChange={(event) => updateMetronome({ tempoUnit: event.target.value as TempoUnit })} data-testid="metronome-tempo-unit">
+              {units.map((option) => (
+                <option key={option} value={option}>
+                  {t(tempoUnitKey(option))}
+                </option>
+              ))}
+            </NativeSelect>
+            <span className="text-xs text-muted-foreground">{t("metronome.tempoUnitHint")}</span>
+          </div>
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="metronome-subdivision">{t("metronome.subdivision")}</Label>

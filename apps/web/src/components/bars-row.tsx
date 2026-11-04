@@ -109,7 +109,7 @@ export function BarsRow({
   const press = () => {
     if (metronome.following) return unlockSyncAudio();
     if (mine) return stopMetronome();
-    if (tempo) startMetronome(metronomeForSong(metronome.settings, { tempo, timeSignature: chart.timeSignature }), songId);
+    if (tempo) startMetronome(metronomeForSong(metronome.settings, { tempo, tempoUnit: chart.tempoUnit, timeSignature: chart.timeSignature }), songId);
   };
   const label = metronome.following
     ? t("bars.followingLeader", { name: metronome.following })

@@ -66,6 +66,7 @@ import {
   resetStemVolumes,
   setStemVolume,
   seekStems,
+  songBeatTempo,
   stemKey,
   TAKE_ID,
   toggleStemMute,
@@ -398,7 +399,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
         songTitle={song.title}
         multitracks={multitracksOf(song.record.attachments)}
         target={NEW_TARGET}
-        songTempo={song.tempo ?? null}
+        songTempo={songBeatTempo(song)}
         songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
         songKey={song.record.songKey ?? ""}
         setlist={song.record.setlist}
@@ -831,7 +832,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
               multitracks={multitracksOf(song.record.attachments)}
               target={song.multitrackId ?? ""}
               into={recordInto}
-              songTempo={song.tempo ?? null}
+              songTempo={songBeatTempo(song)}
               songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
               songKey={song.record.songKey ?? ""}
               setlist={song.record.setlist}

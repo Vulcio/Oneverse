@@ -17,6 +17,7 @@ import { ContinueOnPulse } from "@oneverse/operator/components/continue-on-pulse
 import { PresentControls } from "@oneverse/operator/components/present-controls";
 import { OperatorProvider } from "@oneverse/operator/host";
 import { songverseOperatorHost } from "#/lib/operator-host";
+import { tempoText } from "#/lib/tempo-unit";
 import { TransitionChordsChooser, TransitionSymbol, TransitionVariations, transitionText } from "#/components/set-transition";
 import { CapoBadge } from "#/components/capo-badge";
 import { ChartWithDiagrams, ChordSteps, type ChordStep } from "#/components/chord-diagrams";
@@ -438,7 +439,7 @@ export function LiveView({
         {song.reading ? <ViewSwitch reading={song.reading} compact /> : null}
         {/* The song's tempo and time signature, one press (issue #2); the rest on the Metronome page. */}
         {song.setId ? <SyncControl setId={song.setId} itemId={song.id} compact /> : null}
-        {shows("metronome") ? <MetronomeSongButton songId={song.id} tempo={chart?.tempo} timeSignature={chart?.timeSignature} /> : null}
+        {shows("metronome") ? <MetronomeSongButton songId={song.id} tempo={chart?.tempo} tempoUnit={chart?.tempoUnit} timeSignature={chart?.timeSignature} /> : null}
         <CommandSearch />
         <DisplayPanel mode="LIVE" settings={display} player={head.player} compact className="size-10 border-0 text-muted-foreground [&_svg]:size-5" />
         {fullScreen.available ? (
@@ -630,7 +631,7 @@ function LiveSongSection({
   const transition = useMemo(() => (song.transition ? transposedTransition(song.transition, extraSteps, nextSteps) : null), [song.transition, extraSteps, nextSteps]);
   const details = [
     ...song.references,
-    chart?.tempo ? `${chart.tempo} BPM` : null,
+    chart?.tempo ? tempoText(chart.tempo, chart.tempoUnit, chart.timeSignature) : null,
     song.arrangementName,
   ].filter(Boolean);
   const id = (name: string) => (current ? name : undefined);

@@ -1562,13 +1562,17 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       metronomePositionAt: {
-        about: "Where the leader's metronome is at a server time: on from its anchor at the tempo while playing.",
+        about:
+          "Where the leader's metronome is at a server time: on from its anchor at the tempo while playing. The tempo counts its note (tempoUnit, issue #377), left out the time signature's default (6/8, 9/8, 12/8: dotted quarters; no time signature: 4/4).",
         params: ["metronome", "serverTime"],
         run: metronomePositionAt,
         cases: [
           { name: "120 bpm, 1.5 s on", args: [{ settings: { tempo: 120 }, playing: true, anchorAt: 10_000, anchorPosition: 4 }, 11_500] },
           { name: "72 bpm, before its anchor", args: [{ settings: { tempo: 72 }, playing: true, anchorAt: 10_000, anchorPosition: 8 }, 9_000] },
           { name: "stopped", args: [{ settings: { tempo: 120 }, playing: false, anchorAt: 0, anchorPosition: 6 }, 99_999] },
+          { name: "6/8 at 60, its dotted quarters by default: three beats a second", args: [{ settings: { tempo: 60, numerator: 6, denominator: 8 }, playing: true, anchorAt: 0, anchorPosition: 0 }, 2_000] },
+          { name: "6/8 at 60 eighths", args: [{ settings: { tempo: 60, tempoUnit: "1/8", numerator: 6, denominator: 8 }, playing: true, anchorAt: 0, anchorPosition: 0 }, 2_000] },
+          { name: "4/4 at 60 half notes", args: [{ settings: { tempo: 60, tempoUnit: "1/2", numerator: 4, denominator: 4 }, playing: true, anchorAt: 0, anchorPosition: 0 }, 2_000] },
         ],
       },
       stemsPositionAt: {
@@ -1582,13 +1586,19 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       normalizeMetronome: {
-        about: "Metronome settings made whole and within bounds: the tempo 20-300, a beat level per beat of the bar.",
+        about:
+          "Metronome settings made whole and within bounds: the tempo 20-300, a beat level per beat of the bar, the note the tempo counts (the time signature's own, dotted quarters in 6/8, 9/8, 12/8, dotted eighths in 6/16, 9/16, 12/16).",
         params: ["input"],
         run: normalizeMetronome,
         cases: [
           { name: "nothing", args: [null] },
           { name: "6/8", args: [{ tempo: 90, numerator: 6, denominator: 8 }] },
           { name: "too fast, beats missing", args: [{ tempo: 999, numerator: 3, beats: ["accent"] }] },
+          { name: "6/8 in eighths, as asked", args: [{ tempo: 180, tempoUnit: "1/8", numerator: 6, denominator: 8 }] },
+          { name: "3/8", args: [{ numerator: 3, denominator: 8 }] },
+          { name: "2/2", args: [{ numerator: 2, denominator: 2 }] },
+          { name: "12/16", args: [{ numerator: 12, denominator: 16 }] },
+          { name: "a note it doesn't know", args: [{ tempoUnit: "1/3" }] },
         ],
       },
       beatAt: {
@@ -1603,13 +1613,20 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       clicksBetween: {
-        about: "The clicks from one position (included) to another (not): accents, muted beats, subdivisions, count-in.",
+        about:
+          "The clicks from one position (included) to another (not): accents, muted beats, subdivisions, count-in. The main clicks follow the tempo's note from each bar's start (6/8 in dotted quarters: beats 1 and 4), subdivided; one between two beats sounds normal.",
         params: ["settings", "from", "to"],
         run: (settings: unknown, from: number, to: number) => clicksBetween(normalizeMetronome(settings as never), from, to),
         cases: [
           { name: "a bar of 4/4", args: [{ tempo: 100, numerator: 4 }, 0, 4] },
           { name: "eighths, a muted beat", args: [{ tempo: 100, numerator: 4, subdivision: 2, beats: ["accent", "mute", "normal", "normal"] }, 0, 2] },
           { name: "a bar of count-in, count-in only", args: [{ tempo: 100, numerator: 2, countIn: 1, countInOnly: true }, 0, 4] },
+          { name: "6/8, dotted quarters: 1 and 4", args: [{ tempo: 71, numerator: 6, denominator: 8 }, 0, 6] },
+          { name: "6/8, dotted quarters in triplets: every eighth", args: [{ tempo: 71, numerator: 6, denominator: 8, subdivision: 3 }, 0, 6] },
+          { name: "6/8 in eighths, a bar of count-in", args: [{ tempo: 180, tempoUnit: "1/8", numerator: 6, denominator: 8, countIn: 1 }, 0, 12] },
+          { name: "4/4 in half notes", args: [{ tempo: 60, tempoUnit: "1/2" }, 0, 4] },
+          { name: "4/4 in eighths, the second beat muted", args: [{ tempo: 60, tempoUnit: "1/8", beats: ["accent", "mute", "normal", "normal"] }, 0, 3] },
+          { name: "4/4 in dotted quarters: 3 + 3 + 2", args: [{ tempo: 60, tempoUnit: "1/4." }, 3, 9] },
         ],
       },
       cuesFromSections: {

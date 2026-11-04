@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ISO_639_1_CODES } from "../languages/index.js";
 import { SONG_DOCUMENT_LIMITS } from "../schemas/song-document-v2.js";
 import { SUPPORTED_IMPORT_FORMATS } from "../constants/index.js";
+import { TEMPO_UNITS } from "../metronome/index.js";
 import { clearableInt, clearableText, nameList, optional, queryBoolean, queryInt, queryText, requiredText } from "./fields.js";
 
 const credits = (who: string) => nameList({ max: 20, each: 300 }).optional().describe(`Replaces the song's ${who}`);
@@ -50,6 +51,12 @@ export const songFields = {
     .optional(),
   key: clearableText(20).describe("Free-text key, e.g. G, Bb, C#m"),
   tempo: clearableInt(20, 400).describe("Tempo in BPM"),
+  tempoUnit: z
+    .union([z.enum(TEMPO_UNITS), z.literal("")])
+    .transform((value) => value || null)
+    .nullable()
+    .optional()
+    .describe('The note the tempo counts: 1/8, 1/4, 1/2, a dot for dotted (1/4. in 6/8), 1/16; null or "" for the time signature\'s default'),
   timeSignature: z
     .string()
     .trim()

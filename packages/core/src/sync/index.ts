@@ -1,6 +1,6 @@
 import type { SyncTimer } from "../screens/timers.js";
 import { SCREEN_SWITCHABLE_LAYERS, type ScreenSwitchableLayer } from "../screens/theme.js";
-import type { MetronomeSettings } from "../metronome/index.js";
+import { beatsPerMinute, type MetronomeSettings } from "../metronome/index.js";
 import type { PlaybackSource } from "../playback/index.js";
 import type { LiveCommandOp, LiveSessionState } from "../live/index.js";
 import type { LiveHandback } from "../live/engine.js";
@@ -576,6 +576,7 @@ export function clockOffset(samples: ClockSample[]): { offset: number; rtt: numb
 export function sharedMetronomeSettings(settings: MetronomeSettings): SyncMetronome["settings"] {
   return {
     tempo: settings.tempo,
+    tempoUnit: settings.tempoUnit,
     numerator: settings.numerator,
     denominator: settings.denominator,
     beats: settings.beats,
@@ -596,11 +597,12 @@ export function deviceTime(serverTime: number, offset: number): number {
 /**
  * Where the leader's metronome is at `serverTime` (ms), in beats from its
  * start (count-in included): it goes on from its anchor at the tempo while
- * playing, and stays there while stopped.
+ * playing (its beats a minute: the tempo in its note, issue #377), and
+ * stays there while stopped.
  */
 export function metronomePositionAt(metronome: Pick<SyncMetronome, "settings" | "playing" | "anchorAt" | "anchorPosition">, serverTime: number): number {
   if (!metronome.playing) return metronome.anchorPosition;
-  return metronome.anchorPosition + ((serverTime - metronome.anchorAt) / 1000) * (metronome.settings.tempo / 60);
+  return metronome.anchorPosition + ((serverTime - metronome.anchorAt) / 1000) * (beatsPerMinute(metronome.settings) / 60);
 }
 
 /**

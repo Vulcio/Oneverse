@@ -1,5 +1,5 @@
 import { decodeAudio } from "#/lib/decode-audio";
-import { filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
+import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
@@ -29,6 +29,8 @@ export interface StemSong {
   load: (file: Attachment, onProgress?: (received: number, total: number | null) => void) => Promise<Blob>;
   /** The song's tempo and time signature, for the metronome with the recording (issue #100); its recording's own tempo comes first. */
   tempo?: number | null;
+  /** The note the song's tempo counts (issue #377); left out, its time signature's default. */
+  tempoUnit?: TempoUnit | null;
   timeSignature?: { numerator: number; denominator: number } | null;
   /** Which of the song's multitracks `stems` are (issue #123): null its original stems. */
   multitrackId?: string | null;
@@ -1389,9 +1391,9 @@ export function undockStems(songVersionId: string) {
 }
 
 /** The recording's beat, from its first file (the stems share it) and the song. */
-export function beatOf(song: Pick<StemSong, "stems" | "tempo" | "timeSignature">): StemState["beat"] {
+export function beatOf(song: Pick<StemSong, "stems" | "tempo" | "tempoUnit" | "timeSignature">): StemState["beat"] {
   const first = song.stems[0];
-  const tempo = first?.recordingTempo ?? song.tempo ?? null;
+  const tempo = first?.recordingTempo ?? songBeatTempo(song);
   if (!tempo) return null;
   return {
     tempo,
@@ -1400,6 +1402,16 @@ export function beatOf(song: Pick<StemSong, "stems" | "tempo" | "timeSignature">
     freeIntro: song.stems.some((stem) => stem.recordingFreeIntro),
     map: (first?.recordingBeats?.length ?? 0) >= 2 && first?.recordingDownbeats?.length ? { beats: first.recordingBeats!, downbeats: first.recordingDownbeats } : null,
   };
+}
+
+/**
+ * The song's tempo in its time signature's beats, as a recording's is
+ * counted: its own counts its note (issue #377), so a 6/8 song's 71 dotted
+ * quarters are 213 eighths.
+ */
+export function songBeatTempo(song: Pick<StemSong, "tempo" | "tempoUnit" | "timeSignature">): number | null {
+  if (!song.tempo) return null;
+  return Math.round(song.tempo * beatsPerTempoUnit(song.tempoUnit ?? defaultTempoUnit(song.timeSignature), song.timeSignature?.denominator ?? 4) * 100) / 100;
 }
 
 /** "6/8" as numbers; null when there's none or it doesn't read. */

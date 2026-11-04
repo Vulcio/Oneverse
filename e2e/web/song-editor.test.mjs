@@ -85,6 +85,10 @@ await step("more details starts collapsed, then takes every field", async () => 
   await page.selectOption("#song-key", "D");
   await page.fill("#song-tempo", "abc");
   await page.selectOption("#song-timeSignature", "3/4");
+  // The note the tempo counts (issue #377): unset, the time signature's own.
+  const usual = await page.locator("#song-tempoUnit option").first().textContent();
+  if (usual !== "Usual (1/4)") throw new Error(usual);
+  await page.selectOption("#song-tempoUnit", "1/2.");
   await page.selectOption("#song-capo", "2");
   await page.fill("#song-year", "2006");
   await page.fill("#song-isrc", "USRC17607839");
@@ -104,7 +108,7 @@ await step("a bad tempo is caught before saving", async () => {
 await step("collapsed details show a summary", async () => {
   await page.getByRole("button", { name: /More details/ }).click();
   const summary = page.getByTestId("details-summary");
-  for (const chip of ["Key D", "72 BPM", "3/4", "Suggested capo 2", "Christmas", "CCLI 4768151", "Composer: John Newton"]) {
+  for (const chip of ["Key D", "72 BPM · 1/2.", "3/4", "Suggested capo 2", "Christmas", "CCLI 4768151", "Composer: John Newton"]) {
     await summary.getByText(chip, { exact: true }).waitFor({ timeout: 3000 });
   }
 });
@@ -170,7 +174,7 @@ await step("saving creates the song with everything", async () => {
   const ok =
     d.artists.map((a) => a.source).join() === "Chris Tomlin,Louie Giglio" &&
     roles["John Newton"] === "COMPOSER" &&
-    d.documentJson.defaults.key === "D" && d.documentJson.defaults.tempo === 72 && d.capo === 2 &&
+    d.documentJson.defaults.key === "D" && d.documentJson.defaults.tempo === 72 && d.documentJson.defaults.tempoUnit === "1/2." && d.capo === 2 &&
     d.documentJson.defaults.timeSignature?.numerator === 3 && d.year === 2006 && d.isrc === "USRC17607839" && d.ccli === "4768151" &&
     d.notes === "Slow intro" && d.tags[0]?.label === "Christmas" &&
     d.documentJson.sections[0]?.lines.some((l) => l.chords.some((c) => c.raw === "G"));

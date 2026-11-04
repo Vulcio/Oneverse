@@ -3,6 +3,7 @@ import { CapoBadge } from "#/components/capo-badge";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PresenceChip } from "#/components/presence";
 import { useSongPresence, watchSong } from "#/lib/live-notes";
+import { tempoText } from "#/lib/tempo-unit";
 import { Mic, Pencil, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -107,6 +108,7 @@ export function PracticeSongPage({
     load: fileLoader(version.id, false),
     youtube: youtubeId ? { id: youtubeId } : null,
     tempo: chart.tempo,
+    tempoUnit: chart.tempoUnit,
     timeSignature: chart.timeSignature,
     store: playbackStore,
     stems: { songKey: chart.key, cueSections, record: { attachments, songKey: chart.key ?? undefined, onSaved: () => void router.invalidate() } },
@@ -117,7 +119,7 @@ export function PracticeSongPage({
   const details = [
     ...references,
     chart.key,
-    chart.tempo ? `${chart.tempo} BPM` : null,
+    chart.tempo ? tempoText(chart.tempo, chart.tempoUnit, chart.timeSignature) : null,
   ].filter(Boolean);
 
   return (
@@ -152,7 +154,7 @@ export function PracticeSongPage({
           <DisplayPanel mode="PRACTICE" settings={display} player={player} className="h-9" />
           {notes.button}
           {playback.control}
-          {playback.source === "METRONOME" ? null : <MetronomeSongButton songId={version.id} tempo={chart.tempo} timeSignature={chart.timeSignature} variant="button" />}
+          {playback.source === "METRONOME" ? null : <MetronomeSongButton songId={version.id} tempo={chart.tempo} tempoUnit={chart.tempoUnit} timeSignature={chart.timeSignature} variant="button" />}
           {/* Into one of one's sets (issue #330). */}
           <AddToSetButton songVersionId={version.id} songTitle={version.title} />
           <Button variant="outline" onClick={() => setMode("edit")}>

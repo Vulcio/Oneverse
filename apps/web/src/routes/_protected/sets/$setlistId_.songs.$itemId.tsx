@@ -7,6 +7,7 @@ import { MetronomeSongButton } from "#/components/metronome";
 import { PlayerChart, renderPlayerChart } from "#/components/player-chart";
 import { TracksView } from "#/components/tracks-view";
 import { stemsOf } from "#/lib/stem-engine";
+import { tempoText } from "#/lib/tempo-unit";
 import { SyncControl } from "#/components/sync-control";
 import { useSongPlayback } from "#/components/song-playback";
 import { setPlaybackStore, usePrefetchSetItem } from "#/lib/playback";
@@ -75,12 +76,15 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
   // The arrangement's key and tempo, with the set's own key on top.
   const arrangement = view.arrangement?.document.defaults;
   const tempo = arrangement?.tempo ?? song?.tempo;
+  // The note the song's tempo counts (issue #377), its time signature's default when it doesn't say.
+  const tempoUnit = song?.document.defaults.tempoUnit ?? null;
+  const timeSignatureNow = arrangement?.timeSignature ?? song?.document.defaults.timeSignature ?? null;
   const details = [
     t("sets.songOfSet", { position: item.position + 1, count: set.itemCount }),
     // The set's own transposition, from the arrangement's key.
     song ? transposeLabel(song.key && arrangement ? (transposeKey(song.key, arrangement.transposeSteps) ?? song.key) : song.key, item.transposeSteps, t) : null,
     view.arrangement ? t("sets.playedAs", { name: view.arrangement.name }) : null,
-    tempo ? `${tempo} BPM` : null,
+    tempo ? tempoText(tempo, tempoUnit, timeSignatureNow) : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -102,6 +106,7 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
     // The version's reference video (issue #346), from its start; else the song's own.
     youtube: youtubeOf(reference, files.songVideo),
     tempo,
+    tempoUnit,
     timeSignature,
     store: playbackStore,
     set: { id: set.id, itemId: item.id, name: setName },
@@ -154,6 +159,7 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
             <MetronomeSongButton
               songId={item.id}
               tempo={tempo}
+              tempoUnit={tempoUnit}
               timeSignature={arrangement?.timeSignature ?? song.document.defaults.timeSignature}
               variant="button"
               className="h-8"

@@ -70,6 +70,7 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
     load: fileLoader(song.songVersionId, true),
     youtube: null,
     tempo: chart.tempo,
+    tempoUnit: chart.tempoUnit,
     timeSignature: chart.timeSignature,
     store: playbackStore,
     stems: { cueSections: cueSectionsOf(song.document) },

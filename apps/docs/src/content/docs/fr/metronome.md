@@ -17,7 +17,8 @@ Un nouveau tempo prend effet au temps suivant, sans arrêt.
 
 ## Mesure et motif
 
-- **Mesure** : le nombre de temps par mesure et la valeur du temps - **4 / 4**, **3 / 4**, **6 / 8**... Le tempo compte ces temps : en 6/8, des croches.
+- **Mesure** : le nombre de temps par mesure et la valeur du temps - **4 / 4**, **3 / 4**, **6 / 8**...
+- **Tempo en** : la note que compte le tempo - **1/8**, **1/4**, **1/2**, **1/8 pointée**, **1/4 pointée** ou **1/2 pointée**. Il prend celle d'habitude pour la mesure : son propre temps, sauf en 6/8, 9/8 et 12/8, comptés en noires pointées (**1/4 pointée**) - 6/8 à 71 clique donc 71 fois par minute, sur les temps 1 et 4. Le clic principal suit cette note ; **Triolets** joue alors chaque croche entre deux. Choisissez-en une autre quand un chant se compte autrement, **1/8** pour un 6/8 lent compté à six. Changer de mesure prend la note d'habitude de la nouvelle, sauf si vous en aviez choisi une autre.
 - Les cercles sont les temps de la mesure : celui que vous entendez s'allume, le premier de la mesure est plus grand. Cliquez sur un temps pour le rendre **accentué**, **normal** ou **muet** - par exemple, seulement les temps 2 et 4, ou une mesure sans son dernier temps.
 - **Subdivision** ajoute des clics entre les temps : **2 par temps**, **Triolets** ou **4 par temps**, plus doux que les temps.
 
@@ -33,7 +34,7 @@ Utilisez un casque filaire ou le haut-parleur de l'appareil : un casque Bluetoot
 
 ## Au tempo d'un chant
 
-En [Live](/fr/sets/#jouer-une-liste-en-live), sur la page d'un chant dans une liste et sur la page d'un chant en mode Session, le bouton du métronome (sur la page d'un chant, il affiche son tempo : **76 BPM**) le démarre au tempo et à la mesure du chant (ceux de sa version, quand la liste en joue une) en une pression ; appuyez à nouveau pour l'arrêter. Il utilise votre motif, votre son et votre décompte de la page Métronome, et clignote avec le temps. Un chant sans tempo ne peut pas le démarrer : ajoutez-en un dans son onglet **Infos**.
+En [Live](/fr/sets/#jouer-une-liste-en-live), sur la page d'un chant dans une liste et sur la page d'un chant en mode Session, le bouton du métronome (sur la page d'un chant, il affiche son tempo : **76 BPM**, avec sa note quand ce n'est pas une noire : **71 BPM · 1/4.**) le démarre au tempo, à sa note et à la mesure du chant (ceux de sa version, quand la liste en joue une) en une pression ; appuyez à nouveau pour l'arrêter. Il utilise votre motif, votre son et votre décompte de la page Métronome, et clignote avec le temps. Un chant sans tempo ne peut pas le démarrer : ajoutez-en un dans son onglet **Infos**, avec **Tempo en** à côté quand il ne se compte pas dans la note d'habitude de sa mesure.
 
 En jouant avec d'autres, le métronome du meneur peut être celui de chacun, en rythme : voir [Jouer synchronisé](/fr/sets/#jouer-synchronisé).
 

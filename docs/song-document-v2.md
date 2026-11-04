@@ -53,7 +53,8 @@ exist, the capo is a `SongVersion.capo` column.
 |---|---|
 | `revision` | Goes up by one with every saved change (see [Saving](#saving)). |
 | `defaults.key` | As written: `"G"`, `"Bb"`, `"F#m"`. `parseKey()` reads it. Chords are stored at concert pitch in this key. |
-| `defaults.tempo` | BPM. |
+| `defaults.tempo` | BPM, counting `defaults.tempoUnit`. |
+| `defaults.tempoUnit` | The note the tempo counts (issue #377): `"1/8"`, `"1/4"`, `"1/2"`, `"1/16"`, a dot for dotted (`"1/4."`). Left out, `defaultTempoUnit()`: the time signature's own note, dotted quarters in 6/8, 9/8, 12/8 (dotted eighths in 6/16, 9/16, 12/16). Only the speed: bars, beats and chords' places stay in the time signature's beats. |
 | `defaults.timeSignature` | `{ numerator, denominator }`. |
 | `defaults.durationSeconds` | For autoscroll and set lengths. |
 

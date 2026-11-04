@@ -1,4 +1,5 @@
-import { metronomeForSong, type BeatLevel, type MetronomeSettings } from "@oneverse/core";
+import { metronomeForSong, type BeatLevel, type MetronomeSettings, type TempoUnit } from "@oneverse/core";
+import { tempoText } from "#/lib/tempo-unit";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Metronome, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -70,12 +71,15 @@ export function BeatLights({
 export function MetronomeSongButton({
   songId,
   tempo,
+  tempoUnit,
   timeSignature,
   variant = "icon",
   className,
 }: {
   songId: string;
   tempo: number | null | undefined;
+  /** The note the tempo counts (issue #377); null: the time signature's default. */
+  tempoUnit?: TempoUnit | null;
   timeSignature?: { numerator: number; denominator: number } | null;
   variant?: "icon" | "button";
   className?: string;
@@ -96,7 +100,7 @@ export function MetronomeSongButton({
   const press = () => {
     if (following) return unlockSyncAudio();
     if (mine) return stopMetronome();
-    if (tempo) startMetronome(metronomeForSong(metronome.settings, { tempo, timeSignature }), songId);
+    if (tempo) startMetronome(metronomeForSong(metronome.settings, { tempo, tempoUnit, timeSignature }), songId);
   };
   // The beat, on the button, whatever started it: a flash on each, stronger on the first of the bar.
   const flash = metronome.playing && beat ? (beat.beat === 0 ? "bg-primary text-primary-foreground" : "bg-primary/30") : null;
@@ -104,7 +108,7 @@ export function MetronomeSongButton({
     return (
       <Button type="button" variant="outline" onClick={press} disabled={!tempo && !following} aria-pressed={mine} title={label} className={cn(flash, className)} data-testid="metronome-song">
         <Metronome />
-        {mine ? t("metronome.stop") : tempo ? `${tempo} BPM` : t("metronome.title")}
+        {mine ? t("metronome.stop") : tempo ? tempoText(tempo, tempoUnit, timeSignature) : t("metronome.title")}
       </Button>
     );
   }

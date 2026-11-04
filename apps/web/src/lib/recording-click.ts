@@ -1,4 +1,4 @@
-import { metronomeForSong, type MetronomeSettings } from "@oneverse/core";
+import { beatTempoUnit, metronomeForSong, type MetronomeSettings } from "@oneverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { getMetronomeState, ownMetronomeSettings, playMetronomeOn, stopMetronome, useMetronome } from "#/lib/metronome-engine";
 import { isAudible, useStems } from "#/lib/stem-engine";
@@ -74,8 +74,9 @@ export function useRecordingClickBridge() {
       if (getMetronomeState().playing) stopMetronome();
       return;
     }
-    // Slower or faster (issue #139): the beat at the speed the stems play.
-    const own = metronomeForSong(ownMetronomeSettings(), { tempo: beat.tempo * speed, timeSignature: beat.timeSignature });
+    // Slower or faster (issue #139): the beat at the speed the stems play. A recording's tempo counts its time signature's beats (issue #377).
+    const mine = ownMetronomeSettings();
+    const own = metronomeForSong(mine, { tempo: beat.tempo * speed, tempoUnit: beatTempoUnit(beat.timeSignature?.denominator ?? mine.denominator), timeSignature: beat.timeSignature });
     const plan = recordingClickPlan(own, beat);
     playMetronomeOn({
       settings: plan.settings,

@@ -1,4 +1,4 @@
-import { recordingBeatPosition, type ChartBar } from "@oneverse/core";
+import { recordingBeatPosition, secondsPerBeat, type ChartBar } from "@oneverse/core";
 import { useMemo } from "react";
 import { useMetronome } from "#/lib/metronome-engine";
 import { deviceNow } from "#/lib/output-clock";
@@ -38,7 +38,7 @@ export function useBarsClock(songId: string, bars: readonly ChartBar[]): BarsClo
     }
     if (clickHere) {
       const { anchor, settings } = clickHere;
-      return () => anchor.position + (deviceNow() - anchor.epoch) / 1000 / (60 / settings.tempo) - settings.countIn * settings.numerator;
+      return () => anchor.position + (deviceNow() - anchor.epoch) / 1000 / secondsPerBeat(settings) - settings.countIn * settings.numerator;
     }
     return null;
   }, [bars, stemsHere?.anchor, stemsHere?.beat, stemsHere?.speed, clickHere?.anchor, clickHere?.settings]);

@@ -2,6 +2,7 @@ import { chordFamily, formatChord, parseChord, simplifyChord, transposeChord, ty
 import { passEdited, passLines } from "./pass.js";
 import type { ChordNotationValue } from "../constants/index.js";
 import { transposeKey } from "../music-keys/transpose.js";
+import { beatsPerTempoUnit, defaultTempoUnit, type TempoUnit } from "../metronome/index.js";
 import {
   ArrangementDocumentV2Schema,
   placeChords,
@@ -98,6 +99,8 @@ export interface RenderedChart {
   /** Its chords are named as the shapes played with the capo on, not as they sound: shown so (in italics), never mistaken for the sounding chords. */
   capoShapes: boolean;
   tempo: number | null;
+  /** The note the tempo counts, as the song says (issue #377); null: the time signature's default (defaultTempoUnit). */
+  tempoUnit: TempoUnit | null;
   timeSignature: SongDocumentV2["defaults"]["timeSignature"];
   passes: RenderedPass[];
 }
@@ -267,6 +270,7 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
     capo,
     capoShapes: !!capo && view.capoDisplay === "shapes" && view.notation !== "nashville" && view.notation !== "roman",
     tempo: defaults?.tempo ?? song.defaults.tempo ?? null,
+    tempoUnit: song.defaults.tempoUnit ?? null,
     timeSignature: defaults?.timeSignature ?? song.defaults.timeSignature ?? null,
     passes,
   };
@@ -284,10 +288,13 @@ const BARS_PER_LINE = 2;
 export function chartSeconds(chart: RenderedChart, durationSeconds?: number | null): number {
   if (durationSeconds && durationSeconds > 0) return durationSeconds;
   const beatsPerBar = chart.timeSignature?.numerator ?? 4;
+  // The tempo counts its own note (issue #377): a dotted quarter is three of 6/8's beats.
+  const signature = chart.timeSignature ?? { numerator: 4, denominator: 4 };
+  const beatsPerTempo = beatsPerTempoUnit(chart.tempoUnit ?? defaultTempoUnit(signature), signature.denominator);
   let seconds = 0;
   for (const pass of chart.passes) {
     const lines = pass.lines.filter((line) => line.kind !== "note").length;
-    seconds += (lines * BARS_PER_LINE * beatsPerBar * 60) / (pass.tempo ?? DEFAULT_TEMPO);
+    seconds += (lines * BARS_PER_LINE * beatsPerBar * 60) / ((pass.tempo ?? DEFAULT_TEMPO) * beatsPerTempo);
   }
   return seconds;
 }

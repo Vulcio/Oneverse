@@ -17,7 +17,8 @@ A new tempo takes over on the next beat, without stopping.
 
 ## Time signature and pattern
 
-- **Time signature**: the beats per bar and the beat's value - **4 / 4**, **3 / 4**, **6 / 8**... The tempo counts those beats: in 6/8, eighth notes.
+- **Time signature**: the beats per bar and the beat's value - **4 / 4**, **3 / 4**, **6 / 8**...
+- **Tempo in**: the note the tempo counts - **1/8**, **1/4**, **1/2**, **1/8 dotted**, **1/4 dotted** or **1/2 dotted**. It takes the time signature's usual one: its own beat, except 6/8, 9/8 and 12/8, counted in dotted quarters (**1/4 dotted**) - so 6/8 at 71 clicks 71 times a minute, on beats 1 and 4. The main click follows that note; **Triplets** then plays every eighth between. Pick another when a song is counted differently, **1/8** for a slow 6/8 counted in six. Changing the time signature takes the new one's usual note, unless you picked another.
 - The circles are the bar's beats: the one you hear lights up, the first of the bar is bigger. Click a beat to make it **accented**, **normal** or **silent** - for example, only beats 2 and 4, or a bar with its last beat left out.
 - **Subdivision** adds clicks between the beats: **2 per beat**, **Triplets** or **4 per beat**, softer than the beats.
 
@@ -33,7 +34,7 @@ Use wired headphones or the device's speaker: Bluetooth headphones hear it a fra
 
 ## At a song's tempo
 
-In [Live](/sets/#playing-a-set-live), on a song's page in a set and on a song's page in Practice, the metronome button (on a song's page, it shows the song's tempo: **76 BPM**) starts it at the song's tempo and time signature (its version's, when the set plays one) in one press; press it again to stop. It uses your pattern, sound and count-in from the Metronome page, and flashes with the beat. A song without a tempo can't start it: add one on its **Song info**.
+In [Live](/sets/#playing-a-set-live), on a song's page in a set and on a song's page in Practice, the metronome button (on a song's page, it shows the song's tempo: **76 BPM**, with its note when it isn't a quarter: **71 BPM · 1/4.**) starts it at the song's tempo, its note and time signature (its version's, when the set plays one) in one press; press it again to stop. It uses your pattern, sound and count-in from the Metronome page, and flashes with the beat. A song without a tempo can't start it: add one on its **Song info**, with **Tempo in** under it when it isn't counted in the time signature's usual note.
 
 Playing with others, the leader's metronome can be everyone's, in time: see [Playing in sync](/sets/#playing-in-sync).
 

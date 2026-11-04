@@ -1,7 +1,7 @@
 // The metronome (issue #2), in the browser: its page from the sidebar -
 // tempo, tap tempo, the pattern, subdivisions, a count-in - kept going on
 // other pages with a way back; Live's button at the song's tempo and time
-// signature. The suites can't hear it: they read the clicks the engine
+// signature; the note the tempo counts (issue #377: 6/8 in dotted quarters). The suites can't hear it: they read the clicks the engine
 // scheduled on the audio clock (window.songverseMetronome).
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
@@ -10,6 +10,10 @@ let page;
 const step = stepper(() => page);
 const me = await user("Drummer");
 const waltz = await api(me, "POST", "/song-versions", { title: `Waltz ${stamp}`, language: "en", artists: ["Band"], tempo: 72, timeSignature: "3/4", content: "[G]One two three\n", contentFormat: "CHORDPRO" });
+const jig = await api(me, "POST", "/song-versions", { title: `Jig ${stamp}`, language: "en", artists: ["Band"], tempo: 60, timeSignature: "6/8", content: "[D]One two three four five six\n", contentFormat: "CHORDPRO" });
+const eighths = await api(me, "POST", "/song-versions", { title: `Eighths ${stamp}`, language: "en", artists: ["Band"], tempo: 180, tempoUnit: "1/8", timeSignature: "6/8", content: "[D]One\n", contentFormat: "CHORDPRO" });
+const saved = async (song) => (await api(me, "GET", `/song-versions/${song.id}`)).documentJson.defaults;
+if ((await saved(eighths)).tempoUnit !== "1/8" || (await saved(jig)).tempoUnit) throw new Error(JSON.stringify([await saved(eighths), await saved(jig)]));
 const loose = await api(me, "POST", "/song-versions", { title: `No tempo ${stamp}`, language: "en", artists: ["Band"], content: "[G]Free\n", contentFormat: "CHORDPRO" });
 
 const browser = await chromium.launch();
@@ -89,6 +93,27 @@ await step("a count-in of a bar, then silent: the beat still shows", async () =>
   await page.getByLabel("Count-in", { exact: true }).selectOption({ label: "None" });
 });
 
+await step("Tempo in (issue #377): 6/8 counts dotted quarters, clicks on 1 and 4; in eighths, every beat", async () => {
+  await page.getByTestId("metronome-tempo").fill("120");
+  await page.getByTestId("metronome-numerator").selectOption("6");
+  await page.getByTestId("metronome-denominator").selectOption("8");
+  const unit = page.getByTestId("metronome-tempo-unit");
+  if ((await unit.inputValue()) !== "1/4.") throw new Error(await unit.inputValue());
+  await page.getByTestId("metronome-bpm-unit").getByText("BPM · 1/4 dotted").waitFor();
+  await page.getByTestId("metronome-play").click();
+  let list = await clicks(4, (await now()) + 0.3);
+  if (!same(gaps(list), 0.5) || list.some((c) => c.beat !== 0 && c.beat !== 3)) throw new Error(`dotted: ${list.map((c) => c.beat)} ${gaps(list)}`);
+  await unit.selectOption({ label: "1/8" });
+  list = await clicks(6, (await now()) + 1.2);
+  if (!same(gaps(list), 0.5) || new Set(list.map((c) => c.beat)).size < 5) throw new Error(`eighths: ${list.map((c) => c.beat)} ${gaps(list)}`);
+  await page.getByTestId("metronome-play").click();
+  // Back to the usual note, then to 4/4: it takes 4/4's own.
+  await unit.selectOption({ label: "1/4 dotted" });
+  await page.getByTestId("metronome-numerator").selectOption("4");
+  await page.getByTestId("metronome-denominator").selectOption("4");
+  if ((await unit.inputValue()) !== "1/4") throw new Error(await unit.inputValue());
+});
+
 await step("it keeps going on other pages, with its tempo there, a way back and a stop", async () => {
   await page.getByTestId("metronome-play").click();
   await page.getByRole("link", { name: "Library", exact: true }).first().click();
@@ -122,6 +147,21 @@ await step("Live: one button, at the song's tempo and time signature; a song wit
   if (!same(gaps(list), 60 / 72) || Math.max(...list.map((c) => c.beat)) !== 2) throw new Error(`gaps ${gaps(list)}`);
   await page.getByRole("button", { name: "Stop the metronome" }).click();
   if ((await button.getAttribute("aria-pressed")) !== "false") throw new Error("still pressed");
+  // A 6/8 song at 60: a dotted quarter a second, its eighths a third of one apart (bars and chords stay in eighths).
+  await page.goto(`${WEB}/library/${jig.id}/live`);
+  await page.waitForLoadState("networkidle");
+  await page.getByText("60 BPM · 1/4.").first().waitFor();
+  await button.click();
+  let six = await clicks(3, await now());
+  if (!same(gaps(six), 1) || six.some((c) => c.beat !== 0 && c.beat !== 3)) throw new Error(`jig: ${six.map((c) => c.beat)} ${gaps(six)}`);
+  await page.getByRole("button", { name: "Stop the metronome" }).click();
+  // Told it counts eighths: 180 of them, as before.
+  await page.goto(`${WEB}/library/${eighths.id}/live`);
+  await page.waitForLoadState("networkidle");
+  await button.click();
+  six = await clicks(4, await now());
+  if (!same(gaps(six), 60 / 180)) throw new Error(`eighths: ${gaps(six)}`);
+  await page.getByRole("button", { name: "Stop the metronome" }).click();
   await page.goto(`${WEB}/library/${loose.id}/live`);
   if (!(await page.getByRole("button", { name: "This song has no tempo" }).isDisabled())) throw new Error("enabled without a tempo");
 });

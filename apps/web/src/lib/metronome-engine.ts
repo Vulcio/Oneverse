@@ -294,7 +294,7 @@ export function updateMetronome(change: Partial<MetronomeSettings>) {
   else save(next);
   if (!state.playing || !context) return emit({ settings: next, songId: null });
   output!.gain.value = next.volume;
-  const timing = (["tempo", "numerator", "denominator", "beats", "subdivision", "countIn", "countInOnly", "sound"] as const).some(
+  const timing = (["tempo", "tempoUnit", "numerator", "denominator", "beats", "subdivision", "countIn", "countInOnly", "sound"] as const).some(
     (key) => JSON.stringify(previous[key]) !== JSON.stringify(next[key]),
   );
   if (!timing) return emit({ settings: next });

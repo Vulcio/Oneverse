@@ -1,4 +1,5 @@
-import { metronomeForSong, playbackSourcesOf, playsFiles, resolvePlaybackSource, type Attachment, type PlaybackSource } from "@oneverse/core";
+import { metronomeForSong, playbackSourcesOf, playsFiles, resolvePlaybackSource, type Attachment, type PlaybackSource, type TempoUnit } from "@oneverse/core";
+import { tempoText } from "#/lib/tempo-unit";
 import { AudioLines, Ban, Layers, Metronome, Mic, Square, TvMinimalPlay, Users } from "lucide-react";
 import { useContext, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -36,6 +37,8 @@ export interface SongPlaybackProps {
   /** Its video: the version's reference recording, else the song's own (issue #346). */
   youtube: { id: string; start?: number | null } | null;
   tempo: number | null | undefined;
+  /** The note the tempo counts (issue #377); null: the time signature's default. */
+  tempoUnit?: TempoUnit | null;
   timeSignature: { numerator: number; denominator: number } | null | undefined;
   /** Where the person's choice is kept. */
   store: PlaybackStore;
@@ -128,6 +131,7 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
           ...files,
           load: props.load,
           tempo: props.tempo,
+          tempoUnit: props.tempoUnit,
           timeSignature: props.timeSignature,
           choiceKey: props.choiceKey,
           prefetch,
@@ -162,7 +166,7 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
   ) : source === "YOUTUBE" && props.youtube ? (
     <YouTubeDock video={{ songVersionId: props.songVersionId, videoId: props.youtube.id, start: props.youtube.start ?? null, title: props.title, returnTo: props.returnTo }} />
   ) : source === "METRONOME" ? (
-    <MetronomeDock id={metronomeId(props)} title={props.title} tempo={props.tempo} timeSignature={props.timeSignature} />
+    <MetronomeDock id={metronomeId(props)} title={props.title} tempo={props.tempo} tempoUnit={props.tempoUnit} timeSignature={props.timeSignature} />
   ) : null;
 
   return { control, dock, source };
@@ -178,14 +182,26 @@ function metronomeId(props: Pick<SongPlaybackProps, "songVersionId" | "set">): s
  * at the song's tempo and time signature, its beat lit; the sound and
  * pattern are the player's, from the Metronome page.
  */
-function MetronomeDock({ id, title, tempo, timeSignature }: { id: string; title: string; tempo: number | null | undefined; timeSignature: { numerator: number; denominator: number } | null | undefined }) {
+function MetronomeDock({
+  id,
+  title,
+  tempo,
+  tempoUnit,
+  timeSignature,
+}: {
+  id: string;
+  title: string;
+  tempo: number | null | undefined;
+  tempoUnit?: TempoUnit | null;
+  timeSignature: { numerator: number; denominator: number } | null | undefined;
+}) {
   const slot = useContext(StemDockSlot);
   const { t } = useTranslation();
   const metronome = useMetronome();
   const beat = useMetronomeBeat();
   const mine = metronome.playing && metronome.songId === id;
   const following = metronome.following;
-  const settings = tempo ? metronomeForSong(metronome.settings, { tempo, timeSignature }) : metronome.settings;
+  const settings = tempo ? metronomeForSong(metronome.settings, { tempo, tempoUnit, timeSignature }) : metronome.settings;
   const press = () => {
     if (following) return unlockSyncAudio();
     if (mine) return stopMetronome();
@@ -202,7 +218,7 @@ function MetronomeDock({ id, title, tempo, timeSignature }: { id: string; title:
           {mine ? <Square /> : <Metronome />}
         </Button>
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
-        <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{tempo ? `${tempo} BPM` : t("metronome.noTempo")}</span>
+        <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{tempo ? tempoText(tempo, tempoUnit, timeSignature) : t("metronome.noTempo")}</span>
         <BeatLights settings={mine ? metronome.settings : settings} beat={mine ? beat : null} size="small" />
       </div>
     </section>

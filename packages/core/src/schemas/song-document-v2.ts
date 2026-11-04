@@ -1,6 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { SECTION_TYPES } from "../constants/index.js";
+import { TEMPO_UNITS } from "../metronome/index.js";
 import { TimeSignatureSchema } from "./shared.js";
 
 /**
@@ -167,6 +168,8 @@ export const SongDefaultsV2Schema = z.object({
   /** As written ("G", "Bb", "F#m"); parseKey() reads it. */
   key: z.string().max(12).nullable().optional(),
   tempo: z.number().positive().max(400).nullable().optional(),
+  /** The note the tempo counts (issue #377); left out, the time signature's own, dotted quarters in 6/8, 9/8, 12/8 (defaultTempoUnit). */
+  tempoUnit: z.enum(TEMPO_UNITS).nullable().optional(),
   timeSignature: TimeSignatureSchema.nullable().optional(),
   durationSeconds: z.number().positive().nullable().optional(),
 });

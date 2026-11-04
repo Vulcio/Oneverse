@@ -3,6 +3,7 @@ import {
   getLanguageDisplayName,
   resolveTranslation,
   METADATA_PROVIDER_NAMES,
+  TEMPO_UNITS,
   type LocaleValue,
   type MetadataMatch,
   type MetadataProviderKey,
@@ -30,6 +31,7 @@ import { ChipInput, type ChipSuggestion } from "./chip-input";
 import { CAPO_OPTIONS, TIME_SIGNATURE_OPTIONS, type CreditField, type FormError, type SongForm, type TextField } from "./song-form";
 import { KeySelect } from "#/components/key-select";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { tempoUnitKey, usualTempoUnit } from "#/lib/tempo-unit";
 
 
 export type FieldErrors = Partial<Record<TextField | "artists", FormError>>;
@@ -562,7 +564,7 @@ function useSummary(form: SongForm, tagLabel: (id: string) => string): string[] 
     form.album.trim() || null,
     form.year.trim() || null,
     form.key ? t("songEditor.summary.key", { key: form.key }) : null,
-    form.tempo.trim() ? t("songEditor.summary.tempo", { tempo: form.tempo.trim() }) : null,
+    form.tempo.trim() ? t("songEditor.summary.tempo", { tempo: form.tempo.trim() }) + (form.tempoUnit ? ` · ${form.tempoUnit}` : "") : null,
     form.timeSignature || null,
     form.capo ? t("songEditor.summary.capo", { capo: form.capo }) : null,
     form.duration.trim() || null,
@@ -653,6 +655,17 @@ export function MoreDetailsCard({
                 <KeySelect id="song-key" value={form.key} onChange={(value) => setField("key", value)} className="w-full" />
               </Field>
               {text("tempo", { inputMode: "numeric", placeholder: "72" })}
+              <Field id="song-tempoUnit" label={t("songEditor.fields.tempoUnit")}>
+                <NativeSelect id="song-tempoUnit" value={form.tempoUnit} onChange={(event) => setField("tempoUnit", event.target.value)} className="w-full" data-testid="song-tempo-unit">
+                  {/* Left unset, the time signature's usual note (issue #377): dotted quarters in 6/8. */}
+                  <option value="">{t("songEditor.tempoUnitUsual", { unit: t(tempoUnitKey(usualTempoUnit(form.timeSignature))) })}</option>
+                  {TEMPO_UNITS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {t(tempoUnitKey(unit))}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
               <Field id="song-timeSignature" label={t("songEditor.fields.timeSignature")}>
                 <NativeSelect
                   id="song-timeSignature"

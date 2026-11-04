@@ -5,7 +5,8 @@
  *
  * Positions are in beats of the time signature (a 6/8 bar is six beats,
  * each an eighth note) counted from the start, count-in included; the tempo
- * counts those beats. Ticks are MIDI's: 480 to a quarter note. A click is a
+ * counts its own note (`tempoUnit`, issue #377: a 6/8 song's 71 is usually
+ * dotted quarters, three of those beats each). Ticks are MIDI's: 480 to a quarter note. A click is a
  * note on channel 10, General MIDI's drums, as a MIDI renderer will send it.
  */
 
@@ -21,6 +22,44 @@ export const METRONOME_DENOMINATORS = [2, 4, 8, 16] as const;
 export const MAX_BEATS_PER_BAR = 16;
 export const METRONOME_SOUNDS = ["click", "wood", "beep"] as const;
 
+/**
+ * The note a tempo counts (issue #377): "1/4" is a quarter note, a dot
+ * makes it half as long again ("1/4." is a dotted quarter, three eighths).
+ */
+export const TEMPO_UNITS = ["1/8", "1/4", "1/2", "1/8.", "1/4.", "1/2.", "1/16"] as const;
+export type TempoUnit = (typeof TEMPO_UNITS)[number];
+
+export function isTempoUnit(value: unknown): value is TempoUnit {
+  return (TEMPO_UNITS as readonly unknown[]).includes(value);
+}
+
+/**
+ * The note a song's tempo counts when it doesn't say: the time signature's
+ * own, except in compound time (6/8, 9/8, 12/8 and the same in sixteenths),
+ * counted in dotted notes of three beats.
+ */
+export function defaultTempoUnit(timeSignature: { numerator: number; denominator: number } | null | undefined): TempoUnit {
+  const numerator = timeSignature?.numerator ?? 4;
+  const denominator = timeSignature?.denominator ?? 4;
+  const compound = numerator > 3 && numerator % 3 === 0;
+  if (denominator === 8) return compound ? "1/4." : "1/8";
+  if (denominator === 16) return compound ? "1/8." : "1/16";
+  if (denominator === 2) return "1/2";
+  return "1/4";
+}
+
+/** The time signature's own note: a tempo in it counts the beats as written (a recording's analysed tempo). */
+export function beatTempoUnit(denominator: number): TempoUnit {
+  return denominator === 2 ? "1/2" : denominator === 8 ? "1/8" : denominator === 16 ? "1/16" : "1/4";
+}
+
+/** How many of the time signature's beats one `unit` lasts: 3 for a dotted quarter in 6/8, 0.5 for an eighth in 4/4. */
+export function beatsPerTempoUnit(unit: TempoUnit, denominator: number): number {
+  const dotted = unit.endsWith(".");
+  const note = Number(unit.slice(2, dotted ? -1 : undefined));
+  return (denominator / note) * (dotted ? 1.5 : 1);
+}
+
 /** How a beat sounds: accented, as usual, or not at all. */
 export type BeatLevel = "accent" | "normal" | "mute";
 /** Clicks per beat: 1, eighths (2), triplets (3), sixteenths (4). */
@@ -28,8 +67,10 @@ export type Subdivision = 1 | 2 | 3 | 4;
 export type MetronomeSound = (typeof METRONOME_SOUNDS)[number];
 
 export interface MetronomeSettings {
-  /** Beats a minute, of the time signature's beat. */
+  /** Beats a minute, of `tempoUnit`'s note. */
   tempo: number;
+  /** The note the tempo counts (issue #377); left out, defaultTempoUnit(). */
+  tempoUnit?: TempoUnit;
   numerator: number;
   denominator: number;
   /** One per beat of the bar: the pattern. */
@@ -77,6 +118,7 @@ export function normalizeMetronome(input: Partial<MetronomeSettings> | null | un
     Array.isArray(value.beats) && value.beats.length === numerator && value.beats.every((beat) => levels.includes(beat)) ? [...value.beats] : defaultBeats(numerator);
   return {
     tempo: clampTempo(value.tempo ?? DEFAULT_METRONOME.tempo, true),
+    tempoUnit: isTempoUnit(value.tempoUnit) ? value.tempoUnit : defaultTempoUnit({ numerator, denominator }),
     numerator,
     denominator,
     beats,
@@ -88,22 +130,37 @@ export function normalizeMetronome(input: Partial<MetronomeSettings> | null | un
   };
 }
 
-/** A song's tempo and time signature on top of the player's own settings (their pattern kept when the bar is the same length). */
+/**
+ * A song's tempo, the note it counts and time signature on top of the
+ * player's own settings (their pattern kept when the bar is the same
+ * length). A song that doesn't say its tempo's note counts the default for
+ * its time signature, not the player's.
+ */
 export function metronomeForSong(
   current: MetronomeSettings,
-  song: { tempo: number | null | undefined; timeSignature?: { numerator: number; denominator: number } | null },
+  song: { tempo: number | null | undefined; tempoUnit?: TempoUnit | null; timeSignature?: { numerator: number; denominator: number } | null },
 ): MetronomeSettings {
   const numerator = song.timeSignature?.numerator ?? current.numerator;
+  const denominator = song.timeSignature?.denominator ?? current.denominator;
   return normalizeMetronome({
     ...current,
     tempo: song.tempo ?? current.tempo,
+    tempoUnit: song.tempo ? (song.tempoUnit ?? defaultTempoUnit({ numerator, denominator })) : current.tempoUnit,
     numerator,
-    denominator: song.timeSignature?.denominator ?? current.denominator,
+    denominator,
     beats: numerator === current.numerator ? current.beats : defaultBeats(numerator),
   });
 }
 
-export const secondsPerBeat = (settings: Pick<MetronomeSettings, "tempo">) => 60 / settings.tempo;
+type Speed = Pick<MetronomeSettings, "tempo" | "tempoUnit" | "numerator" | "denominator">;
+
+/** The time signature's beats a minute: the tempo times how many of them its note lasts. */
+export const beatsPerMinute = (settings: Partial<Speed> & Pick<Speed, "tempo">) => {
+  const signature = { numerator: settings.numerator ?? 4, denominator: settings.denominator ?? 4 };
+  return settings.tempo * beatsPerTempoUnit(isTempoUnit(settings.tempoUnit) ? settings.tempoUnit : defaultTempoUnit(signature), signature.denominator);
+};
+/** How long one of the time signature's beats lasts, in seconds. */
+export const secondsPerBeat = (settings: Partial<Speed> & Pick<Speed, "tempo">) => 60 / beatsPerMinute(settings);
 export const ticksPerBeat = (settings: Pick<MetronomeSettings, "denominator">) => (PPQ * 4) / settings.denominator;
 
 /** One click: where it falls, and how it sounds. */
@@ -138,40 +195,52 @@ export function beatAt(settings: Pick<MetronomeSettings, "numerator" | "countIn"
 }
 
 /**
- * The clicks from `from` (included) to `to` (not), in beats. A muted beat
- * mutes its subdivisions; during the count-in every beat sounds, the first
- * of each bar accented, without subdivisions; after it, with `countInOnly`,
- * nothing does.
+ * The clicks from `from` (included) to `to` (not), in beats. The main
+ * clicks follow the tempo's note from each bar's start (issue #377: in 6/8
+ * counted in dotted quarters, beats 1 and 4), split into `subdivision`
+ * (triplets there play every eighth). A main click on a beat sounds as the
+ * pattern says, one between beats as usual; a muted beat mutes what falls in
+ * it. During the count-in every main click sounds, the first of each bar
+ * accented, without subdivisions; after it, with `countInOnly`, nothing does.
  */
 export function clicksBetween(settings: MetronomeSettings, from: number, to: number): MetronomeClick[] {
   const clicks: MetronomeClick[] = [];
-  const step = 1 / settings.subdivision;
-  // Index of the first subdivision at or after `from`, exactly (no float drift over hours).
-  let index = Math.max(0, Math.ceil(from * settings.subdivision - 1e-9));
-  for (; index / settings.subdivision < to; index++) {
-    const position = index * step;
-    const whole = Math.floor(index / settings.subdivision);
-    const sub = index % settings.subdivision;
-    const { bar, beat } = beatAt(settings, whole);
-    const countIn = bar < 0;
-    let level: MetronomeClick["level"] | null;
-    if (countIn) level = sub === 0 ? (beat === 0 ? "accent" : "normal") : null;
-    else if (settings.countInOnly) level = null;
-    else if (settings.beats[beat] === "mute") level = null;
-    else level = sub === 0 ? (settings.beats[beat] === "accent" ? "accent" : "normal") : "sub";
-    if (!level) continue;
-    clicks.push({
-      position,
-      tick: Math.round(position * ticksPerBeat(settings)),
-      bar,
-      beat,
-      sub,
-      level,
-      note: METRONOME_NOTES[level],
-      channel: METRONOME_CHANNEL,
-      velocity: VELOCITY[level],
-      countIn,
-    });
+  const { numerator, subdivision } = settings;
+  const step = 1 / subdivision;
+  // A main click lasts `pulse` beats; each bar starts them again.
+  const pulse = beatsPerTempoUnit(settings.tempoUnit ?? defaultTempoUnit(settings), settings.denominator);
+  const perBar = Math.ceil((numerator * subdivision) / pulse - 1e-9);
+  for (let barIndex = Math.max(0, Math.floor(from / numerator)); barIndex * numerator < to; barIndex++) {
+    for (let index = 0; index < perBar; index++) {
+      // In subdivisions from the start: whole numbers when the pulse is a beat, so no float drift over hours.
+      const position = (barIndex * numerator * subdivision + index * pulse) * step;
+      if (position < from - 1e-9) continue;
+      if (position >= to) break;
+      const offset = (index * pulse) / subdivision;
+      const beat = Math.floor(offset + 1e-9);
+      const sub = index % subdivision;
+      const main = sub === 0;
+      const bar = barIndex - settings.countIn;
+      const countIn = bar < 0;
+      let level: MetronomeClick["level"] | null;
+      if (countIn) level = main ? (index === 0 ? "accent" : "normal") : null;
+      else if (settings.countInOnly) level = null;
+      else if (settings.beats[beat] === "mute") level = null;
+      else level = !main ? "sub" : Math.abs(offset - beat) < 1e-9 && settings.beats[beat] === "accent" ? "accent" : "normal";
+      if (!level) continue;
+      clicks.push({
+        position,
+        tick: Math.round(position * ticksPerBeat(settings)),
+        bar,
+        beat,
+        sub,
+        level,
+        note: METRONOME_NOTES[level],
+        channel: METRONOME_CHANNEL,
+        velocity: VELOCITY[level],
+        countIn,
+      });
+    }
   }
   return clicks;
 }
