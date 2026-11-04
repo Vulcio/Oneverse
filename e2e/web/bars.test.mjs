@@ -49,6 +49,17 @@ try {
     await row().screenshot({ path: `${SP}/bars-row.png` });
   });
 
+  await step("on a phone, scrolled down: the row stays in view under the header, never behind it", async () => {
+    await page.setViewportSize({ width: 390, height: 500 });
+    await page.mouse.wheel(0, 2000);
+    await page.waitForTimeout(300);
+    const header = await page.locator("header").first().boundingBox();
+    const box = await row().boundingBox();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    if (!header || !box || box.y < header.y + header.height - 1) throw new Error(`behind the header: ${JSON.stringify({ header, box })}`);
+  });
+
   await step("the click from the row: the current beat lit, the row sliding with it", async () => {
     await row().getByTestId("bars-metronome").click();
     await page.locator('[data-testid="bars-row"][data-source="click"]').waitFor();

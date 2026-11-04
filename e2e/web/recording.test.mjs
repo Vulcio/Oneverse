@@ -306,11 +306,12 @@ async function expandPlayer() {
   await page.locator('[data-testid="stem-player"][data-view="expanded"]').waitFor();
 }
 /** Records in the player (issue #134): from where the playhead says, for about `seconds` past the count-in. */
-async function recordInPlayer(seconds) {
+async function recordInPlayer(seconds, during) {
   await page.locator('[data-testid="recorder"][data-engine="player"][data-phase="ready"]').waitFor({ timeout: 15000 });
   await dialog().getByTestId("recorder-start").click();
   await dialog().getByText(/Recording \d:\d\d/).waitFor({ timeout: 15000 });
   await page.waitForTimeout(seconds * 1000);
+  if (during) await during();
   await dialog().getByTestId("recorder-stop").click();
   await dialog().getByTestId("recorder-take").waitFor({ timeout: 15000 });
 }
@@ -391,7 +392,14 @@ await step("a voice of one's own naming, and a harmony someone else recorded: na
   await dialog().getByTestId("part-voice").selectOption({ label: "Another name…" });
   await dialog().getByTestId("part-name").fill("Descant");
   await dialog().getByTestId("part-name").press("Enter");
-  await recordInPlayer(1);
+  // On a phone, recording: the player keeps to play, the time and the microphone; the multitrack, transposition, speed and the other tools wait.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await recordInPlayer(1, async () => {
+    const player = page.getByTestId("stem-player");
+    await player.getByTestId("stem-record").waitFor();
+    for (const id of ["stem-controls", "stem-mixer", "stem-click"]) if (await player.getByTestId(id).isVisible()) throw new Error(`${id} shown while recording on a phone`);
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await dialog().getByTestId("recorder-keep").click();
   await dialog().waitFor({ state: "detached", timeout: 15000 });
   const descant = (await processedFiles(webSong.id)).find((file) => file.partName === "Descant");

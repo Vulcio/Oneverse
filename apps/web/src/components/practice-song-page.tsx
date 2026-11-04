@@ -168,8 +168,8 @@ export function PracticeSongPage({
         </div>
       </div>
 
-      {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls. */}
-      {display.bars ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} className="sticky top-0 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
+      {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls - under the header (h-14), never behind it. */}
+      {display.bars ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
 
       {/* The chart, its chord grid (issue #238) or its PDF (issue #152). */}
       <ChartOrPdf

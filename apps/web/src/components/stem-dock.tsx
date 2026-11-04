@@ -781,7 +781,8 @@ export function StemDock({ song: page }: { song: StemSong }) {
               <span className="hidden sm:contents">{stopButton}</span>
             </span>
             {time}
-            <div className="col-span-4 row-start-2 flex flex-wrap items-center gap-1 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:gap-2" data-testid="stem-controls">
+            {/* On a phone's Record tab, the multitrack, transposition and speed are the Mix tab's: the recorder gets the room. */}
+            <div className={cn("col-span-4 row-start-2 flex flex-wrap items-center gap-1 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:gap-2", recordPanel && dockTab === "record" && "hidden md:flex")} data-testid="stem-controls">
               {sectionControls}
               {upgradeButton}
               {picker}
@@ -789,12 +790,15 @@ export function StemDock({ song: page }: { song: StemSong }) {
               {speedControl}
               {resetMix}
             </div>
-            <div className="flex shrink-0 items-center [&>button]:size-8 sm:[&>button]:size-9" data-testid="stem-tools">
-              {whole ? null : combineButton}
-              {whole ? null : mixerButton}
-              {cueButton}
+            <div className="flex shrink-0 items-center [&>button]:size-8 [&>span>button]:size-8 sm:[&>button]:size-9 sm:[&>span>button]:size-9" data-testid="stem-tools">
+              {/* While a take records on a phone, only the microphone's button: the rest waits. */}
+              <span className={cn("contents", recordingNow && "max-md:hidden")}>
+                {whole ? null : combineButton}
+                {whole ? null : mixerButton}
+                {cueButton}
+              </span>
               {recordButton}
-              {clickButton}
+              <span className={cn("contents", recordingNow && "max-md:hidden")}>{clickButton}</span>
             </div>
             <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => expand(false)} aria-label={t("stems.minimize")} data-testid="stem-minimize">
               <ChevronDown />
