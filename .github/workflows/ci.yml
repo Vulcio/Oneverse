@@ -5,6 +5,8 @@ on:
     # Only main: a work branch is checked through its pull request, once.
     branches: [main]
   pull_request:
+  # By hand (Actions > CI > Run workflow), for when GitHub drops a push's event and no run starts: everything checked.
+  workflow_dispatch:
 
 # A newer push to the same branch (or PR) cancels the run it makes pointless;
 # its own run checks, and on main deploys, everything the older one had.
