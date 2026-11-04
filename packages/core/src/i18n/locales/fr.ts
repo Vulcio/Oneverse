@@ -950,6 +950,7 @@ const fr: typeof en = {
     zoomIn: "Zoomer",
     zoomOut: "Dézoomer",
     take: "Enregistrement",
+    colours: "Une couleur par partie",
   },
   chartView: {
     label: "Afficher la grille, les mesures, un PDF ou les pistes",

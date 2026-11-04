@@ -950,6 +950,7 @@ const en = {
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
     take: "Recording",
+    colours: "A colour per part",
   },
   chartView: {
     label: "Read as the chart, the chord grid, a PDF or the tracks",

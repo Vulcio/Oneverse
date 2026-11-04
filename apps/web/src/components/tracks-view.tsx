@@ -1,5 +1,5 @@
 import { barAt, barBeatPlaces, chartBars, cueAt, lineAtPosition, recordingBeatPosition, sortedCues, type Attachment, type CueSection, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Palette, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -10,17 +10,50 @@ import { useTrackName } from "#/components/stem-dock";
 import { keepInView } from "#/lib/follow-view";
 import { deviceNow } from "#/lib/output-clock";
 import { getStemState, isAudible, seekStems, stemBuffer, toggleStemMute, toggleStemSolo, useStems, type StemTrack } from "#/lib/stem-engine";
+import { partColour, setTrackColours, useTrackColours } from "#/lib/track-colours";
 import { COLUMN, columnPeaks, liveTake } from "#/lib/take-strip";
 import { useMarkTracksShown } from "#/lib/tracks-shown";
 
 /** How much of the song the lanes show (s); the last, all of it. */
 const ZOOMS = [8, 16, 32, Number.POSITIVE_INFINITY];
 const DEFAULT_ZOOM = 1;
-/** Each column's width and the gap after it (CSS px). */
-const BAR = 2;
-const STEP = 3;
+/** How far apart the waveform's outline is read (CSS px). */
+const STEP = 2;
 /** The words lit a beat before they're sung, as in the chart. */
 const AHEAD = 1;
+
+/**
+ * A waveform as one filled shape, mirrored about the middle (issue #379):
+ * calmer than lines while it scrolls. `levels` are 0-1, one every STEP px
+ * from x = 0; left of `cut` is drawn as played, the rest as ahead.
+ */
+function drawShape(context: CanvasRenderingContext2D, width: number, height: number, levels: number[], cut: number, played: { colour: string; alpha: number }, ahead: { colour: string; alpha: number }) {
+  if (!levels.some((level) => level > 0)) return;
+  const middle = height / 2;
+  const half = (level: number) => (level > 0 ? Math.max(0.5, along(level) * (middle - 2)) : 0);
+  const outline = () => {
+    context.beginPath();
+    context.moveTo(0, middle);
+    levels.forEach((level, i) => context.lineTo(i * STEP, middle - half(level)));
+    for (let i = levels.length - 1; i >= 0; i--) context.lineTo(i * STEP, middle + half(levels[i]!));
+    context.closePath();
+  };
+  for (const [left, right, look] of [
+    [0, cut, played],
+    [cut, width, ahead],
+  ] as const) {
+    if (right <= left || look.alpha <= 0) continue;
+    context.save();
+    context.beginPath();
+    context.rect(left, 0, right - left, height);
+    context.clip();
+    context.globalAlpha = look.alpha;
+    context.fillStyle = look.colour;
+    outline();
+    context.fill();
+    context.restore();
+  }
+}
 
 /** The bar lines between `from` and `to` (s): the recording's own downbeats when they were found, else its tempo from its first beat. */
 function barLines(beat: ReturnType<typeof getStemState>["beat"], from: number, to: number): number[] {
@@ -119,8 +152,9 @@ export function TracksView({
   const canvases = useRef<(HTMLCanvasElement | null)[]>([]);
   const takeCanvas = useRef<HTMLCanvasElement | null>(null);
   const windowBox = useRef<HTMLDivElement | null>(null);
-  const latest = useRef({ tracks, duration, span, whole, engine, bars, places, lines });
-  latest.current = { tracks, duration, span, whole, engine, bars, places, lines };
+  const coloured = useTrackColours();
+  const latest = useRef({ tracks, duration, span, whole, engine, bars, places, lines, coloured });
+  latest.current = { tracks, duration, span, whole, engine, bars, places, lines, coloured };
   const [recording, setRecording] = useState(false);
   // The take's lane in view as it starts, above the player and the recorder (once, not on each render).
   const showTake = useCallback((element: HTMLLIElement | null) => {
@@ -156,7 +190,7 @@ export function TracksView({
       return { context, width, height };
     };
     let frame = requestAnimationFrame(function tick() {
-      const { tracks, duration, engine, bars, places, lines } = latest.current;
+      const { tracks, duration, engine, bars, places, lines, coloured } = latest.current;
       const at = stemsPosition();
       tracks.forEach((track, index) => {
         const element = canvases.current[index];
@@ -173,15 +207,14 @@ export function TracksView({
           context.globalAlpha = 0.18;
           for (const line of lines) context.fillRect(Math.round(((line - from) / length) * width), 0, 1, height);
         }
-        for (let x = 0; x < width; x += STEP) {
+        const levels: number[] = [];
+        for (let x = 0; x <= width + STEP; x += STEP) {
           const start = from + (x / width) * length;
-          const level = peakBetween(track, start, start + per);
-          if (level <= 0) continue;
-          const size = Math.max(1, along(level) * (height - 4));
-          context.fillStyle = start < at ? colours.played : colours.ahead;
-          context.globalAlpha = (start < at ? 0.75 : 0.35) * (on ? 1 : 0.3);
-          context.fillRect(x, (height - size) / 2, BAR, size);
+          levels.push(start < 0 ? 0 : peakBetween(track, start, start + per));
         }
+        // A colour per part (issue #379), else the page's ink.
+        const tint = coloured && !track.take ? partColour(track.part, index) : null;
+        drawShape(context, width, height, levels, ((at - from) / length) * width, { colour: tint ?? colours.played, alpha: (tint ? 0.9 : 0.75) * (on ? 1 : 0.3) }, { colour: tint ?? colours.ahead, alpha: (tint ? 0.4 : 0.35) * (on ? 1 : 0.3) });
         context.globalAlpha = 1;
         context.fillStyle = colours.head;
         context.fillRect(Math.round(head) - 1, 0, 2, height);
@@ -198,18 +231,17 @@ export function TracksView({
         const { context, width, height } = prepared;
         const { from, length, head } = frameOf(width, at);
         const peaks = liveTake.peaks;
-        context.fillStyle = colours.take;
-        for (let x = 0; x < width; x += STEP) {
+        const levels: number[] = [];
+        for (let x = 0; x <= width + STEP; x += STEP) {
           const start = from + (x / width) * length;
           if (start > at) break;
           const first = Math.floor((start - liveTake.from) / COLUMN);
           const last = Math.floor((start + (length / width) * STEP - liveTake.from) / COLUMN);
           let level = 0;
           for (let column = Math.max(0, first); column <= Math.min(peaks.length - 1, last); column++) level = Math.max(level, peaks[column]!);
-          if (level <= 0) continue;
-          const size = Math.max(1, along(level) * (height - 4));
-          context.fillRect(x, (height - size) / 2, BAR, size);
+          levels.push(level);
         }
+        drawShape(context, width, height, levels, width, { colour: colours.take, alpha: 1 }, { colour: colours.take, alpha: 0 });
         context.fillStyle = colours.head;
         context.fillRect(Math.round(head) - 1, 0, 2, height);
       }
@@ -274,6 +306,19 @@ export function TracksView({
         <span className="tabular-nums" data-testid="tracks-zoom">
           {whole ? t("tracks.wholeSong") : t("tracks.seconds", { count: span })}
         </span>
+        <Button
+          type="button"
+          variant={coloured ? "secondary" : "outline"}
+          size="icon"
+          className="size-8"
+          onClick={() => setTrackColours(!coloured)}
+          aria-pressed={coloured}
+          aria-label={t("tracks.colours")}
+          title={t("tracks.colours")}
+          data-testid="tracks-colours"
+        >
+          <Palette />
+        </Button>
         <Button type="button" variant="outline" size="icon" className="size-8" disabled={zoom === ZOOMS.length - 1 || whole} onClick={() => setZoom(Math.min(ZOOMS.length - 1, zoom + 1))} aria-label={t("tracks.zoomOut")} title={t("tracks.zoomOut")} data-testid="tracks-zoom-out">
           <Minus />
         </Button>

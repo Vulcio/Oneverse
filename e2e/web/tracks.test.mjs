@@ -83,6 +83,36 @@ try {
     await page.locator('[data-testid="tracks-view"][data-zoom="16"]').waitFor();
   });
 
+  await step("the waveforms are filled shapes, a colour per part; the toggle turns the colours off and back (issue #379)", async () => {
+    // Pixels drawn with colour (not grey) in the first lane.
+    const tinted = () =>
+      view()
+        .getByTestId("tracks-lane")
+        .first()
+        .locator("canvas")
+        .evaluate((canvas) => {
+          const data = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+          let drawn = 0, coloured = 0;
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] < 40) continue;
+            drawn++;
+            if (Math.max(data[i], data[i + 1], data[i + 2]) - Math.min(data[i], data[i + 1], data[i + 2]) > 40) coloured++;
+          }
+          return { drawn, coloured };
+        });
+    const colours = view().getByTestId("tracks-colours");
+    if ((await colours.getAttribute("aria-pressed")) !== "true") throw new Error("colours off by default");
+    await page.waitForTimeout(300);
+    let seen = await tinted();
+    if (seen.drawn < 200 || seen.coloured < seen.drawn / 2) throw new Error(`coloured: ${JSON.stringify(seen)}`);
+    await colours.click();
+    await page.waitForTimeout(300);
+    seen = await tinted();
+    if (seen.drawn < 200 || seen.coloured > seen.drawn / 20) throw new Error(`grey: ${JSON.stringify(seen)}`);
+    await colours.click();
+    await page.locator('[data-testid="tracks-colours"][aria-pressed="true"]').waitFor();
+  });
+
   await step("a part muted from its lane, and back", async () => {
     await view().getByTestId("tracks-lane").first().getByTestId("tracks-mute").click();
     await view().locator('[data-testid="tracks-lane"][data-audible="false"]').waitFor();
