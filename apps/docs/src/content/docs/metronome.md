@@ -52,6 +52,8 @@ The bars come from the chart's [bar lines](/song-editor/#bar-lines) when it has 
 
 **Display** > **Chords** > **Bars** hides it, separately in Practice and in Live (see [Display](/display/)).
 
+The chart follows along too, in Practice and on a song's page in a set: while the music plays, the line being sung is lit a beat ahead and kept in view, above the player. The words are matched to the beats as the [beats are placed in the words](#placing-beats-in-the-words), or spread over their bars until they are. Scroll yourself and it waits a few seconds before following again.
+
 ## Chord grid
 
 **Chart** / **Grid** above a song (in Practice, on its page in a set, and in Live's header) reads the song as a chord grid instead of its chart: the same bars, laid out like a lead sheet.

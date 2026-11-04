@@ -1,7 +1,8 @@
 import { chartNotation, cueSectionsOf, inlineSafeType, keptFile, renderChart, type Attachment } from "@oneverse/core";
 import { Link } from "@tanstack/react-router";
 import { FileText, Mic } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSungLine } from "#/lib/sung-line";
 import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
 import { chartDisplayProps, displayModeOf, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
@@ -58,6 +59,9 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
 
   // What plays with it (issue #366): of the files kept on the device ("Include audio").
   const playbackStore = useMemo(() => songPlaybackStore(song.songVersionId), [song.songVersionId]);
+  // The line sung as the music plays (issue #365).
+  const chartArea = useRef<HTMLDivElement>(null);
+  useSungLine(chartArea, song.songVersionId, chart, song.document);
   const playback = useSongPlayback({
     songVersionId: song.songVersionId,
     title: song.title,
@@ -110,7 +114,7 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
       <Card>
         <CardContent>
           {notes.top}
-          <div style={{ zoom: display.textSize }}>
+          <div ref={chartArea} style={{ zoom: display.textSize }}>
             <ChartWithDiagrams chart={chart} {...chartDisplayProps(display)} player={player} songVersionId={song.songVersionId} notes={notes.layer} />
           </div>
           {notes.dialogs}

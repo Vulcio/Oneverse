@@ -52,6 +52,8 @@ Les mesures viennent des [barres de mesure](/fr/song-editor/#les-barres-de-mesur
 
 **Affichage** > **Accords** > **Mesures** la masque, séparément en Session et en Live (voir [Affichage](/fr/display/)).
 
+La partition suit aussi, en Session et sur la page d'un chant dans une liste : pendant que la musique joue, la ligne chantée s'allume un temps à l'avance et reste visible, au-dessus du lecteur. Les paroles sont calées sur les temps tels qu'ils sont [placés dans les paroles](/fr/metronome/#placer-les-temps-dans-les-paroles), sinon réparties sur leurs mesures. Si vous faites défiler vous-même, elle attend quelques secondes avant de suivre à nouveau.
+
 ## Grille en mesures
 
 **Grille** / **Mesures** au-dessus d'un chant (en Session, sur sa page dans une liste et dans l'en-tête du Live) lit le chant en mesures plutôt que sa grille : les mêmes mesures, disposées comme sur une grille de jazz.

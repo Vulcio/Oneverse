@@ -107,6 +107,14 @@
  * --section-tint washing the section, --section-line outlining it. Set by
  * data-section-color="<type>" on the element; a type without one is neutral.
  */
+/* The line being sung as the music plays (issue #365), lit without moving the words. */
+[data-line][data-sung] {
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  box-shadow: 0 0 0 0.25rem color-mix(in oklab, var(--color-primary) 14%, transparent);
+  transition: background-color 150ms, box-shadow 150ms;
+}
+
 [data-section-color] {
   --section-h: 250;
   --section-c: 0;

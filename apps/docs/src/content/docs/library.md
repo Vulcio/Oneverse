@@ -246,7 +246,7 @@ You can record a part straight into Songverse, on a computer, phone or tablet wi
 
 #### The recorder
 
-The recorder is the same wherever you record. In the stem player, the microphone button opens it as the player's **Record** tab, beside its **Mix** tab (the parts, their mutes and solos): on a phone you switch between the two; on a wider screen they're side by side, or one above the other on a tall one such as a tablet held upright. Elsewhere - **Record a part** in a multitrack's box on the **Audio** tab, **Record a new multitrack** - it opens in a drawer at the bottom of the screen. Neither blocks the page: the chart and the lyrics stay usable.
+The recorder is the same wherever you record. In the stem player, the microphone button opens it as the player's **Record** tab, beside its **Mix** tab (the parts, their mutes and solos): on a phone you switch between the two; on a wider screen they're side by side, or one above the other on a tall one such as a tablet held upright. Elsewhere - **Record a part** in a multitrack's box on the **Audio** tab, **Record a new multitrack** - it opens in a drawer at the bottom of the screen. Neither blocks the page: the chart and the lyrics stay usable, and follow the music as you record - the line being sung lit in the chart, the bar in the grid (see [Bars](/metronome/#bars)).
 
 ![Recording in the stem player: the Mix and Record tabs side by side](../../assets/screenshots/en/stems-record.jpg)
 

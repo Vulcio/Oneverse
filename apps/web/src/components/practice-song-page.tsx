@@ -4,7 +4,7 @@ import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PresenceChip } from "#/components/presence";
 import { useSongPresence, watchSong } from "#/lib/live-notes";
 import { Mic, Pencil, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MetronomeSongButton } from "#/components/metronome";
 import { BarsRow } from "#/components/bars-row";
@@ -24,6 +24,7 @@ import { artistNames } from "#/lib/artists";
 import { setMode } from "#/lib/mode";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
+import { useSungLine } from "#/lib/sung-line";
 
 /**
  * A library song in Practice (issue #67): its chart, as written and read
@@ -108,6 +109,9 @@ export function PracticeSongPage({
     store: playbackStore,
     stems: { songKey: chart.key, cueSections, record: { attachments, songKey: chart.key ?? undefined, onSaved: () => void router.invalidate() } },
   });
+  // The line sung as the stems or the click play (issue #365): read along, while recording a part too.
+  const chartArea = useRef<HTMLDivElement>(null);
+  useSungLine(chartArea, version.id, chart, version.documentJson);
   const details = [
     ...references,
     chart.key,
@@ -196,7 +200,7 @@ export function PracticeSongPage({
           <CardContent className="flex flex-col gap-3">
             {/* Zoom, not font size: the chart's own sizes keep their proportions. */}
             {notes.top}
-            <div style={{ zoom: display.textSize }}>
+            <div ref={chartArea} style={{ zoom: display.textSize }} data-testid="practice-chart">
               <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={player} songVersionId={version.id} notes={notes.layer} />
             </div>
           </CardContent>

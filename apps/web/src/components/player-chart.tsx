@@ -1,6 +1,7 @@
 import { chartNotation, renderChart, type ChartPreferences, type RenderedChart, type ChordNotationValue, type CapoDisplayModeValue, type SetlistSongView } from "@oneverse/core";
 import { EyeOff, TriangleAlert } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useSungLine } from "#/lib/sung-line";
 import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
 import { chartDisplayProps, displayModeOf, displaySeed, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
@@ -74,6 +75,9 @@ export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistS
   const notesContext = { songVersionId: song.id, setlistId: view.set.id };
   const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: song.document, show: display.notes, marks: display.noteMarks, style: display.noteStyle, context: notesContext, openNoteId });
 
+  // The line sung as the music plays (issue #365).
+  const chartArea = useRef<HTMLDivElement>(null);
+  useSungLine(chartArea, song.id, chart, song.document);
   const hiddenCount = preferences.hiddenChordIds.length;
   const capoIsSuggestion = !view.arrangement?.document.defaults.capo && !!song.suggestedCapo;
   return (
@@ -120,7 +124,7 @@ export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistS
         </p>
       ) : null}
       {notes.top}
-      <div style={{ zoom: display.textSize }}>
+      <div ref={chartArea} style={{ zoom: display.textSize }}>
         {grid ? (
           <ChordGrid songId={song.id} chart={chart} document={song.document} chordColors={display.chordColors} emptyText={t("sets.noChart")} />
         ) : (

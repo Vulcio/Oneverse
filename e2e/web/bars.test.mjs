@@ -64,10 +64,25 @@ try {
     await page.screenshot({ path: `${SP}/bars-practice.png` });
   });
 
+  await step("the chart follows the click (issue #365): the line being sung lit, then the next", async () => {
+    const chart = page.getByTestId("practice-chart");
+    const sung = chart.locator("[data-line][data-sung]");
+    await sung.waitFor({ timeout: 5000 });
+    if ((await sung.count()) !== 1) throw new Error("not one line lit");
+    const first = await sung.innerText();
+    // 150 BPM, a line of four bars or three: the next line within a few seconds.
+    await page.waitForFunction((was) => {
+      const lit = document.querySelector('[data-testid="practice-chart"] [data-line][data-sung]');
+      return lit && lit.textContent !== was;
+    }, first, { timeout: 12000 });
+    await page.screenshot({ path: `${SP}/bars-sung-line.png` });
+  });
+
   await step("stopped: nothing lit", async () => {
     await row().getByTestId("bars-metronome").click();
     await page.locator('[data-testid="bars-row"]:not([data-source])').waitFor();
     if ((await strip().locator("[data-beat][data-on]").count()) !== 0) throw new Error("a beat still lit");
+    if ((await page.getByTestId("practice-chart").locator("[data-sung]").count()) !== 0) throw new Error("a line still lit");
   });
 
   await step("Live: the row under the header", async () => {

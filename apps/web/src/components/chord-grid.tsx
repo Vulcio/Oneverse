@@ -23,6 +23,7 @@ import { Check, Minus, Pause, Pencil, Play, Plus, Repeat, Trash2, X } from "luci
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { GROUP_COLORS } from "#/components/bars-row";
+import { keepInView } from "#/lib/follow-view";
 import { FAMILY_COLORS, passLabel } from "@oneverse/screen/components/song-chart";
 import { useBarsClock } from "#/lib/bars-clock";
 import { useGridPlayer, type GridPlayer } from "#/lib/grid-player";
@@ -304,8 +305,7 @@ export function ChordGrid({
         light(where?.bar ?? null, where?.beat ?? 0);
         if (where && where.bar !== shownBar && litBar) {
           // Kept in view, without moving the page under the reader for every bar: only when it nears an edge.
-          const box = litBar.getBoundingClientRect();
-          if (box.top < window.innerHeight * 0.15 || box.bottom > window.innerHeight * 0.75) litBar.scrollIntoView({ block: "center", behavior: "smooth" });
+          keepInView(litBar);
         }
         shownBar = where?.bar ?? -1;
       }

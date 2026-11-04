@@ -246,7 +246,7 @@ Vous pouvez enregistrer une piste directement dans Songverse, sur un ordinateur,
 
 #### L'enregistreur
 
-L'enregistreur est le même partout. Dans le lecteur de pistes, le bouton micro l'ouvre comme onglet **Enregistrer** du lecteur, à côté de son onglet **Mix** (les pistes, leurs coupures et solos) : sur un téléphone on passe de l'un à l'autre ; sur un écran plus large ils sont côte à côte, ou l'un au-dessus de l'autre sur un écran en hauteur comme une tablette tenue verticalement. Ailleurs - **Enregistrer une piste** dans le cadre d'un multipiste de l'onglet **Audio**, **Enregistrer un nouveau multipiste** - il s'ouvre dans un tiroir en bas de l'écran. Aucun ne bloque la page : la grille et les paroles restent utilisables.
+L'enregistreur est le même partout. Dans le lecteur de pistes, le bouton micro l'ouvre comme onglet **Enregistrer** du lecteur, à côté de son onglet **Mix** (les pistes, leurs coupures et solos) : sur un téléphone on passe de l'un à l'autre ; sur un écran plus large ils sont côte à côte, ou l'un au-dessus de l'autre sur un écran en hauteur comme une tablette tenue verticalement. Ailleurs - **Enregistrer une piste** dans le cadre d'un multipiste de l'onglet **Audio**, **Enregistrer un nouveau multipiste** - il s'ouvre dans un tiroir en bas de l'écran. Aucun ne bloque la page : la grille et les paroles restent utilisables, et suivent la musique pendant l'enregistrement - la ligne chantée allumée dans la partition, la mesure dans la grille (voir [Mesures](/fr/metronome/#mesures)).
 
 ![Enregistrer dans le lecteur de pistes : les onglets Mix et Enregistrer côte à côte](../../../assets/screenshots/fr/stems-record.jpg)
 
