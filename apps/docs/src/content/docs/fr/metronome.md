@@ -61,11 +61,24 @@ La partition suit aussi, en Session et sur la page d'un chant dans une liste : p
 ![Les mesures en Session, le clic lancé](../../../assets/screenshots/fr/chord-grid.jpg)
 
 - **Quatre mesures par ligne** (deux sur un téléphone), chaque section sous son nom, avec sa mesure là où elle change.
-- **Chaque mesure** a son numéro, une barre oblique par temps et l'accord sur le temps où il change. Un accord qui continue depuis la mesure d'avant est rappelé, en gris. Dessous, les paroles chantées dans cette mesure (de l'accord ou de la barre de mesure où elles commencent au suivant).
+- **Chaque mesure** a son numéro, un bloc par temps et l'accord dans le bloc du temps où il change, comme dans la ligne des mesures. Le temps joué devient foncé. Un accord qui continue depuis la mesure d'avant est rappelé, en gris. Dessous, les paroles chantées dans cette mesure (de l'accord ou de la barre de mesure où elles commencent au suivant).
 - **Pendant que la musique joue,** la mesure et le temps joués s'allument, et la page défile pour garder cette mesure en vue. Elle suit la même chose que la ligne des mesures : les pistes, le métronome ou celui du meneur.
 - **Les accords se lisent comme sur la grille :** transposés, avec votre capodastre, vos noms et vos couleurs, et sur la page d'un chant dans une liste vos **Accords simplifiés** et **Sans basses** aussi.
 
 Votre choix est gardé pour le chant, comme celui d'un PDF : chaque appareil où vous êtes connecté, et le Live, l'affichent de la même façon. Pour lire tous les chants ainsi sauf choix contraire, réglez **Lire les chants en** sur **Accords en mesures** (voir [Affichage des grilles](/fr/account/#affichage-des-grilles)).
+
+### Les paroles
+
+**Paroles** au-dessus des mesures choisit où vont les paroles. Votre choix est gardé sur cet appareil, pour tous les chants :
+
+- **Dans les mesures** : chaque mesure a dessous les paroles chantées dedans, comme ci-dessus.
+- **Entre les lignes** : chaque ligne de mesures a ses paroles en une ligne dessous, plus facile à lire. Les paroles de la mesure jouée deviennent foncées.
+- **Sous une ligne fixe** : la ligne de mesures jouée reste en haut, et les paroles du chant défilent dessous en grand, la ligne chantée allumée.
+- **Masquées** : seulement les mesures.
+
+![Les mesures avec les paroles entre les lignes](../../../assets/screenshots/fr/chord-grid-lyrics.jpg)
+
+Pendant **Modifier les mesures**, les paroles sont dans les mesures, là où les temps se placent.
 
 ### Lire depuis les mesures
 

@@ -77,6 +77,60 @@ try {
     if (await grid().locator("[data-grid-bar][data-on]").count()) throw new Error("a bar still lit");
   });
 
+  // Where the words go (issue #376): in the bars, between the rows, under a pinned row, or off - kept on the device.
+  const lyricsAs = async (choice) => {
+    await page.getByTestId("chord-grid-lyrics-choice").selectOption(choice);
+    await page.locator(`[data-testid="chord-grid"][data-lyrics="${choice}"]`).waitFor();
+  };
+  const playClick = async () => {
+    await page.getByTestId("bars-metronome").click();
+    await page.locator('[data-testid="chord-grid"][data-source="click"]').waitFor();
+  };
+  const stopClick = async () => {
+    await page.getByTestId("bars-metronome").click();
+    await page.locator('[data-testid="chord-grid"]:not([data-source])').waitFor();
+  };
+
+  await step("lyrics between the rows: a row's words as a line under it, the bar being played's lit", async () => {
+    await lyricsAs("between");
+    if (await grid().locator("[data-grid-words]").count()) throw new Error("words still in the bars");
+    const rows = await grid().getByTestId("chord-grid-lyric-row").allInnerTexts();
+    // Bars 1-4, 5-8, then the chorus's 10-11 (bar 9 sings nothing).
+    if (rows.length !== 3 || !rows[0].includes("Amazing grace how sweet the sound") || !rows[1].includes("wretch like") || !rows[2].includes("My chains are gone")) throw new Error(JSON.stringify(rows));
+    if ((await grid().locator("[data-grid-beat]").count()) !== 44) throw new Error("not every beat");
+    await playClick();
+    await grid().locator("[data-lyric-bar][data-on]").first().waitFor({ timeout: 5000 });
+    await page.screenshot({ path: `${SP}/chord-grid-between.png` });
+    await stopClick();
+  });
+
+  await step("lyrics under a pinned row: one row of bars at the top, the line being sung lit under it", async () => {
+    await lyricsAs("pinned");
+    const pinned = grid().getByTestId("chord-grid-pinned");
+    await pinned.locator("[data-grid-row][data-shown]").waitFor();
+    if ((await pinned.locator("[data-grid-row][data-shown] [data-grid-bar]").count()) !== 4) throw new Error("not four bars pinned");
+    const lines = await grid().locator("[data-lyric-line]").allInnerTexts();
+    if (lines.map((one) => one.trim()).join(" | ") !== "Amazing grace how sweet the sound | That saved a wretch like me | I once was lost | My chains are gone") throw new Error(lines.join(" | "));
+    await playClick();
+    // 150 BPM: past bar 4 in under 8 s, and the row pinned moves on with it.
+    await page.waitForFunction(() => Number(document.querySelector('[data-testid="chord-grid"]')?.dataset.position?.split(":")[0]) >= 4, null, { timeout: 10000 });
+    const lit = await grid().locator("[data-grid-bar][data-on]").getAttribute("data-grid-bar");
+    const shown = (await pinned.locator("[data-grid-row][data-shown]").getAttribute("data-bars")).split(" ");
+    if (!shown.includes(lit)) throw new Error(`bar ${lit} not in the pinned row ${shown}`);
+    if ((await grid().locator("[data-lyric-line][data-on]").count()) !== 1) throw new Error("not one line lit");
+    await page.screenshot({ path: `${SP}/chord-grid-pinned.png` });
+    await stopClick();
+  });
+
+  await step("lyrics off: only the bars, still off after a reload; In the bars brings them back", async () => {
+    await lyricsAs("off");
+    if (await grid().locator("[data-grid-words], [data-lyric-line], [data-testid=chord-grid-lyric-row]").count()) throw new Error("words still shown");
+    await page.reload();
+    await page.locator('[data-testid="chord-grid"][data-lyrics="off"]').waitFor();
+    await lyricsAs("bars");
+    if ((await grid().locator("[data-grid-words]").count()) !== 11) throw new Error("the words aren't back in the bars");
+  });
+
   await step("Live reads it as the grid too, and switches back to the chart", async () => {
     await page.goto(`${WEB}/library/${song.id}/live`);
     await page.getByTestId("live-view").getByTestId("chord-grid").waitFor();

@@ -528,6 +528,14 @@ try {
       const box = await grid.boundingBox();
       await page.screenshot({ path: path.join(dir, "chord-grid.jpg"), type: "jpeg", quality: 85, clip: { x: box.x - 24, y: box.y - 76, width: box.width + 48, height: Math.min(box.height + 96, 330) } });
       console.log("  chord-grid");
+      // The words between the rows (issue #376), the click still playing; then back in the bars.
+      await page.getByTestId("chord-grid-lyrics-choice").selectOption("between");
+      await page.locator('[data-testid="chord-grid"][data-lyrics="between"]').waitFor();
+      await page.waitForTimeout(1200);
+      const between = await grid.boundingBox();
+      await page.screenshot({ path: path.join(dir, "chord-grid-lyrics.jpg"), type: "jpeg", quality: 85, clip: { x: between.x - 24, y: between.y - 76, width: between.width + 48, height: Math.min(between.height + 96, 330) } });
+      console.log("  chord-grid-lyrics");
+      await page.getByTestId("chord-grid-lyrics-choice").selectOption("bars");
       await page.getByTestId("bars-metronome").click();
       // Edit bars (issue #238): a chord picked, a bar's tools.
       await page.getByTestId("chord-grid-edit-start").click();

@@ -3099,6 +3099,8 @@ const en = {
     placeAuto: "Let the grid place it",
     beatOutside: "A beat stays in its bar's words, between the beats before and after it.",
     barLineOutside: "A bar starts in its own line, after the bar before and before its chords and the next bar.",
+    lyrics: "Lyrics",
+    lyricsChoice: { bars: "In the bars", between: "Between the rows", pinned: "Under a pinned row", off: "Off" },
   },
   player: {
     myView: "My view",

@@ -61,11 +61,24 @@ The chart follows along too, in Practice and on a song's page in a set: while th
 ![The chord grid in Practice, the click playing](../../assets/screenshots/en/chord-grid.jpg)
 
 - **Four bars to a row** (two on a phone), each section under its name, with its time signature where it changes.
-- **Each bar** has its number, a slash for each beat and the chord on the beat it changes on. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord or the bar line they start at to the next one).
+- **Each bar** has its number, a block for each beat and the chord in the block of the beat it changes on, as in the bars row. The beat being played turns dark. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord or the bar line they start at to the next one).
 - **While the music plays,** the bar and the beat being played light up, and the grid scrolls to keep that bar in view. It follows the same things as the bars row: the stems, the metronome, or the leader's.
 - **The chords read as on the chart:** transposed, with your capo, names and colours, and on a set's song page your **Simpler chords** and **No bass notes** too.
 
 Your choice is kept for the song, as a PDF's is: every device you sign in on, and Live, show it the same way. To read every song this way unless you choose otherwise, set **Songs read as** to **Chord grid (bars)** (see [Chart display](/account/#chart-display)).
+
+### The words
+
+**Lyrics** over the grid chooses where the words go. Your choice is kept on this device, for every song:
+
+- **In the bars**: each bar has the words sung in it underneath, as above.
+- **Between the rows**: each row of bars has its words as a line under it, easier to read. The words of the bar being played turn dark.
+- **Under a pinned row**: the row being played stays at the top, and the song's words scroll under it in large type, with the line being sung lit.
+- **Off**: only the bars.
+
+![The grid with the words between the rows](../../assets/screenshots/en/chord-grid-lyrics.jpg)
+
+While you **Edit bars**, the words are in the bars, where the beats are placed.
 
 ### Playing from the grid
 

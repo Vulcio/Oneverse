@@ -3102,6 +3102,8 @@ const fr: typeof en = {
     placeAuto: "Laisser la grille le placer",
     beatOutside: "Un temps reste dans les paroles de sa mesure, entre le temps d'avant et celui d'après.",
     barLineOutside: "Une mesure commence dans sa propre ligne, après la mesure d'avant et avant ses accords et la mesure suivante.",
+    lyrics: "Paroles",
+    lyricsChoice: { bars: "Dans les mesures", between: "Entre les lignes", pinned: "Sous une ligne fixe", off: "Masquées" },
   },
   player: {
     myView: "Mon affichage",
