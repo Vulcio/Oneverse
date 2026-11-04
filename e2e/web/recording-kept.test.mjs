@@ -163,6 +163,18 @@ await step("headphones plugged in: the delay is that output's own, measured agai
   await dialog().waitFor({ state: "detached" });
 });
 
+await step("a 6/8 song at 60 (dotted quarters): a new multitrack's tempo counts its eighths, 180 (issue #377)", async () => {
+  const jig = await api(me, "POST", "/song-versions", { title: `Jig ${stamp}`, language: "en", artists: [`Band ${stamp}`], content: "[D]One\n", contentFormat: "CHORDPRO", tempo: 60, timeSignature: "6/8" });
+  await page.goto(`${WEB}/library/${jig.id}?tab=audio`);
+  await page.waitForLoadState("networkidle");
+  await page.getByTestId("record-new").click();
+  await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
+  const tempo = await dialog().getByTestId("recorder-tempo").inputValue();
+  if (tempo !== "180") throw new Error(`tempo ${tempo}`);
+  await dialog().getByTestId("recorder-dismiss").click();
+  await dialog().waitFor({ state: "detached" });
+});
+
 await step("no page errors", async () => {
   if (errors.length) throw new Error(errors.join("\n"));
 });
