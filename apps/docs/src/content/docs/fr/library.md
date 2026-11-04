@@ -159,6 +159,8 @@ Seul ce que le chant a est proposé. Tant que vous n'avez rien choisi, le master
 
 En jeu synchronisé, le choix du meneur est celui de tous : le **Ce qui joue** des autres l'affiche, avec le nom du meneur (voir [Jouer en synchro](/fr/sets/#jouer-synchronisé)).
 
+**Le tempo** sous le titre du chant (**100 BPM**) est un bouton en Pratique : **−** et **+**, ou tapez-le, pour travailler plus lentement ou plus vite. C'est le vôtre : le métronome, les mesures et le clic de la grille le jouent, sur vos appareils, jusqu'à **Revenir au tempo du chant (100)** ; le chant garde son propre tempo, et un point indique que le vôtre est différent. Les pistes et les enregistrements gardent leur propre vitesse (voir [Pistes](/fr/library/#pistes)).
+
 ## Pistes
 
 Les pistes (ou stems) sont les parties du chant enregistrées séparément : voix, batterie, basse, etc. Importez-les dans l'onglet **Audio**. Un fichier nommé d'après sa partie (« Voix.mp3 », « 03 drums.opus », « Basse.mp3 », « Alto.wav ») devient cette piste tout seul. Pour les autres fichiers, choisissez sa partie sous le fichier, en deux temps :

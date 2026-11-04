@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { SET_TRANSITIONS } from "../constants/index.js";
-import { clearableText, optional, requiredText } from "./fields.js";
+import { clearableInt, clearableText, optional, requiredText } from "./fields.js";
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 const eventDate = z.string().regex(DATE_ONLY, "eventDate must be YYYY-MM-DD");
@@ -112,6 +112,7 @@ export function readItemTimer(value: unknown): SetlistItemTimer | null {
 export const UpdateSetlistItemSchema = z.strictObject({
   songVersionId: optional(z.string()).describe("Another version of the same song"),
   transposeSteps: optional(transposeSteps),
+  tempoOverride: clearableInt(20, 300).describe("Its own tempo in this set (issue #382), in the song's tempo note; null: the song's"),
   notes: z.string().trim().max(500).nullable().optional(),
   arrangementId: z.string().nullable().optional().describe("The arrangement to play; null plays the song as written"),
   transition: z.enum(SET_TRANSITIONS).nullable().optional().describe("What happens after it (issue #199); null: nothing said"),

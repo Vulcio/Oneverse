@@ -79,6 +79,8 @@ Click a song in the set to open its chart, as the set plays it: its version, in 
 ![A song in a set](../../assets/screenshots/en/set-song.jpg)
 
 - **Previous** and **Next** go through the set in order.
+
+- **The tempo** (**100 BPM**) beside the song's place in the set: if you can change the set, tap it for the song's tempo in this set - **−**, **+** or typed - without changing the song's. Everyone playing the set gets it: the metronome, the bars, Live and the set's **Tempo (BPM)** column. **Back to the song's tempo** undoes it.
 - **My view** changes the chart for you only - hide chords, simpler chords, no bass notes. See [Your own view of a chart](/versions/#your-own-view-of-a-chart). **Display** beside it sets how charts read - chord names, capo shapes, diagrams, text, columns: see [Display](/display/).
 - **Notes** on the song - yours, the set's, your team's - show on the chart, where they're pinned. Right-click (or press and hold) a chord, a word or a section's name to add one; a note saved in the set shows only in this set. See [Notes](/notes/).
 

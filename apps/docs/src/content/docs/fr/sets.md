@@ -79,6 +79,8 @@ Cliquez sur un chant de la liste pour ouvrir sa grille, telle que la liste la jo
 ![Un chant dans une liste](../../../assets/screenshots/fr/set-song.jpg)
 
 - **Précédent** et **Suivant** parcourent la liste dans l'ordre.
+
+- **Le tempo** (**100 BPM**) à côté de la place du chant dans la liste : si vous pouvez modifier la liste, touchez-le pour le tempo du chant dans cette liste - **−**, **+** ou tapé - sans changer celui du chant. Tous ceux qui jouent la liste l'ont : le métronome, les mesures, le Live et la colonne **Tempo (BPM)** de la liste. **Revenir au tempo du chant** l'annule.
 - **Mon affichage** change la grille pour vous seul - accords masqués, simplifiés, sans basses. Voir [Votre propre affichage d'une grille](/fr/versions/#votre-propre-affichage-dune-grille). **Affichage** à côté règle la façon dont les grilles se lisent - noms des accords, formes de capo, diagrammes, texte, colonnes : voir [Affichage](/fr/display/).
 - Les **notes** sur le chant - les vôtres, celles de la liste, de votre équipe - s'affichent sur la grille, là où elles sont attachées. Clic droit (ou appui long) sur un accord, un mot ou le nom d'une partie pour en ajouter une ; une note enregistrée dans la liste ne s'affiche que dans cette liste. Voir [Notes](/fr/notes/).
 

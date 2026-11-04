@@ -159,6 +159,8 @@ Only what the song has is listed. Until you choose, the master plays when there 
 
 Playing in sync, the leader's choice is everyone's: the others' **What plays** shows it, and the leader's name (see [Playing in sync](/sets/#playing-in-sync)).
 
+**The tempo** under the song's title (**100 BPM**) is a button in Practice: **−** and **+**, or type it, to practise slower or faster. It's yours: the metronome, the bars and the grid's click play it, on your devices, until **Back to the song's tempo (100)**; the song keeps its own tempo, and a dot says yours is different. Stems and recordings keep their own speed (see [Stems](/library/#stems)).
+
 ## Stems
 
 Stems are the song's parts as separate recordings: vocals, drums, bass and so on. Upload them on the **Audio** tab. A file named after its part ("Vocals.mp3", "03 drums.opus", "Basse.mp3", "Alto.wav") becomes that stem on its own. For any other file, choose its part under it, in two steps:

@@ -887,6 +887,16 @@ const fr: typeof en = {
       NONE: "Rien",
     },
   },
+  tempo: {
+    title: "Tempo",
+    none: "Pas de tempo",
+    change: "Tempo : {{tempo}}. Le changer",
+    slower: "Plus lent",
+    faster: "Plus rapide",
+    reset: "Revenir au tempo du chant ({{tempo}})",
+    practiceHint: "Le vôtre, pour travailler ce chant : le chant garde son propre tempo.",
+    setHint: "Le tempo du chant dans cette liste : le chant garde le sien.",
+  },
   metronome: {
     title: "Métronome",
     description: "Réglez le tempo, la mesure et les temps qui sonnent. Il garde le tempo pendant que vous naviguez dans l'application.",

@@ -1,5 +1,5 @@
 import { ApiError, cueSectionsOf, keptSetSong, onlineOrKept, transposeKey, type Attachment, type SetlistSongView, type SongLink } from "@oneverse/core";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,7 @@ import { MetronomeSongButton } from "#/components/metronome";
 import { PlayerChart, renderPlayerChart } from "#/components/player-chart";
 import { TracksView } from "#/components/tracks-view";
 import { stemsOf } from "#/lib/stem-engine";
-import { tempoText } from "#/lib/tempo-unit";
+import { TempoControl } from "#/components/tempo-control";
 import { SyncControl } from "#/components/sync-control";
 import { useSongPlayback } from "#/components/song-playback";
 import { setPlaybackStore, usePrefetchSetItem } from "#/lib/playback";
@@ -75,7 +75,13 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
 
   // The arrangement's key and tempo, with the set's own key on top.
   const arrangement = view.arrangement?.document.defaults;
-  const tempo = arrangement?.tempo ?? song?.tempo;
+  const songTempo = arrangement?.tempo ?? song?.tempo ?? null;
+  // The set's own (issue #382), else the song's.
+  const tempo = item.tempoOverride ?? songTempo;
+  const router = useRouter();
+  const changeTempo = set.canEdit
+    ? (tempoOverride: number | null) => void apiClient.updateSetlistItem(set.id, item.id, { tempoOverride }).then(() => router.invalidate())
+    : null;
   // The note the song's tempo counts (issue #377), its time signature's default when it doesn't say.
   const tempoUnit = song?.document.defaults.tempoUnit ?? null;
   const timeSignatureNow = arrangement?.timeSignature ?? song?.document.defaults.timeSignature ?? null;
@@ -84,7 +90,6 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
     // The set's own transposition, from the arrangement's key.
     song ? transposeLabel(song.key && arrangement ? (transposeKey(song.key, arrangement.transposeSteps) ?? song.key) : song.key, item.transposeSteps, t) : null,
     view.arrangement ? t("sets.playedAs", { name: view.arrangement.name }) : null,
-    tempo ? tempoText(tempo, tempoUnit, timeSignatureNow) : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -139,7 +144,15 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-2xl font-semibold">{setItemTitle(view, t)}</h1>
-          <p className="text-sm text-muted-foreground">{details}</p>
+          <p className="text-sm text-muted-foreground">
+            {details}
+            {song ? (
+              <>
+                {" · "}
+                <TempoControl tempo={tempo} songTempo={songTempo} tempoUnit={tempoUnit} timeSignature={timeSignatureNow} hint={t("tempo.setHint")} onChange={changeTempo} testId="set-tempo" />
+              </>
+            ) : null}
+          </p>
           {reference ? (
             <a href={reference.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 self-start text-sm text-primary hover:underline" data-testid="version-reference">
               <ExternalLink className="size-3.5" />

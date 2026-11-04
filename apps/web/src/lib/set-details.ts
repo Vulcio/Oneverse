@@ -51,7 +51,11 @@ export function setDetailValue(detail: Exclude<SetListDetailValue, "TRANSITION">
   const song = item.song;
   if (!song) return null;
   if (detail === "KEY") return playedKey;
-  if (detail === "TEMPO") return song.tempo ? String(Math.round(song.tempo)) : null;
+  // The set's own tempo (issue #382), else the song's.
+  if (detail === "TEMPO") {
+    const tempo = item.tempoOverride ?? song.tempo;
+    return tempo ? String(Math.round(tempo)) : null;
+  }
   if (detail === "TIME_SIGNATURE") return song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : null;
   return song.durationSeconds ? formatDuration(song.durationSeconds) : null;
 }

@@ -3,7 +3,7 @@ import { CapoBadge } from "#/components/capo-badge";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PresenceChip } from "#/components/presence";
 import { useSongPresence, watchSong } from "#/lib/live-notes";
-import { tempoText } from "#/lib/tempo-unit";
+import { TempoControl } from "#/components/tempo-control";
 import { Mic, Pencil, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -74,7 +74,24 @@ export function PracticeSongPage({
   // How Practice reads (issue #209), as the Display panel changes it.
   const display = useDisplaySettings("PRACTICE", { account: { chordNotation: notation, capoDisplayMode: capoDisplay, chordDiagrams: diagrams, chordColors: colors }, saved: displaySettings });
   const player = useDiagramPlayer(accountPlayer);
-  const chart = useMemo(
+  // Their own tempo for it, practising (issue #382): kept with their chart preferences, the song's own untouched.
+  const [practiceTempo, setPracticeTempo] = useState<number | null>(null);
+  useEffect(() => {
+    setPracticeTempo(null);
+    let current = true;
+    apiClient
+      .getChartPreferences(version.id)
+      .then((preferences) => current && setPracticeTempo(preferences.tempo ?? null))
+      .catch(() => {});
+    return () => {
+      current = false;
+    };
+  }, [version.id]);
+  const changeTempo = (tempo: number | null) => {
+    setPracticeTempo(tempo);
+    void apiClient.saveChartPreferences(version.id, null, { tempo }).catch(() => {});
+  };
+  const written = useMemo(
     () =>
       renderChart(version.documentJson, null, {
         notation: chartNotation(display.chordNotation),
@@ -83,6 +100,8 @@ export function PracticeSongPage({
       }),
     [version, display.chordNotation, display.capoDisplayMode],
   );
+  // Played at their tempo: the metronome, the bars and the grid's click.
+  const chart = useMemo(() => (practiceTempo ? { ...written, tempo: practiceTempo } : written), [written, practiceTempo]);
   // Notes on the chart (issue #256).
   const notesContext = { songVersionId: version.id, songbookId };
   const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: version.documentJson, show: display.notes, marks: display.noteMarks, style: display.noteStyle, context: notesContext, openNoteId });
@@ -116,11 +135,7 @@ export function PracticeSongPage({
   // The line sung as the stems or the click play (issue #365): read along, while recording a part too.
   const chartArea = useRef<HTMLDivElement>(null);
   useSungLine(chartArea, version.id, chart, version.documentJson);
-  const details = [
-    ...references,
-    chart.key,
-    chart.tempo ? tempoText(chart.tempo, chart.tempoUnit, chart.timeSignature) : null,
-  ].filter(Boolean);
+  const details = [...references, chart.key].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-6" data-testid="practice-song">
@@ -138,7 +153,11 @@ export function PracticeSongPage({
           <p className="text-sm text-muted-foreground">
             {[artistNames(version.artists), getLanguageDisplayName(version.language, i18n.language)].filter(Boolean).join(" · ")}
           </p>
-          {details.length > 0 ? <p className="text-sm font-medium text-muted-foreground">{details.join(" · ")}</p> : null}
+          <p className="text-sm font-medium text-muted-foreground">
+            {details.join(" · ")}
+            {details.length > 0 ? " · " : null}
+            <TempoControl tempo={chart.tempo} songTempo={written.tempo} tempoUnit={chart.tempoUnit} timeSignature={chart.timeSignature} hint={t("tempo.practiceHint")} onChange={changeTempo} testId="practice-tempo" />
+          </p>
           <PresenceChip people={editors} doing="editing" />
           {/* The capo, hard to miss (issue #219). */}
           {chart.capo ? <CapoBadge capo={chart.capo} shapes={chart.capoShapes} /> : null}

@@ -304,6 +304,8 @@ export interface SetlistItem {
   position: number;
   /** Semitones relative to the song's own key. */
   transposeSteps: number;
+  /** Its own tempo in this set (issue #382), in the song's tempo note; null: the song's. Left out by an older API. */
+  tempoOverride?: number | null;
   notes: string | null;
   /** What happens after it (issue #199); null: nothing said. Missing from copies kept offline before then. */
   transition?: SetTransitionValue | null;
@@ -358,7 +360,7 @@ export interface SetTransitionView {
 
 export interface SetlistSongView {
   set: SetlistSummary;
-  item: { id: string; position: number; transposeSteps: number; notes: string | null; arrangementId: string | null; kind?: SetlistItemKind };
+  item: { id: string; position: number; transposeSteps: number; /** Its own tempo in this set (issue #382); null or left out: the song's. */ tempoOverride?: number | null; notes: string | null; arrangementId: string | null; kind?: SetlistItemKind };
   /** A text item's title and body (issue #305); null or left out for a song. */
   text?: SetlistItemText | null;
   /** A passage item's Bible, reference and verses (issue #301); null or left out for any other kind. */

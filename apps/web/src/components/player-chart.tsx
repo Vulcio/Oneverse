@@ -25,13 +25,15 @@ export function renderPlayerChart(
   extraSteps = 0,
 ): RenderedChart {
   const song = view.song!;
-  return renderChart(song.document, view.arrangement?.document ?? null, {
+  const chart = renderChart(song.document, view.arrangement?.document ?? null, {
     transposeSteps: view.item.transposeSteps + extraSteps,
     preferences,
     notation: chartNotation(notation),
     capoDisplay: capoDisplay === "FINGERED" ? "shapes" : "sounding",
     suggestedCapo: song.suggestedCapo,
   });
+  // The set's own tempo (issue #382), on top of the song's or its arrangement's.
+  return view.item.tempoOverride ? { ...chart, tempo: view.item.tempoOverride } : chart;
 }
 
 /**

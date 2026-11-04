@@ -280,6 +280,8 @@ export class SetlistsService {
           passage: null,
           position: item.position,
           transposeSteps: item.transposeSteps,
+          // Its own tempo in this set (issue #382); null: the song's.
+          tempoOverride: item.tempoOverride,
           notes: item.notes,
           // What happens after it (issue #199).
           transition: item.transition,
@@ -437,8 +439,8 @@ export class SetlistsService {
     const item = await this.findItem(setlistId, itemId);
     // Not a song (issue #305): only what every item has, a text's text and a passage's passage (issue #301).
     if (!item.songVersionId) {
-      if (dto.songVersionId !== undefined || dto.arrangementId !== undefined || dto.transposeSteps !== undefined || dto.transitionChords !== undefined) {
-        throw new BadRequestException("Only a song has a version, an arrangement, a key or transition chords");
+      if (dto.songVersionId !== undefined || dto.arrangementId !== undefined || dto.transposeSteps !== undefined || dto.tempoOverride !== undefined || dto.transitionChords !== undefined) {
+        throw new BadRequestException("Only a song has a version, an arrangement, a key, a tempo or transition chords");
       }
       if (dto.text !== undefined && item.kind !== "TEXT") throw new BadRequestException("Only a text item has a text");
       if (dto.passage !== undefined && item.kind !== "PASSAGE") throw new BadRequestException("Only a passage item has a passage");
@@ -495,6 +497,7 @@ export class SetlistsService {
         ...(switching && { songVersionId, sharedByUserId: null }),
         ...(arrangementId !== undefined && { arrangementId }),
         ...(dto.transposeSteps !== undefined && { transposeSteps: dto.transposeSteps }),
+        ...(dto.tempoOverride !== undefined && { tempoOverride: dto.tempoOverride }),
         ...(dto.notes !== undefined && { notes: dto.notes || null }),
         ...(dto.transition !== undefined && { transition: dto.transition }),
         ...(dto.transitionNote !== undefined && { transitionNote: dto.transitionNote }),
@@ -600,7 +603,7 @@ export class SetlistsService {
 
     return {
       set: { ...summarize(set), itemCount: set.items.length, canEdit: access.canEdit, isGuest: access.isGuest },
-      item: { id: item.id, position: item.position, transposeSteps: item.transposeSteps, notes: item.notes, arrangementId: arrangement?.id ?? null, kind: item.kind },
+      item: { id: item.id, position: item.position, transposeSteps: item.transposeSteps, tempoOverride: item.tempoOverride, notes: item.notes, arrangementId: arrangement?.id ?? null, kind: item.kind },
       // A text item's (issue #305).
       text: song ? null : readItemText(item.text),
       // A passage's (issue #301), with its verses as `passages` may have them.

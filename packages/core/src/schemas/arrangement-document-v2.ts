@@ -180,5 +180,7 @@ export const ChartPreferencesSchema = z.object({
   pdfId: z.string().min(1).max(64).optional(),
   /** What plays with the song (issue #366): left out, what it has decides (defaultPlaybackSource). */
   playback: z.enum(PLAYBACK_SOURCES).optional(),
+  /** Their own tempo for it, practising (issue #382), in the song's tempo note; null or left out: the song's. */
+  tempo: z.number().min(20).max(300).nullable().optional(),
 });
 export type ChartPreferences = z.infer<typeof ChartPreferencesSchema>;

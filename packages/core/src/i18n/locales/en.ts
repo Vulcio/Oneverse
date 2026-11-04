@@ -887,6 +887,16 @@ const en = {
       NONE: "Nothing",
     },
   },
+  tempo: {
+    title: "Tempo",
+    none: "No tempo",
+    change: "Tempo: {{tempo}}. Change it",
+    slower: "Slower",
+    faster: "Faster",
+    reset: "Back to the song's tempo ({{tempo}})",
+    practiceHint: "Yours, for practising this song: the song keeps its own tempo.",
+    setHint: "This set's tempo for the song: the song keeps its own.",
+  },
   metronome: {
     title: "Metronome",
     description: "Set the tempo, the time signature and which beats sound. It keeps time while you move around the app.",
