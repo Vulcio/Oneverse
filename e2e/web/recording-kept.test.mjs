@@ -120,7 +120,12 @@ await step("one cut short can be discarded instead", async () => {
   const cut = page.locator('[data-testid="stored-take"][data-state="recording"]');
   await cut.waitFor();
   await cut.getByRole("button", { name: "Discard" }).click();
+  // On a phone, asking to confirm keeps the take's name readable: the buttons wrap under it.
+  await page.setViewportSize({ width: 390, height: 844 });
+  const name = await cut.locator("span.truncate").first().boundingBox();
+  if (!name || name.width < 120 || name.height > 40) throw new Error(`name squeezed: ${JSON.stringify(name)}`);
   await cut.getByRole("button", { name: "Discard this take" }).click();
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByTestId("stored-takes").waitFor({ state: "detached" });
   if ((await files()).length !== 3) throw new Error("uploaded");
 });
