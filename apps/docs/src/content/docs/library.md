@@ -298,6 +298,21 @@ A kept take is recorded as a WAV file, then turned into Opus in the background (
 
 To do the same afterwards, **Clean up** under an audio file you can change offers **Clean up the voice (RNNoise)** for a voice, **Even out the level** and **Reduce background noise**: it's done in the background, and the file comes back as Opus, in time as before.
 
+#### Devices tried
+
+Recording depends on the device and the browser: how long the sound takes to come out and go back in, and what the browser lets a page do with the microphone. What has been tried so far:
+
+| Device and browser | Recording | Notes |
+| --- | --- | --- |
+| Chrome on a computer (Linux) | Works | Checked by the automated tests, with a simulated microphone |
+| iPhone and iPad (Safari) | Not tried yet | |
+| Android phone (Chrome) | Not tried yet | |
+| Mac (Safari, Chrome) | Not tried yet | |
+| Windows (Chrome, Edge) | Not tried yet | |
+| Bluetooth headphones | Not tried yet | Expect a large delay: clap along to measure it |
+
+This list grows as people try more devices. If yours misbehaves, say which device, browser and headphones you used.
+
 ## Submitting to the global catalogue
 
 The **Global catalogue** card on your own song (or a team song you administer) offers it to everyone. **Submit for review**, optionally with a note for the reviewer; copyright and CCLI details help but aren't required. A reviewer then publishes it, asks for changes, or declines it, and you see where it stands on the same card.

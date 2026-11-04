@@ -298,6 +298,21 @@ Une prise gardée est enregistrée en WAV, puis convertie en Opus en arrière-pl
 
 Pour faire de même après coup, **Nettoyer** sous un fichier audio que vous pouvez modifier propose **Nettoyer la voix (RNNoise)** pour une voix, **Égaliser le niveau** et **Réduire le bruit de fond** : c'est fait en arrière-plan, et le fichier revient en Opus, calé comme avant.
 
+#### Appareils essayés
+
+L'enregistrement dépend de l'appareil et du navigateur : le temps que met le son à sortir et à revenir, et ce que le navigateur permet à une page de faire avec le micro. Ce qui a été essayé jusqu'ici :
+
+| Appareil et navigateur | Enregistrement | Remarques |
+| --- | --- | --- |
+| Chrome sur un ordinateur (Linux) | Fonctionne | Vérifié par les tests automatiques, avec un micro simulé |
+| iPhone et iPad (Safari) | Pas encore essayé | |
+| Téléphone Android (Chrome) | Pas encore essayé | |
+| Mac (Safari, Chrome) | Pas encore essayé | |
+| Windows (Chrome, Edge) | Pas encore essayé | |
+| Casque Bluetooth | Pas encore essayé | Attendez-vous à un grand retard : tapez dans les mains pour le mesurer |
+
+Cette liste s'allonge à mesure que d'autres appareils sont essayés. Si le vôtre se comporte mal, dites quel appareil, quel navigateur et quel casque vous utilisiez.
+
 ## Proposer au catalogue global
 
 La carte **Catalogue global** de votre chant (ou d'un chant d'équipe que vous administrez) le propose à tout le monde. **Proposer à la relecture**, avec une note pour le relecteur si vous le souhaitez ; le copyright et le numéro CCLI aident mais ne sont pas obligatoires. Un relecteur le publie, demande des modifications ou le refuse, et vous suivez où il en est sur la même carte.
