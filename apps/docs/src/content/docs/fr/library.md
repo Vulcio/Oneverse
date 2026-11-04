@@ -217,6 +217,20 @@ Le master, le dernier enregistrement du chant, joue dans le même lecteur, comme
 
 Les pistes gardées sur votre appareil pour le hors ligne (**Avec l'audio**, voir [Hors ligne](/fr/offline/)) se lisent aussi hors ligne.
 
+### La vue Pistes
+
+**Pistes**, à côté de **Grille** et **Mesures** au-dessus d'un chant qui a des pistes (en Session, et sur sa page dans une liste), montre ses pistes en couloirs, comme dans un logiciel de studio. Le lecteur doit avoir chargé les pistes du chant : appuyez une fois sur **Lecture**.
+
+![La vue Pistes : les sections en haut, les paroles chantées, un couloir par piste sous la tête de lecture](../../../assets/screenshots/fr/tracks.jpg)
+
+- **En haut**, les sections de tout le chant (une fois [placées](/fr/library/#les-sections-dun-enregistrement)), avec un cadre autour du passage montré dans les couloirs. Touchez-le pour y aller.
+- **Les paroles** chantées, avec la ligne d'avant et celle d'après.
+- **Un couloir par piste** : sa forme d'onde sous la tête de lecture, plus foncée sur ce qui a été joué, avec les mesures marquées. **M** et **S** la coupent ou la mettent en solo, comme dans le lecteur, et une piste coupée est pâle. Touchez un couloir pour aller à cet endroit.
+- **Zoomez** avec **-** et **+**, de 8 secondes à tout le chant.
+- **Pendant que vous enregistrez une piste** dans le lecteur, la prise a son propre couloir rouge, qui grandit à mesure que vous chantez. Avec les couloirs à l'écran, le lecteur ne montre que l'enregistreur, puisque les couloirs ont déjà les pistes.
+
+Le choix est gardé pour le chant sur cet appareil. Live lit le chant comme avant.
+
 ### Multipistes
 
 Un chant peut avoir plus d'un jeu de pistes : ses **Pistes d'origine**, et des multipistes - des pistes enregistrées ensemble, une autre version ou vos propres couches (voir [Enregistrer une piste](/fr/library/#enregistrer-une-piste)). Chacun a son cadre dans l'onglet **Audio**, avec son **Nom**, son nombre de pistes (et d'autres prises), la liste pour laquelle il a été enregistré s'il y en a une (**Pour aucune liste** l'en retire), et ce dans quoi ses pistes ont été enregistrées : tonalité, tempo, mesure et premier temps, qu'elles partagent. Ses fichiers sont listés dans son cadre : ses pistes d'abord - importées ou séparées - puis **Enregistrements**, les pistes que des personnes y ont enregistrées dans Songverse, chacune disant qui et quand, pour ne jamais les confondre avec les pistes. Elles se jouent toujours avec les pistes de ce multipiste. Sous une piste, la liste **Multipiste** la déplace dans un autre, ou dans un **Nouveau multipiste** à elle : importez les fichiers d'une autre version, puis rassemblez-les ainsi.

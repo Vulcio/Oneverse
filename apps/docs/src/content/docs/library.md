@@ -217,6 +217,20 @@ The master, the song's latest recording, plays in the same player, as one part. 
 
 Stems kept on your device for offline use (**Include audio**, see [Working offline](/offline/)) play offline too.
 
+### The Tracks view
+
+**Tracks**, beside **Chart** and **Grid** above a song with stems (in Practice, and on its page in a set), shows its parts as lanes, as in a recording studio's software. The player has to have the song's stems loaded: press **Play** once.
+
+![The Tracks view: the sections across the top, the words being sung, a lane per part under the playhead](../../assets/screenshots/en/tracks.jpg)
+
+- **Across the top**, the whole song's sections (once they're [placed](/library/#the-sections-of-a-recording)), with a box round the part the lanes show. Tap it to go there.
+- **The words** being sung, with the line before and the line after.
+- **A lane per part**: its waveform under the playhead, darker where it's been played, with the bars marked. **M** and **S** mute and solo it, as in the player, and a muted part is faint. Tap a lane to go to that point.
+- **Zoom** with **-** and **+**, from 8 seconds to the whole song.
+- **While you record a part** in the player, the take gets a red lane of its own, growing as you sing. With the lanes on screen, the player shows only the recorder, since the lanes already have the parts.
+
+The choice is kept for the song on this device. Live reads the song as before.
+
 ### Multitracks
 
 A song can have more than one set of stems: its **Original stems**, and multitracks - parts recorded together, another version or your own layers (see [Recording a part](/library/#recording-a-part)). Each has its box on the **Audio** tab, with its **Name**, its number of parts (and of other takes), the set it was recorded for if any (**Not for a set** takes it off), and what its parts were recorded in: its key, tempo, time signature and first beat, which they share. Its files are listed in its box: its stems first - uploaded or separated - then **Recordings**, the parts people recorded into it in Songverse, each saying who and when, so they're never mixed up with the stems. They still play with that multitrack's stems. Under a stem, the **Multitrack** list moves it into another one, or into a **New multitrack** of its own: upload the files of another version, then put them together that way.

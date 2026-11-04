@@ -38,3 +38,10 @@ export function peaksAhead(buffers: AudioBuffer[], from: number, count: number):
   }
   return result;
 }
+
+/**
+ * The take being recorded in the player (issue #374), for the Tracks view's
+ * lane: where it started in the multitrack (s) and what the microphone has
+ * heard since, a column at a time. `from` is null when nothing records.
+ */
+export const liveTake: { from: number | null; peaks: number[] } = { from: null, peaks: [] };

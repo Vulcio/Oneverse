@@ -1,4 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
+import { useTracksShown } from "#/lib/tracks-shown";
 import { formatDuration, type StemPart } from "@oneverse/core";
 import {
   ArrowUpDown,
@@ -126,7 +127,7 @@ const PART_ICONS: Record<StemPart, LucideIcon> = {
 // Clear of the screen's rounded corners and the home indicator on a phone.
 const EDGES = "pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] md:px-6";
 
-function useTrackName() {
+export function useTrackName() {
   const { t } = useTranslation();
   return (track: StemTrack) => track.partName || (track.part ? `${t(`stems.parts.${track.part}`)}${track.number ? ` ${track.number}` : ""}` : t("stems.fullMix"));
 }
@@ -348,6 +349,8 @@ export function StemDock({ song: page }: { song: StemSong }) {
   const [recorderOpen, setRecorderOpen] = useState(false);
   // Recording in the player (issue #365): on a phone, its tracks or the take; and whether a take is being recorded.
   const [dockTab, setDockTab] = useState<"mix" | "record">("record");
+  // The page shows its Tracks view (issue #374): the parts are there.
+  const lanesShown = useTracksShown();
   const [recordingNow, setRecordingNow] = useState(false);
   const recordable = !!song.record && !following;
   /** One of the viewer's own parts (uploaded or recorded), loaded: record into it, merge it, delete it (someone else's are theirs, or the Audio tab's). */
@@ -809,7 +812,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
             /> : null}
           {recordPanel && recordable && song.record ? (
             // Recording (issue #365) is a part of the player, over its own mix and clock: the take and the tracks side by side on a wide screen, one above the other on a tall one (a tablet upright), two tabs on a phone.
-            <div className="flex flex-col gap-2 md:gap-3 md:landscape:grid md:landscape:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] md:landscape:items-start md:landscape:gap-4" data-testid="stem-record-split">
+            <div className={cn("flex flex-col gap-2 md:gap-3", !lanesShown && "md:landscape:grid md:landscape:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] md:landscape:items-start md:landscape:gap-4")} data-testid="stem-record-split" data-lanes={lanesShown ? "" : undefined}>
               <div className="grid grid-cols-2 rounded-md bg-muted p-[3px] text-sm md:hidden" role="tablist" aria-label={t("stems.title")}>
                 <button type="button" role="tab" aria-selected={dockTab === "mix"} className={cn("h-8 rounded-sm", dockTab === "mix" ? "bg-background font-medium shadow-sm" : "text-muted-foreground")} onClick={() => setDockTab("mix")} data-testid="stem-tab-mix">
                   {t("stems.mixTab", { count: tracks.length })}
@@ -819,8 +822,9 @@ export function StemDock({ song: page }: { song: StemSong }) {
                   {t("stems.recordTab")}
                 </button>
               </div>
-              <div className={cn("flex min-w-0 flex-col gap-2 md:landscape:col-start-1 md:landscape:row-start-1", dockTab !== "mix" && "hidden md:flex")}>{mixContent}</div>
-              <div className={cn("min-w-0 md:portrait:order-first md:landscape:col-start-2 md:landscape:row-start-1", dockTab !== "record" && "hidden md:block")}>
+              {/* The page's Tracks view has the parts, with their mutes and solos (issue #374): on a wider screen, the recorder alone, so it all fits. */}
+              <div className={cn("flex min-w-0 flex-col gap-2 md:landscape:col-start-1 md:landscape:row-start-1", dockTab !== "mix" && "hidden md:flex", lanesShown && "md:hidden")}>{mixContent}</div>
+              <div className={cn("min-w-0 md:portrait:order-first", !lanesShown && "md:landscape:col-start-2 md:landscape:row-start-1", dockTab !== "record" && "hidden md:block")}>
             <RecordScreen
               songVersionId={song.songVersionId}
               songTitle={song.title}

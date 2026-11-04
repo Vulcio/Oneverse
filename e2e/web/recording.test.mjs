@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { API, WEB, api, call, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SP, WEB, api, call, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 
 const FIXTURES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../fixtures/stems");
 
@@ -313,8 +313,14 @@ await step("recording in the player (issue #134): from bar 2 over the mix transp
   await dialog().getByTestId("recorder-start").click();
   await countIn().waitFor();
   await dialog().getByText(/Recording 0:0[4-9]/).waitFor({ timeout: 15000 });
+  // The Tracks view (issue #374), meanwhile: the take a lane of its own, under the others.
+  await page.getByTestId("chart-view-tracks").click();
+  await page.getByTestId("tracks-view").getByTestId("tracks-take").waitFor({ timeout: 5000 });
   await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${SP}/recording-tracks.png` });
   await dialog().getByTestId("recorder-stop").click();
+  await page.getByTestId("tracks-view").getByTestId("tracks-take").waitFor({ state: "detached" });
+  await page.getByTestId("chart-view-chart").click();
   // Heard back in the player: the take, a track like the others.
   await dialog().getByTestId("recorder-preview").click();
   await player.locator('[data-testid="stem-track"]').filter({ hasText: "New take · Harmony 3 (tenor)" }).waitFor({ timeout: 15000 });

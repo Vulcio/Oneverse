@@ -25,6 +25,8 @@ import { setMode } from "#/lib/mode";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
 import { useSungLine } from "#/lib/sung-line";
+import { TracksView } from "#/components/tracks-view";
+import { stemsOf } from "#/lib/stem-engine";
 
 /**
  * A library song in Practice (issue #67): its chart, as written and read
@@ -173,6 +175,8 @@ export function PracticeSongPage({
         attachments={attachments}
         defaultView={liveView}
         store={songViewStore(version.id)}
+        // Its parts as lanes, as in a DAW (issue #374), when it has stems.
+        tracks={stemsOf(attachments).length > 0 ? <TracksView songVersionId={version.id} chart={chart} document={version.documentJson} attachments={attachments} cueSections={cueSections.sections} /> : undefined}
         grid={
           <Card>
             <CardContent style={{ zoom: display.textSize }}>

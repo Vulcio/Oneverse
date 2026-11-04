@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@oneverse/ui/lib/utils";
 import { along } from "#/components/input-level";
 import type { Recorder } from "#/lib/recorder";
-import { COLUMN, peaksAhead } from "#/lib/take-strip";
+import { COLUMN, liveTake, peaksAhead } from "#/lib/take-strip";
 
 /** Each column's width and the gap after it (CSS px). */
 const BAR = 3;
@@ -106,12 +106,26 @@ export function TakeStrip({
       context.fillStyle = colours.head;
       context.fillRect(middle - 1, 0, 2, height);
     };
+    let wasRecording = false;
     const timer = setInterval(() => {
-      heard.current.push(recorder.inputPeak());
+      const peak = recorder.inputPeak();
+      heard.current.push(peak);
+      // Shared with the Tracks view (issue #374): the take's own lane, from where it started.
+      const { recording: now, position } = latest.current;
+      if (now && !wasRecording) {
+        liveTake.from = position();
+        liveTake.peaks = [];
+      }
+      if (now && liveTake.from !== null) liveTake.peaks.push(peak);
+      if (!now && wasRecording) liveTake.from = null;
+      wasRecording = now;
       if (heard.current.length > KEPT) heard.current.splice(0, heard.current.length - KEPT);
       draw();
     }, COLUMN * 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (wasRecording) liveTake.from = null;
+    };
   }, [recorder]);
 
   return <canvas ref={canvas} className={cn("block h-16 w-full rounded-md bg-muted/40", className)} role="img" aria-label={t("recorder.screen.strip")} data-testid="take-strip" />;

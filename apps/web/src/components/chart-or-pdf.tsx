@@ -1,5 +1,5 @@
 import type { Attachment, ChartPreferences, LiveViewValue } from "@oneverse/core";
-import { FileText, LayoutGrid, Loader2, Music } from "lucide-react";
+import { AudioLines, FileText, LayoutGrid, Loader2, Music } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -123,10 +123,11 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
 }
 
 /** The Chart / Grid / PDF switch - PDF when the song has one - and which PDF when there are several. */
-export function ViewSwitch({ reading, compact = false }: { reading: ReadingView; compact?: boolean }) {
+export function ViewSwitch({ reading, compact = false, tracks }: { reading: ReadingView; compact?: boolean; /** The Tracks view (issue #374), where the page offers it: shown or not, and how to show it. */ tracks?: { shown: boolean; show: () => void } }) {
   const { t } = useTranslation();
   const { pdfs, shown, grid, choose } = reading;
-  const chart = !shown && !grid;
+  const onTracks = !!tracks?.shown;
+  const chart = !shown && !grid && !onTracks;
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="chart-view">
       <div className="inline-flex rounded-md border p-0.5" role="group" aria-label={t("chartView.label")}>
@@ -143,9 +144,9 @@ export function ViewSwitch({ reading, compact = false }: { reading: ReadingView;
         </button>
         <button
           type="button"
-          aria-pressed={grid}
+          aria-pressed={grid && !onTracks}
           onClick={() => choose("GRID")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", grid ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", grid && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
           title={compact ? t("chartView.grid") : undefined}
           data-testid="chart-view-grid"
         >
@@ -155,9 +156,9 @@ export function ViewSwitch({ reading, compact = false }: { reading: ReadingView;
         {pdfs.length > 0 ? (
           <button
             type="button"
-            aria-pressed={!!shown}
+            aria-pressed={!!shown && !onTracks}
             onClick={() => choose("PDF", shown?.id ?? pdfs[0]!.id)}
-            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", shown ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", shown && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
             title={compact ? t("chartView.pdf") : undefined}
             data-testid="chart-view-pdf"
           >
@@ -165,8 +166,21 @@ export function ViewSwitch({ reading, compact = false }: { reading: ReadingView;
             <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.pdf")}</span>
           </button>
         ) : null}
+        {tracks ? (
+          <button
+            type="button"
+            aria-pressed={onTracks}
+            onClick={tracks.show}
+            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+            title={compact ? t("chartView.tracks") : undefined}
+            data-testid="chart-view-tracks"
+          >
+            <AudioLines />
+            <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.tracks")}</span>
+          </button>
+        ) : null}
       </div>
-      {shown && pdfs.length > 1 && !compact ? (
+      {shown && !onTracks && pdfs.length > 1 && !compact ? (
         <NativeSelect compact value={shown.id} onChange={(event) => choose("PDF", event.target.value)} aria-label={t("chartView.which")}>
           {pdfs.map((file) => (
             <option key={file.id} value={file.id}>
@@ -190,6 +204,7 @@ export function ChartOrPdf({
   defaultView,
   store,
   grid,
+  tracks,
   children,
 }: {
   songVersionId: string;
@@ -198,17 +213,57 @@ export function ChartOrPdf({
   store: ViewStore;
   /** The song's chord grid; without one (no chart), the chart's place shows. */
   grid?: ReactNode;
+  /** Its parts as lanes (issue #374), where the song has stems. */
+  tracks?: ReactNode;
   children: ReactNode;
 }) {
   const reading = useReadingView(songVersionId, attachments, defaultView, store);
   const { shown } = reading;
+  const [onTracks, setOnTracks] = useTracksChoice(songVersionId);
+  const switching: ReadingView = {
+    ...reading,
+    choose: (view, pdfId) => {
+      setOnTracks(false);
+      reading.choose(view, pdfId);
+    },
+  };
   return (
     <div className="flex flex-col gap-3">
-      <ViewSwitch reading={reading} />
+      <ViewSwitch reading={switching} tracks={tracks ? { shown: onTracks, show: () => setOnTracks(true) } : undefined} />
       {/* On a phone, out to the screen's edges (the page's gutter, --gutter). */}
-      {shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : reading.grid && grid ? grid : children}
+      {tracks && onTracks ? tracks : shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : reading.grid && grid ? grid : children}
     </div>
   );
+}
+
+const TRACKS_KEY = "songverse.tracksView.";
+
+/**
+ * Whether a song is read as its tracks (issue #374): kept on this device, by
+ * song - not with the chart preferences, as Live doesn't show it.
+ */
+function useTracksChoice(songVersionId: string): [boolean, (on: boolean) => void] {
+  const read = () => {
+    try {
+      return localStorage.getItem(TRACKS_KEY + songVersionId) === "1";
+    } catch {
+      return false;
+    }
+  };
+  const [on, setOn] = useState(false);
+  useEffect(() => setOn(read()), [songVersionId]);
+  return [
+    on,
+    (next) => {
+      setOn(next);
+      try {
+        if (next) localStorage.setItem(TRACKS_KEY + songVersionId, "1");
+        else localStorage.removeItem(TRACKS_KEY + songVersionId);
+      } catch {
+        // Not kept: for this page only.
+      }
+    },
+  ];
 }
 
 /** Where pdf.js reads a PDF from: a signed address it fetches by byte ranges (streamed), or bytes already here (offline). */

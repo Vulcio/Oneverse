@@ -516,6 +516,8 @@ try {
     }
     // The chord grid (issue #238): the song read as its bars, the click playing; then back to the chart, which is kept for the song.
     {
+      // In Practice, as the bars were (the mode has been seen back at Edit by now).
+      await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
       await page.goto(`${WEB}/library/${grace.id}`);
       await page.getByTestId("chart-view-grid").click();
       const grid = page.getByTestId("chord-grid");
@@ -553,6 +555,7 @@ try {
     await page.keyboard.press("Escape");
     await api(me, "PATCH", "/users/me", { chordDiagrams: "OFF" });
     const dock = page.getByTestId("stem-player");
+    await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
     await shoot("stems-compact", `/library/${grace.id}`, async () => {
       await page.locator('[data-testid="stem-player"][data-state="ready"]').waitFor({ timeout: 20000 });
       await dock.getByTestId("stem-compact-waveform").getByTestId("stem-waveform").waitFor();
@@ -574,6 +577,22 @@ try {
       await dock.getByTestId("stem-cue-editor").waitFor();
     }, { element: dock });
     await dock.getByTestId("stem-cues").click();
+    // The Tracks view (issue #374): the parts as lanes, the sections above, the words being sung.
+    await shoot("tracks", null, async () => {
+      // From the second verse, the player minimised so the lanes show above it.
+      await dock.getByRole("slider").fill("8");
+      await dock.getByRole("button", { name: /^(Minimize the player|Réduire le lecteur)$/ }).click();
+      await page.getByTestId("chart-view-tracks").click();
+      await page.locator('[data-testid="tracks-view"][data-state="ready"]').waitFor();
+      await dock.getByTestId("stem-play").click();
+      await page.locator('[data-testid="stem-player"][data-state="playing"]').waitFor();
+      await page.waitForTimeout(2500);
+      await dock.getByTestId("stem-play").click();
+      await page.locator('[data-testid="stem-player"][data-state="ready"]').waitFor();
+      await page.getByTestId("tracks-view").scrollIntoViewIfNeeded();
+    }, { element: page.getByTestId("tracks-view") });
+    await page.getByTestId("chart-view-chart").click();
+    await dock.getByRole("button", { name: /^(Expand the player|Agrandir le lecteur)$/ }).click();
     // Recording in the player (issues #134, #365): its Record tab, beside the Mix on a wide screen.
     await shoot("stems-record", null, async () => {
       await dock.getByTestId("stem-record").click();

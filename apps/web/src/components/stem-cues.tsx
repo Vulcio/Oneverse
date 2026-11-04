@@ -9,7 +9,7 @@ import { playStems, seekStems, useStems, type StemSong } from "#/lib/stem-engine
 import { cn } from "@oneverse/ui/lib/utils";
 
 /** The structure bar's colours (Live, issue #68), as CSS colours. */
-const GROUP_COLOURS: Record<StructureGroup, string> = {
+export const GROUP_COLOURS: Record<StructureGroup, string> = {
   edge: "var(--color-violet-500)",
   verse: "var(--color-sky-500)",
   chorus: "var(--color-amber-400)",
@@ -17,7 +17,7 @@ const GROUP_COLOURS: Record<StructureGroup, string> = {
   instrumental: "var(--color-emerald-500)",
   other: "var(--color-zinc-500)",
 };
-const GROUP_TEXT: Record<StructureGroup, string> = {
+export const GROUP_TEXT: Record<StructureGroup, string> = {
   edge: "text-white",
   verse: "text-white",
   chorus: "text-black",

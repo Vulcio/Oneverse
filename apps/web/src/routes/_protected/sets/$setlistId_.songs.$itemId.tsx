@@ -4,7 +4,9 @@ import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MetronomeSongButton } from "#/components/metronome";
-import { PlayerChart } from "#/components/player-chart";
+import { PlayerChart, renderPlayerChart } from "#/components/player-chart";
+import { TracksView } from "#/components/tracks-view";
+import { stemsOf } from "#/lib/stem-engine";
 import { SyncControl } from "#/components/sync-control";
 import { useSongPlayback } from "#/components/song-playback";
 import { setPlaybackStore, usePrefetchSetItem } from "#/lib/playback";
@@ -174,6 +176,12 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
           songVersionId={song.id}
           defaultView={view.view.liveView ?? "CHART"}
           store={setSongViewStore(set.id, item.id, view.view.preferences)}
+          // Its parts as lanes (issue #374), when it has stems.
+          tracks={
+            mode === "practice" && stemsOf(files.attachments).length > 0 ? (
+              <TracksView songVersionId={song.id} chart={renderPlayerChart(view)} document={song.document} attachments={files.attachments} cueSections={files.cueSections?.sections ?? []} />
+            ) : undefined
+          }
           grid={
             <Card>
               <CardContent>
