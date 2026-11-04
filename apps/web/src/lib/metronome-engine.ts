@@ -1,4 +1,4 @@
-import { beatAt, clicksBetween, normalizeMetronome, secondsPerBeat, sharedMetronomeSettings, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
+import { beatAt, clickPulse, clicksBetween, normalizeMetronome, secondsPerBeat, sharedMetronomeSettings, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
@@ -537,7 +537,10 @@ export function useMetronomeBeat(): MetronomeBeat | null {
       const heard = ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0);
       const position = positionAt(heard);
       if (position >= 0) {
-        const whole = Math.floor(position);
+        // Lit on the last click heard (issue #377): in 6/8 by dotted quarters, beats 1 and 4, unless the eighths click too.
+        const step = clickPulse(settings) / (settings.subdivision || 1);
+        const start = Math.floor(position / settings.numerator) * settings.numerator;
+        const whole = step > 1 ? start + Math.floor(Math.floor((position - start) / step + 1e-9) * step + 1e-9) : Math.floor(position);
         if (whole !== last) {
           last = whole;
           const { bar, beat } = beatAt(settings, whole);

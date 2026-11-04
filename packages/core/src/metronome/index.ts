@@ -60,6 +60,23 @@ export function beatsPerTempoUnit(unit: TempoUnit, denominator: number): number 
   return (denominator / note) * (dotted ? 1.5 : 1);
 }
 
+const fits = (a: number, b: number) => Math.abs(a / b - Math.round(a / b)) < 1e-9;
+
+/**
+ * How many of the time signature's beats each main click lasts: the tempo's
+ * note when it falls on the bar's own pulse (eighths or dotted quarters in
+ * 6/8, halves or eighths in 4/4), else that pulse - a quarter in 6/8 or a
+ * dotted eighth would click between or across its beats, never where its beats are, so
+ * that note only sets the speed (issue #377).
+ */
+export function clickPulse(settings: Pick<MetronomeSettings, "tempoUnit" | "numerator" | "denominator">): number {
+  const felt = beatsPerTempoUnit(defaultTempoUnit(settings), settings.denominator);
+  const unit = beatsPerTempoUnit(settings.tempoUnit ?? defaultTempoUnit(settings), settings.denominator);
+  // On the beats (whole beats, or an even split of one), and on the bar's pulse.
+  const onBeats = fits(unit, 1) || fits(1, unit);
+  return onBeats && (fits(felt, unit) || (fits(unit, felt) && fits(settings.numerator, unit))) ? unit : felt;
+}
+
 /** How a beat sounds: accented, as usual, or not at all. */
 export type BeatLevel = "accent" | "normal" | "mute";
 /** Clicks per beat: 1, eighths (2), triplets (3), sixteenths (4). */
@@ -196,8 +213,9 @@ export function beatAt(settings: Pick<MetronomeSettings, "numerator" | "countIn"
 
 /**
  * The clicks from `from` (included) to `to` (not), in beats. The main
- * clicks follow the tempo's note from each bar's start (issue #377: in 6/8
- * counted in dotted quarters, beats 1 and 4), split into `subdivision`
+ * clicks follow the tempo's note from each bar's start where it falls on
+ * the bar's pulse (clickPulse; issue #377: in 6/8 counted in dotted
+ * quarters, beats 1 and 4), split into `subdivision`
  * (triplets there play every eighth). A main click on a beat sounds as the
  * pattern says, one between beats as usual; a muted beat mutes what falls in
  * it. During the count-in every main click sounds, the first of each bar
@@ -208,7 +226,7 @@ export function clicksBetween(settings: MetronomeSettings, from: number, to: num
   const { numerator, subdivision } = settings;
   const step = 1 / subdivision;
   // A main click lasts `pulse` beats; each bar starts them again.
-  const pulse = beatsPerTempoUnit(settings.tempoUnit ?? defaultTempoUnit(settings), settings.denominator);
+  const pulse = clickPulse(settings);
   const perBar = Math.ceil((numerator * subdivision) / pulse - 1e-9);
   for (let barIndex = Math.max(0, Math.floor(from / numerator)); barIndex * numerator < to; barIndex++) {
     for (let index = 0; index < perBar; index++) {

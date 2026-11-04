@@ -1859,6 +1859,132 @@
           ]
         },
         {
+          "name": "6/8 in quarters: the speed only, the clicks on its dotted quarters",
+          "args": [
+            {
+              "tempo": 71,
+              "tempoUnit": "1/4",
+              "numerator": 6,
+              "denominator": 8
+            },
+            0,
+            12
+          ],
+          "expected": [
+            {
+              "position": 0,
+              "tick": 0,
+              "bar": 0,
+              "beat": 0,
+              "sub": 0,
+              "level": "accent",
+              "note": 34,
+              "channel": 10,
+              "velocity": 120,
+              "countIn": false
+            },
+            {
+              "position": 3,
+              "tick": 720,
+              "bar": 0,
+              "beat": 3,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 6,
+              "tick": 1440,
+              "bar": 1,
+              "beat": 0,
+              "sub": 0,
+              "level": "accent",
+              "note": 34,
+              "channel": 10,
+              "velocity": 120,
+              "countIn": false
+            },
+            {
+              "position": 9,
+              "tick": 2160,
+              "bar": 1,
+              "beat": 3,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            }
+          ]
+        },
+        {
+          "name": "6/8 in dotted eighths: the speed only, the clicks on its dotted quarters",
+          "args": [
+            {
+              "tempo": 71,
+              "tempoUnit": "1/8.",
+              "numerator": 6,
+              "denominator": 8
+            },
+            0,
+            12
+          ],
+          "expected": [
+            {
+              "position": 0,
+              "tick": 0,
+              "bar": 0,
+              "beat": 0,
+              "sub": 0,
+              "level": "accent",
+              "note": 34,
+              "channel": 10,
+              "velocity": 120,
+              "countIn": false
+            },
+            {
+              "position": 3,
+              "tick": 720,
+              "bar": 0,
+              "beat": 3,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 6,
+              "tick": 1440,
+              "bar": 1,
+              "beat": 0,
+              "sub": 0,
+              "level": "accent",
+              "note": 34,
+              "channel": 10,
+              "velocity": 120,
+              "countIn": false
+            },
+            {
+              "position": 9,
+              "tick": 2160,
+              "bar": 1,
+              "beat": 3,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            }
+          ]
+        },
+        {
           "name": "4/4 in eighths, the second beat muted",
           "args": [
             {
@@ -1926,7 +2052,7 @@
           ]
         },
         {
-          "name": "4/4 in dotted quarters: 3 + 3 + 2",
+          "name": "4/4 in dotted quarters: off its beats, so the speed only, the clicks on the quarters",
           "args": [
             {
               "tempo": 60,
@@ -1961,10 +2087,22 @@
               "countIn": false
             },
             {
-              "position": 5.5,
-              "tick": 2640,
+              "position": 5,
+              "tick": 2400,
               "bar": 1,
               "beat": 1,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 6,
+              "tick": 2880,
+              "bar": 1,
+              "beat": 2,
               "sub": 0,
               "level": "normal",
               "note": 33,

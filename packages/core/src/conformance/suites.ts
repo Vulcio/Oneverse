@@ -1625,8 +1625,10 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "6/8, dotted quarters in triplets: every eighth", args: [{ tempo: 71, numerator: 6, denominator: 8, subdivision: 3 }, 0, 6] },
           { name: "6/8 in eighths, a bar of count-in", args: [{ tempo: 180, tempoUnit: "1/8", numerator: 6, denominator: 8, countIn: 1 }, 0, 12] },
           { name: "4/4 in half notes", args: [{ tempo: 60, tempoUnit: "1/2" }, 0, 4] },
+          { name: "6/8 in quarters: the speed only, the clicks on its dotted quarters", args: [{ tempo: 71, tempoUnit: "1/4", numerator: 6, denominator: 8 }, 0, 12] },
+          { name: "6/8 in dotted eighths: the speed only, the clicks on its dotted quarters", args: [{ tempo: 71, tempoUnit: "1/8.", numerator: 6, denominator: 8 }, 0, 12] },
           { name: "4/4 in eighths, the second beat muted", args: [{ tempo: 60, tempoUnit: "1/8", beats: ["accent", "mute", "normal", "normal"] }, 0, 3] },
-          { name: "4/4 in dotted quarters: 3 + 3 + 2", args: [{ tempo: 60, tempoUnit: "1/4." }, 3, 9] },
+          { name: "4/4 in dotted quarters: off its beats, so the speed only, the clicks on the quarters", args: [{ tempo: 60, tempoUnit: "1/4." }, 3, 9] },
         ],
       },
       cuesFromSections: {

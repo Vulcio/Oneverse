@@ -106,6 +106,19 @@ await step("Tempo in (issue #377): 6/8 counts dotted quarters, clicks on 1 and 4
   await unit.selectOption({ label: "1/8" });
   list = await clicks(6, (await now()) + 1.2);
   if (!same(gaps(list), 0.5) || new Set(list.map((c) => c.beat)).size < 5) throw new Error(`eighths: ${list.map((c) => c.beat)} ${gaps(list)}`);
+  // In quarters or dotted eighths, notes off 6/8's beats: the speed changes, the clicks stay on 1 and 4 - and so do the lights.
+  for (const [label, gap] of [["1/4", 0.75], ["1/8 dotted", 1]]) {
+    await unit.selectOption({ label });
+    list = await clicks(3, (await now()) + 1.6);
+    if (!same(gaps(list), gap) || list.some((c) => c.beat !== 0 && c.beat !== 3)) throw new Error(`${label}: ${list.map((c) => c.beat)} ${gaps(list)}`);
+  }
+  const lit = new Set();
+  for (let i = 0; i < 30; i++) {
+    const on = await page.getByTestId("metronome-beats").evaluate((el) => [...el.querySelectorAll("button")].findIndex((b) => b.hasAttribute("data-lit")));
+    if (on >= 0) lit.add(String(on));
+    await page.waitForTimeout(100);
+  }
+  if ([...lit].some((beat) => beat !== "0" && beat !== "3")) throw new Error(`lit ${[...lit]}`);
   await page.getByTestId("metronome-play").click();
   // Back to the usual note, then to 4/4: it takes 4/4's own.
   await unit.selectOption({ label: "1/4 dotted" });
