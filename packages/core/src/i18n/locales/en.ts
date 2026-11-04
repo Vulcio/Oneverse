@@ -3508,6 +3508,7 @@ const en = {
     levelQuiet: "Too quiet: sing closer or turn it up",
     levelGood: "Good level",
     levelLoud: "Too loud: it clips, move back or turn it down",
+    levelNothing: "Nothing heard: check it's the right microphone and it isn't muted",
     newMultitrackEllipsis: "New multitrack…",
     stemsNotLoaded: "The stems aren't loaded yet: press Play, then Record.",
     fromBarTime: "From bar {{bar}} ({{time}}), after a bar of count-in",

@@ -234,6 +234,8 @@ await step("a punch-in from bar 2: the vocals replaced from there, what's before
   // The count-in, a bar before bar 2.
   await countIn().waitFor();
   await dialog().getByText(/Recording 0:0[4-9]/).waitFor({ timeout: 15000 });
+  // Its choices folded away while recording, the level stays said in a line (issue #365): the fake microphone's beeps are heard.
+  await page.waitForFunction(() => ["quiet", "good", "loud"].includes(document.querySelector('[data-testid="recorder-level"]')?.dataset.level), null, { timeout: 5000 });
   await page.waitForTimeout(1500);
   await dialog().getByTestId("recorder-stop").click();
   await dialog().getByTestId("recorder-keep").click();

@@ -27,7 +27,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Tabs, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { cn } from "@oneverse/ui/lib/utils";
-import { InputLevel } from "#/components/input-level";
+import { InputLevel, LevelLine } from "#/components/input-level";
 import { PartPicker, usePartLabel, type PartChoice } from "#/components/part-picker";
 import { useCueNames } from "#/components/stem-cues";
 import { TakeStrip } from "#/components/take-strip";
@@ -651,6 +651,8 @@ export function RecordScreen({
         <div className={cn("flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4", inline && "max-h-[45dvh] px-3")}>
           {/* The take as it's recorded: the microphone left of the playhead, the parts to come right of it. */}
           <TakeStrip recorder={opened?.recorder ?? null} ahead={aheadParts} position={stripPosition} marks={stripMarks} recording={phase === "recording" && !counting} />
+          {/* The level in a line once the choices (and their meter) are folded away. */}
+          {!more && (phase === "ready" || phase === "recording") ? <LevelLine recorder={opened?.recorder ?? null} className="-mt-2" /> : null}
           {more ? (
             <div className="flex flex-col gap-4">
               {/* Into what, and which part. */}

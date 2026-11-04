@@ -3511,6 +3511,7 @@ const fr: typeof en = {
     levelQuiet: "Trop faible : chantez plus près ou montez le niveau",
     levelGood: "Bon niveau",
     levelLoud: "Trop fort : ça sature, reculez ou baissez le niveau",
+    levelNothing: "Rien n'est entendu : vérifiez que c'est le bon micro et qu'il n'est pas coupé",
     newMultitrackEllipsis: "Nouveau multipiste…",
     stemsNotLoaded: "Les pistes ne sont pas encore chargées : appuyez sur Lecture, puis sur Enregistrer.",
     fromBarTime: "À partir de la mesure {{bar}} ({{time}}), après une mesure de décompte",

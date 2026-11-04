@@ -88,3 +88,41 @@ export function InputLevel({ recorder, className }: { recorder: Recorder | null;
     </div>
   );
 }
+
+/** Below this for three seconds, nothing reaches the microphone at all: muted, or not the one sung into. */
+const NOTHING = 0.002;
+const NOTHING_OVER = 60;
+
+/**
+ * The microphone's level in a line (issue #365), under the take's waveform
+ * once the recorder's choices are folded away: which microphone, and
+ * whether it's loud enough, too loud, or hears nothing at all - said while
+ * there's still time to fix it, not after the take.
+ */
+export function LevelLine({ recorder, className }: { recorder: Recorder | null; className?: string }) {
+  const { t } = useTranslation();
+  const [verdict, setVerdict] = useState<InputLevelVerdict | "nothing" | null>(null);
+  useEffect(() => {
+    setVerdict(null);
+    if (!recorder) return;
+    let recent: number[] = [];
+    const timer = setInterval(() => {
+      recent = [...recent.slice(1 - NOTHING_OVER), recorder.inputPeak()];
+      setVerdict(recent.length >= NOTHING_OVER && Math.max(...recent) < NOTHING ? "nothing" : judgeLevel(recent));
+    }, EVERY_MS);
+    return () => clearInterval(timer);
+  }, [recorder]);
+  if (!recorder || !verdict) return null;
+  const words = t(verdict === "good" ? "recorder.levelGood" : verdict === "loud" ? "recorder.levelLoud" : verdict === "quiet" ? "recorder.levelQuiet" : "recorder.levelNothing");
+  return (
+    <p
+      className={cn("flex min-w-0 items-center gap-1.5 text-xs", verdict === "good" ? "text-muted-foreground" : verdict === "loud" ? "text-destructive" : "text-amber-700 dark:text-amber-400", className)}
+      role="status"
+      data-testid="recorder-level"
+      data-level={verdict}
+    >
+      <span className={cn("size-2 shrink-0 rounded-full", verdict === "good" ? "bg-primary" : verdict === "loud" ? "bg-destructive" : "bg-amber-500")} aria-hidden />
+      <span className="min-w-0 truncate">{[words, recorder.microphone.label].filter(Boolean).join(" · ")}</span>
+    </p>
+  );
+}
