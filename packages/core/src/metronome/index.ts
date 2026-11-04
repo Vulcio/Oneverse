@@ -60,23 +60,6 @@ export function beatsPerTempoUnit(unit: TempoUnit, denominator: number): number 
   return (denominator / note) * (dotted ? 1.5 : 1);
 }
 
-const fits = (a: number, b: number) => Math.abs(a / b - Math.round(a / b)) < 1e-9;
-
-/**
- * How many of the time signature's beats each main click lasts: the tempo's
- * note when it falls on the bar's own pulse (eighths or dotted quarters in
- * 6/8, halves or eighths in 4/4), else that pulse - a quarter in 6/8 or a
- * dotted eighth would click between or across its beats, never where its beats are, so
- * that note only sets the speed (issue #377).
- */
-export function clickPulse(settings: Pick<MetronomeSettings, "tempoUnit" | "numerator" | "denominator">): number {
-  const felt = beatsPerTempoUnit(defaultTempoUnit(settings), settings.denominator);
-  const unit = beatsPerTempoUnit(settings.tempoUnit ?? defaultTempoUnit(settings), settings.denominator);
-  // On the beats (whole beats, or an even split of one), and on the bar's pulse.
-  const onBeats = fits(unit, 1) || fits(1, unit);
-  return onBeats && (fits(felt, unit) || (fits(unit, felt) && fits(settings.numerator, unit))) ? unit : felt;
-}
-
 /** How a beat sounds: accented, as usual, or not at all. */
 export type BeatLevel = "accent" | "normal" | "mute";
 /** Clicks per beat: 1, eighths (2), triplets (3), sixteenths (4). */
@@ -212,53 +195,43 @@ export function beatAt(settings: Pick<MetronomeSettings, "numerator" | "countIn"
 }
 
 /**
- * The clicks from `from` (included) to `to` (not), in beats. The main
- * clicks follow the tempo's note from each bar's start where it falls on
- * the bar's pulse (clickPulse; issue #377: in 6/8 counted in dotted
- * quarters, beats 1 and 4), split into `subdivision`
- * (triplets there play every eighth). A main click on a beat sounds as the
- * pattern says, one between beats as usual; a muted beat mutes what falls in
- * it. During the count-in every main click sounds, the first of each bar
- * accented, without subdivisions; after it, with `countInOnly`, nothing does.
+ * The clicks from `from` (included) to `to` (not), in beats: one on every
+ * beat of the time signature (every dot of the pattern: six in 6/8), split
+ * into `subdivision`. The tempo's note only sets how fast they come (issue
+ * #377: 6/8 at 71 dotted quarters plays its eighths at 213). A muted beat
+ * mutes its subdivisions; during the count-in every beat sounds, the first
+ * of each bar accented, without subdivisions; after it, with `countInOnly`,
+ * nothing does.
  */
 export function clicksBetween(settings: MetronomeSettings, from: number, to: number): MetronomeClick[] {
   const clicks: MetronomeClick[] = [];
-  const { numerator, subdivision } = settings;
-  const step = 1 / subdivision;
-  // A main click lasts `pulse` beats; each bar starts them again.
-  const pulse = clickPulse(settings);
-  const perBar = Math.ceil((numerator * subdivision) / pulse - 1e-9);
-  for (let barIndex = Math.max(0, Math.floor(from / numerator)); barIndex * numerator < to; barIndex++) {
-    for (let index = 0; index < perBar; index++) {
-      // In subdivisions from the start: whole numbers when the pulse is a beat, so no float drift over hours.
-      const position = (barIndex * numerator * subdivision + index * pulse) * step;
-      if (position < from - 1e-9) continue;
-      if (position >= to) break;
-      const offset = (index * pulse) / subdivision;
-      const beat = Math.floor(offset + 1e-9);
-      const sub = index % subdivision;
-      const main = sub === 0;
-      const bar = barIndex - settings.countIn;
-      const countIn = bar < 0;
-      let level: MetronomeClick["level"] | null;
-      if (countIn) level = main ? (index === 0 ? "accent" : "normal") : null;
-      else if (settings.countInOnly) level = null;
-      else if (settings.beats[beat] === "mute") level = null;
-      else level = !main ? "sub" : Math.abs(offset - beat) < 1e-9 && settings.beats[beat] === "accent" ? "accent" : "normal";
-      if (!level) continue;
-      clicks.push({
-        position,
-        tick: Math.round(position * ticksPerBeat(settings)),
-        bar,
-        beat,
-        sub,
-        level,
-        note: METRONOME_NOTES[level],
-        channel: METRONOME_CHANNEL,
-        velocity: VELOCITY[level],
-        countIn,
-      });
-    }
+  const step = 1 / settings.subdivision;
+  // Index of the first subdivision at or after `from`, exactly (no float drift over hours).
+  let index = Math.max(0, Math.ceil(from * settings.subdivision - 1e-9));
+  for (; index / settings.subdivision < to; index++) {
+    const position = index * step;
+    const whole = Math.floor(index / settings.subdivision);
+    const sub = index % settings.subdivision;
+    const { bar, beat } = beatAt(settings, whole);
+    const countIn = bar < 0;
+    let level: MetronomeClick["level"] | null;
+    if (countIn) level = sub === 0 ? (beat === 0 ? "accent" : "normal") : null;
+    else if (settings.countInOnly) level = null;
+    else if (settings.beats[beat] === "mute") level = null;
+    else level = sub === 0 ? (settings.beats[beat] === "accent" ? "accent" : "normal") : "sub";
+    if (!level) continue;
+    clicks.push({
+      position,
+      tick: Math.round(position * ticksPerBeat(settings)),
+      bar,
+      beat,
+      sub,
+      level,
+      note: METRONOME_NOTES[level],
+      channel: METRONOME_CHANNEL,
+      velocity: VELOCITY[level],
+      countIn,
+    });
   }
   return clicks;
 }

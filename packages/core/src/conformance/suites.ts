@@ -1614,21 +1614,21 @@ export const CONFORMANCE: ConformanceArea[] = [
       },
       clicksBetween: {
         about:
-          "The clicks from one position (included) to another (not): accents, muted beats, subdivisions, count-in. The main clicks follow the tempo's note from each bar's start (6/8 in dotted quarters: beats 1 and 4), subdivided; one between two beats sounds normal.",
+          "The clicks from one position (included) to another (not): accents, muted beats, subdivisions, count-in. Every beat of the time signature clicks (six in 6/8), split into the subdivision; the tempo's note only sets the speed (issue #377).",
         params: ["settings", "from", "to"],
         run: (settings: unknown, from: number, to: number) => clicksBetween(normalizeMetronome(settings as never), from, to),
         cases: [
           { name: "a bar of 4/4", args: [{ tempo: 100, numerator: 4 }, 0, 4] },
           { name: "eighths, a muted beat", args: [{ tempo: 100, numerator: 4, subdivision: 2, beats: ["accent", "mute", "normal", "normal"] }, 0, 2] },
           { name: "a bar of count-in, count-in only", args: [{ tempo: 100, numerator: 2, countIn: 1, countInOnly: true }, 0, 4] },
-          { name: "6/8, dotted quarters: 1 and 4", args: [{ tempo: 71, numerator: 6, denominator: 8 }, 0, 6] },
-          { name: "6/8, dotted quarters in triplets: every eighth", args: [{ tempo: 71, numerator: 6, denominator: 8, subdivision: 3 }, 0, 6] },
+          { name: "6/8, counted in dotted quarters: every eighth", args: [{ tempo: 71, numerator: 6, denominator: 8 }, 0, 6] },
+          { name: "6/8 in dotted quarters, the eighths in triplets", args: [{ tempo: 71, numerator: 6, denominator: 8, subdivision: 3 }, 0, 6] },
           { name: "6/8 in eighths, a bar of count-in", args: [{ tempo: 180, tempoUnit: "1/8", numerator: 6, denominator: 8, countIn: 1 }, 0, 12] },
           { name: "4/4 in half notes", args: [{ tempo: 60, tempoUnit: "1/2" }, 0, 4] },
-          { name: "6/8 in quarters: the speed only, the clicks on its dotted quarters", args: [{ tempo: 71, tempoUnit: "1/4", numerator: 6, denominator: 8 }, 0, 12] },
-          { name: "6/8 in dotted eighths: the speed only, the clicks on its dotted quarters", args: [{ tempo: 71, tempoUnit: "1/8.", numerator: 6, denominator: 8 }, 0, 12] },
+          { name: "6/8 in quarters: the speed only, every eighth", args: [{ tempo: 71, tempoUnit: "1/4", numerator: 6, denominator: 8 }, 0, 12] },
+          { name: "6/8 in dotted eighths: the speed only, every eighth", args: [{ tempo: 71, tempoUnit: "1/8.", numerator: 6, denominator: 8 }, 0, 12] },
           { name: "4/4 in eighths, the second beat muted", args: [{ tempo: 60, tempoUnit: "1/8", beats: ["accent", "mute", "normal", "normal"] }, 0, 3] },
-          { name: "4/4 in dotted quarters: off its beats, so the speed only, the clicks on the quarters", args: [{ tempo: 60, tempoUnit: "1/4." }, 3, 9] },
+          { name: "4/4 in dotted quarters: the speed only, every quarter", args: [{ tempo: 60, tempoUnit: "1/4." }, 3, 9] },
         ],
       },
       cuesFromSections: {

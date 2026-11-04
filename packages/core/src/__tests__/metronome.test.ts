@@ -21,37 +21,22 @@ describe("the metronome's timeline (issue #2)", () => {
     expect(clicks.at(-1)).toMatchObject({ bar: 1, beat: 0, level: "accent" });
   });
 
-  it("6/8 counts dotted quarters unless the song says (issue #377): clicks on 1 and 4, the eighths as triplets", () => {
+  it("6/8 counts dotted quarters unless the song says (issue #377): every eighth still clicks, three to a dotted quarter", () => {
     const six = settings({ tempo: 71, numerator: 6, denominator: 8 });
     expect(six.tempoUnit).toBe("1/4.");
     expect(beatsPerMinute(six)).toBe(213);
-    expect(clicksBetween(six, 0, 6).map((c) => `${c.position}:${c.level}`)).toEqual(["0:accent", "3:normal"]);
-    expect(clicksBetween({ ...six, subdivision: 3 }, 0, 6).map((c) => `${c.position}:${c.beat}:${c.sub}:${c.level}`)).toEqual([
-      "0:0:0:accent",
-      "1:1:1:sub",
-      "2:2:2:sub",
-      "3:3:0:normal",
-      "4:4:1:sub",
-      "5:5:2:sub",
-    ]);
+    expect(clicksBetween(six, 0, 6).map((c) => `${c.position}:${c.level}`)).toEqual(["0:accent", "1:normal", "2:normal", "3:normal", "4:normal", "5:normal"]);
     expect(beatsPerMinute(settings({ tempo: 71, numerator: 6, denominator: 8, tempoUnit: "1/8" }))).toBe(71);
     expect(settings({ numerator: 3, denominator: 8 }).tempoUnit).toBe("1/8");
     expect(settings({ numerator: 12, denominator: 8 }).tempoUnit).toBe("1/4.");
     expect(settings({ numerator: 2, denominator: 2 }).tempoUnit).toBe("1/2");
   });
 
-  it("6/8 in quarters, dotted eighths or halves: on 1 and 4, as its dotted quarters (issue #377)", () => {
-    for (const tempoUnit of ["1/4", "1/8.", "1/2"] as const) expect(clicksBetween(settings({ numerator: 6, denominator: 8, tempoUnit }), 0, 6).map((c) => c.position)).toEqual([0, 3]);
-    expect(clicksBetween(settings({ numerator: 6, denominator: 8, tempoUnit: "1/2." }), 0, 12).map((c) => c.position)).toEqual([0, 6]);
-    expect(clicksBetween(settings({ numerator: 3, denominator: 4, tempoUnit: "1/2" }), 0, 3).map((c) => c.position)).toEqual([0, 1, 2]);
-  });
-
-  it("any note: halves click every other beat, eighths twice a beat, dotted quarters restart each bar", () => {
-    expect(clicksBetween(settings({ tempoUnit: "1/2" }), 0, 4).map((c) => c.position)).toEqual([0, 2]);
+  it("whatever note the tempo counts, every beat clicks: the note only sets the speed", () => {
+    for (const tempoUnit of ["1/8", "1/4", "1/8.", "1/2", "1/2."] as const) expect(clicksBetween(settings({ numerator: 6, denominator: 8, tempoUnit }), 0, 6).map((c) => c.position)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(clicksBetween(settings({ tempoUnit: "1/2" }), 0, 4).map((c) => c.position)).toEqual([0, 1, 2, 3]);
     expect(secondsPerBeat(settings({ tempo: 60, tempoUnit: "1/2" }))).toBe(0.5);
-    expect(clicksBetween(settings({ tempoUnit: "1/8" }), 0, 2).map((c) => `${c.position}:${c.level}`)).toEqual(["0:accent", "0.5:normal", "1:normal", "1.5:normal"]);
-    // A note off the bar's pulse sets the speed only: the clicks stay on the beats.
-    expect(clicksBetween(settings({ tempoUnit: "1/4." }), 0, 8).map((c) => c.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(secondsPerBeat(settings({ tempo: 60, tempoUnit: "1/8" }))).toBe(2);
     expect(beatsPerTempoUnit("1/8.", 16)).toBe(3);
     expect(defaultTempoUnit({ numerator: 6, denominator: 16 })).toBe("1/8.");
   });

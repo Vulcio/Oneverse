@@ -93,7 +93,7 @@ await step("a count-in of a bar, then silent: the beat still shows", async () =>
   await page.getByLabel("Count-in", { exact: true }).selectOption({ label: "None" });
 });
 
-await step("Tempo in (issue #377): 6/8 counts dotted quarters, clicks on 1 and 4; in eighths, every beat", async () => {
+await step("Tempo in (issue #377): 6/8 counts dotted quarters, every eighth still clicks; the note only sets the speed", async () => {
   await page.getByTestId("metronome-tempo").fill("120");
   await page.getByTestId("metronome-numerator").selectOption("6");
   await page.getByTestId("metronome-denominator").selectOption("8");
@@ -101,24 +101,23 @@ await step("Tempo in (issue #377): 6/8 counts dotted quarters, clicks on 1 and 4
   if ((await unit.inputValue()) !== "1/4.") throw new Error(await unit.inputValue());
   await page.getByTestId("metronome-bpm-unit").getByText("BPM · 1/4 dotted").waitFor();
   await page.getByTestId("metronome-play").click();
-  let list = await clicks(4, (await now()) + 0.3);
-  if (!same(gaps(list), 0.5) || list.some((c) => c.beat !== 0 && c.beat !== 3)) throw new Error(`dotted: ${list.map((c) => c.beat)} ${gaps(list)}`);
-  await unit.selectOption({ label: "1/8" });
-  list = await clicks(6, (await now()) + 1.2);
-  if (!same(gaps(list), 0.5) || new Set(list.map((c) => c.beat)).size < 5) throw new Error(`eighths: ${list.map((c) => c.beat)} ${gaps(list)}`);
-  // In quarters or dotted eighths, notes off 6/8's beats: the speed changes, the clicks stay on 1 and 4 - and so do the lights.
-  for (const [label, gap] of [["1/4", 0.75], ["1/8 dotted", 1]]) {
+  // 120 dotted quarters: 360 eighths a minute, every one of the six dots.
+  let list = await clicks(8, (await now()) + 0.3);
+  if (!same(gaps(list), 1 / 6) || new Set(list.map((c) => c.beat)).size < 6) throw new Error(`dotted: ${list.map((c) => c.beat)} ${gaps(list)}`);
+  for (const [label, gap] of [["1/8", 0.5], ["1/4", 0.25], ["1/8 dotted", 1 / 3]]) {
     await unit.selectOption({ label });
-    list = await clicks(3, (await now()) + 1.6);
-    if (!same(gaps(list), gap) || list.some((c) => c.beat !== 0 && c.beat !== 3)) throw new Error(`${label}: ${list.map((c) => c.beat)} ${gaps(list)}`);
+    list = await clicks(6, (await now()) + 1.2);
+    if (!same(gaps(list), gap) || new Set(list.map((c) => c.beat)).size < 5) throw new Error(`${label}: ${list.map((c) => c.beat)} ${gaps(list)}`);
   }
+  // Every dot lights as it clicks.
+  await unit.selectOption({ label: "1/8" });
   const lit = new Set();
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 40; i++) {
     const on = await page.getByTestId("metronome-beats").evaluate((el) => [...el.querySelectorAll("button")].findIndex((b) => b.hasAttribute("data-lit")));
-    if (on >= 0) lit.add(String(on));
+    if (on >= 0) lit.add(on);
     await page.waitForTimeout(100);
   }
-  if ([...lit].some((beat) => beat !== "0" && beat !== "3")) throw new Error(`lit ${[...lit]}`);
+  if (lit.size < 6) throw new Error(`lit ${[...lit]}`);
   await page.getByTestId("metronome-play").click();
   // Back to the usual note, then to 4/4: it takes 4/4's own.
   await unit.selectOption({ label: "1/4 dotted" });
@@ -160,13 +159,13 @@ await step("Live: one button, at the song's tempo and time signature; a song wit
   if (!same(gaps(list), 60 / 72) || Math.max(...list.map((c) => c.beat)) !== 2) throw new Error(`gaps ${gaps(list)}`);
   await page.getByRole("button", { name: "Stop the metronome" }).click();
   if ((await button.getAttribute("aria-pressed")) !== "false") throw new Error("still pressed");
-  // A 6/8 song at 60: a dotted quarter a second, its eighths a third of one apart (bars and chords stay in eighths).
+  // A 6/8 song at 60: a dotted quarter a second, every eighth clicking a third of one apart.
   await page.goto(`${WEB}/library/${jig.id}/live`);
   await page.waitForLoadState("networkidle");
   await page.getByText("60 BPM · 1/4.").first().waitFor();
   await button.click();
-  let six = await clicks(3, await now());
-  if (!same(gaps(six), 1) || six.some((c) => c.beat !== 0 && c.beat !== 3)) throw new Error(`jig: ${six.map((c) => c.beat)} ${gaps(six)}`);
+  let six = await clicks(7, await now());
+  if (!same(gaps(six), 1 / 3) || new Set(six.map((c) => c.beat)).size < 6) throw new Error(`jig: ${six.map((c) => c.beat)} ${gaps(six)}`);
   await page.getByRole("button", { name: "Stop the metronome" }).click();
   // Told it counts eighths: 180 of them, as before.
   await page.goto(`${WEB}/library/${eighths.id}/live`);
