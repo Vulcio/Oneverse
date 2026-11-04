@@ -781,7 +781,14 @@ function GridBar({
               className="mx-0.5 flex min-w-0 flex-1 items-center self-stretch rounded-sm bg-muted px-1 transition-colors duration-75 data-[on]:bg-foreground data-[on]:text-background"
               data-grid-beat={beat}
             >
-              {chords.length > 0 ? (
+              {chords.some((chord) => chord.beat - beat - 1 >= 0.5) ? (
+                // A chord on the "and": the beat in two halves, a chord in each.
+                [chords.filter((chord) => chord.beat - beat - 1 < 0.5), chords.filter((chord) => chord.beat - beat - 1 >= 0.5)].map((half, at) => (
+                  <span key={at} className={cn("flex min-w-0 flex-1 items-center overflow-hidden text-sm [&>*]:text-sm", at === 1 && "border-l border-background/60 pl-1")} data-grid-half={at === 0 ? "beat" : "and"}>
+                    {half.map(chordLabel)}
+                  </span>
+                ))
+              ) : chords.length > 0 ? (
                 chords.map(chordLabel)
               ) : beat === 0 && bar.carried ? (
                 // Held on from the bar before: named again, quietly.

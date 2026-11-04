@@ -181,7 +181,7 @@ function Bar({ bar, section, chordColors }: { bar: ChartBar; section?: ReturnTyp
             )}
           >
             {chords.map((chord) => (
-              <span key={chord.id} className={cn("truncate text-sm font-bold", chordColors && chord.family && FAMILY_COLORS[chord.family])} data-bar-chord={chord.label}>
+              <span key={chord.id} className={cn("min-w-0 flex-1 truncate text-sm font-bold", chords.length > 1 && "not-first:border-l not-first:border-background/60 not-first:pl-1", chordColors && chord.family && FAMILY_COLORS[chord.family])} data-bar-chord={chord.label}>
                 {chord.label}
               </span>
             ))}

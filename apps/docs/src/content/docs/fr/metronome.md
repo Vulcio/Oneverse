@@ -61,7 +61,7 @@ La partition suit aussi, en Session et sur la page d'un chant dans une liste : p
 ![Les mesures en Session, le clic lancé](../../../assets/screenshots/fr/chord-grid.jpg)
 
 - **Quatre mesures par ligne** (deux sur un téléphone), chaque section sous son nom, avec sa mesure là où elle change.
-- **Chaque mesure** a son numéro, un bloc par temps et l'accord dans le bloc du temps où il change, comme dans la ligne des mesures. Le temps joué devient foncé. Un accord qui continue depuis la mesure d'avant est rappelé, en gris. Dessous, les paroles chantées dans cette mesure (de l'accord ou de la barre de mesure où elles commencent au suivant).
+- **Chaque mesure** a son numéro, un bloc par temps et l'accord dans le bloc du temps où il change, comme dans la ligne des mesures. Le temps joué devient foncé. Un accord sur le « et » d'un temps coupe son bloc en deux. Un accord qui continue depuis la mesure d'avant est rappelé, en gris. Dessous, les paroles chantées dans cette mesure (de l'accord ou de la barre de mesure où elles commencent au suivant).
 - **Pendant que la musique joue,** la mesure et le temps joués s'allument, et la page défile pour garder cette mesure en vue. Elle suit la même chose que la ligne des mesures : les pistes, le métronome ou celui du meneur.
 - **Les accords se lisent comme sur la grille :** transposés, avec votre capodastre, vos noms et vos couleurs, et sur la page d'un chant dans une liste vos **Accords simplifiés** et **Sans basses** aussi.
 

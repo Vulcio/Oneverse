@@ -61,7 +61,7 @@ The chart follows along too, in Practice and on a song's page in a set: while th
 ![The chord grid in Practice, the click playing](../../assets/screenshots/en/chord-grid.jpg)
 
 - **Four bars to a row** (two on a phone), each section under its name, with its time signature where it changes.
-- **Each bar** has its number, a block for each beat and the chord in the block of the beat it changes on, as in the bars row. The beat being played turns dark. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord or the bar line they start at to the next one).
+- **Each bar** has its number, a block for each beat and the chord in the block of the beat it changes on, as in the bars row. The beat being played turns dark. A chord on the "and" of a beat splits its block in two. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord or the bar line they start at to the next one).
 - **While the music plays,** the bar and the beat being played light up, and the grid scrolls to keep that bar in view. It follows the same things as the bars row: the stems, the metronome, or the leader's.
 - **The chords read as on the chart:** transposed, with your capo, names and colours, and on a set's song page your **Simpler chords** and **No bass notes** too.
 

@@ -100,6 +100,8 @@ try {
     await grid().waitFor();
     if ((await chordsOf(0)) !== "G C") throw new Error(`bar 1 after reload: ${await chordsOf(0)}`);
     if ((await bar(7).locator("[data-grid-beat]").count()) !== 2) throw new Error("bar 8 not 2 beats after reload");
+    // A chord on an "and" (issue #376): its beat's block in two halves, the chord in the second.
+    if ((await bar(3).locator('[data-grid-beat="1"] [data-grid-half="and"] [data-grid-chord="D"]').count()) !== 1) throw new Error("D not in the and's half of beat 2");
     // The words still under their bars.
     if ((await bar(0).locator("[data-grid-words]").innerText()).trim() !== "Amazing grace how") throw new Error(await bar(0).locator("[data-grid-words]").innerText());
   });
