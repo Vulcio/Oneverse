@@ -70,9 +70,42 @@ try {
     const later = await strip().getAttribute("data-position");
     const [bar] = (later ?? "").split(":").map(Number);
     if (!(bar >= 1)) throw new Error(`still at ${later} (from ${first})`);
-    if ((await strip().evaluate((el) => el.scrollLeft)) <= 0) throw new Error("the row didn't slide");
+    // Whole bars a page at a time: the lit beat always in view, its bar starting the page or after it.
+    const inView = await strip().evaluate((el) => {
+      const lit = el.querySelector("[data-beat][data-on]").getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      return lit.left >= box.left - 1 && lit.right <= box.right + 1;
+    });
+    if (!inView) throw new Error("the lit beat isn't in view");
     if ((await strip().locator("[data-beat][data-on]").count()) !== 1) throw new Error("not one beat lit");
     await page.screenshot({ path: `${SP}/bars-practice.png` });
+  });
+
+  await step("on a phone: one whole bar and a peek at the next; when the next bar starts, the row turns to it at once", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    const shown = () =>
+      strip().evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const bars = [...el.querySelectorAll("[data-bar]")].map((bar) => ({ bar: Number(bar.dataset.bar), rect: bar.getBoundingClientRect() }));
+        const whole = bars.filter((b) => b.rect.left >= box.left - 1 && b.rect.right <= box.right + 1).map((b) => b.bar);
+        const peek = bars.find((b) => b.rect.left < box.right - 1 && b.rect.right > box.right + 1);
+        const lit = el.querySelector("[data-beat][data-on]")?.closest("[data-bar]")?.dataset.bar;
+        return { whole, peek: peek ? box.right - peek.rect.left : 0, lit: lit === undefined ? null : Number(lit), scroll: el.scrollLeft };
+      });
+    const seen = [];
+    for (let i = 0; i < 40; i++) {
+      seen.push(await shown());
+      await page.waitForTimeout(100);
+    }
+    for (const view of seen) {
+      if (view.whole.length !== 1 || view.peek < 15 || view.peek > 60) throw new Error(`not one bar and a peek: ${JSON.stringify(view)}`);
+      if (view.lit !== null && view.whole[0] !== view.lit) throw new Error(`the lit bar isn't the one shown: ${JSON.stringify(view)}`);
+    }
+    // It turned (a new bar every 1.6 s at 150 BPM in 4/4), and only by whole bars: never part-way.
+    const scrolls = new Set(seen.map((view) => view.scroll));
+    if (scrolls.size < 2) throw new Error("it didn't turn");
+    await page.setViewportSize({ width: 1280, height: 900 });
   });
 
   await step("the chart follows the click (issue #365): the line being sung lit, then the next", async () => {

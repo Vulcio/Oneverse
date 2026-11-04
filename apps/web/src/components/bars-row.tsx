@@ -17,16 +17,23 @@ export const GROUP_COLORS: Record<StructureGroup, string> = {
   instrumental: "bg-emerald-500",
   other: "bg-zinc-500",
 };
-/** Beats kept in view before the current one: what's coming fills the rest. */
-const LEAD_BEATS = 1;
+/** How much of the next page's first beat shows at the right edge: what's coming, at a glance. */
+const PEEK = 0.6;
+/** A beat's cell at its narrowest (CSS px, its margins included): a phone shows one 4/4 bar. */
+const MIN_CELL = 48;
+const WIDE_MIN_CELL = 60;
+/** A bar's line on its left (CSS px). */
+const BAR_LINE = 3;
 
 /**
  * The bars row (issue #238), at the top of Practice and Live: the song's
  * chords in bars and beats - a cell a beat, a strong line where a bar
  * starts, the chord written where it changes, each section's name on its
- * first bar - and the metronome. As the music plays, the current beat
- * fills and the row slides so it stays near the left, what's coming in
- * view. It follows the music as `useBarsClock` says (the stems, the
+ * first bar - and the metronome. It shows whole bars, as many as fit (one
+ * on a phone), and a little of the next one's first beat; as the music
+ * plays, the current beat fills, and once the last bar shown is over the
+ * row turns to the next page at once - never sliding under the eye. It
+ * follows the music as `useBarsClock` says (the stems, the
  * metronome or the Sync leader's), else it stands at bar 1 and can be
  * scrolled.
  */
@@ -51,10 +58,45 @@ export function BarsRow({
   const { source, position } = useBarsClock(songId, bars);
   const strip = useRef<HTMLDivElement>(null);
 
+  // The cells sized so whole bars fill the row, with a peek at the next one (the bars' usual length).
+  useEffect(() => {
+    const element = strip.current;
+    if (!element) return;
+    const counts = new Map<number, number>();
+    for (const bar of bars) counts.set(bar.beats, (counts.get(bar.beats) ?? 0) + 1);
+    const beats = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 4;
+    const size = () => {
+      const width = element.clientWidth;
+      if (!width) return;
+      const least = window.matchMedia("(min-width: 640px)").matches ? WIDE_MIN_CELL : MIN_CELL;
+      const shown = Math.max(1, Math.floor((width - PEEK * least) / (beats * least + BAR_LINE)));
+      const cell = (width - shown * BAR_LINE) / (shown * beats + PEEK);
+      element.style.setProperty("--beat-w", `${Math.max(least, cell) - 4}px`);
+    };
+    size();
+    const observer = new ResizeObserver(size);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [bars]);
+
   // Frame by frame, without rendering again: where the music is, in beats from the song's start.
   useEffect(() => {
     const element = strip.current;
     if (!element) return;
+    const barElements = element.querySelectorAll<HTMLElement>("[data-bar]");
+    // The page shown: its first bar, and the first bar after it.
+    let page = { from: 0, to: 0 };
+    const leftOf = (bar: HTMLElement) => bar.getBoundingClientRect().left - element.getBoundingClientRect().left + element.scrollLeft;
+    const turnTo = (from: number) => {
+      const first = barElements[from];
+      if (!first) return;
+      const start = leftOf(first);
+      // Whole bars while they fit, leaving room for the peek; always one.
+      let to = from + 1;
+      while (to < barElements.length && leftOf(barElements[to]!) + barElements[to]!.offsetWidth - start <= element.clientWidth - 8) to++;
+      page = { from, to };
+      element.scrollTo({ left: start, behavior: "instant" });
+    };
     const cells = element.querySelectorAll<HTMLElement>("[data-beat]");
     const countIn = element.parentElement?.querySelector<HTMLElement>("[data-count-in]") ?? null;
     let lit: HTMLElement | null = null;
@@ -85,15 +127,14 @@ export function BarsRow({
         if (where) {
           const index = bars[where.bar]!.start + where.beat;
           light(index);
-          const cell = cells[index];
-          if (cell) {
-            // Where the cell is in the strip, whatever it's scrolled to.
-            const left = cell.getBoundingClientRect().left - element.getBoundingClientRect().left + element.scrollLeft;
-            element.scrollTo({ left: Math.max(0, left - cell.offsetWidth * LEAD_BEATS - 4), behavior: "smooth" });
-          }
+          // Past the page's last bar (or before its first, after a seek), or out of view (the row resized, scrolled by hand): the next page, at once.
+          const current = barElements[where.bar];
+          const left = current ? leftOf(current) - element.scrollLeft : 0;
+          const shown = !!current && left >= -1 && left + current.offsetWidth <= element.clientWidth + 1;
+          if (where.bar < page.from || where.bar >= page.to || !shown) turnTo(where.bar);
         } else {
           light(null);
-          if (at < 0) element.scrollTo({ left: 0, behavior: "smooth" });
+          if (at < 0 && page.from !== 0) turnTo(0);
         }
       }
       frame = requestAnimationFrame(tick);
@@ -138,12 +179,12 @@ export function BarsRow({
         {mine ? <Square /> : <Metronome />}
         {tempo ? `${Math.round(tempo)}` : "–"}
       </button>
-      <div ref={strip} className="flex min-w-0 flex-1 overflow-x-auto overscroll-x-contain [scrollbar-width:none]" data-testid="bars-strip">
+      <div ref={strip} className="flex min-w-0 flex-1 overflow-x-auto overscroll-x-contain [--beat-w:2.75rem] [scrollbar-width:none] sm:[--beat-w:3.5rem]" data-testid="bars-strip">
         {bars.map((bar) => (
           <Bar key={bar.index} bar={bar} section={bar.barInPass === 0 ? steps[bar.passIndex] : undefined} chordColors={chordColors} />
         ))}
-        {/* Room after the last bar: the end can come to the left like the rest. */}
-        <div className="w-1/2 shrink-0" aria-hidden />
+        {/* Room after the last bar: the last page starts at the left like the others. */}
+        <div className="w-full shrink-0" aria-hidden />
       </div>
       <span
         hidden
@@ -176,7 +217,7 @@ function Bar({ bar, section, chordColors }: { bar: ChartBar; section?: ReturnTyp
             key={beat}
             data-beat={beat}
             className={cn(
-              "mx-0.5 mb-0.5 flex w-11 items-center rounded-sm bg-muted px-1 transition-colors duration-75 sm:w-14",
+              "mx-0.5 mb-0.5 flex w-(--beat-w) items-center rounded-sm bg-muted px-1 transition-colors duration-75",
               "data-[on]:bg-foreground data-[on]:text-background",
             )}
           >
