@@ -101,7 +101,7 @@ export class RecordingsProcessor extends WorkerHost {
       delete rest.id;
       const [made] = await this.prisma.client.$transaction([
         this.prisma.client.attachment.create({
-          data: { ...(rest as Omit<typeof current, "id">), cuePoints: current.cuePoints ?? Prisma.DbNull, filename: current.filename.replace(/\.[a-z0-9]{1,5}$/i, "") + ".opus", mimeType: "audio/ogg", storageKey: hash, sizeBytes, processing: null, ...(kept ? { originalStorageKey: kept.hash, originalMimeType: "audio/flac", originalSizeBytes: kept.sizeBytes } : {}) },
+          data: { ...(rest as Omit<typeof current, "id">), cuePoints: current.cuePoints ?? Prisma.DbNull, recordingChords: current.recordingChords ?? Prisma.DbNull, filename: current.filename.replace(/\.[a-z0-9]{1,5}$/i, "") + ".opus", mimeType: "audio/ogg", storageKey: hash, sizeBytes, processing: null, ...(kept ? { originalStorageKey: kept.hash, originalMimeType: "audio/flac", originalSizeBytes: kept.sizeBytes } : {}) },
         }),
         this.prisma.client.attachment.delete({ where: { id: file.id } }),
       ]);
@@ -131,7 +131,7 @@ export class RecordingsProcessor extends WorkerHost {
       delete rest.id;
       const [processed] = await this.prisma.client.$transaction([
         this.prisma.client.attachment.create({
-          data: { ...(rest as Omit<typeof take, "id">), cuePoints: take.cuePoints ?? Prisma.DbNull, filename: take.filename.replace(/\.[a-z0-9]{1,5}$/i, "") + ".opus", mimeType: "audio/ogg", storageKey: hash, sizeBytes, processing: null },
+          data: { ...(rest as Omit<typeof take, "id">), cuePoints: take.cuePoints ?? Prisma.DbNull, recordingChords: take.recordingChords ?? Prisma.DbNull, filename: take.filename.replace(/\.[a-z0-9]{1,5}$/i, "") + ".opus", mimeType: "audio/ogg", storageKey: hash, sizeBytes, processing: null },
         }),
         this.prisma.client.attachment.delete({ where: { id: take.id } }),
       ]);

@@ -69,7 +69,21 @@ try {
       { start: 34, label: "chorus" },
       { start: 40, label: "end" },
     ],
+    // Its chords (Sonic API 1.7, issue #393): a stretch without one, then G and Em.
+    chords: [
+      { start: 0, end: 0.5, label: "N" },
+      { start: 0.5, end: 3, root: 7, quality: "maj", label: "G" },
+      { start: 3, end: 5.5, root: 4, quality: "min7", label: "E:min7" },
+    ],
+    beat_chords: beats.map((at) => (at < 3 ? 1 : at < 5.5 ? 2 : null)),
+    engines: { rhythm: "librosa@1.7.0", chords: "btc@1673d23f8f9a" },
   };
+  const chords = [
+    { start: 0.5, end: 3, root: 7, quality: "maj" },
+    { start: 3, end: 5.5, root: 4, quality: "min7" },
+  ];
+  // Stored as JSON: compared whatever order its keys come back in.
+  const sameChords = (list) => Array.isArray(list) && list.length === chords.length && list.every((chord, i) => Object.keys(chords[i]).length === Object.keys(chord).length && Object.entries(chords[i]).every(([key, value]) => chord[key] === value));
   let r = await call(singer, "POST", `/song-versions/${song.id}/attachments/${recording.id}/separate`, { parts: "4" });
   let list = await waitFor(song.id, (body) => body.separations[0]?.status === "FAST_READY");
   const first = list.separations[0];
@@ -79,13 +93,18 @@ try {
   check("named by its parts, in the asker's language; each file separated", stems.length === 4 && stems.every((file) => file.multitrackName === "Separated (4 parts)" && file.origin === "SEPARATED"), JSON.stringify(stems.map((file) => [file.multitrackName, file.origin])));
   check(
     "what the analysis found, where the recording had nothing: marked detected - its own tempo kept",
-    one.recordingTempo === 96 && one.recordingKey === "Em" && one.recordingTimeSignature === "3/4" && one.recordingFirstBeat === 0.5 && one.detected.join() === "key,timeSignature,firstBeat,beats,sections",
+    one.recordingTempo === 96 && one.recordingKey === "Em" && one.recordingTimeSignature === "3/4" && one.recordingFirstBeat === 0.5 && one.detected.join() === "key,timeSignature,firstBeat,beats,chords,sections",
     JSON.stringify({ tempo: one.recordingTempo, key: one.recordingKey, time: one.recordingTimeSignature, first: one.recordingFirstBeat, detected: one.detected }),
   );
   check(
     "the recording's beats and bars, on every stem, and its free intro (issue #299)",
     stems.every((file) => JSON.stringify(file.recordingBeats) === JSON.stringify(beats) && JSON.stringify(file.recordingDownbeats) === JSON.stringify(downbeats) && file.recordingFreeIntro === true),
     JSON.stringify({ beats: one.recordingBeats?.length, downbeats: one.recordingDownbeats?.length, free: one.recordingFreeIntro }),
+  );
+  check(
+    "the recording's chords on every stem, as pitch classes, without the stretch with none (issue #393)",
+    stems.every((file) => sameChords(file.recordingChords)),
+    JSON.stringify(one.recordingChords),
   );
   check(
     "its sections placed on the song's: verse 1, the chorus, verse 2, the chorus (and once more)",
@@ -95,7 +114,7 @@ try {
 
   // --- Confirmed, or changed
   r = await call(singer, "PATCH", `/song-versions/${song.id}/attachments/${one.id}`, { recordingKey: "G" });
-  check("changing the key confirms it", r.status === 200 && r.body.recordingKey === "G" && r.body.detected.join() === "timeSignature,firstBeat,beats,sections", JSON.stringify(r.body.detected));
+  check("changing the key confirms it", r.status === 200 && r.body.recordingKey === "G" && r.body.detected.join() === "timeSignature,firstBeat,beats,chords,sections", JSON.stringify(r.body.detected));
   r = await call(singer, "PATCH", `/song-versions/${song.id}/attachments/${stems[2].id}`, { recordingFirstBeat: 0.6 });
   check(
     "a first beat set by hand: the detected beats and bars no longer hold",
@@ -115,6 +134,11 @@ try {
     "the finer pass replaced the stems, not the recording (issue #174)",
     list.separations[0].hqDone && after.some((file) => file.origin === "RECORDED" && file.stemPart === "VOCALS") && after.filter((file) => file.origin === "SEPARATED").length === 4 && after.filter((file) => file.stemPart === "VOCALS").length === 2,
     JSON.stringify(after.map((file) => [file.stemPart, file.origin])),
+  );
+  check(
+    "the finer pass's stems keep the chords",
+    after.filter((file) => file.origin === "SEPARATED").every((file) => sameChords(file.recordingChords)),
+    JSON.stringify(after.map((file) => file.recordingChords?.length ?? null)),
   );
 
   // --- Re-run as 6 parts, replacing these: their sections and name carry over, the recording moves

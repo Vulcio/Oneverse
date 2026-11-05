@@ -37,6 +37,7 @@ import type { LyricsMatch } from "../search-text/lyrics.js";
 import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
+import type { RecordingChord } from "../recording/chords.js";
 import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
 import type { CreateLocationRequest, UpdateLocationRequest } from "../requests/locations.js";
@@ -1969,6 +1970,8 @@ export interface Attachment {
   /** Its beats and the first beat of each of its bars, in seconds (issue #299), as the stem separation's analysis found them; empty or left out for none. */
   recordingBeats?: number[];
   recordingDownbeats?: number[];
+  /** Its chords (issue #393), as the stem separation's analysis found them: suggestions; null or left out for none. */
+  recordingChords?: RecordingChord[] | null;
   /** A lossless upload's original (issue #182), kept as FLAC beside this Opus copy: downloadAttachmentOriginal. */
   original?: { mimeType: string; sizeBytes: number | null } | null;
   /** Recorded this many semitones above its multitrack (issue #135), while the player was transposed; null: in its key. */
@@ -2008,7 +2011,7 @@ export interface Attachment {
 
 export type AttachmentVisibility = "PRIVATE" | "TEAM" | "SONG" | "SHARED";
 export type AttachmentOrigin = "UPLOADED" | "SEPARATED" | "RECORDED";
-export type DetectedDetail = "key" | "tempo" | "timeSignature" | "firstBeat" | "beats" | "sections";
+export type DetectedDetail = "key" | "tempo" | "timeSignature" | "firstBeat" | "beats" | "sections" | "chords";
 
 /** Who sees a file: `teamId` for TEAM. */
 /** An audio file's recording details and multitrack (issues #65, #100, #123). */

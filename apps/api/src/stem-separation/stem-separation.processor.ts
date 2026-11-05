@@ -11,7 +11,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { encodeStem, FfmpegMissingError } from "../recordings/ffmpeg.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
-import { readSongDocument, type CuePoint } from "@oneverse/core";
+import { readRecordingChords, readSongDocument, type CuePoint } from "@oneverse/core";
 import en from "@oneverse/core/i18n/locales/en";
 import fr from "@oneverse/core/i18n/locales/fr";
 import { detailsWithAnalysis } from "./analysis.js";
@@ -249,6 +249,7 @@ export class StemSeparationProcessor extends WorkerHost {
         recordingFreeIntro: source?.recordingFreeIntro ?? false,
         recordingBeats: source?.recordingBeats ?? [],
         recordingDownbeats: source?.recordingDownbeats ?? [],
+        recordingChords: readRecordingChords(source?.recordingChords),
         // The recording's sections, else those placed on the stems this replaces.
         cuePoints: (source?.cuePoints as CuePoint[] | null) ?? earlierCues,
       },
@@ -287,6 +288,7 @@ export class StemSeparationProcessor extends WorkerHost {
             recordingFreeIntro: details.recordingFreeIntro,
             recordingBeats: details.recordingBeats,
             recordingDownbeats: details.recordingDownbeats,
+            recordingChords: details.recordingChords ? (details.recordingChords as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
             cuePoints: details.cuePoints?.length ? (details.cuePoints as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
             detected: details.detected,
             origin: "SEPARATED",
@@ -333,7 +335,7 @@ export class StemSeparationProcessor extends WorkerHost {
       delete rest.id;
       await this.prisma.client.$transaction([
         this.prisma.client.attachment.create({
-          data: { ...(rest as Omit<typeof fast, "id">), cuePoints: fast.cuePoints ?? Prisma.DbNull, filename: fast.filename.replace(/\.[a-z0-9]{1,5}$/i, `.${stem.extension}`), mimeType: stem.mimeType, storageKey: hash, sizeBytes },
+          data: { ...(rest as Omit<typeof fast, "id">), cuePoints: fast.cuePoints ?? Prisma.DbNull, recordingChords: fast.recordingChords ?? Prisma.DbNull, filename: fast.filename.replace(/\.[a-z0-9]{1,5}$/i, `.${stem.extension}`), mimeType: stem.mimeType, storageKey: hash, sizeBytes },
         }),
         this.prisma.client.attachment.delete({ where: { id: fast.id } }),
       ]);

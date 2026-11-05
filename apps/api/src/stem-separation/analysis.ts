@@ -1,4 +1,4 @@
-import { cuesFromSections, parseKey, type CuePoint, type DetectedDetail, type SongDocumentV2 } from "@oneverse/core";
+import { cuesFromSections, parseKey, readRecordingChords, type CuePoint, type DetectedDetail, type RecordingChord, type SongDocumentV2 } from "@oneverse/core";
 import type { DemucsAnalysis } from "./demucs-client.js";
 
 /** Below this, what the analysis says is left out (issue #175). */
@@ -14,6 +14,8 @@ export interface SourceDetails {
   /** The recording's beats and bars (issue #299): empty when it has none. */
   recordingBeats: number[];
   recordingDownbeats: number[];
+  /** The recording's chords (issue #393): null when it has none. */
+  recordingChords: RecordingChord[] | null;
   cuePoints: CuePoint[] | null;
 }
 
@@ -80,6 +82,12 @@ export function detailsWithAnalysis(source: SourceDetails, analysis: DemucsAnaly
     detected.push("beats");
     // No steady beat before the first downbeat: the click waits for it (issue #178).
     if (analysis.intro_free === true && !details.recordingFreeIntro && detected.includes("firstBeat")) details.recordingFreeIntro = true;
+  }
+  // Its chords (issue #393): suggestions, kept when the recording has none of its own.
+  const chords = details.recordingChords === null ? readRecordingChords(analysis.chords) : null;
+  if (chords) {
+    details.recordingChords = chords;
+    detected.push("chords");
   }
   if (!details.cuePoints?.length && song && analysis.sections?.length) {
     const found = analysis.sections.flatMap((section) => (typeof section.start === "number" && typeof section.label === "string" ? [{ start: section.start, label: section.label }] : []));

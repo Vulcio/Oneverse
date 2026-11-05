@@ -56,6 +56,12 @@ export interface DemucsAnalysis {
   time_signature?: { numerator?: number; denominator?: number; confidence?: number } | null;
   key?: { name?: string; confidence?: number } | null;
   sections?: { start?: number; label?: string }[] | null;
+  /** The recording's chords (API v1.7, issue #393), when the server has chords on; read with readRecordingChords. */
+  chords?: unknown[] | null;
+  /** For each of `beats`, the index in `chords` of the chord sounding there. */
+  beat_chords?: (number | null)[] | null;
+  /** Which engine found each part ("librosa@1.7.0", "btc@1673d23f8f9a"). */
+  engines?: Partial<Record<"rhythm" | "key" | "sections" | "chords", string>> | null;
 }
 
 export interface DemucsJob {

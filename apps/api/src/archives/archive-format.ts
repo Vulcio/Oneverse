@@ -98,6 +98,8 @@ const ArchiveAttachmentSchema = z.object({
   recordingFreeIntro: z.boolean().default(false),
   recordingBeats: z.array(z.number()).max(100_000).default([]),
   recordingDownbeats: z.array(z.number()).max(100_000).default([]),
+  // Checked again with readRecordingChords on import (issue #393).
+  recordingChords: z.array(z.unknown()).max(20_000).nullish(),
   recordingTimeSignature: optionalText(20),
   multitrackId: optionalText(64),
   multitrackName: optionalText(300),

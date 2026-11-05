@@ -128,6 +128,7 @@ export async function exportArchive(prisma: PrismaService, storage: StorageServi
           recordingFreeIntro: file.recordingFreeIntro,
           recordingBeats: file.recordingBeats,
           recordingDownbeats: file.recordingDownbeats,
+          recordingChords: Array.isArray(file.recordingChords) ? file.recordingChords : undefined,
           recordingTimeSignature: file.recordingTimeSignature,
           multitrackId: file.multitrackId,
           multitrackName: file.multitrackName,

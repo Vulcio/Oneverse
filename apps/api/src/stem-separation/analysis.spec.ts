@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { detailsWithAnalysis, type SourceDetails } from "./analysis.js";
 
-const none: SourceDetails = { recordingKey: null, recordingTempo: null, recordingTimeSignature: null, recordingFirstBeat: null, recordingFreeIntro: false, recordingBeats: [], recordingDownbeats: [], cuePoints: null };
+const none: SourceDetails = { recordingKey: null, recordingTempo: null, recordingTimeSignature: null, recordingFirstBeat: null, recordingFreeIntro: false, recordingBeats: [], recordingDownbeats: [], recordingChords: null, cuePoints: null };
 const song = {
   sections: [
     { id: "sec_v", type: "verse", label: null, showLabel: true, lines: [] },
@@ -34,6 +34,7 @@ describe("detailsWithAnalysis", () => {
       recordingFreeIntro: false,
       recordingBeats: [],
       recordingDownbeats: [],
+      recordingChords: null,
       cuePoints: [
         { at: 8.3, sectionId: "sec_v" },
         { at: 40.1, sectionId: "sec_c" },
@@ -87,5 +88,23 @@ describe("detailsWithAnalysis", () => {
     expect(detailsWithAnalysis(own, { ...analysis, ...beats }, song).recordingBeats).toEqual([1, 2]);
     expect(detailsWithAnalysis(none, { ...analysis, ...beats, intro_free: true }, song).recordingFreeIntro).toBe(true);
     expect(detailsWithAnalysis({ ...none, recordingFirstBeat: 1 }, { ...analysis, ...beats, intro_free: true }, song).recordingFreeIntro).toBe(false);
+  });
+
+  // Issue #393: the recording's chords, suggestions, as the server found them.
+  it("keeps the chords the server found, marked detected, unless the recording has its own", () => {
+    const chords = [
+      { start: 0, end: 0.5, label: "N" },
+      { start: 0.5, end: 2.5, root: 7, quality: "maj", label: "G" },
+      { start: 2.5, end: 4.5, root: 4, quality: "min", label: "E:min" },
+    ];
+    const found = detailsWithAnalysis(none, { chords }, song);
+    expect(found.recordingChords).toEqual([
+      { start: 0.5, end: 2.5, root: 7, quality: "maj" },
+      { start: 2.5, end: 4.5, root: 4, quality: "min" },
+    ]);
+    expect(found.detected).toContain("chords");
+    const own = [{ start: 0, end: 1, root: 0, quality: "maj" as const }];
+    expect(detailsWithAnalysis({ ...none, recordingChords: own }, { chords }, song).recordingChords).toBe(own);
+    expect(detailsWithAnalysis(none, { chords: [chords[1], { ...chords[2], root: 13 }] }, song).recordingChords).toBeNull();
   });
 });
