@@ -92,8 +92,10 @@ try {
         for (let k = 0; k < 12; k++) await new Promise((done) => requestAnimationFrame(done));
         const after = grab();
         const right = Math.floor(width / 5) - 10;
-        let best = { shift: -1, differ: Infinity, drawn: 0 };
-        for (let shift = 0; shift <= 120; shift++) {
+        // The strip before the playhead is narrow (a fifth): only shifts that leave most of it to compare count, and the
+        // best is the one with the smallest share of pixels that differ.
+        let best = { shift: -1, differ: Infinity, drawn: 0, right };
+        for (let shift = 0; shift <= Math.min(120, (right - 8) / 2); shift++) {
           let differ = 0, drawn = 0;
           for (let y = 0; y < height; y++)
             for (let x = 8; x < right - shift; x++) {
@@ -101,15 +103,16 @@ try {
               if (after[b + 3] > 0) drawn++;
               if (Math.abs(before[a] - after[b]) + Math.abs(before[a + 1] - after[b + 1]) + Math.abs(before[a + 2] - after[b + 2]) + Math.abs(before[a + 3] - after[b + 3]) > 8) differ++;
             }
-          if (differ < best.differ) best = { shift, differ, drawn };
+          if (drawn >= 200 && differ / drawn < best.differ / Math.max(best.drawn, 1)) best = { shift, differ, drawn, right };
         }
         return best;
       });
+    // Back to 16 s for the next steps, whatever happened.
+    await view().getByTestId("tracks-zoom-out").click();
+    await page.locator('[data-testid="tracks-view"][data-zoom="16"]').waitFor();
     if (seen.drawn < 200) throw new Error(`nothing drawn: ${JSON.stringify(seen)}`);
     if (seen.shift <= 0) throw new Error(`not scrolling: ${JSON.stringify(seen)}`);
     if (seen.differ > seen.drawn / 100) throw new Error(`the shape changed as it scrolled: ${JSON.stringify(seen)}`);
-    await view().getByTestId("tracks-zoom-out").click();
-    await page.locator('[data-testid="tracks-view"][data-zoom="16"]').waitFor();
   });
 
   await step("zoomed out to the whole song, then in again", async () => {
