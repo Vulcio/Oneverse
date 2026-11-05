@@ -67,7 +67,10 @@ try {
     const dock = page.getByTestId("docked-diagrams");
     await dock.waitFor();
     const box = await dock.boundingBox();
-    if (Math.round(box.y + box.height) < 720 - 2) throw new Error(`not at the bottom: ${JSON.stringify(box)}`);
+    // At the bottom, over the player's dock where there is one (in Practice, What plays is chosen there: issue #390).
+    const player = page.locator('[data-testid="source-dock"], [data-testid="metronome-dock"]');
+    const bottom = (await player.count()) ? (await player.first().boundingBox()).y : 720;
+    if (Math.round(box.y + box.height) < bottom - 2) throw new Error(`not at the bottom: ${JSON.stringify({ box, bottom })}`);
     if (JSON.stringify(await chordsIn(dock)) !== JSON.stringify(["G", "C", "D"])) throw new Error(JSON.stringify(await chordsIn(dock)));
     // The chorus up to the reading line.
     await page.locator("[data-pass]").nth(1).evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - window.innerHeight / 4));
