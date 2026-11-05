@@ -50,6 +50,8 @@ await step("the pills: the key, the tempo with the metronome, the version; the m
     return list.slice(1).map((c, i) => Math.round((c.time - list[i].time) * 1000) / 1000);
   }, from);
   if (!gaps.every((gap) => Math.abs(gap - 0.5) < 0.002)) throw new Error(`not 120 BPM: ${gaps}`);
+  // Its own page has its controls: no floating metronome over the dock.
+  if (await page.getByTestId("metronome-return").isVisible()) throw new Error("the floating metronome over the page");
   await page.getByTestId("practice-metronome").click();
   await page.locator('[data-testid="practice-metronome"][aria-pressed="false"]').waitFor();
 });

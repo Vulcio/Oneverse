@@ -75,7 +75,11 @@ try {
   });
 
   await step("scrolling, a lane's waveform keeps its shape: it only slides, by whole pixels (issue #386)", async () => {
-    // Two frames a few apart: the played half of the first lane, slid by some whole number of pixels, is the same picture.
+    // Zoomed to 8 s, so the lanes scroll: the playhead a fifth of the way in (issue #390) once 1.6 s are played, until the last 6.4.
+    await view().getByTestId("tracks-zoom-in").click();
+    await page.locator('[data-testid="tracks-view"][data-zoom="8"]').waitFor();
+    if ((await position()) > 12) throw new Error(`too far in to scroll: ${await position()} s`);
+    // Two frames a few apart: the played part of the first lane, slid by some whole number of pixels, is the same picture.
     const seen = await view()
       .getByTestId("tracks-lane")
       .first()
@@ -87,7 +91,7 @@ try {
         const before = grab();
         for (let k = 0; k < 12; k++) await new Promise((done) => requestAnimationFrame(done));
         const after = grab();
-        const right = Math.floor(width / 2) - 30;
+        const right = Math.floor(width / 5) - 10;
         let best = { shift: -1, differ: Infinity, drawn: 0 };
         for (let shift = 0; shift <= 120; shift++) {
           let differ = 0, drawn = 0;
@@ -104,6 +108,8 @@ try {
     if (seen.drawn < 200) throw new Error(`nothing drawn: ${JSON.stringify(seen)}`);
     if (seen.shift <= 0) throw new Error(`not scrolling: ${JSON.stringify(seen)}`);
     if (seen.differ > seen.drawn / 100) throw new Error(`the shape changed as it scrolled: ${JSON.stringify(seen)}`);
+    await view().getByTestId("tracks-zoom-out").click();
+    await page.locator('[data-testid="tracks-view"][data-zoom="16"]').waitFor();
   });
 
   await step("zoomed out to the whole song, then in again", async () => {

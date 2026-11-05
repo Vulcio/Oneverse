@@ -203,7 +203,9 @@ export function MetronomeReturnButton() {
   const { t } = useTranslation();
   const metronome = useMetronome();
   const beat = useMetronomeBeat();
-  const onPage = useRouterState({ select: (s) => s.location.pathname === "/metronome" });
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  // On its own page, and on the song's page that started it (its metronome there stops it, issue #390): not over the page's own player.
+  const onPage = path === "/metronome" || (!!metronome.songId && path.split("/").includes(metronome.songId));
   if (!metronome.playing || onPage) return null;
   return (
     <div

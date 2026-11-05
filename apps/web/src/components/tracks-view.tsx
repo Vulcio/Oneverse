@@ -18,6 +18,8 @@ import { useMarkTracksShown } from "#/lib/tracks-shown";
 
 /** How much of the song the lanes show (s); the last, all of it (TRACK_ZOOMS, kept on the device). */
 const ZOOMS = [8, 16, 32, Number.POSITIVE_INFINITY];
+/** Where the playhead sits in the lanes when not recording: a fifth of the way in (issue #390). */
+const LEAD = 0.2;
 /** The words lit a beat before they're sung, as in the chart. */
 const AHEAD = 1;
 
@@ -61,7 +63,8 @@ function peakBetween(track: StemTrack, from: number, to: number): number {
 /**
  * A song's parts as lanes, as in a DAW (issue #374): the song's sections
  * across the top, a box round what the lanes show; the words being sung;
- * then each part's waveform under a playhead in the middle - played on its
+ * then each part's waveform under a playhead a fifth of the way in (the
+ * middle while recording) - played on its
  * left, coming on its right, muted ones faint - zoomed from a few seconds
  * to the whole song. While a part's recorded in the player, the take has a
  * lane of its own, growing left of the playhead. It reads the stem player:
@@ -138,11 +141,18 @@ export function TracksView({
     let shownLine: number | null | undefined;
     let shownBar: number | null | undefined;
     let shownRecording = false;
-    /** The window's left edge (s) and the playhead's x for a lane `width` wide. */
+    /**
+     * The window's left edge (s) and the playhead's x for a lane `width` wide.
+     * Recording, the playhead stays in the middle, the take growing left of it; else it sits a fifth
+     * of the way in (issue #390): from the song's start it moves there, and near its end on to it,
+     * so no half of the lanes is left empty.
+     */
     const frameOf = (width: number, at: number) => {
       const { duration, span, whole } = latest.current;
       if (whole) return { from: 0, length: duration, head: (at / duration) * width };
-      return { from: at - span / 2, length: span, head: width / 2 };
+      if (liveTake.from !== null) return { from: at - span / 2, length: span, head: width / 2 };
+      const from = Math.max(0, Math.min(at - span * LEAD, duration - span));
+      return { from, length: span, head: ((at - from) / span) * width };
     };
     /** The canvas sized for the screen; null when it can't draw. */
     const prepare = (element: HTMLCanvasElement) => {
@@ -266,7 +276,7 @@ export function TracksView({
       const box = windowBox.current;
       if (box && duration > 0) {
         const { span } = latest.current;
-        box.style.left = `${(Math.max(0, at - span / 2) / duration) * 100}%`;
+        box.style.left = `${(Math.max(0, frameOf(1, at).from) / duration) * 100}%`;
         box.style.width = `${(Math.min(span, duration) / duration) * 100}%`;
       }
       // The words and the bar, as the music has them.

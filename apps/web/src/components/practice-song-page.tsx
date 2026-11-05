@@ -31,7 +31,7 @@ import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
 import { useSungLine } from "#/lib/sung-line";
 import { TracksView } from "#/components/tracks-view";
-import { stemsOf } from "#/lib/stem-engine";
+import { stemsOf, useStems } from "#/lib/stem-engine";
 
 /**
  * A library song in Practice (issue #67): its chart, as written and read
@@ -271,16 +271,25 @@ export function PracticeSongPage({
 const PILL = "inline-flex h-8 items-center gap-1.5 rounded-full bg-muted px-3 text-sm font-medium";
 
 /**
- * The song's metronome, in its tempo pill (issue #390): with the stems or
- * the recording, their click; else the song's own metronome, at its tempo,
- * time signature and pattern.
+ * The song's metronome, in its tempo pill (issue #390): one press, whatever
+ * plays. While the stems or the recording play, it's their click; else the
+ * song's own metronome, at its tempo, time signature and pattern - which
+ * hands over to their click when they start.
  */
 function PracticeMetronome({ songId, chart, source }: { songId: string; chart: Pick<RenderedChartLike, "tempo" | "tempoUnit" | "timeSignature" | "metronomeBeats">; source: PlaybackSource }) {
   const { t } = useTranslation();
   const metronome = useMetronome();
   const click = useRecordingClick();
-  const withFiles = playsFiles(source);
+  const stems = useStems();
+  // The stems (or the recording) of this song playing: the click goes with them.
+  const withFiles = playsFiles(source) && stems.songVersionId === songId && stems.playing;
   const mine = metronome.playing && metronome.songId === songId;
+  useEffect(() => {
+    if (withFiles && mine && !metronome.following) {
+      stopMetronome();
+      setRecordingClick(true);
+    }
+  }, [withFiles, mine]);
   const on = withFiles ? click : mine;
   const tempo = chart.tempo;
   const press = () => {
