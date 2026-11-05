@@ -89,6 +89,12 @@ await step("more details starts collapsed, then takes every field", async () => 
   const usual = await page.locator("#song-tempoUnit option").first().textContent();
   if (usual !== "Usual (1/4)") throw new Error(usual);
   await page.selectOption("#song-tempoUnit", "1/2.");
+  // The version's own metronome pattern (issue #384): each player's own until one is set; beat 3 made medium.
+  await page.getByTestId("song-metronome-beats-set").click();
+  await page.getByTestId("song-metronome-beats").getByRole("button", { name: "Beat 3: small" }).click();
+  await page.getByTestId("song-metronome-beats").getByRole("button", { name: "Beat 3: off" }).click();
+  await page.getByTestId("song-metronome-beats").getByRole("button", { name: "Beat 3: accent" }).click();
+  await page.getByTestId("song-metronome-beats").getByRole("button", { name: "Beat 3: medium" }).waitFor();
   await page.selectOption("#song-capo", "2");
   await page.fill("#song-year", "2006");
   await page.fill("#song-isrc", "USRC17607839");
@@ -175,6 +181,7 @@ await step("saving creates the song with everything", async () => {
     d.artists.map((a) => a.source).join() === "Chris Tomlin,Louie Giglio" &&
     roles["John Newton"] === "COMPOSER" &&
     d.documentJson.defaults.key === "D" && d.documentJson.defaults.tempo === 72 && d.documentJson.defaults.tempoUnit === "1/2." && d.capo === 2 &&
+    d.documentJson.defaults.metronomeBeats?.join() === "accent,normal,medium" &&
     d.documentJson.defaults.timeSignature?.numerator === 3 && d.year === 2006 && d.isrc === "USRC17607839" && d.ccli === "4768151" &&
     d.notes === "Slow intro" && d.tags[0]?.label === "Christmas" &&
     d.documentJson.sections[0]?.lines.some((l) => l.chords.some((c) => c.raw === "G"));

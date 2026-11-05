@@ -1003,7 +1003,7 @@
             },
             2000
           ],
-          "expected": 6
+          "expected": 4
         },
         {
           "name": "6/8 at 60 eighths",
@@ -1090,7 +1090,7 @@
       ]
     },
     "normalizeMetronome": {
-      "about": "Metronome settings made whole and within bounds: the tempo 20-300, a beat level per beat of the bar, the note the tempo counts (the time signature's own, dotted quarters in 6/8, 9/8, 12/8, dotted eighths in 6/16, 9/16, 12/16).",
+      "about": "Metronome settings made whole and within bounds: the tempo 20-300, a beat level per beat of the bar (accent, medium, normal, mute; issue #384), the player's patterns per time signature, the note the tempo counts (the time signature's own, quarters in 6/8, 9/8, 12/8, eighths in 6/16, 9/16, 12/16).",
       "params": [
         "input"
       ],
@@ -1111,6 +1111,7 @@
               "normal",
               "normal"
             ],
+            "patterns": {},
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1129,17 +1130,18 @@
           ],
           "expected": {
             "tempo": 90,
-            "tempoUnit": "1/4.",
+            "tempoUnit": "1/4",
             "numerator": 6,
             "denominator": 8,
             "beats": [
               "accent",
               "normal",
               "normal",
-              "normal",
+              "medium",
               "normal",
               "normal"
             ],
+            "patterns": {},
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1168,6 +1170,7 @@
               "normal",
               "normal"
             ],
+            "patterns": {},
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1194,10 +1197,11 @@
               "accent",
               "normal",
               "normal",
-              "normal",
+              "medium",
               "normal",
               "normal"
             ],
+            "patterns": {},
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1223,6 +1227,7 @@
               "normal",
               "normal"
             ],
+            "patterns": {},
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1247,6 +1252,7 @@
               "accent",
               "normal"
             ],
+            "patterns": {},
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1264,23 +1270,24 @@
           ],
           "expected": {
             "tempo": 100,
-            "tempoUnit": "1/8.",
+            "tempoUnit": "1/8",
             "numerator": 12,
             "denominator": 16,
             "beats": [
               "accent",
               "normal",
               "normal",
+              "medium",
               "normal",
               "normal",
+              "medium",
               "normal",
               "normal",
-              "normal",
-              "normal",
-              "normal",
+              "medium",
               "normal",
               "normal"
             ],
+            "patterns": {},
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1306,6 +1313,556 @@
               "normal",
               "normal"
             ],
+            "patterns": {},
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        },
+        {
+          "name": "6/8 with the player's own pattern for it",
+          "args": [
+            {
+              "numerator": 6,
+              "denominator": 8,
+              "patterns": {
+                "6/8": [
+                  "accent",
+                  "mute",
+                  "normal",
+                  "medium",
+                  "mute",
+                  "normal"
+                ],
+                "4/4": [
+                  "accent"
+                ]
+              }
+            }
+          ],
+          "expected": {
+            "tempo": 100,
+            "tempoUnit": "1/4",
+            "numerator": 6,
+            "denominator": 8,
+            "beats": [
+              "accent",
+              "mute",
+              "normal",
+              "medium",
+              "mute",
+              "normal"
+            ],
+            "patterns": {
+              "6/8": [
+                "accent",
+                "mute",
+                "normal",
+                "medium",
+                "mute",
+                "normal"
+              ]
+            },
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        },
+        {
+          "name": "kept before patterns per time signature",
+          "args": [
+            {
+              "numerator": 3,
+              "beats": [
+                "accent",
+                "medium",
+                "mute"
+              ]
+            }
+          ],
+          "expected": {
+            "tempo": 100,
+            "tempoUnit": "1/4",
+            "numerator": 3,
+            "denominator": 4,
+            "beats": [
+              "accent",
+              "medium",
+              "mute"
+            ],
+            "patterns": {
+              "3/4": [
+                "accent",
+                "medium",
+                "mute"
+              ]
+            },
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        }
+      ]
+    },
+    "defaultBeats": {
+      "about": "A bar's usual pattern (issue #384): its first beat accented, the first of each other group medium, the rest normal. Compound time (6/8, 9/8, 12/8) in threes, 5 as 3+2, 7 as 2+2+3, other bars one group.",
+      "params": [
+        "timeSignature"
+      ],
+      "cases": [
+        {
+          "name": "4/4",
+          "args": [
+            {
+              "numerator": 4,
+              "denominator": 4
+            }
+          ],
+          "expected": [
+            "accent",
+            "normal",
+            "normal",
+            "normal"
+          ]
+        },
+        {
+          "name": "3/4",
+          "args": [
+            {
+              "numerator": 3,
+              "denominator": 4
+            }
+          ],
+          "expected": [
+            "accent",
+            "normal",
+            "normal"
+          ]
+        },
+        {
+          "name": "6/8",
+          "args": [
+            {
+              "numerator": 6,
+              "denominator": 8
+            }
+          ],
+          "expected": [
+            "accent",
+            "normal",
+            "normal",
+            "medium",
+            "normal",
+            "normal"
+          ]
+        },
+        {
+          "name": "6/4",
+          "args": [
+            {
+              "numerator": 6,
+              "denominator": 4
+            }
+          ],
+          "expected": [
+            "accent",
+            "normal",
+            "normal",
+            "normal",
+            "normal",
+            "normal"
+          ]
+        },
+        {
+          "name": "12/8",
+          "args": [
+            {
+              "numerator": 12,
+              "denominator": 8
+            }
+          ],
+          "expected": [
+            "accent",
+            "normal",
+            "normal",
+            "medium",
+            "normal",
+            "normal",
+            "medium",
+            "normal",
+            "normal",
+            "medium",
+            "normal",
+            "normal"
+          ]
+        },
+        {
+          "name": "5/4",
+          "args": [
+            {
+              "numerator": 5,
+              "denominator": 4
+            }
+          ],
+          "expected": [
+            "accent",
+            "normal",
+            "normal",
+            "medium",
+            "normal"
+          ]
+        },
+        {
+          "name": "7/8",
+          "args": [
+            {
+              "numerator": 7,
+              "denominator": 8
+            }
+          ],
+          "expected": [
+            "accent",
+            "normal",
+            "medium",
+            "normal",
+            "medium",
+            "normal",
+            "normal"
+          ]
+        }
+      ]
+    },
+    "changeMetronome": {
+      "about": "A change to the player's settings (issue #384): a new pattern is kept for its time signature (the usual one forgotten); a new time signature brings the player's pattern for it, else its usual one.",
+      "params": [
+        "current",
+        "change"
+      ],
+      "cases": [
+        {
+          "name": "a pattern for 6/8",
+          "args": [
+            {
+              "numerator": 6,
+              "denominator": 8
+            },
+            {
+              "beats": [
+                "accent",
+                "mute",
+                "normal",
+                "medium",
+                "mute",
+                "normal"
+              ]
+            }
+          ],
+          "expected": {
+            "tempo": 100,
+            "tempoUnit": "1/4",
+            "numerator": 6,
+            "denominator": 8,
+            "beats": [
+              "accent",
+              "mute",
+              "normal",
+              "medium",
+              "mute",
+              "normal"
+            ],
+            "patterns": {
+              "6/8": [
+                "accent",
+                "mute",
+                "normal",
+                "medium",
+                "mute",
+                "normal"
+              ]
+            },
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        },
+        {
+          "name": "back to the usual pattern",
+          "args": [
+            {
+              "numerator": 6,
+              "denominator": 8,
+              "patterns": {
+                "6/8": [
+                  "accent",
+                  "mute",
+                  "normal",
+                  "medium",
+                  "mute",
+                  "normal"
+                ]
+              }
+            },
+            {
+              "beats": [
+                "accent",
+                "normal",
+                "normal",
+                "medium",
+                "normal",
+                "normal"
+              ]
+            }
+          ],
+          "expected": {
+            "tempo": 100,
+            "tempoUnit": "1/4",
+            "numerator": 6,
+            "denominator": 8,
+            "beats": [
+              "accent",
+              "normal",
+              "normal",
+              "medium",
+              "normal",
+              "normal"
+            ],
+            "patterns": {},
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        },
+        {
+          "name": "6/8 to 6/4",
+          "args": [
+            {
+              "numerator": 6,
+              "denominator": 8,
+              "patterns": {
+                "6/8": [
+                  "accent",
+                  "mute",
+                  "normal",
+                  "medium",
+                  "mute",
+                  "normal"
+                ]
+              }
+            },
+            {
+              "denominator": 4
+            }
+          ],
+          "expected": {
+            "tempo": 100,
+            "tempoUnit": "1/4",
+            "numerator": 6,
+            "denominator": 4,
+            "beats": [
+              "accent",
+              "normal",
+              "normal",
+              "normal",
+              "normal",
+              "normal"
+            ],
+            "patterns": {
+              "6/8": [
+                "accent",
+                "mute",
+                "normal",
+                "medium",
+                "mute",
+                "normal"
+              ]
+            },
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        },
+        {
+          "name": "to a time signature with a pattern of the player's",
+          "args": [
+            {
+              "patterns": {
+                "3/4": [
+                  "accent",
+                  "mute",
+                  "normal"
+                ]
+              }
+            },
+            {
+              "numerator": 3
+            }
+          ],
+          "expected": {
+            "tempo": 100,
+            "tempoUnit": "1/4",
+            "numerator": 3,
+            "denominator": 4,
+            "beats": [
+              "accent",
+              "mute",
+              "normal"
+            ],
+            "patterns": {
+              "3/4": [
+                "accent",
+                "mute",
+                "normal"
+              ]
+            },
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        }
+      ]
+    },
+    "metronomeForSong": {
+      "about": "A song's tempo, the note it counts and time signature on top of the player's settings; the pattern is the version's own when it fits the bar, else the player's for that time signature (issue #384).",
+      "params": [
+        "current",
+        "song"
+      ],
+      "cases": [
+        {
+          "name": "a 6/8 song at 71",
+          "args": [
+            {},
+            {
+              "tempo": 71,
+              "timeSignature": {
+                "numerator": 6,
+                "denominator": 8
+              }
+            }
+          ],
+          "expected": {
+            "tempo": 71,
+            "tempoUnit": "1/4",
+            "numerator": 6,
+            "denominator": 8,
+            "beats": [
+              "accent",
+              "normal",
+              "normal",
+              "medium",
+              "normal",
+              "normal"
+            ],
+            "patterns": {},
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        },
+        {
+          "name": "a 7/8 version's own grouping",
+          "args": [
+            {},
+            {
+              "tempo": 90,
+              "timeSignature": {
+                "numerator": 7,
+                "denominator": 8
+              },
+              "beats": [
+                "accent",
+                "normal",
+                "normal",
+                "medium",
+                "normal",
+                "medium",
+                "normal"
+              ]
+            }
+          ],
+          "expected": {
+            "tempo": 90,
+            "tempoUnit": "1/8",
+            "numerator": 7,
+            "denominator": 8,
+            "beats": [
+              "accent",
+              "normal",
+              "normal",
+              "medium",
+              "normal",
+              "medium",
+              "normal"
+            ],
+            "patterns": {},
+            "subdivision": 1,
+            "countIn": 0,
+            "countInOnly": false,
+            "sound": "click",
+            "volume": 0.8
+          }
+        },
+        {
+          "name": "a version's pattern that doesn't fit the bar",
+          "args": [
+            {
+              "patterns": {
+                "4/4": [
+                  "accent",
+                  "normal",
+                  "medium",
+                  "normal"
+                ]
+              }
+            },
+            {
+              "tempo": 120,
+              "timeSignature": {
+                "numerator": 4,
+                "denominator": 4
+              },
+              "beats": [
+                "accent",
+                "normal",
+                "normal"
+              ]
+            }
+          ],
+          "expected": {
+            "tempo": 120,
+            "tempoUnit": "1/4",
+            "numerator": 4,
+            "denominator": 4,
+            "beats": [
+              "accent",
+              "normal",
+              "medium",
+              "normal"
+            ],
+            "patterns": {
+              "4/4": [
+                "accent",
+                "normal",
+                "medium",
+                "normal"
+              ]
+            },
             "subdivision": 1,
             "countIn": 0,
             "countInOnly": false,
@@ -1385,7 +1942,7 @@
       ]
     },
     "clicksBetween": {
-      "about": "The clicks from one position (included) to another (not): accents, muted beats, subdivisions, count-in. Every beat of the time signature clicks (six in 6/8), split into the subdivision; the tempo's note only sets the speed (issue #377).",
+      "about": "The clicks from one position (included) to another (not): each beat at its level (accent, medium, normal; issue #384), muted beats, subdivisions, count-in (the pattern, a muted beat normal). Every beat of the time signature clicks (six in 6/8), split into the subdivision; the tempo's note only sets the speed (issue #377).",
       "params": [
         "settings",
         "from",
@@ -1537,10 +2094,11 @@
           ]
         },
         {
-          "name": "6/8, counted in dotted quarters: every eighth",
+          "name": "6/8 in dotted quarters: every eighth",
           "args": [
             {
               "tempo": 71,
+              "tempoUnit": "1/4.",
               "numerator": 6,
               "denominator": 8
             },
@@ -1590,8 +2148,8 @@
               "bar": 0,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": false
@@ -1627,6 +2185,7 @@
           "args": [
             {
               "tempo": 71,
+              "tempoUnit": "1/4.",
               "numerator": 6,
               "denominator": 8,
               "subdivision": 3
@@ -1749,8 +2308,8 @@
               "bar": 0,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": false
@@ -1909,8 +2468,8 @@
               "bar": -1,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": true
@@ -1981,8 +2540,8 @@
               "bar": 0,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": false
@@ -2129,8 +2688,8 @@
               "bar": 0,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": false
@@ -2201,8 +2760,8 @@
               "bar": 1,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": false
@@ -2288,8 +2847,8 @@
               "bar": 0,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": false
@@ -2360,8 +2919,8 @@
               "bar": 1,
               "beat": 3,
               "sub": 0,
-              "level": "normal",
-              "note": 33,
+              "level": "medium",
+              "note": 34,
               "channel": 10,
               "velocity": 90,
               "countIn": false
@@ -2516,6 +3075,196 @@
               "note": 34,
               "channel": 10,
               "velocity": 120,
+              "countIn": false
+            }
+          ]
+        },
+        {
+          "name": "6/8 at 71, its usual pattern: 4 medium",
+          "args": [
+            {
+              "tempo": 71,
+              "numerator": 6,
+              "denominator": 8
+            },
+            0,
+            6
+          ],
+          "expected": [
+            {
+              "position": 0,
+              "tick": 0,
+              "bar": 0,
+              "beat": 0,
+              "sub": 0,
+              "level": "accent",
+              "note": 34,
+              "channel": 10,
+              "velocity": 120,
+              "countIn": false
+            },
+            {
+              "position": 1,
+              "tick": 240,
+              "bar": 0,
+              "beat": 1,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 2,
+              "tick": 480,
+              "bar": 0,
+              "beat": 2,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 3,
+              "tick": 720,
+              "bar": 0,
+              "beat": 3,
+              "sub": 0,
+              "level": "medium",
+              "note": 34,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 4,
+              "tick": 960,
+              "bar": 0,
+              "beat": 4,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 5,
+              "tick": 1200,
+              "bar": 0,
+              "beat": 5,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            }
+          ]
+        },
+        {
+          "name": "a bar of count-in plays the pattern, a muted beat small",
+          "args": [
+            {
+              "tempo": 100,
+              "numerator": 4,
+              "countIn": 1,
+              "beats": [
+                "accent",
+                "mute",
+                "medium",
+                "normal"
+              ]
+            },
+            0,
+            8
+          ],
+          "expected": [
+            {
+              "position": 0,
+              "tick": 0,
+              "bar": -1,
+              "beat": 0,
+              "sub": 0,
+              "level": "accent",
+              "note": 34,
+              "channel": 10,
+              "velocity": 120,
+              "countIn": true
+            },
+            {
+              "position": 1,
+              "tick": 480,
+              "bar": -1,
+              "beat": 1,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": true
+            },
+            {
+              "position": 2,
+              "tick": 960,
+              "bar": -1,
+              "beat": 2,
+              "sub": 0,
+              "level": "medium",
+              "note": 34,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": true
+            },
+            {
+              "position": 3,
+              "tick": 1440,
+              "bar": -1,
+              "beat": 3,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": true
+            },
+            {
+              "position": 4,
+              "tick": 1920,
+              "bar": 0,
+              "beat": 0,
+              "sub": 0,
+              "level": "accent",
+              "note": 34,
+              "channel": 10,
+              "velocity": 120,
+              "countIn": false
+            },
+            {
+              "position": 6,
+              "tick": 2880,
+              "bar": 0,
+              "beat": 2,
+              "sub": 0,
+              "level": "medium",
+              "note": 34,
+              "channel": 10,
+              "velocity": 90,
+              "countIn": false
+            },
+            {
+              "position": 7,
+              "tick": 3360,
+              "bar": 0,
+              "beat": 3,
+              "sub": 0,
+              "level": "normal",
+              "note": 33,
+              "channel": 10,
+              "velocity": 90,
               "countIn": false
             }
           ]

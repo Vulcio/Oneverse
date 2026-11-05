@@ -84,6 +84,8 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
     : null;
   // The note the song's tempo counts (issue #377), its time signature's default when it doesn't say.
   const tempoUnit = song?.document.defaults.tempoUnit ?? null;
+  // The version's own metronome pattern (issue #384), else the player's.
+  const metronomeBeats = song?.document.defaults.metronomeBeats ?? null;
   const timeSignatureNow = arrangement?.timeSignature ?? song?.document.defaults.timeSignature ?? null;
   const details = [
     t("sets.songOfSet", { position: item.position + 1, count: set.itemCount }),
@@ -113,6 +115,7 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
     tempo,
     tempoUnit,
     timeSignature,
+    metronomeBeats,
     store: playbackStore,
     set: { id: set.id, itemId: item.id, name: setName },
     versionMultitrackId: view.arrangement?.multitrackId ?? null,
@@ -174,6 +177,7 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
               tempo={tempo}
               tempoUnit={tempoUnit}
               timeSignature={arrangement?.timeSignature ?? song.document.defaults.timeSignature}
+              metronomeBeats={metronomeBeats}
               variant="button"
               className="h-8"
             />

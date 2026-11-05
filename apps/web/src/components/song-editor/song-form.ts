@@ -41,6 +41,8 @@ const TEXT_FIELDS = [
   "key",
   "tempo",
   "tempoUnit",
+  // The version's metronome pattern (issue #384), its levels joined by commas; "" for each player's own.
+  "metronomeBeats",
   "timeSignature",
   "capo",
   "duration",
@@ -96,6 +98,7 @@ export function formFromVersion(version: SongVersionDetail): SongForm {
     key: defaults.key ?? "",
     tempo: defaults.tempo?.toString() ?? "",
     tempoUnit: defaults.tempoUnit ?? "",
+    metronomeBeats: defaults.metronomeBeats?.join(",") ?? "",
     timeSignature: defaults.timeSignature ? `${defaults.timeSignature.numerator}/${defaults.timeSignature.denominator}` : "",
     capo: version.capo ? String(version.capo) : "",
     duration: defaults.durationSeconds ? formatDuration(defaults.durationSeconds) : "",
@@ -236,6 +239,7 @@ function changedFields(form: SongForm, initial: SongForm): UpdateSongVersionInpu
     if (!fieldChanged(form, initial, field)) continue;
     if (field === "duration") data.durationSeconds = form.duration.trim() ? parseDuration(form.duration.trim()) : null;
     else if (field === "title" || field === "language") data[field] = form[field].trim();
+    else if (field === "metronomeBeats") data.metronomeBeats = form.metronomeBeats ? form.metronomeBeats.split(",") : null;
     else data[field] = textValue(form, field);
   }
   for (const field of Object.keys(CREDIT_FIELDS) as CreditField[]) {

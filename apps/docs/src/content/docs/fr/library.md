@@ -78,7 +78,7 @@ Ouverte depuis une liste - **Chants** tels que vous les avez cherchés et triés
 
 Un chant a des onglets :
 
-- **Infos** - son nom et ses artistes, et sous **Plus de détails** : compositeurs, auteurs et autres crédits, album, année, tonalité, tempo et la note qu'il compte (**Tempo en** : laissé sur **Habituel**, celle de la mesure, des noires pointées en 6/8 - voir [le métronome](/fr/metronome/#mesure-et-motif)), mesure, capo suggéré, durée, copyright, numéros CCLI et ISRC, une référence (par exemple le passage biblique dont il s'inspire), des notes et des étiquettes. Il liste aussi les recueils qui le contiennent.
+- **Infos** - son nom et ses artistes, et sous **Plus de détails** : compositeurs, auteurs et autres crédits, album, année, tonalité, tempo et la note qu'il compte (**Tempo en** : laissé sur **Habituel**, celle de la mesure, des noires en 6/8 - voir [le métronome](/fr/metronome/#mesure-et-motif)), mesure, le **Motif du métronome** de la version (celui de chaque musicien, sauf si vous en choisissez un), capo suggéré, durée, copyright, numéros CCLI et ISRC, une référence (par exemple le passage biblique dont il s'inspire), des notes et des étiquettes. Il liste aussi les recueils qui le contiennent.
 - **Éditeur** - la grille elle-même. Voir [L'éditeur de chants](/fr/song-editor/).
 - **Versions** - la façon dont vous et vos équipes le jouez et le chantez. Voir [Versions](/fr/versions/).
 - **Fichiers** - partitions, fichier d'origine de la grille, images (25 Mo maximum chacun, sauf si votre administrateur a fixé d'autres limites ; l'onglet l'indique). Les PDF, images, fichiers audio et vidéo et le texte brut s'ouvrent dans le navigateur ; tout autre fichier (une page web, par exemple) est téléchargé, pour ne jamais pouvoir s'exécuter dans Songverse.
@@ -257,7 +257,7 @@ Pour le séparer de nouveau - 6 pistes après 4, par exemple - utilisez encore *
 
 Vous pouvez enregistrer une piste directement dans Songverse, sur un ordinateur, un téléphone ou une tablette avec un micro :
 
-- **Enregistrer un nouveau multipiste**, en bas de l'onglet **Audio** : la première couche d'un chant, ou une autre version, avec le métronome seul. Donnez-lui un **Nom**, un **Tempo (BPM)** et une **Mesure** (ceux du chant pour commencer ; le tempo d'un enregistrement compte les temps de sa mesure, donc un chant en 6/8 à 71 en noires pointées commence à 213). Il commence par une mesure de décompte, qui est gardée : le premier temps du multipiste tombe une mesure plus loin.
+- **Enregistrer un nouveau multipiste**, en bas de l'onglet **Audio** : la première couche d'un chant, ou une autre version, avec le métronome seul. Donnez-lui un **Nom**, un **Tempo (BPM)** et une **Mesure** (ceux du chant pour commencer ; le tempo d'un enregistrement compte les temps de sa mesure, donc un chant en 6/8 à 71 en noires commence à 142). Le clic joue le motif du métronome pour la mesure : celui de la version, sinon le vôtre. Il commence par une mesure de décompte, qui est gardée : le premier temps du multipiste tombe une mesure plus loin.
 - **Enregistrer une piste**, dans le cadre d'un multipiste : une autre piste de ce multipiste, en entendant les autres (décochez-en une sous **Entendre** pour la laisser de côté) et le clic, à son tempo, avec une mesure de décompte avant son premier temps.
 
 #### L'enregistreur

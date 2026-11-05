@@ -2,7 +2,7 @@ import { chordFamily, formatChord, parseChord, simplifyChord, transposeChord, ty
 import { passEdited, passLines } from "./pass.js";
 import type { ChordNotationValue } from "../constants/index.js";
 import { transposeKey } from "../music-keys/transpose.js";
-import { beatsPerTempoUnit, defaultTempoUnit, type TempoUnit } from "../metronome/index.js";
+import { beatsPerTempoUnit, defaultTempoUnit, type BeatLevel, type TempoUnit } from "../metronome/index.js";
 import {
   ArrangementDocumentV2Schema,
   placeChords,
@@ -101,6 +101,8 @@ export interface RenderedChart {
   tempo: number | null;
   /** The note the tempo counts, as the song says (issue #377); null: the time signature's default (defaultTempoUnit). */
   tempoUnit: TempoUnit | null;
+  /** The version's own metronome pattern (issue #384); left out: the player's. */
+  metronomeBeats?: BeatLevel[];
   timeSignature: SongDocumentV2["defaults"]["timeSignature"];
   passes: RenderedPass[];
 }
@@ -271,6 +273,7 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
     capoShapes: !!capo && view.capoDisplay === "shapes" && view.notation !== "nashville" && view.notation !== "roman",
     tempo: defaults?.tempo ?? song.defaults.tempo ?? null,
     tempoUnit: song.defaults.tempoUnit ?? null,
+    ...(song.defaults.metronomeBeats && { metronomeBeats: song.defaults.metronomeBeats }),
     timeSignature: defaults?.timeSignature ?? song.defaults.timeSignature ?? null,
     passes,
   };

@@ -128,6 +128,7 @@ export function PracticeSongPage({
     youtube: youtubeId ? { id: youtubeId } : null,
     tempo: chart.tempo,
     tempoUnit: chart.tempoUnit,
+    metronomeBeats: chart.metronomeBeats,
     timeSignature: chart.timeSignature,
     store: playbackStore,
     stems: { songKey: chart.key, cueSections, record: { attachments, songKey: chart.key ?? undefined, onSaved: () => void router.invalidate() } },
@@ -173,7 +174,7 @@ export function PracticeSongPage({
           <DisplayPanel mode="PRACTICE" settings={display} player={player} className="h-9" />
           {notes.button}
           {playback.control}
-          {playback.source === "METRONOME" ? null : <MetronomeSongButton songId={version.id} tempo={chart.tempo} tempoUnit={chart.tempoUnit} timeSignature={chart.timeSignature} variant="button" />}
+          {playback.source === "METRONOME" ? null : <MetronomeSongButton songId={version.id} tempo={chart.tempo} tempoUnit={chart.tempoUnit} timeSignature={chart.timeSignature} metronomeBeats={chart.metronomeBeats} variant="button" />}
           {/* Into one of one's sets (issue #330). */}
           <AddToSetButton songVersionId={version.id} songTitle={version.title} />
           <Button variant="outline" onClick={() => setMode("edit")}>

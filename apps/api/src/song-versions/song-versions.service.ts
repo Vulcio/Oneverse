@@ -145,6 +145,7 @@ function defaultsFrom(dto: SongFields): SongDefaultsV2 {
     ...(dto.key !== undefined && { key: dto.key }),
     ...(dto.tempo !== undefined && { tempo: dto.tempo }),
     ...(dto.tempoUnit !== undefined && { tempoUnit: dto.tempoUnit }),
+    ...(dto.metronomeBeats !== undefined && { metronomeBeats: dto.metronomeBeats }),
     ...(dto.timeSignature !== undefined && { timeSignature: parseTimeSignature(dto.timeSignature) }),
     ...(dto.durationSeconds !== undefined && { durationSeconds: dto.durationSeconds }),
   };

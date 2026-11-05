@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Minus, Play, Plus, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BeatLights } from "#/components/metronome";
+import { PatternEditor } from "#/components/metronome";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent } from "@oneverse/ui/components/card";
 import { Input } from "@oneverse/ui/components/input";
@@ -92,7 +92,7 @@ function MetronomePage() {
           <p className="h-5 text-sm font-medium text-muted-foreground" data-testid="metronome-bar" aria-live="off">
             {beat ? (beat.countIn ? t("metronome.countingIn") : t("metronome.bar", { bar: beat.bar + 1 })) : null}
           </p>
-          <BeatLights settings={settings} beat={beat} onChange={locked ? undefined : (beats) => updateMetronome({ beats })} />
+          <PatternEditor beats={settings.beats} timeSignature={settings} beat={beat} disabled={locked} onChange={(beats) => updateMetronome({ beats })} />
           <p className="text-center text-xs text-muted-foreground">{t("metronome.patternHint")}</p>
 
           <div className="flex items-center gap-3">

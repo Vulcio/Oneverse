@@ -11,7 +11,9 @@ import {
   recordingPlan,
   sortedCues,
   TIME_SIGNATURE_PATTERN,
+  patternFor,
   type Attachment,
+  type BeatLevel,
   type CueSection,
   type Multitrack,
   type RecordingDetails,
@@ -32,7 +34,7 @@ import { PartPicker, usePartLabel, type PartChoice } from "#/components/part-pic
 import { useCueNames } from "#/components/stem-cues";
 import { TakeStrip } from "#/components/take-strip";
 import { apiClient } from "#/lib/api-client";
-import { getMetronomeState, stopMetronome } from "#/lib/metronome-engine";
+import { getMetronomeState, ownMetronomeSettings, stopMetronome } from "#/lib/metronome-engine";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { openOwnEngine, openPlayerEngine, type RecordEngine } from "#/lib/record-engine";
 import type { Beat, Take } from "#/lib/recorder";
@@ -92,6 +94,7 @@ export function RecordScreen({
   into = null,
   songTempo,
   songTimeSignature,
+  songBeats = null,
   songKey,
   setlist,
   cueSections = [],
@@ -112,6 +115,8 @@ export function RecordScreen({
   songTempo: number | null;
   /** "4/4", or "". */
   songTimeSignature: string;
+  /** The version's own metronome pattern (issue #384); null: the player's. */
+  songBeats?: BeatLevel[] | null;
   songKey: string;
   /** Recording from a set's song page: a new multitrack can be that set's. */
   setlist?: { id: string; name: string } | null;
@@ -178,7 +183,13 @@ export function RecordScreen({
         firstBeat: multitrack ? (first?.recordingFirstBeat ?? 0) : null,
       })
     : null;
-  const beat: Beat | null = plan ? { tempo: tempoValue, beatsPerBar, firstBeat: plan.firstBeat } : null;
+  // The click sounds the metronome's pattern for the bar (issue #384): the version's, else the player's.
+  const levels = signatureMatch
+    ? songBeats?.length === beatsPerBar && signature === (songTimeSignature || "4/4")
+      ? songBeats
+      : patternFor(ownMetronomeSettings(), { numerator: beatsPerBar, denominator: Number(signatureMatch[2]) })
+    : undefined;
+  const beat: Beat | null = plan ? { tempo: tempoValue, beatsPerBar, firstBeat: plan.firstBeat, levels } : null;
   const barLength = beat ? (60 / beat.tempo) * beat.beatsPerBar : 2;
   const valid = multitrack ? true : hasTempo && !!signatureMatch;
 

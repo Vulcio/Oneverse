@@ -1,5 +1,5 @@
 import { decodeAudio } from "#/lib/decode-audio";
-import { alignTake, clapDelayFrom, clickTimes, roundTripFrom } from "@oneverse/core";
+import { alignTake, clapDelayFrom, clickTimes, roundTripFrom, type BeatLevel, type Click } from "@oneverse/core";
 import { endStemsRecording } from "#/lib/stem-engine";
 
 /**
@@ -120,6 +120,8 @@ export interface Beat {
   tempo: number;
   beatsPerBar: number;
   firstBeat: number;
+  /** The metronome's pattern for the bar (issue #384): the click's levels. */
+  levels?: BeatLevel[];
 }
 
 export interface Take {
@@ -291,10 +293,11 @@ export class Recorder {
     return this.backing.get(id)?.duration ?? 0;
   }
 
-  private click(at: number, accent: boolean) {
+  private click(at: number, level: Click["level"]) {
     const oscillator = this.context.createOscillator();
     const envelope = this.context.createGain();
-    oscillator.frequency.value = accent ? 1600 : 1000;
+    // A pitch per level (issue #384): accent, medium, small; all as loud, for the round trip's measure.
+    oscillator.frequency.value = level === "accent" ? 1600 : level === "medium" ? 1300 : 1000;
     envelope.gain.setValueAtTime(1, at);
     envelope.gain.exponentialRampToValueAtTime(0.001, at + 0.04);
     oscillator.connect(envelope).connect(this.clickGain);
@@ -343,7 +346,7 @@ export class Recorder {
     const schedule = () => {
       const until = this.context.currentTime + LOOKAHEAD - zeroAt;
       if (until < next) return;
-      for (const click of clickTimes({ ...beat, from: next, to: until })) this.click(zeroAt + click.at, click.accent);
+      for (const click of clickTimes({ ...beat, from: next, to: until })) this.click(zeroAt + click.at, click.level);
       next = until + 1e-6;
     };
     schedule();
@@ -453,7 +456,7 @@ export class Recorder {
     this.capture.port.postMessage(true);
     const start = this.context.currentTime + 0.3;
     const playedAt = Array.from({ length: 6 }, (_, i) => start + i * 0.5);
-    for (const at of playedAt) this.click(at, true);
+    for (const at of playedAt) this.click(at, "accent");
     await new Promise((resolve) => setTimeout(resolve, (start - this.context.currentTime + 3.2) * 1000));
     this.capture.port.postMessage(false);
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -478,7 +481,7 @@ export class Recorder {
     const start = this.context.currentTime + 0.5;
     const playedAt = Array.from({ length: 10 }, (_, i) => start + i * 0.6);
     playedAt.forEach((at, i) => {
-      this.click(at, i % 4 === 0);
+      this.click(at, i % 4 === 0 ? "accent" : "normal");
       if (onClick) setTimeout(() => onClick(i), (at - this.context.currentTime) * 1000);
     });
     await new Promise((resolve) => setTimeout(resolve, (start - this.context.currentTime + 6.4) * 1000));

@@ -401,6 +401,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
         target={NEW_TARGET}
         songTempo={songBeatTempo(song)}
         songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
+        songBeats={song.metronomeBeats}
         songKey={song.record.songKey ?? ""}
         setlist={song.record.setlist}
         cueSections={song.cueSections?.sections ?? []}
@@ -838,6 +839,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
               into={recordInto}
               songTempo={songBeatTempo(song)}
               songTimeSignature={song.timeSignature ? `${song.timeSignature.numerator}/${song.timeSignature.denominator}` : ""}
+              songBeats={song.metronomeBeats}
               songKey={song.record.songKey ?? ""}
               setlist={song.record.setlist}
               cueSections={cueSections}

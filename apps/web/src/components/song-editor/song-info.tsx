@@ -4,6 +4,9 @@ import {
   resolveTranslation,
   METADATA_PROVIDER_NAMES,
   TEMPO_UNITS,
+  TIME_SIGNATURE_PATTERN,
+  defaultBeats,
+  type BeatLevel,
   type LocaleValue,
   type MetadataMatch,
   type MetadataProviderKey,
@@ -32,6 +35,7 @@ import { CAPO_OPTIONS, TIME_SIGNATURE_OPTIONS, type CreditField, type FormError,
 import { KeySelect } from "#/components/key-select";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { tempoUnitKey, usualTempoUnit } from "#/lib/tempo-unit";
+import { PatternEditor } from "#/components/metronome";
 
 
 export type FieldErrors = Partial<Record<TextField | "artists", FormError>>;
@@ -670,7 +674,11 @@ export function MoreDetailsCard({
                 <NativeSelect
                   id="song-timeSignature"
                   value={form.timeSignature}
-                  onChange={(event) => setField("timeSignature", event.target.value)}
+                  onChange={(event) => {
+                    setField("timeSignature", event.target.value);
+                    // A pattern for another bar no longer fits (issue #384): each player's own again.
+                    if (form.metronomeBeats && form.metronomeBeats.split(",").length !== Number(event.target.value.split("/")[0])) setField("metronomeBeats", "");
+                  }}
                   className="w-full"
                 >
                   <option value="">{t("songEditor.none")}</option>
@@ -696,6 +704,7 @@ export function MoreDetailsCard({
               </Field>
               {text("duration", { placeholder: "3:45" })}
             </div>
+            <VersionPattern form={form} setField={setField} />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {text("copyright", { placeholder: "© 2006 Publisher" })}
               <Field id="song-language" label={t("songEditor.fields.language")}>
@@ -788,5 +797,37 @@ export function SongbooksCard({ memberships, title }: { memberships: SongVersion
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * The version's metronome pattern (issue #384): each player's own unless
+ * the version sets one (a 7/8 felt 3+2+2, a backbeat), for its time signature.
+ */
+function VersionPattern({ form, setField }: { form: SongForm; setField: (field: "metronomeBeats", value: string) => void }) {
+  const { t } = useTranslation();
+  const match = TIME_SIGNATURE_PATTERN.exec(form.timeSignature);
+  if (!match) return null;
+  const timeSignature = { numerator: Number(match[1]), denominator: Number(match[2]) };
+  const beats = form.metronomeBeats ? (form.metronomeBeats.split(",") as BeatLevel[]) : null;
+  const own = beats && beats.length === timeSignature.numerator ? beats : null;
+  return (
+    <Field id="song-metronomeBeats" label={t("songEditor.fields.metronomeBeats")} hint={t("songEditor.metronomeBeatsHint")}>
+      {own ? (
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
+          <PatternEditor beats={own} timeSignature={timeSignature} onChange={(next) => setField("metronomeBeats", next.join(","))} testId="song-metronome-beats" />
+          <Button type="button" size="sm" variant="ghost" onClick={() => setField("metronomeBeats", "")} data-testid="song-metronome-beats-clear">
+            {t("songEditor.metronomeBeatsPlayers")}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">{t("songEditor.metronomeBeatsNone")}</span>
+          <Button type="button" size="sm" variant="outline" onClick={() => setField("metronomeBeats", defaultBeats(timeSignature).join(","))} data-testid="song-metronome-beats-set">
+            {t("songEditor.metronomeBeatsSet")}
+          </Button>
+        </div>
+      )}
+    </Field>
   );
 }

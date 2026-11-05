@@ -1,4 +1,4 @@
-import { barAt, barsLength, metronomeForSong, recordingBeatPosition, recordingSecondsAt, type ChartBar, type TempoUnit } from "@oneverse/core";
+import { barAt, barsLength, metronomeForSong, recordingBeatPosition, recordingSecondsAt, type ChartBar, type TempoUnit, type BeatLevel } from "@oneverse/core";
 import { startMetronome, stopMetronome, useMetronome } from "#/lib/metronome-engine";
 import { pauseStems, playLoadedStems, setStemLoop, useStems, type StemState } from "#/lib/stem-engine";
 import { unlockSyncAudio } from "#/lib/sync-client";
@@ -41,7 +41,7 @@ function positionAt(beat: NonNullable<StemState["beat"]>, bars: readonly ChartBa
  * (the recording's beats place each bar), else the metronome at the song's
  * tempo from that bar. Following Sync play's leader, it's theirs.
  */
-export function useGridPlayer(songId: string, bars: readonly ChartBar[], song: { tempo: number | null; tempoUnit?: TempoUnit | null; timeSignature?: { numerator: number; denominator: number } | null }): GridPlayer {
+export function useGridPlayer(songId: string, bars: readonly ChartBar[], song: { tempo: number | null; tempoUnit?: TempoUnit | null; timeSignature?: { numerator: number; denominator: number } | null; metronomeBeats?: BeatLevel[] | null }): GridPlayer {
   const stems = useStems();
   const metronome = useMetronome();
   const stemsHere = stems.songVersionId === songId && stems.beat ? stems.beat : null;
@@ -52,7 +52,7 @@ export function useGridPlayer(songId: string, bars: readonly ChartBar[], song: {
   const playing = stemsPlaying || clickPlaying;
 
   const click = (from: number) => {
-    if (song.tempo) startMetronome(metronomeForSong(metronome.settings, { tempo: song.tempo, tempoUnit: song.tempoUnit, timeSignature: song.timeSignature ?? null }), songId, from);
+    if (song.tempo) startMetronome(metronomeForSong(metronome.settings, { tempo: song.tempo, tempoUnit: song.tempoUnit, timeSignature: song.timeSignature ?? null, beats: song.metronomeBeats }), songId, from);
   };
   const toggle = () => {
     if (following) return unlockSyncAudio();

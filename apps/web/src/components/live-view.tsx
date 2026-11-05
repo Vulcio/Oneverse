@@ -439,7 +439,7 @@ export function LiveView({
         {song.reading ? <ViewSwitch reading={song.reading} compact /> : null}
         {/* The song's tempo and time signature, one press (issue #2); the rest on the Metronome page. */}
         {song.setId ? <SyncControl setId={song.setId} itemId={song.id} compact /> : null}
-        {shows("metronome") ? <MetronomeSongButton songId={song.id} tempo={chart?.tempo} tempoUnit={chart?.tempoUnit} timeSignature={chart?.timeSignature} /> : null}
+        {shows("metronome") ? <MetronomeSongButton songId={song.id} tempo={chart?.tempo} tempoUnit={chart?.tempoUnit} timeSignature={chart?.timeSignature} metronomeBeats={chart?.metronomeBeats} /> : null}
         <CommandSearch />
         <DisplayPanel mode="LIVE" settings={display} player={head.player} compact className="size-10 border-0 text-muted-foreground [&_svg]:size-5" />
         {fullScreen.available ? (

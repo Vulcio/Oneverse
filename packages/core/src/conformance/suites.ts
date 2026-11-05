@@ -22,7 +22,7 @@ import { structureOf } from "../song-document/structure.js";
 import { flowToChordPro, lineToInlineText, readSongDocument, sectionsFromText, songDocumentFromSections, songDocumentFromText, songFromText, songToChordPro } from "../song-document/text.js";
 import { findRepeats, linkRepeats } from "../song-document/repeats.js";
 import { sectionHeading } from "../chordpro/section-labels.js";
-import { beatAt, clicksBetween, normalizeMetronome, tapTempo } from "../metronome/index.js";
+import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
@@ -1587,7 +1587,7 @@ export const CONFORMANCE: ConformanceArea[] = [
       },
       normalizeMetronome: {
         about:
-          "Metronome settings made whole and within bounds: the tempo 20-300, a beat level per beat of the bar, the note the tempo counts (the time signature's own, dotted quarters in 6/8, 9/8, 12/8, dotted eighths in 6/16, 9/16, 12/16).",
+          "Metronome settings made whole and within bounds: the tempo 20-300, a beat level per beat of the bar (accent, medium, normal, mute; issue #384), the player's patterns per time signature, the note the tempo counts (the time signature's own, quarters in 6/8, 9/8, 12/8, eighths in 6/16, 9/16, 12/16).",
         params: ["input"],
         run: normalizeMetronome,
         cases: [
@@ -1599,6 +1599,43 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "2/2", args: [{ numerator: 2, denominator: 2 }] },
           { name: "12/16", args: [{ numerator: 12, denominator: 16 }] },
           { name: "a note it doesn't know", args: [{ tempoUnit: "1/3" }] },
+          { name: "6/8 with the player's own pattern for it", args: [{ numerator: 6, denominator: 8, patterns: { "6/8": ["accent", "mute", "normal", "medium", "mute", "normal"], "4/4": ["accent"] } }] },
+          { name: "kept before patterns per time signature", args: [{ numerator: 3, beats: ["accent", "medium", "mute"] }] },
+        ],
+      },
+      defaultBeats: {
+        about: "A bar's usual pattern (issue #384): its first beat accented, the first of each other group medium, the rest normal. Compound time (6/8, 9/8, 12/8) in threes, 5 as 3+2, 7 as 2+2+3, other bars one group.",
+        params: ["timeSignature"],
+        run: defaultBeats,
+        cases: [
+          { name: "4/4", args: [{ numerator: 4, denominator: 4 }] },
+          { name: "3/4", args: [{ numerator: 3, denominator: 4 }] },
+          { name: "6/8", args: [{ numerator: 6, denominator: 8 }] },
+          { name: "6/4", args: [{ numerator: 6, denominator: 4 }] },
+          { name: "12/8", args: [{ numerator: 12, denominator: 8 }] },
+          { name: "5/4", args: [{ numerator: 5, denominator: 4 }] },
+          { name: "7/8", args: [{ numerator: 7, denominator: 8 }] },
+        ],
+      },
+      changeMetronome: {
+        about: "A change to the player's settings (issue #384): a new pattern is kept for its time signature (the usual one forgotten); a new time signature brings the player's pattern for it, else its usual one.",
+        params: ["current", "change"],
+        run: (current: unknown, change: unknown) => changeMetronome(normalizeMetronome(current as never), change as never),
+        cases: [
+          { name: "a pattern for 6/8", args: [{ numerator: 6, denominator: 8 }, { beats: ["accent", "mute", "normal", "medium", "mute", "normal"] }] },
+          { name: "back to the usual pattern", args: [{ numerator: 6, denominator: 8, patterns: { "6/8": ["accent", "mute", "normal", "medium", "mute", "normal"] } }, { beats: ["accent", "normal", "normal", "medium", "normal", "normal"] }] },
+          { name: "6/8 to 6/4", args: [{ numerator: 6, denominator: 8, patterns: { "6/8": ["accent", "mute", "normal", "medium", "mute", "normal"] } }, { denominator: 4 }] },
+          { name: "to a time signature with a pattern of the player's", args: [{ patterns: { "3/4": ["accent", "mute", "normal"] } }, { numerator: 3 }] },
+        ],
+      },
+      metronomeForSong: {
+        about: "A song's tempo, the note it counts and time signature on top of the player's settings; the pattern is the version's own when it fits the bar, else the player's for that time signature (issue #384).",
+        params: ["current", "song"],
+        run: (current: unknown, song: unknown) => metronomeForSong(normalizeMetronome(current as never), song as never),
+        cases: [
+          { name: "a 6/8 song at 71", args: [{}, { tempo: 71, timeSignature: { numerator: 6, denominator: 8 } }] },
+          { name: "a 7/8 version's own grouping", args: [{}, { tempo: 90, timeSignature: { numerator: 7, denominator: 8 }, beats: ["accent", "normal", "normal", "medium", "normal", "medium", "normal"] }] },
+          { name: "a version's pattern that doesn't fit the bar", args: [{ patterns: { "4/4": ["accent", "normal", "medium", "normal"] } }, { tempo: 120, timeSignature: { numerator: 4, denominator: 4 }, beats: ["accent", "normal", "normal"] }] },
         ],
       },
       beatAt: {
@@ -1614,21 +1651,23 @@ export const CONFORMANCE: ConformanceArea[] = [
       },
       clicksBetween: {
         about:
-          "The clicks from one position (included) to another (not): accents, muted beats, subdivisions, count-in. Every beat of the time signature clicks (six in 6/8), split into the subdivision; the tempo's note only sets the speed (issue #377).",
+          "The clicks from one position (included) to another (not): each beat at its level (accent, medium, normal; issue #384), muted beats, subdivisions, count-in (the pattern, a muted beat normal). Every beat of the time signature clicks (six in 6/8), split into the subdivision; the tempo's note only sets the speed (issue #377).",
         params: ["settings", "from", "to"],
         run: (settings: unknown, from: number, to: number) => clicksBetween(normalizeMetronome(settings as never), from, to),
         cases: [
           { name: "a bar of 4/4", args: [{ tempo: 100, numerator: 4 }, 0, 4] },
           { name: "eighths, a muted beat", args: [{ tempo: 100, numerator: 4, subdivision: 2, beats: ["accent", "mute", "normal", "normal"] }, 0, 2] },
           { name: "a bar of count-in, count-in only", args: [{ tempo: 100, numerator: 2, countIn: 1, countInOnly: true }, 0, 4] },
-          { name: "6/8, counted in dotted quarters: every eighth", args: [{ tempo: 71, numerator: 6, denominator: 8 }, 0, 6] },
-          { name: "6/8 in dotted quarters, the eighths in triplets", args: [{ tempo: 71, numerator: 6, denominator: 8, subdivision: 3 }, 0, 6] },
+          { name: "6/8 in dotted quarters: every eighth", args: [{ tempo: 71, tempoUnit: "1/4.", numerator: 6, denominator: 8 }, 0, 6] },
+          { name: "6/8 in dotted quarters, the eighths in triplets", args: [{ tempo: 71, tempoUnit: "1/4.", numerator: 6, denominator: 8, subdivision: 3 }, 0, 6] },
           { name: "6/8 in eighths, a bar of count-in", args: [{ tempo: 180, tempoUnit: "1/8", numerator: 6, denominator: 8, countIn: 1 }, 0, 12] },
           { name: "4/4 in half notes", args: [{ tempo: 60, tempoUnit: "1/2" }, 0, 4] },
           { name: "6/8 in quarters: the speed only, every eighth", args: [{ tempo: 71, tempoUnit: "1/4", numerator: 6, denominator: 8 }, 0, 12] },
           { name: "6/8 in dotted eighths: the speed only, every eighth", args: [{ tempo: 71, tempoUnit: "1/8.", numerator: 6, denominator: 8 }, 0, 12] },
           { name: "4/4 in eighths, the second beat muted", args: [{ tempo: 60, tempoUnit: "1/8", beats: ["accent", "mute", "normal", "normal"] }, 0, 3] },
           { name: "4/4 in dotted quarters: the speed only, every quarter", args: [{ tempo: 60, tempoUnit: "1/4." }, 3, 9] },
+          { name: "6/8 at 71, its usual pattern: 4 medium", args: [{ tempo: 71, numerator: 6, denominator: 8 }, 0, 6] },
+          { name: "a bar of count-in plays the pattern, a muted beat small", args: [{ tempo: 100, numerator: 4, countIn: 1, beats: ["accent", "mute", "medium", "normal"] }, 0, 8] },
         ],
       },
       cuesFromSections: {

@@ -76,7 +76,7 @@ export function useRecordingClickBridge() {
     }
     // Slower or faster (issue #139): the beat at the speed the stems play. A recording's tempo counts its time signature's beats (issue #377).
     const mine = ownMetronomeSettings();
-    const own = metronomeForSong(mine, { tempo: beat.tempo * speed, tempoUnit: beatTempoUnit(beat.timeSignature?.denominator ?? mine.denominator), timeSignature: beat.timeSignature });
+    const own = metronomeForSong(mine, { tempo: beat.tempo * speed, tempoUnit: beatTempoUnit(beat.timeSignature?.denominator ?? mine.denominator), timeSignature: beat.timeSignature, beats: beat.metronomeBeats });
     const plan = recordingClickPlan(own, beat);
     playMetronomeOn({
       settings: plan.settings,

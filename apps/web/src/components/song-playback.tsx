@@ -1,4 +1,4 @@
-import { metronomeForSong, playbackSourcesOf, playsFiles, resolvePlaybackSource, type Attachment, type PlaybackSource, type TempoUnit } from "@oneverse/core";
+import { metronomeForSong, playbackSourcesOf, playsFiles, resolvePlaybackSource, type Attachment, type PlaybackSource, type TempoUnit, type BeatLevel } from "@oneverse/core";
 import { tempoText } from "#/lib/tempo-unit";
 import { AudioLines, Ban, Layers, Metronome, Mic, Square, TvMinimalPlay, Users } from "lucide-react";
 import { useContext, useEffect, useRef, type ReactNode } from "react";
@@ -40,6 +40,8 @@ export interface SongPlaybackProps {
   /** The note the tempo counts (issue #377); null: the time signature's default. */
   tempoUnit?: TempoUnit | null;
   timeSignature: { numerator: number; denominator: number } | null | undefined;
+  /** The version's own metronome pattern (issue #384); null: the player's. */
+  metronomeBeats?: BeatLevel[] | null;
   /** Where the person's choice is kept. */
   store: PlaybackStore;
   /** A song of a set: its multitrack comes first, and Sync play's leader chooses for everyone. */
@@ -132,6 +134,7 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
           load: props.load,
           tempo: props.tempo,
           tempoUnit: props.tempoUnit,
+          metronomeBeats: props.metronomeBeats,
           timeSignature: props.timeSignature,
           choiceKey: props.choiceKey,
           prefetch,
@@ -166,7 +169,7 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
   ) : source === "YOUTUBE" && props.youtube ? (
     <YouTubeDock video={{ songVersionId: props.songVersionId, videoId: props.youtube.id, start: props.youtube.start ?? null, title: props.title, returnTo: props.returnTo }} />
   ) : source === "METRONOME" ? (
-    <MetronomeDock id={metronomeId(props)} title={props.title} tempo={props.tempo} tempoUnit={props.tempoUnit} timeSignature={props.timeSignature} />
+    <MetronomeDock id={metronomeId(props)} title={props.title} tempo={props.tempo} tempoUnit={props.tempoUnit} timeSignature={props.timeSignature} metronomeBeats={props.metronomeBeats} />
   ) : null;
 
   return { control, dock, source };
@@ -188,12 +191,14 @@ function MetronomeDock({
   tempo,
   tempoUnit,
   timeSignature,
+  metronomeBeats,
 }: {
   id: string;
   title: string;
   tempo: number | null | undefined;
   tempoUnit?: TempoUnit | null;
   timeSignature: { numerator: number; denominator: number } | null | undefined;
+  metronomeBeats?: BeatLevel[] | null;
 }) {
   const slot = useContext(StemDockSlot);
   const { t } = useTranslation();
@@ -201,7 +206,7 @@ function MetronomeDock({
   const beat = useMetronomeBeat();
   const mine = metronome.playing && metronome.songId === id;
   const following = metronome.following;
-  const settings = tempo ? metronomeForSong(metronome.settings, { tempo, tempoUnit, timeSignature }) : metronome.settings;
+  const settings = tempo ? metronomeForSong(metronome.settings, { tempo, tempoUnit, timeSignature, beats: metronomeBeats }) : metronome.settings;
   const press = () => {
     if (following) return unlockSyncAudio();
     if (mine) return stopMetronome();

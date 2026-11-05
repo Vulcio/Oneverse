@@ -5,16 +5,16 @@
  *
  * Positions are in beats of the time signature (a 6/8 bar is six beats,
  * each an eighth note) counted from the start, count-in included; the tempo
- * counts its own note (`tempoUnit`, issue #377: a 6/8 song's 71 is usually
- * dotted quarters, three of those beats each). Ticks are MIDI's: 480 to a quarter note. A click is a
+ * counts its own note (`tempoUnit`, issue #377; a 6/8 song's 71 counts
+ * quarters unless it says, two of those beats each, issue #384). Ticks are MIDI's: 480 to a quarter note. A click is a
  * note on channel 10, General MIDI's drums, as a MIDI renderer will send it.
  */
 
 /** Ticks to a quarter note, as in a Standard MIDI File. */
 export const PPQ = 480;
 export const METRONOME_CHANNEL = 10;
-/** General MIDI's metronome bell (a bar's first beat) and click. */
-export const METRONOME_NOTES = { accent: 34, normal: 33, sub: 33 } as const;
+/** General MIDI's metronome bell (a bar's first beat, softer on a group's) and click. */
+export const METRONOME_NOTES = { accent: 34, medium: 34, normal: 33, sub: 33 } as const;
 
 export const MIN_TEMPO = 20;
 export const MAX_TEMPO = 300;
@@ -33,17 +33,25 @@ export function isTempoUnit(value: unknown): value is TempoUnit {
   return (TEMPO_UNITS as readonly unknown[]).includes(value);
 }
 
+type TimeSignature = { numerator: number; denominator: number };
+
+/** Compound time: 6/8, 9/8, 12/8 and the same in sixteenths, felt in groups of three. */
+export function isCompound(timeSignature: TimeSignature): boolean {
+  return timeSignature.numerator > 3 && timeSignature.numerator % 3 === 0 && (timeSignature.denominator === 8 || timeSignature.denominator === 16);
+}
+
 /**
  * The note a song's tempo counts when it doesn't say: the time signature's
  * own, except in compound time (6/8, 9/8, 12/8 and the same in sixteenths),
- * counted in dotted notes of three beats.
+ * counted in notes of two beats (issue #384: 6/8 at 71 plays its eighths
+ * at 142, twice as fast as 3/4 at 71, in a bar as long).
  */
 export function defaultTempoUnit(timeSignature: { numerator: number; denominator: number } | null | undefined): TempoUnit {
   const numerator = timeSignature?.numerator ?? 4;
   const denominator = timeSignature?.denominator ?? 4;
-  const compound = numerator > 3 && numerator % 3 === 0;
-  if (denominator === 8) return compound ? "1/4." : "1/8";
-  if (denominator === 16) return compound ? "1/8." : "1/16";
+  const compound = isCompound({ numerator, denominator });
+  if (denominator === 8) return compound ? "1/4" : "1/8";
+  if (denominator === 16) return compound ? "1/8" : "1/16";
   if (denominator === 2) return "1/2";
   return "1/4";
 }
@@ -60,8 +68,19 @@ export function beatsPerTempoUnit(unit: TempoUnit, denominator: number): number 
   return (denominator / note) * (dotted ? 1.5 : 1);
 }
 
-/** How a beat sounds: accented, as usual, or not at all. */
-export type BeatLevel = "accent" | "normal" | "mute";
+/**
+ * How a beat sounds (issue #384): accented (the bar's first), medium (a
+ * group's first: 4 in 6/8), small ("normal", every other beat), or not at
+ * all ("mute").
+ */
+export const BEAT_LEVELS = ["accent", "medium", "normal", "mute"] as const;
+export type BeatLevel = (typeof BEAT_LEVELS)[number];
+/** Tapping a beat: accent, medium, small, off, and round again. */
+export const NEXT_BEAT_LEVEL: Record<BeatLevel, BeatLevel> = { accent: "medium", medium: "normal", normal: "mute", mute: "accent" };
+
+export function isBeatPattern(value: unknown, numerator: number): value is BeatLevel[] {
+  return Array.isArray(value) && value.length === numerator && value.every((beat) => (BEAT_LEVELS as readonly unknown[]).includes(beat));
+}
 /** Clicks per beat: 1, eighths (2), triplets (3), sixteenths (4). */
 export type Subdivision = 1 | 2 | 3 | 4;
 export type MetronomeSound = (typeof METRONOME_SOUNDS)[number];
@@ -75,6 +94,8 @@ export interface MetronomeSettings {
   denominator: number;
   /** One per beat of the bar: the pattern. */
   beats: BeatLevel[];
+  /** The player's own pattern for each time signature they changed ("6/8"), the usual one for the others (issue #384). */
+  patterns?: Record<string, BeatLevel[]>;
   subdivision: Subdivision;
   /** Bars counted in before the song starts. */
   countIn: number;
@@ -90,6 +111,7 @@ export const DEFAULT_METRONOME: MetronomeSettings = {
   numerator: 4,
   denominator: 4,
   beats: ["accent", "normal", "normal", "normal"],
+  patterns: {},
   subdivision: 1,
   countIn: 0,
   countInOnly: false,
@@ -103,9 +125,59 @@ export function clampTempo(tempo: number, fine = false): number {
   return Math.min(MAX_TEMPO, Math.max(MIN_TEMPO, fine ? Math.round(tempo * 100) / 100 : Math.round(tempo)));
 }
 
-/** A bar's usual pattern: its first beat accented. */
-export function defaultBeats(numerator: number): BeatLevel[] {
-  return Array.from({ length: numerator }, (_, i) => (i === 0 ? "accent" : "normal"));
+/** "6/8": how a pattern is kept for its time signature. */
+export const signatureKey = (timeSignature: TimeSignature) => `${timeSignature.numerator}/${timeSignature.denominator}`;
+
+/**
+ * The ways a bar of 5 or 7 can be grouped (issue #384), the usual one
+ * first: 5 as 3+2 or 2+3; 7 as 2+2+3, 3+2+2 or 2+3+2.
+ */
+export const BEAT_GROUPINGS: Readonly<Record<number, readonly (readonly number[])[]>> = {
+  5: [
+    [3, 2],
+    [2, 3],
+  ],
+  7: [
+    [2, 2, 3],
+    [3, 2, 2],
+    [2, 3, 2],
+  ],
+};
+
+/** How a bar is felt: threes in compound time, 5 and 7 their usual grouping, one group otherwise (4/4, 3/4). */
+export function defaultGrouping(timeSignature: TimeSignature): number[] {
+  if (isCompound(timeSignature)) return Array.from({ length: timeSignature.numerator / 3 }, () => 3);
+  const usual = BEAT_GROUPINGS[timeSignature.numerator]?.[0];
+  return usual ? [...usual] : [timeSignature.numerator];
+}
+
+/** A pattern from groups of beats: the bar's first accented, each other group's first medium, the rest small. */
+export function beatsFromGrouping(groups: readonly number[]): BeatLevel[] {
+  return groups.flatMap((size, group) => Array.from({ length: size }, (_, i): BeatLevel => (i > 0 ? "normal" : group === 0 ? "accent" : "medium")));
+}
+
+/**
+ * A bar's usual pattern (issue #384): its first beat accented, the first of
+ * each other group medium. 3/4 is A s s, 4/4 A s s s, 6/8 A s s M s s.
+ */
+export function defaultBeats(timeSignature: TimeSignature): BeatLevel[] {
+  return beatsFromGrouping(defaultGrouping(timeSignature));
+}
+
+const samePattern = (a: readonly BeatLevel[], b: readonly BeatLevel[]) => a.length === b.length && a.every((level, i) => level === b[i]);
+
+function normalizePatterns(input: unknown, current: { key: string; beats: BeatLevel[] | null; usual: BeatLevel[] }): Record<string, BeatLevel[]> {
+  const patterns: Record<string, BeatLevel[]> = {};
+  if (input && typeof input === "object" && !Array.isArray(input)) {
+    for (const [key, beats] of Object.entries(input as Record<string, unknown>).slice(0, 64)) {
+      const match = /^(\d{1,2})\/(\d{1,2})$/.exec(key);
+      if (match && (METRONOME_DENOMINATORS as readonly number[]).includes(Number(match[2])) && isBeatPattern(beats, Number(match[1]))) patterns[key] = [...beats];
+    }
+  } else if (current.beats && !samePattern(current.beats, current.usual)) {
+    // Settings kept before patterns per time signature: the pattern they had is the one for theirs.
+    patterns[current.key] = [...current.beats];
+  }
+  return patterns;
 }
 
 /** Settings made whole and valid, from whatever was stored or asked for. */
@@ -113,15 +185,18 @@ export function normalizeMetronome(input: Partial<MetronomeSettings> | null | un
   const value = input ?? {};
   const numerator = Number.isInteger(value.numerator) ? Math.min(MAX_BEATS_PER_BAR, Math.max(1, value.numerator!)) : DEFAULT_METRONOME.numerator;
   const denominator = (METRONOME_DENOMINATORS as readonly number[]).includes(value.denominator ?? 0) ? value.denominator! : DEFAULT_METRONOME.denominator;
-  const levels: BeatLevel[] = ["accent", "normal", "mute"];
-  const beats =
-    Array.isArray(value.beats) && value.beats.length === numerator && value.beats.every((beat) => levels.includes(beat)) ? [...value.beats] : defaultBeats(numerator);
+  const signature = { numerator, denominator };
+  const key = signatureKey(signature);
+  const given = isBeatPattern(value.beats, numerator) ? [...value.beats] : null;
+  const patterns = normalizePatterns(value.patterns, { key, beats: given, usual: defaultBeats(signature) });
+  const beats = given ?? (patterns[key] ? [...patterns[key]] : defaultBeats(signature));
   return {
     tempo: clampTempo(value.tempo ?? DEFAULT_METRONOME.tempo, true),
     tempoUnit: isTempoUnit(value.tempoUnit) ? value.tempoUnit : defaultTempoUnit({ numerator, denominator }),
     numerator,
     denominator,
     beats,
+    patterns,
     subdivision: ([1, 2, 3, 4] as const).includes(value.subdivision as Subdivision) ? (value.subdivision as Subdivision) : 1,
     countIn: Number.isInteger(value.countIn) ? Math.min(4, Math.max(0, value.countIn!)) : 0,
     countInOnly: !!value.countInOnly && Number.isInteger(value.countIn) && value.countIn! > 0,
@@ -130,25 +205,54 @@ export function normalizeMetronome(input: Partial<MetronomeSettings> | null | un
   };
 }
 
+/** The player's pattern for a time signature: the one they set for it, else the usual one. */
+export function patternFor(settings: Pick<MetronomeSettings, "patterns">, timeSignature: TimeSignature): BeatLevel[] {
+  const own = settings.patterns?.[signatureKey(timeSignature)];
+  return isBeatPattern(own, timeSignature.numerator) ? [...own] : defaultBeats(timeSignature);
+}
+
+/**
+ * A change to the player's settings: a new pattern is kept for its time
+ * signature (the usual one forgotten); a new time signature brings the
+ * pattern the player has for it, else its usual one (issue #384: 6/8 and
+ * 6/4 are two patterns).
+ */
+export function changeMetronome(current: MetronomeSettings, change: Partial<MetronomeSettings>): MetronomeSettings {
+  const numerator = change.numerator ?? current.numerator;
+  const denominator = change.denominator ?? current.denominator;
+  const signature = { numerator, denominator };
+  const patterns = { ...current.patterns, ...change.patterns };
+  if (change.beats && isBeatPattern(change.beats, numerator)) {
+    const key = signatureKey(signature);
+    if (samePattern(change.beats, defaultBeats(signature))) delete patterns[key];
+    else patterns[key] = [...change.beats];
+    return normalizeMetronome({ ...current, ...change, patterns });
+  }
+  const moved = numerator !== current.numerator || denominator !== current.denominator;
+  return normalizeMetronome({ ...current, ...change, patterns, beats: moved ? patternFor({ patterns }, signature) : (change.beats ?? current.beats) });
+}
+
 /**
  * A song's tempo, the note it counts and time signature on top of the
- * player's own settings (their pattern kept when the bar is the same
- * length). A song that doesn't say its tempo's note counts the default for
- * its time signature, not the player's.
+ * player's own settings. The pattern is the song's (its version's, issue
+ * #384) when it has one for that time signature, else the player's for it.
+ * A song that doesn't say its tempo's note counts the default for its time
+ * signature, not the player's.
  */
 export function metronomeForSong(
   current: MetronomeSettings,
-  song: { tempo: number | null | undefined; tempoUnit?: TempoUnit | null; timeSignature?: { numerator: number; denominator: number } | null },
+  song: { tempo: number | null | undefined; tempoUnit?: TempoUnit | null; timeSignature?: TimeSignature | null; beats?: readonly BeatLevel[] | null },
 ): MetronomeSettings {
   const numerator = song.timeSignature?.numerator ?? current.numerator;
   const denominator = song.timeSignature?.denominator ?? current.denominator;
+  const signature = { numerator, denominator };
   return normalizeMetronome({
     ...current,
     tempo: song.tempo ?? current.tempo,
-    tempoUnit: song.tempo ? (song.tempoUnit ?? defaultTempoUnit({ numerator, denominator })) : current.tempoUnit,
+    tempoUnit: song.tempo ? (song.tempoUnit ?? defaultTempoUnit(signature)) : current.tempoUnit,
     numerator,
     denominator,
-    beats: numerator === current.numerator ? current.beats : defaultBeats(numerator),
+    beats: isBeatPattern(song.beats, numerator) ? [...song.beats] : patternFor(current, signature),
   });
 }
 
@@ -174,7 +278,7 @@ export interface MetronomeClick {
   beat: number;
   /** 0 on the beat, then 1, 2… for the subdivisions. */
   sub: number;
-  level: "accent" | "normal" | "sub";
+  level: "accent" | "medium" | "normal" | "sub";
   note: number;
   channel: number;
   /** 1-127, as MIDI's. */
@@ -182,7 +286,7 @@ export interface MetronomeClick {
   countIn: boolean;
 }
 
-const VELOCITY = { accent: 120, normal: 90, sub: 60 } as const;
+const VELOCITY = { accent: 120, medium: 90, normal: 90, sub: 60 } as const;
 
 /** Where a position in beats falls: its bar (negative in the count-in), beat, and how far through the beat. */
 export function beatAt(settings: Pick<MetronomeSettings, "numerator" | "countIn">, position: number): { bar: number; beat: number; fraction: number } {
@@ -198,10 +302,11 @@ export function beatAt(settings: Pick<MetronomeSettings, "numerator" | "countIn"
  * The clicks from `from` (included) to `to` (not), in beats: one on every
  * beat of the time signature (every dot of the pattern: six in 6/8), split
  * into `subdivision`. The tempo's note only sets how fast they come (issue
- * #377: 6/8 at 71 dotted quarters plays its eighths at 213). A muted beat
- * mutes its subdivisions; during the count-in every beat sounds, the first
- * of each bar accented, without subdivisions; after it, with `countInOnly`,
- * nothing does.
+ * #377: 6/8 at 71 quarters plays its eighths at 142). Each beat sounds at
+ * its level in the pattern (issue #384); a muted beat mutes its
+ * subdivisions. During the count-in every beat sounds, at the pattern's
+ * level (a muted one small), without subdivisions; after it, with
+ * `countInOnly`, nothing does.
  */
 export function clicksBetween(settings: MetronomeSettings, from: number, to: number): MetronomeClick[] {
   const clicks: MetronomeClick[] = [];
@@ -215,10 +320,11 @@ export function clicksBetween(settings: MetronomeSettings, from: number, to: num
     const { bar, beat } = beatAt(settings, whole);
     const countIn = bar < 0;
     let level: MetronomeClick["level"] | null;
-    if (countIn) level = sub === 0 ? (beat === 0 ? "accent" : "normal") : null;
+    const pattern = settings.beats[beat] ?? "normal";
+    if (countIn) level = sub === 0 ? (pattern === "mute" ? "normal" : pattern) : null;
     else if (settings.countInOnly) level = null;
-    else if (settings.beats[beat] === "mute") level = null;
-    else level = sub === 0 ? (settings.beats[beat] === "accent" ? "accent" : "normal") : "sub";
+    else if (pattern === "mute") level = null;
+    else level = sub === 0 ? pattern : "sub";
     if (!level) continue;
     clicks.push({
       position,

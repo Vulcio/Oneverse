@@ -33,16 +33,21 @@ describe("recording a part (issue #123)", () => {
 
   it("clicks on every beat from the count-in, the first of each bar accented", () => {
     expect(clickTimes({ tempo: 120, beatsPerBar: 4, firstBeat: 0.5, from: -1.5, to: 2.5 })).toEqual([
-      { at: -1.5, accent: true },
-      { at: -1, accent: false },
-      { at: -0.5, accent: false },
-      { at: 0, accent: false },
-      { at: 0.5, accent: true },
-      { at: 1, accent: false },
-      { at: 1.5, accent: false },
-      { at: 2, accent: false },
-      { at: 2.5, accent: true },
+      { at: -1.5, accent: true, level: "accent" },
+      { at: -1, accent: false, level: "normal" },
+      { at: -0.5, accent: false, level: "normal" },
+      { at: 0, accent: false, level: "normal" },
+      { at: 0.5, accent: true, level: "accent" },
+      { at: 1, accent: false, level: "normal" },
+      { at: 1.5, accent: false, level: "normal" },
+      { at: 2, accent: false, level: "normal" },
+      { at: 2.5, accent: true, level: "accent" },
     ]);
+  });
+
+  it("the click follows the metronome's pattern (issue #384): a group's first beat medium, a muted one silent but in the count-in", () => {
+    const clicks = clickTimes({ tempo: 120, beatsPerBar: 6, firstBeat: 0, from: -3, to: 2.5, levels: ["accent", "normal", "mute", "medium", "normal", "normal"] });
+    expect(clicks.map((click) => `${click.at}:${click.level}`)).toEqual(["-3:accent", "-2.5:normal", "-2:normal", "-1.5:medium", "-1:normal", "-0.5:normal", "0:accent", "0.5:normal", "1.5:medium", "2:normal", "2.5:normal"]);
   });
 
   it("a take lines up with the timeline: shifted by the round trip, silence before the first sample", () => {

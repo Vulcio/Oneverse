@@ -1,5 +1,6 @@
 import {
   isAudioFilename,
+  type BeatLevel,
   multitracksOf,
   RECORDING_TIME_SIGNATURES,
   newMultitrackId,
@@ -489,6 +490,7 @@ export function AttachmentsTab({
   songKey = "",
   songTempo = "",
   songTimeSignature = "",
+  songMetronomeBeats = "",
   songTitle = "",
   cueSections = [],
 }: {
@@ -504,6 +506,8 @@ export function AttachmentsTab({
   songTempo?: string;
   /** "4/4": what a new multitrack's click defaults to (#123). */
   songTimeSignature?: string;
+  /** The version's metronome pattern (issue #384), its levels joined by commas; "" for the player's own. */
+  songMetronomeBeats?: string;
   songTitle?: string;
   /** The song's sections, to record one of them (issue #365). */
   cueSections?: CueSection[];
@@ -974,6 +978,7 @@ export function AttachmentsTab({
               target={recording.target}
               songTempo={songTempo ? Number(songTempo) : null}
               songTimeSignature={songTimeSignature}
+              songBeats={songMetronomeBeats ? (songMetronomeBeats.split(",") as BeatLevel[]) : null}
               songKey={songKey}
               cueSections={cueSections}
               onClose={() => setRecording(null)}

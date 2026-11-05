@@ -1,4 +1,4 @@
-import { beatAt, clicksBetween, normalizeMetronome, secondsPerBeat, sharedMetronomeSettings, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
+import { beatAt, changeMetronome, clicksBetween, normalizeMetronome, patternFor, secondsPerBeat, sharedMetronomeSettings, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
@@ -75,9 +75,10 @@ export function ownMetronomeSettings(): MetronomeSettings {
   return state.settings;
 }
 
+/** Kept as the player's own: the pattern theirs for the time signature, not a song version's (issue #384). */
 function save(settings: MetronomeSettings) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings, beats: patternFor(settings, settings) }));
   } catch {
     // Storage blocked: they last for this page.
   }
@@ -99,7 +100,7 @@ let scheduledUntil = 0;
 let timer: ReturnType<typeof setInterval> | null = null;
 let scheduled: { source: AudioBufferSourceNode; time: number }[] = [];
 
-/** The clicks' sounds, made here rather than downloaded: a sound per level, for each kind. */
+/** The clicks' sounds, made here rather than downloaded: a sound per level, for each kind (medium between accent and normal, issue #384). */
 function makeBuffers(ctx: AudioContext): Map<string, AudioBuffer> {
   const made = new Map<string, AudioBuffer>();
   const rate = ctx.sampleRate;
@@ -111,13 +112,13 @@ function makeBuffers(ctx: AudioContext): Map<string, AudioBuffer> {
     beep: { partials: [[1, 1]], length: 0.07, decay: 0.05, square: true },
   };
   const pitch: Record<MetronomeSound, Record<MetronomeClick["level"], number>> = {
-    click: { accent: 2000, normal: 1400, sub: 1100 },
-    wood: { accent: 1250, normal: 900, sub: 760 },
-    beep: { accent: 1320, normal: 880, sub: 660 },
+    click: { accent: 2000, medium: 1700, normal: 1400, sub: 1100 },
+    wood: { accent: 1250, medium: 1060, normal: 900, sub: 760 },
+    beep: { accent: 1320, medium: 1100, normal: 880, sub: 660 },
   };
-  const loudness: Record<MetronomeClick["level"], number> = { accent: 1, normal: 0.7, sub: 0.4 };
+  const loudness: Record<MetronomeClick["level"], number> = { accent: 1, medium: 0.85, normal: 0.7, sub: 0.4 };
   for (const [sound, shape] of Object.entries(shapes) as [MetronomeSound, (typeof shapes)[MetronomeSound]][]) {
-    for (const level of ["accent", "normal", "sub"] as const) {
+    for (const level of ["accent", "medium", "normal", "sub"] as const) {
       const buffer = ctx.createBuffer(1, Math.ceil(shape.length * rate), rate);
       const data = buffer.getChannelData(0);
       const frequency = pitch[sound][level];
@@ -288,9 +289,10 @@ export function updateMetronome(change: Partial<MetronomeSettings>) {
   if (!state.following) adopted = placing = null;
   // Following Sync play's leader: only this device's sound and volume are its own.
   if (state.following) change = { ...(change.sound !== undefined && { sound: change.sound }), ...(change.volume !== undefined && { volume: change.volume }) };
-  const next = normalizeMetronome({ ...previous, ...change });
+  // A new pattern is kept for its time signature; a new time signature brings the player's pattern for it (issue #384).
+  const next = changeMetronome(previous, change);
   // Kept as this device's own, the leader's or the recording's settings aside.
-  if (state.following || given) save(normalizeMetronome({ ...ownMetronomeSettings(), ...change }));
+  if (state.following || given) save(changeMetronome(ownMetronomeSettings(), change));
   else save(next);
   if (!state.playing || !context) return emit({ settings: next, songId: null });
   output!.gain.value = next.volume;

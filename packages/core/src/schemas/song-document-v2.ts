@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { SECTION_TYPES } from "../constants/index.js";
-import { TEMPO_UNITS } from "../metronome/index.js";
+import { BEAT_LEVELS, MAX_BEATS_PER_BAR, TEMPO_UNITS } from "../metronome/index.js";
 import { TimeSignatureSchema } from "./shared.js";
 
 /**
@@ -168,8 +168,13 @@ export const SongDefaultsV2Schema = z.object({
   /** As written ("G", "Bb", "F#m"); parseKey() reads it. */
   key: z.string().max(12).nullable().optional(),
   tempo: z.number().positive().max(400).nullable().optional(),
-  /** The note the tempo counts (issue #377); left out, the time signature's own, dotted quarters in 6/8, 9/8, 12/8 (defaultTempoUnit). */
+  /** The note the tempo counts (issue #377); left out, the time signature's own, quarters in 6/8, 9/8, 12/8 (defaultTempoUnit, issue #384). */
   tempoUnit: z.enum(TEMPO_UNITS).nullable().optional(),
+  /**
+   * The metronome's pattern for this version (issue #384): a level per beat
+   * of the bar. Left out, or not as long as the bar, the player's own.
+   */
+  metronomeBeats: z.array(z.enum(BEAT_LEVELS)).min(1).max(MAX_BEATS_PER_BAR).nullable().optional(),
   timeSignature: TimeSignatureSchema.nullable().optional(),
   durationSeconds: z.number().positive().nullable().optional(),
 });

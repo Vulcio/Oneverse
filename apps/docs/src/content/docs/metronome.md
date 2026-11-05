@@ -18,23 +18,25 @@ A new tempo takes over on the next beat, without stopping.
 ## Time signature and pattern
 
 - **Time signature**: the beats per bar and the beat's value - **4 / 4**, **3 / 4**, **6 / 8**...
-- **Tempo in**: the note the tempo counts - **1/8**, **1/4**, **1/2**, **1/8 dotted**, **1/4 dotted** or **1/2 dotted**. It takes the time signature's usual one: its own beat, except 6/8, 9/8 and 12/8, counted in dotted quarters (**1/4 dotted**) - so 6/8 at 71 means 71 dotted quarters a minute. Whatever the note, every beat of the time signature clicks (all six dots in 6/8, its eighths 213 times a minute at that tempo): the note only sets how fast. Pick another when a song is counted differently, **1/8** for a slow 6/8 counted in six. Changing the time signature takes the new one's usual note, unless you picked another.
-- The circles are the bar's beats: the one you hear lights up, the first of the bar is bigger. Click a beat to make it **accented**, **normal** or **silent** - for example, only beats 2 and 4, or a bar with its last beat left out.
+- **Tempo in**: the note the tempo counts - **1/8**, **1/4**, **1/2**, **1/8 dotted**, **1/4 dotted** or **1/2 dotted**. It takes the time signature's usual one: its own beat, except 6/8, 9/8 and 12/8, counted in quarters (**1/4**). So 3/4 at 71 plays three quarters a bar, and 6/8 at 71 plays its six eighths in the same time, twice as fast (142 a minute). Whatever the note, every beat of the time signature clicks: the note only sets how fast. Pick another when a song is counted differently: **1/4 dotted** for a 6/8 counted in two (71 dotted quarters, its eighths 213 times a minute), **1/8** for a slow 6/8 counted in six. Changing the time signature takes the new one's usual note, unless you picked another.
+- The circles are the bar's beats, the one you hear lit. Each beat has a level, and its circle's size shows it: **accent** (the biggest, a higher sound), **medium**, **small** or **off** (hollow, not heard). Click a beat to go from one to the next.
+- **Each time signature has its own pattern.** Its usual one accents the first beat; the others are small, except the first beat of each group, which is medium. So 3/4 is "**1** 2 3", 4/4 "**1** 2 3 4", and 6/8 "**1** 2 3 *4* 5 6": two groups of three, 3/4 and 6/8 feel different with nothing else changed. 9/8 and 12/8 have three and four groups of three. A pattern you change is kept for that time signature on this device: 6/8 and 6/4 are two, and coming back to 6/8 brings yours back. **Usual pattern** puts the usual one back.
+- **A bar of 5 or 7** shows how its beats are grouped: **3+2** or **2+3** for 5, **2+2+3**, **3+2+2** or **2+3+2** for 7. Pick one and each group's first beat becomes medium.
 - **Subdivision** adds clicks between the beats: **2 per beat**, **Triplets** or **4 per beat**, softer than the beats.
 
 ## Count-in
 
-**Count-in** plays one or two bars before the song, every beat heard. With **Count-in only**, it goes silent after them: the circles keep showing the beat, for a band that only needs to be counted in.
+**Count-in** plays one or two bars before the song, every beat heard with the pattern's levels (a beat that's off is small there, so the count is complete). With **Count-in only**, it goes silent after them: the circles keep showing the beat, for a band that only needs to be counted in.
 
 ## Sound and volume
 
-**Sound**: **Click**, **Wood block** or **Beep**; and its **Volume**. The sound is made on your device, so the metronome works offline.
+**Sound**: **Click**, **Wood block** or **Beep**, each with its own sound for an accent, a medium and a small beat; and its **Volume**. The sound is made on your device, so the metronome works offline.
 
 Use wired headphones or the device's speaker: Bluetooth headphones hear it a fraction of a second late.
 
 ## At a song's tempo
 
-In [Live](/sets/#playing-a-set-live), on a song's page in a set and on a song's page in Practice, the metronome button (on a song's page, it shows the song's tempo: **76 BPM**, with its note when it isn't a quarter: **71 BPM · 1/4.**) starts it at the song's tempo, its note and time signature (its version's, when the set plays one) in one press; press it again to stop. It uses your pattern, sound and count-in from the Metronome page, and flashes with the beat. A song without a tempo can't start it: add one on its **Song info**, with **Tempo in** under it when it isn't counted in the time signature's usual note.
+In [Live](/sets/#playing-a-set-live), on a song's page in a set and on a song's page in Practice, the metronome button (on a song's page, it shows the song's tempo: **76 BPM**, with its note when it isn't a quarter: **71 BPM · 1/4.**) starts it at the song's tempo, its note and time signature (its version's, when the set plays one) in one press; press it again to stop. It uses your pattern for that time signature, sound and count-in from the Metronome page, and flashes with the beat. A version can have a pattern of its own, a 7/8 felt 3+2+2 for example: set it on its **Song info**, under **More details** > **Metronome pattern** (**Set one for this version**, then click the beats). Everyone then hears that one for the song; **Use each player's own** takes it away. A song without a tempo can't start it: add one on its **Song info**, with **Tempo in** under it when it isn't counted in the time signature's usual note.
 
 Playing with others, the leader's metronome can be everyone's, in time: see [Playing in sync](/sets/#playing-in-sync).
 

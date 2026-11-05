@@ -1,3 +1,5 @@
+import type { BeatLevel } from "../metronome/index.js";
+
 /**
  * Recording a part in the browser (issue #123): the arithmetic, kept apart
  * from the audio so it can be tested. The web app plays the click and the
@@ -11,10 +13,11 @@
 /** The time signatures offered for a recording. */
 export const RECORDING_TIME_SIGNATURES = ["2/4", "3/4", "4/4", "5/4", "6/4", "6/8", "7/8", "9/8", "12/8"] as const;
 
-/** A beat of the click: when (s, on the multitrack's timeline, 0 its start) and whether it starts a bar. */
+/** A beat of the click: when (s, on the multitrack's timeline, 0 its start), whether it starts a bar, and how it sounds (issue #384). */
 export interface Click {
   at: number;
   accent: boolean;
+  level: Exclude<BeatLevel, "mute">;
 }
 
 /**
@@ -30,8 +33,12 @@ export function recordingPlan(options: { tempo: number; beatsPerBar: number; fir
   return { firstBeat: options.firstBeat, lead: Math.max(0, bar - options.firstBeat) };
 }
 
-/** The click's beats from `from` to `to` (s, the multitrack's timeline; `from` may be negative, in the count-in). */
-export function clickTimes(options: { tempo: number; beatsPerBar: number; firstBeat: number; from: number; to: number }): Click[] {
+/**
+ * The click's beats from `from` to `to` (s, the multitrack's timeline; `from` may be negative, in the count-in),
+ * at the levels of the metronome's pattern (`levels`, one per beat of the bar, issue #384): a muted beat is
+ * left out after the count-in and small in it. Without one, the bar's first beat is accented.
+ */
+export function clickTimes(options: { tempo: number; beatsPerBar: number; firstBeat: number; from: number; to: number; levels?: readonly BeatLevel[] }): Click[] {
   const beat = 60 / options.tempo;
   const clicks: Click[] = [];
   const first = Math.ceil((options.from - options.firstBeat) / beat - 1e-9);
@@ -39,7 +46,10 @@ export function clickTimes(options: { tempo: number; beatsPerBar: number; firstB
     const at = options.firstBeat + n * beat;
     if (at > options.to) break;
     const inBar = ((n % options.beatsPerBar) + options.beatsPerBar) % options.beatsPerBar;
-    clicks.push({ at: round(at), accent: inBar === 0 });
+    const pattern = options.levels?.length === options.beatsPerBar ? options.levels[inBar]! : inBar === 0 ? "accent" : "normal";
+    if (pattern === "mute" && n >= 0) continue;
+    const level = pattern === "mute" ? "normal" : pattern;
+    clicks.push({ at: round(at), accent: level === "accent", level });
   }
   return clicks;
 }

@@ -1,4 +1,4 @@
-import { metronomeForSong, type BeatLevel, type MetronomeSettings, type TempoUnit } from "@oneverse/core";
+import { BEAT_GROUPINGS, beatsFromGrouping, defaultBeats, metronomeForSong, NEXT_BEAT_LEVEL, type BeatLevel, type MetronomeSettings, type TempoUnit } from "@oneverse/core";
 import { tempoText } from "#/lib/tempo-unit";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Metronome, Square } from "lucide-react";
@@ -8,12 +8,16 @@ import { startMetronome, stopMetronome, useMetronome, useMetronomeBeat, type Met
 import { unlockSyncAudio } from "#/lib/sync-client";
 import { cn } from "@oneverse/ui/lib/utils";
 
-const NEXT_LEVEL: Record<BeatLevel, BeatLevel> = { accent: "normal", normal: "mute", mute: "accent" };
+/** A dot's size per level (issue #384): accent biggest, then medium, then small; off hollow. */
+const DOT_SIZE: Record<"large" | "small", Record<BeatLevel, string>> = {
+  large: { accent: "size-12", medium: "size-10", normal: "size-8", mute: "size-8" },
+  small: { accent: "size-2.5", medium: "size-2", normal: "size-1.5", mute: "size-1.5" },
+};
 
 /**
- * A light per beat of the bar (issue #2): the one playing lit, accented
- * beats bigger, silent ones hollow. On the Metronome page, clicking one
- * changes how it sounds.
+ * A light per beat of the bar (issue #2): the one playing lit, its size
+ * its level (accent, medium, small), silent ones hollow. On the Metronome
+ * page, clicking one changes how it sounds: accent, medium, small, off.
  */
 export function BeatLights({
   settings,
@@ -21,7 +25,7 @@ export function BeatLights({
   onChange,
   size = "large",
 }: {
-  settings: MetronomeSettings;
+  settings: Pick<MetronomeSettings, "beats">;
   beat: MetronomeBeat | null;
   onChange?: (beats: BeatLevel[]) => void;
   size?: "large" | "small";
@@ -35,7 +39,7 @@ export function BeatLights({
           <span
             className={cn(
               "block rounded-full border-2 transition-[background-color,transform] duration-75",
-              size === "large" ? (level === "accent" ? "size-12" : "size-9") : level === "accent" ? "size-2.5" : "size-2",
+              DOT_SIZE[size][level],
               level === "mute" ? "border-muted-foreground/50 bg-transparent" : "border-primary",
               level !== "mute" && !lit && "bg-primary/15",
               lit && "scale-110",
@@ -52,12 +56,70 @@ export function BeatLights({
             aria-label={t("metronome.beatLabel", { n: index + 1, level: t(`metronome.level_${level}`) })}
             data-level={level}
             data-lit={lit || undefined}
-            onClick={() => onChange(settings.beats.map((l, i) => (i === index ? NEXT_LEVEL[l] : l)))}
+            onClick={() => onChange(settings.beats.map((l, i) => (i === index ? NEXT_BEAT_LEVEL[l] : l)))}
           >
             {dot}
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * A bar's pattern to edit (issue #384): its lights, a tap changing a beat's
+ * level; for a bar of 5 or 7, how its beats are grouped (3+2, 2+3…); and,
+ * changed, a way back to the time signature's usual pattern.
+ */
+export function PatternEditor({
+  beats,
+  timeSignature,
+  beat = null,
+  onChange,
+  disabled,
+  testId = "metronome-pattern",
+}: {
+  beats: BeatLevel[];
+  timeSignature: { numerator: number; denominator: number };
+  beat?: MetronomeBeat | null;
+  onChange: (beats: BeatLevel[]) => void;
+  disabled?: boolean;
+  testId?: string;
+}) {
+  const { t } = useTranslation();
+  const usual = defaultBeats(timeSignature);
+  const same = (a: readonly BeatLevel[], b: readonly BeatLevel[]) => a.length === b.length && a.every((level, i) => level === b[i]);
+  const groupings = BEAT_GROUPINGS[timeSignature.numerator] ?? [];
+  return (
+    <div className="flex flex-col items-center gap-3" data-testid={testId}>
+      <BeatLights settings={{ beats }} beat={beat} onChange={disabled ? undefined : onChange} />
+      {disabled ? null : (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {groupings.map((groups) => {
+            const pattern = beatsFromGrouping(groups);
+            const label = groups.join("+");
+            return (
+              <Button
+                key={label}
+                type="button"
+                size="sm"
+                variant={same(pattern, beats) ? "default" : "outline"}
+                aria-pressed={same(pattern, beats)}
+                title={t("metronome.groupingHint", { grouping: label })}
+                onClick={() => onChange(pattern)}
+                data-testid="metronome-grouping"
+              >
+                {label}
+              </Button>
+            );
+          })}
+          {same(beats, usual) ? null : (
+            <Button type="button" size="sm" variant="ghost" onClick={() => onChange(usual)} data-testid="metronome-usual-pattern">
+              {t("metronome.usualPattern")}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -73,6 +135,7 @@ export function MetronomeSongButton({
   tempo,
   tempoUnit,
   timeSignature,
+  metronomeBeats,
   variant = "icon",
   className,
 }: {
@@ -81,6 +144,8 @@ export function MetronomeSongButton({
   /** The note the tempo counts (issue #377); null: the time signature's default. */
   tempoUnit?: TempoUnit | null;
   timeSignature?: { numerator: number; denominator: number } | null;
+  /** The version's own pattern (issue #384); null: the player's. */
+  metronomeBeats?: BeatLevel[] | null;
   variant?: "icon" | "button";
   className?: string;
 }) {
@@ -100,7 +165,7 @@ export function MetronomeSongButton({
   const press = () => {
     if (following) return unlockSyncAudio();
     if (mine) return stopMetronome();
-    if (tempo) startMetronome(metronomeForSong(metronome.settings, { tempo, tempoUnit, timeSignature }), songId);
+    if (tempo) startMetronome(metronomeForSong(metronome.settings, { tempo, tempoUnit, timeSignature, beats: metronomeBeats }), songId);
   };
   // The beat, on the button, whatever started it: a flash on each, stronger on the first of the bar.
   const flash = metronome.playing && beat ? (beat.beat === 0 ? "bg-primary text-primary-foreground" : "bg-primary/30") : null;

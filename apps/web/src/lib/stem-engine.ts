@@ -1,5 +1,5 @@
 import { decodeAudio } from "#/lib/decode-audio";
-import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
+import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type BeatLevel, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
@@ -32,6 +32,8 @@ export interface StemSong {
   /** The note the song's tempo counts (issue #377); left out, its time signature's default. */
   tempoUnit?: TempoUnit | null;
   timeSignature?: { numerator: number; denominator: number } | null;
+  /** The version's own metronome pattern (issue #384); left out, the player's. */
+  metronomeBeats?: BeatLevel[] | null;
   /** Which of the song's multitracks `stems` are (issue #123): null its original stems. */
   multitrackId?: string | null;
   /** The song's multitracks, for the player to offer the others. */
@@ -160,7 +162,7 @@ export interface StemState {
    * before is played freely (issue #178); `map`, its own beats and bars when
    * they were found (issue #299). Null without a tempo.
    */
-  beat: { tempo: number; timeSignature: { numerator: number; denominator: number } | null; firstBeat: number; freeIntro: boolean; map: BeatMap | null } | null;
+  beat: { tempo: number; timeSignature: { numerator: number; denominator: number } | null; firstBeat: number; freeIntro: boolean; map: BeatMap | null; metronomeBeats?: BeatLevel[] | null } | null;
   /** Played over and over (issue #162): from `start` to `end` (s, the recording's time); null: through to the end. */
   loop: { start: number; end: number } | null;
 }
@@ -1391,7 +1393,7 @@ export function undockStems(songVersionId: string) {
 }
 
 /** The recording's beat, from its first file (the stems share it) and the song. */
-export function beatOf(song: Pick<StemSong, "stems" | "tempo" | "tempoUnit" | "timeSignature">): StemState["beat"] {
+export function beatOf(song: Pick<StemSong, "stems" | "tempo" | "tempoUnit" | "timeSignature" | "metronomeBeats">): StemState["beat"] {
   const first = song.stems[0];
   const tempo = first?.recordingTempo ?? songBeatTempo(song);
   if (!tempo) return null;
@@ -1401,13 +1403,14 @@ export function beatOf(song: Pick<StemSong, "stems" | "tempo" | "tempoUnit" | "t
     firstBeat: first?.recordingFirstBeat ?? 0,
     freeIntro: song.stems.some((stem) => stem.recordingFreeIntro),
     map: (first?.recordingBeats?.length ?? 0) >= 2 && first?.recordingDownbeats?.length ? { beats: first.recordingBeats!, downbeats: first.recordingDownbeats } : null,
+    metronomeBeats: song.metronomeBeats ?? null,
   };
 }
 
 /**
  * The song's tempo in its time signature's beats, as a recording's is
- * counted: its own counts its note (issue #377), so a 6/8 song's 71 dotted
- * quarters are 213 eighths.
+ * counted: its own counts its note (issue #377), so a 6/8 song's 71
+ * quarters are 142 eighths (issue #384).
  */
 export function songBeatTempo(song: Pick<StemSong, "tempo" | "tempoUnit" | "timeSignature">): number | null {
   if (!song.tempo) return null;

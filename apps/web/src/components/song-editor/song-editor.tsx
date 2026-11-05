@@ -934,7 +934,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
           {edit ? <AttachmentsTab kind="files" songVersionId={edit.version.id} attachments={attachments} canEdit={canManage} canShare={canManage && edit.version.ownerScope !== "GLOBAL"} /> : <SaveFirst />}
         </TabsContent>
         <TabsContent value="audio">
-          {edit ? <AttachmentsTab kind="audio" songVersionId={edit.version.id} attachments={attachments} canEdit={canManage} canShare={canManage && edit.version.ownerScope !== "GLOBAL"} songKey={form.key} songTempo={beatTempoText(form)} songTimeSignature={form.timeSignature} songTitle={form.title} cueSections={cueSectionsOf(edit.version.documentJson).sections} /> : <SaveFirst />}
+          {edit ? <AttachmentsTab kind="audio" songVersionId={edit.version.id} attachments={attachments} canEdit={canManage} canShare={canManage && edit.version.ownerScope !== "GLOBAL"} songKey={form.key} songTempo={beatTempoText(form)} songTimeSignature={form.timeSignature} songMetronomeBeats={form.metronomeBeats} songTitle={form.title} cueSections={cueSectionsOf(edit.version.documentJson).sections} /> : <SaveFirst />}
         </TabsContent>
         <TabsContent value="links">{edit ? <LinksTab version={edit.version} workMatch={edit.workMatch} /> : <SaveFirst />}</TabsContent>
         <TabsContent value="history">

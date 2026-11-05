@@ -18,23 +18,25 @@ Un nouveau tempo prend effet au temps suivant, sans arrêt.
 ## Mesure et motif
 
 - **Mesure** : le nombre de temps par mesure et la valeur du temps - **4 / 4**, **3 / 4**, **6 / 8**...
-- **Tempo en** : la note que compte le tempo - **1/8**, **1/4**, **1/2**, **1/8 pointée**, **1/4 pointée** ou **1/2 pointée**. Il prend celle d'habitude pour la mesure : son propre temps, sauf en 6/8, 9/8 et 12/8, comptés en noires pointées (**1/4 pointée**) - 6/8 à 71, c'est donc 71 noires pointées par minute. Quelle que soit la note, chaque temps de la mesure clique (les six points en 6/8, ses croches 213 fois par minute à ce tempo) : la note ne règle que la vitesse. Choisissez-en une autre quand un chant se compte autrement, **1/8** pour un 6/8 lent compté à six. Changer de mesure prend la note d'habitude de la nouvelle, sauf si vous en aviez choisi une autre.
-- Les cercles sont les temps de la mesure : celui que vous entendez s'allume, le premier de la mesure est plus grand. Cliquez sur un temps pour le rendre **accentué**, **normal** ou **muet** - par exemple, seulement les temps 2 et 4, ou une mesure sans son dernier temps.
+- **Tempo en** : la note que compte le tempo - **1/8**, **1/4**, **1/2**, **1/8 pointée**, **1/4 pointée** ou **1/2 pointée**. Il prend celle d'habitude pour la mesure : son propre temps, sauf en 6/8, 9/8 et 12/8, comptés en noires (**1/4**). 3/4 à 71 joue donc trois noires par mesure, et 6/8 à 71 joue ses six croches dans le même temps, deux fois plus vite (142 par minute). Quelle que soit la note, chaque temps de la mesure clique : la note ne règle que la vitesse. Choisissez-en une autre quand un chant se compte autrement : **1/4 pointée** pour un 6/8 compté à deux (71 noires pointées, ses croches 213 fois par minute), **1/8** pour un 6/8 lent compté à six. Changer de mesure prend la note d'habitude de la nouvelle, sauf si vous en aviez choisi une autre.
+- Les cercles sont les temps de la mesure, celui que vous entendez allumé. Chaque temps a un niveau, que la taille de son cercle montre : **accent** (le plus grand, un son plus aigu), **moyen**, **petit** ou **coupé** (vide, pas entendu). Cliquez sur un temps pour passer de l'un au suivant.
+- **Chaque mesure a son propre motif.** Celui d'habitude accentue le premier temps ; les autres sont petits, sauf le premier temps de chaque groupe, qui est moyen. 3/4 fait donc « **1** 2 3 », 4/4 « **1** 2 3 4 », et 6/8 « **1** 2 3 *4* 5 6 » : deux groupes de trois, 3/4 et 6/8 se sentent différemment sans rien changer d'autre. 9/8 et 12/8 ont trois et quatre groupes de trois. Un motif que vous changez est gardé pour cette mesure sur cet appareil : 6/8 et 6/4 en ont deux, et revenir en 6/8 ramène le vôtre. **Motif habituel** remet celui d'habitude.
+- **Une mesure à 5 ou 7 temps** montre comment ses temps sont groupés : **3+2** ou **2+3** pour 5, **2+2+3**, **3+2+2** ou **2+3+2** pour 7. Choisissez-en un, et le premier temps de chaque groupe devient moyen.
 - **Subdivision** ajoute des clics entre les temps : **2 par temps**, **Triolets** ou **4 par temps**, plus doux que les temps.
 
 ## Décompte
 
-**Décompte** joue une ou deux mesures avant le chant, tous les temps entendus. Avec **Décompte seulement**, il se tait ensuite : les cercles continuent de montrer le temps, pour un groupe qui a juste besoin d'être lancé.
+**Décompte** joue une ou deux mesures avant le chant, tous les temps entendus avec les niveaux du motif (un temps coupé y est petit, pour que le compte soit complet). Avec **Décompte seulement**, il se tait ensuite : les cercles continuent de montrer le temps, pour un groupe qui a juste besoin d'être lancé.
 
 ## Son et volume
 
-**Son** : **Clic**, **Wood block** ou **Bip** ; et son **Volume**. Le son est produit sur votre appareil : le métronome fonctionne hors ligne.
+**Son** : **Clic**, **Wood block** ou **Bip**, chacun avec son propre son pour un accent, un temps moyen et un petit temps ; et son **Volume**. Le son est produit sur votre appareil : le métronome fonctionne hors ligne.
 
 Utilisez un casque filaire ou le haut-parleur de l'appareil : un casque Bluetooth l'entend avec une fraction de seconde de retard.
 
 ## Au tempo d'un chant
 
-En [Live](/fr/sets/#jouer-une-liste-en-live), sur la page d'un chant dans une liste et sur la page d'un chant en mode Session, le bouton du métronome (sur la page d'un chant, il affiche son tempo : **76 BPM**, avec sa note quand ce n'est pas une noire : **71 BPM · 1/4.**) le démarre au tempo, à sa note et à la mesure du chant (ceux de sa version, quand la liste en joue une) en une pression ; appuyez à nouveau pour l'arrêter. Il utilise votre motif, votre son et votre décompte de la page Métronome, et clignote avec le temps. Un chant sans tempo ne peut pas le démarrer : ajoutez-en un dans son onglet **Infos**, avec **Tempo en** à côté quand il ne se compte pas dans la note d'habitude de sa mesure.
+En [Live](/fr/sets/#jouer-une-liste-en-live), sur la page d'un chant dans une liste et sur la page d'un chant en mode Session, le bouton du métronome (sur la page d'un chant, il affiche son tempo : **76 BPM**, avec sa note quand ce n'est pas une noire : **71 BPM · 1/4.**) le démarre au tempo, à sa note et à la mesure du chant (ceux de sa version, quand la liste en joue une) en une pression ; appuyez à nouveau pour l'arrêter. Il utilise votre motif pour cette mesure, votre son et votre décompte de la page Métronome, et clignote avec le temps. Une version peut avoir son propre motif, un 7/8 senti 3+2+2 par exemple : choisissez-le dans son onglet **Infos**, sous **Plus de détails** > **Motif du métronome** (**En choisir un pour cette version**, puis cliquez sur les temps). Tout le monde entend alors celui-là pour le chant ; **Utiliser celui de chaque musicien** le retire. Un chant sans tempo ne peut pas le démarrer : ajoutez-en un dans son onglet **Infos**, avec **Tempo en** à côté quand il ne se compte pas dans la note d'habitude de sa mesure.
 
 En jouant avec d'autres, le métronome du meneur peut être celui de chacun, en rythme : voir [Jouer synchronisé](/fr/sets/#jouer-synchronisé).
 

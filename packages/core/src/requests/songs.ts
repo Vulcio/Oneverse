@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ISO_639_1_CODES } from "../languages/index.js";
 import { SONG_DOCUMENT_LIMITS } from "../schemas/song-document-v2.js";
 import { SUPPORTED_IMPORT_FORMATS } from "../constants/index.js";
-import { TEMPO_UNITS } from "../metronome/index.js";
+import { BEAT_LEVELS, MAX_BEATS_PER_BAR, TEMPO_UNITS } from "../metronome/index.js";
 import { clearableInt, clearableText, nameList, optional, queryBoolean, queryInt, queryText, requiredText } from "./fields.js";
 
 const credits = (who: string) => nameList({ max: 20, each: 300 }).optional().describe(`Replaces the song's ${who}`);
@@ -57,6 +57,13 @@ export const songFields = {
     .nullable()
     .optional()
     .describe('The note the tempo counts: 1/8, 1/4, 1/2, a dot for dotted (1/4. in 6/8), 1/16; null or "" for the time signature\'s default'),
+  metronomeBeats: z
+    .array(z.enum(BEAT_LEVELS))
+    .min(1)
+    .max(MAX_BEATS_PER_BAR)
+    .nullable()
+    .optional()
+    .describe("The metronome's pattern for this version, a level per beat of the bar (accent, medium, normal, mute); null for the player's own"),
   timeSignature: z
     .string()
     .trim()

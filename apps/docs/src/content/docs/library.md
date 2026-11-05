@@ -78,7 +78,7 @@ Opened from a list - **Songs** as you searched and sorted it, your **Favorites**
 
 A song has tabs:
 
-- **Song info** - its name and artists, and under **More details**: composers, lyricists and other credits, album, year, key, tempo and the note it counts (**Tempo in**: left on **Usual**, the time signature's own, dotted quarters in 6/8 - see [the metronome](/metronome/#time-signature-and-pattern)), time signature, suggested capo, duration, copyright, CCLI and ISRC numbers, a reference (e.g. the scripture it draws on), notes and tags. It also lists the songbooks it's in.
+- **Song info** - its name and artists, and under **More details**: composers, lyricists and other credits, album, year, key, tempo and the note it counts (**Tempo in**: left on **Usual**, the time signature's own, quarters in 6/8 - see [the metronome](/metronome/#time-signature-and-pattern)), time signature, the version's **Metronome pattern** (each player's own unless you set one), suggested capo, duration, copyright, CCLI and ISRC numbers, a reference (e.g. the scripture it draws on), notes and tags. It also lists the songbooks it's in.
 - **Editor** - the chart itself. See [The song editor](/song-editor/).
 - **Versions** - how you and your teams play it. See [Versions](/versions/).
 - **Files** - sheet music, the original chart file, images (up to 25 MB each unless your admin set other limits; the tab says). PDFs, images, audio, video and plain text open in the browser; anything else (a web page, say) is downloaded, so it can never run inside Songverse.
@@ -257,7 +257,7 @@ To separate it again - 6 parts after 4, say - use **Separate into stems** once m
 
 You can record a part straight into Songverse, on a computer, phone or tablet with a microphone:
 
-- **Record a new multitrack**, at the bottom of the **Audio** tab: the first layer of a song, or another version of it, with the metronome only. Give it a **Name**, a **Tempo (BPM)** and a **Time signature** (the song's to start with; a recording's tempo counts the time signature's beats, so a 6/8 song at 71 in dotted quarters starts at 213). It starts with a bar of count-in, which is kept: the multitrack's first beat is one bar in.
+- **Record a new multitrack**, at the bottom of the **Audio** tab: the first layer of a song, or another version of it, with the metronome only. Give it a **Name**, a **Tempo (BPM)** and a **Time signature** (the song's to start with; a recording's tempo counts the time signature's beats, so a 6/8 song at 71 in quarters starts at 142). The click plays the metronome's pattern for the time signature: the version's, else yours. It starts with a bar of count-in, which is kept: the multitrack's first beat is one bar in.
 - **Record a part**, in a multitrack's box: another part of that multitrack, hearing its other parts (untick one under **Hear** to leave it out) and the click, at its tempo, with a bar of count-in before its first beat.
 
 #### The recorder

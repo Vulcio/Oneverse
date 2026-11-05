@@ -71,6 +71,7 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
     youtube: null,
     tempo: chart.tempo,
     tempoUnit: chart.tempoUnit,
+    metronomeBeats: chart.metronomeBeats,
     timeSignature: chart.timeSignature,
     store: playbackStore,
     stems: { cueSections: cueSectionsOf(song.document) },

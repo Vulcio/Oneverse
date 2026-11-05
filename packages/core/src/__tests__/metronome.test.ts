@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { beatAt, beatsPerMinute, beatsPerTempoUnit, clicksBetween, DEFAULT_METRONOME, defaultTempoUnit, secondsPerBeat, metronomeForSong, normalizeMetronome, tapTempo, type MetronomeSettings } from "../metronome/index.js";
+import { beatAt, beatsFromGrouping, beatsPerMinute, beatsPerTempoUnit, changeMetronome, clicksBetween, DEFAULT_METRONOME, defaultBeats, defaultTempoUnit, secondsPerBeat, metronomeForSong, normalizeMetronome, tapTempo, type MetronomeSettings } from "../metronome/index.js";
 
 const settings = (change: Partial<MetronomeSettings> = {}) => normalizeMetronome({ ...DEFAULT_METRONOME, ...change });
 
@@ -21,14 +21,18 @@ describe("the metronome's timeline (issue #2)", () => {
     expect(clicks.at(-1)).toMatchObject({ bar: 1, beat: 0, level: "accent" });
   });
 
-  it("6/8 counts dotted quarters unless the song says (issue #377): every eighth still clicks, three to a dotted quarter", () => {
+  it("6/8 counts quarters unless the song says (issue #384): at 71, twice as fast as 3/4 in a bar as long, 4 medium", () => {
     const six = settings({ tempo: 71, numerator: 6, denominator: 8 });
-    expect(six.tempoUnit).toBe("1/4.");
-    expect(beatsPerMinute(six)).toBe(213);
-    expect(clicksBetween(six, 0, 6).map((c) => `${c.position}:${c.level}`)).toEqual(["0:accent", "1:normal", "2:normal", "3:normal", "4:normal", "5:normal"]);
+    const three = settings({ tempo: 71, numerator: 3, denominator: 4 });
+    expect(six.tempoUnit).toBe("1/4");
+    expect(beatsPerMinute(six)).toBe(142);
+    expect(secondsPerBeat(six) * 6).toBeCloseTo(secondsPerBeat(three) * 3, 9);
+    expect(clicksBetween(six, 0, 6).map((c) => `${c.position}:${c.level}`)).toEqual(["0:accent", "1:normal", "2:normal", "3:medium", "4:normal", "5:normal"]);
+    expect(clicksBetween(three, 0, 3).map((c) => c.level)).toEqual(["accent", "normal", "normal"]);
     expect(beatsPerMinute(settings({ tempo: 71, numerator: 6, denominator: 8, tempoUnit: "1/8" }))).toBe(71);
+    expect(beatsPerMinute(settings({ tempo: 71, numerator: 6, denominator: 8, tempoUnit: "1/4." }))).toBe(213);
     expect(settings({ numerator: 3, denominator: 8 }).tempoUnit).toBe("1/8");
-    expect(settings({ numerator: 12, denominator: 8 }).tempoUnit).toBe("1/4.");
+    expect(settings({ numerator: 12, denominator: 8 }).tempoUnit).toBe("1/4");
     expect(settings({ numerator: 2, denominator: 2 }).tempoUnit).toBe("1/2");
   });
 
@@ -38,12 +42,12 @@ describe("the metronome's timeline (issue #2)", () => {
     expect(secondsPerBeat(settings({ tempo: 60, tempoUnit: "1/2" }))).toBe(0.5);
     expect(secondsPerBeat(settings({ tempo: 60, tempoUnit: "1/8" }))).toBe(2);
     expect(beatsPerTempoUnit("1/8.", 16)).toBe(3);
-    expect(defaultTempoUnit({ numerator: 6, denominator: 16 })).toBe("1/8.");
+    expect(defaultTempoUnit({ numerator: 6, denominator: 16 })).toBe("1/8");
   });
 
   it("a song's tempo note comes with it, else its time signature's", () => {
     const mine = settings({ tempoUnit: "1/8" });
-    expect(metronomeForSong(mine, { tempo: 71, timeSignature: { numerator: 6, denominator: 8 } }).tempoUnit).toBe("1/4.");
+    expect(metronomeForSong(mine, { tempo: 71, timeSignature: { numerator: 6, denominator: 8 } }).tempoUnit).toBe("1/4");
     expect(metronomeForSong(mine, { tempo: 71, tempoUnit: "1/8", timeSignature: { numerator: 6, denominator: 8 } }).tempoUnit).toBe("1/8");
     expect(metronomeForSong(mine, { tempo: null }).tempoUnit).toBe("1/8");
   });
@@ -78,16 +82,64 @@ describe("the metronome's timeline (issue #2)", () => {
       volume: 1,
     });
     expect(normalizeMetronome(null)).toEqual({ ...DEFAULT_METRONOME, tempoUnit: "1/4" });
+    expect(normalizeMetronome({ numerator: 3, beats: ["accent", "medium", "loud"] }).beats).toEqual(["accent", "normal", "normal"]);
     expect(normalizeMetronome({ countInOnly: true }).countInOnly).toBe(false);
     // A slowed recording's beat kept to the hundredth (issue #139).
     expect(normalizeMetronome({ tempo: 97 * 0.85 }).tempo).toBe(82.45);
   });
 
-  it("a song's tempo and time signature, the player's pattern kept for a bar of the same length", () => {
-    const mine = settings({ beats: ["accent", "normal", "accent", "normal"], sound: "wood" });
+  it("a song's tempo and time signature, with the player's pattern for that time signature", () => {
+    const mine = changeMetronome(settings({ sound: "wood" }), { beats: ["accent", "normal", "accent", "normal"] });
+    expect(mine.patterns).toEqual({ "4/4": ["accent", "normal", "accent", "normal"] });
+    // Settings kept before patterns per time signature: theirs is the one for their bar.
+    expect(normalizeMetronome({ beats: ["accent", "normal", "accent", "normal"] }).patterns).toEqual({ "4/4": ["accent", "normal", "accent", "normal"] });
     expect(metronomeForSong(mine, { tempo: 72, timeSignature: { numerator: 4, denominator: 4 } })).toMatchObject({ tempo: 72, beats: ["accent", "normal", "accent", "normal"], sound: "wood" });
     expect(metronomeForSong(mine, { tempo: 60, timeSignature: { numerator: 3, denominator: 4 } })).toMatchObject({ tempo: 60, numerator: 3, beats: ["accent", "normal", "normal"] });
     expect(metronomeForSong(mine, { tempo: null }).tempo).toBe(100);
+  });
+
+  it("a song version's own pattern wins, when it fits the bar (issue #384)", () => {
+    const mine = settings();
+    const song = { tempo: 90, timeSignature: { numerator: 7, denominator: 8 } };
+    expect(metronomeForSong(mine, song).beats).toEqual(["accent", "normal", "medium", "normal", "medium", "normal", "normal"]);
+    expect(metronomeForSong(mine, { ...song, beats: beatsFromGrouping([3, 2, 2]) }).beats).toEqual(["accent", "normal", "normal", "medium", "normal", "medium", "normal"]);
+    expect(metronomeForSong(mine, { ...song, beats: ["accent"] }).beats).toEqual(defaultBeats(song.timeSignature));
+    // Played for a song, its pattern isn't the player's.
+    expect(metronomeForSong(mine, { ...song, beats: beatsFromGrouping([3, 2, 2]) }).patterns).toEqual({});
+  });
+
+  it("the usual patterns (issue #384): the first beat accented, each other group's first medium", () => {
+    const usual = (numerator: number, denominator: number) => defaultBeats({ numerator, denominator }).map((level) => ({ accent: "A", medium: "M", normal: "s", mute: "-" })[level]).join(" ");
+    expect(usual(4, 4)).toBe("A s s s");
+    expect(usual(3, 4)).toBe("A s s");
+    expect(usual(2, 2)).toBe("A s");
+    expect(usual(3, 8)).toBe("A s s");
+    expect(usual(6, 4)).toBe("A s s s s s");
+    expect(usual(6, 8)).toBe("A s s M s s");
+    expect(usual(9, 8)).toBe("A s s M s s M s s");
+    expect(usual(12, 8)).toBe("A s s M s s M s s M s s");
+    expect(usual(5, 4)).toBe("A s s M s");
+    expect(usual(7, 8)).toBe("A s M s M s s");
+  });
+
+  it("the player's pattern is kept per time signature: 6/8 and 6/4 are two (issue #384)", () => {
+    let mine = changeMetronome(settings(), { numerator: 6, denominator: 8 });
+    expect(mine.beats).toEqual(defaultBeats({ numerator: 6, denominator: 8 }));
+    mine = changeMetronome(mine, { beats: ["accent", "mute", "normal", "accent", "mute", "normal"] });
+    expect(mine.patterns).toEqual({ "6/8": ["accent", "mute", "normal", "accent", "mute", "normal"] });
+    mine = changeMetronome(mine, { denominator: 4 });
+    expect(mine.beats).toEqual(["accent", "normal", "normal", "normal", "normal", "normal"]);
+    mine = changeMetronome(mine, { denominator: 8 });
+    expect(mine.beats).toEqual(["accent", "mute", "normal", "accent", "mute", "normal"]);
+    // Back to the usual one: nothing kept.
+    expect(changeMetronome(mine, { beats: defaultBeats({ numerator: 6, denominator: 8 }) }).patterns).toEqual({});
+  });
+
+  it("a count-in plays the pattern, a muted beat small; medium clicks are the softer bell", () => {
+    const counted = settings({ numerator: 6, denominator: 8, countIn: 1, beats: ["accent", "normal", "mute", "medium", "normal", "normal"] });
+    expect(clicksBetween(counted, 0, 6).map((c) => c.level)).toEqual(["accent", "normal", "normal", "medium", "normal", "normal"]);
+    const medium = clicksBetween(counted, 9, 10)[0]!;
+    expect([medium.level, medium.note, medium.velocity]).toEqual(["medium", 34, 90]);
   });
 
   it("tap tempo: the average of the last taps; a long pause starts again", () => {
