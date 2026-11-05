@@ -163,16 +163,18 @@ await step("headphones plugged in: the delay is that output's own, measured agai
   await dialog().waitFor({ state: "detached" });
 });
 
-await step("a 6/8 song at 60 (dotted quarters): a new multitrack's tempo counts its eighths, 180 (issue #377)", async () => {
-  const jig = await api(me, "POST", "/song-versions", { title: `Jig ${stamp}`, language: "en", artists: [`Band ${stamp}`], content: "[D]One\n", contentFormat: "CHORDPRO", tempo: 60, timeSignature: "6/8" });
-  await page.goto(`${WEB}/library/${jig.id}?tab=audio`);
-  await page.waitForLoadState("networkidle");
-  await page.getByTestId("record-new").click();
-  await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
-  const tempo = await dialog().getByTestId("recorder-tempo").inputValue();
-  if (tempo !== "180") throw new Error(`tempo ${tempo}`);
-  await dialog().getByTestId("recorder-dismiss").click();
-  await dialog().waitFor({ state: "detached" });
+await step("a 6/8 song at 60: a new multitrack's tempo counts its eighths, 120 in quarters (issue #384), 180 in dotted quarters (issue #377)", async () => {
+  for (const [tempoUnit, expected] of [[undefined, "120"], ["1/4.", "180"]]) {
+    const jig = await api(me, "POST", "/song-versions", { title: `Jig ${tempoUnit ?? "usual"} ${stamp}`, language: "en", artists: [`Band ${stamp}`], content: "[D]One\n", contentFormat: "CHORDPRO", tempo: 60, timeSignature: "6/8", ...(tempoUnit && { tempoUnit }) });
+    await page.goto(`${WEB}/library/${jig.id}?tab=audio`);
+    await page.waitForLoadState("networkidle");
+    await page.getByTestId("record-new").click();
+    await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
+    const tempo = await dialog().getByTestId("recorder-tempo").inputValue();
+    if (tempo !== expected) throw new Error(`${tempoUnit ?? "usual"}: tempo ${tempo}`);
+    await dialog().getByTestId("recorder-dismiss").click();
+    await dialog().waitFor({ state: "detached" });
+  }
 });
 
 await step("no page errors", async () => {
