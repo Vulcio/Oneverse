@@ -1,5 +1,6 @@
 import type { StemPart } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
+import type { WaveStyle } from "#/lib/wave-shape";
 
 /**
  * A colour per part for the Tracks view's waveforms (issue #379): voices in
@@ -29,36 +30,54 @@ export function partColour(part: StemPart | null, index: number): string {
   return `oklch(0.66 0.15 ${hue})`;
 }
 
-const KEY = "songverse.tracksColours";
-const listeners = new Set<() => void>();
-let shown: boolean | null = null;
-
-function read(): boolean {
-  try {
-    return localStorage.getItem(KEY) !== "off";
-  } catch {
-    return true;
-  }
+/** A choice kept on the device, for every Tracks view on the page. */
+function deviceChoice<T extends string>(key: string, fallback: T, allowed: readonly T[]) {
+  const listeners = new Set<() => void>();
+  let shown: T | null = null;
+  const read = (): T => {
+    try {
+      const value = localStorage.getItem(key) as T | null;
+      return value && allowed.includes(value) ? value : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  return {
+    set(value: T) {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // Not kept (a private window): still changed for this page.
+      }
+      shown = value;
+      for (const listener of listeners) listener();
+    },
+    use(): T {
+      return useSyncExternalStore(
+        (listener) => {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+        () => (shown ??= read()),
+        () => fallback,
+      );
+    },
+  };
 }
+
+const colours = deviceChoice("songverse.tracksColours", "on", ["on", "off"] as const);
 
 /** Colours on or off, chosen on the device. */
 export function setTrackColours(on: boolean) {
-  try {
-    localStorage.setItem(KEY, on ? "on" : "off");
-  } catch {
-    // Not kept (a private window): still changed for this page.
-  }
-  shown = on;
-  for (const listener of listeners) listener();
+  colours.set(on ? "on" : "off");
 }
 
 export function useTrackColours(): boolean {
-  return useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    () => (shown ??= read()),
-    () => true,
-  );
+  return colours.use() === "on";
 }
+
+const waves = deviceChoice<WaveStyle>("songverse.tracksWaves", "filled", ["filled", "lines"]);
+
+/** The waveforms as a filled shape or thin lines (issue #386), chosen on the device. */
+export const setTrackWaves = waves.set;
+export const useTrackWaves = waves.use;

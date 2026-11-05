@@ -227,7 +227,7 @@ Stems kept on your device for offline use (**Include audio**, see [Working offli
 
 - **Across the top**, the whole song's sections (once they're [placed](/library/#the-sections-of-a-recording)), with a box round the part the lanes show. Tap it to go there.
 - **The words** being sung, with the line before and the line after.
-- **A lane per part**: its waveform, a filled shape under the playhead, darker where it's been played, with the bars marked. Each part has its colour (the voices green, the drums orange, the bass purple, the keys blue...); **A colour per part** (the palette button) turns the colours off or on again, kept on this device. **M** and **S** mute and solo it, as in the player, and a muted part is faint. Tap a lane to go to that point.
+- **A lane per part**: its waveform, a filled shape under the playhead, darker where it's been played, with the bars marked. Each part has its colour (the voices green, the drums orange, the bass purple, the keys blue...); **A colour per part** (the palette button) turns the colours off or on again, and **Thin lines** (the button beside it) draws each waveform as thin lines instead of a filled shape; both are kept on this device. **M** and **S** mute and solo it, as in the player, and a muted part is faint. Tap a lane to go to that point.
 - **Zoom** with **-** and **+**, from 8 seconds to the whole song.
 - **While you record a part** in the player, the take gets a red lane of its own, growing as you sing. With the lanes on screen, the player shows only the recorder, since the lanes already have the parts.
 

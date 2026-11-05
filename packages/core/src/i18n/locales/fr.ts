@@ -964,6 +964,7 @@ const fr: typeof en = {
     zoomOut: "Dézoomer",
     take: "Enregistrement",
     colours: "Une couleur par partie",
+    lines: "Lignes fines",
   },
   chartView: {
     label: "Afficher la grille, les mesures, un PDF ou les pistes",

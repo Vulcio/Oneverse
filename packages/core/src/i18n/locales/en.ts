@@ -964,6 +964,7 @@ const en = {
     zoomOut: "Zoom out",
     take: "Recording",
     colours: "A colour per part",
+    lines: "Thin lines",
   },
   chartView: {
     label: "Read as the chart, the chord grid, a PDF or the tracks",

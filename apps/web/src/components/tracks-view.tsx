@@ -1,5 +1,5 @@
 import { barAt, barBeatPlaces, chartBars, cueAt, lineAtPosition, recordingBeatPosition, sortedCues, type Attachment, type CueSection, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
-import { Minus, Palette, Plus } from "lucide-react";
+import { AudioLines, Minus, Palette, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -9,16 +9,14 @@ import { useTrackName } from "#/components/stem-dock";
 import { keepInView } from "#/lib/follow-view";
 import { deviceNow } from "#/lib/output-clock";
 import { getStemState, isAudible, seekStems, stemBuffer, toggleStemMute, toggleStemSolo, useStems, type StemTrack } from "#/lib/stem-engine";
-import { partColour, setTrackColours, useTrackColours } from "#/lib/track-colours";
-import { drawShape } from "#/lib/wave-shape";
+import { partColour, setTrackColours, setTrackWaves, useTrackColours, useTrackWaves } from "#/lib/track-colours";
+import { drawWave, WAVE_STEP, waveColumns } from "#/lib/wave-shape";
 import { COLUMN, columnPeaks, liveTake } from "#/lib/take-strip";
 import { useMarkTracksShown } from "#/lib/tracks-shown";
 
 /** How much of the song the lanes show (s); the last, all of it. */
 const ZOOMS = [8, 16, 32, Number.POSITIVE_INFINITY];
 const DEFAULT_ZOOM = 1;
-/** How far apart the waveform's outline is read (CSS px). */
-const STEP = 2;
 /** The words lit a beat before they're sung, as in the chart. */
 const AHEAD = 1;
 
@@ -120,8 +118,9 @@ export function TracksView({
   const takeCanvas = useRef<HTMLCanvasElement | null>(null);
   const windowBox = useRef<HTMLDivElement | null>(null);
   const coloured = useTrackColours();
-  const latest = useRef({ tracks, duration, span, whole, engine, bars, places, lines, coloured });
-  latest.current = { tracks, duration, span, whole, engine, bars, places, lines, coloured };
+  const waves = useTrackWaves();
+  const latest = useRef({ tracks, duration, span, whole, engine, bars, places, lines, coloured, waves });
+  latest.current = { tracks, duration, span, whole, engine, bars, places, lines, coloured, waves };
   const [recording, setRecording] = useState(false);
   // The take's lane in view as it starts, above the player and the recorder (once, not on each render).
   const showTake = useCallback((element: HTMLLIElement | null) => {
@@ -142,6 +141,7 @@ export function TracksView({
       if (whole) return { from: 0, length: duration, head: (at / duration) * width };
       return { from: at - span / 2, length: span, head: width / 2 };
     };
+    /** The canvas sized for the screen; null when it can't draw. */
     const prepare = (element: HTMLCanvasElement) => {
       const context = element.getContext("2d");
       if (!context) return null;
@@ -152,36 +152,73 @@ export function TracksView({
         element.width = Math.round(width * ratio);
         element.height = Math.round(height * ratio);
       }
+      return { context, width, height, ratio };
+    };
+    const clear = (context: CanvasRenderingContext2D, width: number, height: number, ratio: number) => {
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.globalAlpha = 1;
       context.clearRect(0, 0, width, height);
-      return { context, width, height };
+    };
+    // What each lane last drew, so a frame where nothing moved draws nothing (paused, or a pixel not yet crossed).
+    const drawn: string[] = [];
+    let drawnTake = "";
+    // Each lane's columns measured so far (issue #386): a column is a fixed slice of the song, so it's measured once.
+    const measured: { source: string; levels: Map<number, number> }[] = [];
+    const levelsOf = (index: number, track: StemTrack, first: number, count: number, per: number) => {
+      const source = `${track.id}:${per}:${stemBuffer(track.id) ? "decoded" : (track.peaks?.length ?? 0)}`;
+      let lane = measured[index];
+      if (!lane || lane.source !== source || lane.levels.size > 50_000) lane = measured[index] = { source, levels: new Map() };
+      const levels: number[] = [];
+      for (let k = first; k < first + count; k++) {
+        let level = lane.levels.get(k);
+        if (level === undefined) {
+          level = k < 0 ? 0 : peakBetween(track, k * per, (k + 1) * per);
+          lane.levels.set(k, level);
+        }
+        levels.push(level);
+      }
+      return levels;
     };
     let frame = requestAnimationFrame(function tick() {
-      const { tracks, duration, engine, bars, places, lines, coloured } = latest.current;
+      const { tracks, duration, engine, bars, places, lines, coloured, waves } = latest.current;
       const at = stemsPosition();
+      const step = WAVE_STEP[waves];
+      drawn.length = tracks.length;
       tracks.forEach((track, index) => {
         const element = canvases.current[index];
         const prepared = element ? prepare(element) : null;
         if (!prepared) return;
-        const { context, width, height } = prepared;
+        const { context, width, height, ratio } = prepared;
+        if (width <= 0 || height <= 0) return;
         const { from, length, head } = frameOf(width, at);
-        const per = (length / width) * STEP;
+        const { first, per, count, origin } = waveColumns(from, length, width, step, ratio);
+        const shift = origin - first * step;
+        const cut = Math.round(((at - from) / length) * width * ratio) / ratio;
         const on = isAudible(engine, track.id);
-        // The bars, faint, as on a DAW's grid; none when zoomed out too far to read them.
+        const tint = coloured && !track.take ? partColour(track.part, index) : null;
+        const key = [width, height, ratio, length, shift, cut, Math.round(head * ratio), waves, tint, on, track.id, stemBuffer(track.id) ? 1 : 0, track.peaks?.length ?? 0, engine.beat?.tempo, engine.beat?.map?.downbeats.length].join(" ");
+        if (drawn[index] === key) return;
+        drawn[index] = key;
+        clear(context, width, height, ratio);
+        // The bars, faint, as on a DAW's grid; none when zoomed out too far to read them. They slide with the waveform.
         const lines = barLines(engine.beat, from, from + length);
         if (lines.length < width / 12) {
           context.fillStyle = colours.ahead;
           context.globalAlpha = 0.18;
-          for (const line of lines) context.fillRect(Math.round(((line - from) / length) * width), 0, 1, height);
-        }
-        const levels: number[] = [];
-        for (let x = 0; x <= width + STEP; x += STEP) {
-          const start = from + (x / width) * length;
-          levels.push(start < 0 ? 0 : peakBetween(track, start, start + per));
+          for (const line of lines) context.fillRect(Math.round((line / length) * width * ratio) / ratio + shift, 0, 1, height);
         }
         // A colour per part (issue #379), else the page's ink.
-        const tint = coloured && !track.take ? partColour(track.part, index) : null;
-        drawShape(context, width, height, STEP, levels, ((at - from) / length) * width, { colour: tint ?? colours.played, alpha: (tint ? 0.9 : 0.75) * (on ? 1 : 0.3) }, { colour: tint ?? colours.ahead, alpha: (tint ? 0.4 : 0.35) * (on ? 1 : 0.3) });
+        drawWave(context, {
+          width,
+          height,
+          origin,
+          step,
+          levels: levelsOf(index, track, first, count, per),
+          cut,
+          played: { colour: tint ?? colours.played, alpha: (tint ? 0.9 : 0.75) * (on ? 1 : 0.3) },
+          ahead: { colour: tint ?? colours.ahead, alpha: (tint ? 0.4 : 0.35) * (on ? 1 : 0.3) },
+          style: waves,
+        });
         context.globalAlpha = 1;
         context.fillStyle = colours.head;
         context.fillRect(Math.round(head) - 1, 0, 2, height);
@@ -191,26 +228,33 @@ export function TracksView({
       if (taking !== shownRecording) {
         shownRecording = taking;
         setRecording(taking);
+        drawnTake = "";
       }
       const take = takeCanvas.current;
       const prepared = taking && take ? prepare(take) : null;
-      if (prepared && liveTake.from !== null) {
-        const { context, width, height } = prepared;
+      if (prepared && liveTake.from !== null && prepared.width > 0) {
+        const { context, width, height, ratio } = prepared;
         const { from, length, head } = frameOf(width, at);
-        const peaks = liveTake.peaks;
-        const levels: number[] = [];
-        for (let x = 0; x <= width + STEP; x += STEP) {
-          const start = from + (x / width) * length;
-          if (start > at) break;
-          const first = Math.floor((start - liveTake.from) / COLUMN);
-          const last = Math.floor((start + (length / width) * STEP - liveTake.from) / COLUMN);
-          let level = 0;
-          for (let column = Math.max(0, first); column <= Math.min(peaks.length - 1, last); column++) level = Math.max(level, peaks[column]!);
-          levels.push(level);
+        const { first, per, count, origin } = waveColumns(from, length, width, step, ratio);
+        const key = [width, height, ratio, origin, Math.round(head * ratio), waves, liveTake.peaks.length, liveTake.from].join(" ");
+        if (key !== drawnTake) {
+          drawnTake = key;
+          clear(context, width, height, ratio);
+          const peaks = liveTake.peaks;
+          const levels: number[] = [];
+          for (let k = first; k < first + count; k++) {
+            const start = k * per;
+            if (start > at) break;
+            let level = 0;
+            const last = Math.min(peaks.length - 1, Math.floor(((k + 1) * per - liveTake.from) / COLUMN));
+            for (let column = Math.max(0, Math.floor((start - liveTake.from) / COLUMN)); column <= last; column++) level = Math.max(level, peaks[column]!);
+            levels.push(level);
+          }
+          drawWave(context, { width, height, origin, step, levels, cut: width, played: { colour: colours.take, alpha: 1 }, ahead: { colour: colours.take, alpha: 0 }, style: waves });
+          context.globalAlpha = 1;
+          context.fillStyle = colours.head;
+          context.fillRect(Math.round(head) - 1, 0, 2, height);
         }
-        drawShape(context, width, height, STEP, levels, width, { colour: colours.take, alpha: 1 }, { colour: colours.take, alpha: 0 });
-        context.fillStyle = colours.head;
-        context.fillRect(Math.round(head) - 1, 0, 2, height);
       }
       // What the lanes show, boxed on the overview.
       const box = windowBox.current;
@@ -285,6 +329,19 @@ export function TracksView({
           data-testid="tracks-colours"
         >
           <Palette />
+        </Button>
+        <Button
+          type="button"
+          variant={waves === "lines" ? "secondary" : "outline"}
+          size="icon"
+          className="size-8"
+          onClick={() => setTrackWaves(waves === "lines" ? "filled" : "lines")}
+          aria-pressed={waves === "lines"}
+          aria-label={t("tracks.lines")}
+          title={t("tracks.lines")}
+          data-testid="tracks-lines"
+        >
+          <AudioLines />
         </Button>
         <Button type="button" variant="outline" size="icon" className="size-8" disabled={zoom === ZOOMS.length - 1 || whole} onClick={() => setZoom(Math.min(ZOOMS.length - 1, zoom + 1))} aria-label={t("tracks.zoomOut")} title={t("tracks.zoomOut")} data-testid="tracks-zoom-out">
           <Minus />

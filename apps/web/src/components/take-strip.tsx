@@ -4,7 +4,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { along } from "#/components/input-level";
 import type { Recorder } from "#/lib/recorder";
 import { COLUMN, liveTake, peaksAhead } from "#/lib/take-strip";
-import { drawShape } from "#/lib/wave-shape";
+import { drawWave } from "#/lib/wave-shape";
 
 /** Each column's width and the gap after it (CSS px). */
 const BAR = 3;
@@ -43,7 +43,7 @@ export function TakeStrip({
   const { t } = useTranslation();
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const heard = useRef<number[]>([]);
-  // The latest of what's drawn, read by the timer without restarting it.
+  // The latest of what's drawn, read by each frame without restarting it.
   const latest = useRef({ ahead, position, marks, recording });
   latest.current = { ahead, position, marks, recording };
 
@@ -60,6 +60,9 @@ export function TakeStrip({
       ahead: colour("--muted-foreground", "#71717a"),
       head: colour("--foreground", "#18181b"),
     };
+    // When the microphone's newest column came in (ms), so its columns glide left between two (issue #386).
+    let heardAt = performance.now();
+    let drawnKey = "";
     const draw = () => {
       const context = element.getContext("2d");
       if (!context) return;
@@ -69,34 +72,43 @@ export function TakeStrip({
       if (element.width !== Math.round(width * ratio) || element.height !== Math.round(height * ratio)) {
         element.width = Math.round(width * ratio);
         element.height = Math.round(height * ratio);
+        drawnKey = "";
       }
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      context.clearRect(0, 0, width, height);
       const middle = Math.round(width / 2);
       const half = Math.ceil(middle / STEP);
       const tall = height - 8;
+      const { ahead, position, marks, recording } = latest.current;
+      const at = position();
+      // How far everything has slid since a column's start, to a device pixel: the parts by the playhead, the microphone by the clock.
+      const snap = (x: number) => Math.round(x * ratio) / ratio;
+      const partsShift = at === null ? 0 : snap((at / COLUMN - Math.floor(at / COLUMN)) * STEP);
+      const micShift = snap(Math.min(1, (performance.now() - heardAt) / (COLUMN * 1000)) * STEP);
+      const key = [width, height, ratio, at === null ? "" : Math.floor(at / COLUMN), partsShift, micShift, heard.current.length, recording, ahead.length, marks.length].join(" ");
+      if (key === drawnKey) return;
+      drawnKey = key;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.globalAlpha = 1;
+      context.clearRect(0, 0, width, height);
       const bar = (x: number, level: number) => {
         const size = Math.max(2, along(level) * tall);
         context.fillRect(x, (height - size) / 2, BAR, size);
       };
-      const { ahead, position, marks, recording } = latest.current;
-      const at = position();
       // Behind it all, what the parts heard play (a filled shape, as on Tracks): just played to the left, under the take; coming to the right.
       if (at !== null) {
-        const mix = peaksAhead(ahead, at - half * COLUMN, half * 2);
-        const offset = middle - half * STEP;
-        context.save();
-        context.translate(offset, 0);
-        drawShape(context, width - offset, height, STEP, Array.from(mix), middle - offset, { colour: colours.ahead, alpha: 0.3 }, { colour: colours.ahead, alpha: 0.35 });
-        context.restore();
+        const first = Math.floor(at / COLUMN) - half;
+        const mix = peaksAhead(ahead, first * COLUMN, half * 2 + 2);
+        const origin = middle - half * STEP - partsShift;
+        drawWave(context, { width, height, origin, step: STEP, levels: mix, cut: middle, played: { colour: colours.ahead, alpha: 0.3 }, ahead: { colour: colours.ahead, alpha: 0.35 } });
       }
       // Left: the microphone, newest at the playhead.
       const recent = heard.current;
-      for (let k = 0; k < half && k < recent.length; k++) {
+      for (let k = 0; k <= half && k < recent.length; k++) {
         const level = recent[recent.length - 1 - k]!;
         context.fillStyle = level >= CLIPPING ? colours.clip : recording ? colours.take : colours.mic;
         context.globalAlpha = recording || level >= CLIPPING ? 1 : 0.6;
-        bar(middle - (k + 1) * STEP, level);
+        const x = middle - (k + 1) * STEP + STEP - micShift - BAR;
+        if (x + BAR > middle) continue;
+        bar(x, level);
       }
       // The sections' marks.
       if (at !== null) {
@@ -104,16 +116,20 @@ export function TakeStrip({
         context.globalAlpha = 0.8;
         context.font = "10px system-ui, sans-serif";
         for (const mark of marks) {
-          const x = middle + ((mark.at - at) / COLUMN) * STEP;
+          const x = snap(middle + ((mark.at - at) / COLUMN) * STEP);
           if (x < 0 || x > width) continue;
-          context.fillRect(Math.round(x), 0, 1, height);
-          context.fillText(mark.label, Math.round(x) + 3, 10, Math.max(0, width - x - 4));
+          context.fillRect(x, 0, 1, height);
+          context.fillText(mark.label, x + 3, 10, Math.max(0, width - x - 4));
         }
       }
       context.globalAlpha = 1;
       context.fillStyle = colours.head;
       context.fillRect(middle - 1, 0, 2, height);
     };
+    let frame = requestAnimationFrame(function tick() {
+      draw();
+      frame = requestAnimationFrame(tick);
+    });
     let wasRecording = false;
     const timer = setInterval(() => {
       const peak = recorder.inputPeak();
@@ -128,10 +144,11 @@ export function TakeStrip({
       if (!now && wasRecording) liveTake.from = null;
       wasRecording = now;
       if (heard.current.length > KEPT) heard.current.splice(0, heard.current.length - KEPT);
-      draw();
+      heardAt = performance.now();
     }, COLUMN * 1000);
     return () => {
       clearInterval(timer);
+      cancelAnimationFrame(frame);
       if (wasRecording) liveTake.from = null;
     };
   }, [recorder]);

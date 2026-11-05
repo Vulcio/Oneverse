@@ -1,6 +1,6 @@
 // The Tracks view (issue #374): a song's parts as lanes, as in a DAW, beside Chart and Grid - the sections across the
 // top with a box round what's shown, the words being sung, a lane per part under a playhead in the middle, zoomed in
-// and out, a part muted from its lane, a tap on the overview to go there. Screenshots go to e2e/.artifacts.
+// and out, steady as it scrolls, thin lines or a filled shape, a part muted from its lane, a tap on the overview to go there. Screenshots go to e2e/.artifacts.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,6 +74,38 @@ try {
     await page.screenshot({ path: `${SP}/tracks-playing.png` });
   });
 
+  await step("scrolling, a lane's waveform keeps its shape: it only slides, by whole pixels (issue #386)", async () => {
+    // Two frames a few apart: the played half of the first lane, slid by some whole number of pixels, is the same picture.
+    const seen = await view()
+      .getByTestId("tracks-lane")
+      .first()
+      .locator("canvas")
+      .evaluate(async (canvas) => {
+        const context = canvas.getContext("2d");
+        const { width, height } = canvas;
+        const grab = () => context.getImageData(0, 0, width, height).data;
+        const before = grab();
+        for (let k = 0; k < 12; k++) await new Promise((done) => requestAnimationFrame(done));
+        const after = grab();
+        const right = Math.floor(width / 2) - 30;
+        let best = { shift: -1, differ: Infinity, drawn: 0 };
+        for (let shift = 0; shift <= 120; shift++) {
+          let differ = 0, drawn = 0;
+          for (let y = 0; y < height; y++)
+            for (let x = 8; x < right - shift; x++) {
+              const a = (y * width + x + shift) * 4, b = (y * width + x) * 4;
+              if (after[b + 3] > 0) drawn++;
+              if (Math.abs(before[a] - after[b]) + Math.abs(before[a + 1] - after[b + 1]) + Math.abs(before[a + 2] - after[b + 2]) + Math.abs(before[a + 3] - after[b + 3]) > 8) differ++;
+            }
+          if (differ < best.differ) best = { shift, differ, drawn };
+        }
+        return best;
+      });
+    if (seen.drawn < 200) throw new Error(`nothing drawn: ${JSON.stringify(seen)}`);
+    if (seen.shift <= 0) throw new Error(`not scrolling: ${JSON.stringify(seen)}`);
+    if (seen.differ > seen.drawn / 100) throw new Error(`the shape changed as it scrolled: ${JSON.stringify(seen)}`);
+  });
+
   await step("zoomed out to the whole song, then in again", async () => {
     // 32 s is more than the song's 20: the whole song.
     await view().getByTestId("tracks-zoom-out").click();
@@ -111,6 +143,34 @@ try {
     if (seen.drawn < 200 || seen.coloured > seen.drawn / 20) throw new Error(`grey: ${JSON.stringify(seen)}`);
     await colours.click();
     await page.locator('[data-testid="tracks-colours"][aria-pressed="true"]').waitFor();
+  });
+
+  await step("thin lines instead of the filled shape, kept on the device, and back (issue #386)", async () => {
+    const lane = () => view().getByTestId("tracks-lane").first().locator("canvas");
+    // Columns drawn: an x with something on the middle row. Lines leave a gap between columns; the shape doesn't.
+    const gaps = () =>
+      lane().evaluate((canvas) => {
+        const { width, height } = canvas;
+        const data = canvas.getContext("2d").getImageData(0, Math.floor(height / 2), width, 1).data;
+        let drawn = 0, gaps = 0;
+        for (let x = 1; x < width; x++) {
+          const on = data[x * 4 + 3] > 40, was = data[(x - 1) * 4 + 3] > 40;
+          if (on) drawn++;
+          if (was && !on) gaps++;
+        }
+        return { drawn, gaps };
+      });
+    const toggle = view().getByTestId("tracks-lines");
+    if ((await toggle.getAttribute("aria-pressed")) !== "false") throw new Error("thin lines by default");
+    const filled = await gaps();
+    await toggle.click();
+    await page.locator('[data-testid="tracks-lines"][aria-pressed="true"]').waitFor();
+    await page.waitForTimeout(300);
+    const thin = await gaps();
+    if (thin.drawn < 50 || thin.gaps < filled.gaps + 50) throw new Error(`lines: ${JSON.stringify({ filled, thin })}`);
+    if ((await page.evaluate(() => localStorage.getItem("songverse.tracksWaves"))) !== "lines") throw new Error("not kept");
+    await toggle.click();
+    await page.locator('[data-testid="tracks-lines"][aria-pressed="false"]').waitFor();
   });
 
   await step("a part muted from its lane, and back", async () => {
