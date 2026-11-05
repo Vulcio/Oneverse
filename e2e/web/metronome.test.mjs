@@ -78,7 +78,11 @@ await step("the pattern (issue #384): a click makes a beat accent, medium, small
   if (list.some((c) => c.beat === 1)) throw new Error("beat 2 still sounds");
   const onBeat = list.filter((c) => c.beat === 0);
   if (!onBeat.some((c) => c.sub === 1) || !onBeat.some((c) => c.sub === 2)) throw new Error("no triplets");
-  if (!same(gaps(list.filter((c) => c.beat === 2)), 0.5 / 3)) throw new Error(`gaps ${gaps(list.filter((c) => c.beat === 2))}`);
+  // Beat 3's triplets, in one bar: twelve clicks can run into the next bar's.
+  const bars = [...new Set(list.filter((c) => c.beat === 2).map((c) => c.bar))];
+  const whole = bars.find((bar) => list.filter((c) => c.beat === 2 && c.bar === bar).length === 3);
+  const third = list.filter((c) => c.beat === 2 && c.bar === whole);
+  if (!same(gaps(third), 0.5 / 3)) throw new Error(`gaps ${gaps(third)}`);
   // Back to plain beats, every one sounding.
   await page.getByLabel("Subdivision").selectOption({ label: "None" });
   await page.getByTestId("metronome-usual-pattern").click();
