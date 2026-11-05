@@ -2963,6 +2963,14 @@ const fr: typeof en = {
     notePlaceholder: "Note pour les musiciens (ex. Plus doux, sans batterie)",
   },
   display: {
+    trackColours: "Couleurs",
+    trackOneColour: "Une seule couleur",
+    trackWaves: "Forme d'onde",
+    trackFilled: "Pleine",
+    trackLines: "Lignes",
+    trackShown: "Durée affichée",
+    trackWholeSong: "Chant",
+    tracks: "Pistes",
     open: "Affichage",
     title: "Affichage",
     section: "Réglages",
@@ -3626,6 +3634,9 @@ const fr: typeof en = {
     minimize: "Réduire le lecteur : la vidéo s'arrête, YouTube ne jouant qu'une vidéo affichée",
   },
   practice: {
+    more: "Plus",
+    version: "Version",
+    versions: "Autres versions de ce chant",
     edit: "Modifier",
   },
   mode: {

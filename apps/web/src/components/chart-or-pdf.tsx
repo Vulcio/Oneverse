@@ -1,6 +1,6 @@
 import type { Attachment, ChartPreferences, LiveViewValue } from "@oneverse/core";
 import { AudioLines, FileText, LayoutGrid, Loader2, Music } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@oneverse/ui/components/card";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
@@ -193,6 +193,9 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
   );
 }
 
+/** Room at the right of the view switch, for what the view shows there (the Tracks view's bar, issue #390). */
+export const ViewSwitchAside = createContext<HTMLElement | null>(null);
+
 /**
  * A song's chart - or, when the player reads it as its chord grid or a
  * PDF, that instead (issues #152, #155, #238): the switch above it, the
@@ -220,6 +223,7 @@ export function ChartOrPdf({
   const reading = useReadingView(songVersionId, attachments, defaultView, store);
   const { shown } = reading;
   const [onTracks, setOnTracks] = useTracksChoice(songVersionId);
+  const [aside, setAside] = useState<HTMLElement | null>(null);
   const switching: ReadingView = {
     ...reading,
     choose: (view, pdfId) => {
@@ -229,9 +233,12 @@ export function ChartOrPdf({
   };
   return (
     <div className="flex flex-col gap-3">
-      <ViewSwitch reading={switching} tracks={tracks ? { shown: onTracks, show: () => setOnTracks(true) } : undefined} />
+      <div className="flex items-center gap-2">
+        <ViewSwitch reading={switching} tracks={tracks ? { shown: onTracks, show: () => setOnTracks(true) } : undefined} />
+        <span ref={setAside} className="ml-auto flex items-center" />
+      </div>
       {/* On a phone, out to the screen's edges (the page's gutter, --gutter). */}
-      {tracks && onTracks ? tracks : shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : reading.grid && grid ? grid : children}
+      {tracks && onTracks ? <ViewSwitchAside.Provider value={aside}>{tracks}</ViewSwitchAside.Provider> : shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : reading.grid && grid ? grid : children}
     </div>
   );
 }

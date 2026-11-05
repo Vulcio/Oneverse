@@ -93,7 +93,7 @@ A song's image is the artwork of the album or single it's on, from Apple Music, 
 
 On **Song info**, **Artwork** shows it. If you can edit the song, **Find artwork** lists their matches, each with where it's from - choose the album or single it's from; on a computer, hovering one shows its full name. If it isn't there, **Upload an image** takes one of your own: drag and zoom to choose the square that shows, then **Use this image**. **Remove** takes it off. Images are kept square, at up to 800×800.
 
-That's the song in **Edit** mode. In **Practice** its page is the chart itself, read with your chord settings, with its key, capo and tempo, and the song's recording or stems at the bottom (see [Stems](/library/#stems)). On a wide screen the chart flows into columns, a section never split between two; **Display** at the top opens the [Display](/display/) panel for Practice - text size, chord names, diagrams, columns (**Auto**, as many as fit, **1**, **2** or **3**) and more; **Edit** takes you back to editing. **Chart** / **Grid** above it reads the song as its chords in bars (see [Chord grid](/metronome/#chord-grid)). When the song has a PDF (sheet music, the chart it came from), **PDF** beside them switches to the PDF's pages - with several, choose which; a long one shows its first page while the rest is still arriving - here, on its page in a set and in Live. Songverse remembers your choice for the song on your account, so every device you sign in on - the tablet on stage too - shows it the same way; for songs you haven't chosen for, your **Songs read as** setting decides (see [Chart display](/account/#chart-display)). In **Live** it opens as a set's songs do.
+That's the song in **Edit** mode. In **Practice** its page is the chart itself, read with your chord settings, with its key, capo and tempo, and the song's recording or stems at the bottom (see [Stems](/library/#stems)). At the top: the song's title and artists, then its key, its tempo with the metronome and its version (with other versions of the song, the version opens the list to switch to one). Beside the title, **Display** opens the [Display](/display/) panel for Practice - text size, chord names, diagrams, columns (**Auto**, as many as fit, **1**, **2** or **3**) and more - and **Notes** the song's [notes](/notes/); **Add to set** and **Edit** (back to editing) follow on a wider screen, and on a phone they're in the **More** menu (**…**), with **Live**. On a wide screen the chart flows into columns, a section never split between two. **Chart** / **Grid** above it reads the song as its chords in bars (see [Chord grid](/metronome/#chord-grid)). When the song has a PDF (sheet music, the chart it came from), **PDF** beside them switches to the PDF's pages - with several, choose which; a long one shows its first page while the rest is still arriving - here, on its page in a set and in Live. Songverse remembers your choice for the song on your account, so every device you sign in on - the tablet on stage too - shows it the same way; for songs you haven't chosen for, your **Songs read as** setting decides (see [Chart display](/account/#chart-display)). In **Live** it opens as a set's songs do.
 
 ![A song in Practice](../../assets/screenshots/en/practice-song.jpg)
 
@@ -144,7 +144,7 @@ With a role that keeps lossless originals (see [Roles](/admin/#roles)), the orig
 
 ## What plays
 
-In **Practice**, **What plays** at the top of a song's page, and of its page in a set, chooses what plays with the song:
+In **Practice**, **What plays** chooses what plays with the song: in the player docked at the bottom of a song's page, and at the top of its page in a set:
 
 - **Master** - its recording, one file: the quickest to load.
 - **YouTube** - its video (the version's reference recording when it's a YouTube video, else the song's own).
@@ -159,7 +159,7 @@ Only what the song has is listed. Until you choose, the master plays when there 
 
 Playing in sync, the leader's choice is everyone's: the others' **What plays** shows it, and the leader's name (see [Playing in sync](/sets/#playing-in-sync)).
 
-**The tempo** under the song's title (**100 BPM**) is a button in Practice: **−** and **+**, or type it, to practise slower or faster. It's yours: the metronome, the bars and the grid's click play it, on your devices, until **Back to the song's tempo (100)**; the song keeps its own tempo, and a dot says yours is different. Stems and recordings keep their own speed (see [Stems](/library/#stems)).
+**The tempo** under the song's title (**100 BPM**, beside the metronome) is a button in Practice: **−** and **+**, or type it, to practise slower or faster. It's yours: the metronome, the bars and the grid's click play it, on your devices, until **Back to the song's tempo (100)**; the song keeps its own tempo, and a dot says yours is different. Stems and recordings keep their own speed (see [Stems](/library/#stems)).
 
 ## Stems
 
@@ -221,7 +221,7 @@ Stems kept on your device for offline use (**Include audio**, see [Working offli
 
 ### The Tracks view
 
-**Tracks**, beside **Chart** and **Grid** above a song with stems (in Practice, and on its page in a set), shows its parts as lanes, as in a recording studio's software. The player has to have the song's stems loaded: press **Play** once. While they download, the lanes already show each part's waveform, faint, filling in as its file arrives.
+**Tracks**, beside **Chart** and **Grid** above a song with stems (in Practice, and on its page in a set), shows its parts as lanes, as in a recording studio's software. The bar being played shows at the right of those buttons. The player has to have the song's stems loaded: press **Play** once. While they download, the lanes already show each part's waveform, faint, filling in as its file arrives.
 
 ![The Tracks view: the sections across the top, the words being sung, a lane per part under the playhead](../../assets/screenshots/en/tracks.jpg)
 
@@ -229,6 +229,7 @@ Stems kept on your device for offline use (**Include audio**, see [Working offli
 - **The words** being sung, with the line before and the line after.
 - **A lane per part**: its waveform, a filled shape under the playhead, darker where it's been played, with the bars marked. Each part has its colour (the voices green, the drums orange, the bass purple, the keys blue...); **A colour per part** (the palette button) turns the colours off or on again, and **Thin lines** (the button beside it) draws each waveform as thin lines instead of a filled shape; both are kept on this device. **M** and **S** mute and solo it, as in the player, and a muted part is faint. Tap a lane to go to that point.
 - **Zoom** with **-** and **+**, from 8 seconds to the whole song.
+- **On a phone**, the colours, the thin lines and the zoom are in the [Display](/display/) panel's **Tracks** section, so the lanes get the room.
 - **While you record a part** in the player, the take gets a red lane of its own, growing as you sing. With the lanes on screen, the player shows only the recorder, since the lanes already have the parts.
 
 The choice is kept for the song on this device. Live reads the song as before.

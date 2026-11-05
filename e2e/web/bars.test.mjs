@@ -45,7 +45,12 @@ try {
     if (chords.join(" ") !== "G C G D G Em D C G") throw new Error(chords.join(" "));
     const sections = await strip().getByTestId("bars-section").allInnerTexts();
     if (sections.join(" ") !== "V C") throw new Error(sections.join(" "));
-    if (!(await row().getByTestId("bars-metronome").innerText()).includes("150")) throw new Error("not the song's tempo");
+    // Practice's metronome is the tempo pill's (issue #390): none in the row.
+    if (await row().getByTestId("bars-metronome").count()) throw new Error("a metronome in the row");
+    if (!(await page.getByTestId("practice-tempo").innerText()).includes("150")) throw new Error("not the song's tempo");
+    // Each bar's first beat marked; a chord alone in its beat, centred (issue #390).
+    if ((await strip().locator("[data-beat][data-downbeat]").count()) !== 11) throw new Error("first beats not marked");
+    if ((await strip().locator("[data-bar-chord]").first().evaluate((el) => getComputedStyle(el).textAlign)) !== "center") throw new Error("chord not centred");
     await row().screenshot({ path: `${SP}/bars-row.png` });
   });
 
@@ -61,7 +66,7 @@ try {
   });
 
   await step("the click from the row: the current beat lit, the row sliding with it", async () => {
-    await row().getByTestId("bars-metronome").click();
+    await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="bars-row"][data-source="click"]').waitFor();
     await strip().locator("[data-beat][data-on]").waitFor({ timeout: 5000 });
     const first = await strip().getAttribute("data-position");
@@ -81,7 +86,7 @@ try {
     await page.screenshot({ path: `${SP}/bars-practice.png` });
   });
 
-  await step("on a phone: one whole bar and a peek at the next; when the next bar starts, the row turns to it at once", async () => {
+  await step("on a phone: one whole bar and the next one's first beat, whole; when the next bar starts, the row turns to it at once", async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(300);
     const shown = () =>
@@ -90,8 +95,9 @@ try {
         const bars = [...el.querySelectorAll("[data-bar]")].map((bar) => ({ bar: Number(bar.dataset.bar), rect: bar.getBoundingClientRect() }));
         const whole = bars.filter((b) => b.rect.left >= box.left - 1 && b.rect.right <= box.right + 1).map((b) => b.bar);
         const peek = bars.find((b) => b.rect.left < box.right - 1 && b.rect.right > box.right + 1);
+        const next = peek ? el.querySelector(`[data-bar="${peek.bar}"] [data-beat]`)?.getBoundingClientRect() : null;
         const lit = el.querySelector("[data-beat][data-on]")?.closest("[data-bar]")?.dataset.bar;
-        return { whole, peek: peek ? box.right - peek.rect.left : 0, lit: lit === undefined ? null : Number(lit), scroll: el.scrollLeft };
+        return { whole, peek: peek ? box.right - peek.rect.left : 0, nextBeat: !!next && next.right <= box.right + 1, lit: lit === undefined ? null : Number(lit), scroll: el.scrollLeft };
       });
     const seen = [];
     for (let i = 0; i < 40; i++) {
@@ -99,7 +105,7 @@ try {
       await page.waitForTimeout(100);
     }
     for (const view of seen) {
-      if (view.whole.length !== 1 || view.peek < 15 || view.peek > 60) throw new Error(`not one bar and a peek: ${JSON.stringify(view)}`);
+      if (view.whole.length !== 1 || !view.nextBeat || view.peek > 120) throw new Error(`not one bar and the next one's first beat: ${JSON.stringify(view)}`);
       if (view.lit !== null && view.whole[0] !== view.lit) throw new Error(`the lit bar isn't the one shown: ${JSON.stringify(view)}`);
     }
     // It turned (a new bar every 1.6 s at 150 BPM in 4/4), and only by whole bars: never part-way.
@@ -123,7 +129,7 @@ try {
   });
 
   await step("stopped: nothing lit", async () => {
-    await row().getByTestId("bars-metronome").click();
+    await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="bars-row"]:not([data-source])').waitFor();
     if ((await strip().locator("[data-beat][data-on]").count()) !== 0) throw new Error("a beat still lit");
     if ((await page.getByTestId("practice-chart").locator("[data-sung]").count()) !== 0) throw new Error("a line still lit");

@@ -70,7 +70,7 @@ try {
       const now = document.querySelector('[data-testid="tracks-sung"]')?.textContent;
       return now && now !== was;
     }, first, { timeout: 10000 });
-    if (!/^Bar \d+$/.test(await view().getByTestId("tracks-bar").innerText())) throw new Error("no bar");
+    if (!/^Bar \d+$/.test(await page.getByTestId("tracks-bar").innerText())) throw new Error("no bar");
     await page.screenshot({ path: `${SP}/tracks-playing.png` });
   });
 
@@ -171,6 +171,23 @@ try {
     if ((await page.evaluate(() => localStorage.getItem("songverse.tracksWaves"))) !== "lines") throw new Error("not kept");
     await toggle.click();
     await page.locator('[data-testid="tracks-lines"][aria-pressed="false"]').waitFor();
+  });
+
+  await step("on a phone (issue #390): the bar count beside Chart / Grid / Tracks, the look in Display's Tracks section", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    if (await view().getByTestId("tracks-zoom-in").isVisible()) throw new Error("the zoom buttons above the lanes on a phone");
+    const tabs = await page.getByTestId("chart-view").boundingBox();
+    const bar = await page.getByTestId("tracks-bar").boundingBox();
+    if (!tabs || !bar || Math.abs(bar.y + bar.height / 2 - (tabs.y + tabs.height / 2)) > 6 || bar.x < tabs.x + tabs.width) throw new Error(`the bar count isn't beside the switch: ${JSON.stringify({ tabs, bar })}`);
+    await page.getByTestId("display-open").click();
+    await page.getByTestId("display-panel").getByTestId("display-section").click();
+    await page.getByTestId("display-section-tracks").click();
+    await page.getByTestId("display-track-zoom-8").click();
+    await page.locator('[data-testid="tracks-view"][data-zoom="8"]').waitFor();
+    await page.getByTestId("display-track-zoom-16").click();
+    await page.locator('[data-testid="tracks-view"][data-zoom="16"]').waitFor();
+    await page.getByTestId("display-close").click();
+    await page.setViewportSize({ width: 1280, height: 900 });
   });
 
   await step("a part muted from its lane, and back", async () => {

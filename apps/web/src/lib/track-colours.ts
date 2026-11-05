@@ -81,3 +81,12 @@ const waves = deviceChoice<WaveStyle>("songverse.tracksWaves", "filled", ["fille
 /** The waveforms as a filled shape or thin lines (issue #386), chosen on the device. */
 export const setTrackWaves = waves.set;
 export const useTrackWaves = waves.use;
+
+/** How much of the song the lanes show (s); "song", all of it. */
+export const TRACK_ZOOMS = ["8", "16", "32", "song"] as const;
+export type TrackZoom = (typeof TRACK_ZOOMS)[number];
+const zoom = deviceChoice<TrackZoom>("songverse.tracksZoom", "16", TRACK_ZOOMS);
+
+/** The Tracks view's zoom, chosen on the device: from its own buttons, or Display's Tracks section on a phone (issue #390). */
+export const setTrackZoom = zoom.set;
+export const useTrackZoom = zoom.use;

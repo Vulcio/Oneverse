@@ -54,6 +54,10 @@ export interface SongPlaybackProps {
   stems?: Pick<StemSong, "songKey" | "targetKey" | "cueSections" | "record">;
   /** False: nothing docked (Edit mode, say); the control still shows. */
   docked?: boolean;
+  /** The control in the dock rather than the page's toolbar (Practice, issue #390): `control` is then null, and a dock always shows. */
+  controlInDock?: boolean;
+  /** The page has the metronome (its tempo pill, issue #390): the dock's own click button goes. */
+  clickInPage?: boolean;
 }
 
 /**
@@ -92,8 +96,9 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
     if (inSet && sync.leading && props.set) publishPlayback(props.set.itemId, next);
   };
 
+  const inDock = !!props.controlInDock;
   const control = (
-    <label className={cn("relative flex h-9 shrink-0 items-center", leaderChose && "opacity-80")} title={leaderChose ? t("playback.leaderChose", { name: sync.session?.leader.name ?? "" }) : t("playback.label")}>
+    <label className={cn("relative flex shrink-0 items-center", inDock ? "h-8 min-w-0" : "h-9", leaderChose && "opacity-80")} title={leaderChose ? t("playback.leaderChose", { name: sync.session?.leader.name ?? "" }) : t("playback.label")}>
       <span className="pointer-events-none absolute left-2.5 flex items-center text-muted-foreground">
         {(() => {
           const Icon = ICONS[source];
@@ -101,7 +106,7 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
         })()}
       </span>
       <NativeSelect
-        className="h-9 max-w-52 pl-8"
+        className={inDock ? "h-8 max-w-40 pl-8 text-sm" : "h-9 max-w-52 pl-8"}
         value={source}
         disabled={leaderChose}
         onChange={(event) => change(event.target.value as PlaybackSource)}
@@ -140,6 +145,8 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
           prefetch,
           // The player's own list and its Multitrack button switch what plays, as this control does.
           switchSource: (to) => change(to === "MASTER" ? "MASTER" : offered.includes("TAKES") ? "TAKES" : "STEMS"),
+          sourceControl: inDock ? control : undefined,
+          clickInPage: props.clickInPage,
           ...props.stems,
         }
       : null;
@@ -164,20 +171,35 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
   }, [source]);
 
   const docked = props.docked !== false;
+  const sourceControl = inDock ? control : undefined;
   const dock = !docked ? null : song ? (
     <StemDock song={song} />
   ) : source === "YOUTUBE" && props.youtube ? (
-    <YouTubeDock video={{ songVersionId: props.songVersionId, videoId: props.youtube.id, start: props.youtube.start ?? null, title: props.title, returnTo: props.returnTo }} />
+    <YouTubeDock video={{ songVersionId: props.songVersionId, videoId: props.youtube.id, start: props.youtube.start ?? null, title: props.title, returnTo: props.returnTo }} sourceControl={sourceControl} />
   ) : source === "METRONOME" ? (
-    <MetronomeDock id={metronomeId(props)} title={props.title} tempo={props.tempo} tempoUnit={props.tempoUnit} timeSignature={props.timeSignature} metronomeBeats={props.metronomeBeats} />
+    <MetronomeDock id={metronomeId(props)} title={props.title} tempo={props.tempo} tempoUnit={props.tempoUnit} timeSignature={props.timeSignature} metronomeBeats={props.metronomeBeats} sourceControl={sourceControl} />
+  ) : sourceControl ? (
+    <SourceDock control={sourceControl} />
   ) : null;
 
-  return { control, dock, source };
+  return { control: inDock ? null : control, dock, source };
 }
 
 /** What the song's metronome is started as: the set's item, or the song. */
 function metronomeId(props: Pick<SongPlaybackProps, "songVersionId" | "set">): string {
   return props.set?.itemId ?? props.songVersionId;
+}
+
+/** Nothing playing yet, the choice in the dock (issue #390): only the control. */
+function SourceDock({ control }: { control: ReactNode }) {
+  const slot = useContext(StemDockSlot);
+  const { t } = useTranslation();
+  const dock = (
+    <section className="border-t bg-background shadow-[0_-4px_12px_-8px_rgb(0_0_0/0.3)]" aria-label={t("playback.label")} data-testid="source-dock">
+      <div className="mx-auto flex w-full items-center gap-3 pt-2 pr-[max(1rem,env(safe-area-inset-right))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:pb-2 md:px-6">{control}</div>
+    </section>
+  );
+  return slot ? createPortal(dock, slot) : null;
 }
 
 /**
@@ -192,6 +214,7 @@ function MetronomeDock({
   tempoUnit,
   timeSignature,
   metronomeBeats,
+  sourceControl,
 }: {
   id: string;
   title: string;
@@ -199,6 +222,8 @@ function MetronomeDock({
   tempoUnit?: TempoUnit | null;
   timeSignature: { numerator: number; denominator: number } | null | undefined;
   metronomeBeats?: BeatLevel[] | null;
+  /** What plays, chosen here (issue #390). */
+  sourceControl?: ReactNode;
 }) {
   const slot = useContext(StemDockSlot);
   const { t } = useTranslation();
@@ -222,6 +247,7 @@ function MetronomeDock({
         <Button type="button" size="icon" className="size-10 shrink-0 rounded-full" onClick={press} aria-pressed={mine} aria-label={mine ? t("metronome.stop") : t("stems.play")} data-testid="metronome-dock-play">
           {mine ? <Square /> : <Metronome />}
         </Button>
+        {sourceControl}
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
         <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{tempo ? tempoText(tempo, tempoUnit, timeSignature) : t("metronome.noTempo")}</span>
         <BeatLights settings={mine ? metronome.settings : settings} beat={mine ? beat : null} size="small" />

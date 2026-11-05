@@ -867,9 +867,12 @@ export function StemDock({ song: page }: { song: StemSong }) {
           <span className="hidden sm:contents">{stopButton}</span>
           {sectionControls ? <span className="hidden md:contents">{sectionControls}</span> : null}
           {/* What plays, by name (issue #182): no part's controls here - they're the expanded player's. */}
-          <span className={cn("flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1 text-sm", compactPeaks && "sm:max-w-56 sm:flex-none")} data-testid="stem-recording-name">
-            {whole ? <AudioLines className="size-4 shrink-0 text-muted-foreground" aria-hidden /> : <Layers className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
-            <span className="truncate">{playingName}</span>
+          {/* What plays, chosen here (Practice, issue #390). */}
+          {song.sourceControl}
+          <span className={cn("flex min-w-0 flex-1 items-center gap-2 px-1.5 py-1 text-sm", compactPeaks && "sm:max-w-56 sm:flex-none", song.sourceControl && "max-sm:justify-end")} data-testid="stem-recording-name">
+            {song.sourceControl ? null : whole ? <AudioLines className="size-4 shrink-0 text-muted-foreground" aria-hidden /> : <Layers className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
+            {/* Beside the choice of what plays, on a phone: the part count alone (issue #390). */}
+            <span className={cn("truncate", song.sourceControl && "max-sm:hidden")}>{playingName}</span>
             {whole ? null : (
               <span className="shrink-0 text-xs text-muted-foreground" data-testid="stem-part-count">
                 {t("stems.partCount", { count: tracks.length })}
@@ -895,7 +898,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
               {speedPercent(heardSpeed)}
             </span>
           ) : null}
-          {clickButton}
+          {song.clickInPage ? null : clickButton}
           <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => expand(true)} aria-label={t("stems.expand")}>
             <ChevronUp />
           </Button>

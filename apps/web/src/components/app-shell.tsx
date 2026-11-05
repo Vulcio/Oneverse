@@ -67,7 +67,7 @@ export function AppShell({
           <OfflineBanner />
           {/* The page: the whole main area, less its gutter (issue #177) - a page with room to spare uses it rather than
               being narrowed. The gutter (--gutter) lets a part bleed to the edges (.bleed-x, issue #147). */}
-          <div className="@container flex-1 px-(--gutter) py-8 [--gutter:1rem] md:[--gutter:1.5rem] 2xl:[--gutter:2.5rem]">
+          <div className="@container flex-1 px-(--gutter) pt-4 pb-8 sm:pt-8 [--gutter:1rem] md:[--gutter:1.5rem] 2xl:[--gutter:2.5rem]">
             <div className="w-full">{children}</div>
           </div>
           {/* A song's stem player docks here, at the bottom of the screen (issue #64). */}

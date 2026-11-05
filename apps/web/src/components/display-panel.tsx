@@ -43,7 +43,9 @@ import {
   Highlighter,
   Zap,
   UserRound,
+  AudioLines,
 } from "lucide-react";
+import { setTrackColours, setTrackWaves, setTrackZoom, TRACK_ZOOMS, useTrackColours, useTrackWaves, useTrackZoom } from "#/lib/track-colours";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -57,11 +59,11 @@ import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@oneverse/ui/lib/utils";
 
-const SECTIONS = ["text", "chords", "instrument", "layout", "notes", "controls"] as const;
+const SECTIONS = ["text", "chords", "instrument", "layout", "notes", "controls", "tracks"] as const;
 type Section = (typeof SECTIONS)[number];
-const SECTION_ICONS: Record<Section, LucideIcon> = { text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom };
-/** Only Live has controls to lay out (issue #224). */
-const sectionsFor = (mode: AppModeValue) => SECTIONS.filter((one) => one !== "controls" || mode === "LIVE");
+const SECTION_ICONS: Record<Section, LucideIcon> = { text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
+/** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390). */
+const sectionsFor = (mode: AppModeValue, tracks: boolean) => SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks));
 
 const KEY = "songverse.display.section";
 /** From here the panel is a column down the right, every section in it (issue #209). */
@@ -89,6 +91,8 @@ export function DisplayPanel({
   player,
   className,
   compact = false,
+  tracks = false,
+  labelClassName,
 }: {
   mode: AppModeValue;
   settings: EffectiveDisplaySettings;
@@ -97,10 +101,14 @@ export function DisplayPanel({
   className?: string;
   /** An icon only, for a crowded toolbar. */
   compact?: boolean;
+  /** The page has a Tracks view (issue #390): its look, here too. */
+  tracks?: boolean;
+  /** Its label's classes: hidden on a phone, say (issue #390). */
+  labelClassName?: string;
 }) {
   const { t } = useTranslation();
   const [kept, setSection] = useState<Section>(keptSection);
-  const sections = sectionsFor(mode);
+  const sections = sectionsFor(mode, tracks);
   const section = sections.includes(kept) ? kept : "text";
   const [open, setOpen] = useState(false);
   // A large screen has room for a column down the right with every section in it; a phone, the bottom.
@@ -129,7 +137,7 @@ export function DisplayPanel({
         data-testid="display-open"
       >
         <SlidersHorizontal aria-hidden />
-        {compact ? null : t("display.open")}
+        {compact ? null : <span className={labelClassName}>{t("display.open")}</span>}
       </DrawerTrigger>
       <DrawerContent side={wide ? "right" : "bottom"} data-testid="display-panel" data-mode={mode} aria-label={t("display.title")}>
         <div className={cn("flex items-center gap-2 border-b px-3 pb-2", wide && "pt-3")}>
@@ -392,6 +400,11 @@ export function DisplayPanel({
               </Row>
             </SectionBlock>
           ) : null}
+          {sections.includes("tracks") && shown("tracks") ? (
+            <SectionBlock section="tracks" heading={wide}>
+              <TracksSection />
+            </SectionBlock>
+          ) : null}
           {sections.includes("controls") && shown("controls") ? (
             <SectionBlock section="controls" heading={wide}>
               <ControlsSection settings={settings} onChange={change} />
@@ -643,6 +656,48 @@ function foldedSections(): Section[] {
   } catch {
     return [];
   }
+}
+
+/** The Tracks view's look (issue #390): kept on the device, as its own buttons keep it. */
+function TracksSection() {
+  const { t } = useTranslation();
+  const coloured = useTrackColours();
+  const waves = useTrackWaves();
+  const zoom = useTrackZoom();
+  return (
+    <>
+      <Row label={t("display.trackColours")}>
+        <Choices
+          value={coloured ? "on" : "off"}
+          onChange={(value) => setTrackColours(value === "on")}
+          name="track-colours"
+          options={[
+            { value: "on", label: t("tracks.colours"), content: <Palette /> },
+            { value: "off", label: t("display.trackOneColour"), content: <CircleDot /> },
+          ]}
+        />
+      </Row>
+      <Row label={t("display.trackWaves")}>
+        <Choices
+          value={waves}
+          onChange={setTrackWaves}
+          name="track-waves"
+          options={[
+            { value: "filled", label: t("display.trackFilled"), content: t("display.trackFilled") },
+            { value: "lines", label: t("tracks.lines"), content: t("display.trackLines") },
+          ]}
+        />
+      </Row>
+      <Row label={t("display.trackShown")}>
+        <Choices
+          value={zoom}
+          onChange={setTrackZoom}
+          name="track-zoom"
+          options={TRACK_ZOOMS.map((value) => ({ value, label: value === "song" ? t("tracks.wholeSong") : t("tracks.seconds", { count: Number(value) }), content: value === "song" ? t("display.trackWholeSong") : `${value} s` }))}
+        />
+      </Row>
+    </>
+  );
 }
 
 /** A section of the panel; on a large screen, under a heading that folds it away and opens it again. */

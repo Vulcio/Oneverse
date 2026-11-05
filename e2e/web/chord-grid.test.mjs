@@ -62,7 +62,7 @@ try {
   });
 
   await step("the metronome plays: the bar and the beat being played light up, and move on", async () => {
-    await page.getByTestId("bars-metronome").click();
+    await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="chord-grid"][data-source="click"]').waitFor();
     await grid().locator("[data-grid-bar][data-on]").waitFor({ timeout: 5000 });
     // 150 BPM: two and a half beats a second.
@@ -72,7 +72,7 @@ try {
     if ((await grid().locator("[data-grid-bar][data-on]").count()) !== 1) throw new Error("not one bar lit");
     if ((await grid().locator("[data-grid-beat][data-on]").count()) !== 1) throw new Error("not one beat lit");
     await page.screenshot({ path: `${SP}/chord-grid-playing.png` });
-    await page.getByTestId("bars-metronome").click();
+    await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="chord-grid"]:not([data-source])').waitFor();
     if (await grid().locator("[data-grid-bar][data-on]").count()) throw new Error("a bar still lit");
   });
@@ -83,11 +83,11 @@ try {
     await page.locator(`[data-testid="chord-grid"][data-lyrics="${choice}"]`).waitFor();
   };
   const playClick = async () => {
-    await page.getByTestId("bars-metronome").click();
+    await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="chord-grid"][data-source="click"]').waitFor();
   };
   const stopClick = async () => {
-    await page.getByTestId("bars-metronome").click();
+    await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="chord-grid"]:not([data-source])').waitFor();
   };
 

@@ -1,6 +1,6 @@
 import { decodeAudio } from "#/lib/decode-audio";
 import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type BeatLevel, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 import { songWaveforms, type StoredWave } from "#/lib/song-files";
 import { waveformSlices } from "@oneverse/core";
@@ -59,6 +59,10 @@ export interface StemSong {
   source?: "MASTER" | "STEMS" | "TAKES";
   /** Switches what plays (issue #366) from the player's own list: to the master, or to the stems (with the takes when the song has them). */
   switchSource?: (to: "MASTER" | "STEMS") => void;
+  /** What plays, chosen in the dock (Practice, issue #390). */
+  sourceControl?: ReactNode;
+  /** The page has the metronome (its tempo pill, issue #390): no click button in the minimised dock. */
+  clickInPage?: boolean;
   /** Loaded as the page opens (issue #366): when the person chose this (or it's one quick file). Left out: true. */
   prefetch?: boolean;
   /** The song's sections and the order they're sung in (issue #110): what cue points name and place. */

@@ -411,9 +411,11 @@ function IncomingNotes({ onShow }: { onShow: () => void }) {
 function NotesButton({ count, onClick }: { count: number; onClick: () => void }) {
   const { t } = useTranslation();
   return (
-    <Button variant="outline" onClick={onClick} data-testid="notes-button" aria-label={t("songNotes.all")}>
+    <Button variant="outline" onClick={onClick} className="max-sm:px-2.5" data-testid="notes-button" aria-label={t("songNotes.all")}>
       <MessageSquare />
-      {count > 0 ? t("songNotes.button", { count }) : t("songNotes.title")}
+      {/* On a phone, the count alone (issue #390). */}
+      <span className="max-sm:hidden">{count > 0 ? t("songNotes.button", { count }) : t("songNotes.title")}</span>
+      {count > 0 ? <span className="tabular-nums sm:hidden">{count}</span> : null}
     </Button>
   );
 }

@@ -93,7 +93,7 @@ L'image d'un chant est l'illustration de l'album ou du single où il figure, dep
 
 Dans **Infos**, **Illustration** la montre. Si vous pouvez modifier le chant, **Trouver l'illustration** liste leurs résultats, chacun avec sa provenance - choisissez l'album ou le single d'où il vient ; sur un ordinateur, le survoler affiche son nom complet. S'il n'y est pas, **Ajouter une image** en prend une à vous : faites glisser et zoomez pour choisir le carré affiché, puis **Utiliser cette image**. **Retirer** l'enlève. Les images sont gardées carrées, en 800×800 maximum.
 
-Voilà le chant en mode **Édition**. En **Session**, sa page est la grille elle-même, lue avec vos réglages d'accords, avec sa tonalité, son capo et son tempo, et l'enregistrement ou les pistes du chant en bas (voir [Pistes](/fr/library/#pistes)). Sur un écran large, la grille se répartit en colonnes, sans jamais couper une section entre deux ; **Affichage** en haut ouvre le panneau [Affichage](/fr/display/) de la Session - taille du texte, noms des accords, diagrammes, colonnes (**Auto**, autant que la place le permet, **1**, **2** ou **3**) et plus ; **Modifier** vous ramène à l'édition. **Grille** / **Mesures** au-dessus lit le chant en mesures (voir [Grille en mesures](/fr/metronome/#grille-en-mesures)). Quand le chant a un PDF (une partition, la grille d'où il vient), **PDF** à côté bascule vers les pages du PDF - s'il y en a plusieurs, choisissez lequel ; un long PDF montre sa première page pendant que la suite arrive - ici, sur sa page dans une liste et en Live. Songverse retient votre choix pour le chant sur votre compte : chaque appareil où vous êtes connecté - la tablette sur scène aussi - l'affiche de la même façon ; pour les chants où vous n'avez rien choisi, votre réglage **Lire les chants en** décide (voir [Affichage des grilles](/fr/account/#affichage-des-grilles)). En **Live**, il s'ouvre comme les chants d'une liste.
+Voilà le chant en mode **Édition**. En **Session**, sa page est la grille elle-même, lue avec vos réglages d'accords, avec sa tonalité, son capo et son tempo, et l'enregistrement ou les pistes du chant en bas (voir [Pistes](/fr/library/#pistes)). En haut : le titre du chant et ses artistes, puis sa tonalité, son tempo avec le métronome et sa version (quand le chant en a d'autres, la version ouvre la liste pour passer à l'une d'elles). À côté du titre, **Affichage** ouvre le panneau [Affichage](/fr/display/) de la Session - taille du texte, noms des accords, diagrammes, colonnes (**Auto**, autant que la place le permet, **1**, **2** ou **3**) et plus - et **Notes** les [notes](/fr/notes/) du chant ; **Ajouter à une liste** et **Modifier** (retour à l'édition) suivent sur un écran plus large, et sur un téléphone ils sont dans le menu **Plus** (**…**), avec **Live**. Sur un écran large, la grille se répartit en colonnes, sans jamais couper une section entre deux. **Grille** / **Mesures** au-dessus lit le chant en mesures (voir [Grille en mesures](/fr/metronome/#grille-en-mesures)). Quand le chant a un PDF (une partition, la grille d'où il vient), **PDF** à côté bascule vers les pages du PDF - s'il y en a plusieurs, choisissez lequel ; un long PDF montre sa première page pendant que la suite arrive - ici, sur sa page dans une liste et en Live. Songverse retient votre choix pour le chant sur votre compte : chaque appareil où vous êtes connecté - la tablette sur scène aussi - l'affiche de la même façon ; pour les chants où vous n'avez rien choisi, votre réglage **Lire les chants en** décide (voir [Affichage des grilles](/fr/account/#affichage-des-grilles)). En **Live**, il s'ouvre comme les chants d'une liste.
 
 ![Un chant en mode Session](../../../assets/screenshots/fr/practice-song.jpg)
 
@@ -144,7 +144,7 @@ Avec un rôle qui garde les originaux sans perte (voir [Rôles](/fr/admin/#rôle
 
 ## Ce qui joue
 
-En mode **Session**, **Ce qui joue** en haut de la page d'un chant, et de sa page dans une liste, choisit ce qui joue avec le chant :
+En mode **Session**, **Ce qui joue** choisit ce qui joue avec le chant : dans le lecteur en bas de la page d'un chant, et en haut de sa page dans une liste :
 
 - **Master** - son enregistrement, un seul fichier : le plus rapide à charger.
 - **YouTube** - sa vidéo (l'enregistrement de référence de la version quand c'est une vidéo YouTube, sinon celle du chant).
@@ -159,7 +159,7 @@ Seul ce que le chant a est proposé. Tant que vous n'avez rien choisi, le master
 
 En jeu synchronisé, le choix du meneur est celui de tous : le **Ce qui joue** des autres l'affiche, avec le nom du meneur (voir [Jouer en synchro](/fr/sets/#jouer-synchronisé)).
 
-**Le tempo** sous le titre du chant (**100 BPM**) est un bouton en Pratique : **−** et **+**, ou tapez-le, pour travailler plus lentement ou plus vite. C'est le vôtre : le métronome, les mesures et le clic de la grille le jouent, sur vos appareils, jusqu'à **Revenir au tempo du chant (100)** ; le chant garde son propre tempo, et un point indique que le vôtre est différent. Les pistes et les enregistrements gardent leur propre vitesse (voir [Pistes](/fr/library/#pistes)).
+**Le tempo** sous le titre du chant (**100 BPM**, à côté du métronome) est un bouton en Pratique : **−** et **+**, ou tapez-le, pour travailler plus lentement ou plus vite. C'est le vôtre : le métronome, les mesures et le clic de la grille le jouent, sur vos appareils, jusqu'à **Revenir au tempo du chant (100)** ; le chant garde son propre tempo, et un point indique que le vôtre est différent. Les pistes et les enregistrements gardent leur propre vitesse (voir [Pistes](/fr/library/#pistes)).
 
 ## Pistes
 
@@ -221,7 +221,7 @@ Les pistes gardées sur votre appareil pour le hors ligne (**Avec l'audio**, voi
 
 ### La vue Pistes
 
-**Pistes**, à côté de **Grille** et **Mesures** au-dessus d'un chant qui a des pistes (en Session, et sur sa page dans une liste), montre ses pistes en couloirs, comme dans un logiciel de studio. Le lecteur doit avoir chargé les pistes du chant : appuyez une fois sur **Lecture**. Pendant leur téléchargement, les couloirs montrent déjà la forme d'onde de chaque partie, pâle, qui se remplit à mesure que son fichier arrive.
+**Pistes**, à côté de **Grille** et **Mesures** au-dessus d'un chant qui a des pistes (en Session, et sur sa page dans une liste), montre ses pistes en couloirs, comme dans un logiciel de studio. La mesure jouée s'affiche à droite de ces boutons. Le lecteur doit avoir chargé les pistes du chant : appuyez une fois sur **Lecture**. Pendant leur téléchargement, les couloirs montrent déjà la forme d'onde de chaque partie, pâle, qui se remplit à mesure que son fichier arrive.
 
 ![La vue Pistes : les sections en haut, les paroles chantées, un couloir par piste sous la tête de lecture](../../../assets/screenshots/fr/tracks.jpg)
 
@@ -229,6 +229,7 @@ Les pistes gardées sur votre appareil pour le hors ligne (**Avec l'audio**, voi
 - **Les paroles** chantées, avec la ligne d'avant et celle d'après.
 - **Un couloir par piste** : sa forme d'onde, une forme pleine sous la tête de lecture, plus foncée sur ce qui a été joué, avec les mesures marquées. Chaque piste a sa couleur (les voix en vert, la batterie en orange, la basse en violet, les claviers en bleu...) ; **Une couleur par partie** (le bouton palette) les retire ou les remet, et **Lignes fines** (le bouton à côté) dessine chaque forme d'onde en fines lignes plutôt qu'en forme pleine ; les deux sont gardés sur cet appareil. **M** et **S** la coupent ou la mettent en solo, comme dans le lecteur, et une piste coupée est pâle. Touchez un couloir pour aller à cet endroit.
 - **Zoomez** avec **-** et **+**, de 8 secondes à tout le chant.
+- **Sur un téléphone**, les couleurs, les lignes fines et le zoom sont dans la section **Pistes** du panneau [Affichage](/fr/display/), pour laisser la place aux couloirs.
 - **Pendant que vous enregistrez une piste** dans le lecteur, la prise a son propre couloir rouge, qui grandit à mesure que vous chantez. Avec les couloirs à l'écran, le lecteur ne montre que l'enregistreur, puisque les couloirs ont déjà les pistes.
 
 Le choix est gardé pour le chant sur cet appareil. Live lit le chant comme avant.

@@ -1,7 +1,7 @@
 import { formatDuration } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp, Loader2, Pause, Play, TvMinimalPlay } from "lucide-react";
-import { useContext, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { SpeedControl, speedPercent } from "#/components/speed-control";
@@ -35,7 +35,17 @@ const EDGES = "pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-ar
  * won't play a video that isn't shown, minimising pauses it, and Play there
  * expands it.
  */
-export function YouTubeDock({ video, autoPlay = false }: { video: YouTubeVideo; /** Plays it straight away, shown: opened by a press on Play elsewhere (a catalogue entry's, issue #210). */ autoPlay?: boolean }) {
+export function YouTubeDock({
+  video,
+  autoPlay = false,
+  sourceControl,
+}: {
+  video: YouTubeVideo;
+  /** Plays it straight away, shown: opened by a press on Play elsewhere (a catalogue entry's, issue #210). */
+  autoPlay?: boolean;
+  /** What plays, chosen here (issue #390), in place of the video's name. */
+  sourceControl?: ReactNode;
+}) {
   const slot = useContext(StemDockSlot);
   const { t } = useTranslation();
   const yt = useYouTube();
@@ -179,10 +189,14 @@ export function YouTubeDock({ video, autoPlay = false }: { video: YouTubeVideo; 
       ) : (
         <div className={cn("mx-auto flex w-full items-center gap-2 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-2", EDGES)}>
           {play}
-          <span className="flex min-w-0 flex-1 items-center gap-2 px-1.5 text-sm">
-            <TvMinimalPlay className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <span className="truncate">{t("youtube.title")}</span>
-          </span>
+          {sourceControl ? (
+            <span className="flex min-w-0 flex-1 items-center">{sourceControl}</span>
+          ) : (
+            <span className="flex min-w-0 flex-1 items-center gap-2 px-1.5 text-sm">
+              <TvMinimalPlay className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="truncate">{t("youtube.title")}</span>
+            </span>
+          )}
           {duration ? time : null}
           {speed !== 1 ? (
             <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-xs font-semibold tabular-nums text-primary" title={t("stems.speedTitle")} data-testid="youtube-speed-badge">

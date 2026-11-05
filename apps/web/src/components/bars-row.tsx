@@ -17,8 +17,8 @@ export const GROUP_COLORS: Record<StructureGroup, string> = {
   instrumental: "bg-emerald-500",
   other: "bg-zinc-500",
 };
-/** How much of the next page's first beat shows at the right edge: what's coming, at a glance. */
-const PEEK = 0.6;
+/** How much of the next page's first beat shows at the right edge: all of it, what's coming at a glance (issue #390). */
+const PEEK = 1;
 /** A beat's cell at its narrowest (CSS px, its margins included): a phone shows one 4/4 bar. */
 const MIN_CELL = 48;
 const WIDE_MIN_CELL = 60;
@@ -29,7 +29,8 @@ const BAR_LINE = 3;
  * The bars row (issue #238), at the top of Practice and Live: the song's
  * chords in bars and beats - a cell a beat, a strong line where a bar
  * starts, the chord written where it changes, each section's name on its
- * first bar - and the metronome. It shows whole bars, as many as fit (one
+ * first bar - and the metronome (not in Practice, where the song's pill has
+ * it, issue #390). The first beat of each bar is marked. It shows whole bars, as many as fit (one
  * on a phone), and a little of the next one's first beat; as the music
  * plays, the current beat fills, and once the last bar shown is over the
  * row turns to the next page at once - never sliding under the eye. It
@@ -42,6 +43,7 @@ export function BarsRow({
   chart,
   document,
   chordColors = false,
+  metronome: withMetronome = true,
   className,
 }: {
   songId: string;
@@ -49,6 +51,8 @@ export function BarsRow({
   /** The song itself, for its sections' own bars (`rhythm`); without it, bars are filled in from the chart. */
   document?: Pick<SongDocumentV2, "sections"> | null;
   chordColors?: boolean;
+  /** Its own metronome button at the left; false where the page has one (Practice, issue #390). */
+  metronome?: boolean;
   className?: string;
 }) {
   const { t } = useTranslation();
@@ -162,7 +166,8 @@ export function BarsRow({
 
   if (bars.length === 0) return null;
   return (
-    <div className={cn("relative flex h-16 shrink-0 items-stretch gap-1 border-b bg-background", className)} data-testid="bars-row" data-source={source ?? undefined}>
+    <div className={cn("relative flex h-16 shrink-0 items-stretch gap-1 border-b bg-background", !withMetronome && "pl-3", className)} data-testid="bars-row" data-source={source ?? undefined}>
+      {withMetronome ? (
       <button
         type="button"
         onClick={press}
@@ -179,6 +184,7 @@ export function BarsRow({
         {mine ? <Square /> : <Metronome />}
         {tempo ? `${Math.round(tempo)}` : "–"}
       </button>
+      ) : null}
       <div ref={strip} className="flex min-w-0 flex-1 overflow-x-auto overscroll-x-contain [--beat-w:2.75rem] [scrollbar-width:none] sm:[--beat-w:3.5rem]" data-testid="bars-strip">
         {bars.map((bar) => (
           <Bar key={bar.index} bar={bar} section={bar.barInPass === 0 ? steps[bar.passIndex] : undefined} chordColors={chordColors} />
@@ -189,7 +195,7 @@ export function BarsRow({
       <span
         hidden
         data-count-in
-        className="pointer-events-none absolute top-1/2 left-16 flex size-9 -translate-y-1/2 items-center justify-center rounded-md bg-amber-500 text-lg font-bold text-white tabular-nums"
+        className={cn("pointer-events-none absolute top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-md bg-amber-500 text-lg font-bold text-white tabular-nums", withMetronome ? "left-16" : "left-4")}
         aria-label={t("bars.countIn")}
         data-testid="bars-count-in"
       />
@@ -216,13 +222,16 @@ function Bar({ bar, section, chordColors }: { bar: ChartBar; section?: ReturnTyp
           <div
             key={beat}
             data-beat={beat}
+            data-downbeat={beat === 0 ? "" : undefined}
             className={cn(
               "mx-0.5 mb-0.5 flex w-(--beat-w) items-center rounded-sm bg-muted px-1 transition-colors duration-75",
+              // The bar's first beat, marked (issue #390).
+              beat === 0 && "ring-2 ring-primary ring-inset",
               "data-[on]:bg-foreground data-[on]:text-background",
             )}
           >
             {chords.map((chord) => (
-              <span key={chord.id} className={cn("min-w-0 flex-1 truncate text-sm font-bold", chords.length > 1 && "not-first:border-l not-first:border-background/60 not-first:pl-1", chordColors && chord.family && FAMILY_COLORS[chord.family])} data-bar-chord={chord.label}>
+              <span key={chord.id} className={cn("min-w-0 flex-1 truncate text-sm font-bold", chords.length === 1 && "text-center", chords.length > 1 && "not-first:border-l not-first:border-background/60 not-first:pl-1", chordColors && chord.family && FAMILY_COLORS[chord.family])} data-bar-chord={chord.label}>
                 {chord.label}
               </span>
             ))}

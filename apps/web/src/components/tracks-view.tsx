@@ -1,7 +1,9 @@
 import { barAt, barBeatPlaces, chartBars, cueAt, lineAtPosition, recordingBeatPosition, sortedCues, waveformPeakBetween, WAVEFORM_RATE, type Attachment, type CueSection, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
 import { AudioLines, Minus, Palette, Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { ViewSwitchAside } from "#/components/chart-or-pdf";
 import { Button } from "@oneverse/ui/components/button";
 import { cn } from "@oneverse/ui/lib/utils";
 import { GROUP_COLOURS, useCueNames } from "#/components/stem-cues";
@@ -9,14 +11,13 @@ import { useTrackName } from "#/components/stem-dock";
 import { keepInView } from "#/lib/follow-view";
 import { deviceNow } from "#/lib/output-clock";
 import { getStemState, isAudible, seekStems, shownDuration, stemBuffer, stemStoredWave, toggleStemMute, toggleStemSolo, useStems, type StemTrack } from "#/lib/stem-engine";
-import { partColour, setTrackColours, setTrackWaves, useTrackColours, useTrackWaves } from "#/lib/track-colours";
+import { partColour, setTrackColours, setTrackWaves, setTrackZoom, TRACK_ZOOMS, useTrackColours, useTrackWaves, useTrackZoom } from "#/lib/track-colours";
 import { bufferLevels, drawWave, WAVE_STEP, waveColumns } from "#/lib/wave-shape";
 import { COLUMN, liveTake } from "#/lib/take-strip";
 import { useMarkTracksShown } from "#/lib/tracks-shown";
 
-/** How much of the song the lanes show (s); the last, all of it. */
+/** How much of the song the lanes show (s); the last, all of it (TRACK_ZOOMS, kept on the device). */
 const ZOOMS = [8, 16, 32, Number.POSITIVE_INFINITY];
-const DEFAULT_ZOOM = 1;
 /** The words lit a beat before they're sung, as in the chart. */
 const AHEAD = 1;
 
@@ -88,7 +89,10 @@ export function TracksView({
   useMarkTracksShown(here);
   const tracks = here ? engine.tracks : [];
   const duration = here ? shownDuration(engine) : 0;
-  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  const zoom = TRACK_ZOOMS.indexOf(useTrackZoom());
+  const setZoom = (index: number) => setTrackZoom(TRACK_ZOOMS[index] ?? "16");
+  // The bar count beside the Chart / Grid / Tracks switch, where the page has room for it (issue #390).
+  const aside = useContext(ViewSwitchAside);
   const span = Math.min(ZOOMS[zoom]!, duration || Number.POSITIVE_INFINITY);
   const whole = !Number.isFinite(ZOOMS[zoom]!) || span >= duration;
 
@@ -311,10 +315,16 @@ export function TracksView({
   const after = sung !== null ? (lines[sung + 1] ?? null) : (lines[0] ?? null);
   return (
     <div className="flex flex-col gap-3" data-testid="tracks-view" data-state="ready" data-zoom={whole ? "song" : String(span)}>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span className="tabular-nums" data-testid="tracks-bar">
-          {bar !== null ? t("tracks.bar", { n: bar }) : null}
-        </span>
+      {(() => {
+        const barCount = (
+          <span className="text-xs tabular-nums text-muted-foreground" data-testid="tracks-bar">
+            {bar !== null ? t("tracks.bar", { n: bar }) : null}
+          </span>
+        );
+        return aside ? createPortal(barCount, aside) : barCount;
+      })()}
+      {/* On a phone, the look is in Display's Tracks section (issue #390): the lanes get the room. */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground max-sm:hidden">
         <span className="flex-1" />
         <span className="tabular-nums" data-testid="tracks-zoom">
           {whole ? t("tracks.wholeSong") : t("tracks.seconds", { count: span })}

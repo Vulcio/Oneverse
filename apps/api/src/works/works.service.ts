@@ -11,6 +11,8 @@ const DETAIL_INCLUDE = {
     select: {
       id: true,
       title: true,
+      // Tells it apart from the others (issue #390: Practice's version picker).
+      versionName: true,
       language: true,
       ownerScope: true,
       publicationState: true,

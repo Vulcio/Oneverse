@@ -2600,6 +2600,8 @@ export interface WorkDetail {
   versions: Array<{
     id: string;
     title: string;
+    /** Tells it apart from the others, e.g. "Acoustic" (issue #390). */
+    versionName: string | null;
     language: string;
     ownerScope: string;
     publicationState: string;

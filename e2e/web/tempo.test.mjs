@@ -45,10 +45,10 @@ await step("Practice: the BPM, tapped, goes faster for me; the metronome plays i
   await page.waitForLoadState("networkidle");
   await shows("practice-tempo", 120);
   await page.locator('[data-testid="practice-tempo"][data-changed]').waitFor();
-  await page.getByTestId("bars-metronome").click();
+  await page.getByTestId("practice-metronome").click();
   const list = await gaps();
   if (!every(list, 0.5)) throw new Error(`not 120 BPM: ${list}`);
-  await page.getByTestId("bars-metronome").click();
+  await page.getByTestId("practice-metronome").click();
   if ((await songTempo()) !== 100) throw new Error("the song's tempo changed");
 });
 

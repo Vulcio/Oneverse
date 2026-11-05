@@ -2960,6 +2960,14 @@ const en = {
     notePlaceholder: "Note for the band (e.g. Softer, drums out)",
   },
   display: {
+    trackColours: "Colours",
+    trackOneColour: "One colour",
+    trackWaves: "Waveform",
+    trackFilled: "Filled",
+    trackLines: "Lines",
+    trackShown: "Time shown",
+    trackWholeSong: "Song",
+    tracks: "Tracks",
     open: "Display",
     title: "Display",
     section: "Settings",
@@ -3623,6 +3631,9 @@ const en = {
     minimize: "Minimize the player: the video stops, as YouTube only plays a video that's shown",
   },
   practice: {
+    more: "More",
+    version: "Version",
+    versions: "Other versions of this song",
     edit: "Edit",
   },
   mode: {
