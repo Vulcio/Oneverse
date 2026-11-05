@@ -213,6 +213,10 @@ export class StorageService {
    */
   async deleteUnreferenced(hashes: string[], location: StorageLocation = null): Promise<void> {
     for (const hash of new Set(hashes)) {
+      // Its waveform (issue #388) goes once no file anywhere has these bytes.
+      if ((await this.prisma.client.attachment.count({ where: { OR: [{ storageKey: hash }, { originalStorageKey: hash }] } })) === 0) {
+        await this.prisma.client.audioWaveform.deleteMany({ where: { storageKey: hash } });
+      }
       // In an organisation's bucket (issue #206), only its files are there.
       if (location) {
         const files = await this.prisma.client.attachment.count({ where: { storedInOrganizationId: location, OR: [{ storageKey: hash }, { originalStorageKey: hash }] } });

@@ -46,6 +46,7 @@ import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../note
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
 import type { StemPart } from "../stems/index.js";
+import { readWaveform, waveformPeakBetween, waveformSlices } from "../waveform/index.js";
 import { defaultPlaybackSource, filesForSource, playbackSourcesOf, resolvePlaybackSource, type PlaybackSource } from "../playback/index.js";
 
 /**
@@ -2876,6 +2877,45 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a singer", args: [LIVE_SESSION, LIVE_SINGER] },
           { name: "the leader, while someone else has them locked", args: [LIVE_LOCKED, LIVE_EDITOR] },
           { name: "no session: who may lead or run screens", args: [null, LIVE_OPERATOR] },
+        ],
+      },
+    },
+  },
+  {
+    area: "waveform",
+    about: "Audio files' stored waveforms (issue #388), as GET …/attachments/waveforms sends them: one byte a slice, in base64",
+    functions: {
+      readWaveform: {
+        about: "Levels 0-1 against the file's loudest (rounded to 3 places here); null when there are none",
+        params: ["wire"],
+        run: (wire: Parameters<typeof readWaveform>[0]) => {
+          const read = readWaveform(wire);
+          return read && { ...read, levels: Array.from(read.levels, (level) => Math.round(level * 1000) / 1000) };
+        },
+        cases: [
+          { name: "five slices", args: [{ rate: 100, seconds: 0.05, loudest: 0.8, peaks: "AECA/xA=" }] },
+          { name: "none (a file that couldn't be read)", args: [{ rate: 100, seconds: 0, loudest: 0, peaks: "" }] },
+          { name: "not base64", args: [{ rate: 100, seconds: 1, loudest: 1, peaks: "%%%" }] },
+        ],
+      },
+      waveformPeakBetween: {
+        about: "The loudest level from one time to another (s)",
+        params: ["levels", "rate", "from", "to"],
+        run: waveformPeakBetween,
+        cases: [
+          { name: "within", args: [[0, 0.25, 0.5, 1, 0.0625], 100, 0, 0.015] },
+          { name: "past the end", args: [[0, 0.25, 0.5, 1, 0.0625], 100, 0.035, 9] },
+          { name: "before the start", args: [[0, 0.25, 0.5, 1, 0.0625], 100, -1, -0.5] },
+        ],
+      },
+      waveformSlices: {
+        about: "A fixed number of levels across the whole of it, each the loudest of its share",
+        params: ["levels", "count"],
+        run: waveformSlices,
+        cases: [
+          { name: "fewer", args: [[0, 0.25, 0.5, 1, 0.0625], 2] },
+          { name: "more than there are", args: [[0.5, 1], 4] },
+          { name: "none", args: [[], 3] },
         ],
       },
     },

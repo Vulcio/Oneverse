@@ -1,4 +1,4 @@
-import { barAt, barBeatPlaces, chartBars, cueAt, lineAtPosition, recordingBeatPosition, sortedCues, type Attachment, type CueSection, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
+import { barAt, barBeatPlaces, chartBars, cueAt, lineAtPosition, recordingBeatPosition, sortedCues, waveformPeakBetween, WAVEFORM_RATE, type Attachment, type CueSection, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
 import { AudioLines, Minus, Palette, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,10 +8,10 @@ import { GROUP_COLOURS, useCueNames } from "#/components/stem-cues";
 import { useTrackName } from "#/components/stem-dock";
 import { keepInView } from "#/lib/follow-view";
 import { deviceNow } from "#/lib/output-clock";
-import { getStemState, isAudible, seekStems, stemBuffer, toggleStemMute, toggleStemSolo, useStems, type StemTrack } from "#/lib/stem-engine";
+import { getStemState, isAudible, seekStems, shownDuration, stemBuffer, stemStoredWave, toggleStemMute, toggleStemSolo, useStems, type StemTrack } from "#/lib/stem-engine";
 import { partColour, setTrackColours, setTrackWaves, useTrackColours, useTrackWaves } from "#/lib/track-colours";
-import { drawWave, WAVE_STEP, waveColumns } from "#/lib/wave-shape";
-import { COLUMN, columnPeaks, liveTake } from "#/lib/take-strip";
+import { bufferLevels, drawWave, WAVE_STEP, waveColumns } from "#/lib/wave-shape";
+import { COLUMN, liveTake } from "#/lib/take-strip";
 import { useMarkTracksShown } from "#/lib/tracks-shown";
 
 /** How much of the song the lanes show (s); the last, all of it. */
@@ -42,16 +42,14 @@ function stemsPosition(): number {
   return state.position;
 }
 
-/** A part's loudest moment from `from` to `to` (s), 0-1: its decoded audio, else the waveform the player drew. */
+/** A part's loudest moment from `from` to `to` (s), 0-1: its decoded audio, else - while it downloads - the server's waveform (issue #388), else the one the player drew. */
 function peakBetween(track: StemTrack, from: number, to: number): number {
   if (to <= 0 || from >= track.length) return 0;
   const buffer = stemBuffer(track.id);
-  if (buffer) {
-    const peaks = columnPeaks(buffer);
-    let loudest = 0;
-    for (let column = Math.max(0, Math.floor(from / COLUMN)); column <= Math.min(peaks.length - 1, Math.floor(to / COLUMN)); column++) loudest = Math.max(loudest, peaks[column]!);
-    return loudest;
-  }
+  if (buffer) return waveformPeakBetween(bufferLevels(buffer), WAVEFORM_RATE, from, to);
+  const stored = stemStoredWave(track.id);
+  // As loud as it is, as the decoded audio's drawn.
+  if (stored) return waveformPeakBetween(stored.levels, stored.rate, from, to) * stored.loudest;
   if (!track.peaks || track.length <= 0) return 0;
   const per = track.peaks.length / track.length;
   let loudest = 0;
@@ -85,10 +83,11 @@ export function TracksView({
   const engine = useStems();
   const nameOf = useTrackName();
   const cueNames = useCueNames();
-  const here = engine.songVersionId === songVersionId && engine.tracks.length > 0 && engine.duration > 0;
+  // While the files download too, from their stored waveforms (issue #388).
+  const here = engine.songVersionId === songVersionId && engine.tracks.length > 0 && shownDuration(engine) > 0;
   useMarkTracksShown(here);
   const tracks = here ? engine.tracks : [];
-  const duration = here ? engine.duration : 0;
+  const duration = here ? shownDuration(engine) : 0;
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const span = Math.min(ZOOMS[zoom]!, duration || Number.POSITIVE_INFINITY);
   const whole = !Number.isFinite(ZOOMS[zoom]!) || span >= duration;
@@ -165,7 +164,7 @@ export function TracksView({
     // Each lane's columns measured so far (issue #386): a column is a fixed slice of the song, so it's measured once.
     const measured: { source: string; levels: Map<number, number> }[] = [];
     const levelsOf = (index: number, track: StemTrack, first: number, count: number, per: number) => {
-      const source = `${track.id}:${per}:${stemBuffer(track.id) ? "decoded" : (track.peaks?.length ?? 0)}`;
+      const source = `${track.id}:${per}:${stemBuffer(track.id) ? "decoded" : stemStoredWave(track.id) ? "stored" : (track.peaks?.length ?? 0)}`;
       let lane = measured[index];
       if (!lane || lane.source !== source || lane.levels.size > 50_000) lane = measured[index] = { source, levels: new Map() };
       const levels: number[] = [];
@@ -193,10 +192,13 @@ export function TracksView({
         const { from, length, head } = frameOf(width, at);
         const { first, per, count, origin } = waveColumns(from, length, width, step, ratio);
         const shift = origin - first * step;
-        const cut = Math.round(((at - from) / length) * width * ratio) / ratio;
+        // Still downloading (issue #388): its stored waveform, faint, filled in as far as it's come.
+        const arriving = !track.ready && !track.take;
+        const until = arriving ? (track.downloaded ?? 0) * track.length : at;
+        const cut = Math.round(((until - from) / length) * width * ratio) / ratio;
         const on = isAudible(engine, track.id);
         const tint = coloured && !track.take ? partColour(track.part, index) : null;
-        const key = [width, height, ratio, length, shift, cut, Math.round(head * ratio), waves, tint, on, track.id, stemBuffer(track.id) ? 1 : 0, track.peaks?.length ?? 0, engine.beat?.tempo, engine.beat?.map?.downbeats.length].join(" ");
+        const key = [width, height, ratio, length, shift, cut, Math.round(head * ratio), waves, tint, on, track.id, stemBuffer(track.id) ? 1 : stemStoredWave(track.id) ? 2 : 0, arriving, track.peaks?.length ?? 0, engine.beat?.tempo, engine.beat?.map?.downbeats.length].join(" ");
         if (drawn[index] === key) return;
         drawn[index] = key;
         clear(context, width, height, ratio);
@@ -215,8 +217,8 @@ export function TracksView({
           step,
           levels: levelsOf(index, track, first, count, per),
           cut,
-          played: { colour: tint ?? colours.played, alpha: (tint ? 0.9 : 0.75) * (on ? 1 : 0.3) },
-          ahead: { colour: tint ?? colours.ahead, alpha: (tint ? 0.4 : 0.35) * (on ? 1 : 0.3) },
+          played: arriving ? { colour: colours.ahead, alpha: 0.45 * (on ? 1 : 0.3) } : { colour: tint ?? colours.played, alpha: (tint ? 0.9 : 0.75) * (on ? 1 : 0.3) },
+          ahead: arriving ? { colour: colours.ahead, alpha: 0.15 * (on ? 1 : 0.3) } : { colour: tint ?? colours.ahead, alpha: (tint ? 0.4 : 0.35) * (on ? 1 : 0.3) },
           style: waves,
         });
         context.globalAlpha = 1;
@@ -388,7 +390,7 @@ export function TracksView({
           const muted = engine.muted.has(track.id);
           const soloed = engine.soloed.has(track.id);
           return (
-            <li key={track.id} className={cn("flex items-center gap-2 rounded-md bg-muted/40 pr-1", track.take && "bg-destructive/5")} data-testid="tracks-lane" data-audible={String(on)}>
+            <li key={track.id} className={cn("flex items-center gap-2 rounded-md bg-muted/40 pr-1", track.take && "bg-destructive/5")} data-testid="tracks-lane" data-audible={String(on)} data-ready={String(!!track.ready || !!track.take)}>
               <span className={cn("w-20 shrink-0 truncate pl-2 text-xs font-medium sm:w-32 sm:text-sm", !on && "text-muted-foreground")} title={name}>
                 {name}
               </span>

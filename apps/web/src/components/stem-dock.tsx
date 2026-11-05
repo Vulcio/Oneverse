@@ -65,6 +65,7 @@ import {
   stopStems,
   resetStemVolumes,
   setStemVolume,
+  shownDuration,
   seekStems,
   songBeatTempo,
   stemKey,
@@ -164,6 +165,8 @@ export function StemDock({ song: page }: { song: StemSong }) {
   const loading = active && engine.status === "loading";
   const position = active ? engine.position : 0;
   const duration = active ? engine.duration : 0;
+  // What the waveforms are drawn against: while the files download, as long as their stored waveforms say (issue #388).
+  const drawnDuration = active ? shownDuration(engine) : 0;
   const [expanded, setExpanded] = useState(false);
   // Following Sync play's leader (issue #100): play, pause and seek are theirs.
   const following = active ? engine.following : null;
@@ -329,15 +332,15 @@ export function StemDock({ song: page }: { song: StemSong }) {
         {t("stems.resetMix")}
       </Button>
     ) : null;
-  const audibleKey = tracks.map((track) => `${track.id}:${isAudible(engine, track.id)}:${track.peaks ? 1 : 0}:${volumeOf(track)}`).join();
+  const audibleKey = tracks.map((track) => `${track.id}:${isAudible(engine, track.id)}:${track.peaks ? 1 : 0}:${track.ready ? 1 : 0}:${volumeOf(track)}`).join();
   const combinedPeaks = useMemo(
-    () => (combined ? combinePeaks(tracks.filter((track) => isAudible(engine, track.id)).map((track) => ({ ...track, volume: volumeOf(track) })), duration) : null),
-    [combined, audibleKey, duration],
+    () => (combined ? combinePeaks(tracks.filter((track) => isAudible(engine, track.id)).map((track) => ({ ...track, volume: volumeOf(track) })), drawnDuration) : null),
+    [combined, audibleKey, drawnDuration],
   );
   // Minimised (issue #162): what's heard as one waveform, where there's room.
   const compactPeaks = useMemo(
-    () => (expanded || !duration ? null : combinePeaks(tracks.filter((track) => isAudible(engine, track.id)).map((track) => ({ ...track, volume: volumeOf(track) })), duration)),
-    [expanded, audibleKey, duration],
+    () => (expanded || !drawnDuration ? null : combinePeaks(tracks.filter((track) => isAudible(engine, track.id)).map((track) => ({ ...track, volume: volumeOf(track) })), drawnDuration)),
+    [expanded, audibleKey, drawnDuration],
   );
 
   // Recording a part (issues #127, #134): in the player, over its own mix, into the multitrack playing -
@@ -620,7 +623,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
                   <PartButton key={track.id} track={track} name={nameOf(track)} on={isAudible(engine, track.id)} muted={engine.muted.has(track.id)} soloed={engine.soloed.has(track.id)} soloing={engine.soloed.size > 0} chip />
                 ))}
               </div>
-              <Waveform peaks={combinedPeaks} progress={duration ? position / duration : 0} span={1} dim={false} onSeek={active && engine.status === "ready" && !following ? (at) => seekStems(at * duration) : undefined} />
+              <Waveform peaks={combinedPeaks} progress={duration ? position / duration : 0} loading={loading ? engine.downloaded : null} span={1} dim={false} onSeek={active && engine.status === "ready" && !following ? (at) => seekStems(at * duration) : undefined} />
               {/* The mixer too (issue #142): each part's button and fader, compact. */}
               {mixer ? (
                 <ul className="grid grid-cols-1 gap-x-6 gap-y-1 sm:basis-full sm:grid-cols-2" data-testid="stem-combined-mixer">
@@ -676,7 +679,8 @@ export function StemDock({ song: page }: { song: StemSong }) {
                         <Waveform
                           peaks={track.peaks}
                           progress={duration ? position / duration : 0}
-                          span={duration ? Math.min(1, track.length / duration) : 1}
+                          loading={active && !track.ready ? (track.downloaded ?? 0) : null}
+                          span={drawnDuration ? Math.min(1, track.length / drawnDuration) : 1}
                           dim={!on}
                           scale={Math.sqrt(volumeGain(volumeOf(track)))}
                           onSeek={active && engine.status === "ready" && !following ? (at) => seekStems(at * duration) : undefined}
@@ -876,7 +880,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
           {/* What's heard, as one waveform (issue #162), where there's room. */}
           {compactPeaks ? (
             <div className="hidden h-8 min-w-24 flex-1 items-center sm:flex" data-testid="stem-compact-waveform">
-              <Waveform peaks={compactPeaks} progress={duration ? position / duration : 0} span={1} dim={false} onSeek={ready ? (at) => seekStems(at * duration) : undefined} />
+              <Waveform peaks={compactPeaks} progress={duration ? position / duration : 0} loading={loading ? engine.downloaded : null} span={1} dim={false} onSeek={ready ? (at) => seekStems(at * duration) : undefined} />
             </div>
           ) : null}
           {status ? <span className="hidden sm:block">{status}</span> : duration ? <span className="hidden sm:block">{time}</span> : null}
@@ -1026,7 +1030,24 @@ function Fader({ name, volume, disabled, onChange, compact = false }: { name: st
  * drag seeks. Drawn as long as the part is, against the longest (`span`,
  * 0-1): a take shorter than the rest isn't stretched to look like it lasts.
  */
-function Waveform({ peaks, progress, span, dim, scale = 1, onSeek }: { peaks: number[] | null; progress: number; span: number; dim: boolean; /** Drawn this high (0-1): as loud as the mixer has it. */ scale?: number; onSeek?: (at: number) => void }) {
+function Waveform({
+  peaks,
+  progress,
+  loading = null,
+  span,
+  dim,
+  scale = 1,
+  onSeek,
+}: {
+  peaks: number[] | null;
+  progress: number;
+  /** Still downloading (issue #388): how much has come, 0-1 - the server's waveform drawn faint, filled in as far as that. Null: it plays. */
+  loading?: number | null;
+  span: number;
+  dim: boolean;
+  /** Drawn this high (0-1): as loud as the mixer has it. */ scale?: number;
+  onSeek?: (at: number) => void;
+}) {
   const clip = useId();
   const path = useMemo(
     () =>
@@ -1063,14 +1084,16 @@ function Waveform({ peaks, progress, span, dim, scale = 1, onSeek }: { peaks: nu
         style={{ width: `${span * 100}%` }}
         data-testid="stem-waveform"
         data-span={span.toFixed(3)}
+        data-loading={loading === null ? undefined : loading.toFixed(2)}
       >
         <defs>
           <clipPath id={clip}>
-            <rect x={0} y={0} width={Math.min(1, span ? progress / span : 0) * width} height={100} />
+            {/* Played so far; while it downloads, how much has come. */}
+            <rect x={0} y={0} width={Math.min(1, loading ?? (span ? progress / span : 0)) * width} height={100} className={cn(loading !== null && "transition-[width] duration-150")} />
           </clipPath>
         </defs>
-        <path d={path} className="fill-muted-foreground/35" />
-        <path d={path} className="fill-primary" clipPath={`url(#${clip})`} />
+        <path d={path} className={loading === null ? "fill-muted-foreground/35" : "fill-muted-foreground/15"} />
+        <path d={path} className={loading === null ? "fill-primary" : "fill-muted-foreground/45"} clipPath={`url(#${clip})`} />
       </svg>
     </div>
   );

@@ -27,6 +27,8 @@ export const ARCHIVES_QUEUE = "archives";
 export const SONG_INFO_QUEUE = "song-info";
 /** Files moved to and from organisations' own buckets (issue #206). */
 export const OWN_STORAGE_QUEUE = "own-storage";
+/** Audio files' waveforms worked out (issue #388): new ones soon after they're stored, the rest a few at a time. */
+export const WAVEFORMS_QUEUE = "waveforms";
 
 /**
  * A short hash of this process's SETTINGS_ENCRYPTION_KEY, or null without

@@ -1,0 +1,175 @@
+{
+  "$schema": "songverse-conformance/v1",
+  "area": "waveform",
+  "about": "Audio files' stored waveforms (issue #388), as GET …/attachments/waveforms sends them: one byte a slice, in base64",
+  "functions": {
+    "readWaveform": {
+      "about": "Levels 0-1 against the file's loudest (rounded to 3 places here); null when there are none",
+      "params": [
+        "wire"
+      ],
+      "cases": [
+        {
+          "name": "five slices",
+          "args": [
+            {
+              "rate": 100,
+              "seconds": 0.05,
+              "loudest": 0.8,
+              "peaks": "AECA/xA="
+            }
+          ],
+          "expected": {
+            "rate": 100,
+            "seconds": 0.05,
+            "loudest": 0.8,
+            "levels": [
+              0,
+              0.251,
+              0.502,
+              1,
+              0.063
+            ]
+          }
+        },
+        {
+          "name": "none (a file that couldn't be read)",
+          "args": [
+            {
+              "rate": 100,
+              "seconds": 0,
+              "loudest": 0,
+              "peaks": ""
+            }
+          ],
+          "expected": null
+        },
+        {
+          "name": "not base64",
+          "args": [
+            {
+              "rate": 100,
+              "seconds": 1,
+              "loudest": 1,
+              "peaks": "%%%"
+            }
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "waveformPeakBetween": {
+      "about": "The loudest level from one time to another (s)",
+      "params": [
+        "levels",
+        "rate",
+        "from",
+        "to"
+      ],
+      "cases": [
+        {
+          "name": "within",
+          "args": [
+            [
+              0,
+              0.25,
+              0.5,
+              1,
+              0.0625
+            ],
+            100,
+            0,
+            0.015
+          ],
+          "expected": 0.25
+        },
+        {
+          "name": "past the end",
+          "args": [
+            [
+              0,
+              0.25,
+              0.5,
+              1,
+              0.0625
+            ],
+            100,
+            0.035,
+            9
+          ],
+          "expected": 1
+        },
+        {
+          "name": "before the start",
+          "args": [
+            [
+              0,
+              0.25,
+              0.5,
+              1,
+              0.0625
+            ],
+            100,
+            -1,
+            -0.5
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    "waveformSlices": {
+      "about": "A fixed number of levels across the whole of it, each the loudest of its share",
+      "params": [
+        "levels",
+        "count"
+      ],
+      "cases": [
+        {
+          "name": "fewer",
+          "args": [
+            [
+              0,
+              0.25,
+              0.5,
+              1,
+              0.0625
+            ],
+            2
+          ],
+          "expected": [
+            0.25,
+            1
+          ]
+        },
+        {
+          "name": "more than there are",
+          "args": [
+            [
+              0.5,
+              1
+            ],
+            4
+          ],
+          "expected": [
+            0.5,
+            0.5,
+            1,
+            1
+          ]
+        },
+        {
+          "name": "none",
+          "args": [
+            [],
+            3
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  }
+}

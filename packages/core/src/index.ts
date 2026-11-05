@@ -78,3 +78,4 @@ export * from "./requests/index.js";
 export * from "./pdf-chart/index.js";
 export * from "./notes/index.js";
 export { songProviderOpenApi } from "./song-provider/openapi.js";
+export * from "./waveform/index.js";

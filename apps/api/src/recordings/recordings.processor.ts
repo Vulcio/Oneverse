@@ -1,11 +1,12 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { InjectQueue, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Logger } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { UnrecoverableError, type Job } from "bullmq";
+import { UnrecoverableError, type Job, type Queue } from "bullmq";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { JOB_WORKER_OPTIONS, RECORDINGS_QUEUE } from "../jobs/jobs.constants.js";
+import { JOB_WORKER_OPTIONS, RECORDINGS_QUEUE, WAVEFORMS_QUEUE } from "../jobs/jobs.constants.js";
+import { waveformsSoon } from "../waveforms/waveforms.processor.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { encodeUpload, FfmpegMissingError, isLosslessCodec, losslessOriginal, MAX_UPLOAD_BITRATE, probeAudio, processTake } from "./ffmpeg.js";
@@ -46,13 +47,19 @@ export class RecordingsProcessor extends WorkerHost {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    @InjectQueue(WAVEFORMS_QUEUE) private readonly waveforms: Queue,
   ) {
     super();
   }
 
   async process(job: Job<ProcessTakeJob | ShrinkUploadJob>): Promise<{ attachmentId: string; bytes: number } | { skipped: string }> {
-    if (job.name === "shrink-upload") return this.shrink(job as Job<ShrinkUploadJob>);
-    return this.processTake(job as Job<ProcessTakeJob>);
+    try {
+      if (job.name === "shrink-upload") return await this.shrink(job as Job<ShrinkUploadJob>);
+      return await this.processTake(job as Job<ProcessTakeJob>);
+    } finally {
+      // Its file is final now (Opus, or kept as it was): its waveform (issue #388).
+      await waveformsSoon(this.waveforms);
+    }
   }
 
   /**

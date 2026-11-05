@@ -35,3 +35,12 @@ export class AttachmentResponseDto {
   @ApiProperty({ description: "May change who sees it." }) canChangeVisibility!: boolean;
   @ApiProperty() createdAt!: Date;
 }
+
+/** An audio file's waveform (issue #388): a level every 1/rate s. */
+export class WaveformResponseDto {
+  @ApiProperty() attachmentId!: string;
+  @ApiProperty({ description: "Levels a second (100: one every 10 ms)." }) rate!: number;
+  @ApiProperty({ description: "How long the file lasts (s)." }) seconds!: number;
+  @ApiProperty({ description: "The loudest sample in the file, 0-1 (linear): what a level of 255 stands for." }) loudest!: number;
+  @ApiProperty({ description: "The levels, one byte each (0-255, the loudest moment of each slice across the channels, against `loudest`), in base64." }) peaks!: string;
+}

@@ -27,7 +27,7 @@ import { AccessPolicyService } from "../access/access-policy.service.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AttachmentsService } from "./attachments.service.js";
-import { AttachmentResponseDto } from "./dto/attachment-response.dto.js";
+import { AttachmentResponseDto, WaveformResponseDto } from "./dto/attachment-response.dto.js";
 import { ProcessAttachmentDto, UpdateAttachmentDto, UploadAttachmentDto, UseTakeDto } from "./dto/upload-attachment.dto.js";
 import { sniffAudioType } from "./sniff-audio.js";
 import { FileLinksService } from "../files/file-links.service.js";
@@ -70,6 +70,20 @@ export class AttachmentsController {
     if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     return this.attachmentsService.listForSongVersion(user, songVersionId);
+  }
+
+  /**
+   * The waveforms of the song's audio files (issue #388), worked out once by
+   * the Worker: drawn before the audio has arrived. Files without one yet
+   * aren't listed. Levels are one byte each, in base64 (see @oneverse/core's
+   * readWaveform).
+   */
+  @Get("waveforms")
+  @ApiOkResponse({ type: WaveformResponseDto, isArray: true })
+  async waveforms(@Param("songVersionId") songVersionId: string, @CurrentUser() user: AuthenticatedUser | undefined): Promise<WaveformResponseDto[]> {
+    if (!user) throw new UnauthorizedException();
+    await this.access.assertCanSeeSong(user, songVersionId);
+    return this.attachmentsService.waveforms(user, songVersionId);
   }
 
   /** Anyone who can see the song adds their own files; who else sees each is up to them (issue #72). */

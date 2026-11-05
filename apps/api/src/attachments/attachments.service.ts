@@ -1,7 +1,7 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnsupportedMediaTypeException } from "@nestjs/common";
 import type { Queue } from "bullmq";
-import { parseKey, type StemPart } from "@oneverse/core";
+import { parseKey, type StemPart, type WaveformWire } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import type { AttachmentVisibilityValue, UpdateAttachmentDto } from "./dto/upload-attachment.dto.js";
@@ -10,7 +10,8 @@ import { NotificationsService } from "../notifications/notifications.service.js"
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
-import { RECORDINGS_QUEUE } from "../jobs/jobs.constants.js";
+import { RECORDINGS_QUEUE, WAVEFORMS_QUEUE } from "../jobs/jobs.constants.js";
+import { waveformsSoon } from "../waveforms/waveforms.processor.js";
 import { audioRights } from "../roles/audio-rights.js";
 import { MAX_UPLOAD_BITRATE } from "../recordings/ffmpeg.js";
 import type { ProcessTakeJob, ShrinkUploadJob } from "../recordings/recordings.processor.js";
@@ -25,6 +26,7 @@ export class AttachmentsService {
     private readonly images: ImageService,
     private readonly access: AccessPolicyService,
     @InjectQueue(RECORDINGS_QUEUE) private readonly recordings: Queue<ProcessTakeJob | ShrinkUploadJob>,
+    @InjectQueue(WAVEFORMS_QUEUE) private readonly waveformsQueue: Queue,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -81,6 +83,26 @@ export class AttachmentsService {
       orderBy: { createdAt: "desc" },
     });
     return rows.map((row) => present(row, viewer, canEditSong));
+  }
+
+  /**
+   * The waveforms of the song's audio files the viewer sees (issue #388),
+   * as far as the Worker has worked them out: what a player draws before
+   * the audio has arrived. A file without one yet isn't listed.
+   */
+  async waveforms(viewer: Viewer, songVersionId: string): Promise<WaveformWire[]> {
+    const teamIds = await this.access.teamIds(viewer.id);
+    const files = await this.prisma.client.attachment.findMany({
+      where: { songVersionId, type: "AUDIO", ...AttachmentsService.visibleWhere(viewer, teamIds) },
+      select: { id: true, storageKey: true },
+    });
+    if (files.length === 0) return [];
+    const rows = await this.prisma.client.audioWaveform.findMany({ where: { storageKey: { in: [...new Set(files.map((file) => file.storageKey))] } } });
+    const byKey = new Map(rows.filter((row) => row.peaks.length > 0).map((row) => [row.storageKey, row]));
+    return files.flatMap((file) => {
+      const row = byKey.get(file.storageKey);
+      return row ? [{ attachmentId: file.id, rate: row.rate, seconds: row.seconds, loudest: row.loudest, peaks: Buffer.from(row.peaks).toString("base64") }] : [];
+    });
   }
 
   /**
@@ -182,6 +204,8 @@ export class AttachmentsService {
       const keepOriginal = viewer.isGlobalAdmin || (await audioRights(this.prisma.client, this.storage, viewer.id, songVersionId)).canKeepLosslessAudio;
       await this.recordings.add("shrink-upload", { attachmentId: row.id, filename, keepOriginal }, { attempts: 2, backoff: { type: "exponential", delay: 10000 }, removeOnComplete: { count: 200 }, removeOnFail: { count: 200 } });
     }
+    // Its waveform (issue #388), once it's the file it stays (a take or a big upload waits for the Worker's Opus).
+    if (type === "AUDIO" && !row.processing) await waveformsSoon(this.waveformsQueue);
     return present(row, viewer, canEditSong);
   }
 

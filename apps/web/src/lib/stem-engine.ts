@@ -2,6 +2,8 @@ import { decodeAudio } from "#/lib/decode-audio";
 import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type BeatLevel, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
 import { useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
+import { songWaveforms, type StoredWave } from "#/lib/song-files";
+import { waveformSlices } from "@oneverse/core";
 
 /**
  * The stem player's audio (issue #64), kept outside any page so a song
@@ -98,10 +100,14 @@ export interface StemTrack {
   filename: string;
   /** 1, 2… when two files are the same part ("Guitar 1"), else 0. */
   number: number;
-  /** The waveform, 0-1 per slice; null until decoded. */
+  /** The waveform, 0-1 per slice: the server's while it downloads (issue #388), then the decoded audio's; null until either. */
   peaks: number[] | null;
-  /** Its length (s), once decoded: a take shorter than the rest draws as long as it is. */
+  /** Its length (s), once known (its stored waveform says, else decoding): a take shorter than the rest draws as long as it is. */
   length: number;
+  /** Decoded, so it plays (issue #388): until then a waveform shown is the server's, filling in as it downloads. */
+  ready?: boolean;
+  /** How much of its file has downloaded, 0-1 (issue #388). */
+  downloaded?: number;
   /** Recorded this many semitones above the multitrack (issue #135). */
   offset: number;
   /** The take just recorded in the player (issue #134), not kept yet. */
@@ -223,6 +229,9 @@ let recordingDirect = false;
 let lastSong: StemSong | null = null;
 // The song loaded (or loading), for the chord grid's Play (issue #238).
 let loadedSong: StemSong | null = null;
+/** The waveforms the server worked out for the loaded files (issue #388), by file: what's drawn until each is decoded. */
+let storedWaves = new Map<string, StoredWave>();
+
 let buffers = new Map<string, AudioBuffer>();
 let gains = new Map<string, GainNode>();
 // Transposing (issues #129, #135): each part is moved by the transposition,
@@ -536,6 +545,8 @@ export function tracksOf(stems: StemFile[]): StemTrack[] {
       length: 0,
       offset: stem.pitchOffset ?? 0,
       failed: false,
+      ready: false,
+      downloaded: 0,
     };
   });
 }
@@ -834,6 +845,7 @@ if (typeof document !== "undefined") {
 /** Forgets the loaded song and frees its audio. */
 export function unloadStems() {
   generation++;
+  storedWaves = new Map();
   loadedSong = null;
   stopSources();
   stopTimer();
@@ -924,8 +936,25 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
     if (mine !== generation || (!last && now - reported < 100)) return;
     reported = now;
     const all = [...sizes.values()].reduce((sum, size) => sum + size, 0);
-    if (all) set({ downloaded: Math.min(1, [...received.values()].reduce((sum, size) => sum + size, 0) / all) });
+    // Each file's own too (issue #388): its stored waveform fills in as far as it's come.
+    const tracks = state.tracks.map((track) => {
+      const size = sizes.get(track.id);
+      const got = received.get(track.id);
+      return track.ready || !size || got === undefined ? track : { ...track, downloaded: Math.min(1, got / size) };
+    });
+    set({ tracks, ...(all ? { downloaded: Math.min(1, [...received.values()].reduce((sum, size) => sum + size, 0) / all) } : {}) });
   };
+  // Their waveforms, worked out by the server (issue #388): drawn at once, greyed, filling in as each file arrives.
+  void songWaveforms(song.songVersionId, song.stems.map((stem) => stem.id)).then((found) => {
+    if (mine !== generation || found.size === 0) return;
+    storedWaves = found;
+    set({
+      tracks: state.tracks.map((track) => {
+        const wave = found.get(track.id);
+        return wave && !track.ready && !track.failed ? { ...track, peaks: waveformSlices(wave.levels, PEAK_SLICES), length: wave.seconds } : track;
+      }),
+    });
+  });
   // Fetched a few at a time, the parts heard first (issue #366). Play starts
   // once every part that's heard has arrived, all together; one muted then
   // joins in, in time, when it's decoded.
@@ -1003,13 +1032,13 @@ async function join(stem: StemFile, buffer: AudioBuffer | null, empty: boolean, 
   const ctx = context;
   if (mine !== generation || !ctx || !plain) return;
   const track = (changes: Partial<StemTrack>) => set({ tracks: state.tracks.map((item) => (item.id === stem.id ? { ...item, ...changes } : item)) });
-  if (!buffer) return track({ failed: true, empty, peaks: null, length: 0 });
+  if (!buffer) return track({ failed: true, empty, peaks: null, length: 0, ready: false });
   const gain = ctx.createGain();
   tracksInfo.set(stem.id, { part: stem.stemPart, offset: stem.pitchOffset ?? 0 });
   gain.connect(plain);
   buffers.set(stem.id, buffer);
   gains.set(stem.id, gain);
-  track({ peaks: peaksOf(buffer), length: buffer.duration, failed: false, empty: false });
+  track({ peaks: peaksOf(buffer), length: buffer.duration, failed: false, empty: false, ready: true, downloaded: 1 });
   const before = latency;
   await route();
   if (mine !== generation) return;
@@ -1606,6 +1635,16 @@ export function stemBuffer(id: string): AudioBuffer | null {
   return buffers.get(id) ?? null;
 }
 
+export function stemStoredWave(id: string): StoredWave | null {
+  return storedWaves.get(id) ?? null;
+}
+
+/** How long the loaded song lasts (s): its decoded parts' longest, else - while they download - what their stored waveforms say (issue #388). */
+export function shownDuration(current: Pick<StemState, "duration" | "tracks">): number {
+  if (current.duration > 0) return current.duration;
+  return current.tracks.reduce((longest, track) => Math.max(longest, track.length), 0);
+}
+
 export function stemMono(id: string): Float32Array | null {
   const buffer = buffers.get(id);
   if (!buffer) return null;
@@ -1639,7 +1678,7 @@ export async function setStemsTake(take: { samples: Float32Array; part: StemPart
     tracksInfo.set(TAKE_ID, { part: take.part, offset: take.offset });
     tracks = [
       ...tracks,
-      { id: TAKE_ID, part: take.part, partName: take.name, by: null, filename: take.name, number: 0, peaks: peaksOf(buffer), length: buffer.duration, offset: take.offset, failed: false, take: true },
+      { id: TAKE_ID, part: take.part, partName: take.name, by: null, filename: take.name, number: 0, peaks: peaksOf(buffer), length: buffer.duration, offset: take.offset, failed: false, take: true, ready: true, downloaded: 1 },
     ];
   }
   const duration = Math.max(0, ...[...buffers.values()].map((buffer) => buffer.duration));

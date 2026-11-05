@@ -2121,6 +2121,22 @@ model Attachment {
   @@index([uploadedByUserId])
 }
 
+/// An audio file's waveform (issue #388), worked out once by the Worker from
+/// its bytes: keyed by the stored object (content-addressed), so files with
+/// the same bytes share it, and kept until no file has them. What players
+/// draw before the audio has arrived. `peaks` is one byte a slice (0-255,
+/// against `loudest`), `rate` slices a second (see @oneverse/core's
+/// waveform). A file ffmpeg couldn't read has none: `peaks` empty.
+model AudioWaveform {
+  storageKey String   @id
+  rate       Int
+  seconds    Float
+  /// The loudest sample, 0-1 (linear): what 255 stands for.
+  loudest    Float
+  peaks      Bytes
+  createdAt  DateTime @default(now())
+}
+
 enum AttachmentOrigin {
   UPLOADED
   SEPARATED

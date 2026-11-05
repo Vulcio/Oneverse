@@ -22,6 +22,7 @@ import type {
 import type { ArrangementDocumentV2, ChartPreferences } from "../schemas/arrangement-document-v2.js";
 import type { CatalogEntryData, CatalogEntryFieldKey, CatalogFileProblem } from "../songbook-catalog-format/index.js";
 import type { BulkUploadFileMatch } from "../bulk-upload-matching/index.js";
+import type { WaveformWire } from "../waveform/index.js";
 import type { MetadataCapability, MetadataMatch, MetadataProviderKey } from "../schemas/metadata.js";
 import type { MusicBrainzWorkMatch } from "../schemas/musicbrainz.js";
 import type { ChordContent, ChordSong } from "../song-provider/find-chords.js";
@@ -3131,6 +3132,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getSongVersionSongbooks: (songVersionId: string) =>
       request<SongVersionSongbookMembership[]>(`/song-versions/${songVersionId}/songbooks`),
     listAttachments: (songVersionId: string) => request<Attachment[]>(`/song-versions/${songVersionId}/attachments`),
+    /** The waveforms of the song's audio files, as far as the server has them (issue #388): see readWaveform. */
+    listWaveforms: (songVersionId: string) => request<WaveformWire[]>(`/song-versions/${songVersionId}/attachments/waveforms`),
     /** A file of your own on the song; only you see it unless `audience` says otherwise (issue #72). */
     uploadAttachment: (songVersionId: string, type: AttachmentType, file: File, stemPart?: StemPart | null, audience?: AttachmentAudience, recording?: RecordingDetails) => {
       const form = new FormData();

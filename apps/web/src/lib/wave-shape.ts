@@ -1,4 +1,29 @@
 import { along } from "#/components/input-level";
+import { WAVEFORM_RATE } from "@oneverse/core";
+
+const levelsCache = new WeakMap<AudioBuffer, Float32Array>();
+
+/**
+ * A decoded part's loudest moment every 10 ms, all channels (0-1): as fine
+ * as the server's stored waveform (issue #388), so the lanes look the same
+ * once the audio's in. Worked out once per part.
+ */
+export function bufferLevels(buffer: AudioBuffer): Float32Array {
+  const known = levelsCache.get(buffer);
+  if (known) return known;
+  const size = buffer.sampleRate / WAVEFORM_RATE;
+  const levels = new Float32Array(Math.ceil(buffer.length / size));
+  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+    const data = buffer.getChannelData(channel);
+    for (let i = 0; i < data.length; i++) {
+      const value = Math.abs(data[i]!);
+      const slice = (i / size) | 0;
+      if (value > levels[slice]!) levels[slice] = value;
+    }
+  }
+  levelsCache.set(buffer, levels);
+  return levels;
+}
 
 /** How a waveform's drawn (issue #386): one filled shape, or thin lines. */
 export type WaveStyle = "filled" | "lines";

@@ -1,4 +1,4 @@
-import { keptFile, keptSongCopy, type Attachment } from "@oneverse/core";
+import { keptFile, keptSongCopy, readWaveform, type Attachment } from "@oneverse/core";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage } from "#/lib/offline-data";
 
@@ -14,6 +14,47 @@ export async function songFiles(songVersionId: string): Promise<{ attachments: A
   } catch {
     return { attachments: (await keptSongCopy(deviceStorage(), songVersionId))?.attachments ?? [], offline: true };
   }
+}
+
+// --- waveforms (issue #388): worked out once by the server, drawn while the audio arrives
+
+/** A file's waveform: `levels` a level every 1/rate s, 0-1 against its own loudest, which was `loudest` (0-1). */
+export interface StoredWave {
+  rate: number;
+  seconds: number;
+  loudest: number;
+  levels: Float32Array;
+}
+
+/** By file: a file's bytes never change (a processed one is a new file), so neither does its waveform. */
+const waves = new Map<string, StoredWave>();
+/** The song's request going on, so two asking at once make one. */
+const asking = new Map<string, Promise<void>>();
+
+/**
+ * The waveforms of these files of the song (issue #388), those the server
+ * has: asked for once, kept for the page's life. Nothing when it can't be
+ * reached (offline) - the player draws them once they're decoded instead.
+ */
+export async function songWaveforms(songVersionId: string, fileIds: string[]): Promise<Map<string, StoredWave>> {
+  if (fileIds.some((id) => !waves.has(id))) {
+    let request = asking.get(songVersionId);
+    if (!request) {
+      request = apiClient
+        .listWaveforms(songVersionId)
+        .then((list) => {
+          for (const wire of list) {
+            const read = readWaveform(wire);
+            if (read) waves.set(wire.attachmentId, read);
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => asking.delete(songVersionId));
+      asking.set(songVersionId, request);
+    }
+    await request;
+  }
+  return new Map(fileIds.flatMap((id) => (waves.has(id) ? [[id, waves.get(id)!] as const] : [])));
 }
 
 // --- files fetched ahead (issue #366): the next song of a set, kept here for its Play
@@ -80,6 +121,8 @@ export function downloadOnce(songVersionId: string, file: Attachment, onProgress
 export async function prefetchFiles(songVersionId: string, files: Attachment[]) {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   if (connection?.saveData) return;
+  // Their waveforms first (issue #388): a few kilobytes, and its player shows them at once.
+  void songWaveforms(songVersionId, files.map((file) => file.id));
   for (const file of files) await downloadOnce(songVersionId, file).catch(() => {});
 }
 

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { encodeWav } from "@oneverse/core";
+import { encodeWav, WaveformMeter, type Waveform } from "@oneverse/core";
 
 /**
  * ffmpeg, for a recorded take (issue #127): run in the Worker, on files
@@ -269,4 +269,49 @@ export async function audioSeconds(file: string): Promise<number> {
   const times = [...stderr.matchAll(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/g)];
   const last = times[times.length - 1];
   return last ? Number(last[1]) * 3600 + Number(last[2]) * 60 + Number(last[3]) : 0;
+}
+
+/** The sample rate an audio file is read at for its waveform (issue #388): plenty for a level every 10 ms. */
+const WAVEFORM_SAMPLE_RATE = 22050;
+
+/**
+ * An audio file's waveform (issue #388), read through by ffmpeg as 16-bit
+ * samples in its own channels and measured as it comes: the file is never decoded into memory
+ * whole. Throws when ffmpeg can't read it.
+ */
+export async function measureWaveform(file: string): Promise<Waveform> {
+  // Its own channels, as they are: mixing them up or down would change how loud it reads.
+  const probe = await probeAudio(file);
+  if (!probe) throw new Error("Its audio can't be read");
+  const channels = Math.max(1, Math.min(8, probe.channels));
+  const frame = channels * 2;
+  const meter = new WaveformMeter(WAVEFORM_SAMPLE_RATE, channels);
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(FFMPEG, ["-hide_banner", "-nostdin", "-i", file, "-vn", "-map", "0:a:0", "-ac", String(channels), "-ar", String(WAVEFORM_SAMPLE_RATE), "-f", "s16le", "pipe:1"], { stdio: ["ignore", "pipe", "pipe"] });
+    let err = "";
+    // A byte left over from the last chunk (a sample split between two).
+    let rest: Buffer | null = null;
+    const timer = setTimeout(() => child.kill("SIGKILL"), RUN_TIMEOUT_MS);
+    child.stdout.on("data", (chunk: Buffer) => {
+      const data = rest ? Buffer.concat([rest, chunk]) : chunk;
+      const usable = data.length - (data.length % frame);
+      rest = usable < data.length ? Buffer.from(data.subarray(usable)) : null;
+      // Copied: a chunk's bytes needn't start where an Int16Array may.
+      const aligned = Buffer.from(data.subarray(0, usable));
+      meter.add(new Int16Array(aligned.buffer, aligned.byteOffset, usable / 2));
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      err = (err + chunk.toString()).slice(-4000);
+    });
+    child.on("error", (error: NodeJS.ErrnoException) => {
+      clearTimeout(timer);
+      reject(error.code === "ENOENT" ? new FfmpegMissingError() : error);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg failed (${code ?? "killed"}): ${err.trim().split("\n").slice(-2).join(" ")}`));
+    });
+  });
+  return meter.finish();
 }

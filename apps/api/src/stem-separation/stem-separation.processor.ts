@@ -5,7 +5,8 @@ import { UnrecoverableError, type Job, type Queue } from "bullmq";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { JOB_WORKER_OPTIONS, STEM_SEPARATION_QUEUE } from "../jobs/jobs.constants.js";
+import { JOB_WORKER_OPTIONS, STEM_SEPARATION_QUEUE, WAVEFORMS_QUEUE } from "../jobs/jobs.constants.js";
+import { waveformsSoon } from "../waveforms/waveforms.processor.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { encodeStem, FfmpegMissingError } from "../recordings/ffmpeg.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
@@ -65,6 +66,7 @@ export class StemSeparationProcessor extends WorkerHost {
     private readonly storage: StorageService,
     private readonly quota: StorageQuotaService,
     @InjectQueue(STEM_SEPARATION_QUEUE) private readonly queue: Queue,
+    @InjectQueue(WAVEFORMS_QUEUE) private readonly waveforms: Queue,
   ) {
     super();
   }
@@ -72,7 +74,12 @@ export class StemSeparationProcessor extends WorkerHost {
   async process(job: Job): Promise<unknown> {
     if (job.name === POLL_SCHEDULER_ID) return this.pollAll();
     if (job.name === "submit") return this.submit(job as Job<SubmitSeparationJob>);
-    if (job.name === "sync") return this.sync((job.data as SyncSeparationJob).separationId);
+    if (job.name === "sync") {
+      const synced = await this.sync((job.data as SyncSeparationJob).separationId);
+      // The stems it brought in (issue #388).
+      await waveformsSoon(this.waveforms);
+      return synced;
+    }
     return { skipped: `unknown job ${job.name}` };
   }
 
