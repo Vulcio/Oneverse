@@ -36,10 +36,11 @@ await step("the menu: Add to set, Edit and Live", async () => {
   await page.keyboard.press("Escape");
 });
 
-await step("the pills: the key, the tempo with the metronome, the version; the metronome clicks at the song's tempo", async () => {
+await step("the pills: the key, the tempo and the time signature with the metronome, the version; the metronome clicks at the song's tempo", async () => {
   const pills = page.getByTestId("practice-pills");
   await pills.getByText("G", { exact: true }).waitFor();
   if (!(await page.getByTestId("practice-tempo").innerText()).includes("120")) throw new Error(await page.getByTestId("practice-tempo").innerText());
+  if ((await page.getByTestId("practice-time-signature").innerText()).trim() !== "· 4/4") throw new Error(await page.getByTestId("practice-time-signature").innerText());
   await page.getByTestId("practice-version").locator("span", { hasText: "Live" }).first().waitFor();
   const from = await page.evaluate(() => window.songverseMetronome?.now() ?? 0);
   await page.getByTestId("practice-metronome").click();

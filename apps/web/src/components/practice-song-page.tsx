@@ -203,10 +203,15 @@ export function PracticeSongPage({
         </div>
         <div className="flex flex-wrap items-center gap-2" data-testid="practice-pills">
           {details.length > 0 ? <span className={PILL}>{details.join(" · ")}</span> : null}
-          {/* The metronome and the tempo, one pill: the page's only metronome (issue #390). */}
+          {/* The metronome, the tempo and the time signature, one pill: the page's only metronome (issue #390). */}
           <span className={cn(PILL, "gap-0 overflow-hidden p-0")}>
             <PracticeMetronome songId={version.id} chart={chart} source={playback.source} />
-            <TempoControl tempo={chart.tempo} songTempo={written.tempo} tempoUnit={chart.tempoUnit} timeSignature={chart.timeSignature} hint={t("tempo.practiceHint")} onChange={changeTempo} testId="practice-tempo" className="h-8 pr-3 pl-1.5 no-underline" />
+            <TempoControl tempo={chart.tempo} songTempo={written.tempo} tempoUnit={chart.tempoUnit} timeSignature={chart.timeSignature} hint={t("tempo.practiceHint")} onChange={changeTempo} testId="practice-tempo" className={cn("h-8 pl-1.5 no-underline", chart.timeSignature ? "pr-1.5" : "pr-3")} />
+            {chart.timeSignature ? (
+              <span className="pr-3 text-muted-foreground tabular-nums" data-testid="practice-time-signature">
+                · {chart.timeSignature.numerator}/{chart.timeSignature.denominator}
+              </span>
+            ) : null}
           </span>
           <VersionPill songVersionId={version.id} workId={version.workId} versionName={version.versionName} />
           {/* The capo, hard to miss (issue #219). */}
