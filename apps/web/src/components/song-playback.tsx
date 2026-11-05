@@ -248,7 +248,8 @@ function MetronomeDock({
           {mine ? <Square /> : <Metronome />}
         </Button>
         {sourceControl}
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
+        {/* Beside the choice of what plays, on a phone: no room for the title (issue #390). */}
+        <span className={cn("min-w-0 flex-1 truncate text-sm font-medium", sourceControl && "max-sm:invisible")}>{title}</span>
         <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{tempo ? tempoText(tempo, tempoUnit, timeSignature) : t("metronome.noTempo")}</span>
         <BeatLights settings={mine ? metronome.settings : settings} beat={mine ? beat : null} size="small" />
       </div>
