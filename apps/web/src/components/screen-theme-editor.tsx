@@ -542,7 +542,8 @@ export function ScreenThemeEditor({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium">{t("screens.preview")}</span>
               <Choices value={aspect} options={["16/9", "4/3"] as const} label={(one) => one.replace("/", ":")} onChange={setAspect} />
-              {theme.grid ? (
+              {/* The layout is the template's (issue #398): a part's editor previews it, never moves it. */}
+              {theme.grid && kind === "template" ? (
                 <label className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" className="accent-primary" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} data-testid="theme-show-grid" />
                   {t("screens.editor.editLayout")}
@@ -561,7 +562,7 @@ export function ScreenThemeEditor({
               </span>
             </div>
             <ScreenThemePreview theme={theme} assets={previewAssets} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
-              {theme.grid && showGrid ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
+              {theme.grid && showGrid && kind === "template" ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
             </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">
               {contrast < 4.5 ? <TriangleAlert className="size-3.5 shrink-0" aria-hidden /> : null}
