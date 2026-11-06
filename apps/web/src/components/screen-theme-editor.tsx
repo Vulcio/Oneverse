@@ -29,6 +29,7 @@ import {
   ScreenThemeSchema,
   screenBaseColor,
   screenBuiltInPart,
+  screenShowsChart,
   screenThemeContrast,
   type ScreenMask,
   type ScreenPartKind,
@@ -359,6 +360,8 @@ export function ScreenThemeEditor({
               onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))}
               fonts={{ assets, uploading: uploading === "font", onUpload: draft.id ? (file) => void upload("font", file) : null }}
             />
+            {/* Lines around the slide's: not for Charts, which shows the section (issue #398). */}
+            {!screenShowsChart(theme) ? (
             <Group title={t("screens.editor.lines")}>
               <Field label={t("screens.editor.group")}>
                 <Choices value={theme.lines.group} options={["slide", "section"] as const} label={(one) => t(`screens.editor.groups.${one}`)} onChange={(group) => set("lines", { group })} />
@@ -377,6 +380,7 @@ export function ScreenThemeEditor({
                 <Choices value={theme.lines.contextStyle} options={SCREEN_CONTEXT_STYLES} label={(one) => t(`screens.editor.contextStyles.${one}`)} onChange={(contextStyle) => set("lines", { contextStyle })} />
               </Field>
             </Group>
+            ) : null}
             <Group title={t("screens.editor.layout")}>
               <Field label={t("screens.editor.position")}>
                 <Choices value={theme.layout.position} options={SCREEN_POSITIONS} label={(one) => t(`screens.editor.positions.${one}`)} onChange={(position) => set("layout", { position })} />

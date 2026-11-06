@@ -1142,21 +1142,20 @@
 }
 }
 
-/* Charts (issue #398): the next section's first lines fade out under the one being sung; a new section fades in. */
+/* Charts (issue #398): the next section's first lines fade out under the one being sung. */
 .sv-stage .sv-chart [data-peek] {
+  opacity: 0.6;
   -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent);
   mask-image: linear-gradient(to bottom, #000 30%, transparent);
 }
-.sv-chart-in {
-  animation: sv-chart-in 0.35s ease both;
+/* A line of chords alone (an intro, a turnaround), and a performance note. */
+.sv-chord-row {
+  font-family: var(--chord-font);
+  color: var(--chord);
+  white-space: pre-wrap;
 }
-@keyframes sv-chart-in {
-  from {
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sv-chart-in {
-    animation: none;
-  }
+.sv-chart-note {
+  font-style: italic;
+  opacity: 0.6;
+  font-size: calc(var(--k) * 0.6cqmin) !important;
 }

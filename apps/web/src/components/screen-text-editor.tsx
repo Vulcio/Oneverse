@@ -66,7 +66,10 @@ export function DisplaySettings({ theme, onTheme }: { theme: ScreenTheme; onThem
         columns={5}
         label={(one) => t(`screens.editor.displayModes.${one}`)}
         picture={(one) => <ModePicture mode={one} />}
-        onChange={(next) => onTheme((before) => ({ display: { ...before.display, mode: next }, shows: next === "chart" ? "chart" : "lyrics" }))}
+        onChange={(next) =>
+          // A chart has its chords: picked, they show over the words if they were off.
+          onTheme((before) => ({ display: { ...before.display, mode: next }, shows: next === "chart" ? "chart" : "lyrics", ...(next === "chart" && before.chords.show === "off" ? { chords: { ...before.chords, show: "above" as const } } : null) }))
+        }
         testId="theme-display-mode"
       />
       <p className="text-xs text-muted-foreground">{t(`screens.editor.displayHints.${mode}`)}</p>
@@ -611,29 +614,26 @@ function FontPicker({
   );
 }
 
-/** Chords: over a lyrics template's words (off, above, on beats), how they're named, and the chart's look. */
+/** Chords: over the words (off, above, on beats), in every display mode, and how they're named and look. */
 export function ChordSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: OnTheme }) {
   const { t } = useTranslation();
   const chords = theme.chords;
   const set = (change: Partial<ScreenTheme["chords"]>) => onTheme((before) => ({ chords: { ...before.chords, ...change } }));
+  // Charts always has its chords (issue #398): above the words or on beats.
   const chart = screenShowsChart(theme);
-  const named = chords.show !== "off" || theme.display.mode === "grid" || chart;
+  const show = chart && chords.show === "off" ? "above" : chords.show;
+  const named = show !== "off" || theme.display.mode === "grid";
   return (
-    <Group title={t("screens.editor.chords")} hint={t("screens.editor.groupHints.chords")} open={chords.show !== "off" || chart} testId="theme-group-chords">
-      {!chart ? <Choices value={chords.show} options={SCREEN_LYRIC_CHORDS} label={(one) => t(`screens.editor.chordShows.${one}`)} onChange={(show) => set({ show })} testId="theme-chords-show" /> : null}
+    <Group title={t("screens.editor.chords")} hint={t("screens.editor.groupHints.chords")} open={named} testId="theme-group-chords">
+      <Choices value={show} options={chart ? SCREEN_LYRIC_CHORDS.filter((one) => one !== "off") : SCREEN_LYRIC_CHORDS} label={(one) => t(`screens.editor.chordShows.${one}`)} onChange={(show) => set({ show })} testId="theme-chords-show" />
       {named ? (
         <>
           <Field label={t("screens.editor.chordNotation")}>
             <Choices value={chords.notation} options={SCREEN_CHORD_NOTATIONS} label={(one) => t(`screens.editor.chordNotations.${one}`)} onChange={(notation) => set({ notation })} />
           </Field>
-          {chords.show !== "off" && !chart ? (
+          {show !== "off" ? (
             <Field label={t("screens.editor.chordSize")}>
               <Slider value={Math.round(chords.size * 100)} min={35} max={90} step={1} unit="%" onChange={(size) => set({ size: size / 100 })} />
-            </Field>
-          ) : null}
-          {chart ? (
-            <Field label={t("screens.editor.chordScale")}>
-              <Slider value={chords.scale} min={0.5} max={2} step={0.05} onChange={(scale) => set({ scale })} />
             </Field>
           ) : null}
           <Field label={t("screens.editor.chordColor")}>

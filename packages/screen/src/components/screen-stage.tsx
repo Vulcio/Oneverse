@@ -1,6 +1,6 @@
 import "@fontsource-variable/inter";
 import "../screen-stage.css";
-import { SCREEN_PACE_EASING, screenShowsChart, screenSectionText, type ScreenSectionKind, type ScreenTransition, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
+import { SCREEN_PACE_EASING, evenScreenLine, screenSectionKind, screenShowsChart, screenSectionText, type ScreenSectionKind, type ScreenTransition, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
 import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,8 +9,7 @@ import { useScreenEffects, type ScreenSignals } from "../lib/screen-effects";
 import { TextBackground, type StageText } from "./screen-text-background";
 import { ShaderBackground } from "./screen-shader-background";
 import { moveWords } from "../lib/screen-move";
-import { SongChart } from "./song-chart";
-import { BeatRow, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songLines, songSize, StageSide, useStageSide, type StageLine, type StageSong } from "./screen-text";
+import { BeatRow, chordName, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songLines, songSize, StageSide, useStageSide, type StageLine, type StageSong } from "./screen-text";
 import { Flow } from "./screen-flow";
 import { useFollowMusic } from "../lib/screen-follow";
 import { useScreenFonts } from "../lib/screen-fonts";
@@ -132,7 +131,20 @@ export function ScreenStage({
     dark ? null : !song || !current ? (
       <div className="sv-words items-center justify-center text-center">{idle}</div>
     ) : mode === "CHART" && song.chart ? (
-      <ChartStage theme={look} chart={song.chart} title={song.title} passId={current.passId} />
+      // Charts (issue #398): a section at a time; a new one comes in as the template's slides do.
+      <>
+        {outgoing?.song?.chart && (outgoing.songChange || outgoing.song.slides[outgoing.index]?.passIndex !== current.passIndex) ? (
+          <ChartStage key={`${outgoing.key}-out`} theme={look} song={outgoing.song} passIndex={outgoing.song.slides[outgoing.index]?.passIndex ?? 0} phase="out" transition={transition} />
+        ) : null}
+        <ChartStage
+          key={`${song.key}:${current.passIndex}`}
+          theme={look}
+          song={song}
+          passIndex={current.passIndex}
+          phase={outgoing && (outgoing.songChange || outgoing.song?.slides[outgoing.index]?.passIndex !== current.passIndex) ? "in" : "still"}
+          transition={transition}
+        />
+      </>
     ) : look.display.mode === "scroll" || (look.display.mode === "grid" && song.chart) ? (
       // Scroll and Grid (issue #395): the whole song in one column, gliding to the lines being sung; a new song fades in.
       <>
@@ -704,71 +716,131 @@ function reveal(line: string, kind: ScreenTheme["motion"]["reveal"], next: () =>
  * template says, or none); fitted to the stage, never bigger than the
  * template's chart size.
  */
-function ChartStage({ theme, chart, title, passId }: { theme: ScreenTheme; chart: RenderedChart; title: string; passId: string }) {
+function ChartStage({ theme, song, passIndex, phase, transition }: { theme: ScreenTheme; song: StageSong; passIndex: number; phase: "in" | "out" | "still"; transition: ScreenTransition }) {
+  const chart = song.chart!;
   const box = useRef<HTMLDivElement>(null);
-  const inner = useRef<HTMLDivElement>(null);
-  const at = Math.max(0, chart.passes.findIndex((pass) => pass.id === passId));
+  const id = useId().replace(/:/g, "");
+  const side = useContext(StageSide);
+  const { text, layout } = theme;
+  // A chart has its chords: over the words when the template has them off (a screen switched to the chart).
+  const chords = theme.chords.show === "off" ? { ...theme.chords, show: "above" as const } : theme.chords;
   const next = theme.display.chart.next;
-  const shown = useMemo(() => ({ ...chart, passes: chart.passes.slice(at, at + (next > 0 ? 2 : 1)) }), [chart, at, next]);
-  const [scale, setScale] = useState<number | null>(null);
+  const passes = [chart.passes[passIndex], next > 0 ? chart.passes[passIndex + 1] : undefined].flatMap((pass, i) => (pass ? [{ pass, peek: i === 1 }] : []));
+  const looks = { default: text, chorus: screenSectionText(text, theme.sections.chorus), bridge: screenSectionText(text, theme.sections.bridge) };
+  // The words' size (cqmin): the template's, or as big as lets the section fit, up to a slide's; less when a fixed one doesn't fit.
+  const most = text.size === "auto" ? 7 : text.size;
+  const [size, setSize] = useState<number | null>(null);
   useLayoutEffect(() => {
     const outer = box.current;
-    const content = inner.current;
-    if (!outer || !content) return;
+    if (!outer) return;
     const fit = () => {
-      const passes = [...content.querySelectorAll<HTMLElement>("[data-pass]")];
-      passes.forEach((pass, i) => {
-        pass.toggleAttribute("data-current", i === 0);
-        pass.toggleAttribute("data-peek", i === 1);
-        pass.style.maxHeight = "";
-      });
-      // The chart's own sizes as on a page 380 pixels high, times the template's chart size; less when the section doesn't fit.
-      const style = getComputedStyle(outer);
-      const width = outer.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      const height = outer.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-      const most = Math.max(0.4, (outer.clientHeight / 380) * theme.chords.scale);
-      let size = most;
-      for (let i = 0; i < 3; i++) {
-        content.style.width = `${width / size}px`;
-        const peek = passes[1];
+      const content = outer.firstElementChild as HTMLElement | null;
+      if (!content) return;
+      const room = outer.clientHeight - parseFloat(getComputedStyle(outer).paddingTop) - parseFloat(getComputedStyle(outer).paddingBottom);
+      let at = most;
+      for (let i = 0; i < 4; i++) {
+        outer.style.setProperty("--k", String(at));
+        // The next section's first lines only.
+        const peek = content.querySelector<HTMLElement>("[data-peek]");
         if (peek) {
+          peek.style.maxHeight = "";
           const lines = [...peek.querySelectorAll<HTMLElement>("[data-line]")];
           const last = lines[Math.min(next, lines.length) - 1];
-          const top = peek.getBoundingClientRect().top;
-          peek.style.maxHeight = last ? `${(last.getBoundingClientRect().bottom - top) / (scaleNow(content) || 1)}px` : "";
+          if (last) peek.style.maxHeight = `${last.getBoundingClientRect().bottom - peek.getBoundingClientRect().top}px`;
         }
-        size = Math.min(most, height / Math.max(1, content.scrollHeight));
+        const high = content.scrollHeight;
+        if (high <= room + 1) break;
+        at = Math.max(1.2, at * (room / high) * 0.98);
       }
-      content.style.width = `${width / size}px`;
-      setScale(size);
+      setSize(at);
     };
     fit();
+    if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(fit);
     observer.observe(outer);
     return () => observer.disconnect();
-  }, [shown, next, theme.chords.scale]);
+  }, [chart, passIndex, next, most, text, chords, theme.sections]);
+  const shown = size ?? most;
+  const alignOf = (one: ScreenTheme["text"]["align"]) => ({ left: "items-start text-left", center: "items-center text-center", right: "items-end text-right" })[one];
+  let li = 0;
   return (
     <div
       ref={box}
-      className={cn(
-        "sv-words sv-chart block overflow-hidden px-[4cqw] py-[4cqh]",
-        "[&_[data-pass]]:rounded-lg [&_[data-pass]]:p-2 [&_[data-pass][data-current]]:bg-white/10 [&_[data-pass][data-peek]]:overflow-hidden [&_[data-pass][data-peek]]:opacity-55",
-        "[&_[data-chord]]:!text-(--chord)",
-      )}
-      style={{ color: theme.text.color }}
-      data-testid="screen-chart"
+      className={cn("sv-words sv-chart justify-start", phase === "in" && `sv-in sv-in-${transition}`, phase === "out" && `sv-out sv-out-${transition}`)}
+      style={{ padding: `${layout.margin}cqh ${layout.margin}cqw`, "--cs": chords.size, "--k": shown, visibility: size === null ? "hidden" : undefined } as CSSProperties}
+      data-testid={phase === "out" ? "screen-out" : "screen-chart"}
+      aria-hidden={phase === "out" || undefined}
     >
-      <div key={passId} ref={inner} className="sv-chart-in origin-top-left" style={{ transform: scale === null ? undefined : `scale(${scale})`, visibility: scale === null ? "hidden" : undefined }}>
-        {at === 0 ? <p className="mb-4 text-xl font-bold">{title}</p> : null}
-        <SongChart chart={shown} columns="1" />
+      <div className={cn("flex w-full flex-col", alignOf(text.align))} style={{ gap: "calc(var(--k) * 0.6cqmin)" }}>
+        <svg width="0" height="0" className="absolute" aria-hidden>
+          {(["default", "chorus", "bridge"] as const).map((kind) => (
+            <OutlineFilter key={kind} id={`${id}-${kind}`} look={looks[kind]} size={shown} side={side} />
+          ))}
+        </svg>
+        {passIndex === 0 && theme.title.show ? (
+          <p className="sv-line text-[2.8cqmin] font-semibold tracking-[0.12em] uppercase opacity-70" style={theme.title.font ? { fontFamily: SCREEN_FONT_FAMILIES[theme.title.font] } : undefined}>
+            {song.title}
+          </p>
+        ) : null}
+        {passes.map(({ pass, peek }) => {
+          const kind = screenSectionKind(pass.section.type, pass.label ?? pass.section.label);
+          const section = kind ? theme.sections[kind] : null;
+          const look = looks[kind ?? "default"];
+          const filter = effectFilter(look, `${id}-${kind ?? "default"}`);
+          const label = pass.label ?? pass.section.label;
+          const marked = !!section && section.mark !== "none";
+          return (
+            <div
+              key={pass.id}
+              className={cn("flex flex-col", marked ? "w-fit max-w-full" : "w-full", alignOf(look.align), marked && `sv-mark sv-mark-${section.mark}`, peek && "overflow-hidden")}
+              style={{ gap: "calc(var(--k) * 0.18cqmin)", "--mark": look.color, color: look.color } as CSSProperties}
+              data-pass={pass.id}
+              data-current={peek ? undefined : ""}
+              data-peek={peek ? "" : undefined}
+              data-section={kind ?? undefined}
+            >
+              {label ? <p className="sv-flow-label" style={{ fontSize: "calc(var(--k) * 0.42cqmin)" }}>{label}</p> : null}
+              {pass.lines.map((raw) => {
+                const line = evenScreenLine(raw.id, raw.text, raw.chords);
+                const note = raw.kind === "note";
+                const stage = { text: line.text, chords: line, slide: 0, passIndex: chart.passes.indexOf(pass) };
+                const beats = chords.show === "beats" && !note ? lineBars(song, stage) : [];
+                const above = chords.show === "above" && !note && line.chords.length > 0;
+                const onlyChords = line.text === "" && line.chords.length > 0;
+                if (line.text === "" && !onlyChords) return null;
+                const i = li++;
+                const content = onlyChords ? (
+                  <span className="sv-chord-row">{line.chords.map(({ chord }) => chordName(chord, chords)).join("   ")}</span>
+                ) : (
+                  <>
+                    {beats.length > 0 ? <BeatRow bars={beats} chart={chart} options={chords} /> : null}
+                    {above ? chordsAbove(line, chords) : line.text}
+                  </>
+                );
+                return (
+                  <p
+                    key={raw.id}
+                    className={cn("sv-line", above && "sv-has-chords", note && "sv-chart-note")}
+                    data-line=""
+                    data-line-id={line.lineId}
+                    style={{ fontSize: "calc(var(--k) * 1cqmin)", filter, "--li": i, ...lineLook(look, text), ...(above ? { lineHeight: Math.max(look.lineHeight, 1.35 + chords.size) } : null) } as CSSProperties}
+                  >
+                    {!peek && phase !== "out" && BY_LINE.includes(transition) ? (
+                      <span className="sv-reel">
+                        <span className="sv-reel-in">{content}</span>
+                      </span>
+                    ) : (
+                      content
+                    )}
+                  </p>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
-}
-
-/** The scale a transform gives an element (1 without one). */
-function scaleNow(element: HTMLElement): number {
-  return element.offsetHeight > 0 ? element.getBoundingClientRect().height / element.offsetHeight : 1;
 }
 
 /**

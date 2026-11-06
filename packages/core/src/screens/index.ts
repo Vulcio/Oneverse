@@ -95,7 +95,7 @@ export function lyricSlideLines(chart: Pick<RenderedChart, "passes">, size: numb
   chart.passes.forEach((pass) => {
     const lines = pass.lines
       .filter((line) => line.kind === "lyric")
-      .map((line) => evenLine(line.id, line.text, line.chords))
+      .map((line) => evenScreenLine(line.id, line.text, line.chords))
       .filter((line) => line.text !== "");
     if (lines.length === 0) {
       slides.push({ sectionType: pass.section.type, lines: [] });
@@ -107,7 +107,7 @@ export function lyricSlideLines(chart: Pick<RenderedChart, "passes">, size: numb
 }
 
 /** A line's words with runs of spaces made one and the ends trimmed, as a slide shows them, its chords moved with them. */
-function evenLine(lineId: string, raw: string, chords: RenderedChord[]): ScreenSlideLine {
+export function evenScreenLine(lineId: string, raw: string, chords: RenderedChord[]): ScreenSlideLine {
   // Where each character of the raw line lands in the evened one.
   const map: number[] = [];
   let text = "";
