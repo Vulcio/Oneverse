@@ -562,6 +562,833 @@
         }
       ]
     },
+    "lyricSlideLines": {
+      "about": "Every slide's lines with their chords (issue #395), cut as lyricSlides cuts them: each line's words with runs of spaces made one and its ends trimmed, each chord at the character it falls on in those words (on the last one when past the end); each slide's section type.",
+      "params": [
+        "song",
+        "arrangement",
+        "size"
+      ],
+      "cases": [
+        {
+          "name": "two lines at a time, as written",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            },
+            null,
+            2
+          ],
+          "expected": [
+            {
+              "sectionType": "verse",
+              "lines": [
+                {
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    [
+                      0,
+                      "G"
+                    ],
+                    [
+                      17,
+                      "G7"
+                    ],
+                    [
+                      27,
+                      "C"
+                    ]
+                  ]
+                },
+                {
+                  "text": "That saved a wretch like me",
+                  "chords": [
+                    [
+                      0,
+                      "D/F#"
+                    ],
+                    [
+                      19,
+                      "Em7"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "sectionType": "chorus",
+              "lines": [
+                {
+                  "text": "I once was lost but now am found",
+                  "chords": [
+                    [
+                      1,
+                      "C"
+                    ],
+                    [
+                      17,
+                      "Dsus4"
+                    ],
+                    [
+                      26,
+                      "Bm7b5"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "sectionType": "chorus",
+              "lines": [
+                {
+                  "text": "I once was lost but now am found",
+                  "chords": [
+                    [
+                      1,
+                      "D"
+                    ],
+                    [
+                      17,
+                      "Esus4"
+                    ],
+                    [
+                      26,
+                      "C#m7b5"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "an arrangement: changed words, an inserted line",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            },
+            {
+              "$schema": "arrangement-document/v2",
+              "songVersionId": "song_1",
+              "songRevision": 3,
+              "defaults": {
+                "transposeSteps": -2,
+                "capo": 3
+              },
+              "items": [
+                {
+                  "id": "ai_1",
+                  "sectionId": "sec_verse",
+                  "overrides": [
+                    {
+                      "type": "chord",
+                      "chordId": "chd_v3",
+                      "raw": "Cadd9"
+                    },
+                    {
+                      "type": "hide_line",
+                      "lineId": "line_v2"
+                    }
+                  ]
+                },
+                {
+                  "id": "ai_2",
+                  "sectionId": "sec_chorus",
+                  "note": "all in",
+                  "overrides": [
+                    {
+                      "type": "hide_chord",
+                      "chordId": "chd_c3"
+                    }
+                  ]
+                },
+                {
+                  "id": "ai_3",
+                  "sectionId": "sec_verse",
+                  "label": "Verse 2",
+                  "overrides": [
+                    {
+                      "type": "lyric",
+                      "lineId": "line_v1",
+                      "text": "Twas grace that taught my heart to fear"
+                    },
+                    {
+                      "type": "insert_line",
+                      "afterLineId": "line_v3",
+                      "line": {
+                        "id": "ins_line_1",
+                        "kind": "lyric",
+                        "text": "Tag",
+                        "chords": [
+                          {
+                            "id": "ins_chd_1",
+                            "at": 0,
+                            "raw": "G"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "chord",
+                      "chordId": "chd_gone",
+                      "raw": "A"
+                    }
+                  ]
+                }
+              ]
+            },
+            2
+          ],
+          "expected": [
+            {
+              "sectionType": "verse",
+              "lines": [
+                {
+                  "text": "Amazing grace how sweet the sound",
+                  "chords": [
+                    [
+                      0,
+                      "F"
+                    ],
+                    [
+                      17,
+                      "F7"
+                    ],
+                    [
+                      27,
+                      "Bbadd9"
+                    ]
+                  ]
+                },
+                {
+                  "text": "That saved a wretch like me",
+                  "chords": [
+                    [
+                      0,
+                      "C/E"
+                    ],
+                    [
+                      19,
+                      "Dm7"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "sectionType": "chorus",
+              "lines": [
+                {
+                  "text": "I once was lost but now am found",
+                  "chords": [
+                    [
+                      1,
+                      "Bb"
+                    ],
+                    [
+                      17,
+                      "Csus4"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "sectionType": "verse",
+              "lines": [
+                {
+                  "text": "Twas grace that taught my heart to fear",
+                  "chords": [
+                    [
+                      0,
+                      "F"
+                    ],
+                    [
+                      18,
+                      "F7"
+                    ],
+                    [
+                      28,
+                      "Bb"
+                    ]
+                  ]
+                },
+                {
+                  "text": "That saved a wretch like me",
+                  "chords": [
+                    [
+                      0,
+                      "C/E"
+                    ],
+                    [
+                      19,
+                      "Dm7"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "sectionType": "verse",
+              "lines": [
+                {
+                  "text": "Tag",
+                  "chords": [
+                    [
+                      0,
+                      "F"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "screenAutoTextSize": {
+      "about": "The words' size when a theme says auto (issue #395): one for the whole song, from its longer lines - the 90th percentile of their lengths, at least 8 - in % of the screen's shorter side: 208 / (length x width x capitals), width 0.72 for condensed and display, 1.2 for mono, capitals 1.15; between 3.2 and 8.5 (8 in capitals), to 2 decimals.",
+      "params": [
+        "lines",
+        "text"
+      ],
+      "cases": [
+        {
+          "name": "short lines",
+          "args": [
+            [
+              "Holy",
+              "Holy, holy"
+            ],
+            {
+              "font": "sans",
+              "upperCase": false
+            }
+          ],
+          "expected": 8.5
+        },
+        {
+          "name": "a song's lines, one very long: it doesn't set the size",
+          "args": [
+            [
+              "Amazing grace how sweet the sound",
+              "That saved a wretch like me",
+              "I once was lost but now am found",
+              "Was blind but now I see",
+              "Through many dangers, toils and snares, I have already come, and grace will lead me home"
+            ],
+            {
+              "font": "sans",
+              "upperCase": false
+            }
+          ],
+          "expected": 6.3
+        },
+        {
+          "name": "condensed capitals",
+          "args": [
+            [
+              "Amazing grace how sweet the sound",
+              "That saved a wretch like me"
+            ],
+            {
+              "font": "condensed",
+              "upperCase": true
+            }
+          ],
+          "expected": 8
+        },
+        {
+          "name": "no words",
+          "args": [
+            [],
+            {
+              "font": "sans",
+              "upperCase": false
+            }
+          ],
+          "expected": 8.5
+        }
+      ]
+    },
+    "screenSectionKind": {
+      "about": "Which kind of section a pass is, for its look (issue #395): chorus for a chorus, pre-chorus or post-chorus; bridge for a bridge; a section typed other by its label; null for the rest.",
+      "params": [
+        "type",
+        "label"
+      ],
+      "cases": [
+        {
+          "name": "a chorus",
+          "args": [
+            "chorus",
+            null
+          ],
+          "expected": "chorus"
+        },
+        {
+          "name": "a pre-chorus is styled as the chorus",
+          "args": [
+            "pre-chorus",
+            "Pre"
+          ],
+          "expected": "chorus"
+        },
+        {
+          "name": "a bridge",
+          "args": [
+            "bridge",
+            null
+          ],
+          "expected": "bridge"
+        },
+        {
+          "name": "a verse called Chorus stays a verse",
+          "args": [
+            "verse",
+            "Chorus"
+          ],
+          "expected": null
+        },
+        {
+          "name": "other, labelled Refrain",
+          "args": [
+            "other",
+            "Refrain"
+          ],
+          "expected": "chorus"
+        },
+        {
+          "name": "other, labelled Pont",
+          "args": [
+            "other",
+            "Pont"
+          ],
+          "expected": "bridge"
+        },
+        {
+          "name": "other, no label",
+          "args": [
+            "other",
+            null
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "screenTextEffects": {
+      "about": "A text's effects as drawn (issue #395): its own presets (shadow, outline, glow); none of them set, those its effect stands for - shadow a soft black shadow, outline a thin black outline, glow a soft glow.",
+      "params": [
+        "text"
+      ],
+      "cases": [
+        {
+          "name": "before presets: a shadow",
+          "args": [
+            {
+              "effect": "shadow",
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            }
+          ],
+          "expected": {
+            "shadow": {
+              "style": "soft",
+              "color": "#000000"
+            },
+            "outline": {
+              "width": "none",
+              "color": "#0b1020"
+            },
+            "glow": "none"
+          }
+        },
+        {
+          "name": "before presets: an outline",
+          "args": [
+            {
+              "effect": "outline",
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            }
+          ],
+          "expected": {
+            "shadow": {
+              "style": "none",
+              "color": "#000000"
+            },
+            "outline": {
+              "width": "thin",
+              "color": "#000000"
+            },
+            "glow": "none"
+          }
+        },
+        {
+          "name": "presets set: effect ignored",
+          "args": [
+            {
+              "effect": "shadow",
+              "shadow": {
+                "style": "strong",
+                "color": "#3b2470"
+              },
+              "outline": {
+                "width": "medium",
+                "color": "#ffffff"
+              },
+              "glow": null
+            }
+          ],
+          "expected": {
+            "shadow": {
+              "style": "strong",
+              "color": "#3b2470"
+            },
+            "outline": {
+              "width": "medium",
+              "color": "#ffffff"
+            },
+            "glow": "none"
+          }
+        }
+      ]
+    },
+    "screenSectionText": {
+      "about": "A section's text (issue #395): the template's, with what the section's style sets over it - each field its own or the template's; effects set on the section stand with the template's others as presets.",
+      "params": [
+        "text",
+        "style"
+      ],
+      "cases": [
+        {
+          "name": "no style: the template's",
+          "args": [
+            {
+              "font": "serif",
+              "color": "#ffffff"
+            },
+            null
+          ],
+          "expected": {
+            "font": "serif",
+            "customFont": null,
+            "size": "auto",
+            "weight": 600,
+            "upperCase": false,
+            "color": "#ffffff",
+            "effect": "shadow",
+            "lineHeight": 1.15,
+            "align": "center",
+            "letterSpacing": 0,
+            "italic": false,
+            "shadow": null,
+            "outline": null,
+            "glow": null
+          }
+        },
+        {
+          "name": "a colour and heavier: the rest the template's",
+          "args": [
+            {
+              "font": "serif",
+              "color": "#ffffff",
+              "effect": "shadow"
+            },
+            {
+              "text": {
+                "color": "#fde68a",
+                "weight": 800
+              }
+            }
+          ],
+          "expected": {
+            "font": "serif",
+            "customFont": null,
+            "size": "auto",
+            "weight": 800,
+            "upperCase": false,
+            "color": "#fde68a",
+            "effect": "shadow",
+            "lineHeight": 1.15,
+            "align": "center",
+            "letterSpacing": 0,
+            "italic": false,
+            "shadow": null,
+            "outline": null,
+            "glow": null
+          }
+        },
+        {
+          "name": "an outline on the section, the template's shadow kept",
+          "args": [
+            {
+              "effect": "shadow"
+            },
+            {
+              "text": {
+                "outline": {
+                  "width": "medium",
+                  "color": "#3b2470"
+                }
+              }
+            }
+          ],
+          "expected": {
+            "font": "sans",
+            "customFont": null,
+            "size": "auto",
+            "weight": 600,
+            "upperCase": false,
+            "color": "#ffffff",
+            "effect": "shadow",
+            "lineHeight": 1.15,
+            "align": "center",
+            "letterSpacing": 0,
+            "italic": false,
+            "shadow": {
+              "style": "soft",
+              "color": "#000000"
+            },
+            "outline": {
+              "width": "medium",
+              "color": "#3b2470"
+            },
+            "glow": "none"
+          }
+        }
+      ]
+    },
     "textSlides": {
       "about": "A text item's slides (issue #305): its paragraphs, split by a blank line, each one slide of its lines as written, labelled with its title; an empty body is one empty slide.",
       "params": [
@@ -1010,7 +1837,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1049,13 +1899,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -1105,7 +1961,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1144,13 +2023,19 @@
             },
             "motion": {
               "transition": "blur",
+              "pace": null,
               "duration": 350,
               "reveal": "words",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -1203,7 +2088,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1243,13 +2151,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -1298,7 +2212,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1337,13 +2274,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -1384,7 +2327,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1423,13 +2389,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -1507,7 +2479,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1546,13 +2541,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": {
               "columns": 6,
@@ -1658,7 +2659,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1697,13 +2721,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -1781,7 +2811,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -1820,13 +2873,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": {
               "columns": 12,
@@ -2179,7 +3238,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -2219,13 +3301,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": {
               "columns": 12,
@@ -2355,7 +3443,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -2394,13 +3505,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -2450,7 +3567,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -2489,13 +3629,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#facc15",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -2545,7 +3691,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -2584,13 +3753,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -2633,7 +3808,11 @@
                 "effect": "shadow",
                 "lineHeight": 1.15,
                 "align": "center",
-                "letterSpacing": 0
+                "letterSpacing": 0,
+                "italic": false,
+                "shadow": null,
+                "outline": null,
+                "glow": null
               },
               "lines": {
                 "group": "slide",
@@ -2656,13 +3835,38 @@
               },
               "motion": {
                 "transition": "fade",
+                "pace": null,
                 "duration": 350,
                 "reveal": "none",
                 "stagger": 60
               },
               "chords": {
                 "color": "#7dd3fc",
-                "scale": 1
+                "scale": 1,
+                "show": "off",
+                "notation": "letters",
+                "size": 0.55,
+                "simple": false,
+                "current": true
+              },
+              "display": {
+                "mode": "slides",
+                "follow": "off",
+                "scroll": {
+                  "anchor": "middle",
+                  "past": "dim",
+                  "coming": 0,
+                  "others": 0.82,
+                  "soften": false,
+                  "labels": false
+                },
+                "grid": {
+                  "words": true
+                }
+              },
+              "sections": {
+                "chorus": null,
+                "bridge": null
               }
             },
             "background": {
@@ -2753,7 +3957,11 @@
                 "effect": "shadow",
                 "lineHeight": 1.15,
                 "align": "center",
-                "letterSpacing": 0
+                "letterSpacing": 0,
+                "italic": false,
+                "shadow": null,
+                "outline": null,
+                "glow": null
               },
               "lines": {
                 "group": "slide",
@@ -2776,13 +3984,38 @@
               },
               "motion": {
                 "transition": "fade",
+                "pace": null,
                 "duration": 350,
                 "reveal": "none",
                 "stagger": 60
               },
               "chords": {
                 "color": "#7dd3fc",
-                "scale": 1
+                "scale": 1,
+                "show": "off",
+                "notation": "letters",
+                "size": 0.55,
+                "simple": false,
+                "current": true
+              },
+              "display": {
+                "mode": "slides",
+                "follow": "off",
+                "scroll": {
+                  "anchor": "middle",
+                  "past": "dim",
+                  "coming": 0,
+                  "others": 0.82,
+                  "soften": false,
+                  "labels": false
+                },
+                "grid": {
+                  "words": true
+                }
+              },
+              "sections": {
+                "chorus": null,
+                "bridge": null
               }
             },
             "background": {
@@ -5546,7 +6779,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -5585,13 +6841,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 350,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -5632,7 +6894,30 @@
               "effect": "glow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0.02
+              "letterSpacing": 0.02,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -5674,13 +6959,19 @@
             },
             "motion": {
               "transition": "blur",
+              "pace": null,
               "duration": 500,
               "reveal": "words",
               "stagger": 70
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -5721,7 +7012,30 @@
               "effect": "shadow",
               "lineHeight": 1.3,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -5762,13 +7076,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 700,
               "reveal": "lines",
               "stagger": 180
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -5809,7 +7129,30 @@
               "effect": "shadow",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -5851,13 +7194,19 @@
             },
             "motion": {
               "transition": "rise",
+              "pace": null,
               "duration": 450,
               "reveal": "words",
               "stagger": 50
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -5898,7 +7247,30 @@
               "effect": "glow",
               "lineHeight": 1.25,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -5939,13 +7311,19 @@
             },
             "motion": {
               "transition": "zoom",
+              "pace": null,
               "duration": 600,
               "reveal": "glow",
               "stagger": 90
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -5986,7 +7364,30 @@
               "effect": "none",
               "lineHeight": 1.05,
               "align": "center",
-              "letterSpacing": 0.04
+              "letterSpacing": 0.04,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -6026,13 +7427,19 @@
             },
             "motion": {
               "transition": "scale",
+              "pace": null,
               "duration": 400,
               "reveal": "letters",
               "stagger": 25
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -6073,7 +7480,30 @@
               "effect": "outline",
               "lineHeight": 1.15,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -6112,13 +7542,19 @@
             },
             "motion": {
               "transition": "slide",
+              "pace": null,
               "duration": 300,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -6159,7 +7595,30 @@
               "effect": "none",
               "lineHeight": 1.25,
               "align": "left",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -6198,13 +7657,19 @@
             },
             "motion": {
               "transition": "fade",
+              "pace": null,
               "duration": 250,
               "reveal": "typewriter",
               "stagger": 18
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],
@@ -6245,7 +7710,30 @@
               "effect": "none",
               "lineHeight": 1.05,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "slide",
@@ -6284,13 +7772,19 @@
             },
             "motion": {
               "transition": "cut",
+              "pace": null,
               "duration": 0,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#7dd3fc",
-              "scale": 1
+              "scale": 1,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": {
               "columns": 12,
@@ -6695,7 +8189,30 @@
               "effect": "none",
               "lineHeight": 1.05,
               "align": "center",
-              "letterSpacing": 0
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
             },
             "lines": {
               "group": "section",
@@ -6734,13 +8251,19 @@
             },
             "motion": {
               "transition": "cut",
+              "pace": null,
               "duration": 0,
               "reveal": "none",
               "stagger": 60
             },
             "chords": {
               "color": "#facc15",
-              "scale": 1.2
+              "scale": 1.2,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
             },
             "grid": null,
             "masks": [],

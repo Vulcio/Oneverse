@@ -51,6 +51,8 @@ function contentSchema(strict: boolean) {
     credits: theme.credits,
     motion: theme.motion,
     chords: theme.chords,
+    display: theme.display,
+    sections: theme.sections,
   });
 }
 
@@ -191,7 +193,7 @@ export function composeScreenTheme(
  */
 export function splitScreenTheme(input: unknown): { content: ScreenContentTheme; background: ScreenBackgroundTheme; effects: ScreenEffects | null; template: ScreenTemplateLayout } {
   const theme = resolveScreenTheme(input);
-  const content = ScreenContentThemeSchema.parse({ shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords });
+  const content = ScreenContentThemeSchema.parse({ shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords, display: theme.display, sections: theme.sections });
   const background = ScreenBackgroundThemeSchema.parse({ base: theme.base, video: theme.video, background: { ...theme.background, reactive: false }, reacts: theme.reacts });
   const effects = theme.effects
     ? ScreenEffectsSchema.parse(theme.effects)

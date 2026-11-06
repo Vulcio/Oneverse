@@ -1,4 +1,4 @@
-import type { RenderedChart } from "../song-document/render.js";
+import type { RenderedChart, RenderedChord } from "../song-document/render.js";
 import { barAt, lineAtPosition, type BeatPlace, type ChartBar } from "../song-document/bars.js";
 import type { PassageChapter } from "../scriptures/references.js";
 
@@ -56,6 +56,62 @@ export function lyricSlides(chart: Pick<RenderedChart, "passes">, size: number =
     for (let at = 0, part = 0; at < lines.length; at += per, part++) slides.push({ passIndex, passId: pass.id, label, lines: lines.slice(at, at + per), part });
   });
   return slides;
+}
+
+/** A line of a slide with its chords (issue #395): its words as `lyricSlides` shows them, and where each chord falls in them. */
+export interface ScreenSlideLine {
+  /** The chart's line. */
+  lineId: string;
+  text: string;
+  /** Each chord at a character of `text` (the words' spaces evened out as the slide shows them). */
+  chords: { at: number; chord: RenderedChord }[];
+}
+
+/**
+ * Every slide's lines with their chords (issue #395), cut as `lyricSlides`
+ * cuts them, for a lyrics screen that shows chords over its words, and the
+ * kind of section each slide is from (`sectionType`).
+ */
+export function lyricSlideLines(chart: Pick<RenderedChart, "passes">, size: number = LYRIC_LINES_PER_SLIDE): { sectionType: string; lines: ScreenSlideLine[] }[] {
+  const per = Math.max(1, Math.floor(size));
+  const slides: { sectionType: string; lines: ScreenSlideLine[] }[] = [];
+  chart.passes.forEach((pass) => {
+    const lines = pass.lines
+      .filter((line) => line.kind === "lyric")
+      .map((line) => evenLine(line.id, line.text, line.chords))
+      .filter((line) => line.text !== "");
+    if (lines.length === 0) {
+      slides.push({ sectionType: pass.section.type, lines: [] });
+      return;
+    }
+    for (let at = 0; at < lines.length; at += per) slides.push({ sectionType: pass.section.type, lines: lines.slice(at, at + per) });
+  });
+  return slides;
+}
+
+/** A line's words with runs of spaces made one and the ends trimmed, as a slide shows them, its chords moved with them. */
+function evenLine(lineId: string, raw: string, chords: RenderedChord[]): ScreenSlideLine {
+  // Where each character of the raw line lands in the evened one.
+  const map: number[] = [];
+  let text = "";
+  let space = false;
+  for (const ch of raw) {
+    map.push(text.length);
+    if (/\s/.test(ch)) {
+      space = true;
+      continue;
+    }
+    if (space && text !== "") text += " ";
+    space = false;
+    text += ch;
+  }
+  map.push(text.length);
+  // A trimmed start moves everything; a chord past the end sits on the last character.
+  return {
+    lineId,
+    text,
+    chords: chords.map((chord) => ({ at: Math.max(0, Math.min(map[Math.min(chord.at, raw.length)] ?? text.length, Math.max(0, text.length - 1))), chord })),
+  };
 }
 
 /**

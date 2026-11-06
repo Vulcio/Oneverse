@@ -41,7 +41,22 @@ section with the slide's lines picked out.
     "effect": "shadow",      // none, shadow, outline, glow: readability over a moving background
     "lineHeight": 1.15,
     "align": "center",       // left, center, right
-    "letterSpacing": 0       // em
+    "letterSpacing": 0,      // em
+    "italic": false,         // issue #395
+    "shadow": null,          // { "style": "soft", "color": "#000000" }: none, soft, lifted, strong (#395)
+    "outline": null,         // { "width": "thin", "color": "#0b1020" }: none, thin, medium (#395)
+    "glow": null             // none, soft (#395); shadow, outline and glow all null: from "effect"
+  },
+  "display": {               // issue #395
+    "mode": "slides",        // slides, scroll, focus, grid; one a client doesn't know: slides
+    "follow": "off",         // off, line, fill: the line being sung, or its words filling, when the music is followed
+    "scroll": { "anchor": "middle", "past": "dim", "coming": 0, "others": 0.82, "soften": false, "labels": false },
+    "grid": { "words": true }
+  },
+  "sections": {              // issue #395: kinds of section set apart; null, like the rest
+    "chorus": null,          // a pre-chorus and a post-chorus are styled as the chorus
+    "bridge": null           // { "text": { …any text field but size }, "mark": "none", "label": false,
+                             //   "transitionInto": null, "transitionWithin": null }
   },
   "lines": {
     "group": "slide",        // slide, section
@@ -66,16 +81,39 @@ section with the slide's lines picked out.
   "title": { "show": true, "when": "first" },                       // first, every
   "credits": { "show": true, "where": "bottom", "when": "first-and-last" }, // bottom, top, lower-third; first, last, first-and-last, every
   "motion": {
-    "transition": "fade",    // cut, fade, slide, rise, scale, blur, zoom, move (the words on both slides glide to their new place, issue #324)
+    "transition": "fade",    // cut, fade, slide, rise, scale, blur, zoom, move (the words on both slides glide to their new place, issue #324),
+                             // unveil, wipe, push, push-across, relay, settle, iris, cover, tighten, cascade, flip, depth, drift (#395);
+                             // one a client doesn't know: fade
+    "pace": null,            // gentle, smooth, snappy: the change's curve (#395); null, as before
     "duration": 350,         // ms per slide; a new song takes twice as long
     "reveal": "none",        // none, lines, words, letters, typewriter, glow
     "stagger": 60            // ms between pieces; a slide's words are all in within 1.6 s
   },
-  "chords": { "color": "#7dd3fc", "scale": 1 },                     // the band's chart
+  "chords": { "color": "#7dd3fc", "scale": 1,                       // the band's chart
+              "show": "off", "notation": "letters", "size": 0.55, "simple": false, "current": true }, // over the lyrics (#395)
   "grid": null,                                                     // widgets on a grid (below); null: the words fill the screen
   "base": { "color": null }, "video": { "source": "none" }, "masks": [] // layers (below)
 }
 ```
+
+## Text, sections and modes (issue #395)
+
+- **One size per song.** With `size: "auto"` the words' size is worked out once for the song
+  (`screenAutoTextSize`, from the 90th percentile of its lines' lengths), never per slide, so nothing
+  jumps; a very long line wraps. A section's style never changes the size.
+- **Effects** are presets: `shadow` (soft, lifted, strong, in its colour), `outline` (thin, medium:
+  the letters' whole silhouette grown and drawn behind them, never a stroke of each contour) and
+  `glow`. A theme made before them keeps `effect`: `screenTextEffects` reads one from the other.
+- **Sections:** `screenSectionKind` says which kind a pass is (chorus for a chorus, pre-chorus or
+  post-chorus; bridge; by its label for a section typed other), `screenSectionText` its text. Its
+  transitions apply when a slide of that kind comes after one of another kind (`transitionInto`),
+  or of the same (`transitionWithin`).
+- **Modes:** `scroll` shows the whole song as arranged (its passes in order, repeats included) as
+  one column; `focus` one line at a time with the music, else the slide; `grid` the song's bars
+  (`chartBars`), a block per beat, each chord in the beat it starts on. Slides stay the unit:
+  Next works the same in every mode.
+- **Chords over the lyrics:** `lyricSlideLines` gives each slide's lines with their chords, cut as
+  `lyricSlides` cuts them.
 
 ## Widgets on a grid
 

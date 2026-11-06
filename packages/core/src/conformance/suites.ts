@@ -26,7 +26,7 @@ import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong,
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, slideAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenAutoTextSize, screenSectionKind, screenTextEffects, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { readCatalogLinks } from "../songbook-catalog-format/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -1710,6 +1710,66 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "two lines at a time, as written", args: [SONG, null, 2] },
           { name: "one at a time", args: [SONG, null, 1] },
           { name: "an arrangement: changed words, an inserted line", args: [SONG, ARRANGEMENT, 2] },
+        ],
+      },
+      lyricSlideLines: {
+        about:
+          "Every slide's lines with their chords (issue #395), cut as lyricSlides cuts them: each line's words with runs of spaces made one and its ends trimmed, each chord at the character it falls on in those words (on the last one when past the end); each slide's section type.",
+        params: ["song", "arrangement", "size"],
+        run: (song: unknown, arr: unknown, size: number) =>
+          lyricSlideLines(renderChart(read(song), arr ? arrangement(arr) : null), size).map((slide) => ({
+            sectionType: slide.sectionType,
+            lines: slide.lines.map((line) => ({ text: line.text, chords: line.chords.map((one) => [one.at, one.chord.label]) })),
+          })),
+        cases: [
+          { name: "two lines at a time, as written", args: [SONG, null, 2] },
+          { name: "an arrangement: changed words, an inserted line", args: [SONG, ARRANGEMENT, 2] },
+        ],
+      },
+      screenAutoTextSize: {
+        about:
+          "The words' size when a theme says auto (issue #395): one for the whole song, from its longer lines - the 90th percentile of their lengths, at least 8 - in % of the screen's shorter side: 208 / (length x width x capitals), width 0.72 for condensed and display, 1.2 for mono, capitals 1.15; between 3.2 and 8.5 (8 in capitals), to 2 decimals.",
+        params: ["lines", "text"],
+        run: screenAutoTextSize,
+        cases: [
+          { name: "short lines", args: [["Holy", "Holy, holy"], { font: "sans", upperCase: false }] },
+          { name: "a song's lines, one very long: it doesn't set the size", args: [["Amazing grace how sweet the sound", "That saved a wretch like me", "I once was lost but now am found", "Was blind but now I see", "Through many dangers, toils and snares, I have already come, and grace will lead me home"], { font: "sans", upperCase: false }] },
+          { name: "condensed capitals", args: [["Amazing grace how sweet the sound", "That saved a wretch like me"], { font: "condensed", upperCase: true }] },
+          { name: "no words", args: [[], { font: "sans", upperCase: false }] },
+        ],
+      },
+      screenSectionKind: {
+        about: "Which kind of section a pass is, for its look (issue #395): chorus for a chorus, pre-chorus or post-chorus; bridge for a bridge; a section typed other by its label; null for the rest.",
+        params: ["type", "label"],
+        run: screenSectionKind,
+        cases: [
+          { name: "a chorus", args: ["chorus", null] },
+          { name: "a pre-chorus is styled as the chorus", args: ["pre-chorus", "Pre"] },
+          { name: "a bridge", args: ["bridge", null] },
+          { name: "a verse called Chorus stays a verse", args: ["verse", "Chorus"] },
+          { name: "other, labelled Refrain", args: ["other", "Refrain"] },
+          { name: "other, labelled Pont", args: ["other", "Pont"] },
+          { name: "other, no label", args: ["other", null] },
+        ],
+      },
+      screenTextEffects: {
+        about: "A text's effects as drawn (issue #395): its own presets (shadow, outline, glow); none of them set, those its effect stands for - shadow a soft black shadow, outline a thin black outline, glow a soft glow.",
+        params: ["text"],
+        run: screenTextEffects,
+        cases: [
+          { name: "before presets: a shadow", args: [{ effect: "shadow", shadow: null, outline: null, glow: null }] },
+          { name: "before presets: an outline", args: [{ effect: "outline", shadow: null, outline: null, glow: null }] },
+          { name: "presets set: effect ignored", args: [{ effect: "shadow", shadow: { style: "strong", color: "#3b2470" }, outline: { width: "medium", color: "#ffffff" }, glow: null }] },
+        ],
+      },
+      screenSectionText: {
+        about: "A section's text (issue #395): the template's, with what the section's style sets over it - each field its own or the template's; effects set on the section stand with the template's others as presets.",
+        params: ["text", "style"],
+        run: (text: unknown, style: unknown) => screenSectionText(resolveScreenTheme({ text }).text, style ? ScreenSectionStyleSchema.parse(style) : null),
+        cases: [
+          { name: "no style: the template's", args: [{ font: "serif", color: "#ffffff" }, null] },
+          { name: "a colour and heavier: the rest the template's", args: [{ font: "serif", color: "#ffffff", effect: "shadow" }, { text: { color: "#fde68a", weight: 800 } }] },
+          { name: "an outline on the section, the template's shadow kept", args: [{ effect: "shadow" }, { text: { outline: { width: "medium", color: "#3b2470" } } }] },
         ],
       },
       textSlides: {

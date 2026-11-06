@@ -46,8 +46,74 @@ export const SCREEN_TEXT_BACKGROUNDS = ["flow", "strings", "grid", "bokeh"] as c
 /** What a theme's own files are for (issue #194): a background picture or looping video, a font, or an ISF shader (issue #297). */
 export const SCREEN_THEME_ASSET_KINDS = ["media", "font", "shader"] as const;
 export type ScreenThemeAssetKind = (typeof SCREEN_THEME_ASSET_KINDS)[number];
-/** How one slide gives way to the next. */
-export const SCREEN_TRANSITIONS = ["cut", "fade", "slide", "rise", "scale", "blur", "zoom", "move"] as const;
+/**
+ * How one slide gives way to the next. Issue #395 added unveil (each line
+ * rises from behind its own edge), wipe (a soft edge in reading direction),
+ * push and push-across (old and new move together, up or sideways), relay
+ * (line by line), settle (in slightly large, settling to size), iris (from
+ * the middle in a soft circle), cover (the new slide laid over the old),
+ * tighten (spread wide, closing up), cascade (word by word), flip (lines
+ * turn in), depth and drift (3D: from the depth of the screen). Values are
+ * never removed: a client that doesn't know one fades.
+ */
+export const SCREEN_TRANSITIONS = [
+  "cut",
+  "fade",
+  "slide",
+  "rise",
+  "scale",
+  "blur",
+  "zoom",
+  "move",
+  "unveil",
+  "wipe",
+  "push",
+  "push-across",
+  "relay",
+  "settle",
+  "iris",
+  "cover",
+  "tighten",
+  "cascade",
+  "flip",
+  "depth",
+  "drift",
+] as const;
+export type ScreenTransition = (typeof SCREEN_TRANSITIONS)[number];
+/** The transitions the editor offers (issue #395): rise gave way to unveil, and move isn't offered; templates using them keep them. */
+export const SCREEN_TRANSITION_CHOICES: readonly ScreenTransition[] = ["cut", "fade", "blur", "unveil", "wipe", "push", "push-across", "relay", "settle", "iris", "cover", "tighten", "cascade", "flip", "depth", "drift", "slide", "scale", "zoom"];
+/** A change's pace (issue #395): its length and its curve, so nobody tunes milliseconds. */
+export const SCREEN_PACES = ["gentle", "smooth", "snappy"] as const;
+export type ScreenPace = (typeof SCREEN_PACES)[number];
+export const SCREEN_PACE_MS: Record<ScreenPace, number> = { gentle: 900, smooth: 620, snappy: 360 };
+/** Each pace's curve, as CSS writes it. */
+export const SCREEN_PACE_EASING: Record<ScreenPace, string> = {
+  gentle: "cubic-bezier(0.45, 0, 0.2, 1)",
+  smooth: "cubic-bezier(0.22, 1, 0.36, 1)",
+  snappy: "cubic-bezier(0.2, 0.9, 0.1, 1)",
+};
+/**
+ * How the words sit (issue #395): slides as before; scroll, the song as one
+ * column gliding up (as music players show lyrics); focus, one line at a
+ * time with the next under it; grid, the song's bars for the band, every
+ * beat a block.
+ */
+export const SCREEN_DISPLAY_MODES = ["slides", "scroll", "focus", "grid"] as const;
+export type ScreenDisplayMode = (typeof SCREEN_DISPLAY_MODES)[number];
+/** Following the music (issue #395): nothing, the line being sung, or its words filling with colour as they're sung. */
+export const SCREEN_FOLLOW = ["off", "line", "fill"] as const;
+/** Text effects as presets (issue #395), tuned to read over anything. */
+export const SCREEN_SHADOWS = ["none", "soft", "lifted", "strong"] as const;
+export const SCREEN_OUTLINES = ["none", "thin", "medium"] as const;
+export const SCREEN_GLOWS = ["none", "soft"] as const;
+/** Chords over a lyrics template's words (issue #395): none, above the syllable they're on, or a row of beat blocks over each line. */
+export const SCREEN_LYRIC_CHORDS = ["off", "above", "beats"] as const;
+export const SCREEN_CHORD_NOTATIONS = ["letters", "numbers", "solfege"] as const;
+/** How a kind of section is set apart (issue #395): nothing, a bar beside its lines, a band behind them. */
+export const SCREEN_SECTION_MARKS = ["none", "bar", "band"] as const;
+/** The kinds of section a template can style apart (issue #395); a pre-chorus is styled as the chorus. */
+export const SCREEN_SECTION_KINDS = ["chorus", "bridge"] as const;
+export type ScreenSectionKind = (typeof SCREEN_SECTION_KINDS)[number];
 /** How a slide's words come in: all at once, line by line, word by word, letter by letter, typed, or glowing in. */
 export const SCREEN_REVEALS = ["none", "lines", "words", "letters", "typewriter", "glow"] as const;
 export const SCREEN_TEXT_EFFECTS = ["none", "shadow", "outline", "glow"] as const;
@@ -322,6 +388,81 @@ export type ScreenMask = z.output<typeof ScreenMaskSchema>;
 /** The most masks a theme has. */
 export const SCREEN_MASKS_MAX = 8;
 
+/** A transition: when reading, one this client doesn't know (a later version's) is a fade; a request names one it knows. */
+function transitionSchema(strict: boolean) {
+  return strict ? z.enum(SCREEN_TRANSITIONS) : z.preprocess((value) => (typeof value === "string" && !(SCREEN_TRANSITIONS as readonly string[]).includes(value) ? "fade" : value), z.enum(SCREEN_TRANSITIONS));
+}
+
+function textShadowSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({ style: z.enum(SCREEN_SHADOWS).default("soft"), color: color.default("#000000") });
+}
+function textOutlineSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({ width: z.enum(SCREEN_OUTLINES).default("thin"), color: color.default("#0b1020") });
+}
+
+/** How the words sit (issue #395), and Scroll's and Grid's own settings. */
+function screenDisplaySchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    // A mode from a later version reads as slides.
+    mode: (strict ? z.enum(SCREEN_DISPLAY_MODES) : z.preprocess((value) => (typeof value === "string" && !(SCREEN_DISPLAY_MODES as readonly string[]).includes(value) ? "slides" : value), z.enum(SCREEN_DISPLAY_MODES))).default("slides"),
+    follow: z.enum(SCREEN_FOLLOW).default("off"),
+    scroll: object({
+      /** Where the lines being sung sit. */
+      anchor: z.enum(["high", "middle", "low"]).default("middle"),
+      /** The lines already sung: dimmed, fading away, hidden. */
+      past: z.enum(["dim", "fade", "hide"]).default("dim"),
+      /** How many of the coming lines show (0: all). */
+      coming: z.number().int().min(0).max(4).default(0),
+      /** The other lines' size beside the current ones'. */
+      others: z.number().min(0.55).max(1).default(0.82),
+      /** The other lines softened (a blur: heavier on a TV). */
+      soften: z.boolean().default(false),
+      /** The sections' names in the column. */
+      labels: z.boolean().default(false),
+    }).prefault({}),
+    grid: object({
+      /** Each bar's words under it. */
+      words: z.boolean().default(true),
+    }).prefault({}),
+  });
+}
+
+/**
+ * A kind of section set apart (issue #395): its text - each setting the
+ * template's (left out) or its own, so they combine - a mark, and its own
+ * transitions into it and within it. Never its size: the words keep one
+ * size for the whole song.
+ */
+function screenSectionStyleSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    text: object({
+      font: z.enum(SCREEN_FONTS).optional(),
+      customFont: z.string().max(40).nullable().optional(),
+      weight: z.number().int().min(100).max(900).multipleOf(100).optional(),
+      italic: z.boolean().optional(),
+      upperCase: z.boolean().optional(),
+      color: color.optional(),
+      align: z.enum(["left", "center", "right"]).optional(),
+      letterSpacing: z.number().min(-0.1).max(0.5).optional(),
+      lineHeight: z.number().min(0.8).max(2.5).optional(),
+      shadow: textShadowSchema(strict).optional(),
+      outline: textOutlineSchema(strict).optional(),
+      glow: z.enum(SCREEN_GLOWS).optional(),
+    }).prefault({}),
+    mark: z.enum(SCREEN_SECTION_MARKS).default("none"),
+    /** A tag in the corner ("Chorus") while it's on. */
+    label: z.boolean().default(false),
+    transitionInto: transitionSchema(strict).nullable().default(null),
+    transitionWithin: transitionSchema(strict).nullable().default(null),
+  });
+}
+export const ScreenSectionStyleSchema = screenSectionStyleSchema(false);
+export type ScreenSectionStyle = z.output<typeof ScreenSectionStyleSchema>;
+
 /** A theme's parts, as an object that ignores fields it doesn't know (reading) or refuses them (a request). */
 function screenThemeSchema(strict: boolean) {
   const object = strict ? z.strictObject : z.object;
@@ -349,6 +490,19 @@ function screenThemeSchema(strict: boolean) {
       lineHeight: z.number().min(0.8).max(2.5).default(1.15),
       align: z.enum(["left", "center", "right"]).default("center"),
       letterSpacing: z.number().min(-0.1).max(0.5).default(0),
+      /** Issue #395: italic, and effects as presets with their colours; null, from `effect` (as before them). */
+      italic: z.boolean().default(false),
+      shadow: textShadowSchema(strict).nullable().default(null),
+      outline: textOutlineSchema(strict).nullable().default(null),
+      glow: z.enum(SCREEN_GLOWS).nullable().default(null),
+    })
+    .prefault({}),
+  /** How the words sit and follow the music (issue #395). */
+  display: screenDisplaySchema(strict).prefault({}),
+  /** Kinds of section set apart (issue #395): their text, a mark, their own transitions; null, like the rest. */
+  sections: object({
+      chorus: screenSectionStyleSchema(strict).nullable().default(null),
+      bridge: screenSectionStyleSchema(strict).nullable().default(null),
     })
     .prefault({}),
   /**
@@ -407,7 +561,9 @@ function screenThemeSchema(strict: boolean) {
     })
     .prefault({}),
   motion: object({
-      transition: z.enum(SCREEN_TRANSITIONS).default("fade"),
+      transition: transitionSchema(strict).default("fade"),
+      /** Issue #395: the change's curve (and the length the editor set with it); null, as before paces. */
+      pace: z.enum(SCREEN_PACES).nullable().default(null),
       /** A slide's change, in milliseconds; between songs it takes twice as long. */
       duration: z.number().int().min(0).max(3000).default(350),
       reveal: z.enum(SCREEN_REVEALS).default("none"),
@@ -415,10 +571,18 @@ function screenThemeSchema(strict: boolean) {
       stagger: z.number().int().min(0).max(400).default(60),
     })
     .prefault({}),
-  /** The chart, for the band: its chords' colour and size. */
+  /** The chart, for the band: its chords' colour and size; and chords over a lyrics template's words (issue #395). */
   chords: object({
       color: color.default("#7dd3fc"),
       scale: z.number().min(0.5).max(2).default(1),
+      show: z.enum(SCREEN_LYRIC_CHORDS).default("off"),
+      notation: z.enum(SCREEN_CHORD_NOTATIONS).default("letters"),
+      /** Their size beside the words', 0.35 to 0.9. */
+      size: z.number().min(0.35).max(0.9).default(0.55),
+      /** Simpler chords: G7 shows as G, no bass notes. */
+      simple: z.boolean().default(false),
+      /** The chord being played lit, when the music is followed. */
+      current: z.boolean().default(true),
     })
     .prefault({}),
   /** Widgets placed on a grid (issue #268); none, and the words fill the screen as they always have. */
@@ -702,4 +866,59 @@ export function sectionEnergy(label: string | null | undefined): "low" | "mid" |
   if (/bridge|pont|pre-?chorus|pré-?refrain|build|montée/.test(text)) return "mid";
   if (/chorus|refrain|refrão|estribillo|coro|tag|climax/.test(text)) return "high";
   return "low";
+}
+
+/** A text's effects as drawn (issue #395): its own presets, else those its `effect` (before presets) stands for. */
+export function screenTextEffects(text: Pick<ScreenTheme["text"], "effect" | "shadow" | "outline" | "glow">): {
+  shadow: { style: (typeof SCREEN_SHADOWS)[number]; color: string };
+  outline: { width: (typeof SCREEN_OUTLINES)[number]; color: string };
+  glow: (typeof SCREEN_GLOWS)[number];
+} {
+  const set = text.shadow !== null || text.outline !== null || text.glow !== null;
+  return {
+    shadow: text.shadow ?? (!set && text.effect === "shadow" ? { style: "soft", color: "#000000" } : { style: "none", color: "#000000" }),
+    outline: text.outline ?? (!set && text.effect === "outline" ? { width: "thin", color: "#000000" } : { width: "none", color: "#0b1020" }),
+    glow: text.glow ?? (!set && text.effect === "glow" ? "soft" : "none"),
+  };
+}
+
+/**
+ * Which kind of section a pass is, for its look (issue #395): a chorus (a
+ * pre-chorus and a post-chorus too) or a bridge by the section's type; a
+ * section typed "other" by its label, as sectionEnergy reads it; null for
+ * the rest.
+ */
+export function screenSectionKind(type: string | null | undefined, label?: string | null): ScreenSectionKind | null {
+  if (type === "chorus" || type === "pre-chorus" || type === "post-chorus") return "chorus";
+  if (type === "bridge") return "bridge";
+  if (type && type !== "other") return null;
+  const text = (label ?? "").toLowerCase();
+  if (/bridge|pont/.test(text)) return "bridge";
+  if (/chorus|refrain|refrão|estribillo|coro/.test(text)) return "chorus";
+  return null;
+}
+
+/** A section's text: the template's, with what the section's style sets over it (issue #395). Never the size. */
+export function screenSectionText(text: ScreenTheme["text"], style: ScreenSectionStyle | null | undefined): ScreenTheme["text"] {
+  if (!style) return text;
+  const own = Object.fromEntries(Object.entries(style.text).filter(([, value]) => value !== undefined));
+  // Effects set on the section stand on their own: the others come from the template's presets.
+  const effects = screenTextEffects(text);
+  const effectsSet = own.shadow !== undefined || own.outline !== undefined || own.glow !== undefined;
+  return { ...text, ...(effectsSet ? { shadow: effects.shadow, outline: effects.outline, glow: effects.glow } : {}), ...own };
+}
+
+/**
+ * The words' size when the theme says "auto" (issue #395): one for the whole
+ * song, so nothing jumps from slide to slide - set by its longer lines (the
+ * 90th percentile of their lengths, so one very long line wraps rather than
+ * shrinking every slide), in % of the screen's shorter side. Narrow fonts go
+ * bigger, capitals smaller.
+ */
+export function screenAutoTextSize(lines: readonly string[], text: Pick<ScreenTheme["text"], "font" | "upperCase">): number {
+  const lengths = lines.map((line) => line.length).filter((length) => length > 0).sort((a, b) => a - b);
+  const long = lengths.length === 0 ? 8 : Math.max(8, lengths[Math.floor((lengths.length - 1) * 0.9)]!);
+  const width = text.font === "condensed" || text.font === "display" ? 0.72 : text.font === "mono" ? 1.2 : 1;
+  const size = (8 * 26) / (long * width * (text.upperCase ? 1.15 : 1));
+  return Math.round(Math.max(3.2, Math.min(text.upperCase ? 8 : 8.5, size)) * 100) / 100;
 }
