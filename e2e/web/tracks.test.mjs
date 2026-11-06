@@ -89,7 +89,10 @@ try {
         const { width, height } = canvas;
         const grab = () => context.getImageData(0, 0, width, height).data;
         const before = grab();
-        for (let k = 0; k < 12; k++) await new Promise((done) => requestAnimationFrame(done));
+        // A few frames, about 150 ms: on a slow runner 12 frames scrolled further than the shifts tried below, and
+        // the best of those was then a wrong one.
+        const from = performance.now();
+        for (let k = 0; k < 2 || performance.now() - from < 150; k++) await new Promise((done) => requestAnimationFrame(done));
         const after = grab();
         const right = Math.floor(width / 5) - 10;
         // The strip before the playhead is narrow (a fifth): only shifts that leave most of it to compare count, and the
@@ -105,7 +108,7 @@ try {
             }
           if (drawn >= 200 && differ / drawn < best.differ / Math.max(best.drawn, 1)) best = { shift, differ, drawn, right };
         }
-        return best;
+        return { ...best, ms: Math.round(performance.now() - from) };
       });
     // Back to 16 s for the next steps, whatever happened.
     await view().getByTestId("tracks-zoom-out").click();
