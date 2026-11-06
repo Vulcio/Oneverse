@@ -296,13 +296,22 @@ function themeValue(screen: Pick<ScreenSummary, "themeId" | "themeTemplate">): s
   return screen.themeId ? `s:${screen.themeId}` : screen.themeTemplate ? `t:${screen.themeTemplate}` : "";
 }
 
-function ThemeSelect({ id, value, themes, onChange }: { id: string; value: string; themes: ScreenThemeSummary[]; onChange: (value: string) => void }) {
+/**
+ * A template for a screen: built-in ones, then saved ones. For Bible
+ * passages (issue #402), "" is its look for songs, and the templates for
+ * scripture come first.
+ */
+function ThemeSelect({ id, value, themes, onChange, scripture = false }: { id: string; value: string; themes: ScreenThemeSummary[]; onChange: (value: string) => void; scripture?: boolean }) {
   const { t } = useTranslation();
+  const first = <T,>(list: T[], tags: (one: T) => readonly string[]) => (scripture ? [...list.filter((one) => tags(one).includes("scripture")), ...list.filter((one) => !tags(one).includes("scripture"))] : list);
   return (
-    <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)}>
-      <option value="">{t("screens.themeDefault")}</option>
+    <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)} data-testid={scripture ? "screen-scripture-theme" : undefined}>
+      <option value="">{scripture ? t("screens.themeSameAsSongs") : t("screens.themeDefault")}</option>
       <optgroup label={t("screens.builtIn")}>
-        {SCREEN_TEMPLATES.filter((one) => one.id !== "classic").map((one) => (
+        {first(
+          SCREEN_TEMPLATES.filter((one) => scripture || one.id !== "classic"),
+          (one) => one.template.tags,
+        ).map((one) => (
           <option key={one.id} value={`t:${one.id}`}>
             {t(`screens.templates.${one.id}.name`)}
           </option>
@@ -310,7 +319,7 @@ function ThemeSelect({ id, value, themes, onChange }: { id: string; value: strin
       </optgroup>
       {themes.length > 0 ? (
         <optgroup label={t("screens.savedThemes")}>
-          {themes.map((theme) => (
+          {first(themes, (one) => one.template.tags).map((theme) => (
             <option key={theme.id} value={`s:${theme.id}`}>
               {theme.teamName ? `${theme.name} · ${theme.teamName}` : theme.name}
             </option>
@@ -683,7 +692,7 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
               )}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`screen-theme-${screen.id}`}>{t("screens.theme")}</Label>
+              <Label htmlFor={`screen-theme-${screen.id}`}>{t("screens.themeSongs")}</Label>
               <ThemeSelect
                 id={`screen-theme-${screen.id}`}
                 value={themeValue(screen)}
@@ -692,6 +701,21 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
                   void change(value.startsWith("s:") ? { themeId: value.slice(2) } : value.startsWith("t:") ? { themeTemplate: value.slice(2) } : { themeId: null, themeTemplate: null })
                 }
               />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`screen-scripture-theme-${screen.id}`}>{t("screens.themeScripture")}</Label>
+              <ThemeSelect
+                id={`screen-scripture-theme-${screen.id}`}
+                scripture
+                value={themeValue({ themeId: screen.scriptureThemeId ?? null, themeTemplate: screen.scriptureThemeTemplate ?? null })}
+                themes={themes}
+                onChange={(value) =>
+                  void change(
+                    value.startsWith("s:") ? { scriptureThemeId: value.slice(2) } : value.startsWith("t:") ? { scriptureThemeTemplate: value.slice(2) } : { scriptureThemeId: null, scriptureThemeTemplate: null },
+                  )
+                }
+              />
+              <p className="text-xs text-muted-foreground">{t("screens.themeScriptureHint")}</p>
             </div>
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" className="mt-1 size-4 accent-primary" checked={screen.effects !== false} onChange={(event) => void change({ effects: event.target.checked })} data-testid="screen-effects" />

@@ -122,7 +122,7 @@ export class ScreenPartsService {
   /** The screens showing a template that uses it: told to load their look again. */
   private async announce(partId: string) {
     const screens = await this.prisma.client.screen.findMany({
-      where: { theme: { OR: [{ contentPartId: partId }, { backgroundPartId: partId }, { effectsPartId: partId }] } },
+      where: { OR: [{ theme: { OR: [{ contentPartId: partId }, { backgroundPartId: partId }, { effectsPartId: partId }] } }, { scriptureTheme: { OR: [{ contentPartId: partId }, { backgroundPartId: partId }, { effectsPartId: partId }] } }] },
       select: { id: true },
     });
     for (const screen of screens) await redis().publish(SCREEN_CHANNEL, screen.id);

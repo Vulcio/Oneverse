@@ -3235,6 +3235,10 @@ model Screen {
   // Its look (issue #194): a saved theme, or a built-in one by its id ("concert"); neither, the default.
   themeId             String?
   themeTemplate       String?
+  // Its look for a Bible passage (issue #402) without a template of its own:
+  // a saved template, or a built-in one by its id; neither, its look above.
+  scriptureThemeId       String?
+  scriptureThemeTemplate String?
   // The layers it never shows (issue #287), whatever the operator does: a
   // stage monitor without the background, a lobby TV without the words.
   hiddenLayers        String[]      @default([])
@@ -3252,7 +3256,8 @@ model Screen {
   ownerOrganization Organization? @relation(fields: [ownerOrganizationId], references: [id], onDelete: Cascade)
   setBy             User?         @relation("ScreenSetBy", fields: [setByUserId], references: [id], onDelete: SetNull)
   setlist           Setlist?      @relation(fields: [setlistId], references: [id], onDelete: SetNull)
-  theme             ScreenTheme?  @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  theme             ScreenTheme?  @relation("ScreenLook", fields: [themeId], references: [id], onDelete: SetNull)
+  scriptureTheme    ScreenTheme?  @relation("ScreenScriptureLook", fields: [scriptureThemeId], references: [id], onDelete: SetNull)
   location          Location?     @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   @@index([ownerUserId])
@@ -3260,6 +3265,7 @@ model Screen {
   @@index([ownerOrganizationId])
   @@index([setlistId])
   @@index([themeId])
+  @@index([scriptureThemeId])
   @@index([locationId])
 }
 
@@ -3292,7 +3298,8 @@ model ScreenTheme {
   contentPart    ScreenPart?        @relation("TemplateContent", fields: [contentPartId], references: [id], onDelete: SetNull)
   backgroundPart ScreenPart?        @relation("TemplateBackground", fields: [backgroundPartId], references: [id], onDelete: SetNull)
   effectsPart    ScreenPart?        @relation("TemplateEffects", fields: [effectsPartId], references: [id], onDelete: SetNull)
-  screens        Screen[]
+  screens        Screen[]           @relation("ScreenLook")
+  scriptureOn    Screen[]           @relation("ScreenScriptureLook")
   assets         ScreenThemeAsset[]
 
   @@index([ownerUserId])
