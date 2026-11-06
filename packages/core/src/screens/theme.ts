@@ -261,6 +261,13 @@ export type ScreenWidgetKind = (typeof SCREEN_WIDGET_KINDS)[number];
 export const SCREEN_TIMER_SOURCES = ["operator", "duration", "until", "song"] as const;
 /** How the Date widget writes the day (issue #289): "Sunday 20 October", "20 Oct 2026", "20/10/2026", "2026-10-20", or the weekday alone. */
 export const SCREEN_DATE_FORMATS = ["long", "medium", "short", "iso", "weekday"] as const;
+/** The widgets that only mean something for one kind of content (issue #402): a song's sections, structure, key and tempo. The rest work for anything. */
+export const SCREEN_WIDGETS_FOR: Partial<Record<(typeof SCREEN_WIDGET_KINDS)[number], "songs" | "scripture">> = {
+  "current-section": "songs",
+  "next-section": "songs",
+  "song-structure": "songs",
+  song: "songs",
+};
 /** On which of a song's slides a widget shows (issue #398): every one, the first, the last, or the first and the last. */
 export const SCREEN_WIDGET_WHEN = ["every", "first", "last", "first-and-last"] as const;
 /** What a QR code widget holds (issue #289): an address, an event, a contact card, a Wi-Fi network. */

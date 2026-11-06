@@ -138,7 +138,9 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 - **Tournoiement** - des couleurs qui tourbillonnent et tournent un peu plus à chaque diapositive, plus proches dans un refrain.
 - **Neuronal** - des fils lumineux sur fond noir qui s'animent et s'éclairent à chaque ligne.
 
-**Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3** - qui change à mesure que vous les changez. **⏵** lance le chant d'exemple, **‹ ›** avancent diapositive par diapositive.
+**Personnaliser** en ouvre un dans l'éditeur de modèle, avec son aperçu à côté des réglages - en **16:9** ou **4:3** - qui change à mesure que vous les changez. **Aperçu avec** joue **Un chant** ou **Un passage** (Jean 3:16-18), **⏵** le lance, **‹ ›** avancent diapositive par diapositive.
+
+**Fait pour**, en haut, dit ce que le modèle affiche : **Chants**, **Passages bibliques**, les deux, ou aucun pour tout. Il choisit ce que joue l'aperçu, les widgets que propose **Ajouter un widget** (ceux des chants, comme les sections et la structure du chant, seulement sur un modèle fait pour les chants), et les modèles proposés en premier quand un écran ou un passage en choisit un. Il n'empêche jamais un écran d'afficher autre chose avec. Un modèle fait pour une seule chose la joue aussi sur sa carte.
 
 ![L'éditeur de modèle : son contenu, son fond et ses effets](../../../assets/screenshots/fr/screen-template-parts.jpg)
 

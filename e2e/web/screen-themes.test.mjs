@@ -116,13 +116,20 @@ try {
     await part.locator("#theme-name").fill(`Starry words ${stamp}`);
     await part.getByTestId("theme-save").click();
     await part.waitFor({ state: "detached" });
+    // Made for songs (the chapel's), and passages too (issue #402): previewed with a passage, the widgets for songs still offered.
+    await editor.getByTestId("theme-made-for").locator('[data-value="scripture"]').click();
+    await editor.getByTestId("theme-preview-with").getByRole("button", { name: "A passage" }).click();
+    await editor.getByTestId("theme-preview").getByText("For God so loved the world", { exact: false }).first().waitFor();
+    await editor.getByTestId("theme-tab-widgets").click();
+    const groups = await editor.getByTestId("theme-widget-add").locator("optgroup").evaluateAll((all) => all.map((one) => one.label));
+    if (groups.join("|") !== "For everything|For songs") throw new Error(`widget groups: ${groups.join("|")}`);
     await editor.getByTestId("theme-tab-template").click();
     await editor.getByTestId("theme-tags").locator('[data-value="presentation"]').click();
     await editor.locator("#theme-name").fill(`Starry ${stamp}`);
     await editor.getByTestId("theme-save").click();
     await tablet.getByTestId(`saved-theme-Starry ${stamp}`).waitFor();
     const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
-    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant" || saved.theme.sections.chorus?.mark !== "band" || saved.theme.sections.chorus.text.italic !== true || saved.theme.sections.chorus.text.color !== undefined || saved.parts.background.name !== `Starry sky ${stamp}` || !saved.template.tags.includes("presentation"))
+    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant" || saved.theme.sections.chorus?.mark !== "band" || saved.theme.sections.chorus.text.italic !== true || saved.theme.sections.chorus.text.color !== undefined || saved.parts.background.name !== `Starry sky ${stamp}` || !saved.template.tags.includes("presentation") || saved.template.madeFor.join() !== "songs,scripture")
       throw new Error(JSON.stringify(saved));
   });
 
@@ -133,7 +140,12 @@ try {
     // Its settings, in a dialog (issue #288).
     await row.getByTestId("screen-settings").click();
     const dialog = tablet.getByTestId("screen-dialog");
-    await dialog.getByLabel("Template").selectOption({ label: `Starry ${stamp}` });
+    await dialog.getByLabel("Template for songs").selectOption({ label: `Starry ${stamp}` });
+    // Its template for passages (issue #402): the same as songs until one's picked; templates made for scripture first.
+    const forPassages = dialog.getByTestId("screen-scripture-theme");
+    if ((await forPassages.inputValue()) !== "") throw new Error("a new screen's passages should look like its songs");
+    const first = await forPassages.locator("optgroup").first().locator("option").first().textContent();
+    if (first !== "Scripture") throw new Error(`first for passages: ${first}`);
     await dialog.getByTestId("theme-preview").waitFor();
     await dialog.getByTestId("screen-dialog-done").click();
     await dialog.waitFor({ state: "detached" });

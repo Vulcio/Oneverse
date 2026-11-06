@@ -32,6 +32,8 @@ import {
   screenBuiltInPart,
   screenShowsChart,
   screenThemeContrast,
+  SCREEN_CONTENT_KINDS,
+  type ScreenContentKind,
   type ScreenMask,
   type ScreenPartKind,
   type ScreenPartRef,
@@ -49,7 +51,7 @@ import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { Choices, ColorInput, Field, Group, Slider } from "#/components/screen-editor-fields";
 import { DisplaySettings, ChordSettings, TextMotionSettings } from "#/components/screen-text-editor";
-import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
+import { ScreenThemePreview, useSamplePassage, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
 import { Input } from "@oneverse/ui/components/input";
@@ -85,6 +87,8 @@ export interface ThemeDraft {
   masks?: ScreenMask[];
   /** The title and credits are widgets in its grid (issue #398); false, a template from before: its content theme's are made widgets. */
   titleWidgets?: boolean;
+  /** What it's made for (issue #402); a part opened from a template: what that template is made for, to preview it with. */
+  madeFor?: ScreenContentKind[];
   refs?: TemplateRefs;
   /** A part's document. */
   document?: unknown;
@@ -159,6 +163,14 @@ export function ScreenThemeEditor({
   const [refs, setRefs] = useState<TemplateRefs>(draft.refs ?? { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null });
   const [tags, setTags] = useState<ScreenTemplateTag[]>(draft.tags ?? []);
   const [versesPerSlide, setVersesPerSlide] = useState(draft.versesPerSlide ?? 1);
+  const [madeFor, setMadeFor] = useState<ScreenContentKind[]>(draft.madeFor ?? []);
+  // What the preview plays (issue #402): a song, or a passage - what the template is made for, when it's one thing.
+  const [previewWith, setPreviewWith] = useState<ScreenContentKind>(draft.madeFor?.length === 1 ? draft.madeFor[0]! : "songs");
+  function toggleMadeFor(kind: ScreenContentKind) {
+    const next = madeFor.includes(kind) ? madeFor.filter((one) => one !== kind) : SCREEN_CONTENT_KINDS.filter((one) => one === kind || madeFor.includes(one));
+    setMadeFor(next);
+    if (next.length === 1) setPreviewWith(next[0]!);
+  }
   const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[]; titleWidgets: boolean }, own?: unknown) =>
     composeScreenTheme({
       content: kind === "content" ? own : partDocument("content", with_.content, parts),
@@ -189,7 +201,9 @@ export function ScreenThemeEditor({
   // A template's parts, one at a time (issue #398).
   const [layer, setLayer] = useState<Layer>("content");
   const setGrid = (grid: Grid | null) => setTheme((before) => ScreenThemeSchema.parse({ ...before, grid }));
-  const sample = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
+  const sampleSong = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
+  const samplePassage = useSamplePassage(versesPerSlide);
+  const sample = previewWith === "scripture" ? samplePassage : sampleSong;
   const adminTeams = teams.filter((team) => team.currentUserRole === "ADMIN");
   const contrast = screenThemeContrast(theme);
   const teamId = draft.ownerTeamId ?? (owner || null);
@@ -245,7 +259,7 @@ export function ScreenThemeEditor({
     try {
       let saved: ScreenThemeSummary | ScreenPartSummary;
       if (kind === "template") {
-        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide, titleWidgets: true }, content: refs.content, background: refs.background, effects: refs.effects };
+        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide, titleWidgets: true, madeFor }, content: refs.content, background: refs.background, effects: refs.effects };
         saved = draft.id && !asNew ? await apiClient.updateScreenTheme(draft.id, body) : await apiClient.createScreenTheme({ ...body, ...(teamId && { teamId }) });
       } else {
         const document = extractPart(kind, theme, draft.document) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
@@ -310,8 +324,8 @@ export function ScreenThemeEditor({
     const document = partDocument(slot, ref ?? { builtIn: "pulse" }, parts) ?? {};
     setEditing(
       saved?.canEdit
-        ? { kind: slot, id: saved.id, name: saved.name, ownerTeamId: saved.ownerTeamId, document: saved.document, assets: saved.assets }
-        : { kind: slot, name: t("screens.parts.copyOf", { name: saved?.name ?? (ref && "builtIn" in ref ? t(`screens.parts.builtIn.${slot}.${ref.builtIn}`) : name) }), ownerTeamId: teamId, document },
+        ? { kind: slot, id: saved.id, name: saved.name, ownerTeamId: saved.ownerTeamId, document: saved.document, assets: saved.assets, madeFor: [previewWith] }
+        : { kind: slot, name: t("screens.parts.copyOf", { name: saved?.name ?? (ref && "builtIn" in ref ? t(`screens.parts.builtIn.${slot}.${ref.builtIn}`) : name) }), ownerTeamId: teamId, document, madeFor: [previewWith] },
     );
   }
 
@@ -331,6 +345,27 @@ export function ScreenThemeEditor({
           <div className="flex flex-col border-b lg:overflow-y-auto lg:border-r lg:border-b-0">
             {kind === "template" ? (
               <>
+                <div className="flex flex-col gap-1.5 border-b px-4 py-3" data-testid="theme-made-for">
+                  <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{t("screens.editor.madeFor")}</span>
+                  <div className="flex flex-wrap gap-1" role="group" aria-label={t("screens.editor.madeFor")}>
+                    {SCREEN_CONTENT_KINDS.map((one) => {
+                      const on = madeFor.includes(one);
+                      return (
+                        <button
+                          key={one}
+                          type="button"
+                          aria-pressed={on}
+                          data-value={one}
+                          onClick={() => toggleMadeFor(one)}
+                          className={cn("h-7 rounded-full border px-3 text-xs font-medium transition-colors", on ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground")}
+                        >
+                          {t(`screens.editor.madeForKinds.${one}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{t("screens.editor.madeForHint")}</span>
+                </div>
                 <LayerRail
                   tab={layer}
                   onTab={setLayer}
@@ -380,6 +415,7 @@ export function ScreenThemeEditor({
                     onGrid={setGrid}
                     selected={selected}
                     onSelect={setSelected}
+                    madeFor={madeFor}
                     lookFor={(kind) => {
                       const team = draft.ownerTeamId ?? (owner || null);
                       return (widgetDefaults.find((one) => one.kind === kind && team && one.teamId === team) ?? widgetDefaults.find((one) => one.kind === kind && !one.teamId))?.look ?? null;
@@ -574,6 +610,10 @@ export function ScreenThemeEditor({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium">{t("screens.preview")}</span>
               <Choices value={aspect} options={["16/9", "4/3"] as const} label={(one) => one.replace("/", ":")} onChange={setAspect} />
+              <span className="flex items-center gap-1.5 text-xs" data-testid="theme-preview-with">
+                <span className="text-muted-foreground">{t("screens.editor.previewWith")}</span>
+                <Choices value={previewWith} options={SCREEN_CONTENT_KINDS} label={(one) => t(`screens.editor.previewWithKinds.${one}`)} onChange={(one) => (setSlide(undefined), setPreviewWith(one))} />
+              </span>
               {kind !== "template" ? (
                 <NativeSelect className="h-8 w-auto max-w-56 text-xs" value={previewIn} onChange={(event) => setPreviewIn(event.target.value)} aria-label={t("screens.editor.previewIn")} data-testid="theme-preview-in">
                   <option value="">{t("screens.editor.previewAlone")}</option>
@@ -615,7 +655,7 @@ export function ScreenThemeEditor({
                 </Button>
               </span>
             </div>
-            <ScreenThemePreview theme={shown} assets={shownAssets} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
+            <ScreenThemePreview theme={shown} assets={shownAssets} sample={previewWith} versesPerSlide={versesPerSlide} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
               {theme.grid && showGrid && kind === "template" ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
             </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">

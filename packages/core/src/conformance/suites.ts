@@ -1991,7 +1991,7 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       readScreenTemplate: {
-        about: "A template's layout as a client reads it (issues #281, #310): its tags (one it doesn't know left out), its widget grid and masks, and how many verses of a passage go on a slide (1 to 10; anything else, one).",
+        about: "A template's layout as a client reads it (issues #281, #310, #402): its tags (one it doesn't know left out), its widget grid and masks, how many verses of a passage go on a slide (1 to 10; anything else, one), whether its title and credits are widgets, and what it's made for (a kind it doesn't know left out).",
         params: ["input"],
         run: readScreenTemplate,
         cases: [
@@ -1999,6 +1999,8 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a mask that can't be read: left out", args: [{ masks: [{ id: "a", shape: "ellipse", x: 10 }, { id: "b", shape: "star" }] }] },
           { name: "three verses a slide, for scripture", args: [{ tags: ["scripture"], versesPerSlide: 3 }] },
           { name: "verses a slide that can't be: one", args: [{ versesPerSlide: 40 }] },
+          { name: "its title and credits as widgets (issue #398), kept", args: [{ titleWidgets: true }] },
+          { name: "made for scripture (issue #402); a kind from a later version left out", args: [{ madeFor: ["scripture", "slides", "scripture"] }] },
         ],
       },
       filterScreenTemplates: {

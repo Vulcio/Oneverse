@@ -310,7 +310,7 @@ function ThemeSelect({ id, value, themes, onChange, scripture = false }: { id: s
       <optgroup label={t("screens.builtIn")}>
         {first(
           SCREEN_TEMPLATES.filter((one) => scripture || one.id !== "classic"),
-          (one) => one.template.tags,
+          (one) => [...one.template.tags, ...one.template.madeFor],
         ).map((one) => (
           <option key={one.id} value={`t:${one.id}`}>
             {t(`screens.templates.${one.id}.name`)}
@@ -319,7 +319,7 @@ function ThemeSelect({ id, value, themes, onChange, scripture = false }: { id: s
       </optgroup>
       {themes.length > 0 ? (
         <optgroup label={t("screens.savedThemes")}>
-          {first(themes, (one) => one.template.tags).map((theme) => (
+          {first(themes, (one) => [...one.template.tags, ...(one.template.madeFor ?? [])]).map((theme) => (
             <option key={theme.id} value={`s:${theme.id}`}>
               {theme.teamName ? `${theme.name} · ${theme.teamName}` : theme.name}
             </option>

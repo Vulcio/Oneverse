@@ -138,7 +138,9 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 - **Turning** - colours swirling and turning a little further with each slide, closer in a chorus.
 - **Neural** - glowing threads on black that quicken and brighten with each line.
 
-**Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3** - changing as you change them. **⏵** plays the sample song, **‹ ›** go slide by slide.
+**Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3** - changing as you change them. **Preview with** plays **A song** or **A passage** (John 3:16-18), **⏵** plays it, **‹ ›** go slide by slide.
+
+**Made for**, at the top, says what the template shows: **Songs**, **Bible passages**, both, or neither for anything. It sets what the preview plays, which widgets **Add a widget** offers (those for songs, such as the sections and the song's structure, only on a template made for songs), and which templates come first where a screen or a passage picks one. It never stops a screen showing anything else with it. A template for one kind plays it on its card too.
 
 ![The template editor: its content, background and effects](../../assets/screenshots/en/screen-template-parts.jpg)
 
