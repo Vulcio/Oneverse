@@ -210,8 +210,10 @@ try {
     await tablet.getByTestId("templates-view-content").click();
     await tablet.getByTestId(`saved-part-Starry words ${stamp}`).getByTestId("edit-part").click();
     editor = tablet.getByTestId("part-editor");
+    // The font field opens into the list of fonts (issue #395), with Upload under it; the uploaded font is picked.
+    await editor.getByTestId("theme-font").click();
     await editor.getByTestId("theme-upload-font").setInputFiles({ name: "bebas.woff2", mimeType: "font/woff2", buffer: readFileSync(FONT) });
-    await editor.getByTestId("theme-custom-font").locator("option", { hasText: "bebas.woff2" }).waitFor({ state: "attached" });
+    await editor.getByTestId("theme-font").getByText("bebas.woff2").waitFor();
     await editor.getByTestId("theme-save").click();
     await editor.waitFor({ state: "detached" });
     page = tv;

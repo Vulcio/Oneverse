@@ -16,20 +16,15 @@ import {
   SCREEN_EFFECTS,
   SCREEN_BACKGROUND_THEMES,
   SCREEN_CONTENT_THEMES,
-  SCREEN_FONT_FAMILIES,
-  SCREEN_FONTS,
   SCREEN_MASK_KINDS,
   SCREEN_MASK_SHAPES,
   SCREEN_MASKS_MAX,
   SCREEN_POSITIONS,
   SCREEN_REACTIONS_MAX,
   SCREEN_REACTION_FALL_MS,
-  SCREEN_REVEALS,
   SCREEN_TEMPLATE_TAGS,
   SCREEN_VERSES_PER_SLIDE_MAX,
   SCREEN_TEXT_ANIMATIONS,
-  SCREEN_TEXT_EFFECTS,
-  SCREEN_TRANSITIONS,
   SCREEN_VIDEO_SOURCES,
   ScreenMaskSchema,
   ScreenThemeSchema,
@@ -48,9 +43,11 @@ import {
   type TeamSummary,
 } from "@oneverse/core";
 import { ChevronLeft, ChevronRight, Copy, Minus, Pause, Pencil, Play, Plus, Trash2, TriangleAlert } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
+import { Choices, ColorInput, Field, Group, Slider } from "#/components/screen-editor-fields";
+import { DisplaySettings, ChordSettings, TextMotionSettings } from "#/components/screen-text-editor";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
@@ -62,9 +59,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 
 type Part = Exclude<keyof ScreenTheme, "$schema" | "shows" | "grid" | "masks" | "effects">;
 
-/** A pace that suits each way words appear (ms between pieces): a letter comes far sooner after the last than a line does. */
 const SPEC_ORDER: string[] = Object.keys(SHADER_CONTROLS);
-const REVEAL_PACE: Record<ScreenTheme["motion"]["reveal"], number> = { none: 60, lines: 180, words: 70, letters: 25, typewriter: 18, glow: 90 };
 
 /** What the editor makes (issue #281): a template, or one of its parts. */
 export type EditorKind = "template" | ScreenPartKind;
@@ -326,70 +321,12 @@ export function ScreenThemeEditor({
                 <Group title={t("screens.editor.shows")} open testId="theme-group-shows">
                   <Choices value={theme.shows} options={SCREEN_CONTENT_SHOWS} label={(one) => t(`screens.editor.showsOptions.${one}`)} onChange={(shows) => setTheme((before) => ScreenThemeSchema.parse({ ...before, shows }))} testId="theme-shows" />
                 </Group>
-            <Group title={t("screens.editor.text")} open>
-              <Field label={t("screens.editor.font")}>
-                <NativeSelect value={theme.text.font} onChange={(e) => set("text", { font: e.target.value as ScreenTheme["text"]["font"] })} data-testid="theme-font">
-                  {SCREEN_FONTS.map((font) => (
-                    <option key={font} value={font} style={{ fontFamily: SCREEN_FONT_FAMILIES[font] }}>
-                      {t(`screens.editor.fonts.${font}`)}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label={t("screens.editor.customFont")}>
-                {draft.id ? (
-                  <div className="flex flex-col gap-1.5">
-                    <NativeSelect value={theme.text.customFont ?? ""} onChange={(e) => set("text", { customFont: e.target.value || null })} data-testid="theme-custom-font">
-                      <option value="">{t("screens.editor.customFontNone")}</option>
-                      {assets
-                        .filter((asset) => asset.kind === "font")
-                        .map((asset) => (
-                          <option key={asset.id} value={asset.id}>
-                            {asset.filename}
-                          </option>
-                        ))}
-                    </NativeSelect>
-                    <FileButton accept=".woff2,.woff,.ttf,.otf" busy={uploading === "font"} onFile={(file) => void upload("font", file)} testId="theme-upload-font" />
-                    <span className="text-xs text-muted-foreground">{t("screens.editor.fontHint")}</span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground">{t("screens.editor.saveFirst")}</span>
-                )}
-              </Field>
-              <Field label={t("screens.editor.size")}>
-                <div className="flex items-center gap-2">
-                  <label className="flex shrink-0 items-center gap-1.5 text-xs">
-                    <input type="checkbox" checked={theme.text.size === "auto"} onChange={(e) => set("text", { size: e.target.checked ? "auto" : 7 })} />
-                    {t("screens.editor.sizeAuto")}
-                  </label>
-                  {theme.text.size !== "auto" ? <Slider value={theme.text.size} min={2} max={20} step={0.5} onChange={(size) => set("text", { size })} /> : null}
-                </div>
-              </Field>
-              <Field label={t("screens.editor.weight")}>
-                <Slider value={theme.text.weight} min={100} max={900} step={100} onChange={(weight) => set("text", { weight })} />
-              </Field>
-              <Field label={t("screens.editor.color")}>
-                <div className="flex items-center gap-3">
-                  <ColorInput value={theme.text.color} onChange={(color) => set("text", { color })} testId="theme-text-color" />
-                  <label className="flex items-center gap-1.5 text-xs">
-                    <input type="checkbox" checked={theme.text.upperCase} onChange={(e) => set("text", { upperCase: e.target.checked })} />
-                    {t("screens.editor.upperCase")}
-                  </label>
-                </div>
-              </Field>
-              <Field label={t("screens.editor.effect")}>
-                <Choices value={theme.text.effect} options={SCREEN_TEXT_EFFECTS} label={(one) => t(`screens.editor.effects.${one}`)} onChange={(effect) => set("text", { effect })} />
-              </Field>
-              <Field label={t("screens.editor.align")}>
-                <Choices value={theme.text.align} options={["left", "center", "right"] as const} label={(one) => t(`screens.editor.aligns.${one}`)} onChange={(align) => set("text", { align })} />
-              </Field>
-              <Field label={t("screens.editor.lineHeight")}>
-                <Slider value={theme.text.lineHeight} min={0.8} max={2.5} step={0.05} onChange={(lineHeight) => set("text", { lineHeight })} />
-              </Field>
-              <Field label={t("screens.editor.letterSpacing")}>
-                <Slider value={theme.text.letterSpacing} min={-0.1} max={0.5} step={0.01} onChange={(letterSpacing) => set("text", { letterSpacing })} />
-              </Field>
-            </Group>
+            <DisplaySettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+            <TextMotionSettings
+              theme={theme}
+              onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))}
+              fonts={{ assets, uploading: uploading === "font", onUpload: draft.id ? (file) => void upload("font", file) : null }}
+            />
             <Group title={t("screens.editor.lines")}>
               <Field label={t("screens.editor.group")}>
                 <Choices value={theme.lines.group} options={["slide", "section"] as const} label={(one) => t(`screens.editor.groups.${one}`)} onChange={(group) => set("lines", { group })} />
@@ -415,24 +352,6 @@ export function ScreenThemeEditor({
               <Field label={t("screens.editor.margin")}>
                 <Slider value={theme.layout.margin} min={0} max={20} step={1} unit="%" onChange={(margin) => set("layout", { margin })} />
               </Field>
-            </Group>
-            <Group title={t("screens.editor.motion")} open>
-              <Field label={t("screens.editor.transition")}>
-                <Choices value={theme.motion.transition} options={SCREEN_TRANSITIONS} label={(one) => t(`screens.editor.transitions.${one}`)} onChange={(transition) => set("motion", { transition })} testId="theme-transition" />
-              </Field>
-              {theme.motion.transition !== "cut" ? (
-                <Field label={t("screens.editor.duration")}>
-                  <Slider value={theme.motion.duration} min={100} max={2000} step={50} unit="ms" onChange={(duration) => set("motion", { duration })} />
-                </Field>
-              ) : null}
-              <Field label={t("screens.editor.reveal")}>
-                <Choices value={theme.motion.reveal} options={SCREEN_REVEALS} label={(one) => t(`screens.editor.reveals.${one}`)} onChange={(reveal) => set("motion", { reveal, stagger: REVEAL_PACE[reveal] })} testId="theme-reveal" />
-              </Field>
-              {theme.motion.reveal !== "none" ? (
-                <Field label={t("screens.editor.stagger")}>
-                  <Slider value={theme.motion.stagger} min={0} max={400} step={5} unit="ms" onChange={(stagger) => set("motion", { stagger })} />
-                </Field>
-              ) : null}
             </Group>
             <Group title={t("screens.editor.credits")}>
               <label className="flex items-center gap-2 text-sm">
@@ -465,14 +384,7 @@ export function ScreenThemeEditor({
                 </>
               ) : null}
             </Group>
-            <Group title={t("screens.editor.chords")}>
-              <Field label={t("screens.editor.chordColor")}>
-                <ColorInput value={theme.chords.color} onChange={(color) => set("chords", { color })} />
-              </Field>
-              <Field label={t("screens.editor.chordScale")}>
-                <Slider value={theme.chords.scale} min={0.5} max={2} step={0.05} onChange={(scale) => set("chords", { scale })} />
-              </Field>
-            </Group>
+            <ChordSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
               </>
             ) : null}
             {kind === "background" ? (
@@ -942,72 +854,6 @@ function MasksSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (chang
         <span className="text-xs text-muted-foreground">{t("screens.editor.masksHint")}</span>
       </Field>
     </>
-  );
-}
-
-function Group({ title, open = false, testId, children }: { title: string; open?: boolean; testId?: string; children: ReactNode }) {
-  return (
-    <details open={open} className="group rounded-md border bg-card [&[open]>summary]:border-b" data-testid={testId}>
-      <summary className="cursor-pointer px-3 py-2 text-sm font-semibold select-none">{title}</summary>
-      <div className="flex flex-col gap-3 p-3">{children}</div>
-    </details>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </div>
-  );
-}
-
-function Slider({ value, min, max, step, unit = "", onChange }: { value: number; min: number; max: number; step: number; unit?: string; onChange: (value: number) => void }) {
-  return (
-    <div className="flex w-full items-center gap-2">
-      <input type="range" className="min-w-0 flex-1 accent-primary" value={value} min={min} max={max} step={step} onChange={(e) => onChange(Number(e.target.value))} />
-      <span className="w-14 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-        {Number.isInteger(value) ? value : value.toFixed(2)}
-        {unit}
-      </span>
-    </div>
-  );
-}
-
-function ColorInput({ value, onChange, testId }: { value: string; onChange: (value: string) => void; testId?: string }) {
-  return (
-    <input
-      type="color"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-8 w-10 cursor-pointer rounded border bg-transparent p-0.5"
-      aria-label={value}
-      data-testid={testId}
-    />
-  );
-}
-
-/** One of a few, as buttons side by side; wraps when they don't fit. */
-function Choices<T extends string>({ value, options, label, onChange, testId }: { value: T; options: readonly T[]; label: (one: T) => string; onChange: (value: T) => void; testId?: string }) {
-  return (
-    <div className="flex flex-wrap gap-1" role="group" data-testid={testId}>
-      {options.map((one) => (
-        <button
-          key={one}
-          type="button"
-          aria-pressed={value === one}
-          onClick={() => onChange(one)}
-          data-value={one}
-          className={cn(
-            "h-7 rounded-md border px-2 text-xs font-medium transition-colors",
-            value === one ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          {label(one)}
-        </button>
-      ))}
-    </div>
   );
 }
 
