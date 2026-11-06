@@ -253,12 +253,16 @@ export const SCREEN_WIDGET_KINDS = [
   "date",
   "slide-count",
   "qr-code",
+  "song-title",
+  "credits",
 ] as const;
 export type ScreenWidgetKind = (typeof SCREEN_WIDGET_KINDS)[number];
 /** Where a timer's time comes from: the media operator (issue #269), a length from when the set item came on, a time of day, the song on screen. */
 export const SCREEN_TIMER_SOURCES = ["operator", "duration", "until", "song"] as const;
 /** How the Date widget writes the day (issue #289): "Sunday 20 October", "20 Oct 2026", "20/10/2026", "2026-10-20", or the weekday alone. */
 export const SCREEN_DATE_FORMATS = ["long", "medium", "short", "iso", "weekday"] as const;
+/** On which of a song's slides a widget shows (issue #398): every one, the first, the last, or the first and the last. */
+export const SCREEN_WIDGET_WHEN = ["every", "first", "last", "first-and-last"] as const;
 /** What a QR code widget holds (issue #289): an address, an event, a contact card, a Wi-Fi network. */
 export const SCREEN_QR_KINDS = ["url", "event", "contact", "wifi"] as const;
 /** The most columns or rows a template's grid has. */
@@ -314,6 +318,8 @@ function screenWidgetSchema(strict: boolean) {
       /** Slide count (issue #289): the song's slides or the whole set's, and a progress bar under it. */
       scope: z.enum(["song", "set"]).default("song"),
       progress: z.enum(["none", "thin", "thick"]).default("thin"),
+      /** Song title and credits (issue #398): on which of a song's slides they show. */
+      when: z.enum(SCREEN_WIDGET_WHEN).default("every"),
       /** QR code (issue #289): what it holds; its caption is the label. */
       qr: object({
         kind: z.enum(SCREEN_QR_KINDS).default("url"),
@@ -774,7 +780,36 @@ export function resolveGrid(input: unknown): ScreenTheme["grid"] {
 }
 
 /** The widgets that show the song (issue #280): on the content layer unless they say otherwise; the others are overlays. */
-const CONTENT_WIDGETS: ScreenWidgetKind[] = ["stage", "current-slide", "next-slide", "current-section", "next-section", "song-structure", "song", "next-song", "current-item", "next-item"];
+const CONTENT_WIDGETS: ScreenWidgetKind[] = ["stage", "current-slide", "next-slide", "current-section", "next-section", "song-structure", "song", "next-song", "current-item", "next-item", "song-title", "credits"];
+
+/** Whether a widget shown on some of a song's slides (issue #398) shows on this one, of `count`. */
+export function screenWidgetShows(when: (typeof SCREEN_WIDGET_WHEN)[number], index: number, count: number): boolean {
+  const first = index === 0;
+  const last = index === count - 1;
+  return when === "every" || (when === "first" && first) || (when === "last" && last) || (when === "first-and-last" && (first || last));
+}
+
+/**
+ * A content theme's title and credits as widgets (issue #398), for a template
+ * from before they were widgets: the title in the top row, the credits where
+ * they were (the bottom row, the top, or the lower third), on the slides they
+ * were on. A grid that already has one keeps its own.
+ */
+export function screenTitleWidgets(grid: ScreenTheme["grid"], title: ScreenTheme["title"], credits: ScreenTheme["credits"]): ScreenTheme["grid"] {
+  if (!title.show && !credits.show) return grid;
+  const base = grid ?? screenGridSchema(false).parse({ widgets: [{ id: "stage", kind: "stage", x: 0, y: 0, w: 12, h: 12 }] });
+  const widgets = [...base.widgets];
+  const has = (kind: ScreenWidgetKind) => widgets.some((one) => one.kind === kind);
+  const rows = base.rows;
+  if (title.show && !has("song-title") && widgets.length < 32) {
+    widgets.push(newScreenWidget("song-title", { x: 0, y: 0, w: base.columns, h: 1 }, "song-title", { options: { when: title.when }, style: { font: title.font, size: 55 } }));
+  }
+  if (credits.show && !has("credits") && widgets.length < 32) {
+    const y = credits.where === "top" ? (title.show ? Math.min(1, rows - 1) : 0) : credits.where === "lower-third" ? Math.max(0, Math.round(rows * 0.62)) : rows - 1;
+    widgets.push(newScreenWidget("credits", { x: 0, y, w: base.columns, h: 1 }, "credits", { options: { when: credits.when }, style: { size: 38 } }));
+  }
+  return { ...base, widgets };
+}
 
 /** The layer a widget is on (issue #280): its own, else its kind's. */
 export function screenWidgetLayer(widget: Pick<ScreenWidget, "kind"> & { layer?: ScreenWidget["layer"] }): "content" | "overlays" {

@@ -12,6 +12,7 @@ import {
   resolveScreenTheme,
   screenEffectsSchema,
   screenReactsSchema,
+  screenTitleWidgets,
   type ScreenTheme,
 } from "./theme.js";
 
@@ -86,6 +87,12 @@ function templateSchema(strict: boolean) {
     grid: theme.grid,
     masks: theme.masks,
     versesPerSlide: z.number().int().min(1).max(SCREEN_VERSES_PER_SLIDE_MAX).default(1),
+    /**
+     * The song's title and credits are widgets in the grid (issue #398). A
+     * template from before has its content theme's made widgets when it's
+     * read (screenTitleWidgets); saved again, it has them as widgets.
+     */
+    titleWidgets: z.boolean().default(false),
   });
 }
 
@@ -179,7 +186,10 @@ export function composeScreenTheme(
     // The pulse and the warmer chorus that came with "reactive" before effects: on when the effects make the background react.
     background: { ...look.background, reactive: !!effects && effects.reactions.length > 0 },
     effects: effects ? { reactions: effects.reactions, text: effects.text } : null,
-    grid: template.grid,
+    // The title and credits are widgets (issue #398): the content theme's, made ones for a template from before.
+    title: { ...words.title, show: false },
+    credits: { ...words.credits, show: false },
+    grid: template.titleWidgets ? template.grid : screenTitleWidgets(template.grid, words.title, words.credits),
     masks: template.masks,
   });
 }

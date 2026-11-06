@@ -171,7 +171,6 @@ How the words look, edited from **Content themes** (**New content theme**, or **
   - In **Chorus** or **Bridge**, tick to style it apart: each setting is the default's (shown dashed) until you change it there, and changes add up - a colour, bolder and italic. **Reset** gives one back to the default. A **Mark** sets it apart with a **Bar beside** its lines or a **Band behind** them, a **Tag in the corner** names it, and it can have its own transition into it and within it. Its size never changes.
 - **Lines** - for slides: **The slide**, with the lines before and after it, or **The whole section** with the slide's lines picked out; the lines around them **Dimmed**, **Smaller**, **Blurred** or **Hidden**.
 - **Layout** - top, centre, bottom or **Lower third**, and a **Safe margin** for TVs that crop their edges.
-- **Title and credits** - whether to show the song's title, in a font of its own if you like, and its credits (writers, copyright, CCLI number), on which slides and where.
 - **Chords** - **Chords over the words**: **Above** the syllable each is played on, or **On beats**, a row of beat blocks over each line. Their **Names** in letters, numbers or Do Ré Mi, their size beside the words, **Simpler chords** (G7 as G, no bass notes), **Light the chord being played** while the music is followed, their colour and font, in every display mode, **Charts** too.
 
 The editor checks the contrast between the words and the background and warns when it's under 4.5:1.
@@ -242,6 +241,7 @@ A template can place widgets on a grid: a stage display shows the singers the sl
 - **Count up** - the time since **The song on screen, since it came on**, or since the media operator started it. **Colours by time gone by** works as a countdown's does, once that much time has gone by.
 - **Message** - a short message from the media operator, shown until it's cleared.
 - **Song** and **Next song** - the song's title, with its key and tempo, and what comes next in the set.
+- **Song title** and **Credits** - the song's title, and its credits (writers, copyright, CCLI number), **Shown on** **Every slide**, **The first**, **The last** or **First and last** (new ones: the title on the first, the credits on the first and last). A passage's copyright shows on every slide. A template from before these widgets, which showed its title and credits with the words, has them as widgets: the title in the top row, the credits where they were.
 - **Current item** and **Next item** - what's on in the set and what comes next, songs or not, with **Its place in the set (3 of 8)**.
 - **Text** - words of your own.
 - **Date** - today's date, **Written as** **Sunday 20 October**, **20 Oct 2026**, **20/10/2026**, **2026-10-20** or the weekday alone, **With the time** if you like.

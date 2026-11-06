@@ -26,7 +26,7 @@ import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong,
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenShowsChart, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, sungAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenShowsChart, screenWidgetShows, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, sungAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { readCatalogLinks } from "../songbook-catalog-format/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -1769,6 +1769,19 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "other, labelled Refrain", args: ["other", "Refrain"] },
           { name: "other, labelled Pont", args: ["other", "Pont"] },
           { name: "other, no label", args: ["other", null] },
+        ],
+      },
+      screenWidgetShows: {
+        about: "Whether a Song title or Credits widget (issue #398) shows on a song's slide: on every one, the first, the last, or the first and the last.",
+        params: ["when", "index", "count"],
+        run: screenWidgetShows,
+        cases: [
+          { name: "every slide", args: ["every", 2, 5] },
+          { name: "the first, on the first", args: ["first", 0, 5] },
+          { name: "the first, on another", args: ["first", 1, 5] },
+          { name: "the last, on the last", args: ["last", 4, 5] },
+          { name: "first and last, in the middle", args: ["first-and-last", 2, 5] },
+          { name: "first and last, a song of one slide", args: ["first-and-last", 0, 1] },
         ],
       },
       screenShowsChart: {

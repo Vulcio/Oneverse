@@ -63,6 +63,7 @@ export function ScreenStage({
   videoInput?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const index = song ? Math.max(0, Math.min(slide, song.slides.length - 1)) : 0;
   const current = song?.slides[index];
   const energy = theme.background.reactive ? ENERGY[sectionEnergy(current?.label)] : 0.5;
@@ -167,7 +168,7 @@ export function ScreenStage({
         slides={song && current ? song.slides : null}
         index={index}
         black={dark && grid.black === "words"}
-        live={live}
+        live={song && current ? { ...live, songCredits: { title: song.title, credits: song.attribution ?? (song.credits ? [song.credits.writers.join(", "), song.credits.copyright, song.credits.ccli ? t("screens.ccliSong", { number: song.credits.ccli }) : null].filter(Boolean).join(" · ") : ""), attribution: !!song.attribution } } : live}
         words={words({ ...theme, layout: { ...theme.layout, margin: 2 } })}
       />
     ) : null;
@@ -559,7 +560,8 @@ function Words({ theme, song, index, phase, transition, size }: { theme: ScreenT
   const credits = song.credits;
   const creditsWhen = theme.credits.when;
   // A passage's copyright goes with its words on every slide (issue #301), whatever the theme says of credits.
-  const attribution = song.attribution ?? null;
+  // A Credits widget shows it there instead (issue #398).
+  const attribution = theme.grid?.widgets.some((one) => one.kind === "credits") ? null : (song.attribution ?? null);
   const showCredits =
     !!attribution ||
     (theme.credits.show &&

@@ -102,7 +102,7 @@ try {
     if ((await lines()) !== "Amazing grace / how sweet the sound") throw new Error(await lines());
     if ((await tv.getByTestId("screen-after").innerText()) !== "that saved a wretch") throw new Error("not the next line");
     await tv.getByText(`Grace ${stamp}`, { exact: false }).first().waitFor();
-    await tv.getByTestId("screen-credits").getByText("CCLI song 22025", { exact: false }).waitFor();
+    await tv.locator('[data-testid="widget-credits"], [data-testid="screen-credits"]').getByText("CCLI song 22025", { exact: false }).waitFor();
   });
 
   await step("Next, then the down arrow (a pedal's key): the screen follows, the line before faint", async () => {

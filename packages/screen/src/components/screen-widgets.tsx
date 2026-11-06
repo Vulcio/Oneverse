@@ -1,4 +1,4 @@
-import { formatTimer, placeScreenWidget, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type ScreenLayersShown, type SyncTimer } from "@oneverse/core";
+import { formatTimer, placeScreenWidget, screenWidgetShows, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type ScreenLayersShown, type SyncTimer } from "@oneverse/core";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { renderSVG } from "uqr";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,8 @@ export interface StageLive {
   layers?: ScreenLayersShown;
   /** The set's songs' slide counts, in order, and the one on screen's place among them (issue #289): the Slide count widget's set. */
   setSlides?: { counts: number[]; item: number } | null;
+  /** The song on screen's title and credit line (issue #398), for the Song title and Credits widgets: the stage fills it in. A passage's copyright (attribution) shows on every slide. */
+  songCredits?: { title: string; credits: string; attribution: boolean } | null;
   /** The overlay's title card: the set's name, and its team's. */
   title?: { title: string; subtitle: string | null } | null;
 }
@@ -74,7 +76,7 @@ export function ScreenGrid({
     >
       {grid.widgets.map((widget) => {
         const place = placeScreenWidget(widget, grid);
-        const wordsKind = ["stage", "current-slide", "next-slide", "current-section", "next-section"].includes(widget.kind);
+        const wordsKind = ["stage", "current-slide", "next-slide", "current-section", "next-section", "song-title", "credits"].includes(widget.kind);
         return (
           <WidgetCell key={widget.id} widget={widget} theme={theme} place={place} data-kind={widget.kind}>
             {black && wordsKind ? null : <WidgetBody widget={widget} theme={theme} slides={slides} index={index} live={live} now={now} words={words} />}
@@ -213,6 +215,20 @@ function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget
         "widget-song",
         Math.min(song.title.length, 24),
         options.details && details ? 1.6 : 1,
+      );
+    }
+    case "song-title":
+    case "credits": {
+      // The song's title or its credits (issue #398), on the slides the widget says: a passage's copyright on every one.
+      const song = slides?.[index] ? live.songCredits : null;
+      const words = widget.kind === "song-title" ? song?.title : song?.credits;
+      if (!song || !slides || !words || (!(widget.kind === "credits" && song.attribution) && !screenWidgetShows(options.when, index, slides.length))) return null;
+      return box(
+        <p className={widget.kind === "song-title" ? "font-semibold tracking-[0.12em] uppercase opacity-80" : "opacity-70"} style={{ fontWeight: widget.kind === "credits" ? 400 : undefined }}>
+          {words}
+        </p>,
+        `widget-${widget.kind}`,
+        Math.min(words.length, widget.kind === "credits" ? 90 : 40),
       );
     }
     case "next-song": {

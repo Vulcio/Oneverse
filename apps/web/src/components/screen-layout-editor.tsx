@@ -8,6 +8,7 @@ import {
   SCREEN_GRID_MAX,
   SCREEN_LAYOUT_PRESETS,
   SCREEN_WIDGET_KINDS,
+  SCREEN_WIDGET_WHEN,
   screenWidgetLayer,
   type ScreenTheme,
   type ScreenWidget,
@@ -22,6 +23,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { cn } from "@oneverse/ui/lib/utils";
+import { Choices } from "#/components/screen-editor-fields";
 
 export type Grid = NonNullable<ScreenTheme["grid"]>;
 
@@ -57,7 +59,12 @@ const SIZES: Record<ScreenWidgetKind, [number, number]> = {
   date: [4, 2],
   "slide-count": [3, 2],
   "qr-code": [2, 4],
+  "song-title": [12, 1],
+  credits: [12, 1],
 };
+
+/** A new Song title shows on a song's first slide, new Credits on its first and last (issue #398), as the content theme's did. */
+const FIRST_WHEN: Partial<Record<ScreenWidgetKind, ScreenWidget["options"]["when"]>> = { "song-title": "first", credits: "first-and-last" };
 
 /**
  * A template's layout (issue #268), in the editor's settings: a ready-made
@@ -87,7 +94,8 @@ export function LayoutSettings({
     const w = Math.max(1, Math.round((SIZES[kind][0] * base.columns) / 12));
     const h = Math.max(1, Math.round((SIZES[kind][1] * base.rows) / 12));
     const id = `${kind}-${Math.random().toString(36).slice(2, 8)}`;
-    onGrid({ ...base, widgets: [...base.widgets, newScreenWidget(kind, { ...freeSpot(base, w, h), w, h }, id, lookFor?.(kind) ?? {})] });
+    const when = FIRST_WHEN[kind];
+    onGrid({ ...base, widgets: [...base.widgets, newScreenWidget(kind, { ...freeSpot(base, w, h), w, h }, id, lookFor?.(kind) ?? (when ? { options: { when } } : {}))] });
     onSelect(id);
   }
 
@@ -312,6 +320,11 @@ export function WidgetSettings({ widget, onChange, layered = false }: { widget: 
         </>
       ) : null}
       {kind === "qr-code" ? <QrSettings qr={widget.options.qr} onChange={(change) => options({ qr: { ...widget.options.qr, ...change } })} /> : null}
+      {kind === "song-title" || kind === "credits" ? (
+        <Field label={t("screens.editor.widgetWhen")}>
+          <Choices value={widget.options.when} options={SCREEN_WIDGET_WHEN} label={(one) => t(`screens.editor.widgetWhens.${one}`)} onChange={(when) => options({ when })} testId="theme-widget-when" />
+        </Field>
+      ) : null}
       {kind === "song" ? <Check label={t("screens.editor.songDetails")} checked={widget.options.details} onChange={(details) => options({ details })} /> : null}
       {kind === "analog-clock" ? <Check label={t("screens.editor.secondHand")} checked={widget.options.seconds} onChange={(seconds) => options({ seconds })} testId="theme-widget-seconds" /> : null}
       {kind === "song-structure" ? <Check label={t("screens.editor.structureProgress")} checked={widget.options.details} onChange={(details) => options({ details })} /> : null}

@@ -171,7 +171,6 @@ L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thè
   - Dans **Refrain** ou **Pont**, cochez pour le styliser à part : chaque réglage reprend celui par défaut (en pointillés) tant que vous ne le changez pas, et les changements s'additionnent - une couleur, plus gras et en italique. **Rétablir** le rend au réglage par défaut. Une **Marque** le distingue avec une **Barre à côté** de ses lignes ou une **Bande derrière**, une **Étiquette dans le coin** le nomme, et il peut avoir sa propre transition vers lui et en son sein. Sa taille ne change jamais.
 - **Lignes** - pour les diapositives : **La diapositive**, avec les lignes d'avant et d'après, ou **Toute la partie** avec les lignes de la diapositive mises en avant ; les lignes autour **Atténuées**, **Plus petites**, **Floues** ou **Masquées**.
 - **Mise en page** - en haut, au centre, en bas ou **Tiers inférieur**, et une **Marge de sécurité** pour les téléviseurs qui rognent les bords.
-- **Titre et crédits** - afficher ou non le titre du chant, dans sa propre police si vous voulez, et ses crédits (auteurs, copyright, numéro CCLI), sur quelles diapositives et où.
 - **Accords** - **Accords sur les paroles** : **Au-dessus** de la syllabe où chacun est joué, ou **Sur les temps**, une rangée de blocs de temps au-dessus de chaque ligne. Leurs **Noms** en lettres, en chiffres ou en Do Ré Mi, leur taille par rapport aux paroles, **Accords simplifiés** (G7 en G, sans basse), **Éclairer l'accord joué** quand la musique est suivie, leur couleur et leur police, dans tous les affichages, **Grilles d'accords** comprises.
 
 L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1.
@@ -242,6 +241,7 @@ Un modèle peut placer des widgets sur une grille : un affichage de scène montr
 - **Chronomètre** - le temps écoulé depuis **Le chant à l'écran, depuis son arrivée**, ou depuis que l'opérateur média l'a lancé. **Couleurs selon le temps écoulé** fonctionne comme pour un compte à rebours, une fois ce temps passé.
 - **Message** - un court message de l'opérateur média, affiché jusqu'à ce qu'il l'efface.
 - **Chant** et **Chant suivant** - le titre du chant, avec sa tonalité et son tempo, et ce qui vient ensuite dans la liste.
+- **Titre du chant** et **Crédits** - le titre du chant, et ses crédits (auteurs, copyright, numéro CCLI), **Affiché sur** **Chaque diapositive**, **La première**, **La dernière** ou **Première et dernière** (à l'ajout : le titre sur la première, les crédits sur la première et la dernière). Le copyright d'un passage s'affiche sur chaque diapositive. Un modèle d'avant ces widgets, qui affichait son titre et ses crédits avec les paroles, les a en widgets : le titre sur la rangée du haut, les crédits là où ils étaient.
 - **Élément en cours** et **Élément suivant** - ce qui se passe dans la liste et ce qui vient ensuite, chants ou non, avec **Sa place dans la liste (3 sur 8)**.
 - **Texte** - vos propres mots.
 - **Date** - la date du jour, **Écrite** **dimanche 20 octobre**, **20 oct. 2026**, **20/10/2026**, **2026-10-20** ou le jour seul, **Avec l'heure** si vous le souhaitez.

@@ -76,6 +76,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
     versesPerSlide: from?.template.versesPerSlide ?? 1,
     grid: from?.template.grid ?? null,
     masks: from?.template.masks ?? [],
+    titleWidgets: from?.template.titleWidgets ?? true,
     refs: from
       ? { content: { builtIn: from.content }, background: { builtIn: from.background }, effects: from.effects ? { builtIn: from.effects } : null }
       : { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null },
@@ -124,7 +125,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
                               size="sm"
                               variant="outline"
                               onClick={() =>
-                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, refs: theme.parts })
+                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, titleWidgets: theme.template.titleWidgets, refs: theme.parts })
                               }
                               data-testid="edit-theme"
                             >

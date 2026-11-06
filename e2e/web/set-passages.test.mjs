@@ -107,7 +107,7 @@ try {
     leading.send({ type: "update", presenting: { itemId: passageId, slide: 1, black: false } });
     await tv.locator(`[data-testid="screen-showing"][data-item="${passageId}"]`).waitFor({ timeout: 10000 });
     await tv.getByTestId("screen-lines").getByText("He maketh me to lie down in green").waitFor({ timeout: 5000 });
-    await tv.getByTestId("screen-credits").getByText("Public Domain").waitFor();
+    await tv.locator('[data-testid="widget-credits"], [data-testid="screen-credits"]').getByText("Public Domain").waitFor();
   });
 
   await step("the operator's page: the passage in the set's list, a slide a verse, the one on the screens", async () => {

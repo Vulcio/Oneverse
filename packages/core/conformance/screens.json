@@ -1204,6 +1204,70 @@
         }
       ]
     },
+    "screenWidgetShows": {
+      "about": "Whether a Song title or Credits widget (issue #398) shows on a song's slide: on every one, the first, the last, or the first and the last.",
+      "params": [
+        "when",
+        "index",
+        "count"
+      ],
+      "cases": [
+        {
+          "name": "every slide",
+          "args": [
+            "every",
+            2,
+            5
+          ],
+          "expected": true
+        },
+        {
+          "name": "the first, on the first",
+          "args": [
+            "first",
+            0,
+            5
+          ],
+          "expected": true
+        },
+        {
+          "name": "the first, on another",
+          "args": [
+            "first",
+            1,
+            5
+          ],
+          "expected": false
+        },
+        {
+          "name": "the last, on the last",
+          "args": [
+            "last",
+            4,
+            5
+          ],
+          "expected": true
+        },
+        {
+          "name": "first and last, in the middle",
+          "args": [
+            "first-and-last",
+            2,
+            5
+          ],
+          "expected": false
+        },
+        {
+          "name": "first and last, a song of one slide",
+          "args": [
+            "first-and-last",
+            0,
+            1
+          ],
+          "expected": true
+        }
+      ]
+    },
     "screenShowsChart": {
       "about": "Whether a content theme shows the chord chart (issue #398): its Charts display mode, or - as themes before it said - shows set to chart.",
       "params": [
@@ -2875,6 +2939,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -3217,6 +3282,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -3593,12 +3659,12 @@
               }
             },
             "title": {
-              "show": true,
+              "show": false,
               "font": null,
               "when": "first"
             },
             "credits": {
-              "show": true,
+              "show": false,
               "where": "bottom",
               "when": "first-and-last"
             },
@@ -3650,6 +3716,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -3673,6 +3740,110 @@
                     "opacity": 0,
                     "align": "center",
                     "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song-title",
+                  "kind": "song-title",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 55,
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "credits",
+                  "kind": "credits",
+                  "layer": null,
+                  "x": 0,
+                  "y": 11,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first-and-last",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 38,
                     "radius": 1
                   }
                 }
@@ -3802,12 +3973,12 @@
               }
             },
             "title": {
-              "show": true,
+              "show": false,
               "font": null,
               "when": "first"
             },
             "credits": {
-              "show": true,
+              "show": false,
               "where": "bottom",
               "when": "first-and-last"
             },
@@ -3828,7 +3999,170 @@
               "simple": false,
               "current": true
             },
-            "grid": null,
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "stage",
+                  "kind": "stage",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 12,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "every",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song-title",
+                  "kind": "song-title",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 55,
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "credits",
+                  "kind": "credits",
+                  "layer": null,
+                  "x": 0,
+                  "y": 11,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first-and-last",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 38,
+                    "radius": 1
+                  }
+                }
+              ]
+            },
             "masks": [],
             "shows": "lyrics",
             "reacts": {
@@ -3931,12 +4265,12 @@
               }
             },
             "title": {
-              "show": true,
+              "show": false,
               "font": null,
               "when": "first"
             },
             "credits": {
-              "show": true,
+              "show": false,
               "where": "bottom",
               "when": "first-and-last"
             },
@@ -3957,7 +4291,170 @@
               "simple": false,
               "current": true
             },
-            "grid": null,
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "stage",
+                  "kind": "stage",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 12,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "every",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song-title",
+                  "kind": "song-title",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 55,
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "credits",
+                  "kind": "credits",
+                  "layer": null,
+                  "x": 0,
+                  "y": 11,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first-and-last",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 38,
+                    "radius": 1
+                  }
+                }
+              ]
+            },
             "masks": [],
             "shows": "chart",
             "reacts": {
@@ -4060,12 +4557,12 @@
               }
             },
             "title": {
-              "show": true,
+              "show": false,
               "font": null,
               "when": "first"
             },
             "credits": {
-              "show": true,
+              "show": false,
               "where": "bottom",
               "when": "first-and-last"
             },
@@ -4086,7 +4583,170 @@
               "simple": false,
               "current": true
             },
-            "grid": null,
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "stage",
+                  "kind": "stage",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 12,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "every",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song-title",
+                  "kind": "song-title",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 55,
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "credits",
+                  "kind": "credits",
+                  "layer": null,
+                  "x": 0,
+                  "y": 11,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first-and-last",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 38,
+                    "radius": 1
+                  }
+                }
+              ]
+            },
             "masks": [],
             "shows": "lyrics",
             "reacts": {
@@ -4234,7 +4894,8 @@
               "tags": [],
               "grid": null,
               "masks": [],
-              "versesPerSlide": 1
+              "versesPerSlide": 1,
+              "titleWidgets": false
             }
           }
         },
@@ -4437,6 +5098,7 @@
                       "time": false,
                       "scope": "song",
                       "progress": "thin",
+                      "when": "every",
                       "qr": {
                         "kind": "url",
                         "url": "",
@@ -4466,7 +5128,8 @@
                 ]
               },
               "masks": [],
-              "versesPerSlide": 1
+              "versesPerSlide": 1,
+              "titleWidgets": false
             }
           }
         }
@@ -4558,7 +5221,8 @@
             ],
             "grid": null,
             "masks": [],
-            "versesPerSlide": 1
+            "versesPerSlide": 1,
+            "titleWidgets": false
           }
         },
         {
@@ -4595,7 +5259,8 @@
                 "feather": 0
               }
             ],
-            "versesPerSlide": 1
+            "versesPerSlide": 1,
+            "titleWidgets": false
           }
         },
         {
@@ -4615,7 +5280,8 @@
             ],
             "grid": null,
             "masks": [],
-            "versesPerSlide": 3
+            "versesPerSlide": 3,
+            "titleWidgets": false
           }
         },
         {
@@ -4630,7 +5296,8 @@
             "tags": [],
             "grid": null,
             "masks": [],
-            "versesPerSlide": 1
+            "versesPerSlide": 1,
+            "titleWidgets": false
           }
         }
       ]
@@ -6021,6 +6688,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6072,6 +6740,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6137,6 +6806,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6188,6 +6858,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6239,6 +6910,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6290,6 +6962,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6341,6 +7014,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6392,6 +7066,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -6443,6 +7118,7 @@
                   "time": false,
                   "scope": "song",
                   "progress": "thin",
+                  "when": "every",
                   "qr": {
                     "kind": "url",
                     "url": "",
@@ -8191,6 +8867,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -8242,6 +8919,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -8293,6 +8971,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -8344,6 +9023,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -8395,6 +9075,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -8446,6 +9127,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",
@@ -8497,6 +9179,7 @@
                     "time": false,
                     "scope": "song",
                     "progress": "thin",
+                    "when": "every",
                     "qr": {
                       "kind": "url",
                       "url": "",

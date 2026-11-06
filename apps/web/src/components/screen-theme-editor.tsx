@@ -82,6 +82,8 @@ export interface ThemeDraft {
   versesPerSlide?: number;
   grid?: ScreenTheme["grid"];
   masks?: ScreenMask[];
+  /** The title and credits are widgets in its grid (issue #398); false, a template from before: its content theme's are made widgets. */
+  titleWidgets?: boolean;
   refs?: TemplateRefs;
   /** A part's document. */
   document?: unknown;
@@ -102,9 +104,16 @@ const PREVIEW_WITH: Record<ScreenPartKind, TemplateRefs> = {
   effects: { content: { builtIn: "classic" }, background: { builtIn: "concert" }, effects: null },
 };
 
-/** The part a full theme holds, for saving: its words, its background, or its effects. */
-function extractPart(kind: ScreenPartKind, theme: ScreenTheme): unknown {
-  if (kind === "content") return { shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords, display: theme.display, sections: theme.sections };
+/**
+ * The part a full theme holds, for saving: its words, its background, or its effects.
+ * A content theme's title and credits are widgets now (issue #398): they're kept as
+ * the part had them (templates from before make them widgets), off in a new one.
+ */
+function extractPart(kind: ScreenPartKind, theme: ScreenTheme, original?: unknown): unknown {
+  if (kind === "content") {
+    const before = original && typeof original === "object" ? (original as { title?: unknown; credits?: unknown }) : {};
+    return { shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: before.title ?? { show: false }, credits: before.credits ?? { show: false }, motion: theme.motion, chords: theme.chords, display: theme.display, sections: theme.sections };
+  }
   if (kind === "background") return { base: theme.base, video: theme.video, background: { ...theme.background, reactive: false }, reacts: theme.reacts };
   return { reactions: theme.effects?.reactions ?? [], text: theme.effects?.text ?? {} };
 }
@@ -146,7 +155,7 @@ export function ScreenThemeEditor({
   const [refs, setRefs] = useState<TemplateRefs>(draft.refs ?? { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null });
   const [tags, setTags] = useState<ScreenTemplateTag[]>(draft.tags ?? []);
   const [versesPerSlide, setVersesPerSlide] = useState(draft.versesPerSlide ?? 1);
-  const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[] }, own?: unknown) =>
+  const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[]; titleWidgets: boolean }, own?: unknown) =>
     composeScreenTheme({
       content: kind === "content" ? own : partDocument("content", with_.content, parts),
       background: kind === "background" ? own : partDocument("background", with_.background, parts),
@@ -155,8 +164,8 @@ export function ScreenThemeEditor({
     });
   const [theme, setTheme] = useState<ScreenTheme>(() =>
     kind === "template"
-      ? compose(refs, { grid: draft.grid ?? null, masks: draft.masks ?? [] })
-      : compose(context ?? PREVIEW_WITH[kind], { grid: context?.grid ?? null, masks: context?.masks ?? [] }, draft.document ?? {}),
+      ? compose(refs, { grid: draft.grid ?? null, masks: draft.masks ?? [], titleWidgets: draft.titleWidgets ?? true })
+      : compose(context ?? PREVIEW_WITH[kind], { grid: context?.grid ?? null, masks: context?.masks ?? [], titleWidgets: true }, draft.document ?? {}),
   );
   const [name, setName] = useState(draft.name);
   const [owner, setOwner] = useState(draft.ownerTeamId ?? "");
@@ -195,7 +204,7 @@ export function ScreenThemeEditor({
   function pickPart(slot: ScreenPartKind, ref: ScreenPartRef | null) {
     const next = { ...refs, [slot]: ref } as TemplateRefs;
     setRefs(next);
-    setTheme((before) => compose(next, { grid: before.grid, masks: before.masks }));
+    setTheme((before) => compose(next, { grid: before.grid, masks: before.masks, titleWidgets: true }));
   }
 
   async function save(asNew: boolean) {
@@ -204,10 +213,10 @@ export function ScreenThemeEditor({
     try {
       let saved: ScreenThemeSummary | ScreenPartSummary;
       if (kind === "template") {
-        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide }, content: refs.content, background: refs.background, effects: refs.effects };
+        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide, titleWidgets: true }, content: refs.content, background: refs.background, effects: refs.effects };
         saved = draft.id && !asNew ? await apiClient.updateScreenTheme(draft.id, body) : await apiClient.createScreenTheme({ ...body, ...(teamId && { teamId }) });
       } else {
-        const document = extractPart(kind, theme) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
+        const document = extractPart(kind, theme, draft.document) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
         saved = draft.id && !asNew ? await apiClient.updateScreenPart(draft.id, { name: name.trim(), document }) : await apiClient.createScreenPart({ kind, name: name.trim(), document, ...(teamId && { teamId }) });
       }
       onSaved(saved);
@@ -388,42 +397,6 @@ export function ScreenThemeEditor({
               <Field label={t("screens.editor.margin")}>
                 <Slider value={theme.layout.margin} min={0} max={20} step={1} unit="%" onChange={(margin) => set("layout", { margin })} />
               </Field>
-            </Group>
-            <Group title={t("screens.editor.credits")}>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={theme.title.show} onChange={(e) => set("title", { show: e.target.checked })} />
-                {t("screens.editor.showTitle")}
-              </label>
-              {theme.title.show ? (
-                <>
-                  <Field label={t("screens.editor.when")}>
-                    <Choices value={theme.title.when} options={["first", "every"] as const} label={(one) => t(`screens.editor.whens.${one}`)} onChange={(when) => set("title", { when })} />
-                  </Field>
-                  <Field label={t("screens.editor.titleFont")}>
-                    <FontSelect value={theme.title.font} onChange={(font) => set("title", { font })} testId="theme-title-font" />
-                  </Field>
-                </>
-              ) : null}
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={theme.credits.show} onChange={(e) => set("credits", { show: e.target.checked })} />
-                {t("screens.editor.showCredits")}
-              </label>
-              {theme.credits.show ? (
-                <>
-                  <Field label={t("screens.editor.when")}>
-                    <NativeSelect value={theme.credits.when} onChange={(e) => set("credits", { when: e.target.value as ScreenTheme["credits"]["when"] })}>
-                      {(["first", "last", "first-and-last", "every"] as const).map((when) => (
-                        <option key={when} value={when}>
-                          {t(`screens.editor.whens.${when}`)}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </Field>
-                  <Field label={t("screens.editor.where")}>
-                    <Choices value={theme.credits.where} options={["bottom", "top", "lower-third"] as const} label={(one) => t(`screens.editor.wheres.${one}`)} onChange={(where) => set("credits", { where })} />
-                  </Field>
-                </>
-              ) : null}
             </Group>
             <ChordSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
               </>
@@ -647,7 +620,7 @@ export function ScreenThemeEditor({
             const part = saved as ScreenPartSummary;
             setSavedHere((before) => [part, ...before.filter((one) => one.id !== part.id)]);
             pickPart(part.kind, { id: part.id });
-            setTheme((before) => composeScreenTheme({ ...splitParts(before), [part.kind]: part.document, template: { grid: before.grid, masks: before.masks } }));
+            setTheme((before) => composeScreenTheme({ ...splitParts(before), [part.kind]: part.document, template: { grid: before.grid, masks: before.masks, titleWidgets: true } }));
             onSaved(saved);
           }}
         />
