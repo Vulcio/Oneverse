@@ -175,7 +175,12 @@ try {
   provider.setDown(true);
   r = await call(someone, "GET", `/plugins/chords/search?${new URLSearchParams({ title: "grace" })}`);
   check("down: Find chords says so, without a crash", r.status === 503, JSON.stringify(r.body));
-  found = await plugin();
+  // Kept after the answer, not before it: read again for a moment.
+  for (let i = 0; i < 30; i++) {
+    found = await plugin();
+    if (found.sources[0].lastError) break;
+    await new Promise((done) => setTimeout(done, 100));
+  }
   check("its error shown in Admin", /answered 503: Down for maintenance/.test(found.sources[0].lastError ?? ""), JSON.stringify(found.sources[0]));
   r = await call(admin, "POST", `/admin/plugins/song-provider/sources/${source.id}/test`);
   check("Test connection says what's wrong", r.status === 200 && r.body.ok === false && /503/.test(r.body.message), JSON.stringify(r.body));
