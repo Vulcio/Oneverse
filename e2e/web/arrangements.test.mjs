@@ -166,21 +166,29 @@ await step("a player hides a chord for themselves only", async () => {
   await chord("F#m").first().waitFor();
 });
 
+// A dashboard setting kept: saved, and the page reloaded with it (the selects are off while it saves).
+const saved = (select, value) =>
+  page.waitForFunction(([css, want]) => {
+    const element = document.querySelector(css);
+    return element && !element.disabled && element.value === want;
+  }, [select, value], { timeout: 10000 });
+
 await step("chord names and capo display are also set from the dashboard", async () => {
   await page.goto(`${WEB}/dashboard`);
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Chord names").selectOption({ label: "Solfège (Do Ré Mi)" });
+  await saved("#chord-notation", "SOLFEGE");
   await page.getByLabel("With a capo").selectOption({ label: "Shapes to play" });
-  await page.waitForLoadState("networkidle");
+  await saved("#capo-display", "FINGERED");
   await page.goto(`${WEB}/sets/${set.id}/songs/${itemId}`);
   await page.waitForLoadState("networkidle");
   await chord("Mim").first().waitFor(); // F#m as capo 2 shapes (Em), in solfège
   await page.goto(`${WEB}/dashboard`);
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Chord names").selectOption({ label: "Letters (C D E)" });
-  await page.waitForLoadState("networkidle");
+  await saved("#chord-notation", "LETTERS");
   await page.getByLabel("With a capo").selectOption({ label: "Chords as they sound" });
-  await page.waitForLoadState("networkidle");
+  await saved("#capo-display", "SOUNDING");
 });
 
 await step("the song's own capo is only a suggestion", async () => {

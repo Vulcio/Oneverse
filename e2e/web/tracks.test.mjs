@@ -88,11 +88,15 @@ try {
         const context = canvas.getContext("2d");
         const { width, height } = canvas;
         const grab = () => context.getImageData(0, 0, width, height).data;
+        const frame = () => new Promise((done) => requestAnimationFrame(done));
+        // The zoom's label changes before the lane is drawn at the new scale: a few frames first, or the picture
+        // before is still the 16 s one and no shift matches.
+        for (let k = 0; k < 4; k++) await frame();
         const before = grab();
         // A few frames, about 150 ms: on a slow runner 12 frames scrolled further than the shifts tried below, and
         // the best of those was then a wrong one.
         const from = performance.now();
-        for (let k = 0; k < 2 || performance.now() - from < 150; k++) await new Promise((done) => requestAnimationFrame(done));
+        for (let k = 0; k < 2 || performance.now() - from < 150; k++) await frame();
         const after = grab();
         const right = Math.floor(width / 5) - 10;
         // The strip before the playhead is narrow (a fifth): only shifts that leave most of it to compare count, and the
