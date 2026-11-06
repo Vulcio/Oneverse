@@ -104,7 +104,7 @@ const PREVIEW_WITH: Record<ScreenPartKind, TemplateRefs> = {
 
 /** The part a full theme holds, for saving: its words, its background, or its effects. */
 function extractPart(kind: ScreenPartKind, theme: ScreenTheme): unknown {
-  if (kind === "content") return { shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords };
+  if (kind === "content") return { shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords, display: theme.display, sections: theme.sections };
   if (kind === "background") return { base: theme.base, video: theme.video, background: { ...theme.background, reactive: false }, reacts: theme.reacts };
   return { reactions: theme.effects?.reactions ?? [], text: theme.effects?.text ?? {} };
 }
