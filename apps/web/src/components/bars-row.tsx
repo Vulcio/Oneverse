@@ -116,6 +116,9 @@ export function BarsRow({
       element.dataset.position = "";
       return;
     }
+    // Resized (a phone turned, the window narrowed): checked again at the next frame, not the next beat.
+    const resized = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => (shownBeat = Number.NaN));
+    resized?.observe(element);
     let frame = requestAnimationFrame(function tick() {
       const at = position();
       const whole = Math.floor(at);
@@ -145,6 +148,7 @@ export function BarsRow({
     });
     return () => {
       cancelAnimationFrame(frame);
+      resized?.disconnect();
       light(null);
     };
   }, [position, bars]);
