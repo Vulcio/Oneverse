@@ -337,7 +337,72 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
   { id: "neural", content: "classic", background: "neuro-noise", effects: "nerves", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"], madeFor: ["songs"] }) },
   // For a passage (issue #310): the chapel's look, two verses a slide.
   { id: "scripture", content: "chapel", background: "chapel", effects: null, template: ScreenTemplateSchema.parse({ tags: ["audience", "scripture"], versesPerSlide: 2, madeFor: ["scripture"] }) },
+  // For a passage on the singers' and speakers' screen (issue #402): the stage display's, the reference where the song was.
+  {
+    id: "stage-scripture",
+    content: "stage-display",
+    background: "stage-display",
+    effects: null,
+    template: ScreenTemplateSchema.parse({
+      tags: ["stage", "scripture"],
+      madeFor: ["scripture"],
+      titleWidgets: true,
+      grid: {
+        black: "words",
+        widgets: [
+          { id: "current", kind: "current-slide", x: 0, y: 0, w: 8, h: 7 },
+          { id: "next", kind: "next-slide", x: 0, y: 7, w: 8, h: 3, style: { color: "#a3a3a3" } },
+          { id: "clock", kind: "clock", x: 8, y: 0, w: 4, h: 2, options: { seconds: true } },
+          { id: "countdown", kind: "countdown", x: 8, y: 2, w: 4, h: 4, style: { opacity: 0.5, background: "#1f2937" } },
+          { id: "reference", kind: "song-title", x: 8, y: 6, w: 4, h: 2, options: { when: "every" } },
+          { id: "next-item", kind: "next-item", x: 8, y: 8, w: 4, h: 2, style: { color: "#a3a3a3" } },
+          { id: "message", kind: "message", x: 0, y: 10, w: 12, h: 2, style: { background: "#b91c1c", opacity: 0.9, color: "#ffffff" } },
+        ],
+      },
+    }),
+  },
+  // For a passage over a stream (issue #402): the stream's lower third, its reference under it.
+  {
+    id: "stream-scripture",
+    content: "stream",
+    background: "stream",
+    effects: null,
+    template: ScreenTemplateSchema.parse({
+      tags: ["presentation", "scripture"],
+      madeFor: ["scripture"],
+      titleWidgets: true,
+      grid: {
+        widgets: [
+          { id: "words", kind: "stage", x: 0, y: 0, w: 12, h: 10 },
+          { id: "reference", kind: "song-title", x: 0, y: 10, w: 12, h: 1, options: { when: "every" } },
+        ],
+      },
+    }),
+  },
 ];
+
+/**
+ * Whether a template is made for a kind of content (issue #402): what it
+ * says it's made for, else (a template from before) its Scripture tag for
+ * passages; one made for nothing in particular is for anything.
+ */
+export function screenTemplateFor(template: { tags?: readonly string[]; madeFor?: readonly string[] }, kind: ScreenContentKind): boolean {
+  if (template.madeFor?.length) return template.madeFor.includes(kind);
+  return kind === "scripture" ? !!template.tags?.includes("scripture") : !template.tags?.includes("scripture");
+}
+
+/**
+ * What a screen is for (issue #402), picked when it's paired: the built-in
+ * templates it starts with, for songs and for Bible passages (null: the
+ * default look). Changed afterwards in its settings.
+ */
+export const SCREEN_ROLES = {
+  audience: { songs: null, scripture: "scripture" },
+  stage: { songs: "stage-display", scripture: "stage-scripture" },
+  stream: { songs: "stream", scripture: "stream-scripture" },
+  band: { songs: "band-chart", scripture: "stage-scripture" },
+} as const satisfies Record<string, { songs: string | null; scripture: string }>;
+export type ScreenRole = keyof typeof SCREEN_ROLES;
 
 export function screenBuiltInPart(kind: "content", id: string | null | undefined): ScreenContentTheme | undefined;
 export function screenBuiltInPart(kind: "background", id: string | null | undefined): ScreenBackgroundTheme | undefined;

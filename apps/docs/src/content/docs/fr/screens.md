@@ -12,7 +12,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
    ![Un écran affichant son code](../../../assets/screenshots/fr/screen-code.jpg)
 
 2. Sur votre téléphone ou votre tablette, scannez le code QR, ou ouvrez **Écrans** - sous **Outils** dans la barre latérale, ou depuis le menu Synchro de Live (**Écrans…**) - et saisissez le code.
-3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche - une des vôtres, ou **La liste du jour (automatique)** (voir [plus bas](/fr/screens/#la-liste-du-jour)) **Associé pour** dit combien de temps il le reste : **Sans limite**, ou **12 heures**, **1 jour** ou **1 semaine** pour l'ordinateur d'un intervenant ou l'écran d'une salle louée (voir [Pour un temps, ou pour plusieurs](/fr/screens/#pour-un-temps-ou-pour-plusieurs)). Puis **Associer l'écran**. Ce qu'il affiche - les paroles ou la grille des musiciens - vient de son [modèle](/fr/screens/#modèles).
+3. Donnez un **Nom** à l'écran (« Télé de l'église »), choisissez la **Liste** qu'il affiche - une des vôtres, ou **La liste du jour (automatique)** (voir [plus bas](/fr/screens/#la-liste-du-jour)) **Associé pour** dit combien de temps il le reste : **Sans limite**, ou **12 heures**, **1 jour** ou **1 semaine** pour l'ordinateur d'un intervenant ou l'écran d'une salle louée (voir [Pour un temps, ou pour plusieurs](/fr/screens/#pour-un-temps-ou-pour-plusieurs)). **Utilisé pour** choisit les modèles avec lesquels il commence, pour les chants et pour les passages bibliques : **Assemblée** (Classique et Écriture), **Scène** (Affichage de scène et Écriture sur scène), **Diffusion** (Diffusion et Écriture en diffusion) ou **Musiciens** (Grille du groupe et Écriture sur scène) ; changez-les plus tard dans ses **Réglages**. Puis **Associer l'écran**. Ce qu'il affiche - les paroles ou la grille des musiciens - vient de son [modèle](/fr/screens/#modèles).
 
    ![Associer un écran](../../../assets/screenshots/fr/screens-pair.jpg)
 
@@ -39,7 +39,8 @@ L'écran a son propre menu, pour qui se trouve à côté, même pendant qu'une l
 ![Le menu de l'écran, par-dessus les paroles](../../../assets/screenshots/fr/screen-menu.jpg)
 
 - **Choisir une liste** ouvre la liste des listes ci-dessus. Sur un écran à liste fixe, il est grisé : changez cette liste depuis **Écrans**.
-- **Thème** propose les modèles **Intégrés** et les **Thèmes enregistrés** du propriétaire, celui utilisé étant marqué. Choisissez-en un avec **OK** et l'écran change aussitôt. Il garde ce thème, comme s'il avait été choisi dans les **Réglages** de sa vignette.
+- **Modèle des chants** propose les modèles **Intégrés** et les **Modèles enregistrés** du propriétaire, celui utilisé étant marqué. Choisissez-en un avec **OK** et l'écran change aussitôt. Il garde ce modèle, comme s'il avait été choisi dans les **Réglages** de sa vignette.
+- **Modèle des passages bibliques** fait de même pour les passages qui n'ont pas leur propre modèle, ceux pour les Écritures d'abord ; **Comme les chants** les affiche avec le modèle des chants.
 - **Entrée vidéo**, avec un modèle qui en affiche une (voir [Calques](/fr/screens/#calques)), liste les caméras et cartes de capture de l'appareil : **La première caméra disponible**, ou l'une d'elles par son nom. L'écran garde celle choisie, sur cet appareil. Le navigateur demande l'autorisation d'utiliser la caméra la première fois.
 - **Profils** liste les profils de l'écran, un pour chaque fois qu'il a été associé, celui affiché étant marqué : choisissez-en un autre et l'écran l'affiche. **L'associer à nouveau** affiche un code pour un de plus (voir [Pour un temps, ou pour plusieurs](/fr/screens/#pour-un-temps-ou-pour-plusieurs)).
 - **Retour** sort des thèmes, des caméras ou des profils, et Retour (Échap) ou **Fermer** ferme le menu.
@@ -134,6 +135,8 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 - **Retour de scène** - de grandes majuscules en haut et toute la partie, pour les musiciens.
 - **Grille du groupe** - la grille du chant avec ses accords, la partie chantée en vue, pour les musiciens.
 - **Écriture** - pour un passage de la Bible : le style chapelle, deux versets par diapositive.
+- **Écriture sur scène** - pour un passage biblique sur l'écran de scène : les versets en cours et suivants, la référence, l'horloge et un minuteur.
+- **Écriture en diffusion** - pour un passage biblique sur une diffusion : le verset en bas de l'image, sa référence en dessous.
 - **Dérive** - des couleurs qui coulent lentement, accélèrent à chaque diapositive, puis se calment.
 - **Tournoiement** - des couleurs qui tourbillonnent et tournent un peu plus à chaque diapositive, plus proches dans un refrain.
 - **Neuronal** - des fils lumineux sur fond noir qui s'animent et s'éclairent à chaque ligne.
@@ -255,7 +258,7 @@ Chacun s'anime dans l'onglet **Widgets**, avec un chant d'exemple. **Personnalis
 Dans l'éditeur de modèle, **Mise en page et widgets** les place :
 
 1. **Partir de** une mise en page toute faite - **Les paroles seules**, **Paroles et horloge** ou **Affichage de scène** - ou **Ajouter un widget** aux paroles.
-2. Sur l'aperçu, faites glisser un widget pour le déplacer, et tirez son coin pour le redimensionner. Une fois choisi, les flèches du clavier le déplacent, et avec Maj elles le redimensionnent. **Afficher la grille** masque les cases pour voir l'écran tel qu'il sera.
+2. Sur l'aperçu, faites glisser un widget pour le déplacer, et tirez son coin pour le redimensionner. Une fois choisi, les flèches du clavier le déplacent, et avec Maj elles le redimensionnent. **Afficher la grille** masque les cases pour voir l'écran tel qu'il sera. Un modèle sans widgets montre ses paroles en une seule boîte sur tout l'écran : déplacez-la ou redimensionnez-la et le modèle a une grille.
 3. Choisissez un widget, dans la liste ou sur l'aperçu, pour régler ce qu'il affiche et son **Apparence** : sa police et sa couleur (ou celles du modèle), sa taille, un **Fond derrière** et des **Coins arrondis**. Dans la liste, les flèches le mettent devant ou derrière, là où des widgets se chevauchent.
 4. **Colonnes**, **Lignes** et **Espace entre les cases** règlent la grille, et **L'écran noir masque** **Tout** ou **Seulement les paroles (minuteurs et horloge restent)** - un affichage de scène garde son horloge et son compte à rebours quand les écrans de l'assemblée passent au noir.
 

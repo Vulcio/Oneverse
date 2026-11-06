@@ -213,8 +213,11 @@ export async function pickScreenSet(setlistId: string | null): Promise<boolean> 
 export interface ScreenThemeOptions {
   themeId: string | null;
   themeTemplate: string | null;
-  /** Its owner's saved themes (issue #276). */
-  themes: { id: string; name: string; teamName: string | null }[];
+  /** Its template for Bible passages (issue #402); left out by an older API. */
+  scriptureThemeId?: string | null;
+  scriptureThemeTemplate?: string | null;
+  /** Its owner's saved themes (issue #276), and what each is made for (issue #402). */
+  themes: { id: string; name: string; teamName: string | null; tags?: string[]; madeFor?: string[] }[];
 }
 
 /** The themes the screen offers (issue #276). */
@@ -226,7 +229,7 @@ export async function fetchScreenThemes(): Promise<ScreenThemeOptions | null> {
 }
 
 /** A theme picked on the screen - saved, built-in, or (both null) the default look; the screen loads it again when the server says so. */
-export async function pickScreenTheme(pick: { themeId: string | null; themeTemplate: string | null }): Promise<boolean> {
+export async function pickScreenTheme(pick: { themeId: string | null; themeTemplate: string | null; for?: "songs" | "scripture" }): Promise<boolean> {
   const token = storedToken();
   if (!token) return false;
   const response = await fetch(api("/screens/current/theme"), {

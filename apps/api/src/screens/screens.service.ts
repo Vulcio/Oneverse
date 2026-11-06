@@ -143,16 +143,17 @@ export class ScreensService {
    * or (issue #222) a team's or an organisation's they run - its token
    * waiting for it to claim.
    */
-  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; themeId?: string | null; themeTemplate?: string | null; lasts?: ScreenPairingLength }) {
+  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; lasts?: ScreenPairingLength }) {
     const { code, pairingId, pairing } = await this.waiting(input);
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
+    if (change.scriptureThemeId) await this.themes.assertCanUse(user, change.scriptureThemeId);
     const owner = await this.ownerFor(user, change.owner, true);
     // Following a location (issue #320): one its owner's events can take.
     const locationId = change.setMode === "LOCATION" ? await this.assertLocation(owner, change.locationId) : null;
     const token = `scr_${randomBytes(32).toString("base64url")}`;
     let screen = await this.prisma.client.screen.create({
-      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, setByUserId: user.id, ...owner, tokenHash: hash(token), expiresAt: screenPairingEnds(change.lasts ?? "unlimited"), ...lookChange(change) },
+      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, setByUserId: user.id, ...owner, tokenHash: hash(token), expiresAt: screenPairingEnds(change.lasts ?? "unlimited"), ...lookChange(change), ...scriptureLookChange(change) },
       select: SCREEN_SELECT,
     });
     if (locationId) screen = await this.followLocation(screen);
@@ -291,31 +292,42 @@ export class ScreensService {
     const screen = await this.byToken(token);
     if (!screen) throw new NotFoundException("This screen was disconnected");
     const themes = await this.ownerThemes(screen);
-    return { themeId: screen.themeId, themeTemplate: screen.themeTemplate, themes: themes.map((one) => ({ id: one.id, name: one.name, teamName: one.team?.name ?? null, tags: templateLayout(one).tags })) };
+    return {
+      themeId: screen.themeId,
+      themeTemplate: screen.themeTemplate,
+      scriptureThemeId: screen.scriptureThemeId,
+      scriptureThemeTemplate: screen.scriptureThemeTemplate,
+      themes: themes.map((one) => ({ id: one.id, name: one.name, teamName: one.team?.name ?? null, tags: templateLayout(one).tags, madeFor: templateLayout(one).madeFor })),
+    };
   }
 
   /** A theme picked on the screen (issue #276): kept on it, as if set from Screens. */
-  async pickTheme(token: string, pick: { themeId: string | null; themeTemplate: string | null }) {
+  async pickTheme(token: string, pick: { themeId: string | null; themeTemplate: string | null; for?: "songs" | "scripture" }) {
     const screen = await this.byToken(token);
     if (!screen) throw new NotFoundException("This screen was disconnected");
     if (pick.themeId && !(await this.ownerThemes(screen)).some((one) => one.id === pick.themeId)) throw new NotFoundException("Theme not found");
+    // Its template for passages (issue #402), or for songs.
+    const data =
+      pick.for === "scripture"
+        ? scriptureLookChange(pick.themeId ? { scriptureThemeId: pick.themeId } : { scriptureThemeId: null, scriptureThemeTemplate: pick.themeTemplate })
+        : lookChange(pick.themeId ? { themeId: pick.themeId } : { themeId: null, themeTemplate: pick.themeTemplate });
     const updated = await this.prisma.client.screen.update({
       where: { id: screen.id },
-      data: lookChange(pick.themeId ? { themeId: pick.themeId } : { themeId: null, themeTemplate: pick.themeTemplate }),
+      data,
       select: SCREEN_SELECT,
     });
     await redis().publish(SCREEN_CHANNEL, screen.id);
     return present(updated);
   }
 
-  private async ownerThemes(screen: { themeId: string | null } & Owned) {
+  private async ownerThemes(screen: { themeId: string | null; scriptureThemeId: string | null } & Owned) {
     const owners = screen.ownerTeamId
       ? [{ ownerTeamId: screen.ownerTeamId }]
       : screen.ownerOrganizationId
         ? [{ team: { organizationId: screen.ownerOrganizationId } }]
         : [{ ownerUserId: screen.ownerUserId ?? "-" }];
     return this.prisma.client.screenTheme.findMany({
-      where: { OR: [...owners, ...(screen.themeId ? [{ id: screen.themeId }] : [])] },
+      where: { OR: [...owners, ...(screen.themeId ? [{ id: screen.themeId }] : []), ...(screen.scriptureThemeId ? [{ id: screen.scriptureThemeId }] : [])] },
       select: { id: true, name: true, document: true, team: { select: { name: true } } },
       orderBy: { name: "asc" },
       take: 100,

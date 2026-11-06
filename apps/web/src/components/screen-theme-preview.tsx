@@ -5,6 +5,7 @@ import { ScreenStage, type StageSong } from "@oneverse/screen/components/screen-
 import type { StageLive } from "@oneverse/screen/components/screen-widgets";
 import { cn } from "@oneverse/ui/lib/utils";
 
+// Public domain: John Newton's words (1779), and the stanza John P. Rees added (1859), sung here as a chorus.
 const SAMPLE = `{key: G}
 {start_of_verse: Verse 1}
 [G]Amazing grace, how [C]sweet the [G]sound
@@ -13,10 +14,10 @@ I [G]once was lost, but [C]now am [G]found
 Was blind, but [D]now I [G]see
 {end_of_verse}
 {start_of_chorus: Chorus}
-My [C]chains are gone, I've been set [G]free
-My God, my Saviour has [D]ransomed me
-And like a [C]flood His mercy [G]reigns
-Unending love, [D]amazing [G]grace
+When [G]we've been there ten [C]thousand [G]years
+Bright shining as the [D]sun
+We've [G]no less days to [C]sing God's [G]praise
+Than when we'd [D]first be[G]gun
 {end_of_chorus}`;
 
 /** How long a slide stays in a preview that plays by itself. */

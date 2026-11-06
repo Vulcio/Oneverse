@@ -101,7 +101,7 @@ export class ScreensController {
   @Post("current/theme")
   @HttpCode(HttpStatus.OK)
   pickTheme(@Headers("authorization") authorization: string | undefined, @Body() dto: PickScreenThemeDto): ReturnType<ScreensService["pickTheme"]> {
-    return this.screens.pickTheme(screenToken(authorization), { themeId: dto.themeId, themeTemplate: dto.themeTemplate });
+    return this.screens.pickTheme(screenToken(authorization), { themeId: dto.themeId, themeTemplate: dto.themeTemplate, for: dto.for });
   }
 
   /** The screens showing a set (for who leads it), or the user's own. */
