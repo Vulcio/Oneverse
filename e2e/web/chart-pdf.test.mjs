@@ -160,7 +160,7 @@ await step("a long PDF streams (issue #156): fetched by byte ranges, its first p
   await fetch(`${API}/song-versions/${book.id}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${me.bearer}` }, body: form });
   const ranges = [];
   page.on("response", (response) => {
-    if (response.url().includes("/files/")) ranges.push({ status: response.status(), range: response.request().headers().range ?? null });
+    if (response.url().includes("/files/")) ranges.push({ status: response.status(), range: response.request().headers().range ?? null, url: response.url(), pdf: (response.headers()["content-type"] ?? "").includes("pdf") });
   });
   await page.goto(`${WEB}/library/${book.id}`);
   await page.getByTestId("chart-view-pdf").click();
@@ -172,7 +172,8 @@ await step("a long PDF streams (issue #156): fetched by byte ranges, its first p
   if (drawn > 6) throw new Error(`${drawn} pages drawn before they're near`);
   // pdf.js asks for ranges unless the whole file came first (a fast machine, CI): either way, its address answers one.
   if (!ranges.some((r) => r.status === 206 && r.range)) {
-    const url = (await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name))).find((name) => name.includes("/files/"));
+    // Its address as the page fetched it (the browser's resource timing list can leave it out).
+    const url = (ranges.find((r) => r.status === 200 && r.pdf) ?? ranges.find((r) => r.status === 200))?.url;
     if (!url) throw new Error(`the PDF wasn't fetched: ${JSON.stringify(ranges)}`);
     const part = await page.evaluate(async (address) => {
       const response = await fetch(address, { headers: { Range: "bytes=0-1023" } });
