@@ -297,6 +297,7 @@ const fr: typeof en = {
     views: { templates: "Modèles", content: "Thèmes de contenu", background: "Thèmes de fond", effects: "Effets" },
     /** What a template is for (issue #281). */
     tags: { audience: "Public", stage: "Scène", presentation: "Présentation", lyrics: "Paroles", chords: "Accords", signage: "Affichage", scripture: "Écriture" },
+    sectionKinds: { chorus: "Refrain", bridge: "Pont" },
     noTemplatesTagged: "Aucun modèle n'a tous ces tags.",
     effects: "Effets",
     effectsHint: "Le fond qui répond aux paroles et le mouvement propre des paroles. Désactivez-les sur un écran qui ne suit pas.",

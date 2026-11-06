@@ -6,9 +6,9 @@ import "@fontsource-variable/nunito";
 import "@fontsource-variable/oswald";
 import "@fontsource/bebas-neue";
 import "../screen-stage.css";
-import { SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
+import { SCREEN_PACE_EASING, screenAutoTextSize, screenSectionKind, screenSectionText, screenTextEffects, type ScreenSectionKind, type ScreenTransition, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenSlide, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "./screen-widgets";
 import { useScreenEffects, type ScreenSignals } from "../lib/screen-effects";
@@ -92,24 +92,27 @@ export function ScreenStage({
   const text = useStageText(stageRef, viewKey, theme, current?.lines ?? []);
 
   // The slide going out while the next comes in; a new song takes twice as long.
-  const [outgoing, setOutgoing] = useState<{ key: string; song: StageSong | null; index: number; songChange: boolean } | null>(null);
+  const [outgoing, setOutgoing] = useState<{ key: string; song: StageSong | null; index: number; songChange: boolean; transition: ScreenTransition } | null>(null);
   const shown = useRef<{ key: string; song: StageSong | null; index: number }>({ key: viewKey, song, index });
   const songChange = outgoing?.songChange ?? false;
-  const duration = theme.motion.transition === "cut" ? 0 : theme.motion.duration * (songChange ? 2 : 1);
+  // The change's own transition (issue #395): a chorus may come in, and change within, its own way.
+  const transition = outgoing?.transition ?? theme.motion.transition;
+  const duration = transition === "cut" ? 0 : theme.motion.duration * (songChange ? 2 : 1);
   // Before the new slide is painted (issue #324): never a frame of it alone, without the old one going.
   useBeforePaint(() => {
     const before = shown.current;
     shown.current = { key: viewKey, song, index };
-    if (before.key === viewKey || theme.motion.transition === "cut") return setOutgoing(null);
     const changed = before.song?.key !== song?.key;
-    setOutgoing({ ...before, songChange: changed });
+    const into = changed ? theme.motion.transition : slideTransition(theme, kindOf(before.song, before.index), kindOf(song, index));
+    if (before.key === viewKey || into === "cut") return setOutgoing(null);
+    setOutgoing({ ...before, songChange: changed, transition: into });
     const timer = setTimeout(() => setOutgoing(null), theme.motion.duration * (changed ? 2 : 1) + 50);
     return () => clearTimeout(timer);
   }, [viewKey]);
   // Move (issue #324): the words on both slides glide from the old one to the new.
   useBeforePaint(() => {
     const stage = stageRef.current;
-    if (!stage || !outgoing || theme.motion.transition !== "move" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (!stage || !outgoing || outgoing.transition !== "move" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const stops = [...stage.querySelectorAll<HTMLElement>('[data-testid="screen-out"]')].flatMap((out) => {
       const into = out.parentElement?.querySelector<HTMLElement>(':scope > [data-testid="screen-lyrics"]');
       return into ? [moveWords(out, into, duration)] : [];
@@ -140,8 +143,8 @@ export function ScreenStage({
       <ChartStage theme={look} chart={song.chart} title={song.title} passId={current.passId} />
     ) : (
       <>
-        {outgoing?.song ? <Words key={outgoing.key} theme={look} song={outgoing.song} index={outgoing.index} phase="out" /> : null}
-        <Words key={viewKey} theme={look} song={song} index={index} phase={outgoing ? "in" : "still"} />
+        {outgoing?.song ? <Words key={outgoing.key} theme={look} song={outgoing.song} index={outgoing.index} phase="out" transition={transition} size={songSize(look, outgoing.song)} /> : null}
+        <Words key={viewKey} theme={look} song={song} index={index} phase={outgoing ? "in" : "still"} transition={transition} size={songSize(look, song)} />
       </>
     );
   // A grid's widgets, on the layer each is on.
@@ -159,6 +162,7 @@ export function ScreenStage({
       />
     ) : null;
   };
+  const side = useStageSide(stageRef);
   const windows = theme.masks.filter((mask) => mask.kind === "window");
   const covers = theme.masks.filter((mask) => mask.kind === "cover");
   const video = theme.video.source !== "none" && visible.video;
@@ -166,6 +170,7 @@ export function ScreenStage({
   const style = {
     "--t": `${duration}ms`,
     "--stagger": `${theme.motion.stagger}ms`,
+    "--ease": theme.motion.pace ? SCREEN_PACE_EASING[theme.motion.pace] : "cubic-bezier(0.22, 1, 0.36, 1)",
     "--energy": energy,
     "--motion": theme.background.motion,
     "--text": theme.text.color,
@@ -180,6 +185,7 @@ export function ScreenStage({
   } as CSSProperties;
 
   return (
+    <StageSide.Provider value={side}>
     <div
       ref={stageRef}
       className={cn("sv-stage", className)}
@@ -189,7 +195,7 @@ export function ScreenStage({
       data-testid="screen-stage"
       data-background={theme.background.kind}
       data-layers={(["video", "media", "content", "overlays", "masks"] as const).filter((layer) => visible[layer]).join(" ") + (title ? " title" : "")}
-      data-transition={theme.motion.transition}
+      data-transition={transition}
       data-reveal={theme.motion.reveal}
       data-energy={energy}
     >
@@ -240,6 +246,7 @@ export function ScreenStage({
       ) : null}
       <div className="sv-black" data-on={black && (!grid || grid.black === "all") ? "" : undefined} data-testid="screen-black" />
     </div>
+    </StageSide.Provider>
   );
 }
 
@@ -477,25 +484,123 @@ function Background({ theme, media, shader, text, signals }: { theme: ScreenThem
 /** A layout effect where there's a page to lay out, an effect on the server. */
 const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-/** A line as words a Move can take from one slide to the next (issue #324). */
-function movingWords(line: string): ReactNode {
+/** The stage's shorter side in pixels (issue #395): an outline's width is drawn in pixels. */
+const StageSide = createContext(1080);
+
+function useStageSide(stage: RefObject<HTMLElement | null>): number {
+  const [side, setSide] = useState(1080);
+  useEffect(() => {
+    const element = stage.current;
+    if (!element || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => entry && setSide(Math.max(1, Math.round(Math.min(entry.contentRect.width, entry.contentRect.height)))));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return side;
+}
+
+/** The kind of section a song's slide is from (issue #395): by its pass's section type in the chart, else its label. */
+function kindOf(song: StageSong | null, index: number): ScreenSectionKind | null {
+  const slide = song?.slides[index];
+  if (!slide) return null;
+  return screenSectionKind(song?.chart?.passes[slide.passIndex]?.section.type ?? "other", slide.label);
+}
+
+/** The transition from a slide of one kind to the next (issue #395): the section's own, into it or within it, else the template's. */
+function slideTransition(theme: ScreenTheme, from: ScreenSectionKind | null, to: ScreenSectionKind | null): ScreenTransition {
+  const style = to ? theme.sections[to] : null;
+  const own = from === to ? style?.transitionWithin : style?.transitionInto;
+  return own ?? theme.motion.transition;
+}
+
+/** The words' size for a whole song (issue #395): the theme's, or one auto size from all its lines, so nothing jumps between slides. */
+const sizes = new WeakMap<StageSong, Map<string, number>>();
+function songSize(theme: ScreenTheme, song: StageSong): number {
+  if (theme.text.size !== "auto") return theme.text.size;
+  const key = `${theme.text.font}:${theme.text.upperCase}`;
+  let bySong = sizes.get(song);
+  if (!bySong) sizes.set(song, (bySong = new Map()));
+  let size = bySong.get(key);
+  if (size === undefined) bySong.set(key, (size = screenAutoTextSize(song.slides.flatMap((slide) => slide.lines), theme.text)));
+  return size;
+}
+
+/** Transitions that move each line on its own (issue #395): the slide's lines get their index, and Unveil a frame to rise in. */
+const BY_LINE: ScreenTransition[] = ["unveil", "relay", "tighten", "flip", "drift"];
+
+/** A line's words, each its own element with its place (issue #395), for a Move or a Cascade. */
+function wordSpans(line: string, first: number): ReactNode {
+  let at = first;
   return line.split(/(\s+)/).map((word, i) =>
     /^\s+$/.test(word) || !word ? (
       word
     ) : (
-      <span key={i} className="inline-block" data-word>
+      <span key={i} className="inline-block" style={{ "--wi": at++ } as CSSProperties} data-word>
         {word}
       </span>
     ),
   );
 }
 
-function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageSong; index: number; phase: "in" | "out" | "still" }) {
+/** How many words a line has, to number the next line's. */
+const wordCount = (line: string) => line.split(/\s+/).filter(Boolean).length;
+
+/** The filter that draws a text's effects (issue #395): its outline (an SVG filter, `outlineId`), its shadow and its glow. */
+function effectFilter(look: ScreenTheme["text"], outlineId: string): string | undefined {
+  const { shadow, outline, glow } = screenTextEffects(look);
+  const mix = (pct: number) => `color-mix(in srgb, ${shadow.color} ${pct}%, transparent)`;
+  const shadows = {
+    none: [],
+    soft: [`drop-shadow(0 0.06em 0.22em ${mix(70)})`],
+    lifted: [`drop-shadow(0 0.07em 0.08em ${mix(85)})`, `drop-shadow(0 0.18em 0.55em ${mix(60)})`],
+    strong: [`drop-shadow(0 0.05em 0.05em ${shadow.color})`, `drop-shadow(0 0.14em 0.35em ${mix(85)})`, `drop-shadow(0 0 1em ${mix(55)})`],
+  }[shadow.style];
+  const parts = [outline.width !== "none" ? `url(#${outlineId})` : "", ...shadows, glow === "soft" ? `drop-shadow(0 0 0.28em color-mix(in srgb, ${look.color} 55%, transparent))` : ""].filter(Boolean);
+  return parts.length ? parts.join(" ") : undefined;
+}
+
+/**
+ * An outline as one shape around each letter (issue #395): the letters'
+ * silhouette grown by a few pixels and drawn behind them. A text stroke would
+ * outline every overlapping part of a variable font's letters.
+ */
+function OutlineFilter({ id, look, size, side }: { id: string; look: ScreenTheme["text"]; size: number; side: number }) {
+  const { outline } = screenTextEffects(look);
+  if (outline.width === "none") return null;
+  const radius = ((size * side) / 100) * (outline.width === "thin" ? 0.03 : 0.055);
+  return (
+    <filter id={id} x="-10%" y="-30%" width="120%" height="160%" colorInterpolationFilters="sRGB">
+      <feMorphology in="SourceAlpha" operator="dilate" radius={radius.toFixed(2)} result="grown" />
+      <feFlood floodColor={outline.color} />
+      <feComposite in2="grown" operator="in" result="ring" />
+      <feMerge>
+        <feMergeNode in="ring" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  );
+}
+
+/** A text's own look on a line (issue #395): its font, weight, italic, capitals, colour and spacing; never its size, which the song keeps. */
+function lineLook(look: ScreenTheme["text"], base: ScreenTheme["text"]): CSSProperties {
+  return {
+    fontWeight: look.weight,
+    fontStyle: look.italic ? "italic" : undefined,
+    lineHeight: look.lineHeight,
+    letterSpacing: `${look.letterSpacing}em`,
+    textTransform: look.upperCase ? "uppercase" : undefined,
+    color: look.color !== base.color ? look.color : undefined,
+    fontFamily: look.font !== base.font ? SCREEN_FONT_FAMILIES[look.font] : undefined,
+  };
+}
+
+function Words({ theme, song, index, phase, transition, size }: { theme: ScreenTheme; song: StageSong; index: number; phase: "in" | "out" | "still"; transition: ScreenTransition; size: number }) {
   const { t } = useTranslation();
+  const id = useId().replace(/:/g, "");
+  const side = useContext(StageSide);
   const slides = song.slides;
   const current = slides[index]!;
   const { lines, text, layout, motion } = theme;
-
   // The lines around the current ones: the slides' before and after it, or the rest of its section.
   const inSection = (i: number) => slides[i]!.passIndex === current.passIndex;
   const before =
@@ -508,12 +613,10 @@ function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageS
     lines.group === "section"
       ? slides.slice(index + 1).filter((_, i) => inSection(index + 1 + i)).flatMap((one) => one.lines)
       : slides.slice(index + 1).flatMap((one) => one.lines).slice(0, lines.after);
-
-  // Auto: the longest current line fits the width; narrow fonts can go bigger.
-  const longest = Math.max(8, ...current.lines.map((line) => line.length));
-  const width = text.font === "condensed" || text.font === "display" ? 0.72 : text.font === "mono" ? 1.2 : 1;
-  const size = text.size === "auto" ? Math.max(3.2, Math.min(text.upperCase ? 8 : 8.5, (8 * 26) / (longest * width * (text.upperCase ? 1.15 : 1)))) : text.size;
-
+  // A chorus or a bridge set apart (issue #395): its own text over the template's, a mark, a tag.
+  const kind = kindOf(song, index);
+  const section = kind ? theme.sections[kind] : null;
+  const nowText = screenSectionText(text, section);
   const first = index === 0;
   const last = index === slides.length - 1;
   const showTitle = theme.title.show && (theme.title.when === "every" || first);
@@ -527,30 +630,34 @@ function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageS
     !!credits &&
       (creditsWhen === "every" || (creditsWhen === "first" && first) || (creditsWhen === "last" && last) || (creditsWhen === "first-and-last" && (first || last))));
   const creditLine = attribution ? attribution : credits ? [credits.writers.join(", "), credits.copyright, credits.ccli ? t("screens.ccliSong", { number: credits.ccli }) : null].filter(Boolean).join(" · ") : "";
-
   // However many pieces a slide has, its words are all in within REVEAL_MAX_MS: a long line typed letter by letter doesn't crawl.
   const pieces = motion.reveal === "lines" ? current.lines.length : motion.reveal === "words" || motion.reveal === "glow" ? current.lines.join(" ").split(/\s+/).length : current.lines.join("").replace(/\s/g, "").length;
   const stagger = Math.min(motion.stagger, REVEAL_MAX_MS / Math.max(1, pieces));
-
   const justify = { top: "justify-start", center: "justify-center", bottom: "justify-end", "lower-third": "justify-end" }[layout.position];
-  const align = { left: "items-start text-left", center: "items-center text-center", right: "items-end text-right" }[text.align];
+  const alignOf = (one: ScreenTheme["text"]["align"]) => ({ left: "items-start text-left", center: "items-center text-center", right: "items-end text-right" })[one];
+  const align = alignOf(text.align);
+  // A Cascade's words, numbered through the slide; with few words each waits longer, all in within the change.
+  const words = current.lines.reduce((sum, line) => sum + wordCount(line), 0);
   let piece = 0;
-
   return (
     <div
       className={cn(
         "sv-words sv-slide",
         justify,
         align,
-        `sv-effect-${text.effect}`,
-        phase === "in" && `sv-in sv-in-${motion.transition}`,
-        phase === "out" && `sv-out sv-out-${motion.transition}`,
+        phase === "in" && `sv-in sv-in-${transition}`,
+        phase === "out" && `sv-out sv-out-${transition}`,
         phase !== "out" && motion.reveal !== "none" && `sv-reveal-${motion.reveal}`,
       )}
-      style={{ padding: `${layout.margin}cqh ${layout.margin}cqw`, "--stagger": `${stagger}ms` } as CSSProperties}
+      style={{ padding: `${layout.margin}cqh ${layout.margin}cqw`, "--stagger": `${stagger}ms`, "--words": Math.max(1, words) } as CSSProperties}
       data-testid={phase === "out" ? "screen-out" : "screen-lyrics"}
+      data-section={kind ?? undefined}
       aria-hidden={phase === "out" || undefined}
     >
+      <svg width="0" height="0" className="absolute" aria-hidden>
+        <OutlineFilter id={`${id}-o`} look={text} size={size} side={side} />
+        {nowText !== text ? <OutlineFilter id={`${id}-n`} look={nowText} size={size} side={side} /> : null}
+      </svg>
       <div
         className={cn("flex w-full flex-col", align, layout.position === "lower-third" && "rounded-[1.2cqmin] bg-black/55 px-[3cqw] py-[2.2cqh]")}
         style={{ gap: `${size * 0.18}cqmin` }}
@@ -564,28 +671,48 @@ function Words({ theme, song, index, phase }: { theme: ScreenTheme; song: StageS
           { group: before, now: false, id: "screen-before" },
           { group: current.lines, now: true, id: "screen-lines" },
           { group: after, now: false, id: "screen-after" },
-        ].map(({ group, now, id }) =>
-          group.length > 0 || now ? (
-            <div key={id} className={cn("flex w-full flex-col", align, !now && `sv-context sv-context-${lines.contextStyle}`)} style={{ gap: `${size * 0.18}cqmin` }} data-testid={phase === "out" ? undefined : id} data-group={id}>
-              {group.map((line, i) => (
-                <p
-                  key={i}
-                  className="sv-line"
-                  style={{
-                    fontSize: `calc(${size}cqmin * var(--k, 1))`,
-                    fontWeight: text.weight,
-                    lineHeight: text.lineHeight,
-                    letterSpacing: `${text.letterSpacing}em`,
-                    textTransform: text.upperCase ? "uppercase" : undefined,
-                  }}
-                >
-                  {now && phase !== "out" && motion.reveal !== "none" ? reveal(line, motion.reveal, () => piece++) : motion.transition === "move" ? movingWords(line) : line}
-                </p>
-              ))}
+        ].map(({ group, now, id: groupId }) => {
+          const look = now ? nowText : text;
+          const filter = effectFilter(look, now && nowText !== text ? `${id}-n` : `${id}-o`);
+          let wordAt = 0;
+          return group.length > 0 || now ? (
+            <div
+              key={groupId}
+              className={cn("flex w-full flex-col", now ? alignOf(look.align) : align, !now && `sv-context sv-context-${lines.contextStyle}`, now && section && section.mark !== "none" && `sv-mark sv-mark-${section.mark}`)}
+              style={{ gap: `${size * 0.18}cqmin`, "--mark": look.color } as CSSProperties}
+              data-testid={phase === "out" ? undefined : groupId}
+              data-group={groupId}
+            >
+              {group.map((line, i) => {
+                const first = wordAt;
+                wordAt += wordCount(line);
+                const content =
+                  now && phase !== "out" && motion.reveal !== "none"
+                    ? reveal(line, motion.reveal, () => piece++)
+                    : transition === "move" || (now && transition === "cascade")
+                      ? wordSpans(line, first)
+                      : line;
+                return (
+                  <p key={i} className="sv-line" style={{ fontSize: `calc(${size}cqmin * var(--k, 1))`, filter, "--li": i, ...lineLook(look, text) } as CSSProperties}>
+                    {now && BY_LINE.includes(transition) ? (
+                      <span className="sv-reel">
+                        <span className="sv-reel-in">{content}</span>
+                      </span>
+                    ) : (
+                      content
+                    )}
+                  </p>
+                );
+              })}
             </div>
-          ) : null,
-        )}
+          ) : null;
+        })}
       </div>
+      {section?.label && kind ? (
+        <span className="sv-section-tag" style={{ "--mark": nowText.color } as CSSProperties} data-testid={phase === "out" ? undefined : "screen-section-tag"}>
+          {t(`screens.sectionKinds.${kind}`)}
+        </span>
+      ) : null}
       {showCredits && creditLine ? (
         <p
           className={cn(

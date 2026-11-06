@@ -338,19 +338,41 @@
   margin: 0;
   text-wrap: balance;
 }
-.sv-effect-shadow .sv-line {
-  text-shadow:
-    0 0.04em 0.12em rgb(0 0 0 / 0.75),
-    0 0 0.6em rgb(0 0 0 / 0.35);
+/* A text's shadow, outline and glow are a filter on each line (issue #395, effectFilter in screen-stage.tsx). */
+
+/* A chorus or a bridge set apart (issue #395): a bar beside its lines, or a band behind them, in its colour; a tag in the corner. */
+.sv-mark-bar {
+  box-shadow: inset 0.5cqmin 0 0 var(--mark);
+  padding-left: 2.2cqmin;
 }
-.sv-effect-outline .sv-line {
-  -webkit-text-stroke: 0.07em #000;
-  paint-order: stroke fill;
+.sv-mark-band {
+  background: color-mix(in srgb, var(--mark) 16%, transparent);
+  border-radius: 1cqmin;
+  padding: 1cqmin 2.4cqmin;
 }
-.sv-effect-glow .sv-line {
-  text-shadow:
-    0 0 0.18em color-mix(in srgb, var(--text) 70%, transparent),
-    0 0 0.6em color-mix(in srgb, var(--c2) 60%, transparent);
+.sv-section-tag {
+  position: absolute;
+  top: 3cqh;
+  right: 3cqw;
+  padding: 0.6cqmin 1.4cqmin;
+  border-radius: 999px;
+  background: var(--mark);
+  color: #06121c;
+  font-size: 1.8cqmin;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* A line's frame for Unveil (issue #395): the line rises from behind its own lower edge. */
+.sv-reel {
+  display: block;
+  overflow: hidden;
+  padding: 0.12em 0.2em;
+  margin: -0.12em -0.2em;
+}
+.sv-reel-in {
+  display: block;
 }
 
 /* The lines around the current ones. */
@@ -382,7 +404,7 @@
 .sv-in {
   animation-duration: calc(var(--t) * 0.85);
   animation-delay: calc(var(--t) * 0.15);
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-timing-function: var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
   animation-fill-mode: both;
 }
 .sv-out {
@@ -436,6 +458,294 @@
 .sv-out-move {
   animation-name: sv-fade-out;
   animation-duration: calc(var(--t) * 0.3);
+}
+/*
+ * Issue #395's transitions. Only transform, opacity and mask move (a blur
+ * nowhere): what a TV's GPU puts together without laying text out again.
+ * Line by line ones use each line's --li, Cascade each word's --wi.
+ */
+.sv-in-unveil,
+.sv-in-relay,
+.sv-in-tighten,
+.sv-in-flip,
+.sv-in-drift,
+.sv-in-cascade {
+  animation-name: none;
+}
+.sv-out-unveil,
+.sv-out-relay,
+.sv-out-flip,
+.sv-out-drift,
+.sv-out-cascade {
+  animation-name: none;
+}
+.sv-out-tighten {
+  animation-name: sv-tighten-out;
+}
+.sv-in-unveil .sv-reel-in {
+  animation: sv-unveil-in calc(var(--t) * 0.85) var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--t) * 0.12 + var(--li, 0) * 80ms);
+}
+.sv-out-unveil .sv-line {
+  animation: sv-unveil-out calc(var(--t) * 0.4) cubic-bezier(0.3, 0, 0.6, 1) both;
+  animation-delay: calc(var(--li, 0) * 40ms);
+}
+@keyframes sv-unveil-in {
+  from {
+    transform: translate3d(0, 105%, 0);
+  }
+}
+@keyframes sv-unveil-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -0.5em, 0);
+  }
+}
+.sv-in-wipe {
+  animation-name: sv-wipe-in;
+  animation-duration: calc(var(--t) * 1.1);
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  mask-image: linear-gradient(90deg, #000 40%, transparent 60%);
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+@keyframes sv-wipe-in {
+  from {
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+  }
+  to {
+    -webkit-mask-position: 0% 0;
+    mask-position: 0% 0;
+  }
+}
+.sv-out-wipe {
+  animation-name: sv-fade-out;
+}
+.sv-in-push {
+  animation-name: sv-push-in;
+}
+.sv-out-push {
+  animation-name: sv-push-out;
+  animation-duration: calc(var(--t) * 0.8);
+  animation-timing-function: var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+@keyframes sv-push-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14cqh, 0);
+  }
+}
+@keyframes sv-push-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -14cqh, 0);
+  }
+}
+.sv-in-push-across {
+  animation-name: sv-push-across-in;
+}
+.sv-out-push-across {
+  animation-name: sv-push-across-out;
+  animation-duration: calc(var(--t) * 0.8);
+  animation-timing-function: var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+@keyframes sv-push-across-in {
+  from {
+    opacity: 0;
+    transform: translate3d(22cqw, 0, 0);
+  }
+}
+@keyframes sv-push-across-out {
+  to {
+    opacity: 0;
+    transform: translate3d(-22cqw, 0, 0);
+  }
+}
+.sv-in-relay .sv-line {
+  animation: sv-relay-in calc(var(--t) * 0.6) var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--t) * 0.2 + var(--li, 0) * var(--t) * 0.22);
+}
+.sv-out-relay .sv-line {
+  animation: sv-relay-out calc(var(--t) * 0.35) cubic-bezier(0.3, 0, 0.6, 1) both;
+  animation-delay: calc(var(--li, 0) * var(--t) * 0.22);
+}
+@keyframes sv-relay-in {
+  from {
+    opacity: 0;
+    transform: translate3d(4cqw, 0, 0);
+  }
+}
+@keyframes sv-relay-out {
+  to {
+    opacity: 0;
+    transform: translate3d(-4cqw, 0, 0);
+  }
+}
+.sv-in-settle {
+  animation-name: sv-settle-in;
+  animation-duration: var(--t);
+}
+.sv-out-settle {
+  animation-name: sv-settle-out;
+}
+@keyframes sv-settle-in {
+  from {
+    opacity: 0;
+    transform: scale(1.07);
+  }
+}
+@keyframes sv-settle-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+.sv-in-iris {
+  animation-name: sv-iris-in;
+  animation-duration: var(--t);
+  -webkit-mask-image: radial-gradient(circle, #000 55%, transparent 70%);
+  mask-image: radial-gradient(circle, #000 55%, transparent 70%);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 260% 260%;
+  mask-size: 260% 260%;
+}
+@keyframes sv-iris-in {
+  from {
+    -webkit-mask-size: 0% 0%;
+    mask-size: 0% 0%;
+  }
+}
+.sv-out-iris {
+  animation-name: sv-fade-out;
+}
+.sv-in-cover {
+  animation-name: sv-cover-in;
+}
+.sv-out-cover {
+  animation-name: sv-cover-out;
+  animation-duration: calc(var(--t) * 0.9);
+}
+@keyframes sv-cover-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 35cqh, 0);
+  }
+  45% {
+    opacity: 1;
+  }
+}
+@keyframes sv-cover-out {
+  to {
+    opacity: 0;
+    transform: scale(0.93);
+  }
+}
+.sv-in-tighten .sv-line {
+  animation: sv-tighten-in var(--t) var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--li, 0) * 60ms);
+}
+@keyframes sv-tighten-in {
+  from {
+    opacity: 0;
+    transform: scaleX(1.35);
+  }
+}
+@keyframes sv-tighten-out {
+  to {
+    opacity: 0;
+    transform: scaleX(0.92);
+  }
+}
+.sv-in-cascade [data-word] {
+  animation: sv-cascade-in calc(var(--t) * 0.8) var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--t) * 0.12 + var(--wi, 0) * min(45ms, var(--t) * 0.9 / var(--words, 1)));
+}
+.sv-out-cascade [data-word] {
+  animation: sv-cascade-out calc(var(--t) * 0.32) cubic-bezier(0.3, 0, 0.6, 1) both;
+  animation-delay: calc(min(var(--wi, 0) * 14ms, 160ms));
+}
+.sv-out-cascade .sv-line {
+  animation: sv-fade-out calc(var(--t) * 0.4) both;
+}
+@keyframes sv-cascade-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.3em, 0);
+  }
+}
+@keyframes sv-cascade-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -0.15em, 0);
+  }
+}
+.sv-in-flip .sv-line {
+  transform-origin: 50% 0;
+  animation: sv-flip-in var(--t) var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--t) * 0.1 + var(--li, 0) * 90ms);
+}
+.sv-out-flip .sv-line {
+  animation: sv-flip-out calc(var(--t) * 0.4) cubic-bezier(0.3, 0, 0.6, 1) both;
+  animation-delay: calc(var(--li, 0) * 50ms);
+}
+@keyframes sv-flip-in {
+  from {
+    opacity: 0;
+    transform: perspective(60cqmin) rotateX(-75deg);
+  }
+}
+@keyframes sv-flip-out {
+  to {
+    opacity: 0;
+    transform: perspective(60cqmin) rotateX(70deg);
+  }
+}
+.sv-in-depth {
+  animation-name: sv-depth-in;
+  animation-duration: calc(var(--t) * 1.1);
+}
+.sv-out-depth {
+  animation-name: sv-depth-out;
+  animation-duration: calc(var(--t) * 0.7);
+  animation-timing-function: var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+@keyframes sv-depth-in {
+  from {
+    opacity: 0;
+    transform: perspective(100cqmin) translate3d(0, 0, 20cqmin);
+  }
+}
+@keyframes sv-depth-out {
+  to {
+    opacity: 0;
+    transform: perspective(100cqmin) translate3d(0, 0, -24cqmin);
+  }
+}
+.sv-in-drift .sv-line {
+  animation: sv-drift-in calc(var(--t) * 1.1) var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--t) * 0.06 + var(--li, 0) * 110ms);
+}
+.sv-out-drift .sv-line {
+  animation: sv-drift-out calc(var(--t) * 0.4) cubic-bezier(0.3, 0, 0.6, 1) both;
+  animation-delay: calc(var(--li, 0) * 40ms);
+}
+@keyframes sv-drift-in {
+  from {
+    opacity: 0;
+    transform: perspective(100cqmin) translate3d(0, 25%, -30cqmin) rotateX(22deg);
+  }
+}
+@keyframes sv-drift-out {
+  to {
+    opacity: 0;
+    transform: perspective(100cqmin) translate3d(0, -20%, 12cqmin);
+  }
 }
 @keyframes sv-fade-in {
   from {
@@ -598,7 +908,12 @@
     animation-delay: 0ms !important;
   }
   .sv-in,
-  .sv-out {
+  .sv-out,
+  .sv-in .sv-line,
+  .sv-out .sv-line,
+  .sv-in .sv-reel-in,
+  .sv-in [data-word],
+  .sv-out [data-word] {
     animation-name: none !important;
   }
 }

@@ -297,6 +297,7 @@ const en = {
     views: { templates: "Templates", content: "Content themes", background: "Background themes", effects: "Effects" },
     /** What a template is for (issue #281). */
     tags: { audience: "Audience", stage: "Stage", presentation: "Presentation", lyrics: "Lyrics", chords: "Chords", signage: "Signage", scripture: "Scripture" },
+    sectionKinds: { chorus: "Chorus", bridge: "Bridge" },
     noTemplatesTagged: "No template has all these tags.",
     effects: "Effects",
     effectsHint: "The background answering the words and the words' own movement. Turn them off on a screen that can't keep up.",
