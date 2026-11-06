@@ -1,6 +1,7 @@
 import type { RenderedChart, RenderedChord } from "../song-document/render.js";
 import { barAt, lineAtPosition, type BeatPlace, type ChartBar } from "../song-document/bars.js";
 import type { PassageChapter } from "../scriptures/references.js";
+import { formatChord, nashvilleChord, simplifyChord } from "../chords/chord.js";
 
 /**
  * Screens (issue #186): a set's lyrics on a big screen, or its chart for the
@@ -65,6 +66,22 @@ export interface ScreenSlideLine {
   text: string;
   /** Each chord at a character of `text` (the words' spaces evened out as the slide shows them). */
   chords: { at: number; chord: RenderedChord }[];
+}
+
+/**
+ * A chord as a lyrics screen names it (issue #395): as it sounds (a screen
+ * is for the singers and the room, never the capo's shapes), simpler when
+ * asked (the triad, no bass note), in letters, Nashville numbers counted
+ * from the key it's sung in there, or solfège.
+ */
+export function screenChordLabel(
+  chord: { sounding: string; key: string | null },
+  options: { notation: "letters" | "numbers" | "solfege"; simple: boolean },
+): string {
+  const raw = options.simple ? simplifyChord(chord.sounding, { dropExtensions: true, dropBass: true }) : chord.sounding;
+  if (options.notation === "numbers") return nashvilleChord(raw, chord.key);
+  if (options.notation === "solfege") return formatChord(raw, "solfege");
+  return raw;
 }
 
 /**

@@ -364,6 +364,174 @@
   text-transform: uppercase;
 }
 
+/* Chords over the words (issue #395): each over the letter it's played on, in the chord colour, at the template's size beside the words. */
+.sv-has-chords {
+  padding-top: calc(var(--cs, 0.55) * 1em);
+}
+.sv-chord-at {
+  position: relative;
+  display: inline-block;
+  text-indent: 0;
+}
+.sv-chord-name {
+  position: absolute;
+  left: -0.04em;
+  bottom: 100%;
+  margin-bottom: 0.08em;
+  color: var(--chord);
+  font-size: calc(var(--cs, 0.55) * 1em);
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+}
+.sv-has-chords .sv-reel {
+  padding-top: calc(var(--cs, 0.55) * 1em + 0.3em);
+  margin-top: calc(var(--cs, 0.55) * -1em - 0.3em);
+}
+/* Chords on beats: a block for each beat of the line's bars, the chord in the beat it changes on. */
+.sv-beats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: inherit;
+  gap: 0.45em;
+  margin-bottom: 0.35em;
+  font-size: calc(var(--cs, 0.55) * 0.8em);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+.items-center > .sv-line .sv-beats,
+.text-center .sv-beats {
+  justify-content: center;
+}
+.text-right .sv-beats {
+  justify-content: flex-end;
+}
+.sv-beat-bar {
+  display: flex;
+  gap: 0.12em;
+}
+.sv-beat-block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.3em;
+  height: 1.55em;
+  padding: 0 0.2em;
+  border-radius: 0.22em;
+  background: rgb(255 255 255 / 0.09);
+  color: var(--chord);
+}
+.sv-beat-block[data-on] {
+  background: rgb(255 255 255 / 0.16);
+}
+
+/* Focus (issue #395): the next line to sing, small under the current ones. */
+.sv-focus-next {
+  --k: 0.55;
+  margin-top: 0.6em;
+  opacity: 0.5;
+}
+
+/*
+ * Scroll and Grid (issue #395): the whole song in a column that glides to
+ * the lines being sung, at the pace's easing; faded out at the edges.
+ */
+.sv-flow {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent);
+  mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent);
+}
+.sv-flow-column {
+  position: absolute;
+  inset: 0 0 auto;
+  will-change: transform;
+  transition: transform var(--glide, 900ms) var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.sv-flow-line {
+  transition:
+    transform var(--glide, 900ms) var(--ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    opacity calc(var(--glide, 900ms) * 0.7) ease;
+}
+.sv-flow-label {
+  margin: 0 0 0.6cqmin;
+  font-size: 1.9cqmin;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.45;
+  transition: opacity var(--glide, 900ms) ease;
+}
+.sv-grid-pass {
+  margin-top: 3.2cqmin;
+}
+.sv-grid-pass.sv-mark-bar {
+  padding-left: 2.2cqmin;
+}
+.sv-grid-bars {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.6cqmin 3.6cqmin;
+  padding-left: 3.6cqmin;
+}
+.sv-gbar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqmin;
+  padding-left: 1.2cqmin;
+  border-left: 0.35cqmin solid rgb(255 255 255 / 0.35);
+  transition: opacity var(--glide, 900ms) ease;
+}
+.sv-gbar[data-state="past"] {
+  opacity: 0.4;
+}
+.sv-gbar[data-state="coming"] {
+  opacity: 0.8;
+}
+.sv-gnum {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 0.7cqmin);
+  text-align: right;
+  font-size: 1.6cqmin;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.5;
+}
+.sv-gbeats {
+  display: grid;
+  grid-template-columns: repeat(var(--beats, 4), minmax(0, 1fr));
+  gap: 0.5cqmin;
+}
+.sv-gbeats .sv-beat-block {
+  min-width: 0;
+  height: 6.4cqmin;
+  border-radius: 0.8cqmin;
+  font-size: calc(var(--cs, 0.55) * 8cqmin);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sv-gbar[data-now] .sv-beat-block {
+  background: rgb(255 255 255 / 0.18);
+}
+.sv-gwords {
+  min-height: 1.2em;
+  overflow: hidden;
+  font-size: 2.6cqmin;
+  font-weight: 500;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
 /* A line's frame for Unveil (issue #395): the line rises from behind its own lower edge. */
 .sv-reel {
   display: block;
@@ -915,6 +1083,10 @@
   .sv-in [data-word],
   .sv-out [data-word] {
     animation-name: none !important;
+  }
+  .sv-flow-column,
+  .sv-flow-line {
+    transition: none !important;
   }
 }
 }

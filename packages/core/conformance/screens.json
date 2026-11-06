@@ -1284,6 +1284,85 @@
         }
       ]
     },
+    "screenChordLabel": {
+      "about": "A chord over a lyrics screen's words (issue #395): as it sounds, simpler when asked (the triad, no bass), in letters, numbers from the key there, or solfège.",
+      "params": [
+        "chord",
+        "options"
+      ],
+      "cases": [
+        {
+          "name": "letters",
+          "args": [
+            {
+              "sounding": "Gmaj7/B",
+              "key": "D"
+            },
+            {
+              "notation": "letters",
+              "simple": false
+            }
+          ],
+          "expected": "Gmaj7/B"
+        },
+        {
+          "name": "letters, simpler",
+          "args": [
+            {
+              "sounding": "Gmaj7/B",
+              "key": "D"
+            },
+            {
+              "notation": "letters",
+              "simple": true
+            }
+          ],
+          "expected": "G"
+        },
+        {
+          "name": "numbers in D",
+          "args": [
+            {
+              "sounding": "A7sus4",
+              "key": "D"
+            },
+            {
+              "notation": "numbers",
+              "simple": false
+            }
+          ],
+          "expected": "57sus4"
+        },
+        {
+          "name": "numbers without a key: letters",
+          "args": [
+            {
+              "sounding": "Em7",
+              "key": null
+            },
+            {
+              "notation": "numbers",
+              "simple": false
+            }
+          ],
+          "expected": "Em7"
+        },
+        {
+          "name": "solfège, simpler",
+          "args": [
+            {
+              "sounding": "F#m7",
+              "key": "D"
+            },
+            {
+              "notation": "solfege",
+              "simple": true
+            }
+          ],
+          "expected": "Fa#m"
+        }
+      ]
+    },
     "screenSectionText": {
       "about": "A section's text (issue #395): the template's, with what the section's style sets over it - each field its own or the template's; effects set on the section stand with the template's others as presets.",
       "params": [

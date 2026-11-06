@@ -26,7 +26,7 @@ import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong,
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenAutoTextSize, screenSectionKind, screenTextEffects, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { readCatalogLinks } from "../songbook-catalog-format/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -1760,6 +1760,18 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "before presets: a shadow", args: [{ effect: "shadow", shadow: null, outline: null, glow: null }] },
           { name: "before presets: an outline", args: [{ effect: "outline", shadow: null, outline: null, glow: null }] },
           { name: "presets set: effect ignored", args: [{ effect: "shadow", shadow: { style: "strong", color: "#3b2470" }, outline: { width: "medium", color: "#ffffff" }, glow: null }] },
+        ],
+      },
+      screenChordLabel: {
+        about: "A chord over a lyrics screen's words (issue #395): as it sounds, simpler when asked (the triad, no bass), in letters, numbers from the key there, or solfège.",
+        params: ["chord", "options"],
+        run: screenChordLabel,
+        cases: [
+          { name: "letters", args: [{ sounding: "Gmaj7/B", key: "D" }, { notation: "letters", simple: false }] },
+          { name: "letters, simpler", args: [{ sounding: "Gmaj7/B", key: "D" }, { notation: "letters", simple: true }] },
+          { name: "numbers in D", args: [{ sounding: "A7sus4", key: "D" }, { notation: "numbers", simple: false }] },
+          { name: "numbers without a key: letters", args: [{ sounding: "Em7", key: null }, { notation: "numbers", simple: false }] },
+          { name: "solfège, simpler", args: [{ sounding: "F#m7", key: "D" }, { notation: "solfege", simple: true }] },
         ],
       },
       screenSectionText: {

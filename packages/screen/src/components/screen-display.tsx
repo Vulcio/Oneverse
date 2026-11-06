@@ -1,4 +1,4 @@
-import { composeBuiltInTemplate, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
+import { chartBars, composeBuiltInTemplate, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { ChevronLeft, Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -107,7 +107,7 @@ function Showing({
     const { chart, slides: cut } = setItemView(view);
     // Not the words the presenter's slides say (the song edited since, issue #247): no words rather than another slide's.
     const slides = presenting?.slideKey && slideKey(cut) !== presenting.slideKey ? cut.map((slide) => ({ ...slide, lines: [] })) : cut;
-    return { key: view.item.id, title: setItemTitle(view, t), slides, credits: view.song ? set?.credits[view.song.id] : undefined, attribution: view.passage ? passageCredit(view.passage) : null, chart };
+    return { key: view.item.id, title: setItemTitle(view, t), slides, credits: view.song ? set?.credits[view.song.id] : undefined, attribution: view.passage ? passageCredit(view.passage) : null, chart, bars: chart && view.song ? chartBars(chart, view.song.document) : null };
   }, [view, set, t, presenting?.slideKey]);
 
   // Each item's slides, counted once per set (issue #289): the Slide count widget's set.

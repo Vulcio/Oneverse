@@ -1,4 +1,4 @@
-import { lyricSlides, renderChart, screenLayers, songDocumentFromText, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
+import { chartBars, lyricSlides, renderChart, screenLayers, songDocumentFromText, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenStage, type StageSong } from "@oneverse/screen/components/screen-stage";
@@ -84,8 +84,9 @@ export function ScreenThemePreview({
 /** The sample song, as a set's song would be on a screen. */
 export function useSampleSong(title: string, writers: string): StageSong {
   return useMemo(() => {
-    const chart = renderChart(songDocumentFromText(null, { content: SAMPLE, format: "CHORDPRO" }));
-    return { key: "sample", title, slides: lyricSlides(chart), credits: { writers: [writers], copyright: null, ccli: "22025" }, chart };
+    const document = songDocumentFromText(null, { content: SAMPLE, format: "CHORDPRO" });
+    const chart = renderChart(document);
+    return { key: "sample", title, slides: lyricSlides(chart), credits: { writers: [writers], copyright: null, ccli: "22025" }, chart, bars: chartBars(chart, document) };
   }, [title, writers]);
 }
 
