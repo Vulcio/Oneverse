@@ -1,4 +1,4 @@
-import { chartBars, composeBuiltInTemplate, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
+import { chartBars, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { ChevronLeft, Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,7 @@ export function ScreenDisplay({ pairUrl, pinnedTheme }: { pairUrl: string; pinne
     <div className="fixed inset-0 cursor-none overflow-hidden bg-black text-white select-none" data-testid="screen-display" data-state={state.kind}>
       {state.kind === "pairing" ? <Pairing code={state.code} pairUrl={pairUrl} adding={state.adding} /> : null}
       {state.kind === "showing" ? (
-        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
+        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} music={state.music} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
       ) : null}
     </div>
   );
@@ -85,6 +85,7 @@ function Showing({
   online,
   stage,
   offset,
+  music,
   theme,
   itemThemes,
 }: {
@@ -93,6 +94,7 @@ function Showing({
   online: boolean;
   stage: SyncStage | null;
   offset: number;
+  music?: { metronome: SyncMetronome | null; itemId: string | null };
   theme: ScreenTheme;
   itemThemes?: Record<string, ScreenTheme>;
 }) {
@@ -109,6 +111,13 @@ function Showing({
     const slides = presenting?.slideKey && slideKey(cut) !== presenting.slideKey ? cut.map((slide) => ({ ...slide, lines: [] })) : cut;
     return { key: view.item.id, title: setItemTitle(view, t), slides, credits: view.song ? set?.credits[view.song.id] : undefined, attribution: view.passage ? passageCredit(view.passage) : null, chart, bars: chart && view.song ? chartBars(chart, view.song.document) : null };
   }, [view, set, t, presenting?.slideKey]);
+  // Where the music is (issue #395), for a template following it: the leader's click, while it plays for the song on screen.
+  const metronome = music?.metronome ?? null;
+  const position = useMemo(() => {
+    if (!metronome?.playing || !presenting || music?.itemId !== presenting.itemId) return null;
+    const countIn = metronome.settings.countIn * metronome.settings.numerator;
+    return () => metronomePositionAt(metronome, Date.now() + offset) - countIn;
+  }, [metronome, music?.itemId, presenting?.itemId, offset]);
 
   // Each item's slides, counted once per set (issue #289): the Slide count widget's set.
   const slideCounts = useMemo(() => (set?.songs ?? []).map((one) => setItemView(one).slides.length), [set]);
@@ -231,6 +240,7 @@ function Showing({
         idle={idle}
         assets={current.assets}
         live={live}
+        position={position}
         videoInput
       />
       {showPicker ? <ScreenSetPicker onClose={set ? () => setPicking(false) : undefined} /> : null}

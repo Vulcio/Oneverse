@@ -10606,6 +10606,819 @@
         }
       ]
     },
+    "sungAtPosition": {
+      "about": "How far the words are sung at a position (issue #395), for a screen filling them in: the line, and the place in its text as a lyrics screen shows it (spaces evened out), moving from the letter placed on the beat before to the next one placed in the line (or its end) through the beats between. Null when no line is sung.",
+      "params": [
+        "song",
+        "position"
+      ],
+      "cases": [
+        {
+          "name": "the first words, on the beat",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            },
+            0
+          ],
+          "expected": {
+            "passIndex": 0,
+            "lineId": "line_v1",
+            "at": 0
+          }
+        },
+        {
+          "name": "half a beat on",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            },
+            0.5
+          ],
+          "expected": {
+            "passIndex": 0,
+            "lineId": "line_v1",
+            "at": 4
+          }
+        },
+        {
+          "name": "the verse's second line",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            },
+            13.25
+          ],
+          "expected": {
+            "passIndex": 0,
+            "lineId": "line_v3",
+            "at": 6.5
+          }
+        },
+        {
+          "name": "an intro of chords alone",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 1,
+              "defaults": {
+                "key": "D",
+                "tempo": 120,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                }
+              },
+              "sections": [
+                {
+                  "id": "sec_intro",
+                  "type": "intro",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_i1",
+                      "kind": "lyric",
+                      "text": "",
+                      "chords": [
+                        {
+                          "id": "chd_i1",
+                          "at": 0,
+                          "raw": "D"
+                        },
+                        {
+                          "id": "chd_i2",
+                          "at": 0,
+                          "raw": "G"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Every song is like gold",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "D"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 14,
+                          "raw": "A"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 19,
+                          "raw": "Bm"
+                        }
+                      ]
+                    }
+                  ],
+                  "rhythm": {
+                    "beatsPerBar": null,
+                    "bars": [
+                      {
+                        "chords": [
+                          {
+                            "chordId": "chd_v1",
+                            "beat": 1
+                          },
+                          {
+                            "chordId": "chd_v2",
+                            "beat": 3
+                          }
+                        ],
+                        "lyricAnchor": {
+                          "lineId": "line_v1",
+                          "at": 0
+                        }
+                      },
+                      {
+                        "chords": []
+                      },
+                      {
+                        "chords": [
+                          {
+                            "chordId": "chd_v3",
+                            "beat": 1
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "Torn up town",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 0,
+                          "raw": "G"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "p_intro",
+                  "sectionId": "sec_intro"
+                },
+                {
+                  "id": "p_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "p_chorus",
+                  "sectionId": "sec_chorus",
+                  "timeSignature": {
+                    "numerator": 3,
+                    "denominator": 4
+                  }
+                }
+              ]
+            },
+            2
+          ],
+          "expected": null
+        },
+        {
+          "name": "words held on",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 1,
+              "defaults": {
+                "key": "D",
+                "tempo": 120,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                }
+              },
+              "sections": [
+                {
+                  "id": "sec_intro",
+                  "type": "intro",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_i1",
+                      "kind": "lyric",
+                      "text": "",
+                      "chords": [
+                        {
+                          "id": "chd_i1",
+                          "at": 0,
+                          "raw": "D"
+                        },
+                        {
+                          "id": "chd_i2",
+                          "at": 0,
+                          "raw": "G"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Every song is like gold",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "D"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 14,
+                          "raw": "A"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 19,
+                          "raw": "Bm"
+                        }
+                      ]
+                    }
+                  ],
+                  "rhythm": {
+                    "beatsPerBar": null,
+                    "bars": [
+                      {
+                        "chords": [
+                          {
+                            "chordId": "chd_v1",
+                            "beat": 1
+                          },
+                          {
+                            "chordId": "chd_v2",
+                            "beat": 3
+                          }
+                        ],
+                        "lyricAnchor": {
+                          "lineId": "line_v1",
+                          "at": 0
+                        }
+                      },
+                      {
+                        "chords": []
+                      },
+                      {
+                        "chords": [
+                          {
+                            "chordId": "chd_v3",
+                            "beat": 1
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "Torn up town",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 0,
+                          "raw": "G"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "p_intro",
+                  "sectionId": "sec_intro"
+                },
+                {
+                  "id": "p_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "p_chorus",
+                  "sectionId": "sec_chorus",
+                  "timeSignature": {
+                    "numerator": 3,
+                    "denominator": 4
+                  }
+                }
+              ]
+            },
+            14
+          ],
+          "expected": {
+            "passIndex": 1,
+            "lineId": "line_v1",
+            "at": 17.33
+          }
+        },
+        {
+          "name": "past the end",
+          "args": [
+            {
+              "$schema": "song-document/v2",
+              "revision": 3,
+              "defaults": {
+                "key": "G",
+                "tempo": 72,
+                "timeSignature": {
+                  "numerator": 4,
+                  "denominator": 4
+                },
+                "durationSeconds": 180
+              },
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "flow": [
+                {
+                  "id": "fi_verse",
+                  "sectionId": "sec_verse"
+                },
+                {
+                  "id": "fi_chorus",
+                  "sectionId": "sec_chorus"
+                },
+                {
+                  "id": "fi_chorus2",
+                  "sectionId": "sec_chorus",
+                  "label": "Chorus 2",
+                  "keyChange": {
+                    "steps": 2,
+                    "key": "A"
+                  }
+                }
+              ]
+            },
+            1000
+          ],
+          "expected": null
+        }
+      ]
+    },
     "rhythmFromBarLines": {
       "about": "A section's rhythm from bar lines placed in its lyrics (issue #238), as the editor saves them: each bar line starts a bar where it stands (its lyricAnchor), more bars after it when it says so, and the chords up to the next bar line fall in them on the beats their words reach, rounded to the beat and half a beat apart at least; between chords with no words, evenly. Words or chords before the first bar line get a bar of their own. Null without bar lines.",
       "params": [

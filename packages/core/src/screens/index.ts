@@ -132,6 +132,73 @@ function evenLine(lineId: string, raw: string, chords: RenderedChord[]): ScreenS
 }
 
 /**
+ * How far the words are sung at `position` (in beats from the song's
+ * start), for a screen filling them in as they're sung (issue #395): the
+ * line (`lineAtPosition`) and the place in its text, as a lyrics screen
+ * shows it (spaces evened out), moving from the letter placed on the beat
+ * before to the next one placed after it in the line (or the line's end)
+ * through the beats between. Null when no line is being sung.
+ */
+export function sungAtPosition(
+  chart: Pick<RenderedChart, "passes">,
+  bars: readonly ChartBar[],
+  places: readonly (BeatPlace | null)[][],
+  position: number,
+): { passIndex: number; lineId: string; at: number } | null {
+  const now = barAt(bars, position);
+  const line = now ? lineAtPosition(bars, places, position) : null;
+  if (!now || !line) return null;
+  const text = chart.passes[line.passIndex]?.lines.find((one) => one.id === line.lineId)?.text;
+  if (text === undefined) return null;
+  // The beat placed at or before it in the line, and the next placed after it.
+  let from: { beat: number; at: number } | null = null;
+  for (let bar = now.bar; bar >= 0 && !from && bars[bar]!.passIndex === line.passIndex; bar--) {
+    const beats = places[bar] ?? [];
+    for (let beat = bar === now.bar ? Math.min(now.beat, beats.length - 1) : beats.length - 1; beat >= 0; beat--) {
+      const place = beats[beat];
+      if (place && place.lineId === line.lineId) {
+        from = { beat: bars[bar]!.start + beat, at: place.at };
+        break;
+      }
+    }
+  }
+  if (!from) return null;
+  let to: { beat: number; at: number } = { beat: from.beat + 1, at: text.length };
+  search: for (let bar = now.bar; bar < bars.length && bars[bar]!.passIndex === line.passIndex; bar++) {
+    const beats = places[bar] ?? [];
+    for (let beat = bar === now.bar ? now.beat + 1 : 0; beat < beats.length; beat++) {
+      const place = beats[beat];
+      const start = bars[bar]!.start + beat;
+      if (!place) continue;
+      if (place.lineId === line.lineId && place.at > from.at) to = { beat: start, at: place.at };
+      else to = { beat: start, at: text.length };
+      break search;
+    }
+  }
+  const through = Math.max(0, Math.min(1, (position - from.beat) / Math.max(1e-6, to.beat - from.beat)));
+  const raw = from.at + through * (to.at - from.at);
+  return { passIndex: line.passIndex, lineId: line.lineId, at: Math.round(evenAt(text, raw) * 100) / 100 };
+}
+
+/** A place (fractional) in a line's text as a lyrics screen shows it: spaces evened out, the start trimmed. */
+function evenAt(raw: string, at: number): number {
+  let even = 0;
+  let space = false;
+  for (let index = 0; index < raw.length; index++) {
+    const ch = raw[index]!;
+    if (/\s/.test(ch)) {
+      space = true;
+      continue;
+    }
+    if (space && even > 0) even += 1;
+    space = false;
+    if (at < index + 1) return even + Math.max(0, at - index);
+    even += 1;
+  }
+  return even;
+}
+
+/**
  * The slide showing the words sung at `position` (in beats from the song's
  * start; a beat or two ahead, so they're read before they're sung), as
  * `lyricSlides` cuts the chart: the slide of the line `lineAtPosition`

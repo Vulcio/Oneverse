@@ -1,7 +1,7 @@
 import { screenSectionText, type ChartBar, type ScreenTheme } from "@oneverse/core";
 import { cn } from "@oneverse/ui/lib/utils";
 import { useContext, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { BeatRow, beatsOf, chordsAbove, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songBars, songBarWords, songLines, StageSide, type StageSong } from "./screen-text";
+import { BeatRow, beatsOf, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songBars, songBarWords, songLines, StageSide, type StageSong } from "./screen-text";
 
 const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -132,6 +132,8 @@ function ScrollRows({ theme, song, index, size, looks, filterOf }: { theme: Scre
                   <p
                     key={li}
                     className={cn("sv-line sv-flow-line", above && "sv-has-chords")}
+                    data-line-id={line.chords?.lineId}
+                    data-pass={line.passIndex}
                     style={{
                       fontSize: `${size}cqmin`,
                       ...lineLook(look, text),
@@ -144,7 +146,7 @@ function ScrollRows({ theme, song, index, size, looks, filterOf }: { theme: Scre
                     }}
                   >
                     {beats.length > 0 ? <BeatRow bars={beats} chart={song.chart} options={chords} /> : null}
-                    {above && line.chords ? chordsAbove(line.chords, chords) : line.text}
+                    {above && line.chords ? chordsAbove(line.chords, chords) : theme.display.follow === "fill" && line.chords ? fillWords(line.text) : line.text}
                   </p>
                 );
               })}
@@ -197,7 +199,7 @@ function GridRows({ theme, song, index, looks }: { theme: ScreenTheme; song: Sta
                 const now = isNow(bar);
                 const state = now ? "now" : nowAt >= 0 && bar.index < nowAt ? "past" : "coming";
                 return (
-                  <div key={bar.index} className="sv-gbar" data-state={state} data-now={now ? "" : undefined} data-testid={now ? "screen-grid-now" : undefined}>
+                  <div key={bar.index} className="sv-gbar" data-bar={bar.index} data-state={state} data-now={now ? "" : undefined} data-testid={now ? "screen-grid-now" : undefined}>
                     <span className="sv-gnum">{bar.index + 1}</span>
                     <div className="sv-gbeats" style={{ "--beats": bar.beats } as CSSProperties}>
                       {beatsOf(bar, song.chart, theme.chords)}

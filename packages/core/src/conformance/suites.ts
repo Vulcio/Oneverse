@@ -26,7 +26,7 @@ import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong,
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, sungAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { readCatalogLinks } from "../songbook-catalog-format/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -1146,6 +1146,25 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the chorus: its slide", args: [SONG, 21] },
           { name: "an intro of chords alone: its own slide", args: [BARS_SONG, 2] },
           { name: "the chorus", args: [BARS_SONG, 22] },
+          { name: "past the end", args: [SONG, 1000] },
+        ],
+      },
+      sungAtPosition: {
+        about:
+          "How far the words are sung at a position (issue #395), for a screen filling them in: the line, and the place in its text as a lyrics screen shows it (spaces evened out), moving from the letter placed on the beat before to the next one placed in the line (or its end) through the beats between. Null when no line is sung.",
+        params: ["song", "position"],
+        run: (song: unknown, position: number) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          const bars = chartBars(chart, doc);
+          return sungAtPosition(chart, bars, barBeatPlaces(chart, bars), position);
+        },
+        cases: [
+          { name: "the first words, on the beat", args: [SONG, 0] },
+          { name: "half a beat on", args: [SONG, 0.5] },
+          { name: "the verse's second line", args: [SONG, 13.25] },
+          { name: "an intro of chords alone", args: [BARS_SONG, 2] },
+          { name: "words held on", args: [BARS_SONG, 14] },
           { name: "past the end", args: [SONG, 1000] },
         ],
       },

@@ -16,8 +16,9 @@ import { TextBackground, type StageText } from "./screen-text-background";
 import { ShaderBackground } from "./screen-shader-background";
 import { moveWords } from "../lib/screen-move";
 import { SongChart } from "./song-chart";
-import { BeatRow, chordsAbove, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songLines, songSize, StageSide, useStageSide, type StageLine, type StageSong } from "./screen-text";
+import { BeatRow, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songLines, songSize, StageSide, useStageSide, type StageLine, type StageSong } from "./screen-text";
 import { Flow } from "./screen-flow";
+import { useFollowMusic } from "../lib/screen-follow";
 import { cn } from "@oneverse/ui/lib/utils";
 
 export type { StageSong } from "./screen-text";
@@ -48,6 +49,7 @@ export function ScreenStage({
   assets = [],
   live = {},
   videoInput = false,
+  position = null,
   className,
 }: {
   theme: ScreenTheme;
@@ -61,6 +63,8 @@ export function ScreenStage({
   assets?: ScreenThemeAsset[];
   /** What widgets read besides the song (issue #268): the next song, timers, the operator's message. */
   live?: StageLive;
+  /** Where the music is, in beats from the song's start (issue #395), for a template following it; null or left out when nothing plays. */
+  position?: (() => number) | null;
   /** A real screen: the video input layer opens the device's camera or capture card; elsewhere (a preview) it's a placeholder. */
   videoInput?: boolean;
   className?: string;
@@ -160,6 +164,7 @@ export function ScreenStage({
     ) : null;
   };
   const side = useStageSide(stageRef);
+  useFollowMusic(stageRef, dark ? null : song, theme, position);
   const windows = theme.masks.filter((mask) => mask.kind === "window");
   const covers = theme.masks.filter((mask) => mask.kind === "cover");
   const video = theme.video.source !== "none" && visible.video;
@@ -612,11 +617,13 @@ function Words({ theme, song, index, phase, transition, size }: { theme: ScreenT
                 const body =
                   above && line.chords
                     ? chordsAbove(line.chords, chords)
-                    : now && phase !== "out" && motion.reveal !== "none"
-                      ? reveal(line.text, motion.reveal, () => piece++)
-                      : transition === "move" || (now && transition === "cascade")
-                        ? wordSpans(line.text, first)
-                        : line.text;
+                    : theme.display.follow === "fill" && line.chords
+                      ? fillWords(line.text)
+                      : now && phase !== "out" && motion.reveal !== "none"
+                        ? reveal(line.text, motion.reveal, () => piece++)
+                        : transition === "move" || (now && transition === "cascade")
+                          ? wordSpans(line.text, first)
+                          : line.text;
                 const content = (
                   <>
                     {beats.length > 0 ? <BeatRow bars={beats} chart={song.chart} options={chords} /> : null}
@@ -627,6 +634,8 @@ function Words({ theme, song, index, phase, transition, size }: { theme: ScreenT
                   <p
                     key={i}
                     className={cn("sv-line", above && "sv-has-chords")}
+                    data-line-id={line.chords?.lineId}
+                    data-pass={line.passIndex}
                     style={{ fontSize: `calc(${size}cqmin * var(--k, 1))`, filter, "--li": i, ...lineLook(look, text), ...(above ? { lineHeight: Math.max(look.lineHeight, 1.35 + chords.size) } : null) } as CSSProperties}
                   >
                     {now && BY_LINE.includes(transition) ? (

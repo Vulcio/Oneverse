@@ -1,4 +1,5 @@
 import {
+  barBeatPlaces,
   barLyricSpans,
   chartBars,
   lyricSlideLines,
@@ -7,6 +8,7 @@ import {
   screenSectionKind,
   screenTextEffects,
   SCREEN_FONT_FAMILIES,
+  type BeatPlace,
   type ChartBar,
   type RenderedChart,
   type ScreenSectionKind,
@@ -200,7 +202,7 @@ export function chordsAbove(line: ScreenSlideLine, options: ChordOptions): React
       return { at: place, chord };
     })
     .sort((a, b) => a.at - b.at);
-  if (placed.length === 0) return text;
+  if (placed.length === 0) return fillWords(text);
   const anchor = (key: string, chord: (typeof placed)[number]["chord"], fragment: string) => {
     const name = chordName(chord, options);
     const room = name.length * options.size * 0.62 + 0.3;
@@ -219,17 +221,41 @@ export function chordsAbove(line: ScreenSlideLine, options: ChordOptions): React
     const start = offset;
     const end = (offset += token.length);
     const inWord = /\S/.test(token) ? placed.filter((one) => one.at >= start && one.at < end) : [];
-    if (inWord.length === 0) return out.push(token);
+    if (!/\S/.test(token)) return out.push(token);
+    if (inWord.length === 0) return out.push(word(t, start, end, token));
     const parts: ReactNode[] = [token.slice(0, inWord[0]!.at - start)];
     inWord.forEach((one, i) => parts.push(anchor(`${t}-${i}`, one.chord, token.slice(one.at - start, (inWord[i + 1]?.at ?? end) - start))));
-    out.push(
-      <span key={t} className="whitespace-nowrap">
-        {parts}
-      </span>,
-    );
+    out.push(word(t, start, end, parts, true));
   });
   placed.filter((one) => one.at >= text.length).forEach((one, i) => out.push(" ", anchor(`end-${i}`, one.chord, "")));
   return out;
+}
+
+/** A word of a line, with where it is in the line's text: a template filling the words as they're sung fills it (issue #395). */
+function word(key: number, from: number, to: number, content: ReactNode, whole = false): ReactNode {
+  return (
+    <span key={key} className={whole ? "sv-fw whitespace-nowrap" : "sv-fw"} data-from={from} data-to={to}>
+      {content}
+    </span>
+  );
+}
+
+/** A line's words, each its own element with its place, to be filled in as they're sung (issue #395). */
+export function fillWords(text: string): ReactNode {
+  let offset = 0;
+  return text.split(/(\s+)/).map((token, t) => {
+    const start = offset;
+    offset += token.length;
+    return /\S/.test(token) ? word(t, start, offset, token) : token;
+  });
+}
+
+/** The beats placed in the words (issue #238), for following the music. */
+const placesCache = new WeakMap<StageSong, (BeatPlace | null)[][]>();
+export function songPlaces(song: StageSong): (BeatPlace | null)[][] {
+  let places = placesCache.get(song);
+  if (!places) placesCache.set(song, (places = song.chart ? barBeatPlaces(song.chart, songBars(song)) : []));
+  return places;
 }
 
 /**

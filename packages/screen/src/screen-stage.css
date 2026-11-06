@@ -431,6 +431,51 @@
   background: rgb(255 255 255 / 0.16);
 }
 
+/*
+ * Following the music (issue #395): the line being sung, the ones sung
+ * dimmed, the coming ones a little; Fill fills each word as it's sung. The
+ * chord sounding and the beat being played lit.
+ */
+.sv-stage[data-follow] .sv-line[data-sung] {
+  transition: opacity 0.3s ease;
+}
+.sv-stage[data-follow] .sv-line[data-sung="sung"] {
+  opacity: 0.4;
+}
+.sv-stage[data-follow] .sv-line[data-sung="coming"] {
+  opacity: 0.62;
+}
+.sv-stage[data-follow="fill"] .sv-line[data-sung="now"] .sv-fw {
+  background: linear-gradient(90deg, currentColor var(--f, 0%), color-mix(in srgb, currentColor 38%, transparent) calc(var(--f, 0%) + 4%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.sv-chord-name {
+  -webkit-text-fill-color: var(--chord);
+  border-radius: 0.25em;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.sv-chord-name[data-lit] {
+  padding: 0 0.16em;
+  margin-left: -0.16em;
+  background: var(--chord);
+  color: #06121c;
+  -webkit-text-fill-color: #06121c;
+}
+.sv-beat-block {
+  transition:
+    background-color 0.12s,
+    color 0.12s;
+}
+.sv-stage .sv-beats .sv-beat-block[data-lit],
+.sv-stage .sv-gbeats .sv-beat-block[data-lit] {
+  background: #fff;
+  color: #06121c;
+}
+
 /* Focus (issue #395): the next line to sing, small under the current ones. */
 .sv-focus-next {
   --k: 0.55;

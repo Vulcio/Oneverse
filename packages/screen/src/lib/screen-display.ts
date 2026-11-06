@@ -1,4 +1,4 @@
-import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, slideKey, type ScreenCurrent, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
+import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, slideKey, type ScreenCurrent, type SyncMetronome, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
 import { useEffect, useRef, useState } from "react";
 import { getApiUrl } from "@oneverse/app/public-env";
 import { screenReport } from "./screen-report";
@@ -44,6 +44,8 @@ export type ScreenDisplayState =
       stage: SyncStage | null;
       /** The server's clock less this device's (ms), from its pings: the operator's timer is on the server's. */
       offset: number;
+      /** The leader's click and the item they have open (issue #395): a template following the music follows it on the song it's for. */
+      music: { metronome: SyncMetronome | null; itemId: string | null };
     }
   | { kind: "error"; message: string };
 
@@ -242,6 +244,7 @@ export function useScreenDisplay(): ScreenDisplayState {
   const [adding, setAdding] = useState(false);
   const presenting = useRef<SyncPresenting | null>(null);
   const stage = useRef<SyncStage | null>(null);
+  const music = useRef<{ metronome: SyncMetronome | null; itemId: string | null }>({ metronome: null, itemId: null });
   const offset = useRef(0);
 
   // The token kept from last time, or handed over from Songverse's /screen, once in the browser.
@@ -323,7 +326,7 @@ export function useScreenDisplay(): ScreenDisplayState {
     // Disconnected, or its pairing ended (issue #284): another profile, or a new code.
     const forget = () => setToken(forgetShown());
     const show = () => {
-      if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current });
+      if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current, music: music.current });
     };
     async function load() {
       // Its own day and time: a screen following its owner's schedule shows the set of the day (issue #274).
@@ -374,6 +377,9 @@ export function useScreenDisplay(): ScreenDisplayState {
           online = true;
           presenting.current = message.session?.presenting ?? null;
           stage.current = message.stage ?? null;
+          const metronome = message.session?.metronome ?? null;
+          const open = message.session?.itemId ?? null;
+          if (metronome !== music.current.metronome || open !== music.current.itemId) music.current = { metronome, itemId: open };
           // A song it doesn't have (added since), or whose words aren't the presenter's (edited since, issue #247): loaded again, once for those words.
           const itemId = presenting.current?.itemId;
           const view = itemId ? current?.set?.songs.find((song) => song.item.id === itemId) : undefined;
