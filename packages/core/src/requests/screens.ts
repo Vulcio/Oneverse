@@ -73,6 +73,8 @@ export const UpdateScreenSchema = z.strictObject({
   locationId: screenFields.locationId.nullable().optional().describe("The location it follows in LOCATION mode (issue #320)"),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
+  scriptureThemeId: screenFields.themeId.optional().describe("Its template for a Bible passage without one of its own (issue #402); null: its look for songs"),
+  scriptureThemeTemplate: screenFields.themeTemplate.optional().describe("...or a built-in one by its id; null: its look for songs"),
   hiddenLayers: optional(screenFields.hiddenLayers),
   effects: optional(screenFields.effects),
   lasts: optional(screenFields.lasts).describe("Extended (issue #284): paired for this long from now, or unlimited"),

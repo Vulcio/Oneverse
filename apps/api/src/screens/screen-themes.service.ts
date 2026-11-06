@@ -83,7 +83,7 @@ export class ScreenThemesService {
   /** Deleted: its screens go back to the default look. Its parts stay, for other templates. */
   async remove(user: AuthenticatedUser, themeId: string): Promise<void> {
     await this.changeable(user, themeId);
-    const screens = await this.prisma.client.screen.findMany({ where: { themeId }, select: { id: true } });
+    const screens = await this.prisma.client.screen.findMany({ where: { OR: [{ themeId }, { scriptureThemeId: themeId }] }, select: { id: true } });
     const assets = await this.prisma.client.screenThemeAsset.findMany({ where: { themeId }, select: { storageKey: true } });
     await this.prisma.client.screenTheme.delete({ where: { id: themeId } });
     await this.storage.deleteUnreferenced(assets.map((asset) => asset.storageKey));
@@ -157,7 +157,7 @@ export class ScreenThemesService {
   }
 
   private async announce(themeId: string) {
-    const screens = await this.prisma.client.screen.findMany({ where: { themeId }, select: { id: true } });
+    const screens = await this.prisma.client.screen.findMany({ where: { OR: [{ themeId }, { scriptureThemeId: themeId }] }, select: { id: true } });
     for (const screen of screens) await redis().publish(SCREEN_CHANNEL, screen.id);
   }
 
