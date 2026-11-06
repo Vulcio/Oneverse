@@ -389,7 +389,7 @@ try {
       "/screens?tab=templates",
       async () => {
         await page.getByTestId("builtin-theme-concert").getByTestId("customize-theme").click();
-        await page.getByTestId("theme-group-parts").waitFor();
+        await page.getByTestId("theme-parts").waitFor();
         await page.waitForTimeout(1200);
       },
       { element: page.getByTestId("theme-editor") },

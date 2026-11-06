@@ -605,3 +605,62 @@ body.sv-dragging {
   white-space: nowrap;
   user-select: none;
 }
+
+/* The screen editor's tiles (issue #398): a small picture of a display mode or a transition; a transition's plays while
+   its tile is hovered or picked. */
+.sv-tile-pic i {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  height: 3px;
+  border-radius: 2px;
+  background: #fff;
+}
+.sv-tile-pic i[data-dim] {
+  opacity: 0.35;
+}
+.sv-tile-pic i[data-chord] {
+  height: 2px;
+  right: auto;
+  width: 9%;
+  background: #7dd3fc;
+}
+.sv-tile-pic b {
+  position: absolute;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.18);
+}
+.sv-tile-pic b[data-on] {
+  background: #fff;
+}
+.group\/tile:hover .sv-tile-pic [data-anim],
+.sv-tile-pic[data-on] [data-anim] {
+  animation: var(--a) 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@keyframes sv-t-cut { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@keyframes sv-t-fade { 0%, 15% { opacity: 0; } 60%, 100% { opacity: 1; } }
+@keyframes sv-t-blur { 0%, 15% { opacity: 0; filter: blur(3px); } 60%, 100% { opacity: 1; filter: none; } }
+@keyframes sv-t-unveil { 0%, 15% { clip-path: inset(100% 0 0 0); transform: translateY(4px); } 60%, 100% { clip-path: inset(0); transform: none; } }
+@keyframes sv-t-wipe { 0%, 15% { clip-path: inset(0 100% 0 0); } 60%, 100% { clip-path: inset(0); } }
+@keyframes sv-t-push { 0%, 15% { transform: translateY(12px); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-push-across { 0%, 15% { transform: translateX(28px); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-relay { 0%, 15% { transform: translateX(-18px); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-settle { 0%, 15% { transform: scale(1.3); opacity: 0; } 70%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-iris { 0%, 15% { clip-path: circle(0% at 50% 50%); } 60%, 100% { clip-path: circle(80% at 50% 50%); } }
+@keyframes sv-t-cover { 0%, 15% { transform: translateY(14px); } 60%, 100% { transform: none; } }
+@keyframes sv-t-tighten { 0%, 15% { transform: scaleX(1.5); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-cascade { 0%, 15% { clip-path: inset(0 100% 0 0); opacity: 0.2; } 60%, 100% { clip-path: inset(0); opacity: 1; } }
+@keyframes sv-t-flip { 0%, 15% { transform: perspective(60px) rotateX(-80deg); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-depth { 0%, 15% { opacity: 0; transform: perspective(80px) translateZ(30px); } 60%, 100% { opacity: 1; transform: none; } }
+@keyframes sv-t-drift { 0%, 15% { opacity: 0; transform: perspective(80px) translateZ(-40px) rotateX(25deg); } 60%, 100% { opacity: 1; transform: none; } }
+@keyframes sv-t-slide { 0%, 15% { transform: translateX(-24px); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-rise { 0%, 15% { transform: translateY(8px); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-scale { 0%, 15% { transform: scale(0.6); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-zoom { 0%, 15% { transform: scale(1.6); opacity: 0; } 60%, 100% { transform: none; opacity: 1; } }
+@keyframes sv-t-move { 0%, 15% { transform: translate(-6px, 6px) scale(0.8); } 60%, 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .group\/tile:hover .sv-tile-pic [data-anim],
+  .sv-tile-pic[data-on] [data-anim] {
+    animation: none;
+  }
+}

@@ -252,7 +252,7 @@ try {
     // Added to a template: it comes with that look.
     await tablet.goto(`${WEB}/screens?tab=templates`);
     await tablet.getByTestId("new-theme").click();
-    await editor.getByTestId("theme-group-widgets").locator("summary").click();
+    await editor.getByTestId("theme-tab-widgets").click();
     await editor.getByTestId("theme-widget-add").selectOption("countdown");
     await editor.getByTestId("theme-widget-label").waitFor();
     if ((await editor.getByTestId("theme-widget-label").inputValue()) !== `Talk ${stamp}`) throw new Error("the default look wasn't put on the widget");

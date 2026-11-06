@@ -212,6 +212,7 @@ try {
     await desk.getByTestId("new-theme").click();
     const editor = desk.getByTestId("theme-editor");
     // The base and the video input are the background theme's (issue #281).
+    await editor.getByTestId("theme-tab-background").click();
     await editor.getByTestId("theme-part-background-open").click();
     const part = desk.getByTestId("part-editor");
     await part.getByTestId("theme-group-layers").locator("summary").click();
@@ -224,10 +225,10 @@ try {
     await part.getByTestId("theme-save").click();
     await part.waitFor({ state: "detached" });
     await editor.getByTestId("screen-video-placeholder").waitFor();
+    await editor.getByTestId("theme-tab-widgets").click();
     await editor.getByTestId("theme-group-masks").locator("summary").click();
     await editor.getByTestId("theme-add-mask").click();
     await editor.getByTestId("theme-mask").getByTestId("theme-mask-kind").locator('[data-value="window"]').click();
-    await editor.getByTestId("theme-group-widgets").locator("summary").click();
     await editor.getByTestId("theme-widget-add").selectOption("song");
     await editor.getByTestId("theme-widget-layer").selectOption("overlays");
     await editor.locator('[data-testid="theme-preview"] [data-layer="overlays"] [data-kind="song"]').waitFor();

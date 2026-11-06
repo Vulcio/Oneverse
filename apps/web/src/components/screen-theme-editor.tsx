@@ -9,7 +9,6 @@ import {
   screenShader,
   type IsfInput,
   type IsfValue,
-  SCREEN_CONTENT_SHOWS,
   SCREEN_CONTEXT_STYLES,
   SCREEN_EFFECT_TARGETS,
   SCREEN_EFFECT_TRIGGERS,
@@ -42,7 +41,7 @@ import {
   type ScreenWidgetDefault,
   type TeamSummary,
 } from "@oneverse/core";
-import { ChevronLeft, ChevronRight, Copy, Minus, Pause, Pencil, Play, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Image as ImageIcon, LayoutGrid, Minus, Palette, Pause, Pencil, Play, Plus, Sparkles, Tag, Trash2, TriangleAlert, Type } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
@@ -172,6 +171,8 @@ export function ScreenThemeEditor({
   // The layout (issue #268): the widget picked, and the grid drawn over the preview to move them.
   const [selected, setSelected] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
+  // A template's parts, one at a time (issue #398).
+  const [layer, setLayer] = useState<Layer>("content");
   const setGrid = (grid: Grid | null) => setTheme((before) => ScreenThemeSchema.parse({ ...before, grid }));
   const sample = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
   const adminTeams = teams.filter((team) => team.currentUserRole === "ADMIN");
@@ -248,6 +249,13 @@ export function ScreenThemeEditor({
   }
 
   /** A template's part opened: a saved one to change, a built-in one to customize into one of the user's own. */
+  /** The name of a template's part, as its row in the rail says it. */
+  function partName(slot: ScreenPartKind, ref: ScreenPartRef | null): string {
+    if (!ref) return t("screens.parts.noEffects");
+    if ("builtIn" in ref) return t(`screens.parts.builtIn.${slot}.${ref.builtIn}`);
+    return parts.find((one) => one.id === ref.id)?.name ?? "";
+  }
+
   function openPart(slot: ScreenPartKind) {
     const ref = refs[slot];
     const saved = ref && "id" in ref ? parts.find((one) => one.id === ref.id) : undefined;
@@ -272,55 +280,73 @@ export function ScreenThemeEditor({
         </div>
         <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[24rem_minmax(0,1fr)] lg:overflow-hidden">
           {/* The settings, grouped; their own scroll on a wide screen. */}
-          <div className="flex flex-col gap-1 border-b p-3 lg:overflow-y-auto lg:border-r lg:border-b-0">
+          <div className="flex flex-col border-b lg:overflow-y-auto lg:border-r lg:border-b-0">
             {kind === "template" ? (
               <>
-                <Group title={t("screens.editor.parts")} open testId="theme-group-parts">
-                  <p className="text-xs text-muted-foreground">{t("screens.editor.partsHint")}</p>
-                  {(["content", "background", "effects"] as const).map((slot) => (
-                    <PartPicker key={slot} slot={slot} value={refs[slot]} parts={usable.filter((one) => one.kind === slot)} onPick={(ref) => pickPart(slot, ref)} onOpen={() => openPart(slot)} />
-                  ))}
-                </Group>
-                <Group title={t("screens.editor.tags")} open testId="theme-group-tags">
-                  <TagPicker value={tags} onChange={setTags} testId="theme-tags" />
-                  <span className="text-xs text-muted-foreground">{t("screens.editor.tagsHint")}</span>
-                </Group>
-                <Group title={t("screens.editor.passages")} open={versesPerSlide !== 1 || tags.includes("scripture")} testId="theme-group-passages">
-                  <Field label={t("screens.editor.versesPerSlide")}>
-                    <Input
-                      type="number"
-                      className="h-8 w-24"
-                      min={1}
-                      max={SCREEN_VERSES_PER_SLIDE_MAX}
-                      value={versesPerSlide}
-                      onChange={(event) => setVersesPerSlide(Math.min(SCREEN_VERSES_PER_SLIDE_MAX, Math.max(1, Math.round(Number(event.target.value) || 1))))}
-                      data-testid="theme-verses-per-slide"
-                    />
-                  </Field>
-                  <span className="text-xs text-muted-foreground">{t("screens.editor.versesPerSlideHint")}</span>
-                </Group>
-                <Group title={t("screens.editor.widgets")} open={!!theme.grid} testId="theme-group-widgets">
-              <LayoutSettings
-                grid={theme.grid}
-                onGrid={setGrid}
-                selected={selected}
-                onSelect={setSelected}
-                lookFor={(kind) => {
-                  const team = draft.ownerTeamId ?? (owner || null);
-                  return (widgetDefaults.find((one) => one.kind === kind && team && one.teamId === team) ?? widgetDefaults.find((one) => one.kind === kind && !one.teamId))?.look ?? null;
-                }}
-              />
-                </Group>
-                <Group title={t("screens.layers.masks")} testId="theme-group-masks">
-                  <MasksSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
-                </Group>
+                <LayerRail
+                  tab={layer}
+                  onTab={setLayer}
+                  names={{
+                    content: partName("content", refs.content),
+                    background: partName("background", refs.background),
+                    effects: partName("effects", refs.effects),
+                    widgets: theme.grid?.widgets.length ? t("screens.editor.widgetCount", { count: theme.grid.widgets.length }) : t("screens.editor.noWidgets"),
+                    template: tags.length ? t("screens.editor.tagCount", { count: tags.length }) : "",
+                  }}
+                />
+                {layer === "content" || layer === "background" || layer === "effects" ? (
+                  <div className="flex flex-col gap-3 px-4 py-4" data-testid={`theme-layer-${layer}`}>
+                    <p className="text-xs text-muted-foreground">{t(`screens.editor.partRowHints.${layer}`)}</p>
+                    <PartPicker slot={layer} value={refs[layer]} parts={usable.filter((one) => one.kind === layer)} onPick={(ref) => pickPart(layer, ref)} onOpen={() => openPart(layer)} />
+                  </div>
+                ) : null}
+                {layer === "template" ? (
+                  <>
+                    <p className="px-4 pt-4 text-xs text-muted-foreground">{t("screens.editor.partRowHints.template")}</p>
+                    <Group title={t("screens.editor.tags")} open testId="theme-group-tags">
+                      <TagPicker value={tags} onChange={setTags} testId="theme-tags" />
+                      <span className="text-xs text-muted-foreground">{t("screens.editor.tagsHint")}</span>
+                    </Group>
+                    <Group title={t("screens.editor.passages")} open={versesPerSlide !== 1 || tags.includes("scripture")} testId="theme-group-passages">
+                      <Field label={t("screens.editor.versesPerSlide")}>
+                        <Input
+                          type="number"
+                          className="h-8 w-24"
+                          min={1}
+                          max={SCREEN_VERSES_PER_SLIDE_MAX}
+                          value={versesPerSlide}
+                          onChange={(event) => setVersesPerSlide(Math.min(SCREEN_VERSES_PER_SLIDE_MAX, Math.max(1, Math.round(Number(event.target.value) || 1))))}
+                          data-testid="theme-verses-per-slide"
+                        />
+                      </Field>
+                      <span className="text-xs text-muted-foreground">{t("screens.editor.versesPerSlideHint")}</span>
+                    </Group>
+                  </>
+                ) : null}
+                {layer === "widgets" ? (
+                  <>
+                    <p className="px-4 pt-4 text-xs text-muted-foreground">{t("screens.editor.partRowHints.widgets")}</p>
+                    <Group title={t("screens.editor.widgets")} open testId="theme-group-widgets">
+                  <LayoutSettings
+                    grid={theme.grid}
+                    onGrid={setGrid}
+                    selected={selected}
+                    onSelect={setSelected}
+                    lookFor={(kind) => {
+                      const team = draft.ownerTeamId ?? (owner || null);
+                      return (widgetDefaults.find((one) => one.kind === kind && team && one.teamId === team) ?? widgetDefaults.find((one) => one.kind === kind && !one.teamId))?.look ?? null;
+                    }}
+                  />
+                    </Group>
+                    <Group title={t("screens.layers.masks")} testId="theme-group-masks">
+                      <MasksSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+                    </Group>
+                  </>
+                ) : null}
               </>
             ) : null}
             {kind === "content" ? (
               <>
-                <Group title={t("screens.editor.shows")} open testId="theme-group-shows">
-                  <Choices value={theme.shows} options={SCREEN_CONTENT_SHOWS} label={(one) => t(`screens.editor.showsOptions.${one}`)} onChange={(shows) => setTheme((before) => ScreenThemeSchema.parse({ ...before, shows }))} testId="theme-shows" />
-                </Group>
             <DisplaySettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
             <TextMotionSettings
               theme={theme}
@@ -628,6 +654,55 @@ function splitParts(theme: ScreenTheme) {
 /** The files a template's saved parts refer to. */
 function savedAssets(refs: TemplateRefs, parts: ScreenPartSummary[]): ScreenThemeAsset[] {
   return [refs.content, refs.background].flatMap((ref) => (ref && "id" in ref ? (parts.find((one) => one.id === ref.id)?.assets ?? []) : []));
+}
+
+type Layer = "content" | "background" | "effects" | "widgets" | "template";
+
+const LAYER_ICONS = { content: Type, background: ImageIcon, effects: Sparkles, widgets: LayoutGrid, brand: Palette, template: Tag } as const;
+
+/**
+ * What a template is made of (issue #398), one row each: its words, its
+ * background, its effects, its widgets and masks, its brand (to come, #397)
+ * and its own tags; the one picked is edited under the rail.
+ */
+function LayerRail({ tab, onTab, names }: { tab: Layer; onTab: (tab: Layer) => void; names: Record<Layer, string> }) {
+  const { t } = useTranslation();
+  const rows = ["content", "background", "effects", "widgets", "brand", "template"] as const;
+  return (
+    <div className="flex flex-col gap-1 border-b bg-muted/30 p-3" data-testid="theme-parts">
+      <span className="px-1 pb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">{t("screens.editor.madeOf")}</span>
+      <div className="flex flex-col gap-0.5" role="tablist" aria-orientation="vertical">
+        {rows.map((row) => {
+          const Icon = LAYER_ICONS[row];
+          const soon = row === "brand";
+          const on = row === tab;
+          return (
+            <button
+              key={row}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              aria-disabled={soon || undefined}
+              disabled={soon}
+              onClick={() => (soon ? undefined : onTab(row))}
+              className={cn(
+                "flex h-10 items-center gap-2.5 rounded-lg px-2 text-left transition-colors",
+                on ? "bg-background shadow-sm ring-1 ring-border" : soon ? "opacity-50" : "hover:bg-background/70",
+              )}
+              data-testid={`theme-tab-${row}`}
+            >
+              <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-md", on ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                <Icon className="size-4" aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">{t(`screens.editor.partRows.${row}`)}</span>
+              <span className="max-w-[45%] shrink-0 truncate text-xs text-muted-foreground">{soon ? t("screens.editor.brandSoon") : names[row]}</span>
+              {soon ? null : <ChevronRight className={cn("size-3.5 shrink-0 text-muted-foreground", on ? "opacity-100" : "opacity-0")} aria-hidden />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /** A template's part (issue #281): built-in or saved, picked from a list; opened to change it (a saved one) or to customize it into one's own. */

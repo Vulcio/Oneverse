@@ -82,7 +82,8 @@ try {
     await builtIn.getByTestId("customize-theme").click();
     const editor = tablet.getByTestId("theme-editor");
     await editor.getByTestId("theme-preview").waitFor();
-    // The background, customized into one of the user's own.
+    // The background, customized into one of the user's own: its own tab among the template's parts (issue #398).
+    await editor.getByTestId("theme-tab-background").click();
     await editor.getByTestId("theme-part-background-open").click();
     let part = tablet.getByTestId("part-editor");
     await part.getByTestId("theme-background").locator('[data-value="particles"]').click();
@@ -92,6 +93,7 @@ try {
     await part.waitFor({ state: "detached" });
     await editor.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor();
     // The words too.
+    await editor.getByTestId("theme-tab-content").click();
     await editor.getByTestId("theme-part-content-open").click();
     part = tablet.getByTestId("part-editor");
     await part.getByTestId("theme-transition").locator('[data-value="zoom"]').click();
@@ -114,6 +116,7 @@ try {
     await part.locator("#theme-name").fill(`Starry words ${stamp}`);
     await part.getByTestId("theme-save").click();
     await part.waitFor({ state: "detached" });
+    await editor.getByTestId("theme-tab-template").click();
     await editor.getByTestId("theme-tags").locator('[data-value="presentation"]').click();
     await editor.locator("#theme-name").fill(`Starry ${stamp}`);
     await editor.getByTestId("theme-save").click();
