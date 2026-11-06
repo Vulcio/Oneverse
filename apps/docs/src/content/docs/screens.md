@@ -12,13 +12,13 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
    ![A screen showing its code](../../assets/screenshots/en/screen-code.jpg)
 
 2. On your phone or tablet, scan the QR code, or open **Screens** - under **Tools** in the sidebar, or from the Sync menu in Live (**Screens…**) - and type the code.
-3. Give the screen a **Name** ("Church TV"), pick the **Set** it shows - one of yours, or **The day's set (automatic)** (see [below](/screens/#the-days-set)) **Paired for** says how long it stays paired: **Unlimited**, or **12 hours**, **1 day** or **1 week** for a guest speaker's laptop or a rented venue's screen (see [For a while, or for several](/screens/#for-a-while-or-for-several)). Then **Pair screen**. What it shows - the lyrics or the band's chart - comes from its [template](/screens/#templates).
+3. Give the screen a **Name** ("Church TV"), pick the **Set** it shows - one of yours, or **The day's set (automatic)** (see [below](/screens/#the-days-set)) **Paired for** says how long it stays paired: **Unlimited**, or **12 hours**, **1 day** or **1 week** for a guest speaker's laptop or a rented venue's screen (see [For a while, or for several](/screens/#for-a-while-or-for-several)). **Used for** picks the templates it starts with, for songs and for Bible passages: **Audience** (Classic and Scripture), **Stage** (Stage display and Stage scripture), **Stream** (Stream and Stream scripture) or **Band** (Band chart and Stage scripture); change them later in its **Settings**. Then **Pair screen**. What it shows - the lyrics or the band's chart - comes from its [template](/screens/#templates).
 
    ![Pairing a screen](../../assets/screenshots/en/screens-pair.jpg)
 
 The screen remembers it's paired: next time, open the same page and it reconnects by itself. A screen paired before the screen app, at **songverse.top/screen**, is sent there and stays paired. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
-**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, change its template or its owner, turn its **Effects** on or off (see [Effects](/screens/#effects)), and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
+**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, change its **Template for songs** and its **Template for Bible passages** (**Same as songs** until you pick one; a passage that picks its own template in the set keeps it, see [Bible](/bible/#adding-it-to-a-set)) or its owner, turn its **Effects** on or off (see [Effects](/screens/#effects)), and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
 
 ### The day's set
 
@@ -39,7 +39,8 @@ The screen has a menu of its own, for whoever stands by it, even while a set is 
 ![The screen's menu, over the words](../../assets/screenshots/en/screen-menu.jpg)
 
 - **Choose a set** opens the list of sets above. On a screen with a fixed set it's greyed out: change that set from **Screens**.
-- **Theme** lists the **Built-in** templates and the owner's **Saved themes**, with the one in use marked. Pick one with **OK** and the screen changes at once. It keeps that theme, as if you'd picked it in the tile's **Settings**.
+- **Template for songs** lists the **Built-in** templates and the owner's **Saved templates**, with the one in use marked. Pick one with **OK** and the screen changes at once. It keeps that template, as if you'd picked it in the tile's **Settings**.
+- **Template for Bible passages** does the same for the passages that don't have a template of their own, the templates for scripture first; **Same as songs** shows them with the template for songs.
 - **Video input**, with a template that shows one (see [Layers](/screens/#layers)), lists the device's cameras and capture cards: **The first camera there is**, or one by name. The screen keeps the one picked, on that device. The browser asks to allow the camera the first time.
 - **Profiles** lists the screen's profiles, one for each time it was paired, with the one showing marked: pick another and the screen shows it. **Pair it again** shows a code for one more (see [For a while, or for several](/screens/#for-a-while-or-for-several)).
 - **Back** steps out of the themes, the cameras or the profiles, and Back (Escape) or **Close** closes the menu.
@@ -134,11 +135,15 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 - **Stage monitor** - big capitals at the top and the whole section, for the band.
 - **Band chart** - the song's chart with its chords, the section being sung in view, for the band.
 - **Scripture** - for a Bible passage: the chapel's look, two verses on each slide.
+- **Stage scripture** - for a Bible passage on the stage screen: the verses now and next, the reference, the clock and a timer.
+- **Stream scripture** - for a Bible passage over a stream: the verse in the lower third, its reference under it.
 - **Drift** - colours flowing slowly, speeding up as each slide comes, then settling again.
 - **Turning** - colours swirling and turning a little further with each slide, closer in a chorus.
 - **Neural** - glowing threads on black that quicken and brighten with each line.
 
-**Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3** - changing as you change them. **⏵** plays the sample song, **‹ ›** go slide by slide.
+**Customize** opens one in the template editor, with its preview beside the settings - at **16:9** or **4:3** - changing as you change them. **Preview with** plays **A song** or **A passage** (John 3:16-18), **⏵** plays it, **‹ ›** go slide by slide.
+
+**Made for**, at the top, says what the template shows: **Songs**, **Bible passages**, both, or neither for anything. It sets what the preview plays, which widgets **Add a widget** offers (those for songs, such as the sections and the song's structure, only on a template made for songs), and which templates come first where a screen or a passage picks one. It never stops a screen showing anything else with it. A template for one kind plays it on its card too.
 
 ![The template editor: its content, background and effects](../../assets/screenshots/en/screen-template-parts.jpg)
 
@@ -253,7 +258,7 @@ Each one plays live on the **Widgets** tab, with a sample song. **Customize** se
 In the template editor, **Layout and widgets** places them:
 
 1. **Start from** a ready-made layout - **Words only**, **Words and a clock** or **Stage display** - or **Add a widget** to the words.
-2. On the preview, drag a widget to move it, and drag its corner to resize it. Picked, the arrow keys move it, and with Shift they resize it. **Show the grid** hides the cells to see the screen as it will be.
+2. On the preview, drag a widget to move it, and drag its corner to resize it. Picked, the arrow keys move it, and with Shift they resize it. **Show the grid** hides the cells to see the screen as it will be. A template without widgets shows its words as one box over the whole screen: move or resize it and the template gets a grid.
 3. Pick a widget, in the list or on the preview, to set what it shows and its **Look**: its font and colour (or the template's), size, a **Panel behind it** and **Rounded corners**. In the list, the arrows bring one forward or send it back, where widgets overlap.
 4. **Columns**, **Rows** and **Space between cells** set the grid, and **Black screen hides** **Everything** or **Only the words (timers and the clock stay)** - a stage display keeps its clock and countdown when the audience's screens go black.
 

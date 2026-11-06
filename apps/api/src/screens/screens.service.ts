@@ -45,6 +45,8 @@ const SCREEN_SELECT = {
   setlistId: true,
   themeId: true,
   themeTemplate: true,
+  scriptureThemeId: true,
+  scriptureThemeTemplate: true,
   hiddenLayers: true,
   effects: true,
   expiresAt: true,
@@ -88,6 +90,13 @@ function lookChange(change: { themeId?: string | null; themeTemplate?: string | 
   if (change.themeId) return { themeId: change.themeId, themeTemplate: null, ...mode };
   if (change.themeTemplate) return { themeId: null, themeTemplate: change.themeTemplate, ...mode };
   return { ...(change.themeId === null && { themeId: null }), ...(change.themeTemplate === null && { themeTemplate: null }), ...mode };
+}
+
+/** A screen's template for Bible passages (issue #402) as asked for: one or the other, or (both null) its look for songs; left out, as it was. */
+function scriptureLookChange(change: { scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null }) {
+  if (change.scriptureThemeId) return { scriptureThemeId: change.scriptureThemeId, scriptureThemeTemplate: null };
+  if (change.scriptureThemeTemplate) return { scriptureThemeId: null, scriptureThemeTemplate: change.scriptureThemeTemplate };
+  return { ...(change.scriptureThemeId === null && { scriptureThemeId: null }), ...(change.scriptureThemeTemplate === null && { scriptureThemeTemplate: null }) };
 }
 
 /**
@@ -134,16 +143,17 @@ export class ScreensService {
    * or (issue #222) a team's or an organisation's they run - its token
    * waiting for it to claim.
    */
-  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; themeId?: string | null; themeTemplate?: string | null; lasts?: ScreenPairingLength }) {
+  async confirm(user: AuthenticatedUser, input: string, change: { owner?: ScreenOwnerRequest; name: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string; locationId?: string; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; lasts?: ScreenPairingLength }) {
     const { code, pairingId, pairing } = await this.waiting(input);
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
+    if (change.scriptureThemeId) await this.themes.assertCanUse(user, change.scriptureThemeId);
     const owner = await this.ownerFor(user, change.owner, true);
     // Following a location (issue #320): one its owner's events can take.
     const locationId = change.setMode === "LOCATION" ? await this.assertLocation(owner, change.locationId) : null;
     const token = `scr_${randomBytes(32).toString("base64url")}`;
     let screen = await this.prisma.client.screen.create({
-      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, setByUserId: user.id, ...owner, tokenHash: hash(token), expiresAt: screenPairingEnds(change.lasts ?? "unlimited"), ...lookChange(change) },
+      data: { name: change.name, kind: pairing.kind ?? "SCREEN", mode: change.mode ?? "LYRICS", setMode: change.setMode ?? "FIXED", setlistId: locationId ? null : (change.setlistId ?? null), locationId, setByUserId: user.id, ...owner, tokenHash: hash(token), expiresAt: screenPairingEnds(change.lasts ?? "unlimited"), ...lookChange(change), ...scriptureLookChange(change) },
       select: SCREEN_SELECT,
     });
     if (locationId) screen = await this.followLocation(screen);
@@ -187,7 +197,7 @@ export class ScreensService {
     const shown = await this.prisma.client.screen.update({
       where: { id: screen.id },
       data: { lastSeenAt: new Date() },
-      select: { mode: true, effects: true, theme: { select: TEMPLATE_PARTS_SELECT } },
+      select: { mode: true, effects: true, theme: { select: TEMPLATE_PARTS_SELECT }, scriptureTheme: { select: TEMPLATE_PARTS_SELECT } },
     });
     let set = null;
     if (screen.setlistId) {
@@ -203,14 +213,21 @@ export class ScreensService {
     }
     // Its template's pictures, videos and fonts (issues #194, #281), at addresses a screen can load without a session.
     const look = screenLook({ themeTemplate: screen.themeTemplate, ...shown });
-    // Its passages' own templates (issue #310), by item: what it shows while one of them is presented.
-    const items = await this.itemLooks(set?.songs ?? [], { effects: shown.effects });
-    const assets = [...look.assets, ...items.assets.filter((asset) => !look.assets.some((one) => one.id === asset.id))];
+    // Its look for passages (issue #402), when it has one: a saved template, or a built-in one.
+    const scripture = shown.scriptureTheme
+      ? templateLook(shown.scriptureTheme, { effects: shown.effects })
+      : screen.scriptureThemeTemplate
+        ? { theme: composeBuiltInTemplate(screen.scriptureThemeTemplate, { effects: shown.effects }) ?? null, assets: [] }
+        : null;
+    // Its passages' own templates (issue #310), by item, else its look for passages: what it shows while one of them is presented.
+    const items = await this.itemLooks(set?.songs ?? [], { effects: shown.effects, scripture: scripture?.theme ?? null });
+    const assets = [...look.assets];
+    for (const asset of [...(scripture?.assets ?? []), ...items.assets]) if (!assets.some((one) => one.id === asset.id)) assets.push(asset);
     return { screen: present(screen), theme: look.theme, assets, itemThemes: items.themes, set };
   }
 
   /** The looks of a set's items that have a template of their own (issue #310), and the files they refer to. */
-  private async itemLooks(views: { item: { id: string }; passage: SetItemPassage | null }[], options: { effects: boolean }) {
+  private async itemLooks(views: { item: { id: string }; passage: SetItemPassage | null }[], options: { effects: boolean; scripture: ScreenTheme | null }) {
     const themes: Record<string, ScreenTheme> = {};
     const assets: ReturnType<typeof templateLook>["assets"] = [];
     const saved = new Map<string, ReturnType<typeof templateLook> | null>();
@@ -228,6 +245,8 @@ export class ScreensService {
         }
         const look = saved.get(template.id);
         if (look) themes[view.item.id] = look.theme;
+      } else if (view.passage && options.scripture) {
+        themes[view.item.id] = options.scripture;
       }
     }
     return { themes, assets };
@@ -273,31 +292,42 @@ export class ScreensService {
     const screen = await this.byToken(token);
     if (!screen) throw new NotFoundException("This screen was disconnected");
     const themes = await this.ownerThemes(screen);
-    return { themeId: screen.themeId, themeTemplate: screen.themeTemplate, themes: themes.map((one) => ({ id: one.id, name: one.name, teamName: one.team?.name ?? null, tags: templateLayout(one).tags })) };
+    return {
+      themeId: screen.themeId,
+      themeTemplate: screen.themeTemplate,
+      scriptureThemeId: screen.scriptureThemeId,
+      scriptureThemeTemplate: screen.scriptureThemeTemplate,
+      themes: themes.map((one) => ({ id: one.id, name: one.name, teamName: one.team?.name ?? null, tags: templateLayout(one).tags, madeFor: templateLayout(one).madeFor })),
+    };
   }
 
   /** A theme picked on the screen (issue #276): kept on it, as if set from Screens. */
-  async pickTheme(token: string, pick: { themeId: string | null; themeTemplate: string | null }) {
+  async pickTheme(token: string, pick: { themeId: string | null; themeTemplate: string | null; for?: "songs" | "scripture" }) {
     const screen = await this.byToken(token);
     if (!screen) throw new NotFoundException("This screen was disconnected");
     if (pick.themeId && !(await this.ownerThemes(screen)).some((one) => one.id === pick.themeId)) throw new NotFoundException("Theme not found");
+    // Its template for passages (issue #402), or for songs.
+    const data =
+      pick.for === "scripture"
+        ? scriptureLookChange(pick.themeId ? { scriptureThemeId: pick.themeId } : { scriptureThemeId: null, scriptureThemeTemplate: pick.themeTemplate })
+        : lookChange(pick.themeId ? { themeId: pick.themeId } : { themeId: null, themeTemplate: pick.themeTemplate });
     const updated = await this.prisma.client.screen.update({
       where: { id: screen.id },
-      data: lookChange(pick.themeId ? { themeId: pick.themeId } : { themeId: null, themeTemplate: pick.themeTemplate }),
+      data,
       select: SCREEN_SELECT,
     });
     await redis().publish(SCREEN_CHANNEL, screen.id);
     return present(updated);
   }
 
-  private async ownerThemes(screen: { themeId: string | null } & Owned) {
+  private async ownerThemes(screen: { themeId: string | null; scriptureThemeId: string | null } & Owned) {
     const owners = screen.ownerTeamId
       ? [{ ownerTeamId: screen.ownerTeamId }]
       : screen.ownerOrganizationId
         ? [{ team: { organizationId: screen.ownerOrganizationId } }]
         : [{ ownerUserId: screen.ownerUserId ?? "-" }];
     return this.prisma.client.screenTheme.findMany({
-      where: { OR: [...owners, ...(screen.themeId ? [{ id: screen.themeId }] : [])] },
+      where: { OR: [...owners, ...(screen.themeId ? [{ id: screen.themeId }] : []), ...(screen.scriptureThemeId ? [{ id: screen.scriptureThemeId }] : [])] },
       select: { id: true, name: true, document: true, team: { select: { name: true } } },
       orderBy: { name: "asc" },
       take: 100,
@@ -423,12 +453,13 @@ export class ScreensService {
    * leads the set it shows, gives it another set (one they can edit) - it
    * then reads that set as them.
    */
-  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; themeId?: string | null; themeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean; lasts?: ScreenPairingLength }) {
+  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean; lasts?: ScreenPairingLength }) {
     const { screen, canManage } = await this.changeable(user, screenId);
     const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode" || key === "locationId");
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
     if (change.setlistId) await this.assertCanPresent(user, change.setlistId);
     if (change.themeId) await this.themes.assertCanUse(user, change.themeId);
+    if (change.scriptureThemeId) await this.themes.assertCanUse(user, change.scriptureThemeId);
     // Who owns it is its owners' to change, not someone who manages it by a role (issue #322).
     if (change.owner && !manages(user, { ...(await this.scopeOf(user)), managedTeams: new Set(), managedOrganizations: new Set() }, screen)) throw new ForbiddenException("Only the screen's owners give it to someone else");
     const owner = change.owner ? await this.ownerFor(user, change.owner) : null;
@@ -450,6 +481,7 @@ export class ScreensService {
         ...(change.setMode !== undefined ? { setMode: change.setMode, ...(change.setMode === "DAY" && change.setlistId === undefined && { setlistPickedOn: null }) } : change.setlistId ? { setMode: "FIXED" as const } : {}),
         ...(locationId !== undefined && { locationId }),
         ...lookChange(change),
+        ...scriptureLookChange(change),
       },
       select: SCREEN_SELECT,
     });
@@ -640,6 +672,8 @@ function present(
     setlistId: string | null;
     themeId: string | null;
     themeTemplate: string | null;
+    scriptureThemeId: string | null;
+    scriptureThemeTemplate: string | null;
     hiddenLayers: string[];
     effects: boolean;
     expiresAt: Date | null;
@@ -675,6 +709,8 @@ function present(
     createdAt: screen.createdAt.toISOString(),
     themeId: screen.themeId,
     themeTemplate: screen.themeTemplate,
+    scriptureThemeId: screen.scriptureThemeId,
+    scriptureThemeTemplate: screen.scriptureThemeTemplate,
     hiddenLayers: SCREEN_SWITCHABLE_LAYERS.filter((layer) => screen.hiddenLayers.includes(layer)),
     effects: screen.effects,
     expiresAt: screen.expiresAt?.toISOString() ?? null,

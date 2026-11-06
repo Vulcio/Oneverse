@@ -47,6 +47,8 @@ export const ConfirmScreenPairingSchema = z
   locationId: optional(screenFields.locationId),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
+  scriptureThemeId: screenFields.themeId.optional().describe("Its template for a Bible passage without one of its own (issue #402)"),
+  scriptureThemeTemplate: screenFields.themeTemplate.optional().describe("...or a built-in one by its id"),
   lasts: optional(screenFields.lasts).describe("How long it stays paired (issue #284); left out: unlimited"),
   })
   .refine((pairing) => pairing.setMode === "DAY" || pairing.setMode === "LOCATION" || !!pairing.setlistId, "setlistId must name the set, unless setMode is DAY or LOCATION")
@@ -73,6 +75,8 @@ export const UpdateScreenSchema = z.strictObject({
   locationId: screenFields.locationId.nullable().optional().describe("The location it follows in LOCATION mode (issue #320)"),
   themeId: screenFields.themeId.optional(),
   themeTemplate: screenFields.themeTemplate.optional(),
+  scriptureThemeId: screenFields.themeId.optional().describe("Its template for a Bible passage without one of its own (issue #402); null: its look for songs"),
+  scriptureThemeTemplate: screenFields.themeTemplate.optional().describe("...or a built-in one by its id; null: its look for songs"),
   hiddenLayers: optional(screenFields.hiddenLayers),
   effects: optional(screenFields.effects),
   lasts: optional(screenFields.lasts).describe("Extended (issue #284): paired for this long from now, or unlimited"),
@@ -167,6 +171,7 @@ export const PickScreenThemeSchema = z
   .strictObject({
     themeId: screenFields.themeId,
     themeTemplate: screenFields.themeTemplate,
+    for: optional(z.enum(["songs", "scripture"])).describe("Which of its templates (issue #402): for songs (left out), or for Bible passages - both null: the same as songs"),
   })
   .refine((pick) => !(pick.themeId && pick.themeTemplate), "Pick a saved theme or a built-in one, not both");
 export type PickScreenThemeRequest = z.input<typeof PickScreenThemeSchema>;

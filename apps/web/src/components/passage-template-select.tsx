@@ -1,4 +1,4 @@
-import { SCREEN_TEMPLATES, type ScreenThemeSummary, type SetItemTemplate, type SetlistItemScreenTemplate } from "@oneverse/core";
+import { SCREEN_TEMPLATES, screenTemplateFor, type ScreenThemeSummary, type SetItemTemplate, type SetlistItemScreenTemplate } from "@oneverse/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@oneverse/ui/components/label";
@@ -45,11 +45,11 @@ export function PassageTemplateSelect({ id, value, onChange }: { id: string; val
   }, []);
 
   const options = [
-    ...SCREEN_TEMPLATES.map((one) => ({ value: `b:${one.id}`, name: t(`screens.templates.${one.id}.name`), tags: one.template.tags as string[], verses: one.template.versesPerSlide })),
-    ...(saved ?? []).map((one) => ({ value: `s:${one.id}`, name: one.teamName ? `${one.name} (${one.teamName})` : one.name, tags: one.template.tags as string[], verses: one.template.versesPerSlide })),
+    ...SCREEN_TEMPLATES.map((one) => ({ value: `b:${one.id}`, name: t(`screens.templates.${one.id}.name`), scripture: screenTemplateFor(one.template, "scripture"), verses: one.template.versesPerSlide })),
+    ...(saved ?? []).map((one) => ({ value: `s:${one.id}`, name: one.teamName ? `${one.name} (${one.teamName})` : one.name, scripture: screenTemplateFor(one.template, "scripture"), verses: one.template.versesPerSlide })),
   ];
-  const scripture = options.filter((one) => one.tags.includes("scripture"));
-  const others = options.filter((one) => !one.tags.includes("scripture"));
+  const scripture = options.filter((one) => one.scripture);
+  const others = options.filter((one) => !one.scripture);
   const picked = options.find((one) => one.value === valueOf(value));
   const label = (one: (typeof options)[number]) => `${one.name} - ${t("biblePage.versesPerSlide", { count: one.verses })}`;
 

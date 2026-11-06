@@ -57,7 +57,7 @@ async function anonymous(method, path, body, headers = {}) {
   return { status: res.status, body: await res.json().catch(() => null) };
 }
 const pairing = (await anonymous("POST", "/screens/pairings")).body;
-await api(leader, "POST", `/screens/pairings/${pairing.code}/confirm`, { name: `Reading screen ${stamp}`, mode: "LYRICS", setlistId: set.id, themeTemplate: "concert" });
+const screen = await api(leader, "POST", `/screens/pairings/${pairing.code}/confirm`, { name: `Reading screen ${stamp}`, mode: "LYRICS", setlistId: set.id, themeTemplate: "concert" });
 const token = (await anonymous("POST", `/screens/pairings/${pairing.pairingId}/claim`, { secret: pairing.secret })).body.token;
 r = await anonymous("GET", "/screens/current", null, { Authorization: `Screen ${token}` });
 check(
@@ -72,5 +72,27 @@ check("its template deleted: the screen's own again", r.body.items.find((one) =>
 r = await call(leader, "PATCH", `/setlists/${set.id}/items/${item.id}`, { screenTemplate: { builtIn: "scripture" } });
 r = await call(leader, "PATCH", `/setlists/${set.id}/items/${item.id}`, { screenTemplate: null });
 check("cleared", r.status === 200 && r.body.items.find((one) => one.id === item.id)?.passage?.template === null && sql(`select coalesce("screenTemplate"::text, 'none') from "SetlistItem" where id='${item.id}'`) === "none");
+
+// The screen's own template for passages (issue #402): a passage without one of its own shows with it; a song never does.
+r = await anonymous("GET", "/screens/current", null, { Authorization: `Screen ${token}` });
+check("no template of its own, none for passages: the screen's look", r.status === 200 && !r.body.itemThemes?.[item.id], JSON.stringify(Object.keys(r.body?.itemThemes ?? {})));
+r = await call(leader, "PATCH", `/screens/${screen.id}`, { scriptureThemeTemplate: "scripture" });
+check("a screen picks a template for passages", r.status === 200 && r.body.scriptureThemeTemplate === "scripture" && r.body.scriptureThemeId === null && r.body.themeTemplate === "concert", JSON.stringify(r.body));
+r = await anonymous("GET", "/screens/current", null, { Authorization: `Screen ${token}` });
+check(
+  "the passage shows with the screen's template for passages, the song with its own",
+  r.status === 200 && !!r.body.itemThemes?.[item.id] && !r.body.itemThemes[songItem.id] && r.body.itemThemes[item.id].background.kind !== r.body.theme.background.kind,
+  JSON.stringify({ itemThemes: Object.keys(r.body?.itemThemes ?? {}), theme: r.body?.theme?.background?.kind }),
+);
+r = await call(leader, "PATCH", `/screens/${screen.id}`, { scriptureThemeId: "nope" });
+check("a saved template someone can't use is refused", r.status === 404 || r.status === 403, `${r.status}`);
+r = await call(leader, "PATCH", `/screens/${screen.id}`, { scriptureThemeTemplate: null });
+r = await anonymous("GET", "/screens/current", null, { Authorization: `Screen ${token}` });
+check("back to the same as songs", r.status === 200 && !r.body.itemThemes?.[item.id], JSON.stringify(Object.keys(r.body?.itemThemes ?? {})));
+
+// Paired for the stage (issue #402): its templates for songs and for passages, both at once.
+const stagePairing = (await anonymous("POST", "/screens/pairings")).body;
+r = await call(leader, "POST", `/screens/pairings/${stagePairing.code}/confirm`, { name: `Stage ${stamp}`, setlistId: set.id, themeTemplate: "stage-display", scriptureThemeTemplate: "stage-scripture" });
+check("paired with its templates for songs and passages", r.status === 201 && r.body.themeTemplate === "stage-display" && r.body.scriptureThemeTemplate === "stage-scripture", JSON.stringify(r.body));
 
 finish();

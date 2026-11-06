@@ -893,6 +893,9 @@ export interface ScreenSummary {
   /** Its look (issue #194): a saved theme, or a built-in one by its id; neither, the default. */
   themeId: string | null;
   themeTemplate: string | null;
+  /** Its look for a Bible passage without a template of its own (issue #402): a saved template, or a built-in one; neither, its look above. Left out by an older API. */
+  scriptureThemeId?: string | null;
+  scriptureThemeTemplate?: string | null;
   /** The layers it never shows (issue #287); left out by an older API. */
   hiddenLayers?: ScreenSwitchableLayer[];
   /** Effects shown (issue #281), or off on a screen that can't keep up; left out by an older API. */

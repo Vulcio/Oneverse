@@ -1,5 +1,5 @@
-import { SCREEN_TEMPLATES } from "@oneverse/core";
-import { Check, ChevronLeft, ListMusic, Palette, Plus, Users, Video, X } from "lucide-react";
+import { SCREEN_TEMPLATES, screenTemplateFor } from "@oneverse/core";
+import { BookOpen, Check, ChevronLeft, ListMusic, Palette, Plus, Users, Video, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchScreenThemes, pairScreenAgain, pickScreenTheme, screenProfiles, showScreenProfile, type ScreenThemeOptions } from "../lib/screen-display";
@@ -25,6 +25,8 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
   const [cameras, setCameras] = useState<{ id: string; label: string }[] | null>(null);
   const [camera, setCamera] = useState<string | null>(() => readCamera());
   const [themes, setThemes] = useState<ScreenThemeOptions | null>(null);
+  // Which of its templates the list picks (issue #402): for songs, or for Bible passages.
+  const [kind, setKind] = useState<"songs" | "scripture">("songs");
   const [busy, setBusy] = useState(false);
   const list = useRef<HTMLDivElement>(null);
   useRemoteList(list, view !== "menu" ? () => setView("menu") : onClose);
@@ -71,9 +73,31 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
     : themes.themeId
       ? (themes.themes.find((one) => one.id === themes.themeId)?.name ?? "")
       : t(`screens.templates.${themes.themeTemplate ?? "classic"}.name`);
+  // Its template for passages: one of its own, else the same as songs.
+  const scripture = { id: themes?.scriptureThemeId ?? null, builtIn: themes?.scriptureThemeTemplate ?? null };
+  const scriptureName = !themes
+    ? ""
+    : scripture.id
+      ? (themes.themes.find((one) => one.id === scripture.id)?.name ?? "")
+      : scripture.builtIn
+        ? t(`screens.templates.${scripture.builtIn}.name`)
+        : t("screens.menu.sameAsSongs");
+  const isCurrent = (choice: { themeId: string | null; themeTemplate: string | null }) =>
+    !!themes &&
+    (kind === "songs"
+      ? choice.themeId
+        ? themes.themeId === choice.themeId
+        : !themes.themeId && (themes.themeTemplate ?? "classic") === choice.themeTemplate
+      : choice.themeId
+        ? scripture.id === choice.themeId
+        : !scripture.id && scripture.builtIn === choice.themeTemplate);
+  // For passages, the templates made for them first.
+  const forScripture = (template: { tags?: readonly string[]; madeFor?: readonly string[] }) => screenTemplateFor(template, "scripture");
+  const builtIns = kind === "scripture" ? [...SCREEN_TEMPLATES.filter((one) => forScripture(one.template)), ...SCREEN_TEMPLATES.filter((one) => !forScripture(one.template))] : SCREEN_TEMPLATES;
+  const saved = !themes ? [] : kind === "scripture" ? [...themes.themes.filter(forScripture), ...themes.themes.filter((one) => !forScripture(one))] : themes.themes;
   const pick = async (choice: { themeId: string | null; themeTemplate: string | null }) => {
     setBusy(true);
-    if (await pickScreenTheme(choice)) onClose();
+    if (await pickScreenTheme({ ...choice, ...(kind === "scripture" && { for: "scripture" as const }) })) onClose();
     setBusy(false);
   };
   const themeRow = (key: string, label: ReactNode, current: boolean, choice: { themeId: string | null; themeTemplate: string | null }, detail?: string | null) => (
@@ -89,7 +113,7 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
     <div className="absolute inset-0 z-20 flex cursor-default items-center justify-center bg-black/90 p-[5vmin]" data-testid="screen-menu" data-view={view}>
       <div className="flex max-h-full w-[min(90vw,110vmin)] flex-col gap-[2vmin]">
         <div>
-          <p className="text-[4.5vmin] font-semibold">{view === "menu" ? t("screens.menu.title") : view === "themes" ? t("screens.menu.themesTitle") : view === "profiles" ? t("screens.menu.profilesTitle") : t("screens.menu.videoTitle")}</p>
+          <p className="text-[4.5vmin] font-semibold">{view === "menu" ? t("screens.menu.title") : view === "themes" ? (kind === "scripture" ? t("screens.menu.scriptureTheme") : t("screens.menu.themesTitle")) : view === "profiles" ? t("screens.menu.profilesTitle") : t("screens.menu.videoTitle")}</p>
           <p className="text-[2.4vmin] opacity-60">{t("screens.menu.hint")}</p>
         </div>
         <div ref={list} className="min-h-0 overflow-y-auto pr-[1vmin]">
@@ -100,10 +124,15 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
                 <span className="min-w-0 flex-1">{t("screens.menu.chooseSet")}</span>
               </button>
               {!daySet ? <p className="px-[2.5vmin] pb-[1vmin] text-[2.2vmin] opacity-60">{t("screens.menu.fixedSet")}</p> : null}
-              <button type="button" data-pick="themes" onClick={() => setView("themes")} className={entry} data-testid="screen-menu-themes">
+              <button type="button" data-pick="themes" onClick={() => (setKind("songs"), setView("themes"))} className={entry} data-testid="screen-menu-themes">
                 <Palette className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
                 <span className="min-w-0 flex-1">{t("screens.menu.theme")}</span>
                 <span className="shrink-0 text-[2.4vmin] opacity-60">{currentName}</span>
+              </button>
+              <button type="button" data-pick="scripture-themes" onClick={() => (setKind("scripture"), setView("themes"))} className={entry} data-testid="screen-menu-scripture-themes">
+                <BookOpen className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
+                <span className="min-w-0 flex-1">{t("screens.menu.scriptureTheme")}</span>
+                <span className="shrink-0 text-[2.4vmin] opacity-60">{scriptureName}</span>
               </button>
               <button type="button" data-pick="profiles" onClick={() => setView("profiles")} className={entry} data-testid="screen-menu-profiles">
                 <Users className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
@@ -184,14 +213,13 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
                 <ChevronLeft className="size-[3.2vmin] shrink-0 opacity-60" aria-hidden />
                 {t("screens.menu.back")}
               </button>
+              {kind === "scripture" ? themeRow("same", t("screens.menu.sameAsSongs"), !!themes && !scripture.id && !scripture.builtIn, { themeId: null, themeTemplate: null }) : null}
               {heading(t("screens.menu.builtIn"))}
-              {SCREEN_TEMPLATES.map((one) =>
-                themeRow(one.id, t(`screens.templates.${one.id}.name`), !!themes && !themes.themeId && (themes.themeTemplate ?? "classic") === one.id, { themeId: null, themeTemplate: one.id }),
-              )}
-              {themes && themes.themes.length > 0 ? (
+              {builtIns.map((one) => themeRow(one.id, t(`screens.templates.${one.id}.name`), isCurrent({ themeId: null, themeTemplate: one.id }), { themeId: null, themeTemplate: one.id }))}
+              {saved.length > 0 ? (
                 <>
                   {heading(t("screens.menu.saved"))}
-                  {themes.themes.map((one) => themeRow(one.id, one.name, themes.themeId === one.id, { themeId: one.id, themeTemplate: null }, one.teamName))}
+                  {saved.map((one) => themeRow(one.id, one.name, isCurrent({ themeId: one.id, themeTemplate: null }), { themeId: one.id, themeTemplate: null }, one.teamName))}
                 </>
               ) : null}
             </>

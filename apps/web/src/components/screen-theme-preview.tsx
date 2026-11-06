@@ -1,10 +1,11 @@
-import { chartBars, lyricSlides, renderChart, screenLayers, songDocumentFromText, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
+import { chartBars, lyricSlides, passageSlides, renderChart, screenLayers, songDocumentFromText, type ScreenContentKind, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenStage, type StageSong } from "@oneverse/screen/components/screen-stage";
 import type { StageLive } from "@oneverse/screen/components/screen-widgets";
 import { cn } from "@oneverse/ui/lib/utils";
 
+// Public domain: John Newton's words (1779), and the stanza John P. Rees added (1859), sung here as a chorus.
 const SAMPLE = `{key: G}
 {start_of_verse: Verse 1}
 [G]Amazing grace, how [C]sweet the [G]sound
@@ -13,10 +14,10 @@ I [G]once was lost, but [C]now am [G]found
 Was blind, but [D]now I [G]see
 {end_of_verse}
 {start_of_chorus: Chorus}
-My [C]chains are gone, I've been set [G]free
-My God, my Saviour has [D]ransomed me
-And like a [C]flood His mercy [G]reigns
-Unending love, [D]amazing [G]grace
+When [G]we've been there ten [C]thousand [G]years
+Bright shining as the [D]sun
+We've [G]no less days to [C]sing God's [G]praise
+Than when we'd [D]first be[G]gun
 {end_of_chorus}`;
 
 /** How long a slide stays in a preview that plays by itself. */
@@ -35,6 +36,8 @@ export function ScreenThemePreview({
   slide: fixed,
   assets,
   hiddenLayers,
+  sample: kind = "songs",
+  versesPerSlide = 1,
   className,
   children,
 }: {
@@ -48,12 +51,18 @@ export function ScreenThemePreview({
   assets?: ScreenThemeAsset[];
   /** Layers a screen never shows (issue #287), left out of the preview too. */
   hiddenLayers?: readonly string[];
+  /** What it plays (issue #402): the sample song, or a sample Bible passage. */
+  sample?: ScreenContentKind;
+  /** The passage's verses on a slide. */
+  versesPerSlide?: number;
   className?: string;
   /** Drawn over it: the template editor's grid (issue #268). */
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const song = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
+  const songs = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
+  const passage = useSamplePassage(versesPerSlide);
+  const song = kind === "scripture" ? passage : songs;
   const [slide, setSlide] = useState(0);
   const sample = useSampleLive(song);
   const live = useMemo(() => (hiddenLayers?.length ? { ...sample, layers: screenLayers(null, null, { id: "preview", hidden: hiddenLayers }) } : sample), [sample, hiddenLayers]);
@@ -75,7 +84,7 @@ export function ScreenThemePreview({
 
   return (
     <div ref={box} className={cn("relative overflow-hidden rounded-lg bg-black shadow-sm ring-1 ring-border", className)} style={{ aspectRatio: aspect }} data-testid="theme-preview">
-      <ScreenStage className={cn("absolute inset-0", !visible && "[&_*]:[animation-play-state:paused]")} theme={theme} mode={mode} song={song} slide={fixed ?? slide} assets={assets} live={live} />
+      <ScreenStage className={cn("absolute inset-0", !visible && "[&_*]:[animation-play-state:paused]")} theme={theme} mode={mode} song={song} slide={(fixed ?? slide) % song.slides.length} assets={assets} live={live} />
       {children}
     </div>
   );
@@ -88,6 +97,17 @@ export function useSampleSong(title: string, writers: string): StageSong {
     const chart = renderChart(document);
     return { key: "sample", title, slides: lyricSlides(chart), credits: { writers: [writers], copyright: null, ccli: "22025" }, chart, bars: chartBars(chart, document) };
   }, [title, writers]);
+}
+
+/** A sample Bible passage (issue #402), John 3:16-18 in a public-domain translation, as a set's passage would be on a screen. */
+export function useSamplePassage(versesPerSlide = 1): StageSong {
+  const { t } = useTranslation();
+  return useMemo(() => {
+    const book = t("screens.samplePassage.book");
+    const verses = [16, 17, 18].map((number) => ({ number, text: t(`screens.samplePassage.v${number}`) }));
+    const slides = passageSlides({ bookName: book, chapters: [{ book: 43, chapter: 3, verses }], projection: true, template: { id: null, builtIn: null, name: null, versesPerSlide } });
+    return { key: `sample-passage-${versesPerSlide}`, title: `${book} 3:16-18`, slides, attribution: t("screens.samplePassage.credit") };
+  }, [t, versesPerSlide]);
 }
 
 /** What a template's widgets show in a preview (issue #268): a next song, a running countdown, a message. */
