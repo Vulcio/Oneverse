@@ -14,7 +14,7 @@ import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-doc
 import type { SectionType } from "../constants/index.js";
 import { isPlainLabel, passName, sectionNumbers, withoutPlainLabels } from "../song-document/section-names.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
-import { barAt, barBeatPlaces, barLyrics, barSeconds, beatPlaceRange, chartBars, lineAtPosition, positionAtSeconds, recordingBeatPosition, recordingSecondsAt, scrollStops, secondsAtPosition } from "../song-document/bars.js";
+import { barAt, barBeatPlaces, barLyrics, barSeconds, beatPlaceRange, chartBars, lineAtPosition, positionAtSeconds, recordingBeatPosition, recordingSecondsAt, scrollStops, secondsAtPosition, type ChartBar } from "../song-document/bars.js";
 import { barLinesFromRhythm, rhythmFromBarLines, suggestedBarLines } from "../song-document/bar-lines.js";
 import { editableRhythm, insertRhythmBar, keepPlacedBeats, moveRhythmChord, placeRhythmBeat, removeRhythmBar, setRhythmBarBeats } from "../song-document/rhythm-edit.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
@@ -26,6 +26,8 @@ import { sectionHeading } from "../chordpro/section-labels.js";
 import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
+import { readRecordingChords, type RecordingChord } from "../recording/chords.js";
+import { cuesFromChords, downbeatShift, recordingBars, recordingChordSymbol, recordingSteps } from "../recording/chord-bars.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
 import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenShowsChart, screenWidgetShows, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, sungAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
@@ -382,6 +384,40 @@ const CUE_ITEMS = [
   { id: "item_3", sections: [0] },
 ];
 const CUE = { cueItems: CUE_ITEMS };
+
+
+// --- A recording's chords (issue #393): 120 BPM in 4/4 from 0:00, a chord a bar.
+type ChordBarsCase = { bars: string[]; steps?: number };
+const CHORD_ROOTS: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function chordRecording({ bars, steps = 0 }: ChordBarsCase) {
+  const beats = Array.from({ length: bars.length * 4 }, (_, i) => i * 0.5);
+  const chords: RecordingChord[] = [];
+  bars.forEach((symbol, i) => {
+    if (symbol === "-") return;
+    const minor = symbol.endsWith("m");
+    chords.push({ start: i * 2, end: i * 2 + 2, root: (CHORD_ROOTS[symbol[0]!]! + steps + 12) % 12, quality: minor ? "min" : "maj" });
+  });
+  return { map: { beats, downbeats: bars.map((_, i) => i * 2) }, chords };
+}
+function chordChart(passes: { sectionId: string; bars: string[] }[]): ChartBar[] {
+  let start = 0;
+  let index = 0;
+  return passes.flatMap((pass, passIndex) =>
+    pass.bars.map((symbol, barInPass) => {
+      const bar = { index: index++, passIndex, passId: `p${passIndex}`, sectionId: pass.sectionId, barInPass, barsInPass: pass.bars.length, beats: 4, start, tempo: 120, chords: [{ id: `${pass.sectionId}-${barInPass}`, beat: 1, label: symbol, sounding: symbol, family: null }], carried: null, lineId: null, lyricAt: null, fromRhythm: false, beatAnchors: [] };
+      start += 4;
+      return bar;
+    }),
+  );
+}
+const CHORD_VERSE = ["G", "C", "G", "D"];
+const CHORD_CHORUS = ["C", "G", "D", "Em"];
+const CHORD_PASSES = [
+  { sectionId: "v", bars: CHORD_VERSE },
+  { sectionId: "c", bars: CHORD_CHORUS },
+  { sectionId: "v", bars: CHORD_VERSE },
+  { sectionId: "c", bars: CHORD_CHORUS },
+];
 
 export const CONFORMANCE: ConformanceArea[] = [
   {
@@ -3150,6 +3186,86 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a singer", args: [LIVE_SESSION, LIVE_SINGER] },
           { name: "the leader, while someone else has them locked", args: [LIVE_LOCKED, LIVE_EDITOR] },
           { name: "no session: who may lead or run screens", args: [null, LIVE_OPERATOR] },
+        ],
+      },
+    },
+  },
+  {
+    area: "recording-chords",
+    about: "A recording's chords (issue #393), as the stem separation's analysis finds them, laid on its beats and bars to suggest them in a chart",
+    functions: {
+      readRecordingChords: {
+        about: "The chords a server sent or a row stores: in order and not overlapping, each part valid, else null (never a partial list); stretches without a chord dropped; times to the millisecond; the bass only when it isn't the root",
+        params: ["list"],
+        run: readRecordingChords,
+        cases: [
+          { name: "a chord, none, a chord over its third", args: [[{ start: 0.4204, end: 2, root: 7, quality: "maj" }, { start: 2, end: 2.5, label: "N" }, { start: 2.5, end: 4, root: 0, quality: "maj", bass: 4 }]] },
+          { name: "overlapping: none kept", args: [[{ start: 0, end: 2, root: 7, quality: "maj" }, { start: 1, end: 3, root: 0, quality: "maj" }]] },
+          { name: "a quality it doesn't know", args: [[{ start: 0, end: 2, root: 7, quality: "maj9" }]] },
+        ],
+      },
+      recordingChordSymbol: {
+        about: "A recording's chord as a chord symbol, moved `steps` semitones to the song's key and spelled for it (flats in F, Bb, Dm…, sharps otherwise)",
+        params: ["chord", "options"],
+        run: recordingChordSymbol,
+        cases: [
+          { name: "C# minor in E", args: [{ root: 1, quality: "min" }, { key: "E" }] },
+          { name: "the same in Ab: Db minor", args: [{ root: 1, quality: "min" }, { key: "Ab" }] },
+          { name: "C over E, two semitones up in D", args: [{ root: 0, quality: "maj", bass: 4 }, { steps: 2, key: "D" }] },
+          { name: "half-diminished", args: [{ root: 10, quality: "hdim7" }, { key: "F" }] },
+          { name: "minor with a major seventh", args: [{ root: 9, quality: "minmaj7" }, {}] },
+        ],
+      },
+      recordingSteps: {
+        about: "The semitones from the recording's key to the song's, between -5 and 6; null when either isn't known",
+        params: ["songKey", "recordingKey"],
+        run: recordingSteps,
+        cases: [
+          { name: "D to E", args: ["E", "D"] },
+          { name: "E to C: down", args: ["C", "E"] },
+          { name: "minor keys", args: ["Bbm", "Cm"] },
+          { name: "no recording key", args: ["C", null] },
+        ],
+      },
+      recordingBars: {
+        about: "The recording's bars from its beat map: one per downbeat, as long as the beats to the next (the last no longer than the one before), the chord sounding on each beat (read 30% into it, so a chord found a little early or late counts) and where it changes, beat 1 always",
+        params: ["recording"],
+        run: (recording: { map: { beats: number[]; downbeats: number[] }; chords: RecordingChord[] }) => recordingBars(recording.map, recording.chords),
+        cases: [
+          {
+            name: "a chord changing on beat 3, found 80 ms late",
+            args: [{ map: { beats: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5], downbeats: [0, 2] }, chords: [{ start: 0.08, end: 1.1, root: 7, quality: "maj" }, { start: 1.1, end: 4, root: 0, quality: "maj" }] }],
+          },
+        ],
+      },
+      cuesFromChords: {
+        about: "Where each pass of a chart starts in a recording, by matching the chart's chord on each bar's 1 through its order to the recording's: passes in order, the recording free to play bars the chart doesn't (an intro, an instrumental, a chorus once more) or leave a pass out, tried in each key unless given. Null when the chart has fewer than 8 bars with a chord or the recording agrees with fewer than 60% of them",
+        params: ["passes", "recording", "options"],
+        run: (passes: { sectionId: string; bars: string[] }[], recording: ChordBarsCase, options: { steps?: number | null }) => {
+          const { map, chords } = chordRecording(recording);
+          return cuesFromChords(chordChart(passes), recordingBars(map, chords), options);
+        },
+        cases: [
+          { name: "an intro, an instrumental and a chorus once more, two semitones down", args: [CHORD_PASSES, { bars: ["-", "-", ...CHORD_VERSE, ...CHORD_CHORUS, "Em", "Em", ...CHORD_VERSE, ...CHORD_CHORUS, ...CHORD_CHORUS], steps: -2 }, {}] },
+          { name: "the key given", args: [CHORD_PASSES, { bars: ["-", ...CHORD_VERSE, ...CHORD_CHORUS, ...CHORD_VERSE, ...CHORD_CHORUS] }, { steps: 0 }] },
+          { name: "the recording plays something else", args: [CHORD_PASSES, { bars: ["A", "B", "E", "F", "A", "B", "E", "F", "A", "B", "E", "F", "A", "B", "E", "F"] }, { steps: 0 }] },
+        ],
+      },
+      downbeatShift: {
+        about: "How many beats the recording's bars should move so their 1 is where its chords change: the beat of the bar most chord changes fall on, when that's at least half of them and fewer than a quarter fall on the 1; 0 with fewer than 8 changes",
+        params: ["recording"],
+        run: (recording: { map: { beats: number[]; downbeats: number[] }; chords: RecordingChord[] }) => downbeatShift(recordingBars(recording.map, recording.chords)),
+        cases: [
+          {
+            name: "every chord on beat 2",
+            args: [
+              {
+                map: { beats: Array.from({ length: 48 }, (_, i) => i * 0.5), downbeats: Array.from({ length: 12 }, (_, i) => i * 2) },
+                chords: Array.from({ length: 11 }, (_, i) => ({ start: i * 2 + 0.5, end: i * 2 + 2.5, root: [7, 0, 2, 4][i % 4], quality: "maj" })),
+              },
+            ],
+          },
+          { name: "every chord on the 1", args: [chordRecording({ bars: ["G", "C", "D", "Em", "G", "C", "D", "Em", "G", "C"] })] },
         ],
       },
     },
