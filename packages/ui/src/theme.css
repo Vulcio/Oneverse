@@ -84,6 +84,13 @@
        phones. Only kicks in when a word can't fit, so normal text is unaffected. */
     overflow-wrap: break-word;
   }
+  /* What can be clicked shows it (Tailwind 4's preflight leaves buttons with the default arrow). */
+  :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="checkbox"], [role="radio"], [role="switch"], select, summary, input[type="checkbox"], input[type="radio"], input[type="color"], input[type="file"], input[type="range"], label[for]):not(:disabled, [aria-disabled="true"], [data-disabled]) {
+    cursor: pointer;
+  }
+  :where(button, [role="button"], [role="tab"], [role="option"], select, input):is(:disabled, [aria-disabled="true"], [data-disabled]) {
+    cursor: not-allowed;
+  }
   /* A select is as wide as its longest option by default, which pushes
      narrow (phone) layouts sideways. */
   select {
