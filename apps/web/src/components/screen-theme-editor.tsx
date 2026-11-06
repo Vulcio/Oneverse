@@ -22,6 +22,7 @@ import {
   SCREEN_REACTIONS_MAX,
   SCREEN_REACTION_FALL_MS,
   SCREEN_TEMPLATE_TAGS,
+  SCREEN_TEMPLATES,
   SCREEN_VERSES_PER_SLIDE_MAX,
   SCREEN_TEXT_ANIMATIONS,
   SCREEN_VIDEO_SOURCES,
@@ -133,6 +134,7 @@ export function ScreenThemeEditor({
   parts: listed,
   context,
   widgetDefaults = [],
+  templates = [],
   onClose,
   onSaved,
 }: {
@@ -144,6 +146,8 @@ export function ScreenThemeEditor({
   context?: TemplateRefs & { grid: ScreenTheme["grid"]; masks: ScreenMask[] };
   /** Widgets' default looks (issue #273): the team's for a team's template, else the user's own. */
   widgetDefaults?: ScreenWidgetDefault[];
+  /** The saved templates, for a part's preview in one of them (issue #398). */
+  templates?: ScreenThemeSummary[];
   onClose: () => void;
   onSaved: (saved: ScreenThemeSummary | ScreenPartSummary) => void;
 }) {
@@ -165,7 +169,8 @@ export function ScreenThemeEditor({
   const [theme, setTheme] = useState<ScreenTheme>(() =>
     kind === "template"
       ? compose(refs, { grid: draft.grid ?? null, masks: draft.masks ?? [], titleWidgets: draft.titleWidgets ?? true })
-      : compose(context ?? PREVIEW_WITH[kind], { grid: context?.grid ?? null, masks: context?.masks ?? [], titleWidgets: true }, draft.document ?? {}),
+      : // A part is previewed on its own (issue #398): the template's other parts, never its widgets or masks.
+        compose(context ?? PREVIEW_WITH[kind], { grid: null, masks: [], titleWidgets: true }, draft.document ?? {}),
   );
   const [name, setName] = useState(draft.name);
   const [owner, setOwner] = useState(draft.ownerTeamId ?? "");
@@ -195,6 +200,33 @@ export function ScreenThemeEditor({
     if (kind !== "template") return [...assets, ...(context ? savedAssets(context, parts) : [])];
     return savedAssets(refs, parts);
   }, [kind, assets, refs, parts, context]);
+  // A part previewed on its own, or in a template (issue #398): "this" the one it's opened from, "s:<id>" a saved one, "b:<id>" a built-in one.
+  const [previewIn, setPreviewIn] = useState("");
+  const inTemplate = useMemo((): (TemplateRefs & { layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[]; titleWidgets: boolean } }) | null => {
+    if (kind === "template" || !previewIn) return null;
+    if (previewIn === "this" && context) return { ...context, layout: { grid: context.grid, masks: context.masks, titleWidgets: true } };
+    if (previewIn.startsWith("s:")) {
+      const one = templates.find((template) => template.id === previewIn.slice(2));
+      if (!one) return null;
+      const ref = (view: { builtIn: string } | { id: string } | null): ScreenPartRef | null => (view ? ("builtIn" in view ? { builtIn: view.builtIn } : { id: view.id }) : null);
+      return { content: ref(one.parts.content)!, background: ref(one.parts.background)!, effects: ref(one.parts.effects), layout: one.template };
+    }
+    const builtIn = SCREEN_TEMPLATES.find((one) => one.id === previewIn.slice(2));
+    if (!builtIn) return null;
+    return { content: { builtIn: builtIn.content }, background: { builtIn: builtIn.background }, effects: builtIn.effects ? { builtIn: builtIn.effects } : null, layout: builtIn.template };
+  }, [kind, previewIn, context, templates]);
+  // The part as it is now, with the template's other parts and its layout.
+  const shown = useMemo(() => {
+    if (!inTemplate) return theme;
+    const own = extractPart(kind as ScreenPartKind, theme, draft.document);
+    return composeScreenTheme({
+      content: kind === "content" ? own : partDocument("content", inTemplate.content, parts),
+      background: kind === "background" ? own : partDocument("background", inTemplate.background, parts),
+      effects: kind === "effects" ? own : partDocument("effects", inTemplate.effects, parts),
+      template: inTemplate.layout,
+    });
+  }, [inTemplate, theme, kind, parts, draft.document]);
+  const shownAssets = useMemo(() => (inTemplate ? [...assets, ...savedAssets(inTemplate, parts)] : previewAssets), [inTemplate, assets, parts, previewAssets]);
 
   function set<P extends Part>(part: P, change: Partial<ScreenTheme[P]>) {
     setTheme((before) => ScreenThemeSchema.parse({ ...before, [part]: { ...before[part], ...change } }));
@@ -542,6 +574,28 @@ export function ScreenThemeEditor({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium">{t("screens.preview")}</span>
               <Choices value={aspect} options={["16/9", "4/3"] as const} label={(one) => one.replace("/", ":")} onChange={setAspect} />
+              {kind !== "template" ? (
+                <NativeSelect className="h-8 w-auto max-w-56 text-xs" value={previewIn} onChange={(event) => setPreviewIn(event.target.value)} aria-label={t("screens.editor.previewIn")} data-testid="theme-preview-in">
+                  <option value="">{t("screens.editor.previewAlone")}</option>
+                  {context ? <option value="this">{t("screens.editor.previewThis")}</option> : null}
+                  {templates.length > 0 ? (
+                    <optgroup label={t("screens.parts.saved")}>
+                      {templates.map((one) => (
+                        <option key={one.id} value={`s:${one.id}`}>
+                          {one.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null}
+                  <optgroup label={t("screens.builtIn")}>
+                    {SCREEN_TEMPLATES.map((one) => (
+                      <option key={one.id} value={`b:${one.id}`}>
+                        {t(`screens.templates.${one.id}.name`)}
+                      </option>
+                    ))}
+                  </optgroup>
+                </NativeSelect>
+              ) : null}
               {/* The layout is the template's (issue #398): a part's editor previews it, never moves it. */}
               {theme.grid && kind === "template" ? (
                 <label className="flex items-center gap-1.5 text-xs">
@@ -561,7 +615,7 @@ export function ScreenThemeEditor({
                 </Button>
               </span>
             </div>
-            <ScreenThemePreview theme={theme} assets={previewAssets} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
+            <ScreenThemePreview theme={shown} assets={shownAssets} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
               {theme.grid && showGrid && kind === "template" ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
             </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">
@@ -613,6 +667,7 @@ export function ScreenThemeEditor({
           draft={editing}
           teams={teams}
           parts={parts}
+          templates={templates}
           context={{ ...refs, grid: theme.grid, masks: theme.masks }}
           onClose={() => setEditing(null)}
           onSaved={(saved) => {

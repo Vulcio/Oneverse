@@ -688,6 +688,9 @@ const fr: typeof en = {
       nameOf: { template: "Nom du modèle", content: "Nom du thème de contenu", background: "Nom du thème de fond", effects: "Nom des effets" },
       parts: "Contenu, fond et effets",
       partsHint: "Un modèle est fait d'un thème de contenu, d'un thème de fond et d'effets : intégrés, ou les vôtres. Personnalisez-en un pour qu'il soit à vous.",
+      previewIn: "Aperçu dans",
+      previewAlone: "Seul",
+      previewThis: "Le modèle d'où il vient",
       madeOf: "Un modèle est fait de",
       partRows: { content: "Paroles", background: "Fond", effects: "Effets", widgets: "Widgets et masques", brand: "Marque", template: "Étiquettes et passages" },
       partRowHints: {

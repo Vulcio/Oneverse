@@ -153,7 +153,7 @@ Name the template and **Save template**: it's yours, or - if you're an admin of 
 
 ### Content themes
 
-How the words look, edited from **Content themes** (**New content theme**, or **Customize** a built-in one) or from a template:
+How the words look, edited from **Content themes** (**New content theme**, or **Customize** a built-in one) or from a template. **Preview in** shows it **On its own**, in **The template it's from**, or in any of your templates or the built-in ones, with their background and widgets; the widgets are changed on the template's own **Widgets and masks**:
 
 - **Display** - how the words are shown:
   - **Slides** - a slide at a time, with the lines around it as **Lines** says.
@@ -241,7 +241,7 @@ A template can place widgets on a grid: a stage display shows the singers the sl
 - **Count up** - the time since **The song on screen, since it came on**, or since the media operator started it. **Colours by time gone by** works as a countdown's does, once that much time has gone by.
 - **Message** - a short message from the media operator, shown until it's cleared.
 - **Song** and **Next song** - the song's title, with its key and tempo, and what comes next in the set.
-- **Song title** and **Credits** - the song's title, and its credits (writers, copyright, CCLI number), **Shown on** **Every slide**, **The first**, **The last** or **First and last** (new ones: the title on the first, the credits on the first and last). A passage's copyright shows on every slide. A template from before these widgets, which showed its title and credits with the words, has them as widgets: the title in the top row, the credits where they were.
+- **Song title** and **Credits** - the song's title, and its credits (writers, copyright, CCLI number), **Shown on** **Every slide**, **The first**, **The last** or **First and last** (new ones: the title on the first, the credits on the first and last). A passage's copyright shows on every slide. A template from before these widgets, which showed its title and credits with the words, has them as widgets, over the words: the title at the top, the credits where they were.
 - **Current item** and **Next item** - what's on in the set and what comes next, songs or not, with **Its place in the set (3 of 8)**.
 - **Text** - words of your own.
 - **Date** - today's date, **Written as** **Sunday 20 October**, **20 Oct 2026**, **20/10/2026**, **2026-10-20** or the weekday alone, **With the time** if you like.

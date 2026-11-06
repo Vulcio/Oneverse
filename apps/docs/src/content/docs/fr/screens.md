@@ -153,7 +153,7 @@ Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous ad
 
 ### Thèmes de contenu
 
-L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thème de contenu**, ou **Personnaliser** un thème intégré) ou depuis un modèle :
+L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thème de contenu**, ou **Personnaliser** un thème intégré) ou depuis un modèle. **Aperçu dans** le montre **Seul**, dans **Le modèle d'où il vient**, ou dans n'importe lequel de vos modèles ou des modèles intégrés, avec leur fond et leurs widgets ; les widgets se changent dans **Widgets et masques** du modèle :
 
 - **Affichage** - comment les paroles sont montrées :
   - **Diapositives** - une diapositive à la fois, avec les lignes autour comme le dit **Lignes**.
@@ -241,7 +241,7 @@ Un modèle peut placer des widgets sur une grille : un affichage de scène montr
 - **Chronomètre** - le temps écoulé depuis **Le chant à l'écran, depuis son arrivée**, ou depuis que l'opérateur média l'a lancé. **Couleurs selon le temps écoulé** fonctionne comme pour un compte à rebours, une fois ce temps passé.
 - **Message** - un court message de l'opérateur média, affiché jusqu'à ce qu'il l'efface.
 - **Chant** et **Chant suivant** - le titre du chant, avec sa tonalité et son tempo, et ce qui vient ensuite dans la liste.
-- **Titre du chant** et **Crédits** - le titre du chant, et ses crédits (auteurs, copyright, numéro CCLI), **Affiché sur** **Chaque diapositive**, **La première**, **La dernière** ou **Première et dernière** (à l'ajout : le titre sur la première, les crédits sur la première et la dernière). Le copyright d'un passage s'affiche sur chaque diapositive. Un modèle d'avant ces widgets, qui affichait son titre et ses crédits avec les paroles, les a en widgets : le titre sur la rangée du haut, les crédits là où ils étaient.
+- **Titre du chant** et **Crédits** - le titre du chant, et ses crédits (auteurs, copyright, numéro CCLI), **Affiché sur** **Chaque diapositive**, **La première**, **La dernière** ou **Première et dernière** (à l'ajout : le titre sur la première, les crédits sur la première et la dernière). Le copyright d'un passage s'affiche sur chaque diapositive. Un modèle d'avant ces widgets, qui affichait son titre et ses crédits avec les paroles, les a en widgets, sur les paroles : le titre en haut, les crédits là où ils étaient.
 - **Élément en cours** et **Élément suivant** - ce qui se passe dans la liste et ce qui vient ensuite, chants ou non, avec **Sa place dans la liste (3 sur 8)**.
 - **Texte** - vos propres mots.
 - **Date** - la date du jour, **Écrite** **dimanche 20 octobre**, **20 oct. 2026**, **20/10/2026**, **2026-10-20** ou le jour seul, **Avec l'heure** si vous le souhaitez.

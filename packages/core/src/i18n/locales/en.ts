@@ -688,6 +688,9 @@ const en = {
       nameOf: { template: "Template name", content: "Content theme name", background: "Background theme name", effects: "Effects name" },
       parts: "Content, background and effects",
       partsHint: "A template is made of a content theme, a background theme and effects: built-in ones, or yours. Customize one to make it your own.",
+      previewIn: "Preview in",
+      previewAlone: "On its own",
+      previewThis: "The template it's from",
       madeOf: "A template is made of",
       partRows: { content: "Words", background: "Background", effects: "Effects", widgets: "Widgets and masks", brand: "Brand", template: "Tags and passages" },
       partRowHints: {

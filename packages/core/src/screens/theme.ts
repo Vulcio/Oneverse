@@ -791,22 +791,25 @@ export function screenWidgetShows(when: (typeof SCREEN_WIDGET_WHEN)[number], ind
 
 /**
  * A content theme's title and credits as widgets (issue #398), for a template
- * from before they were widgets: the title in the top row, the credits where
- * they were (the bottom row, the top, or the lower third), on the slides they
- * were on. A grid that already has one keeps its own.
+ * from before they were widgets: over the words' widget (else the whole grid),
+ * the title in its top row, the credits where they were (its bottom row, the
+ * top, or the lower third), on the slides they were on. A grid that already has one keeps its own.
  */
 export function screenTitleWidgets(grid: ScreenTheme["grid"], title: ScreenTheme["title"], credits: ScreenTheme["credits"]): ScreenTheme["grid"] {
   if (!title.show && !credits.show) return grid;
   const base = grid ?? screenGridSchema(false).parse({ widgets: [{ id: "stage", kind: "stage", x: 0, y: 0, w: 12, h: 12 }] });
   const widgets = [...base.widgets];
   const has = (kind: ScreenWidgetKind) => widgets.some((one) => one.kind === kind);
-  const rows = base.rows;
+  // Where the words were drawn, as the title and credits were drawn with them: the words' widget, else the whole grid.
+  const words = widgets.find((one) => one.kind === "stage") ?? widgets.find((one) => one.kind === "current-slide");
+  const area = words ? placeScreenWidget(words, base) : { x: 0, y: 0, w: base.columns, h: base.rows };
+  const row = (at: number) => area.y + Math.max(0, Math.min(area.h - 1, at));
   if (title.show && !has("song-title") && widgets.length < 32) {
-    widgets.push(newScreenWidget("song-title", { x: 0, y: 0, w: base.columns, h: 1 }, "song-title", { options: { when: title.when }, style: { font: title.font, size: 55 } }));
+    widgets.push(newScreenWidget("song-title", { x: area.x, y: row(0), w: area.w, h: 1 }, "song-title", { options: { when: title.when }, style: { font: title.font, size: 55 } }));
   }
   if (credits.show && !has("credits") && widgets.length < 32) {
-    const y = credits.where === "top" ? (title.show ? Math.min(1, rows - 1) : 0) : credits.where === "lower-third" ? Math.max(0, Math.round(rows * 0.62)) : rows - 1;
-    widgets.push(newScreenWidget("credits", { x: 0, y, w: base.columns, h: 1 }, "credits", { options: { when: credits.when }, style: { size: 38 } }));
+    const at = credits.where === "top" ? (title.show ? 1 : 0) : credits.where === "lower-third" ? Math.round(area.h * 0.62) : area.h - 1;
+    widgets.push(newScreenWidget("credits", { x: area.x, y: row(at), w: area.w, h: 1 }, "credits", { options: { when: credits.when }, style: { size: 38 } }));
   }
   return { ...base, widgets };
 }

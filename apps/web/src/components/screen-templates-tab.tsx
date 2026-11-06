@@ -186,6 +186,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
           draft={draft}
           teams={teams}
           parts={parts}
+          templates={themes}
           widgetDefaults={widgetDefaults}
           onClose={() => setDraft(null)}
           onSaved={async (saved) => {
