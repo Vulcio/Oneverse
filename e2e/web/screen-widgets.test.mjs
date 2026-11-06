@@ -237,7 +237,10 @@ try {
     await tablet.goto(`${WEB}/screens?tab=widgets`);
     const list = tablet.getByTestId("widgets-list");
     await list.getByTestId("widget-analog-clock").getByTestId("widget-analog-clock").waitFor();
-    if ((await list.getByTestId("theme-preview").count()) !== 19) throw new Error(`previews: ${await list.getByTestId("theme-preview").count()}`);
+    if ((await list.getByTestId("theme-preview").count()) !== 21) throw new Error(`previews: ${await list.getByTestId("theme-preview").count()}`);
+    // The song's title and credits are widgets too (issue #398), drawn on the sample's first slide.
+    await list.locator('li[data-testid="widget-song-title"]').getByText("Amazing Grace", { exact: false }).first().waitFor();
+    await list.locator('li[data-testid="widget-credits"]').getByText("John Newton", { exact: false }).first().waitFor();
     await list.getByTestId("widget-countdown").getByTestId("widget-countdown").waitFor();
     await list.getByTestId("widget-countdown").getByTestId("widget-customize").click();
     const dialog = tablet.getByTestId("widget-default-editor");
