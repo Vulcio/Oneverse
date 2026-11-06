@@ -187,7 +187,8 @@ export const SCREEN_PACE_EASING: Record<ScreenPace, string> = {
  * time with the next under it; grid, the song's bars for the band, every
  * beat a block.
  */
-export const SCREEN_DISPLAY_MODES = ["slides", "scroll", "focus", "grid"] as const;
+/** Charts (issue #398): the chord chart for the band, a section at a time with the start of the next; the same as `shows: "chart"`. */
+export const SCREEN_DISPLAY_MODES = ["slides", "scroll", "focus", "grid", "chart"] as const;
 export type ScreenDisplayMode = (typeof SCREEN_DISPLAY_MODES)[number];
 /** Following the music (issue #395): nothing, the line being sung, or its words filling with colour as they're sung. */
 export const SCREEN_FOLLOW = ["off", "line", "fill"] as const;
@@ -515,6 +516,10 @@ function screenDisplaySchema(strict: boolean) {
     grid: object({
       /** Each bar's words under it. */
       words: z.boolean().default(true),
+    }).prefault({}),
+    chart: object({
+      /** How many lines of the next section show under the one being sung (issue #398): 0 for none. */
+      next: z.number().int().min(0).max(4).default(2),
     }).prefault({}),
   });
 }
@@ -959,6 +964,14 @@ export function sectionEnergy(label: string | null | undefined): "low" | "mid" |
   if (/bridge|pont|pre-?chorus|pré-?refrain|build|montée/.test(text)) return "mid";
   if (/chorus|refrain|refrão|estribillo|coro|tag|climax/.test(text)) return "high";
   return "low";
+}
+
+/**
+ * Whether a theme shows the chord chart (issue #398): the Charts display
+ * mode, or a theme from before it that says so with `shows: "chart"`.
+ */
+export function screenShowsChart(theme: Pick<ScreenTheme, "shows" | "display">): boolean {
+  return theme.shows === "chart" || theme.display.mode === "chart";
 }
 
 /** A text's effects as drawn (issue #395): its own presets, else those its `effect` (before presets) stands for. */

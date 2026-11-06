@@ -1141,3 +1141,22 @@
   }
 }
 }
+
+/* Charts (issue #398): the next section's first lines fade out under the one being sung; a new section fades in. */
+.sv-stage .sv-chart [data-peek] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent);
+  mask-image: linear-gradient(to bottom, #000 30%, transparent);
+}
+.sv-chart-in {
+  animation: sv-chart-in 0.35s ease both;
+}
+@keyframes sv-chart-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sv-chart-in {
+    animation: none;
+  }
+}

@@ -1204,6 +1204,58 @@
         }
       ]
     },
+    "screenShowsChart": {
+      "about": "Whether a content theme shows the chord chart (issue #398): its Charts display mode, or - as themes before it said - shows set to chart.",
+      "params": [
+        "theme"
+      ],
+      "cases": [
+        {
+          "name": "the default: the words",
+          "args": [
+            {}
+          ],
+          "expected": false
+        },
+        {
+          "name": "the Charts display mode",
+          "args": [
+            {
+              "display": {
+                "mode": "chart",
+                "chart": {
+                  "next": 3
+                }
+              }
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "shows chart, from before the mode",
+          "args": [
+            {
+              "shows": "chart",
+              "display": {
+                "mode": "slides"
+              }
+            }
+          ],
+          "expected": true
+        },
+        {
+          "name": "a mode from a later version: the words",
+          "args": [
+            {
+              "display": {
+                "mode": "hologram"
+              }
+            }
+          ],
+          "expected": false
+        }
+      ]
+    },
     "screenTextEffects": {
       "about": "A text's effects as drawn (issue #395): its own presets (shadow, outline, glow); none of them set, those its effect stands for - shadow a soft black shadow, outline a thin black outline, glow a soft glow.",
       "params": [
@@ -1935,6 +1987,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -2061,6 +2116,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -2190,6 +2248,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -2316,6 +2377,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -2441,6 +2505,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -2558,6 +2625,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -2712,6 +2782,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -2894,6 +2967,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -3048,6 +3124,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -3477,6 +3556,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -3684,6 +3766,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -3810,6 +3895,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -3936,6 +4024,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -4092,6 +4183,9 @@
                 },
                 "grid": {
                   "words": true
+                },
+                "chart": {
+                  "next": 2
                 }
               },
               "sections": {
@@ -4243,6 +4337,9 @@
                 },
                 "grid": {
                   "words": true
+                },
+                "chart": {
+                  "next": 2
                 }
               },
               "sections": {
@@ -7030,6 +7127,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7147,6 +7247,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7267,6 +7370,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7386,6 +7492,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7506,6 +7615,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7625,6 +7737,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7743,6 +7858,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7860,6 +7978,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -7977,6 +8098,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {
@@ -8458,6 +8582,9 @@
               },
               "grid": {
                 "words": true
+              },
+              "chart": {
+                "next": 2
               }
             },
             "sections": {

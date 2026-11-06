@@ -26,7 +26,7 @@ import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong,
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
-import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, sungAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
+import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenShowsChart, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, sungAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
 import { readCatalogLinks } from "../songbook-catalog-format/index.js";
 import { findBibleBook } from "../scriptures/books.js";
@@ -1769,6 +1769,17 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "other, labelled Refrain", args: ["other", "Refrain"] },
           { name: "other, labelled Pont", args: ["other", "Pont"] },
           { name: "other, no label", args: ["other", null] },
+        ],
+      },
+      screenShowsChart: {
+        about: "Whether a content theme shows the chord chart (issue #398): its Charts display mode, or - as themes before it said - shows set to chart.",
+        params: ["theme"],
+        run: (theme: unknown) => screenShowsChart(resolveScreenTheme(theme)),
+        cases: [
+          { name: "the default: the words", args: [{}] },
+          { name: "the Charts display mode", args: [{ display: { mode: "chart", chart: { next: 3 } } }] },
+          { name: "shows chart, from before the mode", args: [{ shows: "chart", display: { mode: "slides" } }] },
+          { name: "a mode from a later version: the words", args: [{ display: { mode: "hologram" } }] },
         ],
       },
       screenTextEffects: {

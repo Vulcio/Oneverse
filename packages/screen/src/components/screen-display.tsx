@@ -1,4 +1,4 @@
-import { chartBars, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
+import { chartBars, screenShowsChart, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { ChevronLeft, Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -218,7 +218,7 @@ function Showing({
     <div
       className="size-full"
       data-testid="screen-showing"
-      data-mode={look.shows === "chart" ? "CHART" : "LYRICS"}
+      data-mode={screenShowsChart(look) ? "CHART" : "LYRICS"}
       data-black={String(!!presenting?.black)}
       data-item={presenting?.itemId ?? ""}
       data-slide={presenting?.slide ?? ""}

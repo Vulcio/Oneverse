@@ -1,6 +1,6 @@
 import "@fontsource-variable/inter";
 import "../screen-stage.css";
-import { SCREEN_PACE_EASING, screenSectionText, type ScreenSectionKind, type ScreenTransition, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
+import { SCREEN_PACE_EASING, screenShowsChart, screenSectionText, type ScreenSectionKind, type ScreenTransition, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
 import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,7 +36,7 @@ const REVEAL_MAX_MS = 1600;
 export function ScreenStage({
   theme,
   // What the template shows (issue #281): its words, or the chord chart.
-  mode = theme.shows === "chart" ? "CHART" : "LYRICS",
+  mode = screenShowsChart(theme) ? "CHART" : "LYRICS",
   song,
   slide,
   black = false,
@@ -698,42 +698,77 @@ function reveal(line: string, kind: ScreenTheme["motion"]["reveal"], next: () =>
   );
 }
 
-/** The chart for the band, in the theme's chord colour and size, the pass being sung marked and kept in view. */
+/**
+ * Charts (issue #398): the chord chart for the band, the section being sung
+ * whole and the first lines of the next one under it, faded (as many as the
+ * template says, or none); fitted to the stage, never bigger than the
+ * template's chart size.
+ */
 function ChartStage({ theme, chart, title, passId }: { theme: ScreenTheme; chart: RenderedChart; title: string; passId: string }) {
   const box = useRef<HTMLDivElement>(null);
-  // As big on a preview card as on a projector: the chart's own sizes zoomed to the stage's height.
-  const [zoom, setZoom] = useState(1.8);
-  useEffect(() => {
-    const element = box.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) => entry && setZoom(Math.max(0.4, (entry.contentRect.height / 600) * theme.chords.scale)));
-    observer.observe(element);
+  const inner = useRef<HTMLDivElement>(null);
+  const at = Math.max(0, chart.passes.findIndex((pass) => pass.id === passId));
+  const next = theme.display.chart.next;
+  const shown = useMemo(() => ({ ...chart, passes: chart.passes.slice(at, at + (next > 0 ? 2 : 1)) }), [chart, at, next]);
+  const [scale, setScale] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const outer = box.current;
+    const content = inner.current;
+    if (!outer || !content) return;
+    const fit = () => {
+      const passes = [...content.querySelectorAll<HTMLElement>("[data-pass]")];
+      passes.forEach((pass, i) => {
+        pass.toggleAttribute("data-current", i === 0);
+        pass.toggleAttribute("data-peek", i === 1);
+        pass.style.maxHeight = "";
+      });
+      // The chart's own sizes as on a page 380 pixels high, times the template's chart size; less when the section doesn't fit.
+      const style = getComputedStyle(outer);
+      const width = outer.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const height = outer.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+      const most = Math.max(0.4, (outer.clientHeight / 380) * theme.chords.scale);
+      let size = most;
+      for (let i = 0; i < 3; i++) {
+        content.style.width = `${width / size}px`;
+        const peek = passes[1];
+        if (peek) {
+          const lines = [...peek.querySelectorAll<HTMLElement>("[data-line]")];
+          const last = lines[Math.min(next, lines.length) - 1];
+          const top = peek.getBoundingClientRect().top;
+          peek.style.maxHeight = last ? `${(last.getBoundingClientRect().bottom - top) / (scaleNow(content) || 1)}px` : "";
+        }
+        size = Math.min(most, height / Math.max(1, content.scrollHeight));
+      }
+      content.style.width = `${width / size}px`;
+      setScale(size);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(outer);
     return () => observer.disconnect();
-  }, [theme.chords.scale]);
-  useEffect(() => {
-    const pass = box.current?.querySelector<HTMLElement>(`[data-pass="${CSS.escape(passId)}"]`);
-    box.current?.querySelectorAll("[data-pass]").forEach((element) => element.removeAttribute("data-current"));
-    if (!pass) return;
-    pass.setAttribute("data-current", "true");
-    pass.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [passId, chart]);
+  }, [shown, next, theme.chords.scale]);
   return (
     <div
       ref={box}
       className={cn(
-        "sv-words block overflow-hidden px-[4cqw] py-[4cqh]",
-        "[&_[data-pass]]:rounded-lg [&_[data-pass]]:p-2 [&_[data-pass]]:opacity-60 [&_[data-pass]]:transition-opacity [&_[data-pass][data-current]]:bg-white/10 [&_[data-pass][data-current]]:opacity-100",
+        "sv-words sv-chart block overflow-hidden px-[4cqw] py-[4cqh]",
+        "[&_[data-pass]]:rounded-lg [&_[data-pass]]:p-2 [&_[data-pass][data-current]]:bg-white/10 [&_[data-pass][data-peek]]:overflow-hidden [&_[data-pass][data-peek]]:opacity-55",
         "[&_[data-chord]]:!text-(--chord)",
       )}
       style={{ color: theme.text.color }}
       data-testid="screen-chart"
     >
-      <div style={{ zoom }}>
-        <p className="mb-4 text-xl font-bold">{title}</p>
-        <SongChart chart={chart} columns="1" />
+      <div key={passId} ref={inner} className="sv-chart-in origin-top-left" style={{ transform: scale === null ? undefined : `scale(${scale})`, visibility: scale === null ? "hidden" : undefined }}>
+        {at === 0 ? <p className="mb-4 text-xl font-bold">{title}</p> : null}
+        <SongChart chart={shown} columns="1" />
       </div>
     </div>
   );
+}
+
+/** The scale a transform gives an element (1 without one). */
+function scaleNow(element: HTMLElement): number {
+  return element.offsetHeight > 0 ? element.getBoundingClientRect().height / element.offsetHeight : 1;
 }
 
 /**
