@@ -7,7 +7,10 @@ import {
   SCREEN_QR_KINDS,
   SCREEN_GRID_MAX,
   SCREEN_LAYOUT_PRESETS,
+  SCREEN_CONTENT_KINDS,
   SCREEN_WIDGET_KINDS,
+  SCREEN_WIDGETS_FOR,
+  type ScreenContentKind,
   SCREEN_WIDGET_WHEN,
   screenWidgetLayer,
   type ScreenTheme,
@@ -77,11 +80,14 @@ export function LayoutSettings({
   selected,
   onSelect,
   lookFor,
+  madeFor = [],
 }: {
   grid: Grid | null;
   onGrid: (grid: Grid | null) => void;
   selected: string | null;
   onSelect: (id: string | null) => void;
+  /** What the template is made for (issue #402): only widgets for that are offered; none, every one. */
+  madeFor?: readonly ScreenContentKind[];
   /** A kind's default look (issue #273), put on a widget as it's added. */
   lookFor?: (kind: ScreenWidgetKind) => ScreenWidgetLook | null;
 }) {
@@ -163,11 +169,19 @@ export function LayoutSettings({
           data-testid="theme-widget-add"
         >
           <option value="">{t("screens.editor.addWidgetPick")}</option>
-          {SCREEN_WIDGET_KINDS.map((kind) => (
-            <option key={kind} value={kind}>
-              {t(`screens.widgetKinds.${kind}.name`)}
-            </option>
-          ))}
+          {/* Grouped by what they're for (issue #402): those for everything, then each kind the template is made for. */}
+          {(["all", ...SCREEN_CONTENT_KINDS.filter((kind) => !madeFor.length || madeFor.includes(kind))] as const).map((group) => {
+            const kinds = SCREEN_WIDGET_KINDS.filter((kind) => (SCREEN_WIDGETS_FOR[kind] ?? "all") === group);
+            return kinds.length ? (
+              <optgroup key={group} label={t(`screens.editor.addWidgetFor.${group}`)}>
+                {kinds.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {t(`screens.widgetKinds.${kind}.name`)}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null;
+          })}
         </NativeSelect>
       </Field>
       {grid && grid.widgets.length > 0 ? (
@@ -177,6 +191,9 @@ export function LayoutSettings({
               <button type="button" className="min-w-0 flex-1 truncate text-left text-xs font-medium" onClick={() => onSelect(one.id === selected ? null : one.id)} aria-pressed={one.id === selected}>
                 {t(`screens.widgetKinds.${one.kind}.name`)}
                 {one.kind === "text" && one.options.text ? <span className="font-normal text-muted-foreground"> · {one.options.text}</span> : null}
+                {SCREEN_WIDGETS_FOR[one.kind] && madeFor.some((kind) => kind !== SCREEN_WIDGETS_FOR[one.kind]) ? (
+                  <span className="font-normal text-muted-foreground"> · {t(`screens.editor.widgetOnlyFor.${SCREEN_WIDGETS_FOR[one.kind]}`)}</span>
+                ) : null}
               </button>
               <Button type="button" size="icon" variant="ghost" className="size-6" disabled={i === grid.widgets.length - 1} onClick={() => move(one.id, 1)} aria-label={t("screens.editor.bringForward")}>
                 <ArrowUp className="size-3.5" />

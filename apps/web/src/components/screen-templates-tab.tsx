@@ -52,6 +52,9 @@ function partPreview(kind: ScreenPartKind, document: unknown) {
  * customized into one's own; saved ones are changed (theirs, or a team's
  * they're an admin of) or deleted.
  */
+/** What a template's card plays (issue #402): a passage for one made for scripture alone, else the sample song. */
+const sampleFor = (template: { madeFor?: readonly string[] }) => (template.madeFor?.length === 1 && template.madeFor[0] === "scripture" ? "scripture" : "songs");
+
 export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: ScreenThemeSummary[]; parts: ScreenPartSummary[]; widgetDefaults: ScreenWidgetDefault[] }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -77,6 +80,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
     grid: from?.template.grid ?? null,
     masks: from?.template.masks ?? [],
     titleWidgets: from?.template.titleWidgets ?? true,
+    madeFor: from?.template.madeFor ?? [],
     refs: from
       ? { content: { builtIn: from.content }, background: { builtIn: from.background }, effects: from.effects ? { builtIn: from.effects } : null }
       : { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null },
@@ -114,7 +118,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
                 <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="saved-themes">
                   {saved.map((theme) => (
                     <li key={theme.id} className="flex flex-col gap-2" data-testid={`saved-theme-${theme.name}`}>
-                      <ScreenThemePreview theme={theme.theme} assets={theme.assets} />
+                      <ScreenThemePreview theme={theme.theme} assets={theme.assets} sample={sampleFor(theme.template)} versesPerSlide={theme.template.versesPerSlide} />
                       <Tags tags={theme.template.tags} />
                       <div className="flex items-center gap-2">
                         <p className="min-w-0 flex-1 truncate text-sm font-medium">{theme.name}</p>
@@ -125,7 +129,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
                               size="sm"
                               variant="outline"
                               onClick={() =>
-                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, titleWidgets: theme.template.titleWidgets, refs: theme.parts })
+                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, titleWidgets: theme.template.titleWidgets, madeFor: theme.template.madeFor ?? [], refs: theme.parts })
                               }
                               data-testid="edit-theme"
                             >
@@ -157,7 +161,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="builtin-themes">
                 {builtIns.map((template) => (
                   <li key={template.id} className="flex flex-col gap-2" data-testid={`builtin-theme-${template.id}`}>
-                    <ScreenThemePreview theme={composeBuiltInTemplate(template.id)!} />
+                    <ScreenThemePreview theme={composeBuiltInTemplate(template.id)!} sample={sampleFor(template.template)} versesPerSlide={template.template.versesPerSlide} />
                     <Tags tags={template.tags} />
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">

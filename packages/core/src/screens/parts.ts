@@ -33,6 +33,9 @@ export const SCREEN_TEMPLATE_SCHEMA = "screen-template/v1";
 
 /** What a template is for, to find it (issue #281); its names are in the locale files (`screens.tags.<tag>`). */
 export const SCREEN_TEMPLATE_TAGS = ["audience", "stage", "presentation", "lyrics", "chords", "signage", "scripture"] as const;
+/** What a template is made for (issue #402): what the editor offers and previews with, and which templates come first where one is picked. None: anything. */
+export const SCREEN_CONTENT_KINDS = ["songs", "scripture"] as const;
+export type ScreenContentKind = (typeof SCREEN_CONTENT_KINDS)[number];
 /** How many verses of a passage a template puts on a slide (issue #310), at most. */
 export const SCREEN_VERSES_PER_SLIDE_MAX = 10;
 export type ScreenTemplateTag = (typeof SCREEN_TEMPLATE_TAGS)[number];
@@ -93,6 +96,8 @@ function templateSchema(strict: boolean) {
      * read (screenTitleWidgets); saved again, it has them as widgets.
      */
     titleWidgets: z.boolean().default(false),
+    /** What it's made for (issue #402); none: anything. It never stops a screen showing something else with it. */
+    madeFor: z.array(z.enum(SCREEN_CONTENT_KINDS)).max(SCREEN_CONTENT_KINDS.length).default([]),
   });
 }
 
@@ -158,7 +163,15 @@ export function readScreenTemplate(input: unknown): ScreenTemplateLayout {
       })
     : [];
   const verses = ScreenTemplateSchema.shape.versesPerSlide.safeParse(raw.versesPerSlide);
-  return ScreenTemplateSchema.parse({ tags, grid: resolveGrid(raw.grid), masks: masks.slice(0, SCREEN_MASKS_MAX), versesPerSlide: verses.success ? verses.data : undefined });
+  const madeFor = Array.isArray(raw.madeFor) ? [...new Set(raw.madeFor)].filter((kind): kind is ScreenContentKind => (SCREEN_CONTENT_KINDS as readonly unknown[]).includes(kind)) : [];
+  return ScreenTemplateSchema.parse({
+    tags,
+    grid: resolveGrid(raw.grid),
+    masks: masks.slice(0, SCREEN_MASKS_MAX),
+    versesPerSlide: verses.success ? verses.data : undefined,
+    titleWidgets: raw.titleWidgets === true,
+    madeFor,
+  });
 }
 
 /**
@@ -315,15 +328,15 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
     content: one.id,
     background: one.id,
     effects: one.effects ? (BUILT_IN_EFFECTS.some((effects) => effects.id === one.id) ? one.id : "pulse") : null,
-    template: ScreenTemplateSchema.parse({ ...one.template, tags: TAGS[one.id] ?? [] }),
+    template: ScreenTemplateSchema.parse({ ...one.template, tags: TAGS[one.id] ?? [], madeFor: ["songs"] }),
   })),
-  { id: "band-chart", content: "chart", background: "classic", effects: null, template: ScreenTemplateSchema.parse({ tags: TAGS["band-chart"] }) },
+  { id: "band-chart", content: "chart", background: "classic", effects: null, template: ScreenTemplateSchema.parse({ tags: TAGS["band-chart"], madeFor: ["songs"] }) },
   // Shaders that move with the words (issue #324).
-  { id: "drift", content: "classic", background: "slow-mesh", effects: "ramp", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"] }) },
-  { id: "turning", content: "classic", background: "turning-mesh", effects: "turn", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"] }) },
-  { id: "neural", content: "classic", background: "neuro-noise", effects: "nerves", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"] }) },
+  { id: "drift", content: "classic", background: "slow-mesh", effects: "ramp", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"], madeFor: ["songs"] }) },
+  { id: "turning", content: "classic", background: "turning-mesh", effects: "turn", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"], madeFor: ["songs"] }) },
+  { id: "neural", content: "classic", background: "neuro-noise", effects: "nerves", template: ScreenTemplateSchema.parse({ tags: ["audience", "lyrics"], madeFor: ["songs"] }) },
   // For a passage (issue #310): the chapel's look, two verses a slide.
-  { id: "scripture", content: "chapel", background: "chapel", effects: null, template: ScreenTemplateSchema.parse({ tags: ["audience", "scripture"], versesPerSlide: 2 }) },
+  { id: "scripture", content: "chapel", background: "chapel", effects: null, template: ScreenTemplateSchema.parse({ tags: ["audience", "scripture"], versesPerSlide: 2, madeFor: ["scripture"] }) },
 ];
 
 export function screenBuiltInPart(kind: "content", id: string | null | undefined): ScreenContentTheme | undefined;
