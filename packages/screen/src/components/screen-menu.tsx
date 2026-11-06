@@ -32,10 +32,19 @@ export function ScreenMenu({ daySet, video = false, onChooseSet, onClose }: { da
   useEffect(() => {
     void fetchScreenThemes().then(setThemes);
   }, []);
-  // Each view opens on its first entry, or the theme the screen has.
+  // Each view opens on its first entry, or the theme the screen has; the themes or cameras arriving later move
+  // the focus there too, unless the remote has moved it since (OK would otherwise pick another entry).
+  const focusedByUs = useRef<Element | null>(null);
+  const shownView = useRef(view);
   useEffect(() => {
+    const changed = shownView.current !== view;
+    shownView.current = view;
+    const active = document.activeElement;
+    if (!changed && focusedByUs.current && active !== focusedByUs.current && list.current?.contains(active)) return;
     const buttons = [...(list.current?.querySelectorAll<HTMLButtonElement>("[data-pick]:not(:disabled)") ?? [])];
-    (buttons.find((one) => one.dataset.current !== undefined) ?? buttons[0])?.focus();
+    const first = buttons.find((one) => one.dataset.current !== undefined) ?? buttons[0];
+    first?.focus();
+    focusedByUs.current = first ?? null;
   }, [view, themes, cameras]);
   // The device's cameras and capture cards, named once the browser has let the page use one.
   useEffect(() => {
