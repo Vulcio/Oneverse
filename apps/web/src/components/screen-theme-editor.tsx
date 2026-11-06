@@ -47,7 +47,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { Choices, ColorInput, Field, Group, Slider } from "#/components/screen-editor-fields";
-import { DisplaySettings, ChordSettings, FontSelect, TextMotionSettings } from "#/components/screen-text-editor";
+import { DisplaySettings, ChordSettings, TextMotionSettings } from "#/components/screen-text-editor";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
