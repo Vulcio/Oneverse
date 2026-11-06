@@ -1,10 +1,4 @@
 import "@fontsource-variable/inter";
-import "@fontsource-variable/montserrat";
-import "@fontsource-variable/playfair-display";
-import "@fontsource-variable/lora";
-import "@fontsource-variable/nunito";
-import "@fontsource-variable/oswald";
-import "@fontsource/bebas-neue";
 import "../screen-stage.css";
 import { SCREEN_PACE_EASING, screenSectionText, type ScreenSectionKind, type ScreenTransition, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type RenderedChart, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
@@ -19,6 +13,7 @@ import { SongChart } from "./song-chart";
 import { BeatRow, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songLines, songSize, StageSide, useStageSide, type StageLine, type StageSong } from "./screen-text";
 import { Flow } from "./screen-flow";
 import { useFollowMusic } from "../lib/screen-follow";
+import { useScreenFonts } from "../lib/screen-fonts";
 import { cn } from "@oneverse/ui/lib/utils";
 
 export type { StageSong } from "./screen-text";
@@ -123,6 +118,8 @@ export function ScreenStage({
     return () => clearTimeout(timer);
   }, [black]);
 
+  // Its built-in fonts, loaded when it's shown (issue #395).
+  useScreenFonts(theme);
   const customFont = useThemeFont(assets.find((asset) => asset.id === theme.text.customFont && asset.kind === "font"));
   const media = assets.find((asset) => asset.id === theme.background.media && asset.kind === "media");
   const shader = useShaderSource(theme, assets);
@@ -185,6 +182,8 @@ export function ScreenStage({
     "--anim-speed": theme.effects?.text.speed ?? 1,
     fontFamily: customFont ? `"${customFont}", ${SCREEN_FONT_FAMILIES[theme.text.font]}` : SCREEN_FONT_FAMILIES[theme.text.font],
   } as CSSProperties;
+  // The chords' own font (issue #395), else the words'.
+  (style as Record<string, unknown>)["--chord-font"] = theme.chords.font ? SCREEN_FONT_FAMILIES[theme.chords.font] : style.fontFamily;
 
   return (
     <StageSide.Provider value={side}>
@@ -588,7 +587,11 @@ function Words({ theme, song, index, phase, transition, size }: { theme: ScreenT
         style={{ gap: `${size * 0.18}cqmin` }}
       >
         {showTitle ? (
-          <p className="sv-line mb-[1cqmin] text-[2.8cqmin] font-semibold tracking-[0.12em] uppercase opacity-70" data-testid={phase === "out" ? undefined : "screen-title"}>
+          <p
+            className="sv-line mb-[1cqmin] text-[2.8cqmin] font-semibold tracking-[0.12em] uppercase opacity-70"
+            style={theme.title.font ? { fontFamily: SCREEN_FONT_FAMILIES[theme.title.font] } : undefined}
+            data-testid={phase === "out" ? undefined : "screen-title"}
+          >
             {song.title}
           </p>
         ) : null}

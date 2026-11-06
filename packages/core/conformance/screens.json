@@ -1969,6 +1969,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -1986,6 +1987,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -2093,6 +2095,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -2110,6 +2113,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -2221,6 +2225,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -2238,6 +2243,132 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
+            },
+            "grid": null,
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5,
+              "rotation": 0.5,
+              "scale": 0.5
+            },
+            "effects": null
+          }
+        },
+        {
+          "name": "a font from a later version: the sans (issue #395)",
+          "args": [
+            {
+              "text": {
+                "font": "some-new-font",
+                "weight": 700
+              },
+              "chords": {
+                "font": "jetbrains"
+              }
+            }
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 700,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "spin": 0,
+              "media": null,
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
+            },
+            "title": {
+              "show": true,
+              "font": null,
+              "when": "first"
+            },
+            "credits": {
+              "show": true,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "pace": null,
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1,
+              "font": "jetbrains",
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -2344,6 +2475,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -2361,6 +2493,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -2459,6 +2592,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -2476,6 +2610,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -2611,6 +2746,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -2628,6 +2764,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -2791,6 +2928,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -2808,6 +2946,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -2943,6 +3082,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -2960,6 +3100,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -3371,6 +3512,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -3388,6 +3530,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -3575,6 +3718,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -3592,6 +3736,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -3699,6 +3844,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -3716,6 +3862,7 @@
             "chords": {
               "color": "#facc15",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -3823,6 +3970,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -3840,6 +3988,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -3905,6 +4054,7 @@
               },
               "title": {
                 "show": true,
+                "font": null,
                 "when": "first"
               },
               "credits": {
@@ -3922,6 +4072,7 @@
               "chords": {
                 "color": "#7dd3fc",
                 "scale": 1,
+                "font": null,
                 "show": "off",
                 "notation": "letters",
                 "size": 0.55,
@@ -4054,6 +4205,7 @@
               },
               "title": {
                 "show": true,
+                "font": null,
                 "when": "first"
               },
               "credits": {
@@ -4071,6 +4223,7 @@
               "chords": {
                 "color": "#7dd3fc",
                 "scale": 1,
+                "font": null,
                 "show": "off",
                 "notation": "letters",
                 "size": 0.55,
@@ -6911,6 +7064,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -6928,6 +7082,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7029,6 +7184,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7046,6 +7202,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7146,6 +7303,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7163,6 +7321,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7264,6 +7423,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7281,6 +7441,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7381,6 +7542,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7398,6 +7560,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7497,6 +7660,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7514,6 +7678,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7612,6 +7777,7 @@
             },
             "title": {
               "show": false,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7629,6 +7795,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7727,6 +7894,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7744,6 +7912,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -7842,6 +8011,7 @@
             },
             "title": {
               "show": false,
+              "font": null,
               "when": "first"
             },
             "credits": {
@@ -7859,6 +8029,7 @@
             "chords": {
               "color": "#7dd3fc",
               "scale": 1,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,
@@ -8321,6 +8492,7 @@
             },
             "title": {
               "show": true,
+              "font": null,
               "when": "every"
             },
             "credits": {
@@ -8338,6 +8510,7 @@
             "chords": {
               "color": "#facc15",
               "scale": 1.2,
+              "font": null,
               "show": "off",
               "notation": "letters",
               "size": 0.55,

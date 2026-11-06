@@ -47,7 +47,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { Choices, ColorInput, Field, Group, Slider } from "#/components/screen-editor-fields";
-import { DisplaySettings, ChordSettings, TextMotionSettings } from "#/components/screen-text-editor";
+import { DisplaySettings, ChordSettings, FontSelect, TextMotionSettings } from "#/components/screen-text-editor";
 import { ScreenThemePreview, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
@@ -359,9 +359,14 @@ export function ScreenThemeEditor({
                 {t("screens.editor.showTitle")}
               </label>
               {theme.title.show ? (
-                <Field label={t("screens.editor.when")}>
-                  <Choices value={theme.title.when} options={["first", "every"] as const} label={(one) => t(`screens.editor.whens.${one}`)} onChange={(when) => set("title", { when })} />
-                </Field>
+                <>
+                  <Field label={t("screens.editor.when")}>
+                    <Choices value={theme.title.when} options={["first", "every"] as const} label={(one) => t(`screens.editor.whens.${one}`)} onChange={(when) => set("title", { when })} />
+                  </Field>
+                  <Field label={t("screens.editor.titleFont")}>
+                    <FontSelect value={theme.title.font} onChange={(font) => set("title", { font })} testId="theme-title-font" />
+                  </Field>
+                </>
               ) : null}
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={theme.credits.show} onChange={(e) => set("credits", { show: e.target.checked })} />

@@ -3,6 +3,8 @@ import {
   SCREEN_DISPLAY_MODES,
   SCREEN_FOLLOW,
   SCREEN_FONT_FAMILIES,
+  SCREEN_FONT_KIND,
+  SCREEN_FONT_KINDS,
   SCREEN_FONTS,
   SCREEN_GLOWS,
   SCREEN_LYRIC_CHORDS,
@@ -22,7 +24,8 @@ import {
   type ScreenTransition,
 } from "@oneverse/core";
 import { AlignCenter, AlignLeft, AlignRight, CaseUpper, Check as CheckIcon, ChevronDown, Italic, RotateCcw } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { loadScreenFont } from "@oneverse/screen/lib/screen-fonts";
 import { useTranslation } from "react-i18next";
 import { Input } from "@oneverse/ui/components/input";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
@@ -437,6 +440,15 @@ function FontPicker({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<"all" | (typeof SCREEN_FONT_KINDS)[number]>("all");
+  const [search, setSearch] = useState("");
+  // Each font shown in its own face: the list's fonts loaded when it opens, the one picked at once.
+  useEffect(() => {
+    void loadScreenFont(font);
+    if (open) SCREEN_FONTS.forEach((one) => void loadScreenFont(one));
+  }, [open, font]);
+  const name = (one: Text["font"]) => t(`screens.editor.fonts.${one}`);
+  const listed = SCREEN_FONTS.filter((one) => (kind === "all" || SCREEN_FONT_KIND[one] === kind) && name(one).toLowerCase().includes(search.trim().toLowerCase()));
   const uploaded = fonts.assets.filter((asset) => asset.kind === "font");
   const custom = customFont ? uploaded.find((asset) => asset.id === customFont) : undefined;
   return (
@@ -453,8 +465,25 @@ function FontPicker({
         <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
       </button>
       {open ? (
-        <div className="flex max-h-72 flex-col overflow-y-auto rounded-md border bg-popover p-1" role="listbox" data-testid="theme-font-list">
-          {SCREEN_FONTS.map((one) => (
+        <div className="flex flex-col rounded-md border bg-popover" data-testid="theme-font-list">
+          <div className="flex flex-col gap-1.5 border-b p-1.5">
+            <Input className="h-7 text-xs" placeholder={t("screens.editor.fontSearch")} value={search} onChange={(event) => setSearch(event.target.value)} aria-label={t("screens.editor.fontSearch")} data-testid="theme-font-search" />
+            <div className="flex flex-wrap gap-1" role="group">
+              {(["all", ...SCREEN_FONT_KINDS] as const).map((one) => (
+                <button
+                  key={one}
+                  type="button"
+                  aria-pressed={kind === one}
+                  onClick={() => setKind(one)}
+                  className={cn("h-6 rounded-full border px-2 text-[11px] font-medium", kind === one ? "border-primary bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted")}
+                >
+                  {t(`screens.editor.fontKinds.${one}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex max-h-72 flex-col overflow-y-auto p-1" role="listbox">
+          {listed.map((one) => (
             <button
               key={one}
               type="button"
@@ -468,7 +497,7 @@ function FontPicker({
               data-value={one}
             >
               <span className="text-lg leading-tight" style={{ fontFamily: SCREEN_FONT_FAMILIES[one] }}>
-                {t(`screens.editor.fonts.${one}`)}
+                {name(one)}
               </span>
               {!custom && font === one ? <CheckIcon className="size-4 text-primary" aria-hidden /> : null}
             </button>
@@ -510,6 +539,7 @@ function FontPicker({
             )}
             <p className="mt-1 text-[11px] text-muted-foreground">{t("screens.editor.fontHint")}</p>
           </div>
+          </div>
         </div>
       ) : null}
     </div>
@@ -546,12 +576,35 @@ export function ChordSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme:
       <Field label={t("screens.editor.chordColor")}>
         <ColorInput value={chords.color} onChange={(color) => set({ color })} />
       </Field>
+      {named ? (
+        <Field label={t("screens.editor.chordFont")}>
+          <FontSelect value={chords.font} onChange={(font) => set({ font })} testId="theme-chord-font" />
+        </Field>
+      ) : null}
       {theme.shows === "chart" ? (
         <Field label={t("screens.editor.chordScale")}>
           <Slider value={chords.scale} min={0.5} max={2} step={0.05} onChange={(scale) => set({ scale })} />
         </Field>
       ) : null}
     </Group>
+  );
+}
+
+/** A font of a part of the template (the chords, the title), or the words' own. */
+export function FontSelect({ value, onChange, testId }: { value: Text["font"] | null; onChange: (font: Text["font"] | null) => void; testId?: string }) {
+  const { t } = useTranslation();
+  useEffect(() => {
+    if (value) void loadScreenFont(value);
+  }, [value]);
+  return (
+    <NativeSelect value={value ?? ""} onChange={(event) => onChange((event.target.value || null) as Text["font"] | null)} style={value ? { fontFamily: SCREEN_FONT_FAMILIES[value] } : undefined} data-testid={testId}>
+      <option value="">{t("screens.editor.sameFont")}</option>
+      {SCREEN_FONTS.map((one) => (
+        <option key={one} value={one}>
+          {t(`screens.editor.fonts.${one}`)}
+        </option>
+      ))}
+    </NativeSelect>
   );
 }
 

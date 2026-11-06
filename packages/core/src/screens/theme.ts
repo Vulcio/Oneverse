@@ -14,8 +14,76 @@ import { SHADER_COLORS_MAX } from "./shader-spec.js";
 export const SCREEN_THEME_SCHEMA = "screen-theme/v1";
 
 /** Built-in typefaces every client has (the web app serves them itself). */
-export const SCREEN_FONTS = ["sans", "rounded", "geometric", "serif", "elegant", "condensed", "display", "mono"] as const;
+export const SCREEN_FONTS = [
+  "sans",
+  "rounded",
+  "geometric",
+  "serif",
+  "elegant",
+  "condensed",
+  "display",
+  "mono",
+  // Issue #395: more, all under the SIL Open Font Licence, bundled with the app (never fetched from Google) and loaded when used.
+  "hyperlegible",
+  "dm-sans",
+  "manrope",
+  "outfit",
+  "poppins",
+  "raleway",
+  "open-sans",
+  "work-sans",
+  "source-sans",
+  "space-grotesk",
+  "josefin",
+  "merriweather",
+  "garamond",
+  "cormorant",
+  "baskerville",
+  "crimson",
+  "anton",
+  "abril",
+  "dancing",
+  "caveat",
+  "jetbrains",
+] as const;
 export type ScreenFont = (typeof SCREEN_FONTS)[number];
+/** Each font's kind, for the font list's filters (issue #395). */
+export const SCREEN_FONT_KINDS = ["sans", "serif", "display", "script", "mono"] as const;
+export const SCREEN_FONT_KIND: Record<ScreenFont, (typeof SCREEN_FONT_KINDS)[number]> = {
+  sans: "sans",
+  rounded: "sans",
+  geometric: "sans",
+  serif: "serif",
+  elegant: "serif",
+  condensed: "display",
+  display: "display",
+  mono: "mono",
+  hyperlegible: "sans",
+  "dm-sans": "sans",
+  manrope: "sans",
+  outfit: "sans",
+  poppins: "sans",
+  raleway: "sans",
+  "open-sans": "sans",
+  "work-sans": "sans",
+  "source-sans": "sans",
+  "space-grotesk": "sans",
+  josefin: "sans",
+  merriweather: "serif",
+  garamond: "serif",
+  cormorant: "serif",
+  baskerville: "serif",
+  crimson: "serif",
+  anton: "display",
+  abril: "display",
+  dancing: "script",
+  caveat: "script",
+  jetbrains: "mono",
+};
+/** A font, reading a template: one from a later version reads as the sans (issue #395). */
+function fontSchema(strict: boolean) {
+  return strict ? z.enum(SCREEN_FONTS) : z.preprocess((value) => (typeof value === "string" && !(SCREEN_FONTS as readonly string[]).includes(value) ? "sans" : value), z.enum(SCREEN_FONTS));
+}
 
 /** Each font's family on the web, and what it falls back to. */
 export const SCREEN_FONT_FAMILIES: Record<ScreenFont, string> = {
@@ -27,6 +95,27 @@ export const SCREEN_FONT_FAMILIES: Record<ScreenFont, string> = {
   condensed: '"Oswald Variable", "Oswald", "Arial Narrow", sans-serif',
   display: '"Bebas Neue", "Oswald Variable", Impact, sans-serif',
   mono: 'ui-monospace, "SF Mono", Menlo, monospace',
+  hyperlegible: '"Atkinson Hyperlegible Next Variable", system-ui, sans-serif',
+  "dm-sans": '"DM Sans Variable", system-ui, sans-serif',
+  manrope: '"Manrope Variable", system-ui, sans-serif',
+  outfit: '"Outfit Variable", system-ui, sans-serif',
+  poppins: '"Poppins", system-ui, sans-serif',
+  raleway: '"Raleway Variable", system-ui, sans-serif',
+  "open-sans": '"Open Sans Variable", system-ui, sans-serif',
+  "work-sans": '"Work Sans Variable", system-ui, sans-serif',
+  "source-sans": '"Source Sans 3 Variable", system-ui, sans-serif',
+  "space-grotesk": '"Space Grotesk Variable", system-ui, sans-serif',
+  josefin: '"Josefin Sans Variable", system-ui, sans-serif',
+  merriweather: '"Merriweather Variable", Georgia, serif',
+  garamond: '"EB Garamond Variable", Garamond, Georgia, serif',
+  cormorant: '"Cormorant Garamond Variable", Garamond, Georgia, serif',
+  baskerville: '"Libre Baskerville", Baskerville, Georgia, serif',
+  crimson: '"Crimson Pro Variable", Georgia, serif',
+  anton: '"Anton", Impact, sans-serif',
+  abril: '"Abril Fatface", Georgia, serif',
+  dancing: '"Dancing Script Variable", cursive',
+  caveat: '"Caveat Variable", cursive',
+  jetbrains: '"JetBrains Mono Variable", ui-monospace, monospace',
 };
 
 /** How the lines before and after the current ones look. */
@@ -246,7 +335,7 @@ function screenWidgetSchema(strict: boolean) {
     }).prefault({}),
     style: object({
       /** The template's font, or another. */
-      font: z.enum(SCREEN_FONTS).nullable().default(null),
+      font: fontSchema(strict).nullable().default(null),
       /** The template's text colour, or another. */
       color: color.nullable().default(null),
       /** A panel behind it, and how much it shows (0: none). */
@@ -440,7 +529,7 @@ function screenSectionStyleSchema(strict: boolean) {
   const object = strict ? z.strictObject : z.object;
   return object({
     text: object({
-      font: z.enum(SCREEN_FONTS).optional(),
+      font: fontSchema(strict).optional(),
       customFont: z.string().max(40).nullable().optional(),
       weight: z.number().int().min(100).max(900).multipleOf(100).optional(),
       italic: z.boolean().optional(),
@@ -478,7 +567,7 @@ function screenThemeSchema(strict: boolean) {
     })
     .prefault({}),
   text: object({
-      font: z.enum(SCREEN_FONTS).default("sans"),
+      font: fontSchema(strict).default("sans"),
       /** A font uploaded with the theme (its asset's id): used when the client has it, `font` otherwise. */
       customFont: z.string().max(40).nullable().default(null),
       /** "auto" fits the longest line; a number is the size in % of the screen's shorter side. */
@@ -551,6 +640,8 @@ function screenThemeSchema(strict: boolean) {
     .prefault({}),
   title: object({
       show: z.boolean().default(true),
+      /** Its own font (issue #395); null, the words'. */
+      font: fontSchema(strict).nullable().default(null),
       when: z.enum(["first", "every"]).default("first"),
     })
     .prefault({}),
@@ -575,6 +666,8 @@ function screenThemeSchema(strict: boolean) {
   chords: object({
       color: color.default("#7dd3fc"),
       scale: z.number().min(0.5).max(2).default(1),
+      /** Their own font (issue #395); null, the words'. */
+      font: fontSchema(strict).nullable().default(null),
       show: z.enum(SCREEN_LYRIC_CHORDS).default("off"),
       notation: z.enum(SCREEN_CHORD_NOTATIONS).default("letters"),
       /** Their size beside the words', 0.35 to 0.9. */
@@ -918,7 +1011,8 @@ export function screenSectionText(text: ScreenTheme["text"], style: ScreenSectio
 export function screenAutoTextSize(lines: readonly string[], text: Pick<ScreenTheme["text"], "font" | "upperCase">): number {
   const lengths = lines.map((line) => line.length).filter((length) => length > 0).sort((a, b) => a - b);
   const long = lengths.length === 0 ? 8 : Math.max(8, lengths[Math.floor((lengths.length - 1) * 0.9)]!);
-  const width = text.font === "condensed" || text.font === "display" ? 0.72 : text.font === "mono" ? 1.2 : 1;
+  // Narrow fonts fit more letters, handwriting a few more, monospaced ones fewer.
+  const width = ["condensed", "display", "anton"].includes(text.font) ? 0.72 : ["dancing", "caveat"].includes(text.font) ? 0.85 : ["mono", "jetbrains"].includes(text.font) ? 1.2 : 1;
   const size = (8 * 26) / (long * width * (text.upperCase ? 1.15 : 1));
   return Math.round(Math.max(3.2, Math.min(text.upperCase ? 8 : 8.5, size)) * 100) / 100;
 }

@@ -373,6 +373,12 @@
   display: inline-block;
   text-indent: 0;
 }
+.sv-chord-name,
+.sv-beats,
+.sv-gbeats,
+[data-testid="screen-chart"] [data-chord] {
+  font-family: var(--chord-font);
+}
 .sv-chord-name {
   position: absolute;
   left: -0.04em;

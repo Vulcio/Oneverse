@@ -1873,6 +1873,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "nothing: the default look", args: [{}] },
           { name: "a few fields: the rest default", args: [{ text: { font: "elegant", upperCase: true }, motion: { transition: "blur", reveal: "words" } }] },
           { name: "a bad colour: that part's defaults, the rest kept", args: [{ text: { color: "red", font: "serif" }, background: { kind: "aurora", colors: ["#000000", "#6d28d9"] } }] },
+          { name: "a font from a later version: the sans (issue #395)", args: [{ text: { font: "some-new-font", weight: 700 }, chords: { font: "jetbrains" } }] },
           { name: "a field from a later version: ignored", args: [{ background: { kind: "waves", shimmer: true }, future: { x: 1 } }] },
           { name: "not a theme", args: ["concert"] },
           {
