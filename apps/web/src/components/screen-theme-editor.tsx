@@ -249,6 +249,12 @@ export function ScreenThemeEditor({
   }
 
   /** A template's part opened: a saved one to change, a built-in one to customize into one of the user's own. */
+  /** A widget picked on the preview: its settings, on the Widgets tab. */
+  function pickWidget(id: string | null) {
+    setSelected(id);
+    if (id) setLayer("widgets");
+  }
+
   /** The name of a template's part, as its row in the rail says it. */
   function partName(slot: ScreenPartKind, ref: ScreenPartRef | null): string {
     if (!ref) return t("screens.parts.noEffects");
@@ -578,7 +584,7 @@ export function ScreenThemeEditor({
               </span>
             </div>
             <ScreenThemePreview theme={theme} assets={previewAssets} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
-              {theme.grid && showGrid ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={setSelected} onGrid={setGrid} /> : null}
+              {theme.grid && showGrid ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
             </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">
               {contrast < 4.5 ? <TriangleAlert className="size-3.5 shrink-0" aria-hidden /> : null}
