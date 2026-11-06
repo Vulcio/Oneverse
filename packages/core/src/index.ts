@@ -58,6 +58,7 @@ export * from "./playback/index.js";
 export * from "./recording/index.js";
 export * from "./recording/cues.js";
 export * from "./recording/chords.js";
+export * from "./recording/chord-bars.js";
 export * from "./recording/ogg-webm.js";
 export * from "./song-history/index.js";
 export * from "./song-document/fold.js";

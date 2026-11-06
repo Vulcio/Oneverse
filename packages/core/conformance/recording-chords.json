@@ -1,0 +1,879 @@
+{
+  "$schema": "songverse-conformance/v1",
+  "area": "recording-chords",
+  "about": "A recording's chords (issue #393), as the stem separation's analysis finds them, laid on its beats and bars to suggest them in a chart",
+  "functions": {
+    "readRecordingChords": {
+      "about": "The chords a server sent or a row stores: in order and not overlapping, each part valid, else null (never a partial list); stretches without a chord dropped; times to the millisecond; the bass only when it isn't the root",
+      "params": [
+        "list"
+      ],
+      "cases": [
+        {
+          "name": "a chord, none, a chord over its third",
+          "args": [
+            [
+              {
+                "start": 0.4204,
+                "end": 2,
+                "root": 7,
+                "quality": "maj"
+              },
+              {
+                "start": 2,
+                "end": 2.5,
+                "label": "N"
+              },
+              {
+                "start": 2.5,
+                "end": 4,
+                "root": 0,
+                "quality": "maj",
+                "bass": 4
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "start": 0.42,
+              "end": 2,
+              "root": 7,
+              "quality": "maj"
+            },
+            {
+              "start": 2.5,
+              "end": 4,
+              "root": 0,
+              "quality": "maj",
+              "bass": 4
+            }
+          ]
+        },
+        {
+          "name": "overlapping: none kept",
+          "args": [
+            [
+              {
+                "start": 0,
+                "end": 2,
+                "root": 7,
+                "quality": "maj"
+              },
+              {
+                "start": 1,
+                "end": 3,
+                "root": 0,
+                "quality": "maj"
+              }
+            ]
+          ],
+          "expected": null
+        },
+        {
+          "name": "a quality it doesn't know",
+          "args": [
+            [
+              {
+                "start": 0,
+                "end": 2,
+                "root": 7,
+                "quality": "maj9"
+              }
+            ]
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "recordingChordSymbol": {
+      "about": "A recording's chord as a chord symbol, moved `steps` semitones to the song's key and spelled for it (flats in F, Bb, Dm…, sharps otherwise)",
+      "params": [
+        "chord",
+        "options"
+      ],
+      "cases": [
+        {
+          "name": "C# minor in E",
+          "args": [
+            {
+              "root": 1,
+              "quality": "min"
+            },
+            {
+              "key": "E"
+            }
+          ],
+          "expected": "C#m"
+        },
+        {
+          "name": "the same in Ab: Db minor",
+          "args": [
+            {
+              "root": 1,
+              "quality": "min"
+            },
+            {
+              "key": "Ab"
+            }
+          ],
+          "expected": "Dbm"
+        },
+        {
+          "name": "C over E, two semitones up in D",
+          "args": [
+            {
+              "root": 0,
+              "quality": "maj",
+              "bass": 4
+            },
+            {
+              "steps": 2,
+              "key": "D"
+            }
+          ],
+          "expected": "D/F#"
+        },
+        {
+          "name": "half-diminished",
+          "args": [
+            {
+              "root": 10,
+              "quality": "hdim7"
+            },
+            {
+              "key": "F"
+            }
+          ],
+          "expected": "Bbm7b5"
+        },
+        {
+          "name": "minor with a major seventh",
+          "args": [
+            {
+              "root": 9,
+              "quality": "minmaj7"
+            },
+            {}
+          ],
+          "expected": "Am(maj7)"
+        }
+      ]
+    },
+    "recordingSteps": {
+      "about": "The semitones from the recording's key to the song's, between -5 and 6; null when either isn't known",
+      "params": [
+        "songKey",
+        "recordingKey"
+      ],
+      "cases": [
+        {
+          "name": "D to E",
+          "args": [
+            "E",
+            "D"
+          ],
+          "expected": 2
+        },
+        {
+          "name": "E to C: down",
+          "args": [
+            "C",
+            "E"
+          ],
+          "expected": -4
+        },
+        {
+          "name": "minor keys",
+          "args": [
+            "Bbm",
+            "Cm"
+          ],
+          "expected": -2
+        },
+        {
+          "name": "no recording key",
+          "args": [
+            "C",
+            null
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "recordingBars": {
+      "about": "The recording's bars from its beat map: one per downbeat, as long as the beats to the next (the last no longer than the one before), the chord sounding on each beat (read 30% into it, so a chord found a little early or late counts) and where it changes, beat 1 always",
+      "params": [
+        "recording"
+      ],
+      "cases": [
+        {
+          "name": "a chord changing on beat 3, found 80 ms late",
+          "args": [
+            {
+              "map": {
+                "beats": [
+                  0,
+                  0.5,
+                  1,
+                  1.5,
+                  2,
+                  2.5,
+                  3,
+                  3.5
+                ],
+                "downbeats": [
+                  0,
+                  2
+                ]
+              },
+              "chords": [
+                {
+                  "start": 0.08,
+                  "end": 1.1,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 1.1,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "start": 0,
+              "beats": 4,
+              "onBeats": [
+                {
+                  "start": 0.08,
+                  "end": 1.1,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 0.08,
+                  "end": 1.1,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 1.1,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 1.1,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                }
+              ],
+              "changes": [
+                {
+                  "beat": 1,
+                  "chord": {
+                    "start": 0.08,
+                    "end": 1.1,
+                    "root": 7,
+                    "quality": "maj"
+                  }
+                },
+                {
+                  "beat": 3,
+                  "chord": {
+                    "start": 1.1,
+                    "end": 4,
+                    "root": 0,
+                    "quality": "maj"
+                  }
+                }
+              ]
+            },
+            {
+              "start": 2,
+              "beats": 4,
+              "onBeats": [
+                {
+                  "start": 1.1,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 1.1,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 1.1,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 1.1,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                }
+              ],
+              "changes": [
+                {
+                  "beat": 1,
+                  "chord": {
+                    "start": 1.1,
+                    "end": 4,
+                    "root": 0,
+                    "quality": "maj"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "cuesFromChords": {
+      "about": "Where each pass of a chart starts in a recording, by matching the chart's chord on each bar's 1 through its order to the recording's: passes in order, the recording free to play bars the chart doesn't (an intro, an instrumental, a chorus once more) or leave a pass out, tried in each key unless given. Null when the chart has fewer than 8 bars with a chord or the recording agrees with fewer than 60% of them",
+      "params": [
+        "passes",
+        "recording",
+        "options"
+      ],
+      "cases": [
+        {
+          "name": "an intro, an instrumental and a chorus once more, two semitones down",
+          "args": [
+            [
+              {
+                "sectionId": "v",
+                "bars": [
+                  "G",
+                  "C",
+                  "G",
+                  "D"
+                ]
+              },
+              {
+                "sectionId": "c",
+                "bars": [
+                  "C",
+                  "G",
+                  "D",
+                  "Em"
+                ]
+              },
+              {
+                "sectionId": "v",
+                "bars": [
+                  "G",
+                  "C",
+                  "G",
+                  "D"
+                ]
+              },
+              {
+                "sectionId": "c",
+                "bars": [
+                  "C",
+                  "G",
+                  "D",
+                  "Em"
+                ]
+              }
+            ],
+            {
+              "bars": [
+                "-",
+                "-",
+                "G",
+                "C",
+                "G",
+                "D",
+                "C",
+                "G",
+                "D",
+                "Em",
+                "Em",
+                "Em",
+                "G",
+                "C",
+                "G",
+                "D",
+                "C",
+                "G",
+                "D",
+                "Em",
+                "C",
+                "G",
+                "D",
+                "Em"
+              ],
+              "steps": -2
+            },
+            {}
+          ],
+          "expected": {
+            "cues": [
+              {
+                "at": 4,
+                "sectionId": "v"
+              },
+              {
+                "at": 12,
+                "sectionId": "c"
+              },
+              {
+                "at": 24,
+                "sectionId": "v"
+              },
+              {
+                "at": 32,
+                "sectionId": "c"
+              }
+            ],
+            "steps": 2,
+            "agreement": 1
+          }
+        },
+        {
+          "name": "the key given",
+          "args": [
+            [
+              {
+                "sectionId": "v",
+                "bars": [
+                  "G",
+                  "C",
+                  "G",
+                  "D"
+                ]
+              },
+              {
+                "sectionId": "c",
+                "bars": [
+                  "C",
+                  "G",
+                  "D",
+                  "Em"
+                ]
+              },
+              {
+                "sectionId": "v",
+                "bars": [
+                  "G",
+                  "C",
+                  "G",
+                  "D"
+                ]
+              },
+              {
+                "sectionId": "c",
+                "bars": [
+                  "C",
+                  "G",
+                  "D",
+                  "Em"
+                ]
+              }
+            ],
+            {
+              "bars": [
+                "-",
+                "G",
+                "C",
+                "G",
+                "D",
+                "C",
+                "G",
+                "D",
+                "Em",
+                "G",
+                "C",
+                "G",
+                "D",
+                "C",
+                "G",
+                "D",
+                "Em"
+              ]
+            },
+            {
+              "steps": 0
+            }
+          ],
+          "expected": {
+            "cues": [
+              {
+                "at": 2,
+                "sectionId": "v"
+              },
+              {
+                "at": 10,
+                "sectionId": "c"
+              },
+              {
+                "at": 18,
+                "sectionId": "v"
+              },
+              {
+                "at": 26,
+                "sectionId": "c"
+              }
+            ],
+            "steps": 0,
+            "agreement": 1
+          }
+        },
+        {
+          "name": "the recording plays something else",
+          "args": [
+            [
+              {
+                "sectionId": "v",
+                "bars": [
+                  "G",
+                  "C",
+                  "G",
+                  "D"
+                ]
+              },
+              {
+                "sectionId": "c",
+                "bars": [
+                  "C",
+                  "G",
+                  "D",
+                  "Em"
+                ]
+              },
+              {
+                "sectionId": "v",
+                "bars": [
+                  "G",
+                  "C",
+                  "G",
+                  "D"
+                ]
+              },
+              {
+                "sectionId": "c",
+                "bars": [
+                  "C",
+                  "G",
+                  "D",
+                  "Em"
+                ]
+              }
+            ],
+            {
+              "bars": [
+                "A",
+                "B",
+                "E",
+                "F",
+                "A",
+                "B",
+                "E",
+                "F",
+                "A",
+                "B",
+                "E",
+                "F",
+                "A",
+                "B",
+                "E",
+                "F"
+              ]
+            },
+            {
+              "steps": 0
+            }
+          ],
+          "expected": null
+        }
+      ]
+    },
+    "downbeatShift": {
+      "about": "How many beats the recording's bars should move so their 1 is where its chords change: the beat of the bar most chord changes fall on, when that's at least half of them and fewer than a quarter fall on the 1; 0 with fewer than 8 changes",
+      "params": [
+        "recording"
+      ],
+      "cases": [
+        {
+          "name": "every chord on beat 2",
+          "args": [
+            {
+              "map": {
+                "beats": [
+                  0,
+                  0.5,
+                  1,
+                  1.5,
+                  2,
+                  2.5,
+                  3,
+                  3.5,
+                  4,
+                  4.5,
+                  5,
+                  5.5,
+                  6,
+                  6.5,
+                  7,
+                  7.5,
+                  8,
+                  8.5,
+                  9,
+                  9.5,
+                  10,
+                  10.5,
+                  11,
+                  11.5,
+                  12,
+                  12.5,
+                  13,
+                  13.5,
+                  14,
+                  14.5,
+                  15,
+                  15.5,
+                  16,
+                  16.5,
+                  17,
+                  17.5,
+                  18,
+                  18.5,
+                  19,
+                  19.5,
+                  20,
+                  20.5,
+                  21,
+                  21.5,
+                  22,
+                  22.5,
+                  23,
+                  23.5
+                ],
+                "downbeats": [
+                  0,
+                  2,
+                  4,
+                  6,
+                  8,
+                  10,
+                  12,
+                  14,
+                  16,
+                  18,
+                  20,
+                  22
+                ]
+              },
+              "chords": [
+                {
+                  "start": 0.5,
+                  "end": 2.5,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 2.5,
+                  "end": 4.5,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 4.5,
+                  "end": 6.5,
+                  "root": 2,
+                  "quality": "maj"
+                },
+                {
+                  "start": 6.5,
+                  "end": 8.5,
+                  "root": 4,
+                  "quality": "maj"
+                },
+                {
+                  "start": 8.5,
+                  "end": 10.5,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 10.5,
+                  "end": 12.5,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 12.5,
+                  "end": 14.5,
+                  "root": 2,
+                  "quality": "maj"
+                },
+                {
+                  "start": 14.5,
+                  "end": 16.5,
+                  "root": 4,
+                  "quality": "maj"
+                },
+                {
+                  "start": 16.5,
+                  "end": 18.5,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 18.5,
+                  "end": 20.5,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 20.5,
+                  "end": 22.5,
+                  "root": 2,
+                  "quality": "maj"
+                }
+              ]
+            }
+          ],
+          "expected": 1
+        },
+        {
+          "name": "every chord on the 1",
+          "args": [
+            {
+              "map": {
+                "beats": [
+                  0,
+                  0.5,
+                  1,
+                  1.5,
+                  2,
+                  2.5,
+                  3,
+                  3.5,
+                  4,
+                  4.5,
+                  5,
+                  5.5,
+                  6,
+                  6.5,
+                  7,
+                  7.5,
+                  8,
+                  8.5,
+                  9,
+                  9.5,
+                  10,
+                  10.5,
+                  11,
+                  11.5,
+                  12,
+                  12.5,
+                  13,
+                  13.5,
+                  14,
+                  14.5,
+                  15,
+                  15.5,
+                  16,
+                  16.5,
+                  17,
+                  17.5,
+                  18,
+                  18.5,
+                  19,
+                  19.5
+                ],
+                "downbeats": [
+                  0,
+                  2,
+                  4,
+                  6,
+                  8,
+                  10,
+                  12,
+                  14,
+                  16,
+                  18
+                ]
+              },
+              "chords": [
+                {
+                  "start": 0,
+                  "end": 2,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 2,
+                  "end": 4,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 4,
+                  "end": 6,
+                  "root": 2,
+                  "quality": "maj"
+                },
+                {
+                  "start": 6,
+                  "end": 8,
+                  "root": 4,
+                  "quality": "min"
+                },
+                {
+                  "start": 8,
+                  "end": 10,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 10,
+                  "end": 12,
+                  "root": 0,
+                  "quality": "maj"
+                },
+                {
+                  "start": 12,
+                  "end": 14,
+                  "root": 2,
+                  "quality": "maj"
+                },
+                {
+                  "start": 14,
+                  "end": 16,
+                  "root": 4,
+                  "quality": "min"
+                },
+                {
+                  "start": 16,
+                  "end": 18,
+                  "root": 7,
+                  "quality": "maj"
+                },
+                {
+                  "start": 18,
+                  "end": 20,
+                  "root": 0,
+                  "quality": "maj"
+                }
+              ]
+            }
+          ],
+          "expected": 0
+        }
+      ]
+    }
+  }
+}
