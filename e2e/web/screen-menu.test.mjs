@@ -143,6 +143,22 @@ try {
     await tv.locator('[data-testid="screen-showing"][data-theme="concert"]').waitFor({ timeout: 10000 });
   });
 
+  await step("its template for Bible passages (issue #402): the same as songs, until one's picked from the menu", async () => {
+    await showing().dblclick({ position: { x: 300, y: 300 } });
+    await menu().waitFor();
+    await menu().getByTestId("screen-menu-scripture-themes").getByText("Same as songs").waitFor();
+    await menu().getByTestId("screen-menu-scripture-themes").click();
+    await tv.locator('[data-testid="screen-menu"][data-view="themes"]').getByText("Template for Bible passages").waitFor();
+    // The one in use has the focus: the same as songs; the built-in ones for scripture come first.
+    if (!(await tv.evaluate(() => document.activeElement?.textContent ?? "")).includes("Same as songs")) throw new Error("not focused on Same as songs");
+    const names = await menu().getByTestId("screen-menu-theme").allInnerTexts();
+    if (!names.slice(1, 5).some((one) => one.startsWith("Scripture")) || !names.slice(1, 5).some((one) => one.startsWith("Stage scripture"))) throw new Error(names.join(" | "));
+    await menu().getByTestId("screen-menu-theme").filter({ hasText: /^Stage scripture/ }).click();
+    await menu().waitFor({ state: "detached" });
+    const [kept] = (await api(admin, "GET", "/screens")).filter((one) => one.id === screen.id);
+    if (kept.scriptureThemeTemplate !== "stage-scripture" || kept.themeTemplate !== "concert") throw new Error(JSON.stringify(kept));
+  });
+
   await step("the screen's API: someone else's theme refused, both at once refused", async () => {
     const headers = { Authorization: `Screen ${token}`, "Content-Type": "application/json" };
     const post = (body) => fetch(`${API}/screens/current/theme`, { method: "POST", headers, body: JSON.stringify(body) });

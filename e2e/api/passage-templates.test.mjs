@@ -90,4 +90,9 @@ r = await call(leader, "PATCH", `/screens/${screen.id}`, { scriptureThemeTemplat
 r = await anonymous("GET", "/screens/current", null, { Authorization: `Screen ${token}` });
 check("back to the same as songs", r.status === 200 && !r.body.itemThemes?.[item.id], JSON.stringify(Object.keys(r.body?.itemThemes ?? {})));
 
+// Paired for the stage (issue #402): its templates for songs and for passages, both at once.
+const stagePairing = (await anonymous("POST", "/screens/pairings")).body;
+r = await call(leader, "POST", `/screens/pairings/${stagePairing.code}/confirm`, { name: `Stage ${stamp}`, setlistId: set.id, themeTemplate: "stage-display", scriptureThemeTemplate: "stage-scripture" });
+check("paired with its templates for songs and passages", r.status === 201 && r.body.themeTemplate === "stage-display" && r.body.scriptureThemeTemplate === "stage-scripture", JSON.stringify(r.body));
+
 finish();

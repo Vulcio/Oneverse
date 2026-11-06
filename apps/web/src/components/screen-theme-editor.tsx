@@ -33,6 +33,7 @@ import {
   screenShowsChart,
   screenThemeContrast,
   SCREEN_CONTENT_KINDS,
+  SCREEN_LAYOUT_PRESETS,
   type ScreenContentKind,
   type ScreenMask,
   type ScreenPartKind,
@@ -101,6 +102,16 @@ export function partDocument(kind: ScreenPartKind, ref: ScreenPartRef | null, pa
   if (!ref) return null;
   return "builtIn" in ref ? screenBuiltInPart(kind as "content", ref.builtIn) : (parts.find((one) => one.id === ref.id)?.document ?? null);
 }
+
+/**
+ * A template without a grid, as its editor draws it (issue #402): the words,
+ * a box over the whole screen to move and resize like any widget. Nothing
+ * changes until it's moved; then the template has a grid.
+ */
+const WORDS_GRID: Grid = (() => {
+  const grid = SCREEN_LAYOUT_PRESETS.find((one) => one.id === "words-clock")!.grid!;
+  return { ...grid, widgets: grid.widgets.filter((one) => one.kind === "stage") };
+})();
 
 /** What a part is previewed with (issue #281): the template it's edited from, else the classic words, a moving background, effects that show the background's reactions. */
 const PREVIEW_WITH: Record<ScreenPartKind, TemplateRefs> = {
@@ -637,7 +648,7 @@ export function ScreenThemeEditor({
                 </NativeSelect>
               ) : null}
               {/* The layout is the template's (issue #398): a part's editor previews it, never moves it. */}
-              {theme.grid && kind === "template" ? (
+              {kind === "template" ? (
                 <label className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" className="accent-primary" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} data-testid="theme-show-grid" />
                   {t("screens.editor.editLayout")}
@@ -656,7 +667,7 @@ export function ScreenThemeEditor({
               </span>
             </div>
             <ScreenThemePreview theme={shown} assets={shownAssets} sample={previewWith} versesPerSlide={versesPerSlide} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
-              {theme.grid && showGrid && kind === "template" ? <GridOverlay grid={theme.grid} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
+              {showGrid && kind === "template" ? <GridOverlay grid={theme.grid ?? WORDS_GRID} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
             </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">
               {contrast < 4.5 ? <TriangleAlert className="size-3.5 shrink-0" aria-hidden /> : null}

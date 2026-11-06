@@ -1,4 +1,4 @@
-import { composeBuiltInTemplate, formatScreenCode, normalizeScreenCode, SCREEN_PAIRING_LENGTHS, SCREEN_SWITCHABLE_LAYERS, type ScreenPairingLength, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@oneverse/core";
+import { composeBuiltInTemplate, screenTemplateFor, formatScreenCode, SCREEN_ROLES, type ScreenRole, normalizeScreenCode, SCREEN_PAIRING_LENGTHS, SCREEN_SWITCHABLE_LAYERS, type ScreenPairingLength, SCREEN_TEMPLATES, type ScreenOwnerRequest, type ScreenSummary, type ScreenTheme, type ScreenTier, type ScreenThemeSummary, type SetlistSummary } from "@oneverse/core";
 import { createFileRoute, Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { Building2, MonitorCheck, MonitorUp, Plus, Radio, Settings2, User, Users, type LucideIcon } from "lucide-react";
 import { Fragment, useEffect, useState, type FormEvent } from "react";
@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { TemplatesTab } from "#/components/screen-templates-tab";
+import { Choices } from "#/components/screen-editor-fields";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { WidgetGallery } from "#/components/screen-widget-gallery";
 import { BrandsList, type BrandOwnerChoice } from "#/components/brands-list";
@@ -303,14 +304,15 @@ function themeValue(screen: Pick<ScreenSummary, "themeId" | "themeTemplate">): s
  */
 function ThemeSelect({ id, value, themes, onChange, scripture = false }: { id: string; value: string; themes: ScreenThemeSummary[]; onChange: (value: string) => void; scripture?: boolean }) {
   const { t } = useTranslation();
-  const first = <T,>(list: T[], tags: (one: T) => readonly string[]) => (scripture ? [...list.filter((one) => tags(one).includes("scripture")), ...list.filter((one) => !tags(one).includes("scripture"))] : list);
+  const first = <T,>(list: T[], template: (one: T) => { tags: readonly string[]; madeFor?: readonly string[] }) =>
+    scripture ? [...list.filter((one) => screenTemplateFor(template(one), "scripture")), ...list.filter((one) => !screenTemplateFor(template(one), "scripture"))] : list;
   return (
     <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)} data-testid={scripture ? "screen-scripture-theme" : undefined}>
       <option value="">{scripture ? t("screens.themeSameAsSongs") : t("screens.themeDefault")}</option>
       <optgroup label={t("screens.builtIn")}>
         {first(
           SCREEN_TEMPLATES.filter((one) => scripture || one.id !== "classic"),
-          (one) => [...one.template.tags, ...one.template.madeFor],
+          (one) => one.template,
         ).map((one) => (
           <option key={one.id} value={`t:${one.id}`}>
             {t(`screens.templates.${one.id}.name`)}
@@ -319,7 +321,7 @@ function ThemeSelect({ id, value, themes, onChange, scripture = false }: { id: s
       </optgroup>
       {themes.length > 0 ? (
         <optgroup label={t("screens.savedThemes")}>
-          {first(themes, (one) => [...one.template.tags, ...(one.template.madeFor ?? [])]).map((theme) => (
+          {first(themes, (one) => one.template).map((theme) => (
             <option key={theme.id} value={`s:${theme.id}`}>
               {theme.teamName ? `${theme.name} · ${theme.teamName}` : theme.name}
             </option>
@@ -395,6 +397,8 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
   const [set, setSet] = useState(setlistId && sets.some((one) => one.id === setlistId) ? setlistId : DAY_SET);
   const [name, setName] = useState(t("screens.defaultName"));
   const [lasts, setLasts] = useState<ScreenPairingLength>("unlimited");
+  // What it's for (issue #402): the templates it starts with, for songs and for passages.
+  const [role, setRole] = useState<ScreenRole>("audience");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A Oneverse Pulse's code (issue #320): said so, and named so.
@@ -424,7 +428,7 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
     setError(null);
     try {
       const shown = setChange(set);
-      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), ...(lasts !== "unlimited" && { lasts }), ...(shown.setMode === "FIXED" ? { setlistId: shown.setlistId ?? undefined } : shown) }));
+      await onPaired(await apiClient.confirmScreenPairing(normalized, { owner: ownerFrom(owner), name: name.trim() || t("screens.defaultName"), ...(lasts !== "unlimited" && { lasts }), ...(SCREEN_ROLES[role].songs && { themeTemplate: SCREEN_ROLES[role].songs }), scriptureThemeTemplate: SCREEN_ROLES[role].scripture, ...(shown.setMode === "FIXED" ? { setlistId: shown.setlistId ?? undefined } : shown) }));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -474,6 +478,13 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
                 <OwnerSelect id="screen-owner" owners={owners} value={owner} onChange={setOwner} />
               </div>
             ) : null}
+            <div className="flex flex-col gap-1.5 sm:col-span-2" data-testid="screen-role">
+              <span className="text-sm font-medium">{t("screens.role")}</span>
+              <Choices value={role} options={Object.keys(SCREEN_ROLES) as ScreenRole[]} label={(one) => t(`screens.roles.${one}`)} onChange={setRole} className="max-w-md" />
+              <p className="text-xs text-muted-foreground">
+                {t("screens.roleHint", { songs: t(`screens.templates.${SCREEN_ROLES[role].songs ?? "classic"}.name`), scripture: t(`screens.templates.${SCREEN_ROLES[role].scripture}.name`) })}
+              </p>
+            </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="screen-set">{t("screens.set")}</Label>
               <SetSelect id="screen-set" sets={sets} value={set} onChange={setSet} />
