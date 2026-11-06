@@ -650,7 +650,7 @@ const en = {
       titleFont: "Title's font",
       sameFont: "Same as the words",
       size: "Size",
-      sizeAuto: "Fit the line",
+      sizeAuto: "Fit the song",
       weight: "Weight",
       upperCase: "Capitals",
       color: "Colour",

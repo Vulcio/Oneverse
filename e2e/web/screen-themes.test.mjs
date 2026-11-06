@@ -104,6 +104,12 @@ try {
     await part.getByTestId("theme-contrast").getByText("Low contrast", { exact: false }).waitFor();
     await part.getByTestId("theme-text-color").fill("#fff7e6");
     await part.getByTestId("theme-contrast").getByText("Contrast", { exact: false }).waitFor();
+    // A chorus styled apart (issue #395): its own tab, a band behind it; the rest the default's.
+    await part.getByTestId("theme-text-tab-chorus").click();
+    await part.getByTestId("theme-section-apart").check();
+    await part.getByTestId("theme-section-text").getByTestId("theme-italic").click();
+    await part.getByTestId("theme-section-mark").locator('[data-value="band"]').click();
+    await part.getByTestId("theme-text-tab-default").click();
     await tablet.screenshot({ path: `${SP}/screen-theme-editor.png` });
     await part.locator("#theme-name").fill(`Starry words ${stamp}`);
     await part.getByTestId("theme-save").click();
@@ -113,7 +119,7 @@ try {
     await editor.getByTestId("theme-save").click();
     await tablet.getByTestId(`saved-theme-Starry ${stamp}`).waitFor();
     const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
-    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant" || saved.parts.background.name !== `Starry sky ${stamp}` || !saved.template.tags.includes("presentation"))
+    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant" || saved.theme.sections.chorus?.mark !== "band" || saved.theme.sections.chorus.text.italic !== true || saved.theme.sections.chorus.text.color !== undefined || saved.parts.background.name !== `Starry sky ${stamp}` || !saved.template.tags.includes("presentation"))
       throw new Error(JSON.stringify(saved));
   });
 
@@ -191,6 +197,27 @@ try {
     await tv.screenshot({ path: `${SP}/screen-theme-move.png` });
     await tv.getByTestId("screen-lines").getByText("third line here").waitFor();
     await tv.getByTestId("screen-before").getByText("second", { exact: false }).waitFor();
+  });
+
+  await step("Scroll and Grid (issue #395): the whole song in a column, gliding to the slide shown", async () => {
+    const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
+    const [content] = (await api(leader, "GET", "/screen-parts?kind=content")).filter((one) => one.id === saved.parts.content.id);
+    const before = content.document;
+    await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: { ...before, display: { mode: "scroll", follow: "line", scroll: { anchor: "high", past: "fade", labels: true } }, text: { ...before.text, font: "cormorant" } } });
+    page = tv;
+    // The slide shown (the second) is the current one in the column; the first is still there above it.
+    await tv.locator('[data-testid="screen-scroll"] [data-testid="screen-lines"]').getByText("third line here").waitFor();
+    await tv.getByTestId("screen-scroll").getByText("First line here").waitFor();
+    await tv.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="screen-stage"]')).fontFamily.includes("Cormorant"));
+    await tv.waitForFunction(() => document.fonts.check('16px "Cormorant Garamond Variable"'));
+    await tv.waitForTimeout(1200);
+    await tv.screenshot({ path: `${SP}/screen-theme-scroll.png` });
+    // Grid: every bar, the slide's lit.
+    await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: { ...before, display: { mode: "grid" } } });
+    await tv.getByTestId("screen-grid").waitFor();
+    await tv.getByTestId("screen-grid-now").first().waitFor();
+    await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: before });
+    await tv.locator('[data-testid="screen-lyrics"] [data-testid="screen-lines"]').getByText("third line here").waitFor();
   });
 
   await step("a picture for the background theme and a font for the content theme, from their own lists: on the screen", async () => {

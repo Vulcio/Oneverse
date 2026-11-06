@@ -650,7 +650,7 @@ const fr: typeof en = {
       titleFont: "Police du titre",
       sameFont: "Comme les paroles",
       size: "Taille",
-      sizeAuto: "Ajustée à la ligne",
+      sizeAuto: "Ajustée au chant",
       weight: "Graisse",
       upperCase: "Majuscules",
       color: "Couleur",

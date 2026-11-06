@@ -80,6 +80,8 @@ Others can present beside you. In the Sync menu, while you lead, **Also presenti
 
 **Follow the music**, at the end of the row of sections, moves the slides on by themselves as the song plays: with the song's click (the metronome started for it), its recording's stems, or the Sync leader's click. Each slide comes up two beats before its first line is sung, so it's read in time. Where each line is sung comes from the beats placed in the words (see [Placing beats in the words](/metronome/#placing-beats-in-the-words)): placed by the grid itself, or by hand where it got them wrong. Bars with no words, such as an intro, show their section's first slide.
 
+A template can follow the music on the screens too, line by line or filling the words as they're sung, with the leader's click: see **Follow the music** in [Content themes](/screens/#content-themes).
+
 While nothing plays, the button says **Waiting for the music**. **Next slide**, **Previous slide** or a section picked by hand turns it off, so you can take over at any moment; press it again to follow once more. It stays on, on this device, until you turn it off, and does nothing while the screens are black.
 
 ### Moving the screens on
@@ -153,12 +155,23 @@ Name the template and **Save template**: it's yours, or - if you're an admin of 
 How the words look, edited from **Content themes** (**New content theme**, or **Customize** a built-in one) or from a template:
 
 - **Shows** - **Lyrics, for the audience** or **The chord chart, for the band**.
-- **Text** - the font (or an **Uploaded font**: a WOFF2, WOFF, TTF or OTF file you may use this way), its size (**Fit the line**, or fixed), weight, colour, **Capitals**, **Readability** (a shadow, an outline or a glow, for words over a moving background), alignment, line and letter spacing.
-- **Lines** - **The slide**, with the lines before and after it, or **The whole section** with the slide's lines picked out; the lines around them **Dimmed**, **Smaller**, **Blurred** or **Hidden**.
+- **Display** - how the words are shown:
+  - **Slides** - a slide at a time, with the lines around it as **Lines** says.
+  - **Scroll** - the whole song as it's sung, repeats included, in a column that glides to the lines being sung, like the lyrics in a music player. Choose where the **Lines being sung** sit (high, middle or low), whether the **Lines sung** are dimmed, fade away or are hidden, how many **Coming lines** show, the **Other lines' size**, whether to soften them (a slight blur, heavier on a TV) and whether to show the **Section names**. Scroll follows the text's alignment.
+  - **Focus** - the lines being sung, with the next one to sing under them.
+  - **Grid** - for musicians: every bar of the song, a block for each beat with the chord in the beat it changes on, the bar's number and the words sung over it, the bars being sung lit.
+- **Follow the music** - **Line** makes the line being sung stand out, the ones sung and coming dimmed; **Fill** fills its words with colour as they're sung. It follows the Sync leader's click while it plays for the song on screen, where the beats are placed in the words (see [Following the music](/screens/#following-the-music)); with no click, the words show as they always do.
+- **Text and motion** - a tab for the **Default**, one for **Chorus & pre-chorus** and one for **Bridge**:
+  - **Font** opens the list of fonts, each in its own face, to filter by kind or search. There are 29 built-in fonts, all free to use, which a screen loads only when a template uses them. **Upload a font…** adds one of yours (a WOFF2, WOFF, TTF or OTF file you may use this way).
+  - **Weight**, **Italic** and **Capitals**, the **Alignment**, the letter and line spacing, and the **Colour**: its swatch, its hex code or one of the colours under it.
+  - **Size** - **Fit the song** gives the whole song one size, from its longer lines, so the words don't jump from one slide to the next; or a fixed size.
+  - **Shadow** (soft, lifted or strong), **Outline** (thin or medium) and **Glow**, for words over a moving background, each in a colour of its own (a black shadow by default). The outline goes around each letter as one shape.
+  - **Between slides** - the transition: a cut, a fade, a blur, **Unveil** (each line rises into place), **Wipe**, **Push up**, **Push across**, **Relay** (line by line), **Settle**, **Iris**, **Cover**, **Tighten**, **Cascade** (word by word), **Flip**, **Depth**, **Drift**, a slide, scale or zoom. Its **Pace** is gentle, smooth or snappy, or a length of your own (a new song takes twice as long). The old slide is gone within the first part of it, so it never lingers over the new one. With less motion asked for on the device, every change is a fade. A template made with **Rise** or **Move** keeps it. **Words appear** all at once, line by line, word by word, letter by letter, typed or glowing.
+  - In **Chorus & pre-chorus** or **Bridge**, tick to style it apart: each setting is the default's (shown dashed) until you change it there, and changes add up - a colour, bolder and italic. **Reset** gives one back to the default. A **Mark** sets it apart with a **Bar beside** its lines or a **Band behind** them, a **Tag in the corner** names it, and it can have its own transition into it and within it. Its size never changes.
+- **Lines** - for slides: **The slide**, with the lines before and after it, or **The whole section** with the slide's lines picked out; the lines around them **Dimmed**, **Smaller**, **Blurred** or **Hidden**.
 - **Layout** - top, centre, bottom or **Lower third**, and a **Safe margin** for TVs that crop their edges.
-- **Motion** - **Between slides**: a cut, a fade, a slide, rise, scale, blur, zoom or **Move**, and how long it takes (a new song takes twice as long). The old slide is gone within the first part of it, so it never lingers over the new one. With **Move**, the words that are on both slides glide to their new place - the line just sung moves up and dims as the next comes in, a repeated line stays where it is - and only what's new fades in; it works best with the lines before and after shown, and words appearing all at once or word by word. **Words appear** all at once, line by line, word by word, letter by letter, typed or glowing.
-- **Title and credits** - whether to show the song's title and its credits (writers, copyright, CCLI number), on which slides and where.
-- **Chords** - for the chord chart: the chords' colour and the chart's size.
+- **Title and credits** - whether to show the song's title, in a font of its own if you like, and its credits (writers, copyright, CCLI number), on which slides and where.
+- **Chords** - **Chords over the words**: **Above** the syllable each is played on, or **On beats**, a row of beat blocks over each line. Their **Names** in letters, numbers or Do Ré Mi, their size beside the words, **Simpler chords** (G7 as G, no bass notes), **Light the chord being played** while the music is followed, their colour and font. For the chord chart, the chart's size.
 
 The editor checks the contrast between the words and the background and warns when it's under 4.5:1.
 
