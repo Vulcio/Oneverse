@@ -89,7 +89,12 @@ type EditProps = {
   openNoteId?: string;
 };
 /** `linkTo`: the song this one is a translation or adaptation of, when started from it. */
-type CreateProps = { mode: "create"; linkTo?: { id: string; label: string } };
+type CreateProps = {
+  mode: "create";
+  linkTo?: { id: string; label: string };
+  /** A file shared to Songverse or opened with it (issue #407): the new song's chart. */
+  incoming?: File | null;
+};
 
 type MatchVersion = SongMatch["versions"][number];
 
@@ -653,6 +658,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                   onFormatChange={(format) => updateForm((current) => withContent(current, current.content, format))}
                   sourceFile={sourceFile}
                   onSourceFile={setSourceFile}
+                  incoming={props.mode === "create" ? props.incoming : null}
                   find={{
                     title: form.title,
                     artist: form.artists[0],

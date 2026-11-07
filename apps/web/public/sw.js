@@ -63,10 +63,39 @@ async function cached(request) {
   return response;
 }
 
+// Shared to Songverse from another app (issue #407, the manifest's
+// `share_target`): what came is kept here for the Import page, which reads
+// it and clears it - signed in first if it must.
+const SHARED = "songverse-shared";
+
+async function receiveShare(request) {
+  try {
+    const form = await request.formData();
+    await caches.delete(SHARED);
+    const cache = await caches.open(SHARED);
+    const files = form.getAll("files").filter((value) => typeof value === "object" && value.size > 0);
+    const kept = [];
+    for (const [index, file] of files.entries()) {
+      const key = `/shared/file/${index}`;
+      await cache.put(key, new Response(file, { headers: { "Content-Type": file.type || "application/octet-stream" } }));
+      kept.push({ key, name: file.name, type: file.type });
+    }
+    const text = (name) => (typeof form.get(name) === "string" ? form.get(name) : "");
+    await cache.put("/shared/meta", new Response(JSON.stringify({ title: text("title"), text: text("text"), url: text("url"), files: kept, at: Date.now() }), { headers: { "Content-Type": "application/json" } }));
+  } catch {
+    // Unreadable: the Import page says nothing came.
+  }
+  return Response.redirect("/import?shared=1", 303);
+}
+
 self.addEventListener("fetch", (event) => {
-  if (!ENABLED) return;
   const { request } = event;
   const url = new URL(request.url);
+  if (request.method === "POST" && url.origin === self.location.origin && url.pathname === "/share-target") {
+    event.respondWith(receiveShare(request));
+    return;
+  }
+  if (!ENABLED) return;
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
   if (request.mode === "navigate") {
     event.respondWith(page(request));
@@ -85,14 +114,19 @@ self.addEventListener("push", (event) => {
     // Not ours: shown plainly rather than dropped (browsers want every push shown).
   }
   const title = typeof message.title === "string" && message.title ? message.title : "Songverse";
+  // The number on the app's icon (issue #407): the server's count of unread notifications.
+  const badge =
+    typeof message.unread === "number" && "setAppBadge" in self.navigator
+      ? (message.unread > 0 ? self.navigator.setAppBadge(message.unread) : self.navigator.clearAppBadge()).catch(() => {})
+      : Promise.resolve();
   event.waitUntil(
-    self.registration.showNotification(title, {
+    Promise.all([badge, self.registration.showNotification(title, {
       body: typeof message.body === "string" ? message.body : "",
       icon: "/icon.svg",
       badge: "/icon.svg",
       tag: typeof message.tag === "string" ? message.tag : undefined,
       data: { url: typeof message.url === "string" && message.url.startsWith("/") ? message.url : "/" },
-    }),
+    })]),
   );
 });
 

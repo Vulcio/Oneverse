@@ -1,6 +1,6 @@
 import { chordProFromPdfText, detectImportFormatDetails, SUPPORTED_IMPORT_FORMATS, type SupportedImportFormat } from "@oneverse/core";
 import { ClipboardPaste, FileText, Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Label } from "@oneverse/ui/components/label";
@@ -147,6 +147,7 @@ export function SongContentCard({
   sourceFile,
   onSourceFile,
   find,
+  incoming,
 }: {
   content: string;
   format: SupportedImportFormat | null;
@@ -156,6 +157,8 @@ export function SongContentCard({
   onSourceFile: (file: SourceFile | null) => void;
   /** Find chords at the song providers (issue #157): the song looked for, and what to do with a chart's details. */
   find?: { title: string; artist?: string; language?: string; onDetails?: (chart: ChordContent, match: MetadataMatch | null) => void };
+  /** A file shared to Songverse or opened with it (issue #407): read as if dropped here. */
+  incoming?: File | null;
 }) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -192,6 +195,14 @@ export function SongContentCard({
       setFileError(t("songEditor.fileUnreadable"));
     }
   }
+
+  // Taken once, as a drop would be.
+  const took = useRef<File | null>(null);
+  useEffect(() => {
+    if (!incoming || took.current === incoming) return;
+    took.current = incoming;
+    void take(incoming);
+  });
 
   return (
     <div className="flex flex-col gap-4">

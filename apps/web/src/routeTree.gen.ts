@@ -17,6 +17,7 @@ import { Route as ProtectedAdminRouteImport } from './routes/_protected/admin'
 import { Route as ProtectedBibleRouteImport } from './routes/_protected/bible'
 import { Route as ProtectedCalendarRouteImport } from './routes/_protected/calendar'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
+import { Route as ProtectedImportRouteImport } from './routes/_protected/import'
 import { Route as ProtectedMetronomeRouteImport } from './routes/_protected/metronome'
 import { Route as ProtectedNotificationsRouteImport } from './routes/_protected/notifications'
 import { Route as ProtectedOfflineRouteImport } from './routes/_protected/offline'
@@ -121,6 +122,11 @@ const ProtectedCalendarRoute = ProtectedCalendarRouteImport.update({
 const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedImportRoute = ProtectedImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedMetronomeRoute = ProtectedMetronomeRouteImport.update({
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/bible': typeof ProtectedBibleRoute
   '/calendar': typeof ProtectedCalendarRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/import': typeof ProtectedImportRoute
   '/metronome': typeof ProtectedMetronomeRoute
   '/notifications': typeof ProtectedNotificationsRoute
   '/offline': typeof ProtectedOfflineRoute
@@ -558,6 +565,7 @@ export interface FileRoutesByTo {
   '/bible': typeof ProtectedBibleRoute
   '/calendar': typeof ProtectedCalendarRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/import': typeof ProtectedImportRoute
   '/metronome': typeof ProtectedMetronomeRoute
   '/notifications': typeof ProtectedNotificationsRoute
   '/offline': typeof ProtectedOfflineRoute
@@ -634,6 +642,7 @@ export interface FileRoutesById {
   '/_protected/bible': typeof ProtectedBibleRoute
   '/_protected/calendar': typeof ProtectedCalendarRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
+  '/_protected/import': typeof ProtectedImportRoute
   '/_protected/metronome': typeof ProtectedMetronomeRoute
   '/_protected/notifications': typeof ProtectedNotificationsRoute
   '/_protected/offline': typeof ProtectedOfflineRoute
@@ -711,6 +720,7 @@ export interface FileRouteTypes {
     | '/bible'
     | '/calendar'
     | '/dashboard'
+    | '/import'
     | '/metronome'
     | '/notifications'
     | '/offline'
@@ -785,6 +795,7 @@ export interface FileRouteTypes {
     | '/bible'
     | '/calendar'
     | '/dashboard'
+    | '/import'
     | '/metronome'
     | '/notifications'
     | '/offline'
@@ -860,6 +871,7 @@ export interface FileRouteTypes {
     | '/_protected/bible'
     | '/_protected/calendar'
     | '/_protected/dashboard'
+    | '/_protected/import'
     | '/_protected/metronome'
     | '/_protected/notifications'
     | '/_protected/offline'
@@ -998,6 +1010,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof ProtectedDashboardRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/import': {
+      id: '/_protected/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ProtectedImportRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/metronome': {
@@ -1532,6 +1551,7 @@ interface ProtectedRouteChildren {
   ProtectedBibleRoute: typeof ProtectedBibleRoute
   ProtectedCalendarRoute: typeof ProtectedCalendarRoute
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
+  ProtectedImportRoute: typeof ProtectedImportRoute
   ProtectedMetronomeRoute: typeof ProtectedMetronomeRoute
   ProtectedNotificationsRoute: typeof ProtectedNotificationsRoute
   ProtectedOfflineRoute: typeof ProtectedOfflineRoute
@@ -1578,6 +1598,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedBibleRoute: ProtectedBibleRoute,
   ProtectedCalendarRoute: ProtectedCalendarRoute,
   ProtectedDashboardRoute: ProtectedDashboardRoute,
+  ProtectedImportRoute: ProtectedImportRoute,
   ProtectedMetronomeRoute: ProtectedMetronomeRoute,
   ProtectedNotificationsRoute: ProtectedNotificationsRoute,
   ProtectedOfflineRoute: ProtectedOfflineRoute,

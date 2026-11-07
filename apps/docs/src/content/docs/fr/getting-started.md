@@ -93,6 +93,17 @@ Les raccourcis sont dans la langue de Songverse au moment de l'installation.
 
 Sur un iPhone ou un iPad, un appui long sur l'icône de Songverse n'affiche que le menu d'iOS : Safari ne propose pas les raccourcis d'une app. Pour y ouvrir une page directement, ouvrez-la dans Safari et ajoutez-la elle aussi à l'écran d'accueil (Partager, puis **Sur l'écran d'accueil**).
 
+## Partager, importer et la pastille de l'icône
+
+Installé comme une app, Songverse fonctionne aussi avec le reste de votre appareil :
+
+- **Partager…** - sur un chant (son menu **Plus**, en Session), à côté du lien de partage d'une liste et des liens d'invitation d'une équipe : le menu de partage de l'appareil (Messages, WhatsApp, Mail…). Là où le navigateur n'en a pas, **Copier le lien** reste là comme avant.
+- **Partager vers Songverse** - sur Android, Songverse est dans le menu **Partager** des autres apps : un fichier ChordPro ou texte, une grille en PDF, une image ou un enregistrement ouvre **Importer**. Une grille ou un PDF devient un **Nouveau chant à partir de ceci** ; tout fichier va sur un chant avec **Ajouter à un chant…** ; un lien Songverse ouvre sa page.
+- **Ouvrir avec Songverse** - sur un ordinateur (Chrome ou Edge), ouvrez un fichier ChordPro (`.cho`, `.chordpro`, `.chopro`, `.pro`) ou un PDF avec Songverse : il s'ouvre dans **Importer** de la même façon.
+- **La pastille de l'icône** - le nombre de [notifications](/fr/account/#notifications) non lues s'affiche sur l'icône de Songverse, et disparaît une fois lues.
+
+Sur un iPhone ou un iPad, **Partager…** et la pastille fonctionnent (la pastille une fois les notifications activées) ; Partager vers Songverse et Ouvrir avec non, Safari ne les propose pas.
+
 ## Langue
 
 Songverse existe en français et en anglais. Choisissez la vôtre dans **Paramètres du compte** > **Langue**. Cette documentation existe aussi dans les deux langues : utilisez le menu des langues en haut de chaque page.

@@ -91,6 +91,17 @@ Installed as an app - on Android, Chrome's **Add to Home screen** or **Install a
 
 On an iPhone or iPad, holding Songverse's icon on the home screen shows only iOS's own menu: Safari doesn't offer an app's shortcuts. To open one page straight away there, open it in Safari and add it to the home screen too (Share, then **Add to Home Screen**).
 
+## Sharing, importing and the icon's badge
+
+Installed as an app, Songverse also works with the rest of your device:
+
+- **Share…** - on a song (its **More** menu, in Practice), beside a set's share link and beside a team's invite links: the device's own share menu (Messages, WhatsApp, Mail…). Where the browser has none, **Copy link** is there as before.
+- **Share to Songverse** - on Android, Songverse is in other apps' **Share** menu: a ChordPro or text file, a PDF chart, an image or a recording opens **Import**. A chart or a PDF becomes a **New song from it**; any file goes on a song with **Add to a song…**; a Songverse link opens its page.
+- **Open with Songverse** - on a computer (Chrome or Edge), open a ChordPro file (`.cho`, `.chordpro`, `.chopro`, `.pro`) or a PDF with Songverse, and it opens in **Import** the same way.
+- **The icon's badge** - the number of unread [notifications](/account/#notifications) shows on Songverse's icon, and goes once they're read.
+
+On an iPhone or iPad, **Share…** and the badge work (the badge once notifications are on); Share to Songverse and Open with don't, as Safari doesn't offer them.
+
 ## Language
 
 Songverse is in English and French. Pick yours under **Account settings** > **Language**. These docs are in both languages too: use the language menu at the top of any page.

@@ -8,6 +8,7 @@ const fr: typeof en = {
     clearDate: "Effacer la date",
     noLanguage: "Aucune langue",
     loading: "Chargement…",
+    share: "Partager…",
     tooManyRequests: "Trop de requêtes, réessayez dans un instant.",
   },
   auth: {
@@ -942,6 +943,15 @@ const fr: typeof en = {
       turning: { name: "Tournoiement", description: "Des couleurs qui tourbillonnent et tournent un peu plus à chaque diapositive, plus proches dans un refrain." },
       neural: { name: "Neuronal", description: "Des fils lumineux sur fond noir qui s'animent et s'éclairent à chaque ligne." },
     },
+  },
+  incoming: {
+    title: "Importer",
+    description: "Partagé à Songverse depuis une autre app, ou ouvert avec : faites-en un chant, ou ajoutez-le à l'un de vos chants.",
+    nothing: "Rien à importer : partagez une grille, un PDF ou un enregistrement à Songverse depuis une autre app, ou ouvrez un fichier ChordPro avec.",
+    newSong: "Nouveau chant à partir de ceci",
+    attach: "Ajouter à un chant…",
+    findSong: "Trouver le chant",
+    noSong: "Aucun chant trouvé.",
   },
   sync: {
     button: "Synchro",

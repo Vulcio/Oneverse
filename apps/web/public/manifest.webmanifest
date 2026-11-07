@@ -16,6 +16,53 @@
       "purpose": "any"
     }
   ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": [
+            "text/plain",
+            ".cho",
+            ".chordpro",
+            ".chopro",
+            ".pro",
+            ".crd",
+            ".txt",
+            "application/pdf",
+            ".pdf",
+            "image/*",
+            "audio/*",
+            ".opus",
+            ".m4a"
+          ]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/import",
+      "accept": {
+        "text/plain": [
+          ".cho",
+          ".chordpro",
+          ".chopro",
+          ".pro",
+          ".crd"
+        ],
+        "application/pdf": [
+          ".pdf"
+        ]
+      }
+    }
+  ],
   "shortcuts": [
     {
       "name": "Current set",

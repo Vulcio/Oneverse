@@ -8,6 +8,7 @@ const en = {
     clearDate: "Clear the date",
     noLanguage: "No language",
     loading: "Loading…",
+    share: "Share…",
     tooManyRequests: "Too many requests, try again in a moment.",
   },
   auth: {
@@ -942,6 +943,15 @@ const en = {
       turning: { name: "Turning", description: "Colours swirling and turning a little further with each slide, closer in a chorus." },
       neural: { name: "Neural", description: "Glowing threads on black that quicken and brighten with each line." },
     },
+  },
+  incoming: {
+    title: "Import",
+    description: "Shared to Songverse from another app, or opened with it: make a song of it, or add it to one of your songs.",
+    nothing: "Nothing to import: share a chart, a PDF or a recording to Songverse from another app, or open a ChordPro file with it.",
+    newSong: "New song from it",
+    attach: "Add to a song…",
+    findSong: "Find the song",
+    noSong: "No song found.",
   },
   sync: {
     button: "Sync",
