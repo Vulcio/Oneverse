@@ -40,7 +40,7 @@ Tant que Songverse est ouvert avec une connexion, il se met à jour toutes les q
 **Stockage hors ligne**, dans le menu sous votre nom, montre ce que cet appareil conserve et la place que cela prend :
 
 - la dernière mise à jour, et **Synchroniser** ;
-- si le navigateur peut l'effacer s'il manque de place, et **Le conserver durablement** ;
+- si le navigateur peut l'effacer s'il manque de place, et **Le conserver durablement** (Songverse installé comme une app le demande de lui-même) ;
 - jusqu'où les listes sont gardées (**Garder les listes à venir dans les** 3 à 60 prochains jours) ;
 - les listes, recueils et chants conservés, chacun avec **Retirer**. Retirer ce que vous avez rendu disponible hors ligne arrête de le garder sur tous vos appareils. Les listes à venir reviennent d'elles-mêmes ;
 - **Tout retirer de cet appareil**.

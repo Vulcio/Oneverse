@@ -40,7 +40,7 @@ Whenever Songverse is open with a connection, it catches up every few minutes: c
 **Offline storage**, in the menu under your name, shows what this device keeps and the space it takes:
 
 - when it last caught up, and **Sync now**;
-- whether the browser may clear it when it runs low on space, and **Keep it permanently**;
+- whether the browser may clear it when it runs low on space, and **Keep it permanently** (Songverse installed as an app asks for this by itself);
 - how far ahead sets are kept (**Keep the sets coming up in the next** 3 to 60 days);
 - the sets, songbooks and songs kept, each with **Remove**. Removing something you made available offline stops keeping it on every device. Sets coming up come back on their own;
 - **Remove everything from this device**.

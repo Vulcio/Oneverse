@@ -123,6 +123,7 @@ export function useOfflineSync() {
   const { session, offline } = useRouteContext({ from: "/_protected" });
   useEffect(() => {
     if (offline) return;
+    keepStorage();
     void syncOffline(session.userId);
     const timer = setInterval(() => void syncOffline(session.userId), SYNC_EVERY_MS);
     const online = () => void syncOffline(session.userId);
@@ -132,4 +133,19 @@ export function useOfflineSync() {
       window.removeEventListener("online", online);
     };
   }, [session.userId, offline]);
+}
+
+/**
+ * Asks the browser to keep what this device saved for offline use when space
+ * runs low (issue #407, `navigator.storage.persist`). Only in the installed
+ * app, where browsers decide without asking (Chrome, Edge, Safari on the home
+ * screen); a tab can still ask from the Offline page's button, which may show
+ * the browser's question (Firefox).
+ */
+export function keepStorage(): void {
+  if (typeof navigator === "undefined" || !navigator.storage?.persist || !window.matchMedia?.("(display-mode: standalone)").matches) return;
+  void navigator.storage
+    .persisted()
+    .then((kept) => (kept ? true : navigator.storage.persist()))
+    .catch(() => false);
 }
