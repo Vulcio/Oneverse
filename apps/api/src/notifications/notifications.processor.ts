@@ -136,7 +136,9 @@ export class NotificationsProcessor extends WorkerHost {
         }
         const messages = MESSAGES[user.locale] ?? en;
         const text = notificationPush(wanted.map((row) => ({ kind: row.kind as NotificationKind, data: row.data as NotificationData })), messages, user.locale);
-        const sent = await this.toDevices(devices, { ...text, url: first?.url ?? "/calendar", tag: wanted.length === 1 ? wanted[0]!.id : undefined }, config!, job.webUrl);
+        // The number on the app's icon (issue #407), as the bell counts it.
+        const unread = await this.prisma.client.notification.count({ where: { userId: list[0]!.userId, readAt: null } });
+        const sent = await this.toDevices(devices, { ...text, url: first?.url ?? "/calendar", tag: wanted.length === 1 ? wanted[0]!.id : undefined, unread }, config!, job.webUrl);
         if (sent.sent > 0) pushed += 1;
       }
       await this.prisma.client.notification.updateMany({ where: { id: { in: list.map((row) => row.id) } }, data: { pushedAt: new Date() } });

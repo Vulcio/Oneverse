@@ -10,6 +10,8 @@ export interface PushPayload {
   url: string;
   /** Pushes with the same tag replace each other on the device. */
   tag?: string;
+  /** How many of their notifications are unread now: the number on the app's icon (issue #407). */
+  unread?: number;
 }
 
 /** Who sends, as push services want it: the saved or env contact, else the web app's address if https, else a mailto: at its host. */

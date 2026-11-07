@@ -80,6 +80,8 @@ try {
   check("a date cancelled: pushed to the device", await until(() => push.for(phone).length === 2), String(push.for(phone).length));
   const cancelled = push.for(phone)[1].message;
   check("…its words and where it leads", /^Evening service on .+ is cancelled$/.test(cancelled?.title) && cancelled.body === team.name && cancelled.url === "/calendar", JSON.stringify(cancelled));
+  const unread = (await call(singer, "GET", "/users/me/notifications/unread")).body.unread;
+  check("…with how many are unread, for the app's icon (issue #407)", cancelled.unread === unread && unread >= 1, JSON.stringify([cancelled.unread, unread]));
   check("…marked pushed", await until(() => pushed(singer.id) === 1));
 
   // --- a kind not wanted pushed

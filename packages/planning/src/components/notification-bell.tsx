@@ -42,6 +42,9 @@ export function NotificationBell() {
     };
   }, [refreshCount, watchNotifications]);
 
+  // The same number on the installed app's icon (issue #407), and none once they're read.
+  useEffect(() => showUnreadOnIcon(unread), [unread]);
+
   useEffect(() => {
     if (!open) return;
     void api.listMyNotifications().then((page) => {
@@ -108,4 +111,10 @@ export function NotificationBell() {
       </PopoverContent>
     </Popover>
   );
+}
+
+/** The number on the installed app's icon (issue #407, Badging API): iPhone and iPad home screen apps (with notifications allowed), Chrome and Edge on computers, some Android launchers. */
+function showUnreadOnIcon(count: number): void {
+  if (typeof navigator === "undefined" || !("setAppBadge" in navigator)) return;
+  void (count > 0 ? navigator.setAppBadge(count) : navigator.clearAppBadge()).catch(() => {});
 }

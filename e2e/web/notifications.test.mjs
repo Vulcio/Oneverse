@@ -24,6 +24,13 @@ await api(admin, "PUT", `${base}/${plus(9)}/answers/${member.id}`, { answer: "IF
 const browser = await chromium.launch();
 try {
   page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: "UTC" });
+  // The number on the installed app's icon (issue #407): what the page asks of the Badging API.
+  await page.addInitScript(() => {
+    window.__badge = undefined;
+    navigator.setAppBadge = async (count) => void (window.__badge = count);
+    navigator.clearAppBadge = async () => void (window.__badge = 0);
+  });
+  const badge = (count) => page.waitForFunction((want) => window.__badge === want, count);
 
   await step("the bell shows two unread; its list says what happened", async () => {
     await signIn(page, member);
@@ -35,6 +42,7 @@ try {
     await list.getByText("now at 09:30").waitFor();
     await list.getByText("Bell admin answered for you: If needed").waitFor();
     if ((await list.locator('[data-read="false"]').count()) !== 2) throw new Error("both should be unread");
+    await badge(2);
   });
 
   await step("pressing one opens My calendar and marks it read", async () => {
@@ -48,6 +56,8 @@ try {
     await page.getByTestId("notification-read-all").click();
     await page.getByTestId("notification-count").waitFor({ state: "detached" });
     if ((await page.locator('[data-read="false"]').count()) !== 0) throw new Error("all should be read");
+    // And none on the icon.
+    await badge(0);
   });
 
   await step("a request to connect, accepted from the bell; See all opens the Notifications page", async () => {
