@@ -91,14 +91,19 @@ await step("the lock screen shows it while the song plays (issue #173)", async (
   form.append("file", new Blob([readFileSync(new URL("../fixtures/stems/03 drums.mp3", import.meta.url))], { type: "audio/mpeg" }), "03 drums.mp3");
   const res = await fetch(`${API}/song-versions/${song.id}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${me.bearer}` }, body: form });
   if (res.status !== 201) throw new Error(`upload: ${res.status}`);
+  // The stem player is Practice's.
+  await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
   await page.goto(`${WEB}/library/${song.id}`);
   await page.waitForLoadState("networkidle");
+  await page.locator('[data-testid="stem-player"][data-state="ready"]').waitFor({ timeout: 20000 });
   await page.getByTestId("stem-player").getByRole("button", { name: "Play", exact: true }).click();
   await page.waitForFunction(() => (navigator.mediaSession.metadata?.artwork.length ?? 0) > 0, null, { timeout: 15000 });
   const metadata = await page.evaluate(() => ({ title: navigator.mediaSession.metadata.title, artist: navigator.mediaSession.metadata.artist, artwork: navigator.mediaSession.metadata.artwork.map((image) => image.src) }));
   if (metadata.title !== `Canvas ${stamp}` || metadata.artist !== "Painter") throw new Error(JSON.stringify(metadata));
   if (!metadata.artwork.every((src) => src.includes(`/song-versions/${song.id}/image/`)) || !metadata.artwork.some((src) => src.endsWith("&w=512"))) throw new Error(JSON.stringify(metadata.artwork));
   await page.getByTestId("stem-player").getByRole("button", { name: "Pause", exact: true }).click();
+  await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
+  await page.goto(`${WEB}/library/${song.id}`);
 });
 
 await step("removed: the cover made from its title", async () => {
