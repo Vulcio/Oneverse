@@ -82,6 +82,15 @@ Songverse remembers the mode on each device, so the tablet on your music stand c
 
 Songverse works without a network too: your sets for the next two weeks, your own songs, and anything you choose are kept on the device. See [Working offline](/offline/).
 
+## Shortcuts on your home screen
+
+Installed as an app - on Android, Chrome's **Add to Home screen** or **Install app**; on a computer, Chrome's or Edge's install button in the address bar - Songverse's icon has shortcuts: press and hold it on Android, or right-click it in the dock, the taskbar or the Start menu.
+
+- **Current set** - today's set, or the next one with a date (from the sets in your sidebar). With none coming up, it opens **Sets**.
+- **Library**, **Metronome** and **Tuner** - straight to their pages.
+
+On an iPhone or iPad, holding Songverse's icon on the home screen shows only iOS's own menu: Safari doesn't offer an app's shortcuts. To open one page straight away there, open it in Safari and add it to the home screen too (Share, then **Add to Home Screen**).
+
 ## Language
 
 Songverse is in English and French. Pick yours under **Account settings** > **Language**. These docs are in both languages too: use the language menu at the top of any page.

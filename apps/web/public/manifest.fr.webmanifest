@@ -1,0 +1,111 @@
+{
+  "name": "Songverse",
+  "short_name": "Songverse",
+  "id": "/",
+  "lang": "fr",
+  "description": "Bibliothèque de chants, arrangements et performances, à plusieurs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Liste en cours",
+      "short_name": "Liste en cours",
+      "description": "La liste du jour, ou la prochaine",
+      "url": "/sets/current",
+      "icons": [
+        {
+          "src": "/shortcuts/current-set.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        },
+        {
+          "src": "/shortcuts/current-set-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "/shortcuts/current-set-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Bibliothèque",
+      "short_name": "Bibliothèque",
+      "description": "Vos chants",
+      "url": "/library",
+      "icons": [
+        {
+          "src": "/shortcuts/library.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        },
+        {
+          "src": "/shortcuts/library-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "/shortcuts/library-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Métronome",
+      "short_name": "Métronome",
+      "url": "/metronome",
+      "icons": [
+        {
+          "src": "/shortcuts/metronome.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        },
+        {
+          "src": "/shortcuts/metronome-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "/shortcuts/metronome-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Accordeur",
+      "short_name": "Accordeur",
+      "url": "/tuner",
+      "icons": [
+        {
+          "src": "/shortcuts/tuner.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        },
+        {
+          "src": "/shortcuts/tuner-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "/shortcuts/tuner-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

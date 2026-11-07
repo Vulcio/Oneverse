@@ -2,6 +2,7 @@ import { decodeAudio } from "#/lib/decode-audio";
 import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, speedCorrection, STEM_PARTS, stemSpeed, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type BeatLevel, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
 import { useSyncExternalStore, type ReactNode } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
+import { mediaArtwork } from "#/lib/song-cover";
 import { songWaveforms, type StoredWave } from "#/lib/song-files";
 import { waveformSlices } from "@oneverse/core";
 
@@ -24,6 +25,9 @@ export type StemFile = Attachment & { stemPart: StemPart | null };
 export interface StemSong {
   songVersionId: string;
   title: string;
+  /** Its artists, one line, and its image (issue #173): the lock screen's Now Playing. */
+  artist?: string | null;
+  imageUrl?: string | null;
   /** The page to come back to: the song's, or its page in a set. */
   returnTo: string;
   stems: StemFile[];
@@ -813,7 +817,15 @@ function updateMediaSession() {
     media.metadata = null;
     return;
   }
-  if (media.metadata?.title !== state.title) media.metadata = new MediaMetadata({ title: state.title, artist: "Songverse" });
+  if (media.metadata?.title !== state.title) {
+    const song = lastSong?.title === state.title ? lastSong : null;
+    const metadata = new MediaMetadata({ title: state.title, artist: song?.artist || "Songverse", album: song?.artist ? "Songverse" : "" });
+    media.metadata = metadata;
+    // Its cover (issue #173), once it's loaded or drawn - if the song hasn't changed meanwhile.
+    void mediaArtwork({ title: state.title, imageUrl: song?.imageUrl }).then((artwork) => {
+      if (artwork.length > 0 && navigator.mediaSession.metadata === metadata) metadata.artwork = artwork;
+    });
+  }
   try {
     if (state.duration) media.setPositionState({ duration: state.duration, position: Math.min(state.position, state.duration), playbackRate: state.speed });
   } catch {

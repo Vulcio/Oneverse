@@ -64,6 +64,7 @@ import { Route as ProtectedReviewIndexRouteImport } from './routes/_protected/re
 import { Route as ProtectedReviewSubmissionIdRouteImport } from './routes/_protected/review/$submissionId'
 import { Route as ProtectedSetsIndexRouteImport } from './routes/_protected/sets/index'
 import { Route as ProtectedSetsSetlistIdRouteImport } from './routes/_protected/sets/$setlistId'
+import { Route as ProtectedSetsCurrentRouteImport } from './routes/_protected/sets/current'
 import { Route as ProtectedSetsNewRouteImport } from './routes/_protected/sets/new'
 import { Route as ProtectedSongbookCatalogsIndexRouteImport } from './routes/_protected/songbook-catalogs/index'
 import { Route as ProtectedSongbookCatalogsCatalogIdRouteImport } from './routes/_protected/songbook-catalogs/$catalogId'
@@ -367,6 +368,11 @@ const ProtectedSetsSetlistIdRoute = ProtectedSetsSetlistIdRouteImport.update({
   path: '/sets/$setlistId',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedSetsCurrentRoute = ProtectedSetsCurrentRouteImport.update({
+  id: '/sets/current',
+  path: '/sets/current',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedSetsNewRoute = ProtectedSetsNewRouteImport.update({
   id: '/sets/new',
   path: '/sets/new',
@@ -520,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/review/$submissionId': typeof ProtectedReviewSubmissionIdRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/sets/current': typeof ProtectedSetsCurrentRoute
   '/sets/new': typeof ProtectedSetsNewRoute
   '/songbook-catalogs/$catalogId': typeof ProtectedSongbookCatalogsCatalogIdRoute
   '/songbook-catalogs/new': typeof ProtectedSongbookCatalogsNewRoute
@@ -592,6 +599,7 @@ export interface FileRoutesByTo {
   '/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/review/$submissionId': typeof ProtectedReviewSubmissionIdRoute
   '/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/sets/current': typeof ProtectedSetsCurrentRoute
   '/sets/new': typeof ProtectedSetsNewRoute
   '/songbook-catalogs/$catalogId': typeof ProtectedSongbookCatalogsCatalogIdRoute
   '/songbook-catalogs/new': typeof ProtectedSongbookCatalogsNewRoute
@@ -668,6 +676,7 @@ export interface FileRoutesById {
   '/_protected/organizations/$organizationId': typeof ProtectedOrganizationsOrganizationIdRoute
   '/_protected/review/$submissionId': typeof ProtectedReviewSubmissionIdRoute
   '/_protected/sets/$setlistId': typeof ProtectedSetsSetlistIdRoute
+  '/_protected/sets/current': typeof ProtectedSetsCurrentRoute
   '/_protected/sets/new': typeof ProtectedSetsNewRoute
   '/_protected/songbook-catalogs/$catalogId': typeof ProtectedSongbookCatalogsCatalogIdRoute
   '/_protected/songbook-catalogs/new': typeof ProtectedSongbookCatalogsNewRoute
@@ -744,6 +753,7 @@ export interface FileRouteTypes {
     | '/organizations/$organizationId'
     | '/review/$submissionId'
     | '/sets/$setlistId'
+    | '/sets/current'
     | '/sets/new'
     | '/songbook-catalogs/$catalogId'
     | '/songbook-catalogs/new'
@@ -816,6 +826,7 @@ export interface FileRouteTypes {
     | '/organizations/$organizationId'
     | '/review/$submissionId'
     | '/sets/$setlistId'
+    | '/sets/current'
     | '/sets/new'
     | '/songbook-catalogs/$catalogId'
     | '/songbook-catalogs/new'
@@ -891,6 +902,7 @@ export interface FileRouteTypes {
     | '/_protected/organizations/$organizationId'
     | '/_protected/review/$submissionId'
     | '/_protected/sets/$setlistId'
+    | '/_protected/sets/current'
     | '/_protected/sets/new'
     | '/_protected/songbook-catalogs/$catalogId'
     | '/_protected/songbook-catalogs/new'
@@ -1317,6 +1329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedSetsSetlistIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/sets/current': {
+      id: '/_protected/sets/current'
+      path: '/sets/current'
+      fullPath: '/sets/current'
+      preLoaderRoute: typeof ProtectedSetsCurrentRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/sets/new': {
       id: '/_protected/sets/new'
       path: '/sets/new'
@@ -1530,6 +1549,7 @@ interface ProtectedRouteChildren {
   ProtectedLibrarySongsRoute: typeof ProtectedLibrarySongsRoute
   ProtectedOrganizationsOrganizationIdRoute: typeof ProtectedOrganizationsOrganizationIdRoute
   ProtectedSetsSetlistIdRoute: typeof ProtectedSetsSetlistIdRoute
+  ProtectedSetsCurrentRoute: typeof ProtectedSetsCurrentRoute
   ProtectedSetsNewRoute: typeof ProtectedSetsNewRoute
   ProtectedSongbookCatalogsCatalogIdRoute: typeof ProtectedSongbookCatalogsCatalogIdRoute
   ProtectedSongbookCatalogsNewRoute: typeof ProtectedSongbookCatalogsNewRoute
@@ -1576,6 +1596,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedOrganizationsOrganizationIdRoute:
     ProtectedOrganizationsOrganizationIdRoute,
   ProtectedSetsSetlistIdRoute: ProtectedSetsSetlistIdRoute,
+  ProtectedSetsCurrentRoute: ProtectedSetsCurrentRoute,
   ProtectedSetsNewRoute: ProtectedSetsNewRoute,
   ProtectedSongbookCatalogsCatalogIdRoute:
     ProtectedSongbookCatalogsCatalogIdRoute,

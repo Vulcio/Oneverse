@@ -13,12 +13,17 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
     ],
   }),
   shellComponent: RootDocument,
 });
+
+/**
+ * The web app manifest in the page's language (issue #404: its shortcuts' names); English for the others.
+ * A new language's is public/manifest.<lang>.webmanifest, the same as the English one but its words.
+ */
+const MANIFESTS: Record<string, string> = { fr: "/manifest.fr.webmanifest" };
 
 const REGISTER_SW_SCRIPT = `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js')})}`;
 
@@ -49,6 +54,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: renderPublicEnvScript(["ONEVERSE_URL", "SCREEN_URL"]) }} />
         <script dangerouslySetInnerHTML={{ __html: MODE_SCRIPT }} />
         <HeadContent />
+        <link rel="manifest" href={MANIFESTS[lang] ?? "/manifest.webmanifest"} />
       </head>
       <body className="min-h-screen bg-neutral-50 text-neutral-900 antialiased dark:bg-background dark:text-foreground">
         {children}

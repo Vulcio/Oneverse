@@ -18,6 +18,8 @@ export const SONG_SELECT = {
   deletedAt: true,
   documentJson: true,
   capo: true,
+  // Its image, for the lock screen while it plays (issue #173).
+  imageStorageKey: true,
   ownerTeam: { select: { name: true } },
   // Its artists, for the Live view's title (issue #68).
   contributors: { where: { roles: { has: "PERFORMER" } }, select: { source: true }, orderBy: { displayOrder: "asc" } },

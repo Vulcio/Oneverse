@@ -82,6 +82,17 @@ Songverse retient le mode sur chaque appareil : la tablette sur votre pupitre pe
 
 Songverse fonctionne aussi sans réseau : vos listes des deux semaines à venir, vos propres chants et ce que vous choisissez sont conservés sur l'appareil. Voir [Hors ligne](/fr/offline/).
 
+## Raccourcis sur l'écran d'accueil
+
+Installé comme une app - sur Android, **Ajouter à l'écran d'accueil** ou **Installer l'application** dans Chrome ; sur un ordinateur, le bouton d'installation de Chrome ou d'Edge dans la barre d'adresse - l'icône de Songverse a des raccourcis : appuyez longuement dessus sur Android, ou faites un clic droit dans le Dock, la barre des tâches ou le menu Démarrer.
+
+- **Liste en cours** - la liste d'aujourd'hui, ou la prochaine qui a une date (parmi celles de votre barre latérale). S'il n'y en a pas, il ouvre **Listes de chants**.
+- **Bibliothèque**, **Métronome** et **Accordeur** - directement leurs pages.
+
+Les raccourcis sont dans la langue de Songverse au moment de l'installation.
+
+Sur un iPhone ou un iPad, un appui long sur l'icône de Songverse n'affiche que le menu d'iOS : Safari ne propose pas les raccourcis d'une app. Pour y ouvrir une page directement, ouvrez-la dans Safari et ajoutez-la elle aussi à l'écran d'accueil (Partager, puis **Sur l'écran d'accueil**).
+
 ## Langue
 
 Songverse existe en français et en anglais. Choisissez la vôtre dans **Paramètres du compte** > **Langue**. Cette documentation existe aussi dans les deux langues : utilisez le menu des langues en haut de chaque page.

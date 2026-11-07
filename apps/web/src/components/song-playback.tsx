@@ -29,6 +29,9 @@ const ICONS: Record<PlaybackSource, typeof AudioLines> = {
 export interface SongPlaybackProps {
   songVersionId: string;
   title: string;
+  /** Its artists, one line, and its image: the lock screen's while it plays (issue #173). */
+  artist?: string | null;
+  imageUrl?: string | null;
   /** The page to come back to. */
   returnTo: string;
   /** The song's files (the API's, or the device's copy offline), and how to load one. */
@@ -134,6 +137,8 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
       ? {
           songVersionId: props.songVersionId,
           title: props.title,
+          artist: props.artist,
+          imageUrl: props.imageUrl,
           returnTo: props.returnTo,
           ...files,
           load: props.load,

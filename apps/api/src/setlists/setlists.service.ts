@@ -14,6 +14,7 @@ import type {
   UpdateSetlistItemDto,
 } from "./dto/setlist.dto.js";
 import { NotesService } from "../notes/notes.service.js";
+import { songImageUrl } from "../artwork/song-image-url.js";
 import { SetlistAccessService, SONG_SELECT, type SetRow, type SongRow } from "./setlist-access.service.js";
 import { SongOwnershipService } from "./song-ownership.service.js";
 import { ArrangementsService } from "../arrangements/arrangements.service.js";
@@ -623,6 +624,8 @@ export class SetlistsService {
             document,
             // A capo written on the song: only a suggestion, when the arrangement sets none.
             suggestedCapo: song.capo ?? null,
+            // Its image (issue #173): the lock screen's cover while it plays.
+            imageUrl: songImageUrl(song.id, song.imageStorageKey),
           }
         : null,
       arrangement,
@@ -694,7 +697,11 @@ export class SetlistsService {
     // The notes one sees on each song in this set (issue #256), by song.
     const notes: Record<string, SongNotes> = {};
     if (withNotes) for (const view of songs) if (view.song && !notes[view.song.id]) notes[view.song.id] = await this.notes.list(user, view.song.id, { setlistId });
-    const version = createHash("sha256").update(JSON.stringify({ set, songs, notes })).digest("hex").slice(0, 32);
+    // Not the songs' image addresses: signed again each day, they'd make every copy new daily (the device keeps the old one).
+    const version = createHash("sha256")
+      .update(JSON.stringify({ set, songs, notes }, (key, value: unknown) => (key === "imageUrl" ? undefined : value)))
+      .digest("hex")
+      .slice(0, 32);
     return { set, songs, notes, version };
   }
 
