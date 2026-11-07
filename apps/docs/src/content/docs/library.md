@@ -211,7 +211,7 @@ A take recorded while the stems were transposed is sung in that key, and its row
 
 The metronome button beside it, **Click with the recording**, plays the [metronome](/metronome/) with the stems: at the recording's tempo (or the song's), its first beat where the recording's falls, with your pattern and sound. It clicks from 0:00, on the recording's beat, even when its first beat comes later: a count-in is for recording. With **Free intro** ticked for the recording, or **Count-in only** on the Metronome page, it waits for the first beat instead, with your count-in before it. It follows **Play**, pause and the playhead. Playing in sync, the leader's is everyone's (see [Playing in sync](/sets/#playing-in-sync)).
 
-The song keeps playing while you go to another page or leave Practice, and on a phone with the screen locked, where the lock screen can pause it too. A small button at the bottom right shows what's playing: tap the song's name to go back to it, or pause it from there.
+The song keeps playing while you go to another page or leave Practice, and on a phone with the screen locked, where the lock screen can pause it too. The lock screen (and a computer's media controls) shows the song's title, its artists and its artwork - or, without artwork, the cover made from its title, as in the library. A small button at the bottom right shows what's playing: tap the song's name to go back to it, or pause it from there.
 
 ![The button back to the song playing](../../assets/screenshots/en/stems-return.jpg)
 

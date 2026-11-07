@@ -126,6 +126,8 @@ export function PracticeSongPage({
   const playback = useSongPlayback({
     songVersionId: version.id,
     title: version.title,
+    artist: artistNames(version.artists),
+    imageUrl: version.imageUrl,
     returnTo,
     attachments,
     load: fileLoader(version.id, false),

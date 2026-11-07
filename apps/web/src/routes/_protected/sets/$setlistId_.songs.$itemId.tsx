@@ -107,6 +107,8 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
   const playback = useSongPlayback({
     songVersionId: song?.id ?? "",
     title: song?.title ?? "",
+    artist: song?.artists?.join(", ") || null,
+    imageUrl: song?.imageUrl,
     returnTo,
     attachments: files.attachments,
     load: fileLoader(song?.id ?? "", files.offline),

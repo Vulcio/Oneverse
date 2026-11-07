@@ -65,6 +65,7 @@ export function OfflineSongPage({ song }: { song: OfflineSong }) {
   const playback = useSongPlayback({
     songVersionId: song.songVersionId,
     title: song.title,
+    artist: song.artists,
     returnTo: `/library/${song.songVersionId}`,
     attachments: song.attachments.filter((file) => keptFiles.has(file.id)),
     load: fileLoader(song.songVersionId, true),

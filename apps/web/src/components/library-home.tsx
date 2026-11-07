@@ -5,28 +5,10 @@ import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useSta
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { cn } from "@oneverse/ui/lib/utils";
+import { coverColors, initialsOf } from "#/lib/song-cover";
 
 /** A song as a card shows it; `imageUrl` for when songs have images of their own. */
 type CardSong = Pick<SongVersionSummary, "id" | "title" | "artists"> & { workId?: string; imageUrl?: string | null; private?: boolean };
-
-/** The same colour for the same song, every time: a hue from its title. */
-function hueOf(text: string): number {
-  let hash = 0;
-  for (const char of text) hash = (hash * 31 + char.codePointAt(0)!) | 0;
-  return Math.abs(hash) % 360;
-}
-
-/** Up to two letters for a title: "Amazing Grace" is "AG", "Hosanna" is "H". */
-function initialsOf(title: string): string {
-  const words = title
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .split(/\s+/)
-    .filter(Boolean);
-  return words
-    .slice(0, 2)
-    .map((word) => Array.from(word)[0]!.toUpperCase())
-    .join("");
-}
 
 /**
  * A song's cover (issue #81): its image, once songs have one; until then, a
@@ -60,13 +42,13 @@ function CoverImage({ song, className, size }: { song: CardSong; className?: str
   if (song.imageUrl) {
     return <img src={`${song.imageUrl}&w=${width}`} alt="" loading="lazy" data-testid="song-image" className={cn("aspect-square w-full rounded-lg object-cover", className)} />;
   }
-  const hue = hueOf(song.title);
+  const [from, to] = coverColors(song.title);
   return (
     <div
       aria-hidden
       data-testid="song-cover"
       className={cn("relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg text-white", className)}
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue} 55% 48%), hsl(${(hue + 40) % 360} 60% 28%))` }}
+      style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
     >
       {size === "small" ? (
         <span className="text-[0.625rem] font-semibold">{initialsOf(song.title)}</span>

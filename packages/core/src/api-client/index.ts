@@ -378,6 +378,8 @@ export interface SetlistSongView {
         document: SongDocumentV2;
         /** A capo written on the song: a suggestion when the arrangement sets none. */
         suggestedCapo: number | null;
+        /** Its image (issue #173), signed for a day or two (add `&w=` for a width); null: none. Left out by an older API, and stale in a copy kept offline. */
+        imageUrl?: string | null;
       })
     | null;
   /** The arrangement the set plays it in (null: as written). */

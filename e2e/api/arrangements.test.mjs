@@ -96,8 +96,8 @@ item = r.body.items[0];
 check("a set item switches arrangement, keeping its own key on top", r.status === 200 && item.arrangement.id === teamArrangement.id && item.transposeSteps === -1);
 r = await call(member, "GET", `/setlists/${teamSet.id}/items/${item.id}/song`);
 check(
-  "the set's song view carries the arrangement, the song, the suggested capo and the player's view",
-  r.status === 200 && r.body.arrangement?.id === teamArrangement.id && r.body.arrangement.document.items.length === 2 && r.body.song.document.revision === song.revision &&
+  "the set's song view carries the arrangement, the song, the suggested capo, its image (issue #173) and the player's view",
+  r.status === 200 && "imageUrl" in r.body.song && r.body.arrangement?.id === teamArrangement.id && r.body.arrangement.document.items.length === 2 && r.body.song.document.revision === song.revision &&
     r.body.song.suggestedCapo === 3 && r.body.view.chordNotation === "LETTERS" && r.body.view.capoDisplayMode === "SOUNDING" && r.body.view.preferences.hiddenChordIds.length === 0,
   JSON.stringify(r.body).slice(0, 400),
 );

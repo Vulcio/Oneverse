@@ -322,6 +322,10 @@ await step("through an <audio> element (as on iPhone, to play on with the screen
   await page.waitForFunction(() => window.songverseStems?.heardVia === "element");
   const session = await page.evaluate(() => [navigator.mediaSession.playbackState, navigator.mediaSession.metadata?.title]);
   if (session.join() !== `playing,Stems ${stamp}`) throw new Error(`lock screen: ${session.join()}`);
+  // Its artist, and without an image its cover drawn from its title (issue #173).
+  await page.waitForFunction(() => (navigator.mediaSession.metadata?.artwork.length ?? 0) > 0);
+  const shown = await page.evaluate(() => [navigator.mediaSession.metadata.artist, navigator.mediaSession.metadata.artwork[0].src, navigator.mediaSession.metadata.artwork[0].sizes]);
+  if (shown[0] !== `Band ${stamp}` || !shown[1].startsWith("blob:") || shown[2] !== "512x512") throw new Error(`lock screen: ${shown.join()}`);
   await player().getByRole("button", { name: "Pause", exact: true }).click();
   if ((await page.evaluate(() => navigator.mediaSession.playbackState)) !== "paused") throw new Error("still playing on the lock screen");
   await page.evaluate(() => localStorage.removeItem("songverse.stems.output"));

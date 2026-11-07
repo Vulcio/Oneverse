@@ -3,8 +3,9 @@
 // Music's matches (a stand-in, lib/fake-providers.mjs), with their full
 // names on hover, or uploading one's own, cropped (issue #88); removing it;
 // the admin's artwork settings.
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
 import { png, startFakeProviders } from "../lib/fake-providers.mjs";
 
 const fake = await startFakeProviders();
@@ -81,6 +82,23 @@ await step("its album art by its title (issue #146): in Edit, and in Practice", 
   if (!(await loaded(page.getByTestId("song-art")))) throw new Error("not shown in Practice");
   await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
   await page.goto(`${WEB}/library/${song.id}`);
+});
+
+await step("the lock screen shows it while the song plays (issue #173)", async () => {
+  const form = new FormData();
+  form.append("type", "AUDIO");
+  form.append("stemPart", "DRUMS");
+  form.append("file", new Blob([readFileSync(new URL("../fixtures/stems/03 drums.mp3", import.meta.url))], { type: "audio/mpeg" }), "03 drums.mp3");
+  const res = await fetch(`${API}/song-versions/${song.id}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${me.bearer}` }, body: form });
+  if (res.status !== 201) throw new Error(`upload: ${res.status}`);
+  await page.goto(`${WEB}/library/${song.id}`);
+  await page.waitForLoadState("networkidle");
+  await page.getByTestId("stem-player").getByRole("button", { name: "Play", exact: true }).click();
+  await page.waitForFunction(() => (navigator.mediaSession.metadata?.artwork.length ?? 0) > 0, null, { timeout: 15000 });
+  const metadata = await page.evaluate(() => ({ title: navigator.mediaSession.metadata.title, artist: navigator.mediaSession.metadata.artist, artwork: navigator.mediaSession.metadata.artwork.map((image) => image.src) }));
+  if (metadata.title !== `Canvas ${stamp}` || metadata.artist !== "Painter") throw new Error(JSON.stringify(metadata));
+  if (!metadata.artwork.every((src) => src.includes(`/song-versions/${song.id}/image/`)) || !metadata.artwork.some((src) => src.endsWith("&w=512"))) throw new Error(JSON.stringify(metadata.artwork));
+  await page.getByTestId("stem-player").getByRole("button", { name: "Pause", exact: true }).click();
 });
 
 await step("removed: the cover made from its title", async () => {

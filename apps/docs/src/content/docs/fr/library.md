@@ -211,7 +211,7 @@ Une prise enregistrée pendant que les pistes étaient transposées est chantée
 
 Le bouton du métronome à côté, **Clic avec l'enregistrement**, joue le [métronome](/fr/metronome/) avec les pistes : au tempo de l'enregistrement (ou du chant), son premier temps là où tombe celui de l'enregistrement, avec votre motif et votre son. Il bat dès 0:00, sur le temps de l'enregistrement, même quand son premier temps vient plus tard : le décompte sert à l'enregistrement. Avec **Intro libre** cochée pour l'enregistrement, ou **Décompte seulement** sur la page Métronome, il attend le premier temps, avec votre décompte avant. Il suit **Lecture**, la pause et la tête de lecture. En jeu synchronisé, celui du meneur est celui de chacun (voir [Jouer synchronisé](/fr/sets/#jouer-synchronisé)).
 
-Le chant continue de jouer quand vous allez sur une autre page ou quittez le mode Session, et sur un téléphone écran verrouillé, où l'écran de verrouillage peut aussi le mettre en pause. Un petit bouton en bas à droite montre ce qui joue : touchez le nom du chant pour y revenir, ou mettez-le en pause de là.
+Le chant continue de jouer quand vous allez sur une autre page ou quittez le mode Session, et sur un téléphone écran verrouillé, où l'écran de verrouillage peut aussi le mettre en pause. L'écran de verrouillage (et les commandes multimédia d'un ordinateur) montre le titre du chant, ses artistes et sa pochette - ou, sans pochette, la couverture faite de son titre, comme dans la bibliothèque. Un petit bouton en bas à droite montre ce qui joue : touchez le nom du chant pour y revenir, ou mettez-le en pause de là.
 
 ![Le bouton pour revenir au chant en lecture](../../../assets/screenshots/fr/stems-return.jpg)
 
