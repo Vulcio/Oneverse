@@ -28,6 +28,13 @@ try {
   const slot = (index, beat) => bar(index).locator(`[data-grid-slot][data-beat="${beat}"]`);
   const chordsOf = async (index) => (await bar(index).locator("[data-grid-chord]").allInnerTexts()).join(" ");
   const position = async () => ((await grid().getAttribute("data-position")) ?? "").split(":").map(Number);
+  // Loop bars, Edit bars and the words' place are in the Display panel's Grid section (issue #408).
+  const fromDisplay = async (testId) => {
+    await page.getByTestId("display-open").first().click();
+    await page.getByTestId(testId).click();
+    if (await page.getByTestId("display-panel").isVisible()) await page.getByTestId("display-close").click();
+    await page.getByTestId("display-panel").waitFor({ state: "hidden" });
+  };
 
   await step("Practice's grid: Edit bars for whoever can edit the song", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
@@ -35,7 +42,7 @@ try {
     await grid().waitFor();
     // As filled in from the chart: the verse's 4 + 3 chords and a line without (2 bars), the chorus's 2.
     if ((await grid().locator("[data-grid-bar]").count()) !== 11) throw new Error(`${await grid().locator("[data-grid-bar]").count()} bars`);
-    await page.getByTestId("chord-grid-edit-start").click();
+    await fromDisplay("chord-grid-edit-start");
     await page.getByTestId("chord-grid-edit").waitFor();
     // Two places a beat: on it and its "and".
     if ((await bar(0).locator("[data-grid-slot]").count()) !== 8) throw new Error("not two places a beat");
@@ -106,17 +113,19 @@ try {
     if ((await bar(0).locator("[data-grid-words]").innerText()).trim() !== "Amazing grace how") throw new Error(await bar(0).locator("[data-grid-words]").innerText());
   });
 
-  await step("Play: the click from the top; a tap on bar 5 plays from there", async () => {
-    await page.getByTestId("chord-grid-play").click();
+  await step("a tap on bar 1 plays the click from there, a tap on bar 5 from there", async () => {
+    // No Play of the grid's own (issue #408): the page's play buttons, or a bar.
+    if (await page.getByTestId("chord-grid-play").count()) throw new Error("the grid still has a Play button");
+    await bar(0).click();
     await page.locator('[data-testid="chord-grid"][data-source="click"]').waitFor();
     await page.waitForTimeout(500);
     const [start] = await position();
-    if (!(start <= 1)) throw new Error(`at bar ${start} just after Play`);
+    if (!(start <= 1)) throw new Error(`at bar ${start} just after a tap on bar 1`);
     await bar(4).click();
     await page.waitForTimeout(500);
     const [from, beat] = await position();
     if (from !== 4) throw new Error(`at ${from}:${beat} after a tap on bar 5`);
-    await page.getByTestId("chord-grid-play").click();
+    await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="chord-grid"][data-source]').waitFor({ state: "detached" });
   });
 
@@ -131,8 +140,11 @@ try {
     sql(`update "Attachment" set "recordingBeats" = '{${beats.join(",")}}', "recordingDownbeats" = '{${downbeats.join(",")}}' where id = '${uploaded.id}'`);
     await page.reload();
     await grid().waitFor();
+    // Loop bars waits for the recording to be loaded.
+    await page.getByTestId("display-open").first().click();
     await page.getByTestId("chord-grid-loop").waitFor({ timeout: 20000 });
     await page.getByTestId("chord-grid-loop").click();
+    if (await page.getByTestId("display-panel").isVisible()) await page.getByTestId("display-close").click();
     await page.getByTestId("chord-grid-loop-hint").waitFor();
     await bar(2).click();
     await bar(3).click();
@@ -142,9 +154,9 @@ try {
     await page.waitForTimeout(3000);
     const [at] = await position();
     if (at !== 2 && at !== 3) throw new Error(`at bar ${at + 1} while looping bars 3-4`);
-    await page.getByTestId("chord-grid-loop").click();
+    await page.getByTestId("chord-grid-looping").waitFor();
+    await page.getByTestId("chord-grid-loop-stop").click();
     if ((await grid().locator("[data-grid-bar][data-looped]").count()) !== 0) throw new Error("still looping");
-    await page.getByTestId("chord-grid-play").click();
   });
 
   await step("no page errors", async () => {

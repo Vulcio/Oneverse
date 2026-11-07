@@ -13,6 +13,7 @@ import { unlockSyncAudio } from "#/lib/sync-client";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { cn } from "@oneverse/ui/lib/utils";
 import { BarsRow } from "#/components/bars-row";
+import { useGridControls } from "#/lib/grid-controls";
 import { DisplayPanel } from "#/components/display-panel";
 import { chartDisplayProps, useDiagramPlayer, useDisplaySettings } from "#/lib/display-settings";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
@@ -78,6 +79,8 @@ export function PracticeSongPage({
   const router = useRouter();
   // How Practice reads (issue #209), as the Display panel changes it.
   const display = useDisplaySettings("PRACTICE", { account: { chordNotation: notation, capoDisplayMode: capoDisplay, chordDiagrams: diagrams, chordColors: colors }, saved: displaySettings });
+  // A chord grid on screen (issue #408): the bars row stays out of its way.
+  const gridOnScreen = !!useGridControls();
   const player = useDiagramPlayer(accountPlayer);
   // Their own tempo for it, practising (issue #382): kept with their chart preferences, the song's own untouched.
   const [practiceTempo, setPracticeTempo] = useState<number | null>(null);
@@ -232,7 +235,8 @@ export function PracticeSongPage({
       </div>
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls - under the header (h-14), never behind it. */}
-      {display.bars ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
+      {/* Not over the chord grid (issue #408): it shows the same bars, unless asked. */}
+      {display.bars && (!gridOnScreen || display.gridBarsRow) ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
 
       {/* The chart, its chord grid (issue #238) or its PDF (issue #152). */}
       <ChartOrPdf
@@ -244,12 +248,14 @@ export function PracticeSongPage({
         tracks={hasTracks ? <TracksView songVersionId={version.id} chart={chart} document={version.documentJson} attachments={attachments} cueSections={cueSections.sections} /> : undefined}
         grid={
           <Card>
-            <CardContent style={{ zoom: display.textSize }}>
+            {/* What the grid keeps in view as it scrolls goes under the page's header (h-14), in the zoomed grid's own pixels. */}
+            <CardContent style={{ zoom: display.textSize, ["--grid-sticky-top" as string]: `calc(3.5rem / ${display.textSize})` }}>
               <ChordGrid
                 songId={version.id}
                 chart={chart}
                 document={version.documentJson}
                 chordColors={display.chordColors}
+                barsPerRow={display.gridBarsPerRow}
                 emptyText={t("sets.noChart")}
                 // Bars placed by whoever can edit the song (issue #238), saved as the editor saves its chart.
                 onSave={

@@ -522,23 +522,30 @@ try {
       await page.getByTestId("chart-view-grid").click();
       const grid = page.getByTestId("chord-grid");
       await grid.waitFor();
-      await page.getByTestId("bars-metronome").click();
+      // Loop bars, Edit bars and the words' place are in the Display panel's Grid section (issue #408).
+      const fromDisplay = async (testId) => {
+        await page.getByTestId("display-open").first().click();
+        await page.getByTestId(testId).click();
+        if (await page.getByTestId("display-panel").isVisible()) await page.getByTestId("display-close").click();
+        await page.getByTestId("display-panel").waitFor({ state: "hidden" });
+      };
+      await page.getByTestId("practice-metronome").click();
       await page.locator('[data-testid="chord-grid"][data-source="click"]').waitFor();
       await page.waitForTimeout(4200);
       const box = await grid.boundingBox();
       await page.screenshot({ path: path.join(dir, "chord-grid.jpg"), type: "jpeg", quality: 85, clip: { x: box.x - 24, y: box.y - 76, width: box.width + 48, height: Math.min(box.height + 96, 330) } });
       console.log("  chord-grid");
       // The words between the rows (issue #376), the click still playing; then back in the bars.
-      await page.getByTestId("chord-grid-lyrics-choice").selectOption("between");
+      await fromDisplay("display-gridLyrics-between");
       await page.locator('[data-testid="chord-grid"][data-lyrics="between"]').waitFor();
       await page.waitForTimeout(1200);
       const between = await grid.boundingBox();
       await page.screenshot({ path: path.join(dir, "chord-grid-lyrics.jpg"), type: "jpeg", quality: 85, clip: { x: between.x - 24, y: between.y - 76, width: between.width + 48, height: Math.min(between.height + 96, 330) } });
       console.log("  chord-grid-lyrics");
-      await page.getByTestId("chord-grid-lyrics-choice").selectOption("bars");
-      await page.getByTestId("bars-metronome").click();
+      await fromDisplay("display-gridLyrics-bars");
+      await page.getByTestId("practice-metronome").click();
       // Edit bars (issue #238): a chord picked, a bar's tools.
-      await page.getByTestId("chord-grid-edit-start").click();
+      await fromDisplay("chord-grid-edit-start");
       await grid.locator('[data-grid-bar="1"] [data-grid-words]').click();
       await grid.locator('[data-grid-bar="2"] [data-grid-chord]').first().click();
       const area = await page.getByTestId("chord-grid-area").boundingBox();

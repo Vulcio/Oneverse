@@ -53,7 +53,7 @@ En haut d'un chant, en Session et en Live, la **ligne des mesures** place les ac
 
 Les mesures viennent des [barres de mesure](/fr/song-editor/#les-barres-de-mesure) de la grille quand elle en a. Sinon de ses accords : chaque accord a une mesure, et une ligne chantée en prend au moins deux (une ligne à un seul accord le garde une deuxième mesure). Les lignes d'accords seuls (une intro) prennent une mesure par accord, et les notes aucune. Chaque mesure a autant de temps que l'indique la mesure du chant, et une section peut avoir sa propre mesure dans l'ordre du chant.
 
-**Affichage** > **Accords** > **Mesures** la masque, séparément en Session et en Live (voir [Affichage](/fr/display/)).
+**Affichage** > **Accords** > **Mesures** la masque, séparément en Session et en Live (voir [Affichage](/fr/display/)). Quand les [mesures](#grille-en-mesures) s'affichent, la ligne des mesures ne s'affiche pas, puisqu'elles ont les mêmes mesures : **Affichage** > **Mesures** > **Ligne du haut** la fait revenir.
 
 La partition suit aussi, en Session et sur la page d'un chant dans une liste : pendant que la musique joue, la ligne chantée s'allume un temps à l'avance et reste visible, au-dessus du lecteur. Les paroles sont calées sur les temps tels qu'ils sont [placés dans les paroles](/fr/metronome/#placer-les-temps-dans-les-paroles), sinon réparties sur leurs mesures. Si vous faites défiler vous-même, elle attend quelques secondes avant de suivre à nouveau.
 
@@ -63,7 +63,7 @@ La partition suit aussi, en Session et sur la page d'un chant dans une liste : p
 
 ![Les mesures en Session, le clic lancé](../../../assets/screenshots/fr/chord-grid.jpg)
 
-- **Quatre mesures par ligne** (deux sur un téléphone), chaque section sous son nom, avec sa mesure là où elle change.
+- **Autant de mesures par ligne qu'il en tient**, chaque section sous son nom, avec sa mesure là où elle change. Chaque temps garde la place d'un accord et d'un mot : un téléphone tenu droit a une mesure par ligne en Session (deux mesures à 4/4 en Live, qui a tout l'écran), et un ordinateur quatre. **Affichage** > **Mesures** > **Par ligne** règle 1, 2 ou 4 au lieu d'**Auto**, séparément en Session et en Live.
 - **Chaque mesure** a son numéro, un bloc par temps et l'accord dans le bloc du temps où il change, comme dans la ligne des mesures. Le temps joué devient foncé. Un accord sur le « et » d'un temps coupe son bloc en deux. Un accord qui continue depuis la mesure d'avant est rappelé, en gris. Dessous, les paroles chantées dans cette mesure (de l'accord ou de la barre de mesure où elles commencent au suivant).
 - **Pendant que la musique joue,** la mesure et le temps joués s'allument, et la page défile pour garder cette mesure en vue. Elle suit la même chose que la ligne des mesures : les pistes, le métronome ou celui du meneur.
 - **Les accords se lisent comme sur la grille :** transposés, avec votre capodastre, vos noms et vos couleurs, et sur la page d'un chant dans une liste vos **Accords simplifiés** et **Sans basses** aussi.
@@ -72,7 +72,7 @@ Votre choix est gardé pour le chant, comme celui d'un PDF : chaque appareil où
 
 ### Les paroles
 
-**Paroles** au-dessus des mesures choisit où vont les paroles. Votre choix est gardé sur cet appareil, pour tous les chants :
+Les réglages des mesures sont dans **Affichage**, qui s'ouvre sur sa section **Mesures** quand elles s'affichent. **Paroles** y choisit où vont les paroles. Votre choix est gardé sur cet appareil, pour tous les chants :
 
 - **Dans les mesures** : chaque mesure a dessous les paroles chantées dedans, comme ci-dessus.
 - **Entre les lignes** : chaque ligne de mesures a ses paroles en une ligne dessous, plus facile à lire. Les paroles de la mesure jouée deviennent foncées.
@@ -85,10 +85,10 @@ Pendant **Modifier les mesures**, les paroles sont dans les mesures, là où les
 
 ### Lire depuis les mesures
 
-Au-dessus des mesures, **Lire l'enregistrement** lance les pistes ou l'enregistrement du chant, et **Lancer le clic** lance le métronome au tempo du chant s'il n'a ni l'un ni l'autre.
+Le bouton de lecture de la page lance les pistes ou l'enregistrement du chant, et le métronome lance le clic : les mesures suivent l'un ou l'autre.
 
 - **Touchez une mesure** pour lire à partir de son premier temps, ou pour y sauter pendant la lecture. Avec un enregistrement, la mesure est trouvée d'après ses temps et ses mesures (quand la [séparation des pistes les a trouvés](/fr/library/#séparer-un-enregistrement-en-pistes)), sinon d'après son tempo et son premier temps. Avec le clic, un décompte joue les temps juste avant la mesure.
-- **Boucler des mesures** (avec un enregistrement) : touchez la première mesure, puis la dernière. Ces mesures se répètent, soulignées, jusqu'à ce que vous touchiez **Arrêter la boucle**.
+- **Boucler des mesures** (dans **Affichage** > **Mesures**, avec un enregistrement) : touchez la première mesure, puis la dernière. Ces mesures se répètent, soulignées. Une barre au-dessus des mesures dit lesquelles, jusqu'à ce que vous y touchiez **Arrêter la boucle**.
 
 Quand vous [jouez en synchro](/fr/sets/#jouer-synchronisé) et suivez le meneur, c'est lui qui lance et arrête la musique : toucher une mesure ne fait rien.
 
@@ -96,7 +96,7 @@ Quand vous [jouez en synchro](/fr/sets/#jouer-synchronisé) et suivez le meneur,
 
 ![Modifier les mesures en Session : un accord choisi, les outils de la mesure 2](../../../assets/screenshots/fr/chord-grid-edit.jpg)
 
-Si vous pouvez modifier le chant, **Modifier les mesures** au-dessus des mesures en Session vous permet de dire exactement où tombe chaque accord :
+Si vous pouvez modifier le chant, **Modifier les mesures** (dans **Affichage** > **Mesures**, en Session) vous permet de dire exactement où tombe chaque accord. **Annuler** et **Enregistrer les mesures** restent en haut des mesures quand vous faites défiler :
 
 - **Déplacer un accord sur un autre temps.** Faites-le glisser, ou touchez-le puis touchez le temps. Chaque temps a deux moitiés : celle de gauche est le temps lui-même, celle de droite son « et » (le + entre les temps). Un accord reste entre l'accord d'avant et celui d'après dans la grille, pour que les mesures et les paroles ne se contredisent jamais.
 - **Changer une mesure.** Touchez une mesure pour afficher ses outils. **−** et **+** changent son nombre de temps, pour une anacrouse ou une mesure à 2/4 avant le refrain. **Ajouter une mesure avant** et **Ajouter une mesure après** ajoutent une mesure vide, où l'accord d'avant continue. **Retirer la mesure** retire une mesure vide (déplacez d'abord ses accords).

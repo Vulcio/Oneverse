@@ -53,7 +53,7 @@ At the top of a song in Practice and in Live, the **bars row** puts the song's c
 
 The bars come from the chart's [bar lines](/song-editor/#bar-lines) when it has them. Otherwise from its chords: each chord gets a bar, and a sung line takes at least two (a line with one chord holds it for a second bar). Lines of chords alone (an intro) take a bar per chord, and notes take none. Each bar has as many beats as the song's time signature says, and a section can have a time signature of its own in the song's order.
 
-**Display** > **Chords** > **Bars** hides it, separately in Practice and in Live (see [Display](/display/)).
+**Display** > **Chords** > **Bars** hides it, separately in Practice and in Live (see [Display](/display/)). While the [chord grid](#chord-grid) shows, the bars row isn't shown, as the grid has the same bars: **Display** > **Grid** > **Bars row** brings it back.
 
 The chart follows along too, in Practice and on a song's page in a set: while the music plays, the line being sung is lit a beat ahead and kept in view, above the player. The words are matched to the beats as the [beats are placed in the words](#placing-beats-in-the-words), or spread over their bars until they are. Scroll yourself and it waits a few seconds before following again.
 
@@ -63,7 +63,7 @@ The chart follows along too, in Practice and on a song's page in a set: while th
 
 ![The chord grid in Practice, the click playing](../../assets/screenshots/en/chord-grid.jpg)
 
-- **Four bars to a row** (two on a phone), each section under its name, with its time signature where it changes.
+- **As many bars to a row as fit**, each section under its name, with its time signature where it changes. Each beat keeps room for a chord and a word, so a phone held upright has one bar a row in Practice (two 4/4 bars in Live, which has the whole screen), and a laptop four. **Display** > **Grid** > **Per row** sets 1, 2 or 4 instead of **Auto**, separately in Practice and in Live.
 - **Each bar** has its number, a block for each beat and the chord in the block of the beat it changes on, as in the bars row. The beat being played turns dark. A chord on the "and" of a beat splits its block in two. A chord held on from the bar before is named again, in grey. Underneath are the words sung in that bar (from the chord or the bar line they start at to the next one).
 - **While the music plays,** the bar and the beat being played light up, and the grid scrolls to keep that bar in view. It follows the same things as the bars row: the stems, the metronome, or the leader's.
 - **The chords read as on the chart:** transposed, with your capo, names and colours, and on a set's song page your **Simpler chords** and **No bass notes** too.
@@ -72,7 +72,7 @@ Your choice is kept for the song, as a PDF's is: every device you sign in on, an
 
 ### The words
 
-**Lyrics** over the grid chooses where the words go. Your choice is kept on this device, for every song:
+The grid's settings are in **Display**, which opens on its **Grid** section while the grid shows. **Lyrics** there chooses where the words go. Your choice is kept on this device, for every song:
 
 - **In the bars**: each bar has the words sung in it underneath, as above.
 - **Between the rows**: each row of bars has its words as a line under it, easier to read. The words of the bar being played turn dark.
@@ -85,10 +85,10 @@ While you **Edit bars**, the words are in the bars, where the beats are placed.
 
 ### Playing from the grid
 
-Above the grid, **Play the recording** plays the song's stems or recording, and **Play the click** plays the metronome at the song's tempo when it has neither.
+The page's own play button plays the song's stems or recording, and the metronome plays the click: the grid follows either.
 
 - **Tap a bar** to play from its first beat, or to jump there while it plays. With a recording, the bar is found from its beats and bars (when the [stem separation found them](/library/#separating-a-recording-into-stems)), else from its tempo and first beat. With the click, a count-in plays the beats just before the bar.
-- **Loop bars** (with a recording): tap the first bar, then the last. Those bars play over and over, marked underneath, until you press **Stop looping**.
+- **Loop bars** (in **Display** > **Grid**, with a recording): tap the first bar, then the last. Those bars play over and over, marked underneath. A bar over the grid says which, until you press **Stop the loop** there.
 
 When you [play in sync](/sets/#playing-in-sync) and follow the leader, they start and stop the music: tapping a bar does nothing.
 
@@ -96,7 +96,7 @@ When you [play in sync](/sets/#playing-in-sync) and follow the leader, they star
 
 ![Editing bars in Practice: a chord picked, the tools of bar 2](../../assets/screenshots/en/chord-grid-edit.jpg)
 
-If you can edit the song, **Edit bars** above the grid in Practice lets you say exactly where each chord falls:
+If you can edit the song, **Edit bars** (in **Display** > **Grid**, in Practice) lets you say exactly where each chord falls. **Cancel** and **Save bars** stay at the top of the grid as you scroll:
 
 - **Move a chord to another beat.** Drag it there, or tap it and then tap the beat. Each beat has two halves: the left one is the beat itself and the right one is its "and" (the + between beats). A chord stays between the chords before and after it in the chart, so the grid and the lyrics never disagree.
 - **Change a bar.** Tap a bar to show its tools. **−** and **+** change how many beats it has, for a pickup or a 2/4 bar before the chorus. **Add a bar before** and **Add a bar after** add an empty bar, where the chord before carries on. **Remove the bar** removes an empty bar (move its chords out first).

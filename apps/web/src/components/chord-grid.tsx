@@ -18,18 +18,18 @@ import {
   type RenderedChart,
   type Rhythm,
   type SongDocumentV2,
+  type GridBarsPerRowValue,
 } from "@oneverse/core";
-import { Check, Minus, Pause, Pencil, Play, Plus, Repeat, Trash2, X } from "lucide-react";
+import { Check, Minus, Pencil, Plus, Repeat, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { GROUP_COLORS } from "#/components/bars-row";
 import { keepInView } from "#/lib/follow-view";
 import { FAMILY_COLORS, passLabel } from "@oneverse/screen/components/song-chart";
 import { useBarsClock } from "#/lib/bars-clock";
-import { useGridPlayer, type GridPlayer } from "#/lib/grid-player";
-import { GRID_LYRICS, setGridLyrics, useGridLyrics, type GridLyrics } from "#/lib/grid-lyrics";
-import { NativeSelect } from "@oneverse/ui/components/native-select";
-import { useMediaQuery } from "@oneverse/ui/hooks/use-media-query";
+import { useGridPlayer } from "#/lib/grid-player";
+import { useGridLyrics, type GridLyrics } from "#/lib/grid-lyrics";
+import { registerGrid, type GridControls } from "#/lib/grid-controls";
 import { Button } from "@oneverse/ui/components/button";
 import { cn } from "@oneverse/ui/lib/utils";
 
@@ -44,9 +44,26 @@ type PickedBeat = { bar: number; beat: number };
 /** How far a pointer moves before a press on a chord is a drag (px). */
 const DRAG_FROM = 6;
 
+/** The narrowest a beat's block gets when the grid picks its bars a row (px, before the chart's zoom): a chord name and a word fit. */
+const MIN_BEAT_WIDTH = 40;
+
+/**
+ * Bars a row (issue #408): the setting's, else as many of a pass's bars as
+ * fit `width` with each beat at least MIN_BEAT_WIDTH wide - 4, 2 or 1, so
+ * the rows' bar lines stay under one another.
+ */
+export function gridBarsPerRow(setting: GridBarsPerRowValue, width: number, beats: number): number {
+  if (setting !== "auto") return Number(setting);
+  // Before it's measured (on the server, say): one bar a row, a phone's.
+  if (width <= 0) return 1;
+  const fit = Math.floor(width / (Math.max(1, beats) * MIN_BEAT_WIDTH));
+  return fit >= 4 ? 4 : fit >= 2 ? 2 : 1;
+}
+
 /**
  * The chord grid (issue #238), a way to read a song as Chart and PDF are:
- * its chords in bars, four to a row (two on a phone), each section under
+ * its chords in bars, as many to a row as fit their beats (issue #408:
+ * one 6/8 bar on a phone, four 4/4 bars on a laptop), each section under
  * its name, a bar's number over it, a block a beat with the chord in the
  * one it changes on (as the bars row), and the words sung in it underneath
  * (Moises' and Chordify's bars with the lyrics). The chords read as on the chart: transposed, capo,
@@ -54,9 +71,11 @@ const DRAG_FROM = 6;
  * metronome or the Sync leader's), the bar and the beat being played light
  * up, and the bar is kept in view.
  *
- * It plays too: Play, a tap on a bar to play from there, and Loop to go
- * over some bars again - the stems the page has loaded, else the click
- * (`useGridPlayer`). With `onSave` (whoever can edit the song), Edit bars
+ * It plays too: a tap on a bar plays from there, and Loop goes over some
+ * bars again - the stems the page has loaded, else the click
+ * (`useGridPlayer`); the page's own play button plays it from the top.
+ * Loop bars and Edit bars are started from the Display panel's Grid
+ * section (issue #408, `registerGrid`). With `onSave` (whoever can edit the song), Edit bars
  * places its chords on beats (the right half of a beat is its "and"),
  * dragged or tapped there, and adds, removes or shortens bars (a pickup, a
  * 2/4 bar), saved as each section's rhythm - every pass of a section has
@@ -74,6 +93,7 @@ export function ChordGrid({
   chart,
   document,
   chordColors = false,
+  barsPerRow = "auto",
   emptyText,
   className,
   onSave,
@@ -83,6 +103,8 @@ export function ChordGrid({
   /** The song itself, for its sections' own bars (`rhythm`); without it, bars are filled in from the chart. */
   document?: Pick<SongDocumentV2, "sections"> | null;
   chordColors?: boolean;
+  /** Bars a row (issue #408): the mode's display setting. */
+  barsPerRow?: GridBarsPerRowValue;
   emptyText?: string;
   className?: string;
   /** Saves the song's sections with the bars edited here; left out, the grid can't be edited. */
@@ -115,7 +137,18 @@ export function ChordGrid({
   const canEdit = !!onSave && !!document;
   const lyricsChoice = useGridLyrics();
   const lyrics: GridLyrics = editing ? "bars" : lyricsChoice;
-  const perRow = useMediaQuery("(min-width: 640px)") ? 4 : 2;
+  // The grid's width, for the bars a row that fit (issue #408): in its own pixels, before the chart's zoom.
+  const area = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const element = area.current;
+    if (!element) return;
+    const measure = () => setWidth(element.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // The section a bar is in, and its rhythm as edited so far.
   const sectionOf = (bar: ChartBar) => document?.sections.find((section) => section.id === bar.sectionId) ?? null;
@@ -280,7 +313,13 @@ export function ChordGrid({
     return grouped;
   }, [bars]);
   // A pass's bars in rows, for the words between them or the row pinned at the top.
-  const rowsOf = (passBars: ChartBar[]) => Array.from({ length: Math.ceil(passBars.length / perRow) }, (_, row) => passBars.slice(row * perRow, row * perRow + perRow));
+  const perRowOf = (passIndex: number) => gridBarsPerRow(barsPerRow, width, chart.passes[passIndex]?.timeSignature?.numerator ?? chart.timeSignature?.numerator ?? 4);
+  const rowsOf = (passBars: ChartBar[]) => {
+    const perRow = perRowOf(passBars[0]?.passIndex ?? 0);
+    return Array.from({ length: Math.ceil(passBars.length / perRow) }, (_, row) => passBars.slice(row * perRow, row * perRow + perRow));
+  };
+  // Each row's bars side by side, as many columns as the pass has a row.
+  const rowStyle = (passIndex: number) => ({ gridTemplateColumns: `repeat(${perRowOf(passIndex)}, minmax(0, 1fr))` });
   // The words of a bar: its pieces of its pass's lines, in order.
   const wordsOf = (bar: ChartBar) => {
     const lines = chart.passes[bar.passIndex]?.lines ?? [];
@@ -364,7 +403,7 @@ export function ChordGrid({
       cancelAnimationFrame(frame);
       light(null, 0);
     };
-  }, [position, bars, lyrics, perRow, lineOfBar]);
+  }, [position, bars, lyrics, width, barsPerRow, lineOfBar]);
 
   // A pass's name over its bars (or over its words, under a pinned row).
   const passHeading = (passIndex: number) => {
@@ -388,10 +427,11 @@ export function ChordGrid({
       </p>
     );
   };
-  const gridBar = (bar: ChartBar) => (
+  const gridBar = (bar: ChartBar, at: number, row: readonly ChartBar[]) => (
     <GridBar
       key={bar.index}
       bar={bar}
+      rowEnd={at === row.length - 1 || (at + 1) % perRowOf(bar.passIndex) === 0}
       words={spans[bar.index] ?? null}
       showWords={lyrics === "bars"}
       lines={chart.passes[bar.passIndex]!.lines}
@@ -411,26 +451,74 @@ export function ChordGrid({
     />
   );
 
+  // Loop bars and Edit bars, for the Display panel's Grid section (issue #408).
+  const controls: GridControls = {
+    canLoop: player.canLoop && !editing,
+    looped: player.looped,
+    choosingLoop: !!choosingLoop,
+    canEdit: canEdit && bars.length > 0,
+    editing,
+    loop: () => {
+      if (player.looped) return player.loop(null);
+      setChoosingLoop((current) => (current ? null : { first: null }));
+    },
+    edit: () => {
+      setChoosingLoop(null);
+      setEditing(true);
+    },
+  };
+  const latest = useRef(controls);
+  latest.current = controls;
+  const registered = useRef<ReturnType<typeof registerGrid> | null>(null);
+  useEffect(() => {
+    // Calls go to this render's grid, whenever they're made.
+    const live = (): GridControls => ({ ...latest.current, loop: () => latest.current.loop(), edit: () => latest.current.edit() });
+    registered.current = registerGrid(live());
+    return () => {
+      registered.current?.remove();
+      registered.current = null;
+    };
+  }, []);
+  const { canLoop, looped, choosingLoop: choosing } = controls;
+  useEffect(() => {
+    registered.current?.update({ ...latest.current, loop: () => latest.current.loop(), edit: () => latest.current.edit() });
+  }, [canLoop, looped?.first, looped?.last, choosing, controls.canEdit, editing]);
+
   if (bars.length === 0) return <p className="text-sm text-muted-foreground">{emptyText ?? t("chart.empty")}</p>;
   const tools = editing && pickedBar !== null && bars[pickedBar] && editable(bars[pickedBar]) ? { bar: bars[pickedBar], ...barTools(bars[pickedBar]) } : null;
   return (
-    <div className={cn("flex flex-col gap-3", className)} data-testid="chord-grid-area">
-      <GridToolbar
-        player={player}
-        editing={editing}
-        canEdit={canEdit}
-        changed={changed}
-        saving={saving}
-        choosingLoop={choosingLoop}
-        onLoop={() => (player.looped ? player.loop(null) : setChoosingLoop(choosingLoop ? null : { first: null }))}
-        onEdit={() => {
-          setChoosingLoop(null);
-          setEditing(true);
-        }}
-        onCancel={stopEditing}
-        onSave={() => void save()}
-        lyrics={lyricsChoice}
-      />
+    <div ref={area} className={cn("flex flex-col gap-3", className)} data-testid="chord-grid-area">
+      {editing ? (
+        // Editing: Cancel and Save kept in reach as the bars scroll by.
+        <div className="sticky top-(--grid-sticky-top,0px) z-20 -mx-1 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-card px-2 py-1.5" data-testid="chord-grid-toolbar">
+          <Pencil className="size-4 text-primary" aria-hidden />
+          <span className="mr-auto text-sm font-medium">{t("chordGrid.editing")}</span>
+          <Button type="button" variant="outline" size="sm" onClick={stopEditing} disabled={saving} data-testid="chord-grid-cancel">
+            <X />
+            {t("chordGrid.cancel")}
+          </Button>
+          <Button type="button" size="sm" onClick={() => void save()} disabled={!changed || saving} data-testid="chord-grid-save">
+            <Check />
+            {t("chordGrid.save")}
+          </Button>
+        </div>
+      ) : player.looped || choosingLoop ? (
+        // Looping, or picking the bars to: what's happening, and Stop.
+        <div className="sticky top-(--grid-sticky-top,0px) z-20 -mx-1 flex items-center gap-2 rounded-md border border-amber-500/60 bg-card px-2 py-1.5 text-sm" data-testid="chord-grid-loop-bar">
+          <Repeat className="size-4 text-amber-500" aria-hidden />
+          <span className="mr-auto" data-testid={choosingLoop ? "chord-grid-loop-hint" : "chord-grid-looping"}>
+            {choosingLoop
+              ? choosingLoop.first === null
+                ? t("chordGrid.loopFirst")
+                : t("chordGrid.loopLast", { n: choosingLoop.first + 1 })
+              : t("chordGrid.looping", { first: player.looped!.first + 1, last: player.looped!.last + 1 })}
+          </span>
+          <Button type="button" variant="outline" size="sm" onClick={() => (player.looped ? player.loop(null) : setChoosingLoop(null))} data-testid="chord-grid-loop-stop">
+            <X />
+            {player.looped ? t("chordGrid.stopLoop") : t("chordGrid.cancel")}
+          </Button>
+        </div>
+      ) : null}
       {editing ? (
         <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2 text-sm" data-testid="chord-grid-edit">
           <p className="text-muted-foreground">{picked ? t("chordGrid.pickBeat") : pickedBeat ? t("chordGrid.pickLetter", { n: pickedBeat.beat }) : t("chordGrid.editHint")}</p>
@@ -471,21 +559,19 @@ export function ChordGrid({
             </p>
           ) : null}
         </div>
-      ) : choosingLoop ? (
-        <p className="rounded-md border bg-muted/40 p-2 text-sm text-muted-foreground" data-testid="chord-grid-loop-hint">
-          {choosingLoop.first === null ? t("chordGrid.loopFirst") : t("chordGrid.loopLast", { n: choosingLoop.first + 1 })}
-        </p>
       ) : null}
       <div ref={grid} className="flex flex-col gap-5" data-testid="chord-grid" data-source={source ?? undefined} data-editing={editing ? "" : undefined} data-lyrics={lyrics}>
         {lyrics === "pinned" ? (
           <>
             {/* The row being played, pinned at the top; the words scrolling under it. */}
-            <div className="sticky top-0 z-10 -mx-1 border-b bg-card px-1 pt-1 pb-2" data-testid="chord-grid-pinned">
+            <div className="sticky top-(--grid-sticky-top,0px) z-10 -mx-1 border-b bg-card px-1 pt-1 pb-2" data-testid="chord-grid-pinned">
               {passes.flatMap(({ passIndex, bars: passBars }) =>
                 rowsOf(passBars).map((row) => (
                   <div key={row[0]!.index} className="hidden data-[shown]:block" data-grid-row="" data-bars={row.map((bar) => bar.index).join(" ")}>
                     {passHeading(passIndex)}
-                    <div className="grid grid-cols-2 sm:grid-cols-4">{row.map(gridBar)}</div>
+                    <div className="grid" style={rowStyle(passIndex)}>
+                      {row.map(gridBar)}
+                    </div>
                   </div>
                 )),
               )}
@@ -520,7 +606,9 @@ export function ChordGrid({
                   const pieces = row.flatMap((bar) => wordsOf(bar).map((piece) => ({ ...piece, bar: bar.index })));
                   return (
                     <div key={row[0]!.index}>
-                      <div className="grid grid-cols-2 sm:grid-cols-4">{row.map(gridBar)}</div>
+                      <div className="grid" style={rowStyle(passIndex)}>
+                      {row.map(gridBar)}
+                    </div>
                       {pieces.length > 0 ? (
                         <p className="px-1.5 pt-1 pb-3 text-lg leading-snug text-foreground/70" data-testid="chord-grid-lyric-row">
                           {pieces.map((piece, at) => (
@@ -538,96 +626,14 @@ export function ChordGrid({
                   );
                 })
               ) : (
-                <div className="grid grid-cols-2 gap-y-2 sm:grid-cols-4">{passBars.map(gridBar)}</div>
+                <div className="grid gap-y-2" style={rowStyle(passIndex)} data-testid="chord-grid-bars" data-per-row={perRowOf(passIndex)}>
+                  {passBars.map(gridBar)}
+                </div>
               )}
             </section>
           ))
         )}
       </div>
-    </div>
-  );
-}
-
-/** Play, Loop and Edit bars over the grid; in Edit, Save and Cancel. */
-function GridToolbar({
-  player,
-  editing,
-  canEdit,
-  changed,
-  saving,
-  choosingLoop,
-  onLoop,
-  onEdit,
-  onCancel,
-  onSave,
-  lyrics,
-}: {
-  player: GridPlayer;
-  editing: boolean;
-  canEdit: boolean;
-  changed: boolean;
-  saving: boolean;
-  choosingLoop: { first: number | null } | null;
-  onLoop: () => void;
-  onEdit: () => void;
-  onCancel: () => void;
-  onSave: () => void;
-  /** Where the words are: the device's choice. */
-  lyrics: GridLyrics;
-}) {
-  const { t } = useTranslation();
-  if (editing)
-    return (
-      <div className="flex flex-wrap items-center gap-2" data-testid="chord-grid-toolbar">
-        <span className="mr-auto text-sm font-medium">{t("chordGrid.editing")}</span>
-        <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={saving} data-testid="chord-grid-cancel">
-          <X />
-          {t("chordGrid.cancel")}
-        </Button>
-        <Button type="button" size="sm" onClick={onSave} disabled={!changed || saving} data-testid="chord-grid-save">
-          <Check />
-          {t("chordGrid.save")}
-        </Button>
-      </div>
-    );
-  const label = player.following
-    ? t("bars.followingLeader", { name: player.following })
-    : player.playing
-      ? t("chordGrid.pause")
-      : player.source === "stems"
-        ? t("chordGrid.playRecording")
-        : player.source === "click"
-          ? t("chordGrid.playClick")
-          : t("bars.noTempo");
-  return (
-    <div className="flex flex-wrap items-center gap-2" data-testid="chord-grid-toolbar">
-      <Button type="button" variant="outline" size="sm" onClick={player.toggle} disabled={!player.source && !player.following} aria-pressed={player.playing} data-testid="chord-grid-play">
-        {player.playing ? <Pause /> : <Play />}
-        {label}
-      </Button>
-      {player.canLoop ? (
-        <Button type="button" variant={player.looped || choosingLoop ? "secondary" : "outline"} size="sm" onClick={onLoop} aria-pressed={!!player.looped} data-testid="chord-grid-loop">
-          <Repeat />
-          {player.looped ? t("chordGrid.loopOff", { first: player.looped.first + 1, last: player.looped.last + 1 }) : t("chordGrid.loop")}
-        </Button>
-      ) : null}
-      {player.source && !player.following ? <span className="text-xs text-muted-foreground max-sm:hidden">{t("chordGrid.tapHint")}</span> : null}
-      <label className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-        {t("chordGrid.lyrics")}
-        <NativeSelect compact value={lyrics} onChange={(event) => setGridLyrics(event.target.value as GridLyrics)} data-testid="chord-grid-lyrics-choice">
-          {GRID_LYRICS.map((choice) => (
-            <option key={choice} value={choice}>
-              {t(`chordGrid.lyricsChoice.${choice}`)}
-            </option>
-          ))}
-        </NativeSelect>
-      </label>
-      {canEdit ? (
-        <Button type="button" variant="ghost" size="sm" onClick={onEdit} data-testid="chord-grid-edit-start">
-          <Pencil />
-          {t("chordGrid.edit")}
-        </Button>
-      ) : null}
     </div>
   );
 }
@@ -640,6 +646,7 @@ function GridToolbar({
  */
 function GridBar({
   bar,
+  rowEnd,
   words,
   showWords,
   lines,
@@ -658,6 +665,8 @@ function GridBar({
   chordEvents,
 }: {
   bar: ChartBar;
+  /** The last bar of its row: a bar line at its right too. */
+  rowEnd: boolean;
   /** Where its words are in the lines (`barLyricSpans`); null for none to sing. */
   words: BarLyricSpan[] | null;
   /** Its words in it: not when they're between the rows, under a pinned row, or off. */
@@ -715,7 +724,7 @@ function GridBar({
     <div
       className={cn(
         "relative flex min-w-0 flex-col border-l-2 border-foreground/70 px-1 pt-3.5 pb-1 transition-colors duration-75",
-        "last:border-r-2 max-sm:even:border-r-2 sm:nth-[4n]:border-r-2",
+        rowEnd && "border-r-2",
         "data-[on]:bg-primary/10",
         interactive && "cursor-pointer hover:bg-accent/60",
         looped && "bg-amber-500/10 shadow-[inset_0_-3px_0_0] shadow-amber-500",

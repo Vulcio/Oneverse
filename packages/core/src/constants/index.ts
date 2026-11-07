@@ -116,6 +116,9 @@ export type DisplaySpacingValue = (typeof DISPLAY_SPACINGS)[number];
 /** Columns a chart flows into (issue #177): as many as fit, or 1, 2, 3. */
 export const DISPLAY_COLUMNS = ["auto", "1", "2", "3"] as const;
 export type DisplayColumnsValue = (typeof DISPLAY_COLUMNS)[number];
+/** Bars a row of the chord grid (issue #408): as many as fit their beats, or 1, 2, 4. */
+export const GRID_BARS_PER_ROW = ["auto", "1", "2", "4"] as const;
+export type GridBarsPerRowValue = (typeof GRID_BARS_PER_ROW)[number];
 /** Text size, as a zoom of the chart: its own proportions kept. */
 export const DISPLAY_TEXT_SIZES = [0.75, 0.875, 1, 1.25, 1.5, 1.75, 2, 2.5, 3] as const;
 /** Where Live's controls are (issue #224): a bar along the bottom, round buttons over the chart, or none. */

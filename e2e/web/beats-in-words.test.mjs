@@ -34,6 +34,13 @@ try {
   await signIn(page, me);
   await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
   const grid = () => page.getByTestId("chord-grid");
+  // Loop bars, Edit bars and the words' place are in the Display panel's Grid section (issue #408).
+  const fromDisplay = async (testId) => {
+    await page.getByTestId("display-open").first().click();
+    await page.getByTestId(testId).click();
+    if (await page.getByTestId("display-panel").isVisible()) await page.getByTestId("display-close").click();
+    await page.getByTestId("display-panel").waitFor({ state: "hidden" });
+  };
   const bar = (index) => grid().locator(`[data-grid-bar="${index}"]`);
   const tick = (index, beat) => bar(index).locator(`[data-beat-tick="${beat}"]`);
   const letter = (index, at) => bar(index).locator(`[data-letter][data-at="${at}"]`);
@@ -58,7 +65,7 @@ try {
   });
 
   await step("Edit bars: a number a beat before its letter, a held beat after the one before", async () => {
-    await page.getByTestId("chord-grid-edit-start").click();
+    await fromDisplay("chord-grid-edit-start");
     await page.getByTestId("chord-grid-edit").waitFor();
     if ((await bar(0).locator("[data-beat-tick]").count()) !== 4) throw new Error(`${await bar(0).locator("[data-beat-tick]").count()} beats`);
     if ((await tickAt(0, 2)) !== "8") throw new Error(`beat 2 at ${await tickAt(0, 2)}`);

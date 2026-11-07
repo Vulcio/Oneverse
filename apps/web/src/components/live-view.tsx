@@ -9,6 +9,7 @@ import { PdfPages, ViewSwitch, type ReadingView } from "#/components/chart-or-pd
 import { CommandSearch } from "#/components/command-search";
 import { MetronomeSongButton } from "#/components/metronome";
 import { BarsRow } from "#/components/bars-row";
+import { useGridControls } from "#/lib/grid-controls";
 import { ChordGrid } from "#/components/chord-grid";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
@@ -371,6 +372,8 @@ export function LiveView({
 
   const inSet = song.nextLabel !== null;
   const pdf = song.reading?.shown ?? null;
+  // A chord grid on screen (issue #408): the bars row stays out of its way.
+  const gridOnScreen = !!useGridControls();
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const columns = display.columns;
   const [current, pickPass] = useCurrentPass(scroller, steps, song.id, columns !== "1", () => sections.current[at] ?? null);
@@ -453,7 +456,7 @@ export function LiveView({
       </header>
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, following the music. */}
-      {chart && !pdf && display.bars ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
+      {chart && !pdf && display.bars && (!gridOnScreen || display.gridBarsRow) ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
       {steps.length > 0 && !pdf && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} /> : null}
 
       <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -674,7 +677,7 @@ function LiveSongSection({
           <PdfPages key={pdf.id} source={() => song.reading!.source(pdf)} name={pdf.filename} className="max-sm:-mx-4" />
         ) : chart && song.reading?.grid ? (
           // Its chords in bars (issue #238), following the music as the bars row does.
-          <ChordGrid songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} emptyText={t("sets.noChart")} />
+          <ChordGrid songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} barsPerRow={display.gridBarsPerRow} emptyText={t("sets.noChart")} />
         ) : chart && song.notes ? (
           <LiveChartWithNotes song={song} notes={song.notes} chart={chart} display={display} />
         ) : chart ? (

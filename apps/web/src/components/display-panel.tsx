@@ -44,7 +44,13 @@ import {
   Zap,
   UserRound,
   AudioLines,
+  Grid2x2,
+  Repeat,
+  Pencil,
+  Square,
 } from "lucide-react";
+import { GRID_LYRICS, setGridLyrics, useGridLyrics, type GridLyrics } from "#/lib/grid-lyrics";
+import { useGridControls, type GridControls } from "#/lib/grid-controls";
 import { setTrackColours, setTrackWaves, setTrackZoom, TRACK_ZOOMS, useTrackColours, useTrackWaves, useTrackZoom } from "#/lib/track-colours";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -59,11 +65,11 @@ import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@oneverse/ui/lib/utils";
 
-const SECTIONS = ["text", "chords", "instrument", "layout", "notes", "controls", "tracks"] as const;
+const SECTIONS = ["grid", "text", "chords", "instrument", "layout", "notes", "controls", "tracks"] as const;
 type Section = (typeof SECTIONS)[number];
-const SECTION_ICONS: Record<Section, LucideIcon> = { text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
-/** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390). */
-const sectionsFor = (mode: AppModeValue, tracks: boolean) => SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks));
+const SECTION_ICONS: Record<Section, LucideIcon> = { grid: Grid2x2, text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
+/** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390); the chord grid's, while one is on screen (issue #408). */
+const sectionsFor = (mode: AppModeValue, tracks: boolean, grid: boolean) => SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks) && (one !== "grid" || grid));
 
 const KEY = "songverse.display.section";
 /** From here the panel is a column down the right, every section in it (issue #209). */
@@ -108,9 +114,12 @@ export function DisplayPanel({
 }) {
   const { t } = useTranslation();
   const [kept, setSection] = useState<Section>(keptSection);
-  const sections = sectionsFor(mode, tracks);
-  const section = sections.includes(kept) ? kept : "text";
+  const grid = useGridControls();
+  const sections = sectionsFor(mode, tracks, !!grid);
   const [open, setOpen] = useState(false);
+  // Opened over the chord grid, it shows the grid's section first (issue #408); picked again, another.
+  const [onGrid, setOnGrid] = useState(false);
+  const section = onGrid && grid ? "grid" : sections.includes(kept) ? kept : "text";
   // A large screen has room for a column down the right with every section in it; a phone, the bottom.
   const wide = useMediaQuery(WIDE);
   const shown = (one: Section) => wide || section === one;
@@ -120,6 +129,8 @@ export function DisplayPanel({
   const change = (next: Parameters<typeof changeDisplaySettings>[1]) => changeDisplaySettings(mode, next);
 
   function pick(next: Section) {
+    setOnGrid(false);
+    if (next === "grid") return setOnGrid(true);
     setSection(next);
     try {
       localStorage.setItem(KEY, next);
@@ -129,7 +140,16 @@ export function DisplayPanel({
   }
 
   return (
-    <Drawer modal={false} disablePointerDismissal open={open} onOpenChange={setOpen} swipeDirection={wide ? "right" : "down"}>
+    <Drawer
+      modal={false}
+      disablePointerDismissal
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setOnGrid(!!grid);
+        setOpen(next);
+      }}
+      swipeDirection={wide ? "right" : "down"}
+    >
       <DrawerTrigger
         render={<Button variant="outline" size={compact ? "icon" : "sm"} className={cn(compact && "size-8", className)} />}
         aria-label={t("display.open")}
@@ -166,7 +186,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, gridBarsRow: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -178,6 +198,11 @@ export function DisplayPanel({
           </DrawerClose>
         </div>
         <div className={cn("flex flex-col gap-2 overflow-y-auto px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]", wide && "gap-5 pt-4")}>
+          {grid && shown("grid") ? (
+            <SectionBlock section="grid" heading={wide}>
+              <GridSection settings={settings} grid={grid} onChange={change} onAction={() => (wide ? undefined : setOpen(false))} />
+            </SectionBlock>
+          ) : null}
           {shown("text") ? (
             <SectionBlock section="text" heading={wide}>
               <Row label={t("display.lyricsSize")}>
@@ -413,6 +438,95 @@ export function DisplayPanel({
         </div>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+/**
+ * The chord grid's section (issue #408): its bars a row and its words, the
+ * bars row over it or not, and Loop bars and Edit bars, which close the
+ * drawer on a phone so the bars can be tapped.
+ */
+function GridSection({ settings, grid, onChange, onAction }: { settings: EffectiveDisplaySettings; grid: GridControls; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void; onAction: () => void }) {
+  const { t } = useTranslation();
+  const lyrics = useGridLyrics();
+  return (
+    <>
+      <Row label={t("display.gridBarsPerRow")}>
+        <Choices
+          value={settings.gridBarsPerRow}
+          onChange={(gridBarsPerRow) => onChange({ gridBarsPerRow })}
+          name="gridBarsPerRow"
+          options={[
+            { value: "auto", label: t("display.gridBarsAutoHint"), content: t("display.gridBarsAuto") },
+            { value: "1", label: t("display.gridBarsCount", { count: 1 }), content: "1" },
+            { value: "2", label: t("display.gridBarsCount", { count: 2 }), content: "2" },
+            { value: "4", label: t("display.gridBarsCount", { count: 4 }), content: "4" },
+          ]}
+        />
+      </Row>
+      <Row label={t("chordGrid.lyrics")}>
+        <Choices<GridLyrics>
+          value={lyrics}
+          onChange={setGridLyrics}
+          name="gridLyrics"
+          options={GRID_LYRICS.map((choice) => ({ value: choice, label: t(`chordGrid.lyricsChoice.${choice}`), content: t(`display.gridLyricsShort.${choice}`) }))}
+        />
+      </Row>
+      <Row label={t("display.gridBarsRow")}>
+        <Choices
+          value={settings.gridBarsRow ? "shown" : "hidden"}
+          onChange={(value) => onChange({ gridBarsRow: value === "shown" })}
+          name="gridBarsRow"
+          options={[
+            { value: "shown", label: t("display.barsShown"), content: <Eye /> },
+            { value: "hidden", label: t("display.barsHidden"), content: <EyeOff /> },
+          ]}
+        />
+      </Row>
+      {grid.canLoop || grid.looped || grid.canEdit ? (
+        <div className="mt-1 grid grid-cols-2 gap-2 border-t pt-2">
+          {grid.canLoop || grid.looped ? (
+            <Button
+              type="button"
+              variant={grid.looped || grid.choosingLoop ? "secondary" : "outline"}
+              className="h-auto flex-col items-start gap-0 py-1.5 text-left whitespace-normal"
+              aria-pressed={!!grid.looped}
+              onClick={() => {
+                grid.loop();
+                if (!grid.looped && !grid.choosingLoop) onAction();
+              }}
+              data-testid="chord-grid-loop"
+            >
+              <span className="flex items-center gap-1.5">
+                {grid.looped ? <Square /> : <Repeat />}
+                {grid.looped ? t("chordGrid.stopLoop") : t("chordGrid.loop")}
+              </span>
+              <span className="text-[11px] font-normal text-muted-foreground">{grid.looped ? t("chordGrid.looping", { first: grid.looped.first + 1, last: grid.looped.last + 1 }) : t("chordGrid.loopHint")}</span>
+            </Button>
+          ) : null}
+          {grid.canEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto flex-col items-start gap-0 py-1.5 text-left whitespace-normal"
+              disabled={grid.editing}
+              onClick={() => {
+                grid.edit();
+                onAction();
+              }}
+              data-testid="chord-grid-edit-start"
+            >
+              <span className="flex items-center gap-1.5">
+                <Pencil />
+                {t("chordGrid.edit")}
+              </span>
+              <span className="text-[11px] font-normal text-muted-foreground">{t("chordGrid.editShort")}</span>
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="text-xs text-muted-foreground">{t("chordGrid.tapHint")}</p>
+    </>
   );
 }
 

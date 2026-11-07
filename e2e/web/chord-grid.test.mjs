@@ -23,6 +23,13 @@ try {
   await signIn(page, me);
   await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
   const grid = () => page.getByTestId("chord-grid");
+  // Loop bars, Edit bars and the words' place are in the Display panel's Grid section (issue #408).
+  const fromDisplay = async (testId) => {
+    await page.getByTestId("display-open").first().click();
+    await page.getByTestId(testId).click();
+    if (await page.getByTestId("display-panel").isVisible()) await page.getByTestId("display-close").click();
+    await page.getByTestId("display-panel").waitFor({ state: "hidden" });
+  };
 
   await step("Practice: Grid shows the bars, four a row, the chords where they change and the words under them", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
@@ -48,6 +55,34 @@ try {
     const tops = await bars.evaluateAll((all) => all.slice(0, 5).map((el) => Math.round(el.getBoundingClientRect().top)));
     if (new Set(tops.slice(0, 4)).size !== 1 || tops[4] <= tops[0]) throw new Error(`rows: ${tops}`);
     await grid().screenshot({ path: `${SP}/chord-grid.png` });
+  });
+
+  await step("Grid for 1.0 (issue #408): no bars row over the grid, no toolbar, bars a row that fit a phone", async () => {
+    // The bars row repeats the grid: not shown while the grid is, back with the chart.
+    if (await page.getByTestId("bars-row").count()) throw new Error("the bars row shows over the grid");
+    if (await page.getByTestId("chord-grid-toolbar").count()) throw new Error("the grid still has its toolbar");
+    await page.getByTestId("chart-view-chart").click();
+    await page.getByTestId("bars-row").waitFor();
+    await page.getByTestId("chart-view-grid").click();
+    await page.getByTestId("bars-row").waitFor({ state: "detached" });
+    // The Display panel opens on the grid's section; the bars row brought back from there.
+    await fromDisplay("display-gridBarsRow-shown");
+    await page.getByTestId("bars-row").waitFor();
+    await fromDisplay("display-gridBarsRow-hidden");
+    await page.getByTestId("bars-row").waitFor({ state: "detached" });
+    // A phone in portrait: one 4/4 bar a row in Practice; two when asked.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('[data-testid="chord-grid-bars"][data-per-row="1"]').first().waitFor();
+    await page.getByTestId("display-open").first().click();
+    if ((await page.getByTestId("display-section").innerText()).trim() !== "Grid") throw new Error(`the panel opened on ${await page.getByTestId("display-section").innerText()}`);
+    await page.getByTestId("display-gridBarsPerRow-2").click();
+    await page.getByTestId("display-close").click();
+    await page.locator('[data-testid="chord-grid-bars"][data-per-row="2"]').first().waitFor();
+    await page.screenshot({ path: `${SP}/chord-grid-phone.png` });
+    await fromDisplay("display-gridBarsPerRow-auto");
+    await page.locator('[data-testid="chord-grid-bars"][data-per-row="1"]').first().waitFor();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.locator('[data-testid="chord-grid-bars"][data-per-row="4"]').first().waitFor();
   });
 
   await step("the choice is kept for the song: the grid again after a reload", async () => {
@@ -79,7 +114,7 @@ try {
 
   // Where the words go (issue #376): in the bars, between the rows, under a pinned row, or off - kept on the device.
   const lyricsAs = async (choice) => {
-    await page.getByTestId("chord-grid-lyrics-choice").selectOption(choice);
+    await fromDisplay(`display-gridLyrics-${choice}`);
     await page.locator(`[data-testid="chord-grid"][data-lyrics="${choice}"]`).waitFor();
   };
   const playClick = async () => {

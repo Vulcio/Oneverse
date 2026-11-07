@@ -8,6 +8,7 @@ import type {
   DiagramPositionValue,
   LiveControlValue,
   DisplayColumnsValue,
+  GridBarsPerRowValue,
   DisplayFontValue,
   DisplaySpacingValue,
 } from "../constants/index.js";
@@ -40,6 +41,10 @@ export interface EffectiveDisplaySettings {
   hideChords: boolean;
   /** The bars row at the top (issue #238): the chords in bars and beats, following the metronome or the recording; on unless turned off. */
   bars: boolean;
+  /** The chord grid's bars a row (issue #408): as many as fit their beats unless set. */
+  gridBarsPerRow: GridBarsPerRowValue;
+  /** The bars row kept while the chord grid is shown (issue #408): off unless turned on, the grid being the same bars. */
+  gridBarsRow: boolean;
   /** Live's controls (issue #224): a footer, floating buttons or none; which are hidden; floating ones' opacity. */
   controls: ControlsLayoutValue;
   controlsPosition: ControlsPositionValue;
@@ -99,6 +104,8 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     diagramsPosition: own.diagramsPosition ?? "top",
     hideChords: own.hideChords ?? false,
     bars: own.bars ?? true,
+    gridBarsPerRow: own.gridBarsPerRow ?? "auto",
+    gridBarsRow: own.gridBarsRow ?? false,
     controls: own.controls ?? "footer",
     controlsPosition: own.controlsPosition ?? "bottom-right",
     hiddenControls: own.hiddenControls ?? [],

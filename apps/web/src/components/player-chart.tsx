@@ -128,7 +128,7 @@ export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistS
       {notes.top}
       <div ref={chartArea} style={{ zoom: display.textSize }}>
         {grid ? (
-          <ChordGrid songId={song.id} chart={chart} document={song.document} chordColors={display.chordColors} emptyText={t("sets.noChart")} />
+          <ChordGrid songId={song.id} chart={chart} document={song.document} chordColors={display.chordColors} barsPerRow={display.gridBarsPerRow} emptyText={t("sets.noChart")} />
         ) : (
           <ChartWithDiagrams
             notes={notes.layer}
