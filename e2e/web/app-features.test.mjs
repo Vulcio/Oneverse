@@ -132,7 +132,8 @@ await step("…words become a new song too, and a Songverse link opens its page"
 await step("opened with Songverse on a computer: the file is offered the same way", async () => {
   const opened = await context.newPage();
   await opened.addInitScript(() => {
-    window.launchQueue = { setConsumer: (consumer) => void (window.__launch = consumer) };
+    // Chromium has its own launchQueue, read-only: this one in its place.
+    Object.defineProperty(window, "launchQueue", { configurable: true, value: { setConsumer: (consumer) => void (window.__launch = consumer) } });
   });
   await opened.goto(`${WEB}/import`);
   await opened.getByTestId("import-nothing").waitFor();
