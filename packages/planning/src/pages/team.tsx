@@ -336,6 +336,7 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
 
       {isAdmin ? (
         <InviteLinksCard
+          name={team.name}
           links={inviteLinks}
           description={t("teams.inviteLinksDescription")}
           path={(token) => `/join/${token}`}

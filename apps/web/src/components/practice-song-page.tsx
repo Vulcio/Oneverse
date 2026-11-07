@@ -4,7 +4,7 @@ import { Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-r
 import { PresenceChip } from "#/components/presence";
 import { useSongPresence, watchSong } from "#/lib/live-notes";
 import { TempoControl } from "#/components/tempo-control";
-import { ChevronDown, ListPlus, Metronome, Mic, MoreHorizontal, Pencil, RefreshCw } from "lucide-react";
+import { ChevronDown, ListPlus, Metronome, Mic, MoreHorizontal, Pencil, RefreshCw, Share } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { startMetronome, stopMetronome, useMetronome } from "#/lib/metronome-engine";
@@ -26,6 +26,7 @@ import { songPlaybackStore } from "#/lib/playback";
 import { apiClient } from "#/lib/api-client";
 import { fileLoader } from "#/lib/song-files";
 import { artistNames } from "#/lib/artists";
+import { shareLink, useCanShareLink } from "@oneverse/ui/lib/share";
 import { setMode } from "#/lib/mode";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
@@ -146,6 +147,7 @@ export function PracticeSongPage({
   // The More menu's Add to set opens its list by the menu.
   const more = useRef<HTMLButtonElement>(null);
   const [addingToSet, setAddingToSet] = useState(false);
+  const canShare = useCanShareLink();
   // The line sung as the stems or the click play (issue #365): read along, while recording a part too.
   const chartArea = useRef<HTMLDivElement>(null);
   useSungLine(chartArea, version.id, chart, version.documentJson);
@@ -198,6 +200,13 @@ export function PracticeSongPage({
                   <Mic />
                   {t("live.start")}
                 </DropdownMenuItem>
+                {/* The device's share sheet (issue #407): the song's address, for those who can open it. */}
+                {canShare ? (
+                  <DropdownMenuItem onClick={() => void shareLink({ title: version.title, url: `${window.location.origin}/library/${version.id}` })} data-testid="practice-menu-share">
+                    <Share />
+                    {t("common.share")}
+                  </DropdownMenuItem>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
             <AddToSetPopover songVersionId={version.id} songTitle={version.title} open={addingToSet} onOpenChange={setAddingToSet} anchor={more} />

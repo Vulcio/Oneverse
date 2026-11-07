@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { ShareButton } from "@oneverse/ui/components/share-button";
 
 /**
  * A team's or an organisation's invite links (issue #241), for its admins:
  * made with a role, an expiry and a number of uses, copied, revoked.
  */
 export function InviteLinksCard({
+  name,
   links,
   description,
   path,
@@ -20,6 +22,8 @@ export function InviteLinksCard({
   onChanged,
   onError,
 }: {
+  /** The team's or organisation's: the title of a link shared through the device's share sheet (issue #407). */
+  name: string;
   links: TeamInviteLink[];
   description: string;
   /** Where a link leads, from its token: "/join/abc". */
@@ -114,6 +118,7 @@ export function InviteLinksCard({
                   <Button variant="outline" size="sm" onClick={() => void navigator.clipboard.writeText(url(link.token))}>
                     {t("teams.copyLink")}
                   </Button>
+                  <ShareButton size="sm" link={{ title: name, url: url(link.token) }} label={t("common.share")} />
                   <Button variant="ghost" size="sm" onClick={() => void revoke(link.id)} disabled={busyLinkId === link.id}>
                     {t("teams.revoke")}
                   </Button>

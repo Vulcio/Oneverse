@@ -265,6 +265,7 @@ export function OrganizationPage({
               </CardContent>
             </Card>
             <InviteLinksCard
+              name={organization.name}
               links={inviteLinks}
               description={t("organizations.inviteLinksDescription")}
               path={(token) => `/join-organization/${token}`}

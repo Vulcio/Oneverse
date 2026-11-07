@@ -207,7 +207,7 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
               </div>
             </CardContent>
           </Card>
-          <ShareCard setlistId={set.id} />
+          <ShareCard setlistId={set.id} title={setlistTitle(set, t, i18n.language)} />
           <DetailsCard
             set={set}
             teams={teams}

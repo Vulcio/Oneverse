@@ -6,12 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@oneverse/ui/components/ava
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Input } from "@oneverse/ui/components/input";
+import { ShareButton } from "@oneverse/ui/components/share-button";
 import { apiClient } from "#/lib/api-client";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 
 /** Share link and guest list, for the set's editors. */
-export function ShareCard({ setlistId }: { setlistId: string }) {
+export function ShareCard({ setlistId, title }: { setlistId: string; title: string }) {
   const { t } = useTranslation();
   const [sharing, setSharing] = useState<SetlistSharing | null>(null);
   const [pending, setPending] = useState(false);
@@ -65,6 +66,7 @@ export function ShareCard({ setlistId }: { setlistId: string }) {
                 {copied ? <Check /> : <Copy />}
                 {copied ? t("sets.copied") : t("sets.copyLink")}
               </Button>
+              <ShareButton link={{ title, url }} label={t("common.share")} />
             </div>
             <p className="text-xs text-muted-foreground">{t("sets.resetLinkHint")}</p>
             <div className="flex flex-wrap gap-2">
