@@ -2,7 +2,7 @@ import { chordFamily, formatChord, parseChord, simplifyChord, transposeChord, ty
 import { passEdited, passLines } from "./pass.js";
 import type { ChordNotationValue } from "../constants/index.js";
 import { transposeKey } from "../music-keys/transpose.js";
-import { beatsPerTempoUnit, defaultTempoUnit, type BeatLevel, type TempoUnit } from "../metronome/index.js";
+import { type BeatLevel, type TempoUnit } from "../metronome/index.js";
 import {
   ArrangementDocumentV2Schema,
   placeChords,
@@ -12,6 +12,7 @@ import {
 } from "../schemas/arrangement-document-v2.js";
 import type { LineKind, SectionInstance, SectionV2, SongDocumentV2 } from "../schemas/song-document-v2.js";
 import { sectionNumbers } from "./section-names.js";
+import { barSeconds, chartBars } from "./bars.js";
 
 /**
  * A chart as it's drawn: the song, played the way an arrangement says (or
@@ -279,27 +280,15 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
   };
 }
 
-/** The tempo assumed when a song has none, and the bars a sung line usually takes. */
-const DEFAULT_TEMPO = 90;
-const BARS_PER_LINE = 2;
-
 /**
  * How long a chart takes to play, in seconds, to pace autoscroll: the
- * song's own duration when it has one, or else two bars a line at each
- * pass's tempo (notes, which aren't sung, take no time).
+ * song's own duration when it has one, or else its bars at each pass's
+ * tempo (`barSeconds`, issue #414) - the bars its sections place, or two a
+ * sung line, a bar a chord (notes, which aren't sung, take no time).
  */
-export function chartSeconds(chart: RenderedChart, durationSeconds?: number | null): number {
+export function chartSeconds(chart: RenderedChart, durationSeconds?: number | null, song?: Pick<SongDocumentV2, "sections"> | null): number {
   if (durationSeconds && durationSeconds > 0) return durationSeconds;
-  const beatsPerBar = chart.timeSignature?.numerator ?? 4;
-  // The tempo counts its own note (issue #377): a dotted quarter is three of 6/8's beats.
-  const signature = chart.timeSignature ?? { numerator: 4, denominator: 4 };
-  const beatsPerTempo = beatsPerTempoUnit(chart.tempoUnit ?? defaultTempoUnit(signature), signature.denominator);
-  let seconds = 0;
-  for (const pass of chart.passes) {
-    const lines = pass.lines.filter((line) => line.kind !== "note").length;
-    seconds += (lines * BARS_PER_LINE * beatsPerBar * 60) / ((pass.tempo ?? DEFAULT_TEMPO) * beatsPerTempo);
-  }
-  return seconds;
+  return barSeconds(chart, chartBars(chart, song)).reduce((sum, one) => sum + one, 0);
 }
 
 /** A new arrangement of `song`: its order as the song's flow, nothing changed yet. */

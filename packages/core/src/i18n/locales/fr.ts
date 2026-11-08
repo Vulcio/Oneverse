@@ -3790,6 +3790,8 @@ const fr: typeof en = {
     nextHidden: "Chant suivant",
     endOfSet: "Fin de la liste",
     autoscroll: "Défilement",
+    withTheMusic: "Avec la musique",
+    lengthGuessed: "Calculée d'après le tempo : renseignez la Durée du chant dans Modifier",
     play: "Lancer le défilement",
     pause: "Mettre le défilement en pause",
     slower: "Plus lent",

@@ -13,7 +13,7 @@ import { arrangementFromChart, mapChartIds, remapArrangement } from "../song-doc
 import type { SectionType } from "../constants/index.js";
 import { isPlainLabel, passName, sectionNumbers, withoutPlainLabels } from "../song-document/section-names.js";
 import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-document/render.js";
-import { barAt, barBeatPlaces, barLyrics, beatPlaceRange, chartBars, lineAtPosition, recordingBeatPosition, recordingSecondsAt } from "../song-document/bars.js";
+import { barAt, barBeatPlaces, barLyrics, barSeconds, beatPlaceRange, chartBars, lineAtPosition, positionAtSeconds, recordingBeatPosition, recordingSecondsAt, scrollStops, secondsAtPosition } from "../song-document/bars.js";
 import { barLinesFromRhythm, rhythmFromBarLines, suggestedBarLines } from "../song-document/bar-lines.js";
 import { editableRhythm, insertRhythmBar, keepPlacedBeats, moveRhythmChord, placeRhythmBeat, removeRhythmBar, setRhythmBarBeats } from "../song-document/rhythm-edit.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
@@ -1409,12 +1409,61 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       chartSeconds: {
-        about: "How long the chart lasts, for autoscroll: the song's duration, or worked out from its tempo.",
+        about: "How long the chart lasts, for autoscroll: the song's duration, or its bars at each pass's tempo (issue #414).",
         params: ["song", "durationSeconds"],
-        run: (song: unknown, duration: number | null) => chartSeconds(renderChart(read(song)), duration),
+        run: (song: unknown, duration: number | null) => {
+          const doc = read(song);
+          return chartSeconds(renderChart(doc), duration, doc);
+        },
         cases: [
           { name: "a duration given", args: [SONG, 200] },
           { name: "none given", args: [SONG, null] },
+          { name: "none given, a section's own rhythm and a 3/4 pass", args: [BARS_SONG, null] },
+        ],
+      },
+      barSeconds: {
+        about:
+          "How long each bar lasts, in seconds, to pace autoscroll (issue #414): its beats at its pass's tempo (90 BPM without one), the tempo counting its own note, the whole stretched to the song's duration when it has one.",
+        params: ["song", "durationSeconds"],
+        run: (song: unknown, duration: number | null) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          return barSeconds(chart, chartBars(chart, doc), duration);
+        },
+        cases: [
+          { name: "at the tempo", args: [SONG, null] },
+          { name: "stretched to a duration", args: [SONG, 200] },
+          { name: "a section's own rhythm and a 3/4 pass", args: [BARS_SONG, null] },
+        ],
+      },
+      positionAtSeconds: {
+        about: "Where autoscroll is, in beats from the song's start, some seconds into it (issue #414): 0 before, the song's length past its end; secondsAtPosition goes back.",
+        params: ["song", "durationSeconds", "seconds"],
+        run: (song: unknown, duration: number | null, at: number) => {
+          const doc = read(song);
+          const chart = renderChart(doc);
+          const bars = chartBars(chart, doc);
+          const seconds = barSeconds(chart, bars, duration);
+          const position = positionAtSeconds(bars, seconds, at);
+          return { position, back: secondsAtPosition(bars, seconds, position) };
+        },
+        cases: [
+          { name: "the start", args: [SONG, 200, 0] },
+          { name: "partway", args: [SONG, 200, 37.5] },
+          { name: "past the end", args: [SONG, 200, 1000] },
+          { name: "in the 3/4 pass, at its tempo", args: [BARS_SONG, null, 15] },
+        ],
+      },
+      scrollStops: {
+        about: "The song's bars as the lines they're played under, in order (issue #414): what autoscroll keeps in view in turn - a line's bars, or a pass's bars without words.",
+        params: ["song"],
+        run: (song: unknown) => {
+          const doc = read(song);
+          return scrollStops(chartBars(renderChart(doc), doc));
+        },
+        cases: [
+          { name: "filled in from the chart", args: [SONG] },
+          { name: "a section's own rhythm, an intro of chords alone", args: [BARS_SONG] },
         ],
       },
     },

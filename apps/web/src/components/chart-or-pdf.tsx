@@ -208,6 +208,7 @@ export function ChartOrPdf({
   store,
   grid,
   tracks,
+  overlay,
   children,
 }: {
   songVersionId: string;
@@ -218,6 +219,8 @@ export function ChartOrPdf({
   grid?: ReactNode;
   /** Its parts as lanes (issue #374), where the song has stems. */
   tracks?: ReactNode;
+  /** Shown with the chart, the grid or the PDF, not with the tracks: Practice's autoscroll (issue #414). */
+  overlay?: ReactNode;
   children: ReactNode;
 }) {
   const reading = useReadingView(songVersionId, attachments, defaultView, store);
@@ -238,6 +241,7 @@ export function ChartOrPdf({
         <span ref={setAside} className="ml-auto flex items-center" />
       </div>
       {/* On a phone, out to the screen's edges (the page's gutter, --gutter). */}
+      {tracks && onTracks ? null : overlay}
       {tracks && onTracks ? <ViewSwitchAside.Provider value={aside}>{tracks}</ViewSwitchAside.Provider> : shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : reading.grid && grid ? grid : children}
     </div>
   );

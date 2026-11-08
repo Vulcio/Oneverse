@@ -3787,6 +3787,8 @@ const en = {
     nextHidden: "Next song",
     endOfSet: "End of the set",
     autoscroll: "Autoscroll",
+    withTheMusic: "With the music",
+    lengthGuessed: "Worked out from the tempo: give the song its Length in Edit",
     play: "Start scrolling",
     pause: "Pause scrolling",
     slower: "Slower",
