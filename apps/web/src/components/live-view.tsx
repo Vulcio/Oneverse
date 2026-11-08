@@ -456,7 +456,7 @@ export function LiveView({
       </header>
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, following the music. */}
-      {chart && !pdf && display.bars && (!gridOnScreen || display.gridBarsRow) ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
+      {chart && !pdf && display.bars && !gridOnScreen ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
       {steps.length > 0 && !pdf && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} /> : null}
 
       <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>

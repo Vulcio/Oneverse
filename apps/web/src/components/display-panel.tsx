@@ -186,7 +186,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, gridBarsRow: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -442,8 +442,8 @@ export function DisplayPanel({
 }
 
 /**
- * The chord grid's section (issue #408): its bars a row and its words, the
- * bars row over it or not, and Loop bars and Edit bars, which close the
+ * The chord grid's section (issue #408): its bars a row and its words, and
+ * Loop bars and Edit bars, which close the
  * drawer on a phone so the bars can be tapped.
  */
 function GridSection({ settings, grid, onChange, onAction }: { settings: EffectiveDisplaySettings; grid: GridControls; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void; onAction: () => void }) {
@@ -470,17 +470,6 @@ function GridSection({ settings, grid, onChange, onAction }: { settings: Effecti
           onChange={setGridLyrics}
           name="gridLyrics"
           options={GRID_LYRICS.map((choice) => ({ value: choice, label: t(`chordGrid.lyricsChoice.${choice}`), content: t(`display.gridLyricsShort.${choice}`) }))}
-        />
-      </Row>
-      <Row label={t("display.gridBarsRow")}>
-        <Choices
-          value={settings.gridBarsRow ? "shown" : "hidden"}
-          onChange={(value) => onChange({ gridBarsRow: value === "shown" })}
-          name="gridBarsRow"
-          options={[
-            { value: "shown", label: t("display.barsShown"), content: <Eye /> },
-            { value: "hidden", label: t("display.barsHidden"), content: <EyeOff /> },
-          ]}
         />
       </Row>
       {grid.canLoop || grid.looped || grid.canEdit ? (

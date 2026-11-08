@@ -53,7 +53,7 @@ En haut d'un chant, en Session et en Live, la **ligne des mesures** place les ac
 
 Les mesures viennent des [barres de mesure](/fr/song-editor/#les-barres-de-mesure) de la grille quand elle en a. Sinon de ses accords : chaque accord a une mesure, et une ligne chantée en prend au moins deux (une ligne à un seul accord le garde une deuxième mesure). Les lignes d'accords seuls (une intro) prennent une mesure par accord, et les notes aucune. Chaque mesure a autant de temps que l'indique la mesure du chant, et une section peut avoir sa propre mesure dans l'ordre du chant.
 
-**Affichage** > **Accords** > **Mesures** la masque, séparément en Session et en Live (voir [Affichage](/fr/display/)). Quand les [mesures](#grille-en-mesures) s'affichent, la ligne des mesures ne s'affiche pas, puisqu'elles ont les mêmes mesures : **Affichage** > **Mesures** > **Ligne du haut** la fait revenir.
+**Affichage** > **Accords** > **Mesures** la masque, séparément en Session et en Live (voir [Affichage](/fr/display/)). Quand les [mesures](#grille-en-mesures) s'affichent, la ligne des mesures ne s'affiche pas, puisqu'elles ont les mêmes mesures.
 
 La partition suit aussi, en Session et sur la page d'un chant dans une liste : pendant que la musique joue, la ligne chantée s'allume un temps à l'avance et reste visible, au-dessus du lecteur. Les paroles sont calées sur les temps tels qu'ils sont [placés dans les paroles](/fr/metronome/#placer-les-temps-dans-les-paroles), sinon réparties sur leurs mesures. Si vous faites défiler vous-même, elle attend quelques secondes avant de suivre à nouveau.
 
@@ -76,7 +76,7 @@ Les réglages des mesures sont dans **Affichage**, qui s'ouvre sur sa section **
 
 - **Dans les mesures** : chaque mesure a dessous les paroles chantées dedans, comme ci-dessus.
 - **Entre les lignes** : chaque ligne de mesures a ses paroles en une ligne dessous, plus facile à lire. Les paroles de la mesure jouée deviennent foncées.
-- **Sous une ligne fixe** : la ligne de mesures jouée reste en haut, et les paroles du chant défilent dessous en grand, la ligne chantée allumée.
+- **Fixées en bas** (**Fixe**) : les mesures gardent la page, sans paroles dedans, et deux lignes restent en bas : la ligne chantée, et la suivante dessous en gris.
 - **Masquées** : seulement les mesures.
 
 ![Les mesures avec les paroles entre les lignes](../../../assets/screenshots/fr/chord-grid-lyrics.jpg)

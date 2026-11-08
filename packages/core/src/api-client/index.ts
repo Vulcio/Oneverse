@@ -649,9 +649,8 @@ export interface DisplaySettings {
   hideChords?: boolean;
   /** The bars row at the top (issue #238): the chords in bars and beats, following the music. */
   bars?: boolean;
-  /** The chord grid (issue #408): bars a row, and the bars row kept over it. */
+  /** The chord grid's bars a row (issue #408). */
   gridBarsPerRow?: GridBarsPerRowValue;
-  gridBarsRow?: boolean;
   /** Live's controls (issue #224). */
   controls?: ControlsLayoutValue;
   controlsPosition?: ControlsPositionValue;

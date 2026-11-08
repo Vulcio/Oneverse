@@ -2,8 +2,8 @@ import { useSyncExternalStore } from "react";
 
 /**
  * Where the chord grid shows the words (issue #376): in each bar (as it
- * always did), as a line between its rows, scrolling under a row of bars
- * pinned at the top, or not at all. Chosen on the device, for every song.
+ * always did), as a line between its rows, two lines pinned at the bottom
+ * (the one being sung and the next, issue #408), or not at all. Chosen on the device, for every song.
  */
 export type GridLyrics = "bars" | "between" | "pinned" | "off";
 

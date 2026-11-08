@@ -235,8 +235,8 @@ export function PracticeSongPage({
       </div>
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls - under the header (h-14), never behind it. */}
-      {/* Not over the chord grid (issue #408): it shows the same bars, unless asked. */}
-      {display.bars && (!gridOnScreen || display.gridBarsRow) ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
+      {/* Not over the chord grid (issue #408): it shows the same bars. */}
+      {display.bars && !gridOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
 
       {/* The chart, its chord grid (issue #238) or its PDF (issue #152). */}
       <ChartOrPdf
@@ -248,8 +248,8 @@ export function PracticeSongPage({
         tracks={hasTracks ? <TracksView songVersionId={version.id} chart={chart} document={version.documentJson} attachments={attachments} cueSections={cueSections.sections} /> : undefined}
         grid={
           <Card>
-            {/* What the grid keeps in view as it scrolls goes under the page's header (h-14), in the zoomed grid's own pixels. */}
-            <CardContent style={{ zoom: display.textSize, ["--grid-sticky-top" as string]: `calc(3.5rem / ${display.textSize})` }}>
+            {/* What the grid keeps in view as it scrolls goes under the page's header (h-14) and over the docked player, in the zoomed grid's own pixels. */}
+            <CardContent style={{ zoom: display.textSize, ["--grid-sticky-top" as string]: `calc(3.5rem / ${display.textSize})`, ["--grid-sticky-bottom" as string]: `calc(var(--stem-dock-height, 0px) / ${display.textSize})` }}>
               <ChordGrid
                 songId={version.id}
                 chart={chart}
