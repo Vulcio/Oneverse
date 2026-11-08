@@ -1,7 +1,7 @@
-import { beatTempoUnit, metronomeForSong, type MetronomeSettings } from "@oneverse/core";
+import { beatTempoUnit, clicksBetween, metronomeForSong, secondsPerBeat, type MetronomeClick, type MetronomeSettings } from "@oneverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { getMetronomeState, ownMetronomeSettings, playMetronomeOn, stopMetronome, useMetronome } from "#/lib/metronome-engine";
-import { isAudible, useStems } from "#/lib/stem-engine";
+import { isAudible, useStems, type StemState } from "#/lib/stem-engine";
 
 /**
  * The metronome with the recording (issue #100): while it's on, the
@@ -27,6 +27,27 @@ export function recordingClickPlan(settings: MetronomeSettings, beat: { tempo: n
   const bar = (60 / beat.tempo) * settings.numerator;
   const bars = beat.firstBeat > 0 ? Math.ceil(beat.firstBeat / bar - 1e-6) : 0;
   return { settings: { ...settings, countIn: 0 }, anchorPosition: bars * settings.numerator };
+}
+
+/** The player's metronome on the recording's beat: their sound and pattern, the recording's tempo (times `speed`) and time signature, the version's pattern first. */
+export function recordingClickSettings(own: MetronomeSettings, beat: NonNullable<StemState["beat"]>, speed = 1): MetronomeSettings {
+  // A recording's tempo counts its time signature's beats (issue #377).
+  return metronomeForSong(own, { tempo: beat.tempo * speed, tempoUnit: beatTempoUnit(beat.timeSignature?.denominator ?? own.denominator), timeSignature: beat.timeSignature, beats: beat.metronomeBeats });
+}
+
+/**
+ * The clicks the metronome plays with the recording from `from` to `to`
+ * (s, in the recording's time), at the level each sounds (issue #410: the
+ * Tracks view's metronome lane): the plan above, its first beat on the
+ * recording's.
+ */
+export function recordingClicksBetween(own: MetronomeSettings, beat: NonNullable<StemState["beat"]>, from: number, to: number): { at: number; level: MetronomeClick["level"]; countIn: boolean }[] {
+  const plan = recordingClickPlan(recordingClickSettings(own, beat), beat);
+  const each = secondsPerBeat(plan.settings);
+  if (!(each > 0)) return [];
+  // Beat `anchorPosition` falls on the first beat.
+  const start = beat.firstBeat - plan.anchorPosition * each;
+  return clicksBetween(plan.settings, Math.max(0, (from - start) / each), (to - start) / each).map((click) => ({ at: start + click.position * each, level: click.level, countIn: click.countIn }));
 }
 
 let on = false;
@@ -74,10 +95,8 @@ export function useRecordingClickBridge() {
       if (getMetronomeState().playing) stopMetronome();
       return;
     }
-    // Slower or faster (issue #139): the beat at the speed the stems play. A recording's tempo counts its time signature's beats (issue #377).
-    const mine = ownMetronomeSettings();
-    const own = metronomeForSong(mine, { tempo: beat.tempo * speed, tempoUnit: beatTempoUnit(beat.timeSignature?.denominator ?? mine.denominator), timeSignature: beat.timeSignature, beats: beat.metronomeBeats });
-    const plan = recordingClickPlan(own, beat);
+    // Slower or faster (issue #139): the beat at the speed the stems play.
+    const plan = recordingClickPlan(recordingClickSettings(ownMetronomeSettings(), beat, speed), beat);
     playMetronomeOn({
       settings: plan.settings,
       playing: true,

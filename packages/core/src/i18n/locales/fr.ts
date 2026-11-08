@@ -1090,6 +1090,7 @@ const fr: typeof en = {
     take: "Enregistrement",
     colours: "Une couleur par partie",
     lines: "Lignes fines",
+    metronome: "Métronome",
   },
   chartView: {
     label: "Afficher la grille, les mesures, un PDF ou les pistes",

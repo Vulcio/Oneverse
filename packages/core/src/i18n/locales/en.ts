@@ -1090,6 +1090,7 @@ const en = {
     take: "Recording",
     colours: "A colour per part",
     lines: "Thin lines",
+    metronome: "Metronome",
   },
   chartView: {
     label: "Read as the chart, the chord grid, a PDF or the tracks",
