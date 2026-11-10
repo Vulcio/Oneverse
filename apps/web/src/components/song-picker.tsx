@@ -101,7 +101,8 @@ export function SongPicker({ onPick, placeholder, query: givenQuery, onQueryChan
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={placeholder}
-          aria-label={placeholder}
+          // With an `id`, the page's own <Label> names the field.
+          aria-label={id ? undefined : placeholder}
           autoFocus={autoFocus}
           disabled={disabled}
           data-testid={testIds?.input}

@@ -18,7 +18,7 @@ await step("adding one's own song asks, then shares it with the team", async () 
   await page.goto(`${WEB}/songbooks/${book.id}`);
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Add a song").fill(`Mine ${stamp}`);
-  await page.getByRole("button", { name: `Mine ${stamp}` }).click();
+  await page.getByRole("option", { name: new RegExp(`Mine ${stamp}`) }).click();
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await page.getByTestId("songbook-team-access").waitFor();
   await page.getByTestId("songbook-team-access-share").click();
