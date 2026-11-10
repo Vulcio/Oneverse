@@ -1,8 +1,7 @@
 import { foldSearchWords, formatSongbookReference, partialEntryDigits, SONGBOOK_HIT_LIMITS, type LyricsMatch, type SongbookEntryHit } from "@oneverse/core";
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { useNavigate, useRouteContext, useRouter, useRouterState } from "@tanstack/react-router";
 import { BookOpen, Hash, ListEnd, ListMusic, ListPlus, Music, Quote, Search, Users, type LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { useInLyrics } from "#/lib/lyrics-search";
@@ -11,6 +10,7 @@ import { LyricsSnippet } from "#/components/lyrics-snippet";
 import { AddToSetIconButton } from "#/components/add-to-set";
 import { useMode } from "#/lib/mode";
 import { formatSetDate, setlistTitle } from "#/lib/setlists";
+import { Command, CommandDialog, CommandDialogClose, CommandDialogTrigger, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@oneverse/ui/components/command";
 import { cn } from "@oneverse/ui/lib/utils";
 
 const SONG_LIMIT = 8;
@@ -62,26 +62,33 @@ export function CommandSearch() {
   }, []);
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <DialogPrimitive.Trigger render={<button type="button" aria-label={t("search.label")} data-testid="command-search" className={cn(
-            "flex h-8 shrink-0 items-center gap-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground [&_svg]:size-4",
-            // A search box on a wide screen, a magnifying glass on a phone.
-            "w-8 justify-center md:w-56 md:justify-start md:border md:bg-background md:px-2.5 md:shadow-xs",
-          )} />}>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      title={t("search.label")}
+      trigger={
+        <CommandDialogTrigger
+          render={
+            <button
+              type="button"
+              aria-label={t("search.label")}
+              data-testid="command-search"
+              className={cn(
+                "flex h-8 shrink-0 items-center gap-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground [&_svg]:size-4",
+                // A search box on a wide screen, a magnifying glass on a phone.
+                "w-8 justify-center md:w-56 md:justify-start md:border md:bg-background md:px-2.5 md:shadow-xs",
+              )}
+            />
+          }
+        >
           <Search />
           <span className="hidden flex-1 text-left md:inline">{t("search.open")}</span>
-          <kbd className="hidden rounded border bg-muted px-1.5 font-sans text-[0.7rem] md:inline">{shortcut}</kbd>
-        </DialogPrimitive.Trigger>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/50" />
-        <DialogPrimitive.Popup
-          className="fixed top-3 left-1/2 z-50 flex max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-lg sm:top-[12vh] sm:max-h-[70vh]"
-        >
-          <DialogPrimitive.Title className="sr-only">{t("search.label")}</DialogPrimitive.Title>
-          {open ? <SearchPanel onDone={() => setOpen(false)} /> : null}
-        </DialogPrimitive.Popup>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+          <CommandShortcut className="hidden md:inline">{shortcut}</CommandShortcut>
+        </CommandDialogTrigger>
+      }
+    >
+      {open ? <SearchPanel onDone={() => setOpen(false)} /> : null}
+    </CommandDialog>
   );
 }
 
@@ -99,8 +106,6 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
   const [addError, setAddError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [moreEntries, setMoreEntries] = useState(false);
-  const [active, setActive] = useState(0);
-  const list = useRef<HTMLDivElement>(null);
   // In the songs' words too (issue #221): off unless turned on, remembered on the device.
   const [inLyrics, setInLyrics] = useInLyrics();
   // The songs: the same search as a set's Add songs (issue #328).
@@ -210,26 +215,15 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
     return byKind;
   }, [entries, songs, lyrics, setlists, songbooks, teams, q, mode, t, i18n.language, navigate, router, onDone, liveSet, playingItemId]);
 
-  // The first result is picked as the results change.
-  useEffect(() => setActive(0), [results]);
-  useEffect(() => {
-    list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
-  }, [active]);
-
   function onKeyDown(event: ReactKeyboardEvent) {
     // Alt+L: in the lyrics too, or not (by the key's place: a Mac's Option+L types "¬").
-    if (event.altKey && event.code === "KeyL") setInLyrics(!inLyrics);
-    else if (event.key === "ArrowDown") setActive((a) => Math.min(results.length - 1, a + 1));
-    else if (event.key === "ArrowUp") setActive((a) => Math.max(0, a - 1));
-    // In a set: Shift+Enter plays it next (issue #199).
-    else if (event.key === "Enter" && event.shiftKey && results[active]?.add) results[active].add!("next");
-    else if (event.key === "Enter") results[active]?.open();
-    else return;
+    if (!(event.altKey && event.code === "KeyL")) return;
+    setInLyrics(!inLyrics);
     event.preventDefault();
   }
 
   const groups = (["entries", "entriesPrefix", "entriesContains", "songs", "lyrics", "sets", "songbooks", "teams"] as const)
-    .map((kind) => ({ kind, items: results.map((result, index) => ({ result, index })).filter(({ result }) => result.kind === kind) }))
+    .map((kind) => ({ kind, items: results.filter((result) => result.kind === kind) }))
     .filter((group) => group.items.length > 0);
 
   // Show more under the last group of numbers, while a group came back full.
@@ -238,22 +232,9 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
   const lastEntryGroup = (["entriesContains", "entriesPrefix", "entries"] as const).find((kind) => groups.some((group) => group.kind === kind));
 
   return (
-    <>
-      <div className="flex items-center gap-2 border-b px-3">
-        <Search className="size-4 shrink-0 text-muted-foreground" />
-        <input
-          autoFocus
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={t("search.placeholder")}
-          aria-label={t("search.label")}
-          role="combobox"
-          aria-expanded
-          aria-controls="command-search-results"
-          aria-activedescendant={results[active] ? `command-result-${active}` : undefined}
-          className="h-12 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
-        />
+    // The first result is picked as the results change; the arrows move, Enter opens.
+    <Command resetOn={results} onKeyDown={onKeyDown} className="flex-1">
+      <CommandInput autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search.placeholder")} aria-label={t("search.label")}>
         <button
           type="button"
           onClick={() => setInLyrics(!inLyrics)}
@@ -269,28 +250,25 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
           <span className="hidden sm:inline">{t("search.inLyrics")}</span>
           <span className="sr-only sm:hidden">{t("search.inLyrics")}</span>
         </button>
-        <DialogPrimitive.Close className="rounded border px-1.5 text-xs text-muted-foreground hover:text-foreground">Esc</DialogPrimitive.Close>
-      </div>
-      <div ref={list} id="command-search-results" role="listbox" aria-label={t("search.label")} className="flex-1 overflow-y-auto p-2">
+        <CommandDialogClose className="rounded border px-1.5 text-xs text-muted-foreground hover:text-foreground">Esc</CommandDialogClose>
+      </CommandInput>
+      <CommandList aria-label={t("search.label")}>
         {groups.map((group) => (
-          <div key={group.kind} role="group" aria-label={t(`search.${group.kind}`, { number: partialEntryDigits(query)[0] ?? "" })} className="mb-2 last:mb-0" data-testid={`search-${group.kind}`}>
-            <p className="px-2 py-1 text-xs font-medium text-muted-foreground">
-              {!q && group.kind === "sets" ? t("search.upcomingSets") : t(`search.${group.kind}`, { number: partialEntryDigits(query)[0] ?? "" })}
-            </p>
-            {group.items.map(({ result, index }) => {
+          <CommandGroup
+            key={group.kind}
+            label={t(`search.${group.kind}`, { number: partialEntryDigits(query)[0] ?? "" })}
+            heading={!q && group.kind === "sets" ? t("search.upcomingSets") : t(`search.${group.kind}`, { number: partialEntryDigits(query)[0] ?? "" })}
+            data-testid={`search-${group.kind}`}
+          >
+            {group.items.map((result) => {
               const Icon = ICONS[result.kind];
               return (
-                <div
+                <CommandItem
                   key={`${result.kind}-${result.id}`}
-                  id={`command-result-${index}`}
-                  data-index={index}
-                  role="option"
-                  aria-selected={index === active}
-                  onMouseMove={() => setActive(index)}
-                  onClick={result.open}
-                  className={cn("flex cursor-pointer items-center gap-3 rounded-md px-2 py-2", index === active && "bg-accent text-accent-foreground")}
+                  // In a set: Shift+Enter plays it next (issue #199).
+                  onSelect={(event) => ("key" in event && event.shiftKey && result.add ? result.add("next") : result.open())}
                 >
-                  <Icon className="size-4 shrink-0 text-muted-foreground" />
+                  <Icon />
                   {result.lyrics ? (
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm">{result.label}</span>
@@ -339,7 +317,7 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
                   ) : result.songId ? (
                     <AddToSetIconButton songVersionId={result.songId} songTitle={result.label} onLeave={onDone} />
                   ) : null}
-                </div>
+                </CommandItem>
               );
             })}
             {/* More of the numbers starting with it or containing it, when there may be (issue #213). */}
@@ -353,21 +331,19 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
                 {t("search.showMore")}
               </button>
             ) : null}
-          </div>
+          </CommandGroup>
         ))}
-        {q && !searching && results.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-muted-foreground">{t("search.noResults", { query: query.trim() })}</p>
-        ) : null}
+        {q && !searching && results.length === 0 ? <CommandEmpty>{t("search.noResults", { query: query.trim() })}</CommandEmpty> : null}
         {inLyrics && q && !lyricsQuery ? <p className="px-2 py-1 text-xs text-muted-foreground" data-testid="search-lyrics-short">{t("search.lyricsTooShort")}</p> : null}
         {searching && songs.length === 0 ? <p className="px-2 py-2 text-xs text-muted-foreground">{t("search.searching")}</p> : null}
-      </div>
+      </CommandList>
       {addError ? (
         <p className="border-t px-3 py-2 text-xs text-destructive" role="alert">
           {addError}
         </p>
       ) : null}
       {mode === "live" ? <p className="border-t px-3 py-2 text-xs text-muted-foreground">{liveSet ? t("search.liveSetHint") : t("search.liveHint")}</p> : null}
-    </>
+    </Command>
   );
 }
 
