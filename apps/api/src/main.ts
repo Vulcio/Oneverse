@@ -73,7 +73,8 @@ async function bootstrap() {
     res.setHeader("Referrer-Policy", "no-referrer");
     next();
   });
-  expressApp.all("/api/auth/*", (req, res, next) => {
+  // "*path": Express 5 names its wildcards (issue #420).
+  expressApp.all("/api/auth/*path", (req, res, next) => {
     getAuth()
       .then((auth) => toNodeHandler(auth)(req, res))
       .catch(next);

@@ -55,15 +55,32 @@ export class PicturesController {
 
   @Public()
   @RateLimit("none")
-  @Get(":owner(teams|songbooks)/:id/avatar/:key")
+  @Get("teams/:id/avatar/:key")
   @ApiExcludeEndpoint()
-  async serve(
-    @Param("owner") owner: PictureOwner,
+  serveTeam(
     @Param("id") id: string,
     @Param("key") key: string,
     @Query("size") size: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
+    return this.serve("teams", id, key, size, res);
+  }
+
+  @Public()
+  @RateLimit("none")
+  @Get("songbooks/:id/avatar/:key")
+  @ApiExcludeEndpoint()
+  serveSongbook(
+    @Param("id") id: string,
+    @Param("key") key: string,
+    @Query("size") size: string | undefined,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    return this.serve("songbooks", id, key, size, res);
+  }
+
+  // One route each: Express 5 takes no pattern in a parameter (":owner(teams|songbooks)", issue #420).
+  private async serve(owner: PictureOwner, id: string, key: string, size: string | undefined, res: Response): Promise<StreamableFile> {
     const { body, contentType } = await this.pictures.get(owner, id, key, size === undefined ? undefined : Number(size));
     res.set({
       "Content-Type": contentType,

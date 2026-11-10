@@ -1,6 +1,5 @@
 import { ArgumentMetadata, BadRequestException, Injectable, InternalServerErrorException, PipeTransform } from "@nestjs/common";
 import type { OpenAPIObject } from "@nestjs/swagger";
-import type { ParameterObject } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface.js";
 import { cleanupOpenApiDoc, createZodDto } from "nestjs-zod";
 import { describeRequestIssue } from "@oneverse/core";
 import { z, type ZodError } from "zod";
@@ -51,6 +50,12 @@ export class ZodValidationPipe implements PipeTransform {
     return value;
   }
 }
+
+/** A parameter of an operation, as the document types it (the package exports only the document's type). */
+type ParameterObject = Extract<
+  NonNullable<NonNullable<OpenAPIObject["paths"][string]["get"]>["parameters"]>[number],
+  { in: unknown }
+>;
 
 /** The request schemas by their DTO's name, for the API's docs. */
 const requestSchemas = new Map<string, z.ZodType>();

@@ -15,24 +15,19 @@ onlyBuiltDependencies:
   - msgpackr-extract
 
 overrides:
-  # @nestjs/platform-express 10 brings multer 2.0.2, which reads uploaded
-  # files' names as Latin-1 whatever it's told; 2.4 takes defParamCharset
-  # (issue #130: "même" came out "mÃªme").
-  # One @types/node (Node 22, what runs everything): Vite+'s core is installed
-  # once per @types/node version, and `vp dev` loading one copy while TanStack
-  # Start's plugins load another left the dev server answering 404.
+  # (pnpm keeps these lines in alphabetical order when it installs, so each
+  # comment names what it's about.)
+  # "@types/node": one version (Node 22, what runs everything). Vite+'s core
+  # is installed once per @types/node version, and `vp dev` loading one copy
+  # while TanStack Start's plugins load another left the dev server answering 404.
+  # fast-uri, js-yaml, postcss-selector-parser, seroval, seroval-plugins and
+  # source-map-js: security fixes in packages that others bring in (issue
+  # #418), each kept within the version its parent asks for. Drop a line once
+  # the parent asks for the fixed version itself.
   "@types/node": ^22.10.5
-  body-parser@1: ^1.20.9
   fast-uri@3: ^3.1.9
   js-yaml@4: ^4.3.2
-  lodash@4: ^4.18.0
-  multer: ^2.5.0
   postcss-selector-parser@6: ^6.1.5
-  # Security fixes in packages that others bring in (issue #418), each kept
-  # within the version its parent asks for. Drop a line once the parent asks
-  # for the fixed version itself (NestJS 10's Express 4 for the first three).
-  proxy-addr@2: ^2.0.8
-  qs@6: ^6.16.1
   seroval-plugins@1: ~1.6.12
   seroval@1: ~1.6.12
   source-map-js@1: ^1.2.2
