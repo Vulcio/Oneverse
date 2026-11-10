@@ -1,7 +1,7 @@
-import { prettyChord, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
+import { prettyChord, barSeconds, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
 import { TextItemSlides } from "#/components/set-text-item";
 import { PassageReading } from "#/components/set-passage-item";
-import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Pause, Play, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
+import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
@@ -33,8 +33,10 @@ import { SidebarTrigger } from "@oneverse/ui/components/sidebar";
 import { chartDisplayProps, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
 import { cn } from "@oneverse/ui/lib/utils";
 import { useBarsClock } from "#/lib/bars-clock";
+import { songLengthText, useAutoscroll } from "#/lib/autoscroll";
+import { AUTOSCROLL_SPEEDS, AutoscrollIcon } from "#/components/autoscroll-control";
 
-const SPEEDS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+const SPEEDS = AUTOSCROLL_SPEEDS;
 
 /** What the Live view shows: a song of a set, or one pulled up on its own (issue #48). */
 export interface LiveSong {
@@ -160,7 +162,7 @@ export function LiveView({
   const bars = useMemo(() => (chart ? chartBars(chart, song.notes?.document) : []), [chart, song.notes?.document]);
   const clock = useBarsClock(song.id, bars);
   const music = useMemo(() => (chart && bars.length > 0 ? { bars, position: clock.position } : null), [chart, bars, clock.position]);
-  const secondsOf = (i: number) => (charts[i] ? chartSeconds(charts[i]!, songs[i]!.durationSeconds) : 0);
+  const secondsOf = (i: number) => (charts[i] ? chartSeconds(charts[i]!, songs[i]!.durationSeconds, songs[i]!.notes?.document) : 0);
   const seconds = secondsOf(at);
   const anySeconds = charts.some((_, i) => secondsOf(i) > 0);
 
@@ -232,33 +234,25 @@ export function LiveView({
     onCurrentRef.current?.(latest.current[at]!.id);
   }, [at]);
 
-  // Autoscroll: each song over the time it takes to play, nudged by `speed`, on across the join.
-  const pace = useRef({ at, secondsOf });
-  pace.current = { at, secondsOf };
-  useEffect(() => {
-    const element = scroller.current;
-    if (!playing || !element || !anySeconds) return;
-    let position = element.scrollTop;
-    let last = performance.now();
-    let frame = requestAnimationFrame(function step(now) {
-      const distance = element.scrollHeight - element.clientHeight;
-      // Scrolled by hand meanwhile: carry on from there.
-      if (Math.abs(element.scrollTop - Math.round(position)) > 2) position = element.scrollTop;
-      const { at: i, secondsOf: secondsAt } = pace.current;
-      const songSeconds = secondsAt(i);
-      const section = sections.current[i];
-      // A song stacked above another: its own height; the last, what's left to scroll.
-      const sectionTop = section ? section.getBoundingClientRect().top - element.getBoundingClientRect().top + element.scrollTop : 0;
-      const length = section && i < latest.current.length - 1 ? section.offsetHeight : distance - (latest.current.length > 1 ? sectionTop : 0);
-      const rate = songSeconds > 0 ? length / songSeconds : 0;
-      position = Math.min(distance, position + (rate * speed * (now - last)) / 1000);
-      last = now;
-      element.scrollTop = position;
-      if (position >= distance || rate === 0) setPlaying(false);
-      else frame = requestAnimationFrame(step);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [playing, speed, anySeconds]);
+  // Autoscroll (issue #414): each song line by line, in its bars' time, on across the join - or with the music, while it plays.
+  const paced = useMemo(
+    () =>
+      charts.map((one, i) => {
+        if (!one) return { bars: [], seconds: [] };
+        const bars = chartBars(one, songs[i]!.notes?.document);
+        return { bars, seconds: barSeconds(one, bars, songs[i]!.durationSeconds) };
+      }),
+    [charts, songs],
+  );
+  useAutoscroll({
+    scroller: () => scroller.current,
+    songs: () => paced.map((one, i) => ({ ...one, element: sections.current[i] ?? null })),
+    playing: playing && anySeconds,
+    speed,
+    music: clock.position ? { song: at, position: clock.position } : null,
+    readingLine: (element) => element.clientHeight / 3,
+    onEnd: () => setPlaying(false),
+  });
 
   // Played through (issue #153): scrolled to 95% of the way down, once it's been seen higher up
   // (the router's scroll restoration can put the last song's position back for a moment).
@@ -409,7 +403,7 @@ export function LiveView({
         aria-pressed={playing}
         className="flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50 [&_svg]:size-4"
       >
-        {playing ? <Pause /> : <Play />}
+        <AutoscrollIcon playing={playing} />
         <span className="tabular-nums" data-testid="live-speed">
           {Math.round(speed * 100)}%
         </span>
@@ -554,7 +548,7 @@ export function LiveView({
                 <Turtle />
               </FloatingButton>
               <FloatingButton label={playing ? t("live.pause") : t("live.play")} onClick={() => setPlaying(!playing)} disabled={!chart || seconds <= 0} pressed={playing} primary>
-                {playing ? <Pause /> : <Play />}
+                <AutoscrollIcon playing={playing} />
                 <span className="sr-only" data-testid="live-speed">
                   {Math.round(speed * 100)}%
                 </span>
@@ -646,6 +640,8 @@ function LiveSongSection({
   const details = [
     ...song.references,
     chart?.tempo ? tempoText(chart.tempo, chart.tempoUnit, chart.timeSignature) : null,
+    // How long it lasts, or the guess autoscroll goes by (issue #414).
+    chart ? songLengthText(chart, song.durationSeconds, song.notes?.document) : null,
     song.arrangementName,
   ].filter(Boolean);
   const id = (name: string) => (current ? name : undefined);

@@ -202,7 +202,8 @@ await step("Live: one button, at the song's tempo and time signature; a song wit
   await page.goto(`${WEB}/library/${jig.id}/live`);
   await page.waitForLoadState("networkidle");
   await page.getByText("60 BPM").first().waitFor();
-  if (await page.getByText("60 BPM ·").count()) throw new Error("a note shown for quarters");
+  // (After the tempo, only the song's length, "~0:05", issue #414.)
+  if (await page.getByText(/60 BPM · [^~\d]/).count()) throw new Error("a note shown for quarters");
   await button.click();
   let six = await clicks(7, await now());
   if (!same(gaps(six), 0.5) || new Set(six.map((c) => c.beat)).size < 6) throw new Error(`jig: ${six.map((c) => c.beat)} ${gaps(six)}`);

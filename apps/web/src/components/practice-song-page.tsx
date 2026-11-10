@@ -1,4 +1,4 @@
-import { chartNotation, cueSectionsOf, structureOf, getLanguageDisplayName, metronomeForSong, playsFiles, renderChart, type PlaybackSource, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type LiveViewValue, type SavedDisplaySettings, type SongVersionDetail } from "@oneverse/core";
+import { barSeconds, chartBars, chartNotation, cueSectionsOf, structureOf, getLanguageDisplayName, metronomeForSong, playsFiles, renderChart, type PlaybackSource, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type LiveViewValue, type SavedDisplaySettings, type SongVersionDetail } from "@oneverse/core";
 import { CapoBadge } from "#/components/capo-badge";
 import { Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PresenceChip } from "#/components/presence";
@@ -37,6 +37,9 @@ import { useSongNotes } from "#/lib/notes";
 import { useSungLine } from "#/lib/sung-line";
 import { TracksView } from "#/components/tracks-view";
 import { stemsOf, useStems } from "#/lib/stem-engine";
+import { songLengthText, useAutoscroll } from "#/lib/autoscroll";
+import { useBarsClock } from "#/lib/bars-clock";
+import { FloatingAutoscroll } from "#/components/autoscroll-control";
 
 /**
  * A library song in Practice (issue #67): its chart, as written and read
@@ -117,8 +120,9 @@ export function PracticeSongPage({
   const chart = useMemo(() => (practiceTempo ? { ...written, tempo: practiceTempo } : written), [written, practiceTempo]);
   // The sections bar over the grid and the words (issue #416), under the page's header (h-14) and the bar's own height.
   const steps = useMemo(() => structureOf(chart), [chart]);
-  const viewRoot = useRef<HTMLDivElement>(null);
-  const [currentPass, pickPass] = usePagePass(viewRoot, steps, 56 + 48);
+  // Where the chart, grid or words are (autoscroll's too, issue #414).
+  const reading = useRef<HTMLDivElement>(null);
+  const [currentPass, pickPass] = usePagePass(reading, steps, 56 + 48);
   // Notes on the chart (issue #256).
   const notesContext = { songVersionId: version.id, songbookId };
   const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: version.documentJson, show: display.notes, marks: display.noteMarks, style: display.noteStyle, context: notesContext, openNoteId });
@@ -163,6 +167,29 @@ export function PracticeSongPage({
   // The line sung as the stems or the click play (issue #365): read along, while recording a part too.
   const chartArea = useRef<HTMLDivElement>(null);
   useSungLine(chartArea, version.id, chart, version.documentJson);
+  // Autoscroll (issue #414): the song's bars in its duration - at their own tempo, the same share of it - or with the music while it plays.
+  const bars = useMemo(() => chartBars(chart, version.documentJson), [chart, version.documentJson]);
+  const songDuration = version.documentJson.defaults.durationSeconds ?? null;
+  const duration = songDuration && practiceTempo && written.tempo ? (songDuration * written.tempo) / practiceTempo : songDuration;
+  const barTimes = useMemo(() => barSeconds(chart, bars, duration), [chart, bars, duration]);
+  const music = useBarsClock(version.id, bars);
+  const [autoscrolling, setAutoscrolling] = useState(false);
+  const [autoscrollSpeed, setAutoscrollSpeed] = useState(1);
+  useEffect(() => setAutoscrolling(false), [version.id]);
+  useAutoscroll({
+    scroller: () => document.scrollingElement as HTMLElement | null,
+    songs: () => [{ element: reading.current, bars, seconds: barTimes }],
+    playing: autoscrolling,
+    speed: autoscrollSpeed,
+    music: music.position ? { song: 0, position: music.position } : null,
+    // A third of the way down what the header (h-14) and the docked player leave.
+    readingLine: () => {
+      const dock = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--stem-dock-height")) || 0;
+      return 56 + (window.innerHeight - 56 - dock) / 3;
+    },
+    onEnd: () => setAutoscrolling(false),
+  });
+  const length = songLengthText(written, songDuration, version.documentJson);
   const details = [...references, chart.key].filter(Boolean);
 
   return (
@@ -226,6 +253,12 @@ export function PracticeSongPage({
         </div>
         <div className="flex flex-wrap items-center gap-2" data-testid="practice-pills">
           {details.length > 0 ? <span className={PILL}>{details.join(" · ")}</span> : null}
+          {/* How long it lasts, or "~" the guess autoscroll goes by (issue #414). */}
+          {length ? (
+            <span className={cn(PILL, "text-muted-foreground tabular-nums")} title={songDuration ? undefined : t("live.lengthGuessed")} data-testid="practice-length">
+              {length}
+            </span>
+          ) : null}
           {/* The metronome, the tempo and the time signature, one pill: the page's only metronome (issue #390). */}
           <span className={cn(PILL, "gap-0 overflow-hidden p-0")}>
             <PracticeMetronome songId={version.id} chart={chart} source={playback.source} />
@@ -248,13 +281,12 @@ export function PracticeSongPage({
       {display.bars && !gridOnScreen && !wordsOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
 
       {/* The chart, its chord grid (issue #238), its words (issue #416) or its PDF (issue #152). */}
-      <div ref={viewRoot} className="contents">
+      <div ref={reading}>
       <ChartOrPdf
         songVersionId={version.id}
         attachments={attachments}
         defaultView={liveView}
         store={songViewStore(version.id)}
-        // Its parts as lanes, as in a DAW (issue #374), when it has stems.
         structure={display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : undefined}
         words={
           <Card>
@@ -263,6 +295,19 @@ export function PracticeSongPage({
             </CardContent>
           </Card>
         }
+        // Autoscroll, over the chart, the grid or the PDF; the tracks have their own playhead.
+        overlay={
+          <FloatingAutoscroll
+            playing={autoscrolling}
+            onToggle={() => setAutoscrolling(!autoscrolling)}
+            onHide={() => setAutoscrolling(false)}
+            speed={autoscrollSpeed}
+            onSpeed={setAutoscrollSpeed}
+            disabled={bars.length === 0}
+            following={!!music.position}
+          />
+        }
+        // Its parts as lanes, as in a DAW (issue #374), when it has stems.
         tracks={hasTracks ? <TracksView songVersionId={version.id} chart={chart} document={version.documentJson} attachments={attachments} cueSections={cueSections.sections} /> : undefined}
         grid={
           <Card>

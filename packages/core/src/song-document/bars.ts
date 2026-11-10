@@ -1,5 +1,6 @@
 import type { ChordFamily } from "../chords/chord.js";
 import type { BeatAnchor, Rhythm, SongDocumentV2 } from "../schemas/song-document-v2.js";
+import { beatsPerTempoUnit, defaultTempoUnit } from "../metronome/index.js";
 import type { RenderedChart, RenderedChord, RenderedPass } from "./render.js";
 
 /**
@@ -53,7 +54,7 @@ export interface ChartBar {
   beatAnchors: BeatAnchor[];
 }
 
-/** Bars a sung line takes at least, filled in from the chart; as autoscroll paces a chart (chartSeconds). */
+/** Bars a sung line takes at least, filled in from the chart. */
 const BARS_PER_LINE = 2;
 
 /** The bars of a rendered chart, in order; `song` gives the sections' own rhythm, where they have one. */
@@ -467,4 +468,73 @@ export function lineAtPosition(bars: readonly ChartBar[], places: readonly (Beat
     }
   }
   return null;
+}
+
+/** The tempo assumed when a song has none, to pace autoscroll. */
+const DEFAULT_TEMPO = 90;
+
+/**
+ * How long each bar lasts, in seconds, to pace autoscroll (issue #414): its
+ * beats at its pass's tempo (90 BPM without one), the tempo counting its own
+ * note (issue #377: a dotted quarter is three of 6/8's beats) - the whole
+ * stretched or shrunk to the song's duration when it has one, so a long
+ * instrumental still takes longer than a short line.
+ */
+export function barSeconds(chart: Pick<RenderedChart, "passes" | "timeSignature" | "tempoUnit">, bars: readonly ChartBar[], durationSeconds?: number | null): number[] {
+  const seconds = bars.map((bar) => {
+    const signature = chart.passes[bar.passIndex]?.timeSignature ?? chart.timeSignature ?? { numerator: 4, denominator: 4 };
+    const perTempo = beatsPerTempoUnit(chart.tempoUnit ?? defaultTempoUnit(signature), signature.denominator);
+    const tempo = bar.tempo && bar.tempo > 0 ? bar.tempo : DEFAULT_TEMPO;
+    return (bar.beats * 60) / (tempo * perTempo);
+  });
+  const total = seconds.reduce((sum, one) => sum + one, 0);
+  if (!durationSeconds || durationSeconds <= 0 || total <= 0) return seconds;
+  return seconds.map((one) => (one * durationSeconds) / total);
+}
+
+/** Where autoscroll is, in beats from the song's start, `seconds` into it (issue #414): 0 before, the song's length past its end. */
+export function positionAtSeconds(bars: readonly Pick<ChartBar, "start" | "beats">[], seconds: readonly number[], at: number): number {
+  if (!(at > 0)) return 0;
+  let elapsed = 0;
+  for (let index = 0; index < bars.length; index++) {
+    const bar = bars[index]!;
+    const length = seconds[index] ?? 0;
+    if (at < elapsed + length) return bar.start + (bar.beats * (at - elapsed)) / length;
+    elapsed += length;
+  }
+  return barsLength(bars);
+}
+
+/** How far into the song a position is, in seconds (issue #414): `positionAtSeconds` the other way round. */
+export function secondsAtPosition(bars: readonly Pick<ChartBar, "start" | "beats">[], seconds: readonly number[], position: number): number {
+  let elapsed = 0;
+  for (let index = 0; index < bars.length; index++) {
+    const bar = bars[index]!;
+    const length = seconds[index] ?? 0;
+    if (position < bar.start + bar.beats) return elapsed + (length * Math.max(0, position - bar.start)) / bar.beats;
+    elapsed += length;
+  }
+  return elapsed;
+}
+
+/** A stretch of a song autoscroll keeps in view in turn: one line's bars, or a pass's bars without words. */
+export interface ScrollStop {
+  passIndex: number;
+  passId: string;
+  /** The line its bars are under; null for bars without words (an intro), shown by their pass. */
+  lineId: string | null;
+  /** Where it starts, in beats from the song's start, and how many it lasts. */
+  start: number;
+  beats: number;
+}
+
+/** The song's bars as the lines they're played under, in order (issue #414): what autoscroll moves from one to the next. */
+export function scrollStops(bars: readonly ChartBar[]): ScrollStop[] {
+  const stops: ScrollStop[] = [];
+  for (const bar of bars) {
+    const last = stops.at(-1);
+    if (last && last.passIndex === bar.passIndex && last.lineId === bar.lineId) last.beats += bar.beats;
+    else stops.push({ passIndex: bar.passIndex, passId: bar.passId, lineId: bar.lineId, start: bar.start, beats: bar.beats });
+  }
+  return stops;
 }

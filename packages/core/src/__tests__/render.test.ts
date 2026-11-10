@@ -2,6 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { findArrangementProblems, type ArrangementDocumentV2 } from "../schemas/arrangement-document-v2.js";
 import { chartSeconds, newArrangementDocument, renderChart, type RenderedPass } from "../song-document/render.js";
 import { songDocumentFromText } from "../song-document/text.js";
+import { barSeconds, chartBars, positionAtSeconds, scrollStops, secondsAtPosition } from "../song-document/bars.js";
 
 const song = songDocumentFromText(null, {
   content:
@@ -126,11 +127,43 @@ describe("chartSeconds", () => {
     expect(chartSeconds(renderChart(song), 245)).toBe(245);
   });
 
-  it("otherwise two bars a sung line at each pass's tempo", () => {
-    // Four lines (verse 2, chorus 1, final chorus 1), 8 beats each at 72 BPM.
-    expect(chartSeconds(renderChart(song))).toBeCloseTo((4 * 8 * 60) / 72);
+  it("otherwise its bars at each pass's tempo: two a sung line, a bar a chord", () => {
+    // The verse's first line has three chords (three bars), the other three lines two: 9 bars of 4 beats at 72 BPM.
+    expect(chartSeconds(renderChart(song))).toBeCloseTo((9 * 4 * 60) / 72);
     // A 3/4 bar is three beats; no tempo is 90 BPM.
     const waltz = songDocumentFromText(null, { content: "[G]One\n[D]Two\n", format: "CHORDPRO", defaults: { timeSignature: { numerator: 3, denominator: 4 } } });
     expect(chartSeconds(renderChart(waltz))).toBeCloseTo((2 * 6 * 60) / 90);
+  });
+});
+
+describe("autoscroll's pace (issue #414)", () => {
+  const chart = renderChart(song);
+  const bars = chartBars(chart, song);
+
+  it("gives each bar its time, stretched to the song's duration", () => {
+    expect(barSeconds(chart, bars)).toEqual(bars.map(() => (4 * 60) / 72));
+    const stretched = barSeconds(chart, bars, 90);
+    expect(stretched.reduce((sum, one) => sum + one, 0)).toBeCloseTo(90);
+    expect(stretched[0]).toBeCloseTo(10);
+  });
+
+  it("goes from seconds to beats and back", () => {
+    const seconds = barSeconds(chart, bars, 90);
+    expect(positionAtSeconds(bars, seconds, 0)).toBe(0);
+    expect(positionAtSeconds(bars, seconds, 15)).toBeCloseTo(6);
+    expect(positionAtSeconds(bars, seconds, 500)).toBe(36);
+    expect(secondsAtPosition(bars, seconds, 6)).toBeCloseTo(15);
+    expect(secondsAtPosition(bars, seconds, 36)).toBeCloseTo(90);
+  });
+
+  it("stops at each line in turn", () => {
+    const stops = scrollStops(bars);
+    expect(stops.map((stop) => [stop.passIndex, stop.start, stop.beats])).toEqual([
+      [0, 0, 12],
+      [0, 12, 8],
+      [1, 20, 8],
+      [2, 28, 8],
+    ]);
+    expect(stops[0]!.lineId).toBe(song.sections[0]!.lines[0]!.id);
   });
 });
