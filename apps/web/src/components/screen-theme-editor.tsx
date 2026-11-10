@@ -165,7 +165,8 @@ export function ScreenThemeEditor({
   /** The saved templates, for a part's preview in one of them (issue #398). */
   templates?: ScreenThemeSummary[];
   onClose: () => void;
-  onSaved: (saved: ScreenThemeSummary | ScreenPartSummary) => void;
+  /** Awaited: the editor says it's saving until the page has what was saved. */
+  onSaved: (saved: ScreenThemeSummary | ScreenPartSummary) => void | Promise<void>;
 }) {
   const { t } = useTranslation();
   const kind = draft.kind;
@@ -277,7 +278,7 @@ export function ScreenThemeEditor({
         const document = extractPart(kind, theme, draft.document) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
         saved = draft.id && !asNew ? await apiClient.updateScreenPart(draft.id, { name: name.trim(), document }) : await apiClient.createScreenPart({ kind, name: name.trim(), document, ...(teamId && { teamId }) });
       }
-      onSaved(saved);
+      await onSaved(saved);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -684,7 +685,8 @@ export function ScreenThemeEditor({
           {!draft.id && !context && adminTeams.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="theme-owner">{t("screens.themeOwner")}</Label>
-              <NativeSelect id="theme-owner" value={owner} onChange={(e) => setOwner(e.target.value)}>
+              {/* Its parts saved from here are that owner's (issue #428): a team's template takes the team's parts only. */}
+              <NativeSelect id="theme-owner" value={owner} onChange={(e) => setOwner(e.target.value)} disabled={savedHere.length > 0} title={savedHere.length > 0 ? t("screens.editor.ownerFixed") : undefined}>
                 <option value="">{t("screens.ownerMe")}</option>
                 {adminTeams.map((team) => (
                   <option key={team.id} value={team.id}>
@@ -722,14 +724,23 @@ export function ScreenThemeEditor({
           templates={templates}
           context={{ ...refs, grid: theme.grid, masks: theme.masks }}
           onClose={() => setEditing(null)}
-          onSaved={(saved) => {
+          onSaved={async (saved) => {
             setEditing(null);
             // The part saved, in the template at once; the list of parts comes again with the page.
             const part = saved as ScreenPartSummary;
+            const before = refs[part.kind];
             setSavedHere((before) => [part, ...before.filter((one) => one.id !== part.id)]);
             pickPart(part.kind, { id: part.id });
             setTheme((before) => composeScreenTheme({ ...splitParts(before), [part.kind]: part.document, template: { grid: before.grid, masks: before.masks, titleWidgets: true } }));
-            onSaved(saved);
+            // A saved template takes its new part at once (issue #428): the screens showing it change now, not at its next save.
+            if (draft.id && !(before && "id" in before && before.id === part.id)) {
+              try {
+                await apiClient.updateScreenTheme(draft.id, { [part.kind]: { id: part.id } });
+              } catch (err) {
+                setError(err instanceof Error ? err.message : String(err));
+              }
+            }
+            await onSaved(saved);
           }}
         />
       ) : null}

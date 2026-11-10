@@ -160,6 +160,46 @@ try {
     if (saved?.document.background.kind !== "shader" || shader?.builtIn !== "embers" || shader.values.falling !== true) throw new Error(JSON.stringify(saved?.document.background));
   });
 
+  await step("a still shader (no movement): its changed settings are drawn (issue #428)", async () => {
+    page = tv;
+    const still = (tint) => ({ document: { background: { kind: "shader", motion: 0, colors: ["#00ff00"], shader: { asset: flat.id, values: { tint } } } } });
+    await api(admin, "PATCH", `/screen-parts/${part.id}`, still([1, 0, 0, 1]));
+    await tv.locator('[data-testid="screen-shader"][data-state="drawing"] canvas[data-state="still"]').waitFor({ timeout: 15000 });
+    await tv.waitForTimeout(500);
+    const red = await look();
+    if (!(red.corner[0] > 200 && red.corner[2] < 40)) throw new Error(`not the tint: ${JSON.stringify(red.corner)}`);
+    await api(admin, "PATCH", `/screen-parts/${part.id}`, still([0, 0, 1, 1]));
+    await tv.waitForTimeout(1500);
+    const blue = await look();
+    if (!(blue.corner[2] > 200 && blue.corner[0] < 40)) throw new Error(`still the old tint: ${JSON.stringify(blue.corner)}`);
+  });
+
+  await step("a background customized inside a saved template: the template has it at once, and so the screen (issue #428)", async () => {
+    page = desk;
+    await api(admin, "PATCH", `/screen-themes/${template.id}`, { background: { builtIn: "neuro-noise" } });
+    await desk.goto(`${WEB}/screens?tab=templates`);
+    await desk.getByTestId(`saved-theme-Shaded ${stamp}`).getByTestId("edit-theme").click();
+    const editor = desk.getByTestId("theme-editor");
+    await editor.getByTestId("theme-tab-background").click();
+    await editor.getByTestId("theme-part-background-open").click();
+    const own = desk.getByTestId("part-editor");
+    await own.locator('[data-testid="theme-shader-input"][data-name="sv_contrast"] input[type="range"]').fill("0.9");
+    await own.locator("#theme-name").fill(`My noise ${stamp}`);
+    await own.getByTestId("theme-save").click();
+    await own.waitFor({ state: "detached" });
+    // Without the template's own Save.
+    const now = (await api(admin, "GET", "/screen-themes")).find((one) => one.id === template.id);
+    if (now.parts.background.name !== `My noise ${stamp}` || now.theme.background.shader.values.sv_contrast !== 0.9) throw new Error(JSON.stringify([now.parts.background, now.theme.background.shader]));
+    // Saved and opened again at once: its parts are the ones just saved, changed in place.
+    await editor.getByTestId("theme-save").click();
+    await editor.waitFor({ state: "detached" });
+    await desk.getByTestId(`saved-theme-Shaded ${stamp}`).getByTestId("edit-theme").click();
+    await editor.getByTestId("theme-tab-background").click();
+    await editor.getByTestId("theme-part-background-open").click();
+    await desk.locator('[data-testid="part-editor"] #theme-name').waitFor();
+    if ((await desk.locator('[data-testid="part-editor"] #theme-name').inputValue()) !== `My noise ${stamp}`) throw new Error(`opened as ${await desk.locator('[data-testid="part-editor"] #theme-name').inputValue()}`);
+  });
+
   await step("no page errors", async () => {
     if (errors.length) throw new Error(errors.join(" | "));
   });

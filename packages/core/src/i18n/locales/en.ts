@@ -871,6 +871,7 @@ const en = {
       customFont: "Uploaded font",
       customFontNone: "None: the font above",
       fontHint: "A WOFF2, WOFF, TTF or OTF file, up to 5 MB, that you may use this way.",
+      ownerFixed: "Its parts are already saved for this owner.",
       saveFirst: "Save the template first to add a picture, a video or a font.",
       colors: "Colours",
       addColor: "Add a colour",

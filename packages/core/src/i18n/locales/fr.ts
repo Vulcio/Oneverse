@@ -871,6 +871,7 @@ const fr: typeof en = {
       customFont: "Police envoyée",
       customFontNone: "Aucune : la police ci-dessus",
       fontHint: "Un fichier WOFF2, WOFF, TTF ou OTF, jusqu'à 5 Mo, que vous avez le droit d'utiliser ainsi.",
+      ownerFixed: "Ses éléments sont déjà enregistrés pour ce propriétaire.",
       saveFirst: "Enregistrez d'abord le modèle pour ajouter une image, une vidéo ou une police.",
       colors: "Couleurs",
       addColor: "Ajouter une couleur",

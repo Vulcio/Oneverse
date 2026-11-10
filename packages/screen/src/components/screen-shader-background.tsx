@@ -46,6 +46,10 @@ export function ShaderBackground({ theme, source, text, signals, still }: { them
   // The latest values, read each frame: moving a slider in the editor doesn't build the program again.
   const live = useRef({ values: {} as Record<string, IsfValue>, colors, pace });
   live.current = { values: shader && !("error" in shader) ? readIsfValues(shader.inputs, values) : {}, colors, pace };
+  // A still one draws a frame, then stops: its settings changed, another (issue #428).
+  const redraw = useRef<(() => void) | null>(null);
+  const settings = JSON.stringify([values, colors, pace.spin]);
+  useEffect(() => redraw.current?.(), [settings]);
 
   useEffect(() => {
     setFailed(null);
@@ -209,9 +213,17 @@ export function ShaderBackground({ theme, source, text, signals, still }: { them
       });
     };
     frame = requestAnimationFrame(draw);
+    redraw.current =
+      still || reduced
+        ? () => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(draw);
+          }
+        : null;
     element.dataset.state = still || reduced ? "still" : "running";
     element.dataset.ready = "";
     return () => {
+      redraw.current = null;
       cancelAnimationFrame(frame);
       observer.disconnect();
       seen.disconnect();

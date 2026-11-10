@@ -196,8 +196,9 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
           onClose={() => setDraft(null)}
           onSaved={async (saved) => {
             // A part saved from a template stays in the template's editor; anything else closes it.
-            if (draft.kind !== "template" || !("kind" in saved)) setDraft(null);
+            // Closed once the page has it (issue #428): opened again at once, it's what was just saved.
             await changed();
+            if (draft.kind !== "template" || !("kind" in saved)) setDraft(null);
           }}
         />
       ) : null}
