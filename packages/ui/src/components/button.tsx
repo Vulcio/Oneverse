@@ -37,19 +37,27 @@ const buttonVariants = cva(
  * Its `title` shows as a tooltip (issue #425), on hover and on keyboard
  * focus, in the app's look rather than the browser's: what an icon button
  * does, said the same way everywhere. It names the button too, unless an
- * `aria-label` does.
+ * `aria-label` does. A disabled button keeps the browser's own title: it
+ * takes no pointer or focus events for a tooltip to open on, and its title
+ * is where it says why it can't be used.
  */
 function Button({ className, variant, size, render, title, ...props }: ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { render?: useRender.RenderProp }) {
+  const tooltip = title && !props.disabled ? title : undefined;
   const button = useRender({
     defaultTagName: "button",
     render,
-    props: { "data-slot": "button", className: cn(buttonVariants({ variant, size, className })), ...(title && !props["aria-label"] && size === "icon" ? { "aria-label": title } : null), ...props },
+    props: {
+      "data-slot": "button",
+      className: cn(buttonVariants({ variant, size, className })),
+      ...(tooltip ? (!props["aria-label"] && size === "icon" ? { "aria-label": tooltip } : null) : { title }),
+      ...props,
+    },
   });
-  if (!title) return button;
+  if (!tooltip) return button;
   return (
     <Tooltip>
       <TooltipTrigger delay={400} render={button} />
-      <TooltipContent>{title}</TooltipContent>
+      <TooltipContent>{tooltip}</TooltipContent>
     </Tooltip>
   );
 }
