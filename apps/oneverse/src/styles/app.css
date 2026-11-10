@@ -11,6 +11,23 @@
   --ring: oklch(0.58 0.18 277);
 }
 :root.dark {
+  /* A deep indigo-grey (issue #422): before, only the buttons changed and the page stayed white. */
+  --background: oklch(0.2 0.015 277);
+  --foreground: oklch(0.96 0.005 277);
+  --card: oklch(0.24 0.018 277);
+  --card-foreground: oklch(0.96 0.005 277);
+  --popover: oklch(0.26 0.018 277);
+  --popover-foreground: oklch(0.96 0.005 277);
   --primary: oklch(0.72 0.14 277);
   --primary-foreground: oklch(0.2 0.04 277);
+  --secondary: oklch(0.29 0.02 277);
+  --secondary-foreground: oklch(0.96 0.005 277);
+  --muted: oklch(0.29 0.02 277);
+  --muted-foreground: oklch(0.74 0.015 277);
+  --accent: oklch(0.32 0.035 277);
+  --accent-foreground: oklch(0.96 0.005 277);
+  --destructive: oklch(0.68 0.2 22);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.62 0.12 277);
 }

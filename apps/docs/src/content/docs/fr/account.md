@@ -25,6 +25,12 @@ Une clé d'accès vous permet de vous connecter sans mot de passe, avec l'emprei
 
 Ajoutez-en une sur chaque appareil que vous utilisez. Vous pouvez supprimer une clé d'accès à tout moment.
 
+## Clair ou sombre
+
+Les pages de Oneverse, dont la page de connexion, sont claires ou sombres comme votre appareil. Les trois boutons en haut à droite en décident autrement : **Clair**, **Sombre** ou **Comme cet appareil**. Ce choix est gardé sur cet appareil. Songverse a le sien, avec ses modes.
+
+Sur la page de connexion, l'œil d'un champ de mot de passe montre ce que vous avez saisi.
+
 ## Rôles
 
 Dites à vos équipes ce que vous jouez ou faites : des **Instruments** (chant, guitares, claviers, batterie, harpe, accordéon, cajón… et ceux que votre administrateur a ajoutés) et d'**Autres rôles** (technicien, opérateur média, ingénieur du son). Ils s'affichent à côté de votre nom dans les listes de membres des équipes.

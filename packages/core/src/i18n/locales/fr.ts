@@ -19,6 +19,9 @@ const fr: typeof en = {
     signUp: "S'inscrire",
     email: "E-mail",
     password: "Mot de passe",
+    passwordHint: "Au moins 8 caractères.",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
     displayName: "Nom affiché",
     forgotPassword: "Mot de passe oublié ?",
     createAccount: "Créer un compte",
@@ -1078,6 +1081,12 @@ const fr: typeof en = {
     unit_4d: "1/4 pointée",
     unit_2d: "1/2 pointée",
     unit_16: "1/16",
+  },
+  theme: {
+    label: "Clair ou sombre",
+    light: "Clair",
+    dark: "Sombre",
+    device: "Comme cet appareil",
   },
   tracks: {
     notLoaded: "Chargez les pistes du chant dans le lecteur (Lecture) pour les voir ici.",

@@ -19,6 +19,9 @@ const en = {
     signUp: "Sign up",
     email: "Email",
     password: "Password",
+    passwordHint: "At least 8 characters.",
+    showPassword: "Show the password",
+    hidePassword: "Hide the password",
     displayName: "Display name",
     forgotPassword: "Forgot password?",
     createAccount: "Create account",
@@ -1078,6 +1081,12 @@ const en = {
     unit_4d: "1/4 dotted",
     unit_2d: "1/2 dotted",
     unit_16: "1/16",
+  },
+  theme: {
+    label: "Light or dark",
+    light: "Light",
+    dark: "Dark",
+    device: "As this device",
   },
   tracks: {
     notLoaded: "Load the song's stems in the player (Play) to see its parts here.",

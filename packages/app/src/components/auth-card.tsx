@@ -10,6 +10,8 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Separator } from "@oneverse/ui/components/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
+import { PasswordInput } from "./password-input";
+import { GoogleLogo } from "./provider-logos";
 
 type View = "auth" | "forgot-password" | "forgot-password-sent" | "signup-check-email";
 
@@ -57,6 +59,14 @@ export function useAuthErrorText() {
   };
 }
 
+/** A social sign-on's button: its own logo and wording. Another provider is another entry (and the API's, Admin > Auth). */
+interface SocialProvider {
+  id: "google";
+  label: string;
+  Logo: typeof GoogleLogo;
+}
+const SOCIAL_PROVIDERS: SocialProvider[] = [{ id: "google", label: "auth.continueWithGoogle", Logo: GoogleLogo }];
+
 export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = false, invitePass, email: invitedEmail }: AuthCardProps) {
   const { t } = useTranslation();
   const errorText = useAuthErrorText();
@@ -75,6 +85,7 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
       .then((response) => setInvited(response.ok))
       .catch(() => setInvited(false));
   }, [invitePass?.kind, invitePass?.token]);
+  const providers = SOCIAL_PROVIDERS.filter((provider) => provider.id !== "google" || hasGoogleAuth);
   const canSignUp = !signupInviteOnly || invited || !!invitedEmail;
   // Back from Google without an account made: by invitation only, most likely.
   useEffect(() => {
@@ -156,9 +167,15 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
     setView("forgot-password-sent");
   }
 
-  async function signInWithGoogle() {
+  async function signInWith(provider: SocialProvider["id"]) {
     resetMessages();
-    await authClient.signIn.social({ provider: "google", callbackURL: toAbsoluteUrl(redirectTo), errorCallbackURL: toAbsoluteUrl(window.location.pathname + window.location.search) });
+    setLoading(true);
+    // On its way to the provider's page; back here only if it couldn't start.
+    const result = await authClient.signIn.social({ provider, callbackURL: toAbsoluteUrl(redirectTo), errorCallbackURL: toAbsoluteUrl(window.location.pathname + window.location.search) });
+    if (result?.error) {
+      setLoading(false);
+      setError(errorText(result.error, t("auth.somethingWentWrong")));
+    }
   }
 
   async function signInWithPasskey() {
@@ -199,7 +216,7 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
                 <Label htmlFor="forgot-email">{t("auth.email")}</Label>
                 <Input id="forgot-email" name="email" type="email" required autoComplete="email" />
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
               <Button type="submit" disabled={loading}>
                 {loading ? t("auth.sending") : t("auth.sendResetLink")}
               </Button>
@@ -268,10 +285,10 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
                     {t("auth.forgotPassword")}
                   </button>
                 </div>
-                <Input id="signin-password" name="password" type="password" required autoComplete="current-password" />
+                <PasswordInput id="signin-password" name="password" required autoComplete="current-password" />
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              {info && <p className="text-sm text-muted-foreground">{info}</p>}
+              {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+              {info && <p role="status" className="text-sm text-muted-foreground">{info}</p>}
               {unverifiedEmail && (
                 <Button type="button" variant="outline" size="sm" onClick={() => void resendVerification()} disabled={loading}>
                   {t("auth.resendVerification")}
@@ -306,16 +323,12 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="signup-password">{t("auth.password")}</Label>
-                <Input
-                  id="signup-password"
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                />
+                <PasswordInput id="signup-password" name="password" required minLength={8} autoComplete="new-password" aria-describedby="signup-password-hint" />
+                <p id="signup-password-hint" className="text-xs text-muted-foreground">
+                  {t("auth.passwordHint")}
+                </p>
               </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
               <Button type="submit" disabled={loading}>
                 {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
               </Button>
@@ -324,18 +337,18 @@ export function AuthCard({ redirectTo = "/", hasGoogleAuth, signupInviteOnly = f
           </TabsContent>
         </Tabs>
 
-        {hasGoogleAuth ? (
-          <>
-            <div className="flex items-center gap-3">
-              <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground">{t("auth.or")}</span>
-              <Separator className="flex-1" />
-            </div>
-            <Button type="button" variant="outline" className="w-full" onClick={() => void signInWithGoogle()}>
-              {t("auth.continueWithGoogle")}
-            </Button>
-          </>
-        ) : null}
+        <div className="flex items-center gap-3">
+          <Separator className="flex-1" />
+          <span className="text-xs text-muted-foreground">{t("auth.or")}</span>
+          <Separator className="flex-1" />
+        </div>
+
+        {providers.map(({ id, label, Logo }) => (
+          <Button key={id} type="button" variant="outline" className="w-full" onClick={() => void signInWith(id)} disabled={loading} data-testid={`sign-in-with-${id}`}>
+            <Logo />
+            {t(label)}
+          </Button>
+        ))}
 
         <Button
           type="button"

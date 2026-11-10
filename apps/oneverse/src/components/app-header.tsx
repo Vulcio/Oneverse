@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { LogOut } from "lucide-react";
 import { authClient } from "@oneverse/app/auth-client";
+import { ThemeSwitch } from "@oneverse/app/components/theme-switch";
 import { Button } from "@oneverse/ui/components/button";
 import { OneverseBrand } from "#/components/brand";
 
-/** Oneverse's name, and signing out of it. */
+/** Oneverse's name, light or dark (issue #422), and signing out of it. */
 export function AppHeader() {
   const { t } = useTranslation();
   return (
@@ -13,6 +14,8 @@ export function AppHeader() {
         <div className="flex items-center gap-2 font-semibold">
           <OneverseBrand />
         </div>
+        <div className="flex items-center gap-2">
+        <ThemeSwitch />
         <Button
           variant="ghost"
           size="sm"
@@ -26,6 +29,7 @@ export function AppHeader() {
           <LogOut />
           {t("nav.signOut")}
         </Button>
+        </div>
       </div>
     </header>
   );

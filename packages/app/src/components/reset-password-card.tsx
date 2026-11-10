@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
-import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { authClient } from "../auth-client";
 import { useAuthErrorText } from "./auth-card";
+import { PasswordInput } from "./password-input";
 
 /** A new password, from the link a reset email leads to (`?token=`). */
 export function ResetPasswordCard({ token }: { token: string | undefined }) {
@@ -80,20 +80,16 @@ export function ResetPasswordCard({ token }: { token: string | undefined }) {
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">{t("auth.newPassword")}</Label>
-            <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
+            <PasswordInput id="password" name="password" required minLength={8} autoComplete="new-password" aria-describedby="password-hint" />
+            <p id="password-hint" className="text-xs text-muted-foreground">
+              {t("auth.passwordHint")}
+            </p>
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
+            <PasswordInput id="confirmPassword" name="confirmPassword" required minLength={8} autoComplete="new-password" />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <Button type="submit" disabled={loading}>
             {loading ? t("auth.saving") : t("auth.resetPassword")}
           </Button>

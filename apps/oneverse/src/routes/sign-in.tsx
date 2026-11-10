@@ -4,6 +4,7 @@ import { SIGNUP_PASS_KINDS, type SignupPassKind } from "@oneverse/core";
 import { AuthCard } from "@oneverse/app/components/auth-card";
 import { AuthPage } from "@oneverse/app/components/auth-page";
 import { LocaleProvider } from "@oneverse/app/components/locale-provider";
+import { ThemeSwitch } from "@oneverse/app/components/theme-switch";
 import { SourceCodeLink } from "@oneverse/app/components/source-code-link";
 import { loadLocale } from "@oneverse/app/i18n";
 import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
@@ -59,7 +60,7 @@ function SignInContent() {
   const { t } = useTranslation();
   const { continueTo, pass, email, hasGoogleAuth, signupInviteOnly } = Route.useRouteContext();
   return (
-    <AuthPage brand={<OneverseBrand />}>
+    <AuthPage brand={<OneverseBrand />} actions={<ThemeSwitch />}>
       {pass ? (
         <p className="max-w-sm text-center text-sm text-muted-foreground" data-testid="sign-in-prompt">
           {t(PROMPTS[pass.kind], { email: email ?? "" })}

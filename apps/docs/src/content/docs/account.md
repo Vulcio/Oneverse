@@ -25,6 +25,12 @@ A passkey lets you sign in without a password, with your device's fingerprint, f
 
 Add one on each device you use. You can remove a passkey at any time.
 
+## Light or dark
+
+Oneverse's pages, the sign-in page among them, are light or dark as your device is. The three buttons in the top corner choose otherwise: **Light**, **Dark**, or **As this device**. The choice is remembered on that device. Songverse has its own, with its modes.
+
+On the sign-in page, the eye in a password field shows what you typed.
+
 ## Roles
 
 Tell your teams what you play or do - **Instruments** (vocals, guitars, keys, drums, harp, accordion, cajón… and any your admin added) and **Other roles** (technician, media operator, sound engineer). They're shown next to your name in team member lists.

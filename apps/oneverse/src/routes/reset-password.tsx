@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AuthPage } from "@oneverse/app/components/auth-page";
+import { ThemeSwitch } from "@oneverse/app/components/theme-switch";
 import { ResetPasswordCard } from "@oneverse/app/components/reset-password-card";
 import { LocaleProvider } from "@oneverse/app/components/locale-provider";
 import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
@@ -18,7 +19,7 @@ function ResetPasswordPage() {
   const { locale } = Route.useRouteContext();
   return (
     <LocaleProvider locale={locale}>
-      <AuthPage brand={<OneverseBrand />}>
+      <AuthPage brand={<OneverseBrand />} actions={<ThemeSwitch />}>
         <ResetPasswordCard token={Route.useSearch().token} />
       </AuthPage>
     </LocaleProvider>

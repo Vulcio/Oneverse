@@ -1,6 +1,7 @@
 import { HeadContent, Scripts, createRootRoute, useMatches } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { renderPublicEnvScript } from "@oneverse/app/public-env";
+import { THEME_SCRIPT } from "@oneverse/app/theme";
 import appCss from "#/styles/app.css?url";
 
 export const Route = createRootRoute({
@@ -19,8 +20,6 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 });
 
-// Dark when the device is, before the page paints.
-const THEME_SCRIPT = `(function(){var m=window.matchMedia('(prefers-color-scheme: dark)');function a(){document.documentElement.classList.toggle('dark',m.matches)}a();m.addEventListener('change',a)})()`;
 // For notifications on this device (push): Planiverse isn't kept offline.
 const REGISTER_SW_SCRIPT = `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js')})}`;
 
@@ -45,6 +44,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         {/* Songverse's address too: a date's set opens there. */}
         <script dangerouslySetInnerHTML={{ __html: renderPublicEnvScript(["SONGVERSE_URL", "ONEVERSE_URL"]) }} />
+        {/* Light or dark, as picked on this device or as the device is, before the page paints (issue #422). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <HeadContent />
       </head>
