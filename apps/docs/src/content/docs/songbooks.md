@@ -24,7 +24,7 @@ Whoever manages a songbook gives it a **Colour** and a picture under **Details**
 
 ## Songs in a songbook
 
-Under **Entries**, **Add a song** by searching for it and, in a numbered songbook, giving its number.
+Under **Entries**, **Add a song** by searching for it and, in a numbered songbook, giving its number. The search finds songs as the search box at the top does: by title, artist, CCLI number, or their number in another songbook ("HY 42"). The arrow keys move through the songs found and **Enter** picks one; songs already in the songbook aren't listed.
 
 A team's songbook holds songs everyone in the team can open: the team's, the global catalogue's, and those shared with the team. Add one of your own songs and you're asked first: **Share with** the team (it stays yours, its members view it) or **Move to** the team (it becomes the team's). Someone else's song the team can't open can't go in.
 

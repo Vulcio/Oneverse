@@ -108,7 +108,7 @@ await step("Plan the team's set, from Getting started, and add the song", async 
   await page.waitForURL(/\/sets\/(?!new)[^/]+$/);
   setUrl = page.url();
   await page.getByLabel("Search by title, artist, number or CCLI…").fill(songTitle);
-  await page.getByTestId("set-song-results").getByRole("listitem").filter({ hasText: songTitle }).getByRole("button", { name: "Add" }).click();
+  await page.getByTestId("set-song-results").getByRole("option").filter({ hasText: songTitle }).getByRole("button", { name: "Add" }).click();
   await page.getByRole("link", { name: songTitle }).first().waitFor();
 });
 

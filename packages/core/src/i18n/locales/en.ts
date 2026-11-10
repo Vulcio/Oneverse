@@ -2412,7 +2412,7 @@ const en = {
     entries: "Entries",
     noEntriesYet: "No songs in this songbook yet.",
     addEntry: "Add a song",
-    searchSongPlaceholder: "Search by song title…",
+    searchSongPlaceholder: "Search by title, artist, number or CCLI…",
     entryCodePlaceholder: "Number, e.g. 245",
     noMatchingSongs: "No matching songs.",
     add: "Add",

@@ -2415,7 +2415,7 @@ const fr: typeof en = {
     entries: "Chansons",
     noEntriesYet: "Aucune chanson dans ce recueil pour l'instant.",
     addEntry: "Ajouter une chanson",
-    searchSongPlaceholder: "Rechercher par titre…",
+    searchSongPlaceholder: "Rechercher par titre, artiste, numéro ou CCLI…",
     entryCodePlaceholder: "Numéro, ex. 245",
     noMatchingSongs: "Aucune chanson correspondante.",
     add: "Ajouter",

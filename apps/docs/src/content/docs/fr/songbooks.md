@@ -24,7 +24,7 @@ Qui gère un recueil lui donne une **Couleur** et une image sous **Détails**, d
 
 ## Les chants d'un recueil
 
-Sous **Chansons**, **Ajouter une chanson** en la cherchant et, dans un recueil numéroté, en indiquant son numéro.
+Sous **Chansons**, **Ajouter une chanson** en la cherchant et, dans un recueil numéroté, en indiquant son numéro. La recherche trouve les chants comme le champ de recherche en haut de la page : par titre, artiste, numéro CCLI, ou leur numéro dans un autre recueil (« HY 42 »). Les flèches du clavier parcourent les chants trouvés et **Entrée** en choisit un ; les chants déjà dans le recueil ne sont pas proposés.
 
 Le recueil d'une équipe contient des chants que tous ses membres peuvent ouvrir : ceux de l'équipe, ceux du catalogue global, et ceux partagés avec l'équipe. Ajoutez l'un de vos chants et la question vous est posée d'abord : **Partager avec** l'équipe (il reste à vous, ses membres le voient) ou **Déplacer vers** l'équipe (il devient celui de l'équipe). Le chant de quelqu'un d'autre que l'équipe ne peut pas ouvrir ne peut pas y entrer.
 

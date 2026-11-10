@@ -4,12 +4,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
-import { Input } from "@oneverse/ui/components/input";
 import { attachmentTypeFor } from "#/components/song-editor/attachment-types";
 import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
 import { handOver, isChartFile, onLaunchedFiles, takeShared, textAsFile, type Incoming } from "#/lib/incoming";
-import { useSongSearch } from "#/lib/song-search";
+import { SongPicker } from "#/components/song-picker";
 
 /**
  * What another app gave Songverse (issue #407): shared to it from another
@@ -81,10 +80,8 @@ function IncomingFile({ file }: { file: File }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [picking, setPicking] = useState(false);
-  const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { songs, searching } = useSongSearch(picking ? query : "", { inLyrics: false, limit: 8 });
   const chart = isChartFile(file);
 
   const newSong = () => {
@@ -128,29 +125,15 @@ function IncomingFile({ file }: { file: File }) {
           </Button>
         </div>
         {picking ? (
-          <div className="flex flex-col gap-2">
-            <Input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("incoming.findSong")} aria-label={t("incoming.findSong")} data-testid="import-song-search" disabled={busy} />
-            {query.trim() && !searching && songs.length === 0 ? <p className="text-sm text-muted-foreground">{t("incoming.noSong")}</p> : null}
-            <ul className="flex flex-col divide-y rounded-md border empty:hidden">
-              {songs.map((song) => (
-                <li key={song.id}>
-                  <button
-                    type="button"
-                    className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-muted disabled:opacity-50"
-                    disabled={busy}
-                    onClick={() => void attachTo(song.id)}
-                    data-testid="import-song"
-                  >
-                    <span className="font-medium">
-                      {song.title}
-                      {song.versionName ? <span className="text-muted-foreground"> · {song.versionName}</span> : null}
-                    </span>
-                    {song.artists ? <span className="text-xs text-muted-foreground">{song.artists}</span> : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <SongPicker
+            autoFocus
+            limit={8}
+            placeholder={t("incoming.findSong")}
+            empty={t("incoming.noSong")}
+            disabled={busy}
+            onPick={(song) => void attachTo(song.id)}
+            testIds={{ input: "import-song-search", item: "import-song" }}
+          />
         ) : null}
         {error ? (
           <p className="text-sm text-destructive" role="alert">

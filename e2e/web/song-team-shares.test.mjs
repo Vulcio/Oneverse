@@ -76,7 +76,7 @@ await step("adding one's own song to the team's set shares it with the team", as
   await page.goto(`${WEB}/sets/${teamSet.id}`);
   await page.waitForLoadState("networkidle");
   await page.getByPlaceholder("Search by title, artist, number or CCLI…").fill(`Leader's own ${tag}`);
-  await page.getByTestId("set-song-results").getByRole("listitem").filter({ hasText: `Leader's own ${tag}` }).getByRole("button", { name: "Add" }).click();
+  await page.getByTestId("set-song-results").getByRole("option").filter({ hasText: `Leader's own ${tag}` }).getByRole("button", { name: "Add" }).click();
   await page.getByTestId("set-team-access").getByRole("button", { name: `Share with Choir ${tag}` }).click();
   await page.getByTestId("set-song-row").filter({ hasText: `Leader's own ${tag}` }).waitFor();
   const teams = await api(leader, "GET", `/song-versions/${mine.id}/shares/teams`);

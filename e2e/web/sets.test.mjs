@@ -54,7 +54,7 @@ await step("add songs by searching", async () => {
   const search = page.getByPlaceholder("Search by title, artist, number or CCLI…");
   for (const title of [`Amazing Grace ${tag}`, `How Great ${tag}`, `Holy Holy ${tag}`]) {
     await search.fill(title);
-    const result = page.getByTestId("set-song-results").getByRole("listitem").filter({ has: page.getByText(title, { exact: true }) });
+    const result = page.getByTestId("set-song-results").getByRole("option").filter({ has: page.getByText(title, { exact: true }) });
     await result.getByRole("button", { name: "Add" }).click();
     await rows().filter({ hasText: title }).first().waitFor();
   }
@@ -145,7 +145,7 @@ await step("create a team set with a team-only song", async () => {
   await asking.waitFor({ state: "detached" });
   if ((await rows().count()) !== 0) throw new Error("added without sharing");
   await page.getByPlaceholder("Search by title, artist, number or CCLI…").fill(`How Great ${tag}`);
-  await page.getByTestId("set-song-results").getByRole("listitem").filter({ hasText: `How Great ${tag}` }).getByRole("button", { name: "Add" }).click();
+  await page.getByTestId("set-song-results").getByRole("option").filter({ hasText: `How Great ${tag}` }).getByRole("button", { name: "Add" }).click();
   await rows().filter({ hasText: `How Great ${tag}` }).waitFor();
 });
 

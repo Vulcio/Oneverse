@@ -1,11 +1,12 @@
-import { ApiError, BULK_UPLOAD_EXTENSIONS, isNetworkError, keptSongbook, onlineOrKept, type BulkUploadContentType, type BulkUploadFileMatch, type LanguageCode, type SongbookSection, type SongVersionSummary } from "@oneverse/core";
+import { ApiError, BULK_UPLOAD_EXTENSIONS, isNetworkError, keptSongbook, onlineOrKept, type BulkUploadContentType, type BulkUploadFileMatch, type LanguageCode, type SongbookSection } from "@oneverse/core";
 import { cn } from "@oneverse/ui/lib/utils";
 import { droppedFiles } from "#/lib/dropped-files";
 import { createFileRoute, Link, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronDown, Settings2, Share2, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
+import { SongPicker } from "#/components/song-picker";
 import { LanguageSelect } from "#/components/language-select";
 import { AppearanceCard } from "#/components/appearance-card";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
@@ -112,28 +113,8 @@ function SongbookDetail() {
   const [bulkUploadProgress, setBulkUploadProgress] = useState<{ done: number; of: number } | null>(null);
   const [bulkUploadDragOver, setBulkUploadDragOver] = useState(false);
 
-  // Songs matching what's typed, searched on the server (the whole
-  // library, not just what's loaded), minus those already in the book.
-  const [songMatches, setSongMatches] = useState<SongVersionSummary[]>([]);
-  useEffect(() => {
-    const q = entryFilter.trim();
-    if (!q || selectedSongVersionId) return;
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      apiClient
-        .listSongVersions({ q, sort: "title", pageSize: 40 })
-        .then(({ items }) => !cancelled && setSongMatches(items))
-        .catch(() => !cancelled && setSongMatches([]));
-    }, 250);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [entryFilter, selectedSongVersionId]);
-  const filteredSongVersions = useMemo(() => {
-    const alreadyAdded = new Set(songbook.entries.map((entry) => entry.songVersionId));
-    return songMatches.filter((version) => !alreadyAdded.has(version.id)).slice(0, 20);
-  }, [songMatches, songbook.entries]);
+  // Songs already in the book aren't offered again.
+  const alreadyAdded = useMemo(() => new Set(songbook.entries.map((entry) => entry.songVersionId)), [songbook.entries]);
 
   const visibleEntries = useMemo(() => {
     if (!sectionFilter) return songbook.entries;
@@ -549,15 +530,24 @@ function SongbookDetail() {
             <div className="flex flex-col gap-2 border-t pt-4">
               <Label htmlFor="entry-search">{t("songbooks.addEntry")}</Label>
               <div className="flex flex-wrap gap-2">
-                <Input
+                {/* Found as the search box finds songs (issue #424): by title, artist, CCLI or a number in another songbook. */}
+                <SongPicker
                   id="entry-search"
-                  value={entryFilter}
-                  onChange={(e) => {
-                    setEntryFilter(e.target.value);
+                  className="w-full max-w-xs"
+                  query={entryFilter}
+                  onQueryChange={(value) => {
+                    setEntryFilter(value);
                     setSelectedSongVersionId("");
                   }}
+                  closed={!!selectedSongVersionId}
+                  exclude={alreadyAdded}
                   placeholder={t("songbooks.searchSongPlaceholder")}
-                  className="max-w-xs"
+                  empty={t("songbooks.noMatchingSongs")}
+                  onPick={(song) => {
+                    setSelectedSongVersionId(song.id);
+                    setEntryFilter(song.label);
+                  }}
+                  testIds={{ item: "songbook-add-song" }}
                 />
                 {isNumbered ? (
                   <Input
@@ -574,32 +564,6 @@ function SongbookDetail() {
                   {addingEntry ? t("songbooks.adding") : t("songbooks.add")}
                 </Button>
               </div>
-              {entryFilter && !selectedSongVersionId ? (
-                filteredSongVersions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t("songbooks.noMatchingSongs")}</p>
-                ) : (
-                  <ul className="flex flex-col gap-1">
-                    {filteredSongVersions.map((version) => (
-                      <li key={version.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedSongVersionId(version.id);
-                            setEntryFilter(version.title);
-                          }}
-                          className="w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-muted"
-                        >
-                          <span className="font-medium">{version.title}</span>
-                          {version.versionName ? <span className="text-muted-foreground"> — {version.versionName}</span> : null}
-                          {version.artists.length > 0 ? (
-                            <span className="text-muted-foreground"> · {version.artists.map((a) => a.source).filter(Boolean).join(", ")}</span>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )
-              ) : null}
               {entryError ? <p className="text-sm text-destructive">{entryError}</p> : null}
             </div>
           ) : null}
