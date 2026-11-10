@@ -32,6 +32,9 @@ async function anonymous(method, path, body, headers = {}) {
 let r = await anonymous("POST", "/screens/pairings");
 check("a screen gets a code without signing in", r.status === 201 && /^[A-Z2-9]{6}$/.test(r.body.code) && r.body.secret && r.body.pairingId, JSON.stringify(r.body));
 const pairing = r.body;
+// As the screen app asks: no body and no Content-Type, which Express 5 leaves undefined (issue #420).
+const bare = await fetch(`${API}/screens/pairings`, { method: "POST" });
+check("the same with no body at all, as the screen app asks", bare.status === 201 && /^[A-Z2-9]{6}$/.test((await bare.json()).code), String(bare.status));
 r = await anonymous("POST", `/screens/pairings/${pairing.pairingId}/claim`, { secret: pairing.secret });
 check("claiming before it's confirmed: wait", r.status === 202 && r.body.pending === true, JSON.stringify(r));
 r = await anonymous("POST", `/screens/pairings/${pairing.pairingId}/claim`, { secret: "x".repeat(32) });

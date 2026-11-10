@@ -43,7 +43,10 @@ function validate(value: unknown, schema: z.ZodType) {
 export class ZodValidationPipe implements PipeTransform {
   transform(value: unknown, metadata: ArgumentMetadata) {
     const { metatype, type, data } = metadata;
-    if (isZodDto(metatype)) return validate(value, metatype.schema);
+    // A request sent with no body at all is an empty one: Express 5 leaves it
+    // undefined where Express 4 gave {} (issue #420), and clients post to
+    // routes whose fields are all optional without one (a screen asking for its code).
+    if (isZodDto(metatype)) return validate(type === "body" && value === undefined ? {} : value, metatype.schema);
     if ((type === "body" || type === "query") && data === undefined) {
       throw new InternalServerErrorException(`The whole ${type} of this route isn't validated: type it with a zod DTO`);
     }
