@@ -433,7 +433,7 @@ export function LiveView({
   return (
     <div className="relative flex h-dvh flex-col bg-background text-foreground" data-testid="live-view">
       {/* Always the same height; the song's own title is at the top of its chart (issue #68). */}
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b-2 border-b-primary px-2 sm:gap-3 sm:px-4">
+      <header className="flex h-14 shrink-0 items-center gap-1 border-b-2 border-b-primary px-2 sm:gap-3 sm:px-4">
         {/* The sidebar (issue #154): beside the song on a wider screen, a sheet on a phone. */}
         <SidebarTrigger className="size-10 text-muted-foreground [&_svg]:size-5" data-testid="live-sidebar" />
         {song.exit ? (
