@@ -18,6 +18,8 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Empty } from "@oneverse/ui/components/empty";
 
 /**
  * The song's history (issue #71): each save, newest first, with who and
@@ -95,9 +97,7 @@ export function HistoryTab({
   }
   if (entries.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-sm text-muted-foreground">{t("history.empty")}</CardContent>
-      </Card>
+      <Empty variant="card">{t("history.empty")}</Empty>
     );
   }
   const current = entries[0]!;
@@ -162,9 +162,9 @@ export function HistoryTab({
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
           {detail && detail.id === selected.id ? <EntryChanges detail={detail} /> : <p className="text-sm text-muted-foreground">{t("history.loading")}</p>}
         </CardContent>

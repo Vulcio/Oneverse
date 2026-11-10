@@ -8,6 +8,7 @@ import { PassagePicker } from "#/components/passage-picker";
 import { PassageTemplateSelect, templateRef } from "#/components/passage-template-select";
 import { apiClient } from "#/lib/api-client";
 import { useBibleVersions, versionOfPassage } from "#/lib/bible-versions";
+import { FieldError } from "@oneverse/ui/components/field";
 
 type Preview = { kind: "imported"; passage: BiblePassage } | { kind: "youversion"; passage: YouVersionPassage };
 
@@ -117,9 +118,9 @@ export function PassageItemDialog({
               </div>
             ) : null}
             {shownError ? (
-              <p className="text-sm text-destructive" role="alert">
+              <FieldError>
                 {shownError}
-              </p>
+              </FieldError>
             ) : null}
             <DialogFooter>
               <Button

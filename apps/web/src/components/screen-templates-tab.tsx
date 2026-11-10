@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/component
 import { partDocument, ScreenThemeEditor, TagPicker, type ThemeDraft } from "#/components/screen-theme-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const VIEWS = ["templates", "content", "background", "effects"] as const;
 type View = (typeof VIEWS)[number];
@@ -223,9 +224,9 @@ function PartsList({ kind, parts, onOpen, onChanged }: { kind: ScreenPartKind; p
         </Button>
       </div>
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       {parts.length > 0 ? (
         <section className="flex flex-col gap-3">

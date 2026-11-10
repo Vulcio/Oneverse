@@ -11,6 +11,7 @@ import { Textarea } from "@oneverse/ui/components/textarea";
 import { RequestOrganizationCard } from "../components/organization-request";
 import { HostLink, usePlanning } from "../host";
 import { forgetMyOrganizations } from "../organizations";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** One's organisations (issue #241), and making one where one may. */
 export function OrganizationsPage({ data }: { data: MyOrganizations }) {
@@ -88,7 +89,7 @@ export function OrganizationsPage({ data }: { data: MyOrganizations }) {
               <Label htmlFor="organization-description">{t("organizations.descriptionLabel")}</Label>
               <Textarea id="organization-description" value={description} maxLength={500} onChange={(e) => setDescription(e.target.value)} />
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? <FieldError>{error}</FieldError> : null}
             <Button className="self-start" disabled={creating || name.trim().length < 2} onClick={() => void create()} data-testid="organization-create">
               {creating ? t("organizations.creating") : t("organizations.createButton")}
             </Button>

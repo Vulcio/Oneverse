@@ -10,6 +10,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent } from "@oneverse/ui/components/card";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * An artist's page (issue #86): their picture and a short bio (from Deezer
@@ -186,9 +187,9 @@ function ArtistPage() {
               </div>
             ) : null}
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <FieldError>
                 {error}
-              </p>
+              </FieldError>
             ) : null}
           </div>
         </CardContent>

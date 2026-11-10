@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
@@ -52,7 +53,7 @@ export function PublishCard({ songVersionId }: { songVersionId: string }) {
     }
   }
 
-  if (!publication) return error ? <p className="text-sm text-destructive">{error}</p> : null;
+  if (!publication) return error ? <FieldError>{error}</FieldError> : null;
   const { submission, published } = publication;
   const open = submission && ["SUBMITTED", "UNDER_REVIEW", "NEEDS_CHANGES"].includes(submission.state);
 
@@ -108,7 +109,7 @@ export function PublishCard({ songVersionId }: { songVersionId: string }) {
           </Button>
         ) : null}
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
 
       <SubmitDialog
@@ -237,7 +238,7 @@ function SubmitDialog({
             <Textarea id="publish-message" className="min-h-16" value={message} onChange={(e) => setMessage(e.target.value)} />
           </div>
           {canPublishDirectly ? <p className="text-xs text-muted-foreground">{t("publish.publishNowHint")}</p> : null}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={!!pending}>

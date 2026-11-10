@@ -45,7 +45,7 @@ await step("a song dragged onto Quick selection in the sidebar", async () => {
   const box = await target.boundingBox();
   await page.mouse.move(box.x + 20, box.y + box.height / 2, { steps: 6 });
   await page.mouse.up();
-  await page.getByTestId("set-drop-notice").getByText(`Quick Three ${tag} added to Quick selection`).waitFor();
+  await page.locator(`[data-slot="toast"]`).getByText(`Quick Three ${tag} added to Quick selection`).waitFor();
   if ((await selection()).join() !== [one.id, two.id, three.id].join()) throw new Error(JSON.stringify(await selection()));
 });
 

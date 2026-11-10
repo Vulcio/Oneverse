@@ -10,6 +10,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { forgetMyOrganizations } from "@oneverse/planning/organizations";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/organizations")({
   loader: async () => {
@@ -160,7 +161,7 @@ function AdminOrganizationsPage() {
         ) : null}
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       {summary.requests.pending.length > 0 || summary.requests.reviewed.length > 0 ? (
         <Card data-testid="organization-requests">
@@ -306,7 +307,7 @@ function PendingRequest({ request, busy, run }: { request: AdminOrganizationRequ
       </dl>
       {request.description ? <p className="text-xs">{request.description}</p> : null}
       {request.looksLike.length > 0 ? (
-        <div className="rounded-md bg-amber-500/10 p-2 text-xs" data-testid="request-looks-like">
+        <div className="rounded-md bg-warning/10 p-2 text-xs" data-testid="request-looks-like">
           <p className="font-medium">{t("organizations.requests.looksLike")}</p>
           <ul className="list-disc pl-4">
             {request.looksLike.map((one) => (

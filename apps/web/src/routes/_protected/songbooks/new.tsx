@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/component
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/songbooks/new")({
   component: NewSongbook,
@@ -132,7 +133,7 @@ function NewSongbook() {
         </CardContent>
       </Card>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       <Button onClick={() => void submit()} disabled={submitting || !name.trim()}>
         {submitting ? t("songbooks.creating") : t("songbooks.createSongbook")}

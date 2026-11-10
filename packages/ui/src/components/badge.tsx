@@ -5,7 +5,8 @@ const VARIANTS = {
   default: "bg-primary/10 text-primary",
   muted: "bg-muted text-muted-foreground",
   destructive: "bg-destructive/10 text-destructive",
-  warning: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  warning: "bg-warning/15 text-warning",
+  success: "bg-success/15 text-success",
   outline: "border text-muted-foreground",
 } as const;
 

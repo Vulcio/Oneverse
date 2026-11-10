@@ -8,6 +8,7 @@ import { OperatorConsole } from "@oneverse/operator/components/operator-console"
 import { OperatorProvider } from "@oneverse/operator/host";
 import { createLiveClient } from "@oneverse/operator/lib/live-client";
 import { setlistTitle } from "@oneverse/screen/lib/set-items";
+import { Alert, AlertTitle } from "@oneverse/ui/components/alert";
 
 /**
  * The console on Oneverse Pulse's own page (issue #247, docs/live-session.md,
@@ -90,9 +91,11 @@ function PulseConsole({ copy, pass }: { copy: SetlistOfflineCopy; pass: string }
   return (
     <OperatorProvider host={live.host}>
       <main className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6">
-        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm" data-testid="pulse-banner">
+        <Alert variant="warning" data-testid="pulse-banner">
+          <AlertTitle className="font-normal">
           {t("screens.operator.pulse.onPulse")}
-        </p>
+        </AlertTitle>
+        </Alert>
         <OperatorConsole copy={copy} members={[]} positions={[]} itemId={itemId} onLook={setPicked} title={setlistTitle(copy.set, t, i18n.language)} />
       </main>
     </OperatorProvider>

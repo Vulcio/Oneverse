@@ -5,10 +5,11 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
-import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Card } from "@oneverse/ui/components/card";
 import { DataTable } from "@oneverse/ui/components/data-table";
 import { apiClient } from "#/lib/api-client";
 import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
+import { Empty } from "@oneverse/ui/components/empty";
 
 export const Route = createFileRoute("/_protected/sets/")({
   loader: () => apiClient.listSetlists(),
@@ -67,9 +68,7 @@ function SetsIndex() {
       </div>
 
       {setlists.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">{t("sets.noSetsYet")}</CardContent>
-        </Card>
+        <Empty variant="card">{t("sets.noSetsYet")}</Empty>
       ) : (
         <Card className="p-0">
           <DataTable

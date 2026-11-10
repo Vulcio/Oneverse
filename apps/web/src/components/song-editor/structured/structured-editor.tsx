@@ -875,7 +875,7 @@ function ChordPopover({ editor, songKey, editTick }: { editor: Editor; songKey: 
           }}
           className={cn(
             "h-8 w-24 min-w-0 rounded-md border bg-transparent px-2 font-mono text-sm font-bold outline-none focus-visible:border-ring",
-            !valid && draft.trim() && "border-amber-500",
+            !valid && draft.trim() && "border-warning",
           )}
         />
         {degree ? <span className="text-xs text-muted-foreground">{t("structuredEditor.degree", { degree, key: songKey })}</span> : null}
@@ -891,7 +891,7 @@ function ChordPopover({ editor, songKey, editTick }: { editor: Editor; songKey: 
           </ToolButton>
         </div>
       </div>
-      {!valid && draft.trim() ? <p className="text-xs text-amber-600">{t("structuredEditor.unknownChord")}</p> : null}
+      {!valid && draft.trim() ? <p className="text-xs text-warning">{t("structuredEditor.unknownChord")}</p> : null}
       {inKey.length > 0 ? (
         <div className="flex flex-col gap-1">
           <span className="text-xs text-muted-foreground">{t("structuredEditor.inKey", { key: songKey })}</span>

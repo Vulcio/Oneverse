@@ -12,6 +12,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/review/$submissionId")({
   loader: async ({ context, params }) => {
@@ -214,7 +215,7 @@ function ReviewSubmission() {
               </CardContent>
             </Card>
           ) : null}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
         </div>
       </div>
     </div>

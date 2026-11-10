@@ -15,6 +15,7 @@ import { formatBytes } from "#/lib/format-bytes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { FieldError } from "@oneverse/ui/components/field";
 
 
 export function StorageCard({ storage }: { storage: StorageUsage }) {
@@ -223,9 +224,9 @@ export function ChartDisplayCard({ profile }: { profile: Pick<UserProfile, "chor
           <p className="text-xs text-muted-foreground">{t("dashboard.liveViewHint")}</p>
         </div>
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

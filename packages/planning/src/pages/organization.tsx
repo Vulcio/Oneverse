@@ -23,6 +23,7 @@ export { loadOrganizationPage };
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 import { forgetMyOrganizations, groupTree } from "../organizations";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * An organisation (issue #241): its teams and members for everyone in it;
@@ -119,7 +120,7 @@ export function OrganizationPage({
         </div>
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       {/* A new organisation's setup, for its admins, until they put it away (issue #364). */}
       {isAdmin && organization.setup && !organization.setup.dismissed ? (

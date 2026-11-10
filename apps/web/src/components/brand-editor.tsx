@@ -31,6 +31,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { cn } from "@oneverse/ui/lib/utils";
 import { BrandLogo } from "#/components/brand-logo";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** What's saved with Save: everything but the files, which go up at once. */
 interface Draft {
@@ -137,9 +138,9 @@ export function BrandEditor({ initial }: { initial: Brand }) {
       </div>
       {!editable ? <p className="text-sm text-muted-foreground">{t("brands.readOnly")}</p> : null}
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
 
       <fieldset disabled={!editable} className="contents">

@@ -10,6 +10,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { cn } from "@oneverse/ui/lib/utils";
 import { BrandLogo } from "#/components/brand-logo";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** Who a new brand can be for: a team or an organisation the user runs. */
 export type BrandOwnerChoice = { kind: "team" | "organization"; id: string; name: string };
@@ -156,9 +157,9 @@ function NewBrand({ owners }: { owners: BrandOwnerChoice[] }) {
         {t("admin.cancel")}
       </Button>
       {error ? (
-        <p className="w-full text-sm text-destructive" role="alert">
+        <FieldError className="w-full">
           {error}
-        </p>
+        </FieldError>
       ) : null}
     </form>
   );

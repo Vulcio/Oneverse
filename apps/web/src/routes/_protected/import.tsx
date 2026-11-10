@@ -9,6 +9,7 @@ import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
 import { handOver, isChartFile, onLaunchedFiles, takeShared, textAsFile, type Incoming } from "#/lib/incoming";
 import { SongPicker } from "#/components/song-picker";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * What another app gave Songverse (issue #407): shared to it from another
@@ -136,9 +137,9 @@ function IncomingFile({ file }: { file: File }) {
           />
         ) : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

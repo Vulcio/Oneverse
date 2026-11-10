@@ -1,5 +1,5 @@
 import { cueAt, formatDuration, nextCueSection, snapToBeat, type CuePoint, type CueSection, type StructureGroup } from "@oneverse/core";
-import { Crosshair, Flag, Loader2, Minus, Play, Plus, Trash2, X } from "lucide-react";
+import { Crosshair, Flag, Minus, Play, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -7,6 +7,8 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { playStems, seekStems, useStems, type StemSong } from "#/lib/stem-engine";
 import { cn } from "@oneverse/ui/lib/utils";
+import { Spinner } from "@oneverse/ui/components/spinner";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** The structure bar's colours (Live, issue #68), as CSS colours. */
 export const GROUP_COLOURS: Record<StructureGroup, string> = {
@@ -368,14 +370,14 @@ export function CueEditor({ song, cues, onChange, onClose }: { song: StemSong; c
           </Button>
         ) : null}
         <Button type="button" size="sm" onClick={() => void save()} disabled={saving} data-testid="stem-cue-save">
-          {saving ? <Loader2 className="animate-spin" /> : null}
+          {saving ? <Spinner /> : null}
           {t("stems.cueSave")}
         </Button>
       </div>
       {error ? (
-        <p className="text-xs text-destructive" role="alert">
+        <FieldError size="sm">
           {error}
-        </p>
+        </FieldError>
       ) : null}
     </div>
   );

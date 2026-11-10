@@ -23,6 +23,7 @@ import { OfflinePinButton } from "#/components/offline-pin-button";
 import { SectionsEditor } from "#/components/sections-editor";
 import { SongbookSongInfoCard } from "#/components/songbook-song-info";
 import { deviceStorage } from "#/lib/offline-data";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** A bulk upload's files go in batches of at most this many files and bytes (issue #202): within the API's limit per request, and its memory. */
 const BULK_UPLOAD_BATCH_FILES = 100;
@@ -384,7 +385,7 @@ function SongbookDetail() {
                   disabled={!canEdit}
                 />
               </div>
-              {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
+              {saveError ? <FieldError>{saveError}</FieldError> : null}
               {canEdit ? (
                 <div className="flex items-center justify-between">
                   <Button onClick={() => void save()} disabled={saving || !name.trim()}>
@@ -466,7 +467,7 @@ function SongbookDetail() {
                 </li>
               ))}
             </ul>
-            {materializeError ? <p className="text-sm text-destructive">{materializeError}</p> : null}
+            {materializeError ? <FieldError>{materializeError}</FieldError> : null}
           </CardContent>
         </Card>
       ) : null}
@@ -564,7 +565,7 @@ function SongbookDetail() {
                   {addingEntry ? t("songbooks.adding") : t("songbooks.add")}
                 </Button>
               </div>
-              {entryError ? <p className="text-sm text-destructive">{entryError}</p> : null}
+              {entryError ? <FieldError>{entryError}</FieldError> : null}
             </div>
           ) : null}
         </CardContent>
@@ -725,7 +726,7 @@ function SongbookDetail() {
               </div>
             ) : null}
 
-            {bulkUploadError ? <p className="text-sm text-destructive">{bulkUploadError}</p> : null}
+            {bulkUploadError ? <FieldError>{bulkUploadError}</FieldError> : null}
           </CardContent>
         </Card>
       ) : null}

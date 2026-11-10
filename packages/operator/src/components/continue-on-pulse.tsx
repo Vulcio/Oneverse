@@ -15,7 +15,7 @@ export function ContinueOnPulse({ className }: { className?: string }) {
   const { ready, pulseLink } = useLive();
   if (ready || !pulseLink) return null;
   return (
-    <div className={cn("flex flex-wrap items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm", className)} data-testid="continue-on-pulse">
+    <div className={cn("flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm", className)} data-testid="continue-on-pulse">
       <p className="min-w-0 flex-1">{t("screens.continueOnPulseHint")}</p>
       <Button size="sm" render={<a href={pulseLink} />}>
         <Radio />

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** Teams asking for songs of yours shared into their sets, and songs offered to teams you run (issue #331). Hidden when there are none. */
 export function OwnershipRequestsCard({ requests }: { requests: SongOwnershipRequest[] }) {
@@ -68,7 +69,7 @@ export function OwnershipRequestsCard({ requests }: { requests: SongOwnershipReq
             </li>
           ))}
         </ul>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );

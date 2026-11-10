@@ -4,6 +4,7 @@ import { I18nextProvider } from "react-i18next";
 import { createI18n, loadLocale } from "@oneverse/app/i18n";
 import { getSession } from "@oneverse/app/server-auth";
 import { AppHeader } from "#/components/app-header";
+import { AppToaster } from "@oneverse/app/components/app-toaster";
 
 /** Every signed-in page: signed out, signing in first. */
 export const Route = createFileRoute("/_protected")({
@@ -26,6 +27,7 @@ function ProtectedLayout() {
       <main className="@container mx-auto max-w-4xl px-4 py-6">
         <Outlet />
       </main>
+      <AppToaster />
     </I18nextProvider>
   );
 }

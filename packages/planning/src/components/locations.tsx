@@ -9,6 +9,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { usePlanning } from "../host";
+import { FieldError } from "@oneverse/ui/components/field";
 
 type Owner = { teamId: string } | { organizationId: string };
 
@@ -159,7 +160,7 @@ export function LocationsCard({ owner }: { owner: Owner }) {
             {t("locations.add")}
           </Button>
         )}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );

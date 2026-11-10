@@ -119,7 +119,7 @@ export function SongOrder({
                   {item.transpose ? <span className="rounded bg-background/60 px-1 text-[10px] font-semibold tabular-nums">{item.transpose > 0 ? `+${item.transpose}` : `−${-item.transpose}`}</span> : null}
                   {/* Its own chords, lines or words (issue #205). */}
                   {passEdited(item) ? (
-                    <span className="font-semibold text-amber-600 dark:text-amber-400" title={t("songOrder.changed")} aria-label={t("songOrder.changed")} data-pass-changed="">
+                    <span className="font-semibold text-warning" title={t("songOrder.changed")} aria-label={t("songOrder.changed")} data-pass-changed="">
                       *
                     </span>
                   ) : null}

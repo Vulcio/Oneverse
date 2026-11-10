@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/notifications")({
   loader: () => apiClient.adminGetNotificationSettings(),
@@ -97,9 +98,9 @@ function AdminNotificationsPage() {
             </span>
           </p>
           {push.error ? (
-            <p className="text-xs text-destructive" data-testid="push-error">
+            <FieldError size="sm" data-testid="push-error">
               {push.error}
-            </p>
+            </FieldError>
           ) : null}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="vapid-public">{t("notifications.adminPublicKey")}</Label>
@@ -142,7 +143,7 @@ function AdminNotificationsPage() {
         </CardContent>
       </Card>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <div className="flex items-center justify-between">
         <Button
           onClick={() =>

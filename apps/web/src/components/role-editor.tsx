@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** What a role allows, all optional: the server's roles have every field, a team's or an organisation's some. */
 export type EditableRole = { name: string; description: string } & Partial<
@@ -139,7 +140,7 @@ export function RoleEditor({ kind, role, onClose, onSubmit }: { kind: RoleEditor
               </div>
             ) : null}
           </fieldset>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               {t("admin.cancel")}

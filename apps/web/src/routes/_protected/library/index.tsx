@@ -5,12 +5,13 @@ import { useTranslation } from "react-i18next";
 import { GettingStarted } from "#/components/getting-started";
 import { LibraryShelves } from "#/components/library-home";
 import { Button } from "@oneverse/ui/components/button";
-import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Card } from "@oneverse/ui/components/card";
 import { DataTable } from "@oneverse/ui/components/data-table";
 import { Input } from "@oneverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
 import { useColumnPrefs, useLibraryColumns } from "./-columns";
 import { parseLibrarySearch } from "./-library-search";
+import { Empty } from "@oneverse/ui/components/empty";
 
 /** Songs shown under the shelves; the rest is on Songs. */
 const PREVIEW = 8;
@@ -71,9 +72,7 @@ function LibraryHomePage() {
       {stats?.ownSongCount !== undefined ? <GettingStarted ownSongs={stats.ownSongCount} teams={teams} setlists={setlists} /> : null}
 
       {recent.total === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">{t("library.noSongsYet")}</CardContent>
-        </Card>
+        <Empty variant="card">{t("library.noSongsYet")}</Empty>
       ) : (
         <>
           {home ? <LibraryShelves home={home} /> : null}

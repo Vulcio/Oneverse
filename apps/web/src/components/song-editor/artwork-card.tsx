@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@oneverse/ui/components/tooltip";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * A song's image (issue #85): the album or single's artwork from Apple
@@ -109,9 +110,9 @@ export function ArtworkCard({ version, canEdit }: { version: SongVersionDetail; 
             </div>
           ) : null}
           {error && !open ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
         </div>
       </CardContent>
@@ -178,9 +179,9 @@ export function ArtworkCard({ version, canEdit }: { version: SongVersionDetail; 
             {uploadButton}
           </div>
           {error && candidates && candidates.length > 0 ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
         </DialogContent>
       </Dialog>

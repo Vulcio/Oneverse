@@ -10,6 +10,7 @@ import { Card, CardContent } from "@oneverse/ui/components/card";
 import { RoleEditor } from "#/components/role-editor";
 import { apiClient } from "#/lib/api-client";
 import { useRoleSummary } from "./-roles-dialog";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/roles")({
   loader: () => apiClient.adminListRoles(),
@@ -67,9 +68,9 @@ function AdminRolesPage() {
       </div>
 
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
 
       <Card className="p-0">

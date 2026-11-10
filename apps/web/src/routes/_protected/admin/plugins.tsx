@@ -11,6 +11,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 import { docsPageUrl } from "#/lib/docs";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/plugins")({
   loader: () => apiClient.adminGetPlugins(),
@@ -114,9 +115,9 @@ function PluginCard({ plugin, encryptionKey }: { plugin: PluginSummary; encrypti
           </div>
         ) : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
         {plugin.sources ? <SongProviderSources sources={plugin.sources} encryptionKey={encryptionKey} /> : null}
         <a className="inline-flex items-center gap-1 text-sm text-primary hover:underline" href={docsPageUrl(plugin.docsPath.replace(/^\/|\/$/g, ""), i18n.language)} target="_blank" rel="noreferrer">
@@ -138,9 +139,9 @@ function SongProviderSources({ sources, encryptionKey }: { sources: SongProvider
       </h2>
       <p className="text-xs text-muted-foreground">{t("plugins.serversHint")}</p>
       {!encryptionKey ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {t("plugins.noEncryptionKey")}
-        </p>
+        </FieldError>
       ) : null}
       {sources.length === 0 ? <p className="text-sm text-muted-foreground">{t("plugins.noServers")}</p> : null}
       <ul className="flex flex-col gap-3">
@@ -235,14 +236,14 @@ function SourceRow({ source, previous, ids }: { source: SongProviderSourceSummar
         </p>
       ) : null}
       {tested ? (
-        <p className={tested.ok ? "text-xs text-emerald-700 dark:text-emerald-400" : "text-xs text-destructive"} role="status" data-testid="song-provider-test">
+        <p className={tested.ok ? "text-xs text-success" : "text-xs text-destructive"} role="status" data-testid="song-provider-test">
           {tested.message}
         </p>
       ) : null}
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       {editing ? <EditSource source={source} onDone={() => setEditing(false)} /> : null}
       <div className="flex flex-wrap gap-2">
@@ -335,9 +336,9 @@ function EditSource({ source, onDone }: { source: SongProviderSourceSummary; onD
         </label>
       ) : null}
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       <div className="flex gap-2">
         <Button type="button" size="sm" disabled={busy || !apiUrl.trim()} onClick={() => void save()}>
@@ -427,9 +428,9 @@ function AddSource() {
       <h3 className="text-sm font-medium">{t("plugins.addServer")}</h3>
       <SourceFields id="new-source" name={name} onName={setName} apiUrl={apiUrl} onApiUrl={setApiUrl} apiKey={apiKey} onApiKey={setApiKey} allowPrivate={allowPrivate} onAllowPrivate={setAllowPrivate} />
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       <div>
         <Button type="submit" size="sm" disabled={busy || !apiUrl.trim()}>

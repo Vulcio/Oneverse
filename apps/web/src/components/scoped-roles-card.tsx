@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { RoleEditor } from "#/components/role-editor";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 type Owner = { teamId: string } | { organizationId: string };
 
@@ -174,9 +175,9 @@ export function ScopedRolesCard({ owner, members }: { owner: Owner; members: { u
           </div>
         ) : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
       {editing ? (

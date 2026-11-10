@@ -23,6 +23,7 @@ import { loadOrganizationEventsPage } from "../loaders";
 
 export { loadOrganizationEventsPage };
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const SHOWN_WEEKS = 8;
 const browserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -84,7 +85,7 @@ export function OrganizationEventsPage({ data }: { data: NonNullable<Awaited<Ret
         ) : null}
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       <Card>
         <CardContent className="flex flex-col gap-3">
@@ -491,7 +492,7 @@ function OrganizationEventDialog({
             ) : null}
           </div>
         </form>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         {presetName !== null ? (
           <div className="flex items-end gap-2">
             <div className="flex flex-1 flex-col gap-1.5">

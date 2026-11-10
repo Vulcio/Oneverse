@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { formatBytes } from "#/lib/format-bytes";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** A role's short account of what it allows, for a list or a badge's title. */
 export function useRoleSummary() {
@@ -117,7 +118,7 @@ export function RolesDialog({
             ))}
           </div>
         ) : null}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
             {t("admin.cancel")}

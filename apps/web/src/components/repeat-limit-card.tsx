@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Input } from "@oneverse/ui/components/input";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Songs played often (issue #335), on a team's page for its admins: over
@@ -62,9 +63,9 @@ export function RepeatLimitCard({ weeks, limit, onSave }: { weeks: number; limit
           {saved ? <span className="text-xs text-muted-foreground">{t("recentPlays.saved")}</span> : null}
         </div>
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

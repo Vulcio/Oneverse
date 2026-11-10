@@ -7,6 +7,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const MAX_PICTURE_BYTES = 5 * 1024 * 1024;
 
@@ -131,9 +132,9 @@ export function AppearanceCard({
           </div>
         </fieldset>
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

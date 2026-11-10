@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/songbook-catalogs/new")({
   beforeLoad: ({ context }) => {
@@ -108,7 +109,7 @@ function NewSongbookCatalog() {
         </CardContent>
       </Card>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       <Button onClick={() => void submit()} disabled={submitting || !name.trim()}>
         {submitting ? t("songbookCatalog.creating") : t("songbookCatalog.createCatalog")}
@@ -161,7 +162,7 @@ function CreateFromFileCard() {
             event.target.value = "";
           }}
         />
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );

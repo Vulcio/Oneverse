@@ -1,6 +1,6 @@
 import { parseLyricsQuery, resolveTranslation, type LocaleValue, type LyricsMatch, type SongSort, type SongVersionSummary, type Tag } from "@oneverse/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ListFilter, Loader2, Quote, Search, Star, X } from "lucide-react";
+import { ListFilter, Quote, Search, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
@@ -8,7 +8,7 @@ import { filtersOf, parseLibrarySearch, sameFilters, SORTS, type LibrarySearch }
 import { useColumnPrefs, useLibraryColumns } from "./-columns";
 import { ColumnsMenu } from "./-columns-menu";
 import { Button } from "@oneverse/ui/components/button";
-import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Card } from "@oneverse/ui/components/card";
 import { DataTable } from "@oneverse/ui/components/data-table";
 import { Input } from "@oneverse/ui/components/input";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
@@ -18,6 +18,9 @@ import { refreshSmartLists, useSmartLists } from "#/lib/smart-lists";
 import { useInLyrics } from "#/lib/lyrics-search";
 import { LyricsSnippet } from "#/components/lyrics-snippet";
 import { songDragProps } from "#/lib/song-drag";
+import { Spinner } from "@oneverse/ui/components/spinner";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Empty } from "@oneverse/ui/components/empty";
 
 const PAGE_SIZE = 50;
 
@@ -144,9 +147,7 @@ function LibraryIndex() {
       <SmartListBar search={search} filtered={filtered} />
 
       {songs.total === 0 && !filtered ? (
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">{t("library.noSongsYet")}</CardContent>
-        </Card>
+        <Empty variant="card">{t("library.noSongsYet")}</Empty>
       ) : (
         <Card className="gap-0 p-0">
           <div className="px-4 pt-4 pb-3">
@@ -228,7 +229,7 @@ function LibraryIndex() {
             <span data-testid="library-range">{t("library.range", { from: items.length ? 1 : 0, to: items.length, total: songs.total })}</span>
             {hasMore ? (
               <Button variant="outline" size="sm" disabled={loadingMore} onClick={() => void loadMore()} data-testid="library-more">
-                {loadingMore ? <Loader2 className="animate-spin" /> : null}
+                {loadingMore ? <Spinner /> : null}
                 {t("library.showMore")}
               </Button>
             ) : null}
@@ -340,7 +341,7 @@ function SmartListBar({ search, filtered }: { search: LibrarySearch; filtered: b
           {t("library.saveAsSmartList")}
         </Button>
       )}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
     </div>
   );
 }

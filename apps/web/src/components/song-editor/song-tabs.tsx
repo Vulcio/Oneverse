@@ -47,15 +47,15 @@ import { StoredTakes } from "#/components/stored-takes";
 import { PartPicker, usePartLabel } from "#/components/part-picker";
 import { CleanUp } from "./clean-up";
 import { HighQuality, SeparateButton, SeparationList, separationModels, useStemSeparations } from "./stem-separation";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Empty } from "@oneverse/ui/components/empty";
 
 const NEW_MULTITRACK = "__new";
 
 export function SaveFirst() {
   const { t } = useTranslation();
   return (
-    <Card>
-      <CardContent className="py-8 text-center text-sm text-muted-foreground">{t("songEditor.saveFirst")}</CardContent>
-    </Card>
+    <Empty variant="card">{t("songEditor.saveFirst")}</Empty>
   );
 }
 
@@ -991,9 +991,9 @@ export function AttachmentsTab({
             </Button>
           ) : null}
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
         </CardContent>
       </Card>
@@ -1347,7 +1347,7 @@ function ReferenceRecordings({ songVersionId, canEdit, canShare }: { songVersion
               {t("songEditor.links.addReference")}
             </Button>
           </div>
-          {error ? <p className="text-sm text-destructive sm:col-span-3">{error}</p> : null}
+          {error ? <FieldError className="sm:col-span-3">{error}</FieldError> : null}
         </div>
       </CardContent>
     </Card>

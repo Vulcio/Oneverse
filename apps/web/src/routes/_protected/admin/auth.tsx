@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/component
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/auth")({
   loader: () => apiClient.adminGetAuthConfig(),
@@ -138,7 +139,7 @@ function AdminAuthPage() {
             </div>
           </div>
 
-          {emailError ? <p className="text-sm text-destructive">{emailError}</p> : null}
+          {emailError ? <FieldError>{emailError}</FieldError> : null}
 
           <div className="flex items-center justify-between">
             <Button onClick={() => void saveEmail()} disabled={savingEmail}>
@@ -186,7 +187,7 @@ function AdminAuthPage() {
             </div>
           </div>
 
-          {googleError ? <p className="text-sm text-destructive">{googleError}</p> : null}
+          {googleError ? <FieldError>{googleError}</FieldError> : null}
 
           <div className="flex items-center justify-between">
             <Button onClick={() => void saveGoogle()} disabled={savingGoogle}>

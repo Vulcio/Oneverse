@@ -12,6 +12,7 @@ import { PassageTemplateSelect } from "#/components/passage-template-select";
 import { PassageVerses } from "#/components/set-passage-item";
 import { apiClient } from "#/lib/api-client";
 import { store, stored, useBibleVersions } from "#/lib/bible-versions";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/bible")({
   component: BiblePage,
@@ -101,9 +102,9 @@ function BiblePage() {
         </form>
       )}
       {shownError ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {shownError}
-        </p>
+        </FieldError>
       ) : null}
       {read?.kind === "imported" ? (
         <>
@@ -230,9 +231,9 @@ function AddToSet({ passage }: { passage: SetlistItemPassageRef }) {
           </p>
         ) : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

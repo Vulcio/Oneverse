@@ -82,7 +82,7 @@ export function InputLevel({ recorder, className }: { recorder: Recorder | null;
         <div className={cn("absolute inset-y-0 left-0 transition-[width] duration-75", colour)} style={{ width: `${along(level) * 100}%` }} />
         {held > 0 ? <div className="absolute inset-y-0 w-0.5 bg-foreground/70" style={{ left: `calc(${along(held) * 100}% - 1px)` }} /> : null}
       </div>
-      <span className={cn("w-full sm:w-56 sm:shrink-0", verdict === "loud" ? "text-destructive" : verdict === "quiet" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")} role="status">
+      <span className={cn("w-full sm:w-56 sm:shrink-0", verdict === "loud" ? "text-destructive" : verdict === "quiet" ? "text-warning" : "text-muted-foreground")} role="status">
         {verdict ? t(verdict === "good" ? "recorder.levelGood" : verdict === "loud" ? "recorder.levelLoud" : "recorder.levelQuiet") : null}
       </span>
     </div>
@@ -116,7 +116,7 @@ export function LevelLine({ recorder, className }: { recorder: Recorder | null; 
   const words = t(verdict === "good" ? "recorder.levelGood" : verdict === "loud" ? "recorder.levelLoud" : verdict === "quiet" ? "recorder.levelQuiet" : "recorder.levelNothing");
   return (
     <p
-      className={cn("flex min-w-0 items-center gap-1.5 text-xs", verdict === "good" ? "text-muted-foreground" : verdict === "loud" ? "text-destructive" : "text-amber-700 dark:text-amber-400", className)}
+      className={cn("flex min-w-0 items-center gap-1.5 text-xs", verdict === "good" ? "text-muted-foreground" : verdict === "loud" ? "text-destructive" : "text-warning", className)}
       role="status"
       data-testid="recorder-level"
       data-level={verdict}

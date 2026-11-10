@@ -10,6 +10,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { usePlanning } from "../host";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Asking for an organisation (issue #364): what it is, where, and who to
@@ -162,7 +163,7 @@ export function RequestOrganizationCard({ initial }: { initial: OrganizationRequ
             <Textarea id="request-description" value={form.description} maxLength={500} onChange={set("description")} />
           </div>
           {looksLike ? (
-            <div className="flex flex-col gap-2 rounded-md bg-amber-500/10 p-3 text-sm" data-testid="request-looks-like">
+            <div className="flex flex-col gap-2 rounded-md bg-warning/10 p-3 text-sm" data-testid="request-looks-like">
               <p className="font-medium">{t("organizations.requests.looksLikeYours")}</p>
               <ul className="list-disc pl-5 text-xs">
                 {looksLike.map((one) => (
@@ -178,9 +179,9 @@ export function RequestOrganizationCard({ initial }: { initial: OrganizationRequ
             </div>
           ) : null}
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
           <Button className="self-start" disabled={busy || !ready} onClick={() => void send()} data-testid="organization-request-send">
             {busy ? t("organizations.requests.sending") : t("organizations.requests.send")}

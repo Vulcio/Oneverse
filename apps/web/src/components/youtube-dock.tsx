@@ -1,6 +1,6 @@
 import { formatDuration } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
-import { ChevronDown, ChevronUp, Loader2, Pause, Play, TvMinimalPlay } from "lucide-react";
+import { ChevronDown, ChevronUp, Pause, Play, TvMinimalPlay } from "lucide-react";
 import { useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,8 @@ import {
   useYouTube,
   type YouTubeVideo,
 } from "#/lib/youtube-player";
+import { Spinner } from "@oneverse/ui/components/spinner";
+import { FieldError } from "@oneverse/ui/components/field";
 
 // Clear of the screen's rounded corners and the home indicator on a phone (as the stem dock).
 const EDGES = "pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] md:px-6";
@@ -116,7 +118,7 @@ export function YouTubeDock({
       disabled={loading}
       aria-label={playing ? t("stems.pause") : t("stems.play")}
     >
-      {loading ? <Loader2 className="animate-spin" /> : playing ? <Pause /> : <Play />}
+      {loading ? <Spinner /> : playing ? <Pause /> : <Play />}
     </Button>
   );
   const time = (
@@ -172,9 +174,9 @@ export function YouTubeDock({
             </p>
             <p className="hidden text-xs text-muted-foreground sm:block">{t("youtube.caption")}</p>
             {current && yt.status === "error" ? (
-              <p className="text-xs text-destructive" role="alert">
+              <FieldError size="sm">
                 {t("youtube.failed")}
-              </p>
+              </FieldError>
             ) : null}
             <div className="flex flex-wrap items-center gap-3">
               {play}

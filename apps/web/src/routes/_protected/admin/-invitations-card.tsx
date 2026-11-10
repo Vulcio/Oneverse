@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Admin > Users' sign-up (issue #198): whether only invited people can
@@ -125,9 +126,9 @@ export function InvitationsCard({ inviteOnly, invitations }: { inviteOnly: Secur
           </div>
         ) : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
 
         {invitations.length === 0 ? (

@@ -7,6 +7,7 @@ import { PlanningProvider } from "@oneverse/planning/host";
 import { WeekStartContext } from "@oneverse/ui/lib/dates";
 import { AppHeader } from "#/components/app-header";
 import { planningHost } from "#/lib/planning-host";
+import { AppToaster } from "@oneverse/app/components/app-toaster";
 
 /** Every signed-in page (issue #241): signed out, back to signing in. */
 export const Route = createFileRoute("/_protected")({
@@ -35,6 +36,7 @@ function ProtectedLayout() {
           </main>
         </PlanningProvider>
       </WeekStartContext.Provider>
+      <AppToaster />
     </I18nextProvider>
   );
 }

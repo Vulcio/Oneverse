@@ -11,6 +11,7 @@ import { setlistTitle, setOwnerLabel } from "#/lib/setlists";
 import { useAddSongToSet } from "#/components/set-team-access";
 import { RecentPlaysLine } from "#/components/recent-plays";
 import { addToQuickSelection, inQuickSelection, removeFromQuickSelection, useQuickSelection } from "#/lib/quick-selection";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Add to set, on a song (issue #330): the sets you can change that aren't
@@ -128,7 +129,7 @@ function SetChoices({ songVersionId, songTitle, adding, onLeave }: { songVersion
     <div className="flex flex-col">
       <p className="border-b px-3 py-2 text-sm font-medium">{t("sets.addToSet.title")}</p>
       <QuickSelectionChoice songVersionId={songVersionId} />
-      {error ? <p className="px-3 py-2 text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError className="px-3 py-2">{error}</FieldError> : null}
       {sets === null ? (
         error ? null : <p className="px-3 py-2 text-sm text-muted-foreground">{t("sets.addToSet.loading")}</p>
       ) : sets.length === 0 ? (

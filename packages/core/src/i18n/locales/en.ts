@@ -4,6 +4,7 @@
 // English strings until translated.
 const en = {
   common: {
+    close: "Close",
     pickDate: "Pick a date",
     clearDate: "Clear the date",
     noLanguage: "No language",

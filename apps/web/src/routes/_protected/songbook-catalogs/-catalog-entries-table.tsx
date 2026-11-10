@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@oneverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const PAGE_SIZE = 100;
 const COLUMNS_STORAGE_KEY = "songverse.catalog.columns";
@@ -208,7 +209,7 @@ export function CatalogEntriesTable({
         <Pager page={currentPage} pageCount={pageCount} total={visible.length} onPage={setPage} />
       </div>
       {canEdit ? <p className="text-xs text-muted-foreground">{t("songbookCatalog.editHint")}</p> : null}
-      {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       <div className="relative w-full overflow-x-auto rounded-md border">
         <table className="w-full text-sm" data-testid="catalog-entries">
@@ -542,7 +543,7 @@ function NewEntryRow({
             {t("songbookCatalog.cancel")}
           </Button>
         </div>
-        {error ? <p className="mt-1 text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError className="mt-1">{error}</FieldError> : null}
       </td>
     </tr>
   );

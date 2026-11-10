@@ -7,6 +7,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
 import { downloadBlob } from "#/lib/download";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const PREVIEW_DEBOUNCE_MS = 500;
 const LIST_LIMIT = 50;
@@ -177,7 +178,7 @@ export function CatalogImportDialog({
 
           {previewing ? <p className="text-sm text-muted-foreground">{t("songbookCatalog.previewing")}</p> : null}
           {preview && !previewing ? <Preview result={preview} replaceBlocked={replaceBlocked} /> : null}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
 
           <details className="text-sm">
             <summary className="cursor-pointer font-medium">{t("songbookCatalog.columnReference")}</summary>

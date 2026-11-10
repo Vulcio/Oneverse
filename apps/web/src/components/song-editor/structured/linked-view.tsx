@@ -106,7 +106,7 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
           {summary.length ? summary.join(" · ") : t("linkedCopy.asSung")}
         </span>
         {changed ? (
-          <span className="font-semibold text-amber-600 dark:text-amber-400" title={t("songOrder.changed")} aria-label={t("songOrder.changed")} data-pass-changed="">
+          <span className="font-semibold text-warning" title={t("songOrder.changed")} aria-label={t("songOrder.changed")} data-pass-changed="">
             *
           </span>
         ) : null}
@@ -381,7 +381,7 @@ function CopyLine({
                   maxLength={32}
                   onChange={(event) => setChord(chord.id, event.target.value.trim() ? event.target.value : undefined)}
                   aria-label={t("songOrder.chordOnPass", { chord: chord.raw })}
-                  className={cn("h-7 w-16 rounded-l-md bg-transparent px-1.5 font-mono text-xs font-bold outline-none placeholder:font-normal", change ? "text-amber-700 dark:text-amber-400" : "text-primary", left && "line-through")}
+                  className={cn("h-7 w-16 rounded-l-md bg-transparent px-1.5 font-mono text-xs font-bold outline-none placeholder:font-normal", change ? "text-warning" : "text-primary", left && "line-through")}
                   data-testid={`linked-chord-${chord.id}`}
                 />
                 <button

@@ -17,6 +17,7 @@ import { CatalogImportDialog } from "./-catalog-import-dialog";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { SectionsEditor } from "#/components/sections-editor";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/songbook-catalogs/$catalogId")({
   // `q` pre-fills the entries search, e.g. from another entry's "Original song" link.
@@ -163,7 +164,7 @@ function SongbookCatalogDetail() {
           {importMessage}
         </p>
       ) : null}
-      {exportError ? <p className="text-sm text-destructive">{exportError}</p> : null}
+      {exportError ? <FieldError>{exportError}</FieldError> : null}
       {canEdit ? (
         <CatalogImportDialog catalogId={catalog.id} open={importOpen} onOpenChange={setImportOpen} onImported={onImported} />
       ) : null}
@@ -202,7 +203,7 @@ function SongbookCatalogDetail() {
               {startingImport ? t("songbookCatalog.startingImport") : t("songbookCatalog.startImport")}
             </Button>
           </div>
-          {startImportError ? <p className="text-sm text-destructive">{startImportError}</p> : null}
+          {startImportError ? <FieldError>{startImportError}</FieldError> : null}
         </CardContent>
       </Card>
 
@@ -275,7 +276,7 @@ function SongbookCatalogDetail() {
             <p className="text-sm font-medium text-primary">{t("songbookCatalog.licensed")}</p>
           ) : null}
 
-          {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
+          {saveError ? <FieldError>{saveError}</FieldError> : null}
           {canEdit ? (
             <div className="flex items-center justify-between">
               <Button onClick={() => void save()} disabled={saving || !name.trim()}>

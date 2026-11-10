@@ -6,6 +6,7 @@ import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** How long ago, for a heartbeat: seconds, then minutes. */
 function ago(at: string, now: number): string {
@@ -82,9 +83,9 @@ export function BackgroundJobsCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
         {status ? (
           <>

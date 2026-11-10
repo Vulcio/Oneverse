@@ -6,6 +6,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent } from "@oneverse/ui/components/card";
 import { NotificationList } from "../components/notification-list";
 import { usePlanning } from "../host";
+import { Empty } from "@oneverse/ui/components/empty";
 
 /**
  * Everything someone was told (issue #149), newest first, a page at a time:
@@ -49,7 +50,7 @@ export function NotificationsPage() {
       <Card className="py-0">
         <CardContent className="px-0">
           {items === null ? null : items.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t("notifications.empty")}</p>
+            <Empty className="py-6">{t("notifications.empty")}</Empty>
           ) : (
             <NotificationList items={items} onRead={(ids) => void markRead(ids)} />
           )}

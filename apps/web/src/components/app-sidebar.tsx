@@ -61,7 +61,7 @@ import { forgetOffline } from "#/lib/offline-db";
 import { setTheme, useMode } from "#/lib/mode";
 import { forgetSmartLists, smartListSearch, useSmartLists } from "#/lib/smart-lists";
 import { setlistTitle } from "#/lib/setlists";
-import { DropNoticeBar, useSetDrop, type SetDropTarget } from "#/components/set-drop";
+import { useSetDrop, type SetDropTarget } from "#/components/set-drop";
 import { forgetQuickSelection, useQuickSelection } from "#/lib/quick-selection";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@oneverse/ui/components/collapsible";
 import {
@@ -443,10 +443,6 @@ function MainNav({
           {setDrop.dragging ? (
             <li className="px-4 py-1 text-xs text-muted-foreground" data-testid="set-drop-hint">
               {t("sets.dropOnSet.title")}
-            </li>
-          ) : setDrop.notice ? (
-            <li className="py-1">
-              <DropNoticeBar notice={setDrop.notice} onClose={setDrop.closeNotice} />
             </li>
           ) : null}
           {setDrop.dialog}

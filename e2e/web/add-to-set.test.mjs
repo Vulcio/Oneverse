@@ -87,7 +87,7 @@ await step("dragging a library song onto a set in the sidebar adds it", async ()
   const box = await entry(`Rehearsal ${tag}`).boundingBox();
   await page.mouse.move(box.x + 20, box.y + box.height / 2, { steps: 6 });
   await page.mouse.up();
-  await page.getByTestId("set-drop-notice").getByText(`Grace ${tag} added to Rehearsal ${tag}`).waitFor();
+  await page.locator(`[data-slot="toast"]`).getByText(`Grace ${tag} added to Rehearsal ${tag}`).waitFor();
   if (!(await songsOf(rehearsal)).includes(grace.id)) throw new Error("not in the set");
   // The sidebar is itself again.
   await page.getByTestId("set-drop-hint").waitFor({ state: "detached" });
@@ -108,7 +108,7 @@ await step("one's own song dropped on a team's set: asked first, then moved to t
   await page.mouse.up();
   const ask = page.getByTestId("set-team-access");
   await ask.getByRole("button", { name: `Move to Add Team ${tag}` }).click();
-  await page.getByTestId("set-drop-notice").getByText(`Mercy ${tag} added to Team service ${tag}`).waitFor();
+  await page.locator(`[data-slot="toast"]`).getByText(`Mercy ${tag} added to Team service ${tag}`).waitFor();
   const after = await api(leader, "GET", `/song-versions/${mercy.id}`);
   if (after.ownerScope !== "TEAM" || !(await songsOf(teamSet)).includes(mercy.id)) throw new Error(JSON.stringify({ scope: after.ownerScope }));
 });

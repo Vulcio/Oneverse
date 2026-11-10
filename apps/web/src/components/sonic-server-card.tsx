@@ -9,6 +9,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 import { docsPageUrl } from "#/lib/docs";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * A team's or an organisation's own Songverse Sonic server (issue #300), on
@@ -127,9 +128,9 @@ export function SonicServerCard({ owner }: { owner: SonicServerOwnerRef }) {
               <span className="text-xs text-muted-foreground">{t("sonicServer.monthlyLimitHint")}</span>
             </div>
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <FieldError>
                 {error}
-              </p>
+              </FieldError>
             ) : null}
             <div className="flex flex-wrap items-center gap-3">
               <Button size="sm" onClick={save} disabled={busy !== null || (!server && (!form.apiUrl.trim() || !form.apiKey))} data-testid="sonic-save">

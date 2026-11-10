@@ -73,6 +73,8 @@ import type { SongNotice, SongTab } from "./song-tabs-list";
 // The editor (Tiptap and ProseMirror) loads when the Editor tab first opens, not with the song page.
 const StructuredEditor = lazy(() => import("./structured/structured-editor").then((module) => ({ default: module.StructuredEditor })));
 import { downloadBlob } from "#/lib/download";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Alert, AlertTitle } from "@oneverse/ui/components/alert";
 
 
 type EditProps = {
@@ -628,9 +630,9 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
             }
             note={
               reviewState === "failed" ? (
-                <p className="text-sm text-destructive" role="alert">
+                <FieldError>
                   {t("songEditor.infoLookupFailed")}
-                </p>
+                </FieldError>
               ) : null
             }
           />
@@ -847,9 +849,11 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
       </div>
 
       {edit?.notices?.length ? (
-        <p className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive" role="alert">
+        <Alert variant="destructive">
+          <AlertTitle>
           {edit.notices.map((notice) => t(`songEditor.notices.${notice}`)).join(" ")}
-        </p>
+        </AlertTitle>
+        </Alert>
       ) : null}
       {version && !canChangeChart ? <p className="text-sm text-muted-foreground">{t(canSuggest ? "suggestions.readOnly" : "songEditor.readOnly")}</p> : null}
       {suggesting ? (

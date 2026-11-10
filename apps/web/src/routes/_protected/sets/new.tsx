@@ -10,6 +10,7 @@ import { apiClient } from "#/lib/api-client";
 import { addQuickSelectionTo } from "#/lib/quick-selection";
 import { formatSetDate, todayIso } from "#/lib/setlists";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/sets/new")({
   // From a song's Add to set (issue #330): the song goes in the new set; from the Quick selection (issue #334), its songs.
@@ -99,7 +100,7 @@ function NewSet() {
               </NativeSelect>
               {teams.length > adminTeams.length ? <p className="text-xs text-muted-foreground">{t("sets.ownerTeamHint")}</p> : null}
             </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? <FieldError>{error}</FieldError> : null}
             <Button type="submit" disabled={pending}>
               {pending ? t("sets.creating") : t("sets.create")}
             </Button>

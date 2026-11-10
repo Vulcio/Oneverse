@@ -2,6 +2,7 @@ import { BookOpen } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * The Bible in the sidebar (issue #310), on a team's or an organisation's
@@ -47,9 +48,9 @@ export function BibleCard({ enabled, fromOrganization, onChange }: { enabled: bo
         </label>
         {fromOrganization ? <p className="text-xs text-muted-foreground">{t("biblePage.fromOrganization", { name: fromOrganization })}</p> : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

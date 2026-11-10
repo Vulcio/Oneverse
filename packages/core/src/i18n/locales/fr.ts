@@ -4,6 +4,7 @@ import type en from "./en.js";
 // mismatch since it's typed against `typeof en`.
 const fr: typeof en = {
   common: {
+    close: "Fermer",
     pickDate: "Choisir une date",
     clearDate: "Effacer la date",
     noLanguage: "Aucune langue",

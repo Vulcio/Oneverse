@@ -60,6 +60,7 @@ import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 type Part = Exclude<keyof ScreenTheme, "$schema" | "shows" | "grid" | "masks" | "effects">;
 
@@ -694,9 +695,9 @@ export function ScreenThemeEditor({
             </div>
           ) : null}
           {error ? (
-            <p className="w-full text-sm text-destructive" role="alert">
+            <FieldError className="w-full">
               {error}
-            </p>
+            </FieldError>
           ) : null}
           <div className="ml-auto flex flex-wrap gap-2">
             <Button variant="ghost" onClick={onClose}>

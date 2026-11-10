@@ -24,6 +24,7 @@ import { LocationsCard } from "../components/locations";
 import { GroupCard, MemberPositions, PositionsCard, TeamOrganizationCard } from "../components/team-cards";
 import { TeamCalendar } from "../components/team-calendar";
 import { NewGroupForm } from "./organization";
+import { FieldError } from "@oneverse/ui/components/field";
 
 
 /**
@@ -239,7 +240,7 @@ export function TeamPage({ userId, data, adminCards }: { userId: string; data: N
         <p className="text-sm text-muted-foreground">{t("teams.promoteBeforeLeaveDescription")}</p>
       ) : null}
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       {/* Its services and rehearsals, each date with its set (issue #235). */}
       <TeamCalendar teamId={team.id} isAdmin={isAdmin} customInstruments={customInstruments} withSets={team.usesSongverse !== false} positions={positions} />

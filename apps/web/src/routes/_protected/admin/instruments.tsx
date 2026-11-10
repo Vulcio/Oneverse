@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/component
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/instruments")({
   loader: () => apiClient.adminListInstruments(),
@@ -48,9 +49,9 @@ function AdminInstrumentsPage() {
       </div>
 
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
 
       <Card>

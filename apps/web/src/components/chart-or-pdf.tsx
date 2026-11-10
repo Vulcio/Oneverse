@@ -1,5 +1,5 @@
 import type { Attachment, ChartPreferences, LiveViewValue } from "@oneverse/core";
-import { AudioLines, FileText, LayoutGrid, Loader2, MicVocal, Music } from "lucide-react";
+import { AudioLines, FileText, LayoutGrid, MicVocal, Music } from "lucide-react";
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -8,6 +8,7 @@ import { apiClient } from "#/lib/api-client";
 import { loadPdfjs, pdfjsWasmUrl } from "#/lib/pdfjs";
 import { fileLoader, songFiles } from "#/lib/song-files";
 import { cn } from "@oneverse/ui/lib/utils";
+import { Spinner } from "@oneverse/ui/components/spinner";
 
 /** A song's PDFs: its sheet music, its original chart. */
 function pdfsOf(attachments: Attachment[]): Attachment[] {
@@ -430,7 +431,7 @@ export function PdfPages({ source, name, className }: { source: () => Promise<Pd
       {state === "loading" ? (
         <Card>
           <CardContent className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" />
+            <Spinner />
             {t("chartView.loading", { name })}
           </CardContent>
         </Card>

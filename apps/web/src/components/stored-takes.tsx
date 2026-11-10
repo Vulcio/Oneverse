@@ -1,5 +1,5 @@
 import { formatDuration } from "@oneverse/core";
-import { CloudUpload, Loader2, Pause, Play, Trash2, TriangleAlert } from "lucide-react";
+import { CloudUpload, Pause, Play, Trash2, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -7,6 +7,8 @@ import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { apiClient } from "#/lib/api-client";
 import { deleteStoredTake, isUploadingTake, recoverStoredTake, storedTakeSeconds, uploadStoredTake, type StoredTake } from "#/lib/take-store";
 import { useStoredTakes } from "#/lib/waiting-takes";
+import { Spinner } from "@oneverse/ui/components/spinner";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * The takes on this device that aren't on the server yet (issue #365): kept
@@ -82,7 +84,7 @@ export function StoredTakes({ songVersionId, onUploaded }: { songVersionId: stri
   const day = (at: number) => new Date(at).toLocaleDateString(i18n.language, { day: "numeric", month: "short" });
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3" data-testid="stored-takes">
+    <div className="flex flex-col gap-2 rounded-md border border-warning/40 bg-warning/10 p-3" data-testid="stored-takes">
       <p className="text-sm font-medium">{t("recorder.stored.title", { count: takes.length })}</p>
       <p className="text-xs text-muted-foreground">{t("recorder.stored.description")}</p>
       <ul className="flex flex-col divide-y">
@@ -111,7 +113,7 @@ export function StoredTakes({ songVersionId, onUploaded }: { songVersionId: stri
               </div>
               <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
                 <Button type="button" size="sm" variant="outline" onClick={() => void upload(take)} disabled={sending} data-testid="stored-take-upload">
-                  {sending ? <Loader2 className="animate-spin" /> : <CloudUpload />}
+                  {sending ? <Spinner /> : <CloudUpload />}
                   {take.state === "recording" ? t("recorder.stored.keep") : t("recorder.stored.upload")}
                 </Button>
                 {sending ? null : (
@@ -136,9 +138,9 @@ export function StoredTakes({ songVersionId, onUploaded }: { songVersionId: stri
         })}
       </ul>
       {error ? (
-        <p className="text-xs text-destructive" role="alert">
+        <FieldError size="sm">
           {error}
-        </p>
+        </FieldError>
       ) : null}
     </div>
   );

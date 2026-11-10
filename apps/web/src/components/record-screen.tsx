@@ -19,7 +19,7 @@ import {
   type RecordingDetails,
 } from "@oneverse/core";
 import { useRouteContext } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronUp, Circle, CloudOff, Hand, Headphones, ListPlus, Loader2, Mic, Play, RotateCcw, Square, Trash2, TriangleAlert, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Circle, CloudOff, Hand, Headphones, ListPlus, Mic, Play, RotateCcw, Square, Trash2, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -40,6 +40,9 @@ import { openOwnEngine, openPlayerEngine, type RecordEngine } from "#/lib/record
 import type { Beat, Take } from "#/lib/recorder";
 import { getStemState, pauseStems, type StemSong } from "#/lib/stem-engine";
 import { keepTake, TakeLog, type TakeTarget } from "#/lib/take-store";
+import { Spinner } from "@oneverse/ui/components/spinner";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Alert, AlertTitle } from "@oneverse/ui/components/alert";
 
 /** A take can be this long at most: its WAV file stays under the upload limit for audio (50 MB). */
 const MAX_BYTES = 50 * 1024 * 1024 - 1024;
@@ -870,7 +873,7 @@ export function RecordScreen({
                   {t("recorder.headphones")}
                 </p>
                 {bluetooth ? (
-                  <p className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400" data-testid="recorder-bluetooth">
+                  <p className="flex items-start gap-2 text-xs text-warning" data-testid="recorder-bluetooth">
                     <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
                     {t("recorder.bluetooth")}
                   </p>
@@ -1017,27 +1020,27 @@ export function RecordScreen({
             </div>
           ) : null}
           {routeChanged && roundTrip ? (
-          <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400" role="status" data-testid="recorder-route-changed">
+          <p className="flex items-start gap-2 text-sm text-warning" role="status" data-testid="recorder-route-changed">
             <Headphones className="mt-0.5 size-4 shrink-0" aria-hidden />
             {t(roundTrip.measured ? "recorder.screen.routeMeasured" : "recorder.screen.routeNotMeasured", { name: routeChanged, ms: Math.round(roundTrip.seconds * 1000) })}
           </p>
         ) : null}
         {interrupted && phase !== "recording" ? (
-            <p className="flex items-start gap-2 text-sm text-amber-700 dark:text-amber-400" role="alert" data-testid="recorder-interrupted">
+            <p className="flex items-start gap-2 text-sm text-warning" role="alert" data-testid="recorder-interrupted">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
               {t(interrupted === "device" ? "recorder.interruptedDevice" : "recorder.interruptedSuspended")}
             </p>
           ) : null}
           {phase === "waiting" ? (
-            <p className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm" role="status" data-testid="recorder-waiting">
-              <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden />
-              {t("recorder.keptOnDevice")}
-            </p>
+            <Alert variant="warning" data-testid="recorder-waiting">
+              <CloudOff aria-hidden />
+              <AlertTitle className="font-normal">{t("recorder.keptOnDevice")}</AlertTitle>
+            </Alert>
           ) : null}
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
           {micRefused ? (
             <Button type="button" variant="outline" className="self-start" onClick={() => open()} data-testid="recorder-allow">
@@ -1077,7 +1080,7 @@ export function RecordScreen({
               ) : null}
               {chosen || sectionCount > 0 ? (
                 <Button type="button" variant="outline" onClick={() => void keep()} disabled={busy} data-testid="recorder-keep">
-                  {phase === "saving" ? <Loader2 className="animate-spin" /> : null}
+                  {phase === "saving" ? <Spinner /> : null}
                   {phase === "saving" ? t("recorder.saving") : chosen ? t("recorder.screen.keepTake", { n: chosen.number }) : t("recorder.keep")}
                 </Button>
               ) : null}
@@ -1089,7 +1092,7 @@ export function RecordScreen({
                 disabled={phase !== "ready" || !valid || calibrating !== null}
                 data-testid={takes.length > 0 ? "recorder-again" : "recorder-start"}
               >
-                {phase === "opening" && !error ? <Loader2 className="animate-spin" /> : takes.length > 0 ? <RotateCcw /> : <Circle className="fill-current" />}
+                {phase === "opening" && !error ? <Spinner /> : takes.length > 0 ? <RotateCcw /> : <Circle className="fill-current" />}
                 {takes.length > 0 ? t("recorder.again") : t("recorder.record")}
               </Button>
             </>

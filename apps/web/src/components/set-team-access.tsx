@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 type SetRef = Pick<SetlistSummary, "id" | "teamName">;
 
@@ -105,9 +106,9 @@ export function TeamAccessDialog({
             <p className="text-xs text-muted-foreground">{t("sets.teamAccess.moveHint")}</p>
           </div>
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
           <Button type="button" variant="ghost" className="self-end" onClick={onCancel}>
             {t("sets.teamAccess.cancel")}

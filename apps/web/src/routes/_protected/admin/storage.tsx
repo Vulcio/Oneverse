@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/component
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Alert, AlertTitle } from "@oneverse/ui/components/alert";
 
 export const Route = createFileRoute("/_protected/admin/storage")({
   loader: async () => {
@@ -104,9 +106,11 @@ function AdminStoragePage() {
       </div>
 
       {stats.driver === "local" ? (
-        <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+        <Alert variant="destructive" role="status">
+          <AlertTitle>
           {t("admin.storageLocalWarning")}
-        </p>
+        </AlertTitle>
+        </Alert>
       ) : null}
 
       <Card>
@@ -165,7 +169,7 @@ function AdminStoragePage() {
             </div>
           </div>
 
-          {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
+          {saveError ? <FieldError>{saveError}</FieldError> : null}
 
           <div className="flex items-center justify-between">
             <Button onClick={() => void saveConfig()} disabled={saving}>
@@ -266,7 +270,7 @@ function StorageLimitsCard({ limits }: { limits: StorageLimits }) {
         <p className="text-sm text-muted-foreground">{t("admin.storageLimitsDescription")}</p>
         {field("default-storage-limit", t("admin.storageDefaultLimitLabel"), user, setUser, limits.isBuiltIn, limits.builtInDefaultMb, () => void save({ defaultLimitMb: null }))}
         {field("default-team-storage-limit", t("admin.storageDefaultTeamLimitLabel"), team, setTeam, limits.teamIsBuiltIn, limits.builtInTeamDefaultMb, () => void save({ defaultTeamLimitMb: null }))}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         <div>
           <Button
             // Only what changed: the other keeps coming from where it does (the built-in default, say).
@@ -350,7 +354,7 @@ function FileSizeLimitsCard({ limits }: { limits: FileSizeLimits }) {
             </div>
           ))}
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         <div>
           <Button onClick={() => void save(changed)} disabled={pending || Object.keys(changed).length === 0 || !ATTACHMENT_TYPES.every((type) => valid(values[type] ?? ""))} data-testid="file-size-save">
             {pending ? t("admin.saving") : t("admin.save")}

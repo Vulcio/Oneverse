@@ -6,6 +6,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { HostLink, usePlanning } from "../host";
 import { NotificationList } from "./notification-list";
+import { Empty } from "@oneverse/ui/components/empty";
 
 /** How often the badge asks for the unread count while the page is shown. */
 const POLL_MS = 60_000;
@@ -82,7 +83,7 @@ export function NotificationBell() {
         </div>
         <div className="max-h-96 overflow-y-auto">
           {items === null ? null : items.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">{t("notifications.empty")}</p>
+            <Empty className="py-6">{t("notifications.empty")}</Empty>
           ) : (
             <NotificationList items={items} onRead={(ids) => void markRead(ids)} onOpened={() => setOpen(false)} />
           )}

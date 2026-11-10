@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Alert, AlertTitle } from "@oneverse/ui/components/alert";
 
 export const Route = createFileRoute("/_protected/admin/backups")({
   loader: () => apiClient.adminGetBackups(),
@@ -151,7 +153,9 @@ function AdminBackupsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
           {destination.kind === "none" ? (
-            <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-destructive">{t("backups.noneWarning")}</p>
+            <Alert variant="destructive" role="status">
+              <AlertTitle>{t("backups.noneWarning")}</AlertTitle>
+            </Alert>
           ) : !settings.enabled.value ? (
             <p className="text-destructive">{t("backups.off")}</p>
           ) : (
@@ -220,7 +224,7 @@ function AdminBackupsPage() {
         </CardContent>
       </Card>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <div className="flex items-center justify-between">
         <Button onClick={() => void save()} disabled={saving || !valid} data-testid="backups-save">
           {saving ? t("admin.authSaving") : t("admin.authSaveConfig")}

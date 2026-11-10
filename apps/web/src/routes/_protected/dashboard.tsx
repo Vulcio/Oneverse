@@ -15,6 +15,7 @@ import { NotificationSettingsCard } from "@oneverse/planning/components/notifica
 import { OwnershipRequestsCard } from "./-dashboard/ownership-requests-card";
 import { RolesCard } from "./-dashboard/roles-card";
 import { ArchivesCard } from "#/components/archives-card";
+import { Empty, EmptyContent, EmptyDescription, EmptyMedia } from "@oneverse/ui/components/empty";
 
 export const Route = createFileRoute("/_protected/dashboard")({
   loader: async ({ context }) => {
@@ -113,11 +114,15 @@ function Dashboard() {
           </CardHeader>
           <CardContent>
             {recentVersions.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center text-sm text-muted-foreground">
-                <ListMusic className="size-8" />
-                <p>{t("dashboard.noSongsYet")}</p>
-                <Button size="sm" render={<Link to="/library/new" />}>{t("dashboard.addASong")}</Button>
-              </div>
+              <Empty>
+                <EmptyMedia>
+                  <ListMusic />
+                </EmptyMedia>
+                <EmptyDescription>{t("dashboard.noSongsYet")}</EmptyDescription>
+                <EmptyContent>
+                  <Button size="sm" render={<Link to="/library/new" />}>{t("dashboard.addASong")}</Button>
+                </EmptyContent>
+              </Empty>
             ) : (
               <ul className="flex flex-col divide-y">
                 {recentVersions.map((version) => (

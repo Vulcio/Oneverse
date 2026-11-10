@@ -9,6 +9,7 @@ import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { apiClient } from "#/lib/api-client";
 import { addQuickSelectionTo, clearQuickSelection, removeFromQuickSelection, useQuickSelection } from "#/lib/quick-selection";
 import { setlistTitle, setOwnerLabel, todayIso } from "#/lib/setlists";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * The Quick selection (issue #334): songs gathered from a song, the
@@ -66,7 +67,7 @@ function QuickSelectionPage() {
           {skipped("not-addable").length ? <p className="text-muted-foreground">{t("quickSelection.notAddable", { songs: skipped("not-addable").join(", ") })}</p> : null}
         </div>
       ) : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
 
       <Card>
         <CardContent className="flex flex-col gap-3">

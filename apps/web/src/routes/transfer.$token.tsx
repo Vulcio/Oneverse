@@ -12,6 +12,7 @@ import { formatBytes } from "#/lib/format-bytes";
 import { getSession } from "@oneverse/app/server-auth";
 import { signInFirst } from "@oneverse/app/join";
 import { loadLocale } from "@oneverse/app/i18n";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/transfer/$token")({
   beforeLoad: async ({ params }) => {
@@ -113,7 +114,7 @@ function ClaimCard({ token, email, preview }: { token: string; email: string; pr
               {t("transfer.expires", { date: new Date(preview.expiresAt).toLocaleDateString(i18n.language) })}{" "}
               {t("transfer.acceptInto", { email })}
             </p>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            {error ? <FieldError>{error}</FieldError> : null}
             <Button onClick={() => void accept()} disabled={pending}>
               {pending ? t("transfer.accepting") : t("transfer.accept")}
             </Button>

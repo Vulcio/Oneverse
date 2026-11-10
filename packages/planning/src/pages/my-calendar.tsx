@@ -13,6 +13,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent } from "@oneverse/ui/components/card";
 import { HostLink, usePlanning } from "../host";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** How far the page shows, then how much more each "Show more" adds. */
 const SHOWN_WEEKS = 8;
@@ -72,7 +73,7 @@ export function MyCalendarPage() {
         <h1 className="text-2xl font-semibold">{t("teamCalendar.myCalendar")}</h1>
         <p className="text-sm text-muted-foreground">{t("teamCalendar.myCalendarDescription")}</p>
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <div className="grid grid-cols-1 items-start gap-6 @6xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card data-testid="my-calendar">
           <CardContent className="flex flex-col gap-4">

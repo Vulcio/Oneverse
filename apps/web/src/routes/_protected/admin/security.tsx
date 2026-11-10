@@ -9,6 +9,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/security")({
   loader: () => apiClient.adminGetSecuritySettings(),
@@ -147,7 +148,7 @@ function AdminSecurityPage() {
         </CardContent>
       </Card>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <div className="flex items-center justify-between">
         <Button onClick={() => void save()} disabled={saving} data-testid="security-save">
           {saving ? t("admin.authSaving") : t("admin.authSaveConfig")}

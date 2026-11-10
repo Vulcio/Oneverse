@@ -36,6 +36,7 @@ import { KeySelect } from "#/components/key-select";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { tempoUnitKey, usualTempoUnit } from "#/lib/tempo-unit";
 import { PatternEditor } from "#/components/metronome";
+import { FieldError } from "@oneverse/ui/components/field";
 
 
 export type FieldErrors = Partial<Record<TextField | "artists", FormError>>;
@@ -265,7 +266,7 @@ export function SongInfoReview({
                     ) : (
                       <span className="break-words">{shownValue(proposal.field, proposal.proposed)}</span>
                     )}
-                    <span className={cn("text-xs", now ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>
+                    <span className={cn("text-xs", now ? "text-warning" : "text-muted-foreground")}>
                       {t("songEditor.infoNow", { value: now ?? t("songEditor.infoEmpty") })}
                     </span>
                   </label>
@@ -401,9 +402,9 @@ export function AutoDetectCard({
         )}
         {staged ? <p className="text-xs text-muted-foreground">{t("songEditor.linkSavedWithSong")}</p> : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {t("songEditor.searchFailed")}
-          </p>
+          </FieldError>
         ) : null}
         {results && (!shown || changing) && unavailable.length > 0 ? (
           <p className="text-xs text-muted-foreground">
@@ -475,11 +476,11 @@ export function LibraryMatchPanel({
   return (
     <section
       aria-labelledby="library-match-title"
-      className="flex flex-col gap-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4"
       data-testid="library-match"
     >
       <div className="flex items-start gap-2">
-        <Library className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+        <Library className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
         <div className="min-w-0 flex-1">
           <h2 id="library-match-title" className="text-sm font-semibold">
             {t("songEditor.matchFound")}

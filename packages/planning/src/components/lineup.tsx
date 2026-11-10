@@ -10,6 +10,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { usePlanning } from "../host";
 import { useInstrumentLabel } from "../instruments";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** A part's name (issue #235, phase 7): its instrument or role in the reader's language, or the team's own name for it. */
 export function usePartLabel(customInstruments: readonly CustomInstrument[]): (part: EventPart) => string {
@@ -246,7 +247,7 @@ export function LineupDialog({
               <li key={key} className="flex flex-col gap-1.5 py-2.5" data-lineup-part={key}>
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="text-sm font-medium">{partLabel(part)}</span>
-                  <span className={cn("text-xs tabular-nums", filled < part.count ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground")}>
+                  <span className={cn("text-xs tabular-nums", filled < part.count ? "text-warning" : "text-muted-foreground")}>
                     {filled}/{part.count}
                   </span>
                 </div>
@@ -359,7 +360,7 @@ export function LineupDialog({
             );
           })}
         </ul>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             {t("teamCalendar.close")}

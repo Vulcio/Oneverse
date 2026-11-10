@@ -21,6 +21,7 @@ import { SetSongList } from "./-set-song-list";
 import { ShareCard } from "./-share-card";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { OfflinePinButton } from "#/components/offline-pin-button";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId")({
   // Null when the set doesn't exist or isn't visible to this user (the API
@@ -187,7 +188,7 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
               onRemoveItem={(itemId) => void apply(apiClient.removeSetlistItem(set.id, itemId))}
             />
           )}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
         </CardContent>
       </Card>
 
@@ -257,7 +258,7 @@ function LeaveSetButton({ setlistId }: { setlistId: string }) {
             <DialogTitle>{t("sets.confirmLeave")}</DialogTitle>
             <DialogDescription>{t("sets.confirmLeaveDescription")}</DialogDescription>
           </DialogHeader>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirming(false)} disabled={pending}>
               {t("sets.cancel")}
@@ -328,7 +329,7 @@ function OwnerField({
             </DialogDescription>
           </DialogHeader>
           {targetTeam && !set.teamId ? <p className="text-sm text-muted-foreground">{t("sets.ownerToTeamShared")}</p> : null}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => setTarget(null)} disabled={pending}>
               {t("sets.cancel")}

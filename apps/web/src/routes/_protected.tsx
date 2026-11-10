@@ -10,6 +10,7 @@ import { createI18n, loadLocale } from "@oneverse/app/i18n";
 import { WeekStartContext } from "@oneverse/ui/lib/dates";
 import { PlanningProvider } from "@oneverse/planning/host";
 import { planningHost } from "#/lib/planning-host";
+import { AppToaster } from "@oneverse/app/components/app-toaster";
 
 /**
  * Pathless layout route — gates every route nested under `_protected/` in
@@ -58,6 +59,7 @@ function RouteComponent() {
           </AppShell>
         </PlanningProvider>
       </WeekStartContext.Provider>
+      <AppToaster />
     </I18nextProvider>
   );
 }

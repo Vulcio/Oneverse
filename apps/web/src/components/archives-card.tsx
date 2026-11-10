@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const KINDS = ["songs", "arrangements", "songbooks", "sets", "notes", "files"] as const;
 
@@ -149,9 +150,9 @@ export function ArchivesCard({ owner }: { owner: ArchiveOwnerRef }) {
           </div>
         </div>
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

@@ -14,6 +14,8 @@ import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
 import { authClient } from "../auth-client";
 import { oneverseUrl } from "../public-env";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Skeleton } from "@oneverse/ui/components/skeleton";
 
 // The account's own cards (issue #242): one's name and picture, email,
 // passkeys, language - each with its app's API client. Email and passkeys
@@ -152,7 +154,7 @@ export function AvatarPicker({ api, profile, onChanged }: { api: ApiClient; prof
           />
         </div>
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       {cropping ? (
         <ImageCropDialog
           file={cropping}
@@ -252,7 +254,7 @@ export function EmailCard({ email }: { email: string }) {
           </div>
         </form>
         {sent ? <p className="text-sm text-muted-foreground">{t("account.changeEmailSent", { email })}</p> : null}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );
@@ -296,7 +298,10 @@ export function PasskeysCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {isPending ? (
-          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+          <div className="flex flex-col gap-2" role="status" aria-label={t("common.loading")}>
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-5 w-1/2" />
+          </div>
         ) : passkeys && passkeys.length > 0 ? (
           <ul className="flex flex-col divide-y">
             {passkeys.map((passkey) => (
@@ -335,7 +340,7 @@ export function PasskeysCard() {
           </div>
         </div>
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );

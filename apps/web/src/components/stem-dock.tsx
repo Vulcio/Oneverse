@@ -12,7 +12,6 @@ import {
   Ellipsis,
   Guitar,
   Layers,
-  Loader2,
   Metronome,
   Mic,
   MicVocal,
@@ -81,6 +80,8 @@ import {
 } from "#/lib/stem-engine";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { cn } from "@oneverse/ui/lib/utils";
+import { Spinner } from "@oneverse/ui/components/spinner";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const NO_PARTS: Record<string, boolean> = {};
 const COMBINED_KEY = "songverse.stems.combined";
@@ -441,7 +442,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
       title={engine.following ? t("sync.followingShort", { name: engine.following }) : undefined}
       data-testid="stem-play"
     >
-      {loading ? <Loader2 className="animate-spin" /> : playing ? <Pause /> : <Play />}
+      {loading ? <Spinner /> : playing ? <Pause /> : <Play />}
     </Button>
   );
   // The metronome with the recording (issue #100): its tempo, its first beat.
@@ -594,13 +595,13 @@ export function StemDock({ song: page }: { song: StemSong }) {
         {t("stems.joining", { percent: Math.round(engine.downloaded * 100) })}
       </p>
     ) : active && engine.transposeFailed ? (
-      <p className="text-xs text-destructive" role="alert">
+      <FieldError size="sm">
         {chosenSpeed !== 1 ? t("stems.speedFailed") : t("stems.transposeFailed")}
-      </p>
+      </FieldError>
     ) : active && engine.status === "error" ? (
-      <p className="text-xs text-destructive" role="alert">
+      <FieldError size="sm">
         {t("stems.loadFailed")}
-      </p>
+      </FieldError>
     ) : null;
 
   // The playhead line in the sections' colours (issue #110).

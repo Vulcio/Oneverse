@@ -7,6 +7,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const DEFAULT_RETENTION_DAYS = 30;
 const MAX_RETENTION_DAYS = 365;
@@ -59,7 +60,7 @@ export function BanDialog({ user, onClose, onDone }: DialogProps & { onDone: () 
         <Label htmlFor="ban-reason">{t("admin.banReasonLabel")}</Label>
         <Textarea id="ban-reason" value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} />
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
           {t("admin.cancel")}
@@ -144,7 +145,7 @@ export function DeleteUserDialog({ user, onClose, onDeleted }: DialogProps & { o
         <Label htmlFor="delete-confirmation">{t("admin.confirmDeleteLabel", { email: user.email })}</Label>
         <Input id="delete-confirmation" value={confirmation} autoComplete="off" onChange={(event) => setConfirmation(event.target.value)} />
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
           {t("admin.cancel")}
@@ -174,7 +175,7 @@ export function DeleteNowDialog({ user, onClose, onDone }: DialogProps & { onDon
   const { pending, error, submit } = useSubmit();
   return (
     <ModalShell title={t("admin.deleteNowTitle", { name: user.displayName })} description={t("admin.deleteNowDescription")} onClose={onClose}>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
           {t("admin.cancel")}

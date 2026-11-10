@@ -5,6 +5,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/collaboration")({
   loader: () => apiClient.adminGetCollaborationSettings(),
@@ -70,7 +71,7 @@ function AdminCollaborationPage() {
           </label>
         </CardContent>
       </Card>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
       <div className="flex items-center justify-between">
         <Button onClick={() => void run(() => apiClient.adminSaveCollaborationSettings({ liveCoEditing: on }), setSaving)} disabled={saving} data-testid="collaboration-save">
           {saving ? t("admin.authSaving") : t("admin.authSaveConfig")}

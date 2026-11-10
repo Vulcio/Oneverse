@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@oneverse/ui/components/card";
+import { Card } from "@oneverse/ui/components/card";
 import { Input } from "@oneverse/ui/components/input";
 import { ArtistPicture } from "#/components/artist-picture";
 import { apiClient } from "#/lib/api-client";
+import { Empty } from "@oneverse/ui/components/empty";
 
 /**
  * The artists of the songs you can see (issue #58), with their pictures
@@ -55,7 +56,7 @@ function ArtistsPage() {
           </div>
         </div>
         {artists.length === 0 ? (
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">{search.q ? t("library.noArtistsMatch") : t("library.noArtistsYet")}</CardContent>
+          <Empty>{search.q ? t("library.noArtistsMatch") : t("library.noArtistsYet")}</Empty>
         ) : (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] gap-x-4 gap-y-6 border-t p-4 sm:grid-cols-[repeat(auto-fill,minmax(9rem,1fr))]" data-testid="artist-list">
             {artists.map((artist) => (

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export function StreamingLinkRow({
   id,
@@ -131,7 +132,7 @@ export function StreamingLinkRow({
           </ul>
         )
       ) : null}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ? <FieldError size="sm">{error}</FieldError> : null}
     </div>
   );
 }

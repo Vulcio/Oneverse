@@ -42,6 +42,7 @@ import { apiClient } from "#/lib/api-client";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { setlistTitle, transposeLabel } from "#/lib/setlists";
 import { cn } from "@oneverse/ui/lib/utils";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@oneverse/ui/components/alert";
 
 type Item = ArrangementItemV2;
 const CAPOS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -218,29 +219,24 @@ export function ArrangementEditor({
       </div>
 
       {detail.needsReview || detail.problems.length > 0 ? (
-        <div className="flex flex-col gap-2 rounded-lg border border-amber-500/50 bg-amber-500/5 p-4 text-sm" data-testid="review-banner">
-          <p className="flex items-center gap-2 font-medium">
-            <AlertTriangle className="size-4 text-amber-600" aria-hidden />
-            {detail.needsReview ? t("arrangements.reviewTitle") : t("arrangements.problemsTitle")}
-          </p>
-          <p className="text-muted-foreground">
-            {detail.needsReview ? t("arrangements.reviewDescription") : null}
-            {detail.needsReview && detail.problems.length > 0 ? " " : null}
-            {detail.problems.length > 0 ? t("arrangements.problemsDescription", { count: detail.problems.length }) : null}
-          </p>
+        <Alert variant="warning" data-testid="review-banner">
+          <AlertTriangle aria-hidden />
+          <AlertTitle>{detail.needsReview ? t("arrangements.reviewTitle") : t("arrangements.problemsTitle")}</AlertTitle>
+          <AlertDescription>
+            <p>
+              {detail.needsReview ? t("arrangements.reviewDescription") : null}
+              {detail.needsReview && detail.problems.length > 0 ? " " : null}
+              {detail.problems.length > 0 ? t("arrangements.problemsDescription", { count: detail.problems.length }) : null}
+            </p>
+          </AlertDescription>
           {readOnly || !detail.needsReview ? null : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="self-start"
-              disabled={saving || dirty}
-              onClick={() => void run(() => apiClient.markArrangementReviewed(detail.id), t("arrangements.reviewed"))}
-            >
-              {t("arrangements.markReviewed")}
-            </Button>
+            <AlertAction>
+              <Button type="button" variant="outline" size="sm" disabled={saving || dirty} onClick={() => void run(() => apiClient.markArrangementReviewed(detail.id), t("arrangements.reviewed"))}>
+                {t("arrangements.markReviewed")}
+              </Button>
+            </AlertAction>
           )}
-        </div>
+        </Alert>
       ) : null}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
@@ -696,8 +692,8 @@ function PassEditor({
                         </Fragment>
                       ))
                     )}
-                    {row.insert ? <span className="ml-2 font-sans text-xs text-amber-700 dark:text-amber-400">{t("arrangements.added")}</span> : null}
-                    {row.lyric ? <span className="ml-2 font-sans text-xs text-amber-700 dark:text-amber-400">{t("arrangements.wordsChanged")}</span> : null}
+                    {row.insert ? <span className="ml-2 font-sans text-xs text-warning">{t("arrangements.added")}</span> : null}
+                    {row.lyric ? <span className="ml-2 font-sans text-xs text-warning">{t("arrangements.wordsChanged")}</span> : null}
                     {notes.get(row.id) ? <span className="ml-2 font-sans text-xs text-amber-700 italic dark:text-amber-400">{notes.get(row.id)}</span> : null}
                   </p>
                   {readOnly ? null : (

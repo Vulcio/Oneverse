@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * A song's sections that repeat an earlier one (issue #231), for its
@@ -83,7 +84,7 @@ export function RepeatsCard({ songVersionId, revision, sections, dirty }: { song
           </li>
         ))}
       </ul>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <FieldError>{error}</FieldError> : null}
     </div>
   );
 }

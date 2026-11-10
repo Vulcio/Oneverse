@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@onev
 import { Input } from "@oneverse/ui/components/input";
 import { cn } from "@oneverse/ui/lib/utils";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** The columns edited in place, and how each is sent. */
 const COLUMNS = ["title", "artists", "album", "year", "key", "tempo", "timeSignature", "ccli", "copyright"] as const;
@@ -104,9 +105,9 @@ export function SongbookSongInfoCard({ songbookId }: { songbookId: string }) {
       {open ? (
         <CardContent className="flex flex-col gap-6">
           {failed ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {t("songbooks.songInfoLoadFailed")}
-            </p>
+            </FieldError>
           ) : !songs ? (
             <p className="text-sm text-muted-foreground">{t("songbooks.songInfoLoading")}</p>
           ) : songs.length === 0 ? (
@@ -308,7 +309,7 @@ function SongInfoRefreshPanel({ songbookId, onApplied }: { songbookId: string; o
                             />
                             <label htmlFor={id} className="min-w-0">
                               <span className="text-xs text-muted-foreground">{proposal.field === "artwork" ? t("songEditor.artwork") : t(`songEditor.fields.${proposal.field}`)}: </span>
-                              <span className={cn(!proposal.fillsEmpty && "text-amber-700 dark:text-amber-400")}>{shown(proposal.field, proposal.current, t)}</span>
+                              <span className={cn(!proposal.fillsEmpty && "text-warning")}>{shown(proposal.field, proposal.current, t)}</span>
                               <span aria-hidden> → </span>
                               <span className="sr-only">{t("songbooks.refreshBecomes")}</span>
                               {proposal.field === "artwork" && song.match?.thumbnailUrl ? (

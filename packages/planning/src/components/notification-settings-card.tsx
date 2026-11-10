@@ -8,6 +8,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { usePlanning } from "../host";
 import { currentSubscription, deviceLabel, pushSupported, subscribe } from "../push";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * How notifications reach one besides the bell (issue #236): each kind by
@@ -216,7 +217,7 @@ export function NotificationSettingsCard() {
             <p className="text-xs text-muted-foreground">{t("notifications.quietHint")}</p>
           </div>
         ) : null}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );

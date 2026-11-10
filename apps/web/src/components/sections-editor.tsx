@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Input } from "@oneverse/ui/components/input";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * A numbered book's printed volumes: number ranges with a label ("JEM1":
@@ -96,7 +97,7 @@ export function SectionsEditor({
             </Button>
           </div>
         ) : null}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );

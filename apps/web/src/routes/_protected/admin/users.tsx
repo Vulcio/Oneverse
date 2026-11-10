@@ -9,6 +9,7 @@ import { InvitationsCard } from "./-invitations-card";
 import { RolesDialog } from "./-roles-dialog";
 import { BanDialog, DeleteNowDialog, DeleteUserDialog, TransferLinkDialog } from "./-user-dialogs";
 import { useUsersColumns, type UserAction } from "./-users-columns";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const Route = createFileRoute("/_protected/admin/users")({
   loader: async () => {
@@ -75,7 +76,7 @@ function AdminUsersPage() {
         <p className="text-sm text-muted-foreground">{t("admin.usersDescription")}</p>
       </div>
 
-      {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
+      {actionError ? <FieldError>{actionError}</FieldError> : null}
 
       <Card className="p-0">
         <DataTable columns={columns} data={users} filterPlaceholder={t("admin.usersFilterPlaceholder")} />

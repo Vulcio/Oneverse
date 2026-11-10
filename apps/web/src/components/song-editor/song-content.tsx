@@ -11,6 +11,7 @@ import { pdfTextItems } from "#/lib/pdf-text";
 import { isPdf } from "./attachment-types";
 import { FindChords } from "./find-chords";
 import type { ChordContent, MetadataMatch } from "@oneverse/core";
+import { FieldError } from "@oneverse/ui/components/field";
 
 export const SOURCE_FILE_ACCEPT = ".cho,.chordpro,.chopro,.crd,.pro,.txt,.pdf,text/plain,application/pdf";
 const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
@@ -259,9 +260,9 @@ export function SongContentCard({
         />
       </div>
       {fileError ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {fileError}
-        </p>
+        </FieldError>
       ) : null}
       {sourceFile ? (
         <div className="flex flex-col gap-2 rounded-md border p-3 text-sm">

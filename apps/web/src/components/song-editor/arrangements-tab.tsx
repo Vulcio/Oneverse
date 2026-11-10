@@ -10,6 +10,8 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Skeleton } from "@oneverse/ui/components/skeleton";
 
 /**
  * The song's arrangements (docs/arrangement-document-v2.md): the user's own
@@ -60,7 +62,10 @@ export function ArrangementsTab({ songVersionId }: { songVersionId: string }) {
         </CardHeader>
         <CardContent>
           {arrangements === null ? (
-            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+            <div className="flex flex-col gap-2" role="status" aria-label={t("common.loading")}>
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-5 w-1/2" />
+            </div>
           ) : arrangements.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("arrangements.none")}</p>
           ) : (
@@ -90,7 +95,7 @@ export function ArrangementsTab({ songVersionId }: { songVersionId: string }) {
                     </Badge>
                   ) : null}
                   {arrangement.needsReview ? (
-                    <Badge variant="muted" className="gap-1 text-amber-700 dark:text-amber-400">
+                    <Badge variant="muted" className="gap-1 text-warning">
                       <AlertTriangle className="size-3" aria-hidden />
                       {t("arrangements.needsReview")}
                     </Badge>
@@ -143,9 +148,9 @@ export function ArrangementsTab({ songVersionId }: { songVersionId: string }) {
               {t("arrangements.create")}
             </Button>
             {error ? (
-              <p className="text-sm text-destructive" role="alert">
+              <FieldError>
                 {error}
-              </p>
+              </FieldError>
             ) : null}
           </div>
         </CardContent>

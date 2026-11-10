@@ -19,6 +19,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { WidgetSettings } from "#/components/screen-layout-editor";
 import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** A widget's shape in its preview (columns × rows of a 16:9 screen): wide ones wide, a dial square. */
 const PREVIEW_SHAPE: Partial<Record<ScreenWidgetKind, [number, number]>> = {
@@ -171,9 +172,9 @@ function WidgetDefaultEditor({ kind, defaults, teams, onClose, onSaved }: { kind
         </div>
         <div className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
           {error ? (
-            <p className="w-full text-sm text-destructive" role="alert">
+            <FieldError className="w-full">
               {error}
-            </p>
+            </FieldError>
           ) : null}
           {existing ? (
             <Button variant="ghost" disabled={busy} onClick={() => void run(() => apiClient.deleteScreenWidgetDefault(kind, owner || undefined))} data-testid="widget-default-reset">

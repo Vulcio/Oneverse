@@ -20,6 +20,7 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { publicEnvValue } from "@oneverse/app/public-env";
 import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** Screens' tabs (issue #267): the screens, the templates they pick from, the widgets placed on templates, the brands they use (issue #279). */
 const TABS = ["screens", "templates", "widgets", "brands"] as const;
@@ -494,9 +495,9 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
               <LastsSelect id="screen-lasts" value={lasts} onChange={setLasts} testId="screen-lasts" />
             </div>
             {error ? (
-              <p className="text-sm text-destructive sm:col-span-2" role="alert">
+              <FieldError className="sm:col-span-2">
                 {error}
-              </p>
+              </FieldError>
             ) : null}
             <div className="flex gap-2 sm:col-span-2">
               <Button type="submit" disabled={pending || !set}>
@@ -628,9 +629,9 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
         ) : null}
       </div>
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       {open ? <ScreenSettingsDialog screen={screen} sets={sets} themes={themes} owners={owners} onChanged={onChanged} onClose={() => setOpen(false)} /> : null}
     </li>
@@ -799,9 +800,9 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
         </div>
         <DialogFooter className="flex-row items-center border-t px-4 py-3">
           {error ? (
-            <p className="mr-auto text-sm text-destructive" role="alert">
+            <FieldError className="mr-auto">
               {error}
-            </p>
+            </FieldError>
           ) : null}
           <DialogClose render={<Button className="ml-auto" />} data-testid="screen-dialog-done">
             {t("screens.settingsDone")}

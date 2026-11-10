@@ -30,6 +30,7 @@ import { noteBody, notePlace, useNewNotes, type NotesContext, type SongNotesStat
 import { usePresence, useSongPresence } from "#/lib/live-notes";
 import { PresenceChip } from "#/components/presence";
 import { PersonAvatar } from "#/components/person-avatar";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Notes on the chart (issue #256): placed where they're pinned - the song
@@ -651,9 +652,9 @@ function ThreadDialog({ note, state, context, label, onClose }: { note: Note; st
         ) : null}
         {offline ? <p className="text-xs text-muted-foreground">{note.pending ? t("songNotes.pending") : t("songNotes.keptOffline")}</p> : null}
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </DialogContent>
     </Dialog>
@@ -812,9 +813,9 @@ function AddNoteDialog({
         ) : null}
         <PlacePicker options={options} value={place?.key ?? ""} onChange={setPlaceKey} testId="add-note-places" />
         {error ? (
-          <p className="text-sm text-destructive" role="alert">
+          <FieldError>
             {error}
-          </p>
+          </FieldError>
         ) : null}
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

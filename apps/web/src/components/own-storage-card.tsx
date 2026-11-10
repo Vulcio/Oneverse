@@ -9,6 +9,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 type Provider = SaveOwnStorageRequest["provider"];
 const PROVIDERS: Provider[] = ["R2", "S3", "B2", "WASABI"];
@@ -189,9 +190,9 @@ export function OwnStorageCard({ organizationId }: { organizationId: string }) {
         {summary.configured && !leaving ? <OwnStorageLimits organizationId={organizationId} summary={summary} onSaved={show} /> : null}
         <p className="text-xs text-muted-foreground">{t("organizations.ownStorage.backups")}</p>
         {error ? (
-          <p className="text-sm text-destructive" role="alert" data-testid="own-storage-error">
+          <FieldError data-testid="own-storage-error">
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </CardContent>
     </Card>

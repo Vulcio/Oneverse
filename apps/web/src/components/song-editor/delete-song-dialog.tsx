@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Deleting a song (issue #340): it goes to the bin for 30 days. When others
@@ -99,7 +100,7 @@ export function DeleteSongDialog({
             <p className="text-muted-foreground">{t("songEditor.deleteUsedHint")}</p>
           </div>
         ) : null}
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter className="flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             {t("songEditor.cancel")}

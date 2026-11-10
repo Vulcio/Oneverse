@@ -14,6 +14,7 @@ import { apiClient } from "#/lib/api-client";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const EMPTY: ChartPreferences = { $schema: "chart-preferences/v1", hiddenChordIds: [], simplifyChords: false, hideBassNotes: false };
 
@@ -131,9 +132,9 @@ export function PlayerChart({ view, openNoteId, grid = false, words = false }: {
       ) : null}
       {hiding && !grid ? <p className="text-xs text-muted-foreground">{t("player.hideHint")}</p> : null}
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       {notes.top}
       {(grid || words) && display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : null}

@@ -20,6 +20,7 @@ import { LocationField, useLocations } from "./locations";
 import { HostLink, usePlanning } from "../host";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
 import { cn } from "@oneverse/ui/lib/utils";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** How far the calendar shows, then how much more each "Show more" adds. */
 const SHOWN_WEEKS = 8;
@@ -132,7 +133,7 @@ export function TeamCalendar({
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         {notice ? (
           <p className="text-sm text-muted-foreground" role="status">
             {notice}
@@ -401,8 +402,8 @@ function AnswerCounts({ counts, onOpen }: { counts: NonNullable<TeamEventDateSum
   const summary = t("teamCalendar.answersSummary", { available: counts.AVAILABLE, ifNeeded: counts.IF_NEEDED, unavailable: counts.UNAVAILABLE, none: counts.NONE });
   return (
     <button type="button" onClick={onOpen} className="flex h-7 items-center gap-2 rounded-md border px-2 text-xs tabular-nums hover:bg-muted" aria-label={`${t("teamCalendar.whoCanPlay")}: ${summary}`} title={summary} data-testid="calendar-answers">
-      <span className="text-emerald-700 dark:text-emerald-400">✓ {counts.AVAILABLE}</span>
-      <span className="text-amber-700 dark:text-amber-400">? {counts.IF_NEEDED}</span>
+      <span className="text-success">✓ {counts.AVAILABLE}</span>
+      <span className="text-warning">? {counts.IF_NEEDED}</span>
       <span className="text-rose-700 dark:text-rose-400">✗ {counts.UNAVAILABLE}</span>
       <span className="text-muted-foreground">– {counts.NONE}</span>
     </button>
@@ -438,7 +439,7 @@ function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: st
                   <li key={partKey(part)} className="flex flex-wrap items-baseline gap-x-2" data-part={partKey(part)}>
                     <span className="font-medium">{partLabel(part)}</span>
                     <span className="text-xs text-muted-foreground">{t("teamCalendar.partNeeded", { count: part.count })}</span>
-                    <span className={cn("text-xs", available.length < part.count ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400")}>
+                    <span className={cn("text-xs", available.length < part.count ? "text-warning" : "text-success")}>
                       {available.length > 0 ? `✓ ${available.join(", ")}` : t("teamCalendar.partNobody")}
                     </span>
                     {ifNeeded.length > 0 ? <span className="text-xs text-muted-foreground">{t("teamCalendar.partIfNeeded", { names: ifNeeded.join(", ") })}</span> : null}
@@ -733,7 +734,7 @@ function EventDialog({
           </div>
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} />}
         </form>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter className="flex flex-wrap items-center gap-2 sm:justify-between">
           {event && !planned ? (
             <ConfirmButton
@@ -812,7 +813,7 @@ function AskDialog({ teamId, onClose, onAsked }: { teamId: string; onClose: () =
             <DatePicker id="ask-deadline" value={deadline} min={today} max={to} onChange={setDeadline} testId="ask-deadline" />
           </div>
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             {t("teamCalendar.cancel")}

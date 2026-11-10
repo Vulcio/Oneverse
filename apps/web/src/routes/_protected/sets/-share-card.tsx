@@ -10,6 +10,7 @@ import { ShareButton } from "@oneverse/ui/components/share-button";
 import { apiClient } from "#/lib/api-client";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { initials } from "@oneverse/ui/lib/initials";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** Share link and guest list, for the set's editors. */
 export function ShareCard({ setlistId, title }: { setlistId: string; title: string }) {
@@ -135,7 +136,7 @@ export function ShareCard({ setlistId, title }: { setlistId: string; title: stri
           </div>
         ) : null}
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <FieldError>{error}</FieldError> : null}
       </CardContent>
     </Card>
   );

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Input } from "@oneverse/ui/components/input";
+import { FieldError } from "@oneverse/ui/components/field";
 
 type Match = MusicBrainzRecordingMatch | MusicBrainzWorkMatch;
 
@@ -109,7 +110,7 @@ export function MusicBrainzMatchPanel({
         <Button type="button" variant="outline" size="sm" onClick={() => void unlink()} disabled={busyMbid !== null}>
           {t("songEditor.links.unlink")}
         </Button>
-        {error ? <p className="text-xs text-destructive">{error}</p> : null}
+        {error ? <FieldError size="sm">{error}</FieldError> : null}
       </div>
     );
   }
@@ -136,7 +137,7 @@ export function MusicBrainzMatchPanel({
         </Button>
       </div>
 
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ? <FieldError size="sm">{error}</FieldError> : null}
 
       {results ? (
         results.length === 0 ? (

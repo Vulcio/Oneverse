@@ -11,6 +11,7 @@ import { apiClient } from "#/lib/api-client";
 import { loadLocale } from "@oneverse/app/i18n";
 import { getSession, getVisitorLocale } from "@oneverse/app/server-auth";
 import { setlistTitle } from "#/lib/setlists";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /** Where a set's share link leads: sign in if needed, then join the set as a guest. */
 export const Route = createFileRoute("/set-invite/$token")({
@@ -106,7 +107,7 @@ function InviteCard({ token, preview, signedIn }: { token: string; preview: SetI
       </CardHeader>
       {signedIn ? (
         <CardContent className="flex flex-col gap-3">
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <FieldError>{error}</FieldError> : null}
           <Button onClick={() => void join()} disabled={pending}>
             {pending ? t("sets.joining") : t("sets.join")}
           </Button>

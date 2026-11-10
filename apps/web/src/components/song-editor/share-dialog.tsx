@@ -7,6 +7,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Sharing a song with one of your people (issue #77) or one of your teams
@@ -296,9 +297,9 @@ export function ShareDialog({
             </p>
           ) : null}
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
         </div>
       </DialogContent>

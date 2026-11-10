@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@oneverse/ui/component
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
+import { FieldError } from "@oneverse/ui/components/field";
+import { Alert, AlertTitle } from "@oneverse/ui/components/alert";
 
 export const Route = createFileRoute("/_protected/review/suggestions/$suggestionId")({
   loader: async ({ context, params }) => ({ session: context.session, suggestion: await apiClient.getSuggestion(params.suggestionId) }),
@@ -85,9 +87,11 @@ function ReviewSuggestion() {
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           {suggestion.conflicts.length > 0 ? (
-            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive" role="alert" data-testid="suggestion-conflicts">
+            <Alert variant="destructive" data-testid="suggestion-conflicts">
+              <AlertTitle>
               {t("suggestions.conflicts", { parts: suggestion.conflicts.map((part) => partLabel(part, t)).join(", ") })}
-            </p>
+            </AlertTitle>
+            </Alert>
           ) : null}
           <SnapshotDiff before={suggestion.base} after={suggestion.proposed} showLabel={t("suggestions.showSong")} />
         </CardContent>
@@ -119,9 +123,9 @@ function ReviewSuggestion() {
         <p className="text-sm text-muted-foreground">{t("suggestions.ownHint")}</p>
       ) : null}
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
     </div>
   );

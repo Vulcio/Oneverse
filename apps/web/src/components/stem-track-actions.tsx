@@ -1,11 +1,12 @@
 import { encodeWav, type RecordingDetails } from "@oneverse/core";
-import { Combine, Loader2, Mic, Trash2, X } from "lucide-react";
+import { Combine, Mic, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
 import { pauseStems, stemMono, stemsAudioContext, TAKE_ID, type StemSong, type StemTrack } from "#/lib/stem-engine";
+import { Spinner } from "@oneverse/ui/components/spinner";
 
 /** Two takes mixed into one (issue #142): each is silent where the other sings, so they add up; brought down if they'd clip. */
 export function mixTakes(a: Float32Array, b: Float32Array): Float32Array {
@@ -122,7 +123,7 @@ export function StemTrackActions({
             ))}
           </NativeSelect>
           <Button type="button" size="sm" disabled={busy || !withId} onClick={() => void merge()} data-testid="stem-track-merge-confirm">
-            {busy ? <Loader2 className="animate-spin" /> : null}
+            {busy ? <Spinner /> : null}
             {t("stems.merge")}
           </Button>
           <span className="w-full text-muted-foreground">{t("stems.mergeHint")}</span>
@@ -131,7 +132,7 @@ export function StemTrackActions({
         <>
           <span>{t("stems.deleteConfirm", { name })}</span>
           <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={() => void remove()} data-testid="stem-track-delete-confirm">
-            {busy ? <Loader2 className="animate-spin" /> : null}
+            {busy ? <Spinner /> : null}
             {t("stems.deleteRecording")}
           </Button>
         </>

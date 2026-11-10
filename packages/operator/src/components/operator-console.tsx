@@ -30,6 +30,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { setItemTitle, setItemView } from "@oneverse/screen/lib/set-items";
 import { useLive, useOperatorHost } from "../host";
 import { ContinueOnPulse } from "./continue-on-pulse";
+import { Kbd } from "@oneverse/ui/components/kbd";
 
 /** A countdown's lengths, one press away (minutes). */
 const PRESETS = [1, 3, 5, 10, 15, 30];
@@ -336,9 +337,7 @@ function ShortcutsHelp() {
             <div key={one.id} className="contents">
               <dt className="flex flex-wrap gap-1">
                 {one.keys.map((key) => (
-                  <kbd key={key} className="rounded border bg-muted px-1.5 font-mono text-xs">
-                    {key}
-                  </kbd>
+                  <Kbd key={key}>{key}</Kbd>
                 ))}
               </dt>
               <dd className="text-muted-foreground">{t(`screens.operator.keys.${one.id}`)}</dd>
@@ -479,7 +478,7 @@ function NotesList({ notes }: { notes: SongNote[] }) {
   return (
     <ul className="flex flex-col gap-1" data-testid="operator-note-list">
       {notes.map((note) => (
-        <li key={note.id} className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs" data-testid="operator-note">
+        <li key={note.id} className="rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-xs" data-testid="operator-note">
           <span className="font-semibold">{note.author.displayName}: </span>
           {note.content}
         </li>

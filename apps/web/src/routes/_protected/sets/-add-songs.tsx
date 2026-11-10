@@ -9,6 +9,7 @@ import { SongPicker } from "#/components/song-picker";
 import { TextItemDialog } from "#/components/set-text-item";
 import { PassageItemDialog } from "#/components/set-passage-item";
 import { useAddSongToSet } from "#/components/set-team-access";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * Search box listing songs that can go in this set - found as the search box
@@ -58,9 +59,9 @@ export function AddSongs({ set, onAdded }: { set: SetlistDetail; onAdded: (set: 
       />
       {set.teamId ? <p className="text-xs text-muted-foreground">{t("sets.teamSongsOnly")}</p> : null}
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       {dialog}
     </div>

@@ -26,6 +26,7 @@ import { YouTubeDock } from "#/components/youtube-dock";
 import { apiClient } from "#/lib/api-client";
 import type { YouTubeVideo } from "#/lib/youtube-player";
 import { CatalogEntriesTable } from "./-catalog-entries-table";
+import { FieldError } from "@oneverse/ui/components/field";
 
 const VIEW_STORAGE_KEY = "songverse.catalog.view";
 const LIST_LIMIT = 200;
@@ -237,9 +238,9 @@ export function CatalogBrowser({
             </span>
           </div>
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
           <ul className="divide-y rounded-md border" data-testid="catalog-list">
             {visible.length === 0 ? (
@@ -510,9 +511,9 @@ function EntryEditor({ catalogId, entry, onUpdated }: { catalogId: string; entry
   return (
     <div className="flex flex-col gap-3" data-testid="catalog-entry-editor">
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <FieldError>
           {error}
-        </p>
+        </FieldError>
       ) : null}
       {fields.map((field) => (
         <label key={`${entry.id}-${field}`} className="flex flex-col gap-1 text-sm">

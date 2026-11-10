@@ -15,6 +15,7 @@ import {
   type ReactNode,
 } from "react";
 import { cn } from "../lib/utils";
+import { Kbd } from "./kbd";
 
 /**
  * A list of things to find and pick with the keyboard (issue #424): a field
@@ -253,8 +254,8 @@ function CommandSeparator({ className, ...props }: ComponentProps<"div">) {
 }
 
 /** A key that does it, at the end of an item or on the trigger. */
-function CommandShortcut({ className, ...props }: ComponentProps<"kbd">) {
-  return <kbd data-slot="command-shortcut" className={cn("ml-auto shrink-0 rounded border bg-muted px-1.5 font-sans text-[0.7rem] text-muted-foreground", className)} {...props} />;
+function CommandShortcut({ className, ...props }: ComponentProps<typeof Kbd>) {
+  return <Kbd data-slot="command-shortcut" className={cn("ml-auto", className)} {...props} />;
 }
 
 export {

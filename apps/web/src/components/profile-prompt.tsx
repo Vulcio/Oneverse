@@ -8,6 +8,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@oneverse/ui/components/dialog";
 import { apiClient } from "#/lib/api-client";
 import { ChipGroup, toggled } from "#/components/role-chips";
+import { FieldError } from "@oneverse/ui/components/field";
 
 // Asked once per page load at most: a soft navigation doesn't ask again.
 let askedThisLoad = false;
@@ -104,9 +105,9 @@ export function ProfilePrompt() {
             <AvatarPicker api={apiClient} profile={profile} onChanged={() => void apiClient.getMe().then(setProfile)} />
           </fieldset>
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
         </div>
         <DialogFooter>

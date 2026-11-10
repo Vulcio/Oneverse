@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
+import { FieldError } from "@oneverse/ui/components/field";
 
 /**
  * A set's text item (issue #305): its title and body, written here. The
@@ -71,9 +72,9 @@ export function TextItemDialog({
             </p>
           </div>
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <FieldError>
               {error}
-            </p>
+            </FieldError>
           ) : null}
           <DialogFooter>
             <Button type="submit" disabled={saving || !body.trim()}>

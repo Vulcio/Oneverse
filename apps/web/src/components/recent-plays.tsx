@@ -20,7 +20,7 @@ export function RecentPlaysLine({ plays, className }: { plays: RecentPlays | nul
   const over = playedTooOften(plays);
   return (
     <span
-      className={cn("inline-flex items-center gap-1 text-xs", over ? "font-medium text-amber-700 dark:text-amber-400" : "text-muted-foreground", className)}
+      className={cn("inline-flex items-center gap-1 text-xs", over ? "font-medium text-warning" : "text-muted-foreground", className)}
       title={over ? t("recentPlays.overLimit", { count: plays.limit, weeks: plays.weeks }) : undefined}
       data-testid="recent-plays"
       data-over={over ? "true" : undefined}
