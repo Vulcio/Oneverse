@@ -3172,7 +3172,6 @@ const fr: typeof en = {
     gridBarsAutoHint: "Autant qu'il en tient",
     gridBarsCount_one: "{{count}} mesure par ligne",
     gridBarsCount_other: "{{count}} mesures par ligne",
-    gridBarsRow: "Ligne du haut",
     gridLyricsShort: { bars: "Dedans", between: "Entre", pinned: "Fixe", off: "Non" },
     notes: "Notes",
     notesAll: "Toutes les notes",
@@ -3268,7 +3267,7 @@ const fr: typeof en = {
     beatOutside: "Un temps reste dans les paroles de sa mesure, entre le temps d'avant et celui d'après.",
     barLineOutside: "Une mesure commence dans sa propre ligne, après la mesure d'avant et avant ses accords et la mesure suivante.",
     lyrics: "Paroles",
-    lyricsChoice: { bars: "Dans les mesures", between: "Entre les lignes", pinned: "Sous une ligne fixe", off: "Masquées" },
+    lyricsChoice: { bars: "Dans les mesures", between: "Entre les lignes", pinned: "Fixées en bas", off: "Masquées" },
   },
   player: {
     myView: "Mon affichage",

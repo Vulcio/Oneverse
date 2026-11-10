@@ -65,11 +65,6 @@ try {
     await page.getByTestId("bars-row").waitFor();
     await page.getByTestId("chart-view-grid").click();
     await page.getByTestId("bars-row").waitFor({ state: "detached" });
-    // The Display panel opens on the grid's section; the bars row brought back from there.
-    await fromDisplay("display-gridBarsRow-shown");
-    await page.getByTestId("bars-row").waitFor();
-    await fromDisplay("display-gridBarsRow-hidden");
-    await page.getByTestId("bars-row").waitFor({ state: "detached" });
     // A phone in portrait: one 4/4 bar a row in Practice; two when asked.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('[data-testid="chord-grid-bars"][data-per-row="1"]').first().waitFor();
@@ -112,7 +107,7 @@ try {
     if (await grid().locator("[data-grid-bar][data-on]").count()) throw new Error("a bar still lit");
   });
 
-  // Where the words go (issue #376): in the bars, between the rows, under a pinned row, or off - kept on the device.
+  // Where the words go (issue #376): in the bars, between the rows, pinned at the bottom, or off - kept on the device.
   const lyricsAs = async (choice) => {
     await fromDisplay(`display-gridLyrics-${choice}`);
     await page.locator(`[data-testid="chord-grid"][data-lyrics="${choice}"]`).waitFor();
@@ -139,20 +134,24 @@ try {
     await stopClick();
   });
 
-  await step("lyrics under a pinned row: one row of bars at the top, the line being sung lit under it", async () => {
+  await step("lyrics pinned at the bottom (issue #408): every bar shown, the line being sung and the next under them", async () => {
     await lyricsAs("pinned");
-    const pinned = grid().getByTestId("chord-grid-pinned");
-    await pinned.locator("[data-grid-row][data-shown]").waitFor();
-    if ((await pinned.locator("[data-grid-row][data-shown] [data-grid-bar]").count()) !== 4) throw new Error("not four bars pinned");
-    const lines = await grid().locator("[data-lyric-line]").allInnerTexts();
-    if (lines.map((one) => one.trim()).join(" | ") !== "Amazing grace how sweet the sound | That saved a wretch like me | I once was lost | My chains are gone") throw new Error(lines.join(" | "));
+    const pinned = page.getByTestId("chord-grid-pinned");
+    await pinned.waitFor();
+    // The grid keeps every bar, without words in them.
+    if ((await grid().locator("[data-grid-bar]").count()) !== 11) throw new Error("not every bar");
+    if (await grid().locator("[data-grid-words]").count()) throw new Error("words still in the bars");
+    const order = ["Amazing grace how sweet the sound", "That saved a wretch like me", "I once was lost", "My chains are gone"];
+    const shown = async () => [await pinned.locator("[data-lyric-line][data-on]").innerText(), await pinned.locator("[data-lyric-line][data-next]").innerText()].map((one) => one.trim());
+    // Before the music: the first two lines.
+    if ((await shown()).join(" | ") !== `${order[0]} | ${order[1]}`) throw new Error((await shown()).join(" | "));
+    if ((await pinned.locator("[data-lyric-line]:visible").count()) !== 2) throw new Error("not two lines shown");
     await playClick();
-    // 150 BPM: past bar 4 in under 8 s, and the row pinned moves on with it.
+    // 150 BPM: bar 5 (the second line) in under 8 s.
     await page.waitForFunction(() => Number(document.querySelector('[data-testid="chord-grid"]')?.dataset.position?.split(":")[0]) >= 4, null, { timeout: 10000 });
-    const lit = await grid().locator("[data-grid-bar][data-on]").getAttribute("data-grid-bar");
-    const shown = (await pinned.locator("[data-grid-row][data-shown]").getAttribute("data-bars")).split(" ");
-    if (!shown.includes(lit)) throw new Error(`bar ${lit} not in the pinned row ${shown}`);
-    if ((await grid().locator("[data-lyric-line][data-on]").count()) !== 1) throw new Error("not one line lit");
+    const [now, next] = await shown();
+    const at = order.indexOf(now);
+    if (at < 1 || next !== order[at + 1]) throw new Error(`${now} | ${next}`);
     await page.screenshot({ path: `${SP}/chord-grid-pinned.png` });
     await stopClick();
   });

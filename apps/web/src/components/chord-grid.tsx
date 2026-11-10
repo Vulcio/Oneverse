@@ -84,7 +84,8 @@ export function gridBarsPerRow(setting: GridBarsPerRowValue, width: number, beat
  * another (beat 1 moves the bar line).
  *
  * The words (issue #376) are in each bar, or a line between the rows, or
- * scroll under a row of bars pinned at the top (the row being played), or
+ * two lines pinned at the bottom, the one being sung and the next, the
+ * grid taking the rest (issue #408), or
  * aren't shown: the device's choice (`useGridLyrics`); Edit has them in the
  * bars, where its beats are placed.
  */
@@ -312,7 +313,7 @@ export function ChordGrid({
     }
     return grouped;
   }, [bars]);
-  // A pass's bars in rows, for the words between them or the row pinned at the top.
+  // A pass's bars in rows, for the words between them.
   const perRowOf = (passIndex: number) => gridBarsPerRow(barsPerRow, width, chart.passes[passIndex]?.timeSignature?.numerator ?? chart.timeSignature?.numerator ?? 4);
   const rowsOf = (passBars: ChartBar[]) => {
     const perRow = perRowOf(passBars[0]?.passIndex ?? 0);
@@ -327,7 +328,7 @@ export function ChordGrid({
       .map((span) => ({ lineId: span.lineId, text: lines.find((line) => line.id === span.lineId)?.text.slice(span.from, span.to) ?? "" }))
       .filter((piece) => piece.text.trim());
   };
-  // The line a bar is sung in (its first words), for the lyrics under a pinned row.
+  // The line a bar is sung in (its first words), for the pinned lines.
   const lineOfBar = useMemo(
     () =>
       bars.map((bar) => {
@@ -347,22 +348,28 @@ export function ChordGrid({
     let litBeat: HTMLElement | null = null;
     let litWords: HTMLElement | null = null;
     let litLyrics: HTMLElement[] = [];
-    let shownRow: HTMLElement | null = null;
-    // The pinned row: the one with the bar being played, else the first.
-    const showRow = (bar: number | null) => {
-      if (lyrics !== "pinned") return;
-      const row = (bar === null ? null : element.querySelector<HTMLElement>(`[data-grid-row][data-bars~="${bar}"]`)) ?? (shownRow ? null : element.querySelector<HTMLElement>("[data-grid-row]"));
-      if (!row || row === shownRow) return;
-      if (shownRow) delete shownRow.dataset.shown;
-      shownRow = row;
-      row.dataset.shown = "";
+    // The pinned lines (issue #408): the line being sung and the next, kept through bars that sing nothing; the first two before the music.
+    const strip = element.parentElement?.querySelector<HTMLElement>("[data-testid=chord-grid-pinned]") ?? null;
+    let stripLine: HTMLElement | null = null;
+    const clearLine = () => {
+      if (!stripLine) return;
+      delete stripLine.dataset.on;
+      if (stripLine.nextElementSibling instanceof HTMLElement) delete stripLine.nextElementSibling.dataset.next;
+    };
+    const showLine = (line: string | null) => {
+      if (!strip) return;
+      const next = (line ? strip.querySelector<HTMLElement>(`[data-lyric-line="${line}"]`) : null) ?? stripLine ?? strip.querySelector<HTMLElement>("[data-lyric-line]");
+      if (!next || next === stripLine) return;
+      clearLine();
+      stripLine = next;
+      next.dataset.on = "";
+      if (next.nextElementSibling instanceof HTMLElement) next.nextElementSibling.dataset.next = "";
     };
     const light = (bar: number | null, beat: number) => {
       if (litBar) delete litBar.dataset.on;
       if (litBeat) delete litBeat.dataset.on;
       if (litWords) delete litWords.dataset.on;
       for (const one of litLyrics) delete one.dataset.on;
-      showRow(bar);
       litBar = bar === null ? null : element.querySelector<HTMLElement>(`[data-grid-bar="${bar}"]`);
       litBeat = litBar?.querySelectorAll<HTMLElement>("[data-grid-beat]")[beat] ?? null;
       // The words being sung: from the last beat placed in them at or before this one.
@@ -370,15 +377,15 @@ export function ChordGrid({
       if (litBar) litBar.dataset.on = "";
       if (litBeat) litBeat.dataset.on = "";
       if (litWords) litWords.dataset.on = "";
-      // Between the rows, the bar's words; under a pinned row, the line it's sung in.
-      const line = bar === null ? null : lineOfBar[bar];
-      litLyrics = bar === null ? [] : [...element.querySelectorAll<HTMLElement>(`[data-lyric-bar="${bar}"]${line ? `, [data-lyric-line="${line}"]` : ""}`)];
+      // Between the rows, the bar's words; in the pinned lines, the line it's sung in.
+      litLyrics = bar === null ? [] : [...element.querySelectorAll<HTMLElement>(`[data-lyric-bar="${bar}"]`)];
       for (const one of litLyrics) one.dataset.on = "";
+      showLine(bar === null ? null : (lineOfBar[bar] ?? null));
     };
     if (!position) {
       light(null, 0);
       element.dataset.position = "";
-      return;
+      return clearLine;
     }
     let shownBeat = Number.NaN;
     let shownBar = -1;
@@ -391,9 +398,7 @@ export function ChordGrid({
         light(where?.bar ?? null, where?.beat ?? 0);
         if (where && where.bar !== shownBar) {
           // Kept in view, without moving the page under the reader for every bar: only when it nears an edge.
-          // Under a pinned row, the line being sung is, the row staying where it is.
-          const follow = lyrics === "pinned" ? element.querySelector<HTMLElement>("[data-lyric-line][data-on]") : litBar;
-          if (follow) keepInView(follow);
+          if (litBar) keepInView(litBar);
         }
         shownBar = where?.bar ?? -1;
       }
@@ -402,10 +407,11 @@ export function ChordGrid({
     return () => {
       cancelAnimationFrame(frame);
       light(null, 0);
+      clearLine();
     };
   }, [position, bars, lyrics, width, barsPerRow, lineOfBar]);
 
-  // A pass's name over its bars (or over its words, under a pinned row).
+  // A pass's name over its bars.
   const passHeading = (passIndex: number) => {
     const pass = chart.passes[passIndex]!;
     const step = steps[passIndex];
@@ -561,44 +567,7 @@ export function ChordGrid({
         </div>
       ) : null}
       <div ref={grid} className="flex flex-col gap-5" data-testid="chord-grid" data-source={source ?? undefined} data-editing={editing ? "" : undefined} data-lyrics={lyrics}>
-        {lyrics === "pinned" ? (
-          <>
-            {/* The row being played, pinned at the top; the words scrolling under it. */}
-            <div className="sticky top-(--grid-sticky-top,0px) z-10 -mx-1 border-b bg-card px-1 pt-1 pb-2" data-testid="chord-grid-pinned">
-              {passes.flatMap(({ passIndex, bars: passBars }) =>
-                rowsOf(passBars).map((row) => (
-                  <div key={row[0]!.index} className="hidden data-[shown]:block" data-grid-row="" data-bars={row.map((bar) => bar.index).join(" ")}>
-                    {passHeading(passIndex)}
-                    <div className="grid" style={rowStyle(passIndex)}>
-                      {row.map(gridBar)}
-                    </div>
-                  </div>
-                )),
-              )}
-            </div>
-            <div className="flex flex-col gap-4" data-testid="chord-grid-lyrics">
-              {chart.passes.map((pass, passIndex) => {
-                const lines = pass.lines.filter((line) => line.text.trim());
-                if (lines.length === 0) return null;
-                return (
-                  <section key={pass.id}>
-                    {passHeading(passIndex)}
-                    {lines.map((line) => (
-                      <p
-                        key={line.id}
-                        className="py-0.5 text-2xl leading-snug text-muted-foreground transition-colors duration-100 data-[on]:font-semibold data-[on]:text-foreground"
-                        data-lyric-line={`${pass.id}:${line.id}`}
-                      >
-                        {line.text}
-                      </p>
-                    ))}
-                  </section>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          passes.map(({ passIndex, bars: passBars }) => (
+        {passes.map(({ passIndex, bars: passBars }) => (
             <section key={chart.passes[passIndex]!.id} data-pass={chart.passes[passIndex]!.id} data-testid="chord-grid-pass">
               {passHeading(passIndex)}
               {lyrics === "between" ? (
@@ -631,9 +600,26 @@ export function ChordGrid({
                 </div>
               )}
             </section>
-          ))
-        )}
+        ))}
       </div>
+      {lyrics === "pinned" && !editing ? (
+        // The words pinned at the bottom (issue #408): the line being sung and the next, the grid taking the rest.
+        <div className="sticky bottom-(--grid-sticky-bottom,0px) z-10 -mx-1 border-t bg-card px-2 pt-1.5 pb-2" data-testid="chord-grid-pinned">
+          {chart.passes.flatMap((pass) =>
+            pass.lines
+              .filter((line) => line.text.trim())
+              .map((line) => (
+                <p
+                  key={`${pass.id}:${line.id}`}
+                  className="hidden truncate leading-snug data-[next]:block data-[next]:text-base data-[next]:text-muted-foreground data-[on]:block data-[on]:text-lg data-[on]:font-semibold"
+                  data-lyric-line={`${pass.id}:${line.id}`}
+                >
+                  {line.text}
+                </p>
+              )),
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -669,7 +655,7 @@ function GridBar({
   rowEnd: boolean;
   /** Where its words are in the lines (`barLyricSpans`); null for none to sing. */
   words: BarLyricSpan[] | null;
-  /** Its words in it: not when they're between the rows, under a pinned row, or off. */
+  /** Its words in it: not when they're between the rows, pinned, or off. */
   showWords: boolean;
   lines: readonly { id: string; text: string }[];
   /** Where each of its beats is sung (`barBeatPlaces`). */

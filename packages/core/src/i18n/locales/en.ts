@@ -3169,7 +3169,6 @@ const en = {
     gridBarsAutoHint: "As many as fit their beats",
     gridBarsCount_one: "{{count}} bar a row",
     gridBarsCount_other: "{{count}} bars a row",
-    gridBarsRow: "Bars row",
     gridLyricsShort: { bars: "In", between: "Between", pinned: "Pinned", off: "Off" },
     notes: "Notes",
     notesAll: "All notes",
@@ -3265,7 +3264,7 @@ const en = {
     beatOutside: "A beat stays in its bar's words, between the beats before and after it.",
     barLineOutside: "A bar starts in its own line, after the bar before and before its chords and the next bar.",
     lyrics: "Lyrics",
-    lyricsChoice: { bars: "In the bars", between: "Between the rows", pinned: "Under a pinned row", off: "Off" },
+    lyricsChoice: { bars: "In the bars", between: "Between the rows", pinned: "Pinned at the bottom", off: "Off" },
   },
   player: {
     myView: "My view",

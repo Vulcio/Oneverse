@@ -53,7 +53,7 @@ At the top of a song in Practice and in Live, the **bars row** puts the song's c
 
 The bars come from the chart's [bar lines](/song-editor/#bar-lines) when it has them. Otherwise from its chords: each chord gets a bar, and a sung line takes at least two (a line with one chord holds it for a second bar). Lines of chords alone (an intro) take a bar per chord, and notes take none. Each bar has as many beats as the song's time signature says, and a section can have a time signature of its own in the song's order.
 
-**Display** > **Chords** > **Bars** hides it, separately in Practice and in Live (see [Display](/display/)). While the [chord grid](#chord-grid) shows, the bars row isn't shown, as the grid has the same bars: **Display** > **Grid** > **Bars row** brings it back.
+**Display** > **Chords** > **Bars** hides it, separately in Practice and in Live (see [Display](/display/)). While the [chord grid](#chord-grid) shows, the bars row isn't shown, as the grid has the same bars.
 
 The chart follows along too, in Practice and on a song's page in a set: while the music plays, the line being sung is lit a beat ahead and kept in view, above the player. The words are matched to the beats as the [beats are placed in the words](#placing-beats-in-the-words), or spread over their bars until they are. Scroll yourself and it waits a few seconds before following again.
 
@@ -76,7 +76,7 @@ The grid's settings are in **Display**, which opens on its **Grid** section whil
 
 - **In the bars**: each bar has the words sung in it underneath, as above.
 - **Between the rows**: each row of bars has its words as a line under it, easier to read. The words of the bar being played turn dark.
-- **Under a pinned row**: the row being played stays at the top, and the song's words scroll under it in large type, with the line being sung lit.
+- **Pinned at the bottom** (**Pinned**): the grid keeps the page, without words in its bars, and two lines stay at the bottom: the line being sung, and the next one under it in grey.
 - **Off**: only the bars.
 
 ![The grid with the words between the rows](../../assets/screenshots/en/chord-grid-lyrics.jpg)
