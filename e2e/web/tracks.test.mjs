@@ -1,6 +1,6 @@
 // The Tracks view (issue #374): a song's parts as lanes, as in a DAW, beside Chart and Grid - the sections across the
 // top with a box round what's shown, the words being sung, a lane per part under a playhead in the middle, zoomed in
-// and out, steady as it scrolls, thin lines or a filled shape, a part muted from its lane, a tap on the overview to go there. Screenshots go to e2e/.artifacts.
+// and out, steady as it scrolls, thin lines or a filled shape, a part muted from its lane, a tap on the overview to go there; the metronome's lane (issue #410). Screenshots go to e2e/.artifacts.
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -204,6 +204,32 @@ try {
     await page.locator('[data-testid="tracks-view"][data-zoom="16"]').waitFor();
     await page.getByTestId("display-close").click();
     await page.setViewportSize({ width: 1280, height: 900 });
+  });
+
+  await step("a metronome lane under the parts (issue #410): a tick per beat, the accents tall, its button the click with the recording", async () => {
+    const lane = view().getByTestId("tracks-metronome");
+    if ((await lane.getAttribute("data-on")) !== "false") throw new Error("the click on by default");
+    // Runs of drawn pixels across a row: through the middle, every beat; near the top, only the accents.
+    const ticks = () =>
+      lane.locator("canvas").evaluate((canvas) => {
+        const { width, height } = canvas;
+        const runs = (y) => {
+          const data = canvas.getContext("2d").getImageData(0, y, width, 1).data;
+          let count = 0;
+          for (let x = 0; x < width; x++) if (data[x * 4 + 3] > 10 && !(x > 0 && data[(x - 1) * 4 + 3] > 10)) count++;
+          return count;
+        };
+        return { beats: runs(Math.floor(height / 2)), accents: runs(Math.floor(height * 0.1)) };
+      });
+    await page.waitForTimeout(300);
+    const seen = await ticks();
+    // 16 s at 120 BPM in 4/4: 32 beats, 8 bars (the playhead adds a run to each row).
+    if (seen.beats < 28 || seen.beats > 36 || seen.accents < 7 || seen.accents > 11) throw new Error(`ticks: ${JSON.stringify(seen)}`);
+    await lane.getByTestId("tracks-metronome-toggle").click();
+    await view().locator('[data-testid="tracks-metronome"][data-on="true"]').waitFor();
+    await page.screenshot({ path: `${SP}/tracks-metronome.png` });
+    await lane.getByTestId("tracks-metronome-toggle").click();
+    await view().locator('[data-testid="tracks-metronome"][data-on="false"]').waitFor();
   });
 
   await step("a part muted from its lane, and back", async () => {

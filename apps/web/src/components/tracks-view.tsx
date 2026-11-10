@@ -1,5 +1,5 @@
 import { barAt, barBeatPlaces, chartBars, cueAt, lineAtPosition, recordingBeatPosition, sortedCues, waveformPeakBetween, WAVEFORM_RATE, type Attachment, type CueSection, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
-import { AudioLines, Minus, Palette, Plus } from "lucide-react";
+import { AudioLines, Metronome, Minus, Palette, Plus } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -9,12 +9,14 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { GROUP_COLOURS, useCueNames } from "#/components/stem-cues";
 import { useTrackName } from "#/components/stem-dock";
 import { keepInView } from "#/lib/follow-view";
+import { ownMetronomeSettings, useMetronome } from "#/lib/metronome-engine";
 import { deviceNow } from "#/lib/output-clock";
 import { getStemState, isAudible, seekStems, shownDuration, stemBuffer, stemStoredWave, toggleStemMute, toggleStemSolo, useStems, type StemTrack } from "#/lib/stem-engine";
 import { partColour, setTrackColours, setTrackWaves, setTrackZoom, TRACK_ZOOMS, useTrackColours, useTrackWaves, useTrackZoom } from "#/lib/track-colours";
 import { bufferLevels, drawWave, WAVE_STEP, waveColumns } from "#/lib/wave-shape";
 import { COLUMN, liveTake } from "#/lib/take-strip";
 import { useMarkTracksShown } from "#/lib/tracks-shown";
+import { recordingClicksBetween, setRecordingClick, useRecordingClick } from "#/lib/recording-click";
 
 /** How much of the song the lanes show (s); the last, all of it (TRACK_ZOOMS, kept on the device). */
 const ZOOMS = [8, 16, 32, Number.POSITIVE_INFINITY];
@@ -37,6 +39,9 @@ function barLines(beat: ReturnType<typeof getStemState>["beat"], from: number, t
   }
   return lines;
 }
+
+/** How tall each click is in the metronome lane (issue #410), of the lane's height: as loud as it sounds. */
+const CLICK_HEIGHT = { accent: 0.9, medium: 0.65, normal: 0.42, sub: 0.2 } as const;
 
 /** Where the stems are now (s), between renders: the audio clock while playing. */
 function stemsPosition(): number {
@@ -67,7 +72,8 @@ function peakBetween(track: StemTrack, from: number, to: number): number {
  * middle while recording) - played on its
  * left, coming on its right, muted ones faint - zoomed from a few seconds
  * to the whole song. While a part's recorded in the player, the take has a
- * lane of its own, growing left of the playhead. It reads the stem player:
+ * lane of its own, growing left of the playhead; the metronome too (issue
+ * #410), a tick per click as loud as it sounds. It reads the stem player:
  * the song's stems have to be loaded there.
  */
 export function TracksView({
@@ -125,8 +131,13 @@ export function TracksView({
   const windowBox = useRef<HTMLDivElement | null>(null);
   const coloured = useTrackColours();
   const waves = useTrackWaves();
-  const latest = useRef({ tracks, duration, span, whole, engine, bars, places, lines, coloured, waves });
-  latest.current = { tracks, duration, span, whole, engine, bars, places, lines, coloured, waves };
+  // The metronome with the recording (issue #410): its lane draws the clicks it plays, on or off.
+  const click = useRecordingClick();
+  const metronome = useMetronome();
+  const own = useMemo(() => ownMetronomeSettings(), [metronome.settings]);
+  const clickCanvas = useRef<HTMLCanvasElement | null>(null);
+  const latest = useRef({ tracks, duration, span, whole, engine, bars, places, lines, coloured, waves, click, own });
+  latest.current = { tracks, duration, span, whole, engine, bars, places, lines, coloured, waves, click, own };
   const [recording, setRecording] = useState(false);
   // The take's lane in view as it starts, above the player and the recorder (once, not on each render).
   const showTake = useCallback((element: HTMLLIElement | null) => {
@@ -175,6 +186,7 @@ export function TracksView({
     // What each lane last drew, so a frame where nothing moved draws nothing (paused, or a pixel not yet crossed).
     const drawn: string[] = [];
     let drawnTake = "";
+    let drawnClicks = "";
     // Each lane's columns measured so far (issue #386): a column is a fixed slice of the song, so it's measured once.
     const measured: { source: string; levels: Map<number, number> }[] = [];
     const levelsOf = (index: number, track: StemTrack, first: number, count: number, per: number) => {
@@ -239,6 +251,35 @@ export function TracksView({
         context.fillStyle = colours.head;
         context.fillRect(Math.round(head) - 1, 0, 2, height);
       });
+      // The metronome (issue #410): a tick per click, as tall as it's loud; played on the playhead's left, faint while off.
+      const metronomeLane = clickCanvas.current;
+      const clickLane = metronomeLane && engine.beat ? prepare(metronomeLane) : null;
+      if (clickLane && engine.beat && clickLane.width > 0 && clickLane.height > 0) {
+        const { context, width, height, ratio } = clickLane;
+        const { from, length, head } = frameOf(width, at);
+        const { click, own } = latest.current;
+        const key = [width, height, ratio, from, length, Math.round(head * ratio), click, JSON.stringify(engine.beat), JSON.stringify(own)].join(" ");
+        if (key !== drawnClicks) {
+          drawnClicks = key;
+          clear(context, width, height, ratio);
+          const clicks = recordingClicksBetween(own, engine.beat, from, from + length);
+          // Too close together to read, zoomed out: the beats only.
+          const shown = clicks.length > width / 3 ? clicks.filter((one) => one.level !== "sub") : clicks;
+          if (shown.length <= width / 2) {
+            const middle = height / 2;
+            for (const one of shown) {
+              const x = Math.round(((one.at - from) / length) * width * ratio) / ratio;
+              const tall = Math.max(2, CLICK_HEIGHT[one.level] * height);
+              context.fillStyle = one.at <= at ? colours.played : colours.ahead;
+              context.globalAlpha = (one.at <= at ? 0.8 : 0.45) * (click ? 1 : 0.35);
+              context.fillRect(x - (one.level === "accent" ? 1 : 0.5), middle - tall / 2, one.level === "accent" ? 2 : 1, tall);
+            }
+          }
+          context.globalAlpha = 1;
+          context.fillStyle = colours.head;
+          context.fillRect(Math.round(head) - 1, 0, 2, height);
+        }
+      }
       // The take being recorded (issue #365): what the microphone heard, from where it started to the playhead.
       const taking = liveTake.from !== null;
       if (taking !== shownRecording) {
@@ -448,6 +489,27 @@ export function TracksView({
             </li>
           );
         })}
+        {/* The metronome with the recording (issue #410): the player's click button, as a lane. */}
+        {engine.beat ? (
+          <li className="flex items-center gap-2 rounded-md bg-muted/40 pr-1" data-testid="tracks-metronome" data-on={String(click)}>
+            <span className={cn("w-20 shrink-0 truncate pl-2 text-xs font-medium sm:w-32 sm:text-sm", !click && "text-muted-foreground")} title={t("tracks.metronome")}>
+              {t("tracks.metronome")}
+            </span>
+            <canvas ref={clickCanvas} className="h-8 min-w-0 flex-1 cursor-pointer sm:h-10" onPointerDown={seekFrom(whole)} role="img" aria-label={t("tracks.metronome")} />
+            <button
+              type="button"
+              className={cn("flex h-7 w-16 shrink-0 items-center justify-center rounded-sm border", click ? "border-foreground bg-foreground text-background" : "text-muted-foreground")}
+              aria-pressed={click}
+              aria-label={t("stems.clickWith")}
+              title={t("stems.clickWithAt", { tempo: engine.beat.tempo })}
+              onClick={() => setRecordingClick(!click)}
+              disabled={!!engine.following}
+              data-testid="tracks-metronome-toggle"
+            >
+              <Metronome className="size-4" />
+            </button>
+          </li>
+        ) : null}
         {/* The take being recorded in the player (issue #365). */}
         {recording ? (
           <li
