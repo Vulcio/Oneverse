@@ -2,6 +2,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "../lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
@@ -32,13 +33,25 @@ const buttonVariants = cva(
 /**
  * A button - or, with `render`, another element that looks like one (a
  * router `<Link render={<Link to=… />}>`), as Base UI composes (issue #144).
+ *
+ * Its `title` shows as a tooltip (issue #425), on hover and on keyboard
+ * focus, in the app's look rather than the browser's: what an icon button
+ * does, said the same way everywhere. It names the button too, unless an
+ * `aria-label` does.
  */
-function Button({ className, variant, size, render, ...props }: ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { render?: useRender.RenderProp }) {
-  return useRender({
+function Button({ className, variant, size, render, title, ...props }: ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { render?: useRender.RenderProp }) {
+  const button = useRender({
     defaultTagName: "button",
     render,
-    props: { "data-slot": "button", className: cn(buttonVariants({ variant, size, className })), ...props },
+    props: { "data-slot": "button", className: cn(buttonVariants({ variant, size, className })), ...(title && !props["aria-label"] && size === "icon" ? { "aria-label": title } : null), ...props },
   });
+  if (!title) return button;
+  return (
+    <Tooltip>
+      <TooltipTrigger delay={400} render={button} />
+      <TooltipContent>{title}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export { Button, buttonVariants };

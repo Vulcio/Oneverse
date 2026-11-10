@@ -21,6 +21,24 @@ await step("with nothing yet, the sets and the notifications say so the same way
   await page.keyboard.press("Escape");
 });
 
+await step("an icon button says what it does in a tooltip, by mouse and by keyboard, and still works", async () => {
+  const bell = page.getByTestId("notification-bell");
+  if (await bell.getAttribute("title")) throw new Error("the browser's own tooltip is still there");
+  await bell.hover();
+  const tip = page.locator('[data-slot="tooltip-content"]').filter({ hasText: "Notifications" });
+  await tip.waitFor();
+  await page.mouse.move(600, 500);
+  await tip.waitFor({ state: "detached" });
+  await bell.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await tip.waitFor();
+  // Still the trigger of its own panel.
+  await page.keyboard.press("Enter");
+  await page.locator('[data-slot="empty"]').filter({ hasText: "Nothing new." }).waitFor();
+  await page.keyboard.press("Escape");
+});
+
 await step("the colours for fine and mind this are lighter on a dark page", async () => {
   const lightness = () =>
     page.evaluate(() => {
