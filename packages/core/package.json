@@ -22,7 +22,7 @@
     "song-provider-api": "tsc -p tsconfig.json && node scripts/song-provider-api.mjs"
   },
   "dependencies": {
-    "zod": "^4.6.5",
+    "zod": "^4.6.7",
     "nanoid": "^5.0.9"
   },
   "devDependencies": {

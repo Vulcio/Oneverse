@@ -2,6 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
   - "e2e"
+auditConfig:
+  ignoreCves:
+    - GHSA-ggr8-5vv4-36mx
 
 onlyBuiltDependencies:
   - "@prisma/client"
@@ -19,7 +22,20 @@ overrides:
   # once per @types/node version, and `vp dev` loading one copy while TanStack
   # Start's plugins load another left the dev server answering 404.
   "@types/node": ^22.10.5
-  multer: ^2.4.0
+  body-parser@1: ^1.20.9
+  fast-uri@3: ^3.1.9
+  js-yaml@4: ^4.3.2
+  lodash@4: ^4.18.0
+  multer: ^2.5.0
+  postcss-selector-parser@6: ^6.1.5
+  # Security fixes in packages that others bring in (issue #418), each kept
+  # within the version its parent asks for. Drop a line once the parent asks
+  # for the fixed version itself (NestJS 10's Express 4 for the first three).
+  proxy-addr@2: ^2.0.8
+  qs@6: ^6.16.1
+  seroval-plugins@1: ~1.6.12
+  seroval@1: ~1.6.12
+  source-map-js@1: ^1.2.2
   # Vite+ (issue #159): every Vite and Vitest in the workspace is the one
   # vite-plus bundles, so plugins (TanStack Start's) and vp test share one copy.
   # Upgrade these two with the vite-plus version in the package.json files.
