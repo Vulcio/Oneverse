@@ -79,6 +79,7 @@ enum LiveView {
   CHART
   GRID
   PDF
+  WORDS
 }
 
 enum MidiEventType {

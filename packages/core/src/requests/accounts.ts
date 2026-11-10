@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { NEW_NOTES, NOTE_COLORS, NOTE_LOOKS, NOTE_PLACEMENTS, NOTE_SHOWS, NOTE_SIZES } from "../notes/index.js";
-import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
+import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, WORDS_SUNG, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
 import { TUNINGS } from "../chords/shapes.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
@@ -75,6 +75,18 @@ export const DisplaySettingsSchema = z.strictObject({
   bars: z.boolean().nullable().optional(),
   /** The chord grid's bars a row (issue #408). */
   gridBarsPerRow: z.enum(GRID_BARS_PER_ROW).nullable().optional(),
+  /** The sections bar over the Grid and Words views (issue #416), outside Live (Live's is one of its controls). */
+  structureBar: z.boolean().nullable().optional(),
+  /** The Words view (issue #416): its size, layout, section names, repeats, instrumental parts, next section's cue, lines sung, words filling, chords. */
+  wordsSize: z.union(DISPLAY_TEXT_SIZES.map((size) => z.literal(size)) as [z.ZodLiteral<number>, ...z.ZodLiteral<number>[]]).nullable().optional(),
+  wordsLayout: z.enum(WORDS_LAYOUTS).nullable().optional(),
+  wordsLabels: z.enum(WORDS_LABELS).nullable().optional(),
+  wordsRepeats: z.enum(WORDS_REPEATS).nullable().optional(),
+  wordsInstrumental: z.boolean().nullable().optional(),
+  wordsNext: z.boolean().nullable().optional(),
+  wordsSung: z.enum(WORDS_SUNG).nullable().optional(),
+  wordsFill: z.boolean().nullable().optional(),
+  wordsChords: z.boolean().nullable().optional(),
   /** Live's controls (issue #224): where they are, which are hidden, and floating ones' opacity. */
   controls: z.enum(CONTROLS_LAYOUTS).nullable().optional(),
   controlsPosition: z.enum(CONTROLS_POSITIONS).nullable().optional(),

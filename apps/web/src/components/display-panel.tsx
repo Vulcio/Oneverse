@@ -48,9 +48,12 @@ import {
   Repeat,
   Pencil,
   Square,
+  MicVocal,
+  ListOrdered,
 } from "lucide-react";
 import { GRID_LYRICS, setGridLyrics, useGridLyrics, type GridLyrics } from "#/lib/grid-lyrics";
 import { useGridControls, type GridControls } from "#/lib/grid-controls";
+import { useWordsOnScreen } from "#/lib/words-view";
 import { setTrackColours, setTrackWaves, setTrackZoom, TRACK_ZOOMS, useTrackColours, useTrackWaves, useTrackZoom } from "#/lib/track-colours";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -65,11 +68,11 @@ import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@oneverse/ui/lib/utils";
 
-const SECTIONS = ["grid", "text", "chords", "instrument", "layout", "notes", "controls", "tracks"] as const;
+const SECTIONS = ["grid", "words", "text", "chords", "instrument", "layout", "notes", "controls", "tracks"] as const;
 type Section = (typeof SECTIONS)[number];
-const SECTION_ICONS: Record<Section, LucideIcon> = { grid: Grid2x2, text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
-/** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390); the chord grid's, while one is on screen (issue #408). */
-const sectionsFor = (mode: AppModeValue, tracks: boolean, grid: boolean) => SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks) && (one !== "grid" || grid));
+const SECTION_ICONS: Record<Section, LucideIcon> = { grid: Grid2x2, words: MicVocal, text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
+/** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390); the chord grid's and the Words view's, while one is on screen (issues #408, #416). */
+const sectionsFor = (mode: AppModeValue, tracks: boolean, grid: boolean, words: boolean) => SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks) && (one !== "grid" || grid) && (one !== "words" || words));
 
 const KEY = "songverse.display.section";
 /** From here the panel is a column down the right, every section in it (issue #209). */
@@ -115,11 +118,12 @@ export function DisplayPanel({
   const { t } = useTranslation();
   const [kept, setSection] = useState<Section>(keptSection);
   const grid = useGridControls();
-  const sections = sectionsFor(mode, tracks, !!grid);
+  const words = useWordsOnScreen();
+  const sections = sectionsFor(mode, tracks, !!grid, words);
   const [open, setOpen] = useState(false);
-  // Opened over the chord grid, it shows the grid's section first (issue #408); picked again, another.
-  const [onGrid, setOnGrid] = useState(false);
-  const section = onGrid && grid ? "grid" : sections.includes(kept) ? kept : "text";
+  // Opened over the chord grid or the Words view, it shows its section first (issues #408, #416); picked again, another.
+  const [onView, setOnView] = useState(false);
+  const section = onView && grid ? "grid" : onView && words ? "words" : sections.includes(kept) ? kept : "text";
   // A large screen has room for a column down the right with every section in it; a phone, the bottom.
   const wide = useMediaQuery(WIDE);
   const shown = (one: Section) => wide || section === one;
@@ -129,8 +133,8 @@ export function DisplayPanel({
   const change = (next: Parameters<typeof changeDisplaySettings>[1]) => changeDisplaySettings(mode, next);
 
   function pick(next: Section) {
-    setOnGrid(false);
-    if (next === "grid") return setOnGrid(true);
+    setOnView(false);
+    if (next === "grid" || next === "words") return setOnView(true);
     setSection(next);
     try {
       localStorage.setItem(KEY, next);
@@ -145,7 +149,7 @@ export function DisplayPanel({
       disablePointerDismissal
       open={open}
       onOpenChange={(next) => {
-        if (next) setOnGrid(!!grid);
+        if (next) setOnView(!!grid || words);
         setOpen(next);
       }}
       swipeDirection={wide ? "right" : "down"}
@@ -186,7 +190,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, structureBar: null, wordsSize: null, wordsLayout: null, wordsLabels: null, wordsRepeats: null, wordsInstrumental: null, wordsNext: null, wordsSung: null, wordsFill: null, wordsChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -200,7 +204,12 @@ export function DisplayPanel({
         <div className={cn("flex flex-col gap-2 overflow-y-auto px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]", wide && "gap-5 pt-4")}>
           {grid && shown("grid") ? (
             <SectionBlock section="grid" heading={wide}>
-              <GridSection settings={settings} grid={grid} onChange={change} onAction={() => (wide ? undefined : setOpen(false))} />
+              <GridSection mode={mode} settings={settings} grid={grid} onChange={change} onAction={() => (wide ? undefined : setOpen(false))} />
+            </SectionBlock>
+          ) : null}
+          {words && shown("words") ? (
+            <SectionBlock section="words" heading={wide}>
+              <WordsSection mode={mode} settings={settings} onChange={change} />
             </SectionBlock>
           ) : null}
           {shown("text") ? (
@@ -446,7 +455,7 @@ export function DisplayPanel({
  * Loop bars and Edit bars, which close the
  * drawer on a phone so the bars can be tapped.
  */
-function GridSection({ settings, grid, onChange, onAction }: { settings: EffectiveDisplaySettings; grid: GridControls; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void; onAction: () => void }) {
+function GridSection({ mode, settings, grid, onChange, onAction }: { mode: AppModeValue; settings: EffectiveDisplaySettings; grid: GridControls; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void; onAction: () => void }) {
   const { t } = useTranslation();
   const lyrics = useGridLyrics();
   return (
@@ -472,6 +481,7 @@ function GridSection({ settings, grid, onChange, onAction }: { settings: Effecti
           options={GRID_LYRICS.map((choice) => ({ value: choice, label: t(`chordGrid.lyricsChoice.${choice}`), content: t(`display.gridLyricsShort.${choice}`) }))}
         />
       </Row>
+      <SectionsBarRow mode={mode} settings={settings} onChange={onChange} />
       {grid.canLoop || grid.looped || grid.canEdit ? (
         <div className="mt-1 grid grid-cols-2 gap-2 border-t pt-2">
           {grid.canLoop || grid.looped ? (
@@ -515,6 +525,103 @@ function GridSection({ settings, grid, onChange, onAction }: { settings: Effecti
         </div>
       ) : null}
       <p className="text-xs text-muted-foreground">{t("chordGrid.tapHint")}</p>
+    </>
+  );
+}
+
+/**
+ * The sections bar over the grid and the words (issue #416): in Live, its
+ * structure bar - one of its controls, the same switch as in Controls.
+ */
+function SectionsBarRow({ mode, settings, onChange }: { mode: AppModeValue; settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
+  const { t } = useTranslation();
+  const live = mode === "LIVE";
+  const on = live ? !settings.hiddenControls.includes("structure") : settings.structureBar;
+  const set = (next: boolean) =>
+    live ? onChange({ hiddenControls: next ? settings.hiddenControls.filter((one) => one !== "structure") : [...settings.hiddenControls, "structure"] }) : onChange({ structureBar: next });
+  return (
+    <Row label={t("display.sectionsBar")}>
+      <Choices
+        value={on ? "shown" : "hidden"}
+        onChange={(value) => set(value === "shown")}
+        name="sectionsBar"
+        options={[
+          { value: "shown", label: t("display.sectionsBarShown"), content: <ListOrdered /> },
+          { value: "hidden", label: t("display.sectionsBarHidden"), content: <EyeOff /> },
+        ]}
+      />
+    </Row>
+  );
+}
+
+/** The Words view's section (issue #416): how the words read for a singer. */
+function WordsSection({ mode, settings, onChange }: { mode: AppModeValue; settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
+  const { t } = useTranslation();
+  const words = settings.words;
+  const onOff = (value: boolean) => (value ? "on" : "off");
+  const both = (name: string, value: boolean, change: (value: boolean) => void, on: string, off: string) => (
+    <Choices
+      value={onOff(value)}
+      onChange={(next) => change(next === "on")}
+      name={name}
+      options={[
+        { value: "on", label: on, content: on },
+        { value: "off", label: off, content: off },
+      ]}
+    />
+  );
+  return (
+    <>
+      <Row label={t("display.wordsSize")}>
+        <SizeStepper size={words.size} onChange={(wordsSize) => onChange({ wordsSize })} smaller={t("display.smaller")} bigger={t("display.bigger")} testId="display-words" />
+      </Row>
+      <Row label={t("display.wordsLayout")}>
+        <Choices
+          value={words.layout}
+          onChange={(wordsLayout) => onChange({ wordsLayout })}
+          name="wordsLayout"
+          options={[
+            { value: "scroll", label: t("display.wordsLayoutScroll"), content: t("display.wordsLayoutScroll") },
+            { value: "lines", label: t("display.wordsLayoutLines"), content: t("display.wordsLayoutLines") },
+          ]}
+        />
+      </Row>
+      <Row label={t("display.wordsLabels")}>
+        <Choices
+          value={words.labels}
+          onChange={(wordsLabels) => onChange({ wordsLabels })}
+          name="wordsLabels"
+          options={(["badge", "heading", "hidden"] as const).map((value) => ({ value, label: t(`display.wordsLabelsChoice.${value}`), content: t(`display.wordsLabelsChoice.${value}`) }))}
+        />
+      </Row>
+      <Row label={t("display.wordsRepeats")}>
+        <Choices
+          value={words.repeats}
+          onChange={(wordsRepeats) => onChange({ wordsRepeats })}
+          name="wordsRepeats"
+          options={[
+            { value: "written", label: t("display.wordsRepeatsWrittenHint"), content: t("display.wordsRepeatsWritten") },
+            { value: "once", label: t("display.wordsRepeatsOnceHint"), content: t("display.wordsRepeatsOnce") },
+          ]}
+        />
+      </Row>
+      <Row label={t("display.wordsInstrumental")}>{both("wordsInstrumental", words.instrumental, (wordsInstrumental) => onChange({ wordsInstrumental }), t("display.wordsInstrumentalShown"), t("display.hidden"))}</Row>
+      <Row label={t("display.wordsNext")}>{both("wordsNext", words.next, (wordsNext) => onChange({ wordsNext }), t("display.wordsNextShown"), t("display.hidden"))}</Row>
+      <Row label={t("display.wordsSung")}>
+        <Choices
+          value={words.sung}
+          onChange={(wordsSung) => onChange({ wordsSung })}
+          name="wordsSung"
+          options={[
+            { value: "dim", label: t("display.wordsSungDim"), content: t("display.wordsSungDim") },
+            { value: "hide", label: t("display.hidden"), content: t("display.hidden") },
+          ]}
+        />
+      </Row>
+      <Row label={t("display.wordsFill")}>{both("wordsFill", words.fill, (wordsFill) => onChange({ wordsFill }), t("display.on"), t("display.off"))}</Row>
+      <Row label={t("display.wordsChords")}>{both("wordsChords", words.chords, (wordsChords) => onChange({ wordsChords }), t("display.wordsChordsSmall"), t("display.hidden"))}</Row>
+      <SectionsBarRow mode={mode} settings={settings} onChange={onChange} />
+      <p className="text-xs text-muted-foreground">{t("display.wordsHint")}</p>
     </>
   );
 }

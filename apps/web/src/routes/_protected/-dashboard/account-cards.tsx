@@ -217,6 +217,7 @@ export function ChartDisplayCard({ profile }: { profile: Pick<UserProfile, "chor
           >
             <option value="CHART">{t("dashboard.liveViewChart")}</option>
             <option value="GRID">{t("dashboard.liveViewGrid")}</option>
+            <option value="WORDS">{t("dashboard.liveViewWords")}</option>
             <option value="PDF">{t("dashboard.liveViewPdf")}</option>
           </NativeSelect>
           <p className="text-xs text-muted-foreground">{t("dashboard.liveViewHint")}</p>

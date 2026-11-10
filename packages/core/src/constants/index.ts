@@ -119,6 +119,18 @@ export type DisplayColumnsValue = (typeof DISPLAY_COLUMNS)[number];
 /** Bars a row of the chord grid (issue #408): as many as fit their beats, or 1, 2, 4. */
 export const GRID_BARS_PER_ROW = ["auto", "1", "2", "4"] as const;
 export type GridBarsPerRowValue = (typeof GRID_BARS_PER_ROW)[number];
+/** The Words view (issue #416): every line down the page, or the line being sung and the next ones, big. */
+export const WORDS_LAYOUTS = ["scroll", "lines"] as const;
+export type WordsLayoutValue = (typeof WORDS_LAYOUTS)[number];
+/** Its section names: small badges, headings, or none. */
+export const WORDS_LABELS = ["badge", "heading", "hidden"] as const;
+export type WordsLabelsValue = (typeof WORDS_LABELS)[number];
+/** A section sung again: its words again, or once, a reminder in its place (×2 when straight after). */
+export const WORDS_REPEATS = ["written", "once"] as const;
+export type WordsRepeatsValue = (typeof WORDS_REPEATS)[number];
+/** Lines already sung, while following the music: dimmed, or gone. */
+export const WORDS_SUNG = ["dim", "hide"] as const;
+export type WordsSungValue = (typeof WORDS_SUNG)[number];
 /** Text size, as a zoom of the chart: its own proportions kept. */
 export const DISPLAY_TEXT_SIZES = [0.75, 0.875, 1, 1.25, 1.5, 1.75, 2, 2.5, 3] as const;
 /** Where Live's controls are (issue #224): a bar along the bottom, round buttons over the chart, or none. */
@@ -133,8 +145,8 @@ export type LiveControlValue = (typeof LIVE_CONTROLS)[number];
 /** How opaque floating controls are, 20% to 100%. */
 export const CONTROLS_OPACITIES = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] as const;
 
-/** How a song reads in Live (issue #155): its chart (chords and lyrics), its chords in bars (the chord grid, issue #238), or its PDF. More to come: lyrics only (#106), drummer (#107). */
-export const LIVE_VIEWS = ["CHART", "GRID", "PDF"] as const;
+/** How a song reads (issue #155): its chart (chords and lyrics), its chords in bars (the chord grid, issue #238), its PDF, or its words laid out for singers (issue #416). More to come: drummer (#107). */
+export const LIVE_VIEWS = ["CHART", "GRID", "PDF", "WORDS"] as const;
 export type LiveViewValue = (typeof LIVE_VIEWS)[number];
 
 /**

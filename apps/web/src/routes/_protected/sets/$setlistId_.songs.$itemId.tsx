@@ -196,7 +196,7 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
       {playback.dock}
 
       {song ? (
-        // The chart, its chord grid (issue #238) or the song's PDF (issue #152).
+        // The chart, its chord grid (issue #238), its words (issue #416) or the song's PDF (issue #152).
         <ChartOrPdf
           songVersionId={song.id}
           defaultView={view.view.liveView ?? "CHART"}
@@ -211,6 +211,13 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
             <Card>
               <CardContent>
                 <PlayerChart view={view} openNoteId={note} grid />
+              </CardContent>
+            </Card>
+          }
+          words={
+            <Card>
+              <CardContent>
+                <PlayerChart view={view} openNoteId={note} words />
               </CardContent>
             </Card>
           }

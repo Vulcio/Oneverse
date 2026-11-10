@@ -1,4 +1,4 @@
-import { chartNotation, cueSectionsOf, getLanguageDisplayName, metronomeForSong, playsFiles, renderChart, type PlaybackSource, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type LiveViewValue, type SavedDisplaySettings, type SongVersionDetail } from "@oneverse/core";
+import { chartNotation, cueSectionsOf, structureOf, getLanguageDisplayName, metronomeForSong, playsFiles, renderChart, type PlaybackSource, type Attachment, type CapoDisplayModeValue, type ChordDiagramsValue, type DiagramPlayer, type ChordNotationValue, type LiveViewValue, type SavedDisplaySettings, type SongVersionDetail } from "@oneverse/core";
 import { CapoBadge } from "#/components/capo-badge";
 import { Link, useNavigate, useRouteContext, useRouter } from "@tanstack/react-router";
 import { PresenceChip } from "#/components/presence";
@@ -19,6 +19,9 @@ import { chartDisplayProps, useDiagramPlayer, useDisplaySettings } from "#/lib/d
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChartOrPdf, songViewStore } from "#/components/chart-or-pdf";
 import { ChordGrid } from "#/components/chord-grid";
+import { WordsView } from "#/components/words-view";
+import { StructureBar, usePagePass } from "#/components/structure-bar";
+import { useWordsOnScreen } from "#/lib/words-view";
 import { Button } from "@oneverse/ui/components/button";
 import { AddToSetButton, AddToSetPopover } from "#/components/add-to-set";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -81,6 +84,8 @@ export function PracticeSongPage({
   const display = useDisplaySettings("PRACTICE", { account: { chordNotation: notation, capoDisplayMode: capoDisplay, chordDiagrams: diagrams, chordColors: colors }, saved: displaySettings });
   // A chord grid on screen (issue #408): the bars row stays out of its way.
   const gridOnScreen = !!useGridControls();
+  // The Words view (issue #416): no bars row over it either, its words are all there is.
+  const wordsOnScreen = useWordsOnScreen();
   const player = useDiagramPlayer(accountPlayer);
   // Their own tempo for it, practising (issue #382): kept with their chart preferences, the song's own untouched.
   const [practiceTempo, setPracticeTempo] = useState<number | null>(null);
@@ -110,6 +115,10 @@ export function PracticeSongPage({
   );
   // Played at their tempo: the metronome, the bars and the grid's click.
   const chart = useMemo(() => (practiceTempo ? { ...written, tempo: practiceTempo } : written), [written, practiceTempo]);
+  // The sections bar over the grid and the words (issue #416), under the page's header (h-14) and the bar's own height.
+  const steps = useMemo(() => structureOf(chart), [chart]);
+  const viewRoot = useRef<HTMLDivElement>(null);
+  const [currentPass, pickPass] = usePagePass(viewRoot, steps, 56 + 48);
   // Notes on the chart (issue #256).
   const notesContext = { songVersionId: version.id, songbookId };
   const notes = useChartNotes({ state: useSongNotes(notesContext), chart, document: version.documentJson, show: display.notes, marks: display.noteMarks, style: display.noteStyle, context: notesContext, openNoteId });
@@ -236,15 +245,24 @@ export function PracticeSongPage({
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls - under the header (h-14), never behind it. */}
       {/* Not over the chord grid (issue #408): it shows the same bars. */}
-      {display.bars && !gridOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
+      {display.bars && !gridOnScreen && !wordsOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
 
-      {/* The chart, its chord grid (issue #238) or its PDF (issue #152). */}
+      {/* The chart, its chord grid (issue #238), its words (issue #416) or its PDF (issue #152). */}
+      <div ref={viewRoot} className="contents">
       <ChartOrPdf
         songVersionId={version.id}
         attachments={attachments}
         defaultView={liveView}
         store={songViewStore(version.id)}
         // Its parts as lanes, as in a DAW (issue #374), when it has stems.
+        structure={display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : undefined}
+        words={
+          <Card>
+            <CardContent>
+              <WordsView songId={version.id} chart={chart} document={version.documentJson} settings={display.words} currentPass={currentPass} emptyText={t("sets.noChart")} />
+            </CardContent>
+          </Card>
+        }
         tracks={hasTracks ? <TracksView songVersionId={version.id} chart={chart} document={version.documentJson} attachments={attachments} cueSections={cueSections.sections} /> : undefined}
         grid={
           <Card>
@@ -281,6 +299,7 @@ export function PracticeSongPage({
           </CardContent>
         </Card>
       </ChartOrPdf>
+      </div>
 
       {notes.dialogs}
 

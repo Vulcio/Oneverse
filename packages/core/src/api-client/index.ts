@@ -5,6 +5,10 @@ import type {
   ChordDiagramsValue,
   DisplayColumnsValue,
   GridBarsPerRowValue,
+  WordsLabelsValue,
+  WordsLayoutValue,
+  WordsRepeatsValue,
+  WordsSungValue,
   DisplayFontValue,
   ControlsLayoutValue,
   DiagramPositionValue,
@@ -651,6 +655,18 @@ export interface DisplaySettings {
   bars?: boolean;
   /** The chord grid's bars a row (issue #408). */
   gridBarsPerRow?: GridBarsPerRowValue;
+  /** The sections bar over the Grid and Words views, outside Live (issue #416). */
+  structureBar?: boolean;
+  /** The Words view (issue #416). */
+  wordsSize?: number;
+  wordsLayout?: WordsLayoutValue;
+  wordsLabels?: WordsLabelsValue;
+  wordsRepeats?: WordsRepeatsValue;
+  wordsInstrumental?: boolean;
+  wordsNext?: boolean;
+  wordsSung?: WordsSungValue;
+  wordsFill?: boolean;
+  wordsChords?: boolean;
   /** Live's controls (issue #224). */
   controls?: ControlsLayoutValue;
   controlsPosition?: ControlsPositionValue;

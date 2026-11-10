@@ -1,5 +1,5 @@
 import type { Attachment, ChartPreferences, LiveViewValue } from "@oneverse/core";
-import { AudioLines, FileText, LayoutGrid, Loader2, Music } from "lucide-react";
+import { AudioLines, FileText, LayoutGrid, Loader2, MicVocal, Music } from "lucide-react";
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -39,13 +39,15 @@ export function songViewStore(songVersionId: string): ViewStore {
   };
 }
 
-/** How a player reads a song, chosen for it or else their default: its chart, its chord grid (issue #238), or one of its PDFs - the chart when it has none. */
+/** How a player reads a song, chosen for it or else their default: its chart, its chord grid (issue #238), its words (issue #416), or one of its PDFs - the chart when it has none. */
 export interface ReadingView {
   pdfs: Attachment[];
   /** The PDF shown; null: the chart or the grid. */
   shown: Attachment | null;
   /** The chord grid shown, rather than the chart (never with a PDF). */
   grid: boolean;
+  /** The words laid out for singers (issue #416), rather than the chart (never with a PDF). */
+  words: boolean;
   choose: (view: LiveViewValue, pdfId?: string) => void;
   /** Where to read a PDF from: its signed address online (streamed by ranges), its bytes offline. */
   source: (file: Attachment) => Promise<PdfSource>;
@@ -102,6 +104,7 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
     pdfs,
     shown,
     grid: view === "GRID",
+    words: view === "WORDS",
     choose: (next, pdfId) => {
       chosen.current = true;
       const change: ViewChoice = next === "PDF" ? { view: next, ...(pdfId ? { pdfId } : {}) } : { view: next };
@@ -122,12 +125,12 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
   };
 }
 
-/** The Chart / Grid / PDF switch - PDF when the song has one - and which PDF when there are several. */
+/** The Chart / Grid / Words / PDF switch - PDF when the song has one - and which PDF when there are several. */
 export function ViewSwitch({ reading, compact = false, tracks }: { reading: ReadingView; compact?: boolean; /** The Tracks view (issue #374), where the page offers it: shown or not, and how to show it. */ tracks?: { shown: boolean; show: () => void } }) {
   const { t } = useTranslation();
-  const { pdfs, shown, grid, choose } = reading;
+  const { pdfs, shown, grid, words, choose } = reading;
   const onTracks = !!tracks?.shown;
-  const chart = !shown && !grid && !onTracks;
+  const chart = !shown && !grid && !words && !onTracks;
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="chart-view">
       <div className="inline-flex rounded-md border p-0.5" role="group" aria-label={t("chartView.label")}>
@@ -152,6 +155,17 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
         >
           <LayoutGrid />
           <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.grid")}</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={words && !onTracks}
+          onClick={() => choose("WORDS")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", words && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          title={compact ? t("chartView.words") : undefined}
+          data-testid="chart-view-words"
+        >
+          <MicVocal />
+          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.words")}</span>
         </button>
         {pdfs.length > 0 ? (
           <button
@@ -207,6 +221,8 @@ export function ChartOrPdf({
   defaultView,
   store,
   grid,
+  words,
+  structure,
   tracks,
   children,
 }: {
@@ -216,6 +232,10 @@ export function ChartOrPdf({
   store: ViewStore;
   /** The song's chord grid; without one (no chart), the chart's place shows. */
   grid?: ReactNode;
+  /** Its words laid out for singers (issue #416); without them (no chart), the chart's place shows. */
+  words?: ReactNode;
+  /** The sections bar (issue #416), over the grid and the words. */
+  structure?: ReactNode;
   /** Its parts as lanes (issue #374), where the song has stems. */
   tracks?: ReactNode;
   children: ReactNode;
@@ -238,7 +258,23 @@ export function ChartOrPdf({
         <span ref={setAside} className="ml-auto flex items-center" />
       </div>
       {/* On a phone, out to the screen's edges (the page's gutter, --gutter). */}
-      {tracks && onTracks ? <ViewSwitchAside.Provider value={aside}>{tracks}</ViewSwitchAside.Provider> : shown ? <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" /> : reading.grid && grid ? grid : children}
+      {tracks && onTracks ? (
+        <ViewSwitchAside.Provider value={aside}>{tracks}</ViewSwitchAside.Provider>
+      ) : shown ? (
+        <PdfPages key={shown.id} source={() => reading.source(shown)} name={shown.filename} className="max-sm:-mx-(--gutter)" />
+      ) : reading.grid && grid ? (
+        <>
+          {structure}
+          {grid}
+        </>
+      ) : reading.words && words ? (
+        <>
+          {structure}
+          {words}
+        </>
+      ) : (
+        children
+      )}
     </div>
   );
 }

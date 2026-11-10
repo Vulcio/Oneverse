@@ -1,4 +1,4 @@
-import { chartNotation, renderChart, type ChartPreferences, type RenderedChart, type ChordNotationValue, type CapoDisplayModeValue, type SetlistSongView } from "@oneverse/core";
+import { chartNotation, renderChart, structureOf, type ChartPreferences, type RenderedChart, type ChordNotationValue, type CapoDisplayModeValue, type SetlistSongView } from "@oneverse/core";
 import { EyeOff, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSungLine } from "#/lib/sung-line";
@@ -8,6 +8,8 @@ import { chartDisplayProps, displayModeOf, displaySeed, useDiagramPlayer, useDis
 import { useMode } from "#/lib/mode";
 import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChordGrid } from "#/components/chord-grid";
+import { WordsView } from "#/components/words-view";
+import { StructureBar, usePagePass } from "#/components/structure-bar";
 import { apiClient } from "#/lib/api-client";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
@@ -41,9 +43,10 @@ export function renderPlayerChart(
  * "Personal chart preferences"): the arrangement the set plays, the set's
  * key on top, and the player's own view - chords they've hidden, simpler
  * chords, no bass notes, capo shapes, solfège. Changes save as they're
- * made, for this player only. `grid`: as its chord grid (issue #238).
+ * made, for this player only. `grid`: as its chord grid (issue #238);
+ * `words`: its words laid out for singers (issue #416).
  */
-export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistSongView; /** A note's thread to open (a notification's link). */ openNoteId?: string; grid?: boolean }) {
+export function PlayerChart({ view, openNoteId, grid = false, words = false }: { view: SetlistSongView; /** A note's thread to open (a notification's link). */ openNoteId?: string; grid?: boolean; words?: boolean }) {
   const { t } = useTranslation();
   const song = view.song!;
   const [preferences, setPreferences] = useState<ChartPreferences>(view.view.preferences ?? EMPTY);
@@ -80,6 +83,9 @@ export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistS
   // The line sung as the music plays (issue #365).
   const chartArea = useRef<HTMLDivElement>(null);
   useSungLine(chartArea, song.id, chart, song.document);
+  // The sections bar over the grid and the words (issue #416).
+  const steps = useMemo(() => structureOf(chart), [chart]);
+  const [currentPass, pickPass] = usePagePass(chartArea, steps, 56 + 48);
   const hiddenCount = preferences.hiddenChordIds.length;
   const capoIsSuggestion = !view.arrangement?.document.defaults.capo && !!song.suggestedCapo;
   return (
@@ -88,18 +94,22 @@ export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistS
         <DisplayPanel mode={displayMode} settings={display} player={player} className="mr-1" />
         <span className="mr-1 [&>button]:h-7 [&>button]:text-xs">{notes.button}</span>
         <span className="mr-1 text-xs font-medium text-muted-foreground">{t("player.myView")}</span>
-        {grid ? null : (
+        {grid || words ? null : (
           <Toggle pressed={hiding} onClick={() => setHiding(!hiding)}>
             <EyeOff className="size-3.5" aria-hidden />
             {t("player.hideChords")}
           </Toggle>
         )}
+        {words ? null : (
+        <>
         <Toggle pressed={preferences.simplifyChords} onClick={() => savePreferences({ ...preferences, simplifyChords: !preferences.simplifyChords })}>
           {t("player.simplify")}
         </Toggle>
         <Toggle pressed={preferences.hideBassNotes} onClick={() => savePreferences({ ...preferences, hideBassNotes: !preferences.hideBassNotes })}>
           {t("player.noBass")}
         </Toggle>
+        </>
+        )}
         {hiddenCount > 0 ? (
           <button
             type="button"
@@ -126,8 +136,11 @@ export function PlayerChart({ view, openNoteId, grid = false }: { view: SetlistS
         </p>
       ) : null}
       {notes.top}
+      {(grid || words) && display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : null}
       <div ref={chartArea} style={{ zoom: display.textSize }}>
-        {grid ? (
+        {words ? (
+          <WordsView songId={song.id} chart={chart} document={song.document} settings={display.words} currentPass={currentPass} zoom={display.textSize} emptyText={t("sets.noChart")} />
+        ) : grid ? (
           <ChordGrid songId={song.id} chart={chart} document={song.document} chordColors={display.chordColors} barsPerRow={display.gridBarsPerRow} emptyText={t("sets.noChart")} />
         ) : (
           <ChartWithDiagrams

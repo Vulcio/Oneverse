@@ -1330,6 +1330,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "diagrams docked at the bottom", args: [{ chordDiagrams: "GUITAR" }, { LIVE: { diagramsPosition: "bottom" } }, "LIVE"] },
           { name: "the bars row turned off in Live (issue #238)", args: [null, { LIVE: { bars: false } }, "LIVE"] },
           { name: "Live's controls floating, some hidden", args: [null, { LIVE: { controls: "floating", controlsPosition: "right", hiddenControls: ["metronome", "transpose"], controlsOpacity: 0.4 } }, "LIVE"] },
+          { name: "the Words view line by line, repeats once, small chords, no sections bar (issue #416)", args: [null, { PRACTICE: { wordsSize: 2, wordsLayout: "lines", wordsLabels: "heading", wordsRepeats: "once", wordsInstrumental: false, wordsNext: false, wordsSung: "hide", wordsFill: false, wordsChords: true, structureBar: false } }, "PRACTICE"] },
           { name: "no account settings", args: [null, null, "EDIT"] },
         ],
       },

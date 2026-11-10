@@ -9,6 +9,10 @@ import type {
   LiveControlValue,
   DisplayColumnsValue,
   GridBarsPerRowValue,
+  WordsLabelsValue,
+  WordsLayoutValue,
+  WordsRepeatsValue,
+  WordsSungValue,
   DisplayFontValue,
   DisplaySpacingValue,
 } from "../constants/index.js";
@@ -43,6 +47,24 @@ export interface EffectiveDisplaySettings {
   bars: boolean;
   /** The chord grid's bars a row (issue #408): as many as fit their beats unless set. */
   gridBarsPerRow: GridBarsPerRowValue;
+  /** The sections bar over the Grid and Words views outside Live (issue #416): on unless turned off. Live's is one of its controls (hiddenControls). */
+  structureBar: boolean;
+  /** The Words view (issue #416), laid out for singers. */
+  words: {
+    /** The words' size, as a zoom. */
+    size: number;
+    layout: WordsLayoutValue;
+    labels: WordsLabelsValue;
+    repeats: WordsRepeatsValue;
+    /** Sections without words, as one line with their bars. */
+    instrumental: boolean;
+    /** The next section's name and first words, at the bottom. */
+    next: boolean;
+    sung: WordsSungValue;
+    fill: boolean;
+    /** The chords, small over the words. */
+    chords: boolean;
+  };
   /** Live's controls (issue #224): a footer, floating buttons or none; which are hidden; floating ones' opacity. */
   controls: ControlsLayoutValue;
   controlsPosition: ControlsPositionValue;
@@ -75,6 +97,9 @@ export interface AccountDisplaySettings {
 /** Live reads from further away: bigger text unless changed there. */
 const DEFAULT_TEXT_SIZE: Record<AppModeValue, number> = { EDIT: 1, PRACTICE: 1, LIVE: 1.5 };
 
+/** The Words view reads bigger still: its words are all there is. */
+const DEFAULT_WORDS_SIZE: Record<AppModeValue, number> = { EDIT: 1.25, PRACTICE: 1.25, LIVE: 1.5 };
+
 /** A mode's settings in full: what it changed, else the account's, else the default. */
 export function effectiveDisplaySettings(account: AccountDisplaySettings | null | undefined, saved: SavedDisplaySettings | null | undefined, mode: AppModeValue): EffectiveDisplaySettings {
   const own = saved?.[mode] ?? {};
@@ -103,6 +128,18 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     hideChords: own.hideChords ?? false,
     bars: own.bars ?? true,
     gridBarsPerRow: own.gridBarsPerRow ?? "auto",
+    structureBar: own.structureBar ?? true,
+    words: {
+      size: own.wordsSize ?? DEFAULT_WORDS_SIZE[mode],
+      layout: own.wordsLayout ?? "scroll",
+      labels: own.wordsLabels ?? "badge",
+      repeats: own.wordsRepeats ?? "written",
+      instrumental: own.wordsInstrumental ?? true,
+      next: own.wordsNext ?? true,
+      sung: own.wordsSung ?? "dim",
+      fill: own.wordsFill ?? true,
+      chords: own.wordsChords ?? false,
+    },
     controls: own.controls ?? "footer",
     controlsPosition: own.controlsPosition ?? "bottom-right",
     hiddenControls: own.hiddenControls ?? [],
