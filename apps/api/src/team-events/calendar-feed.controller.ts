@@ -1,7 +1,7 @@
-import { Controller, Delete, Get, Headers, HttpCode, HttpStatus, NotFoundException, Param, Post, Res, UnauthorizedException } from "@nestjs/common";
+import { Controller, Delete, Get, Headers, HttpCode, HttpStatus, NotFoundException, Param, Post, Res } from "@nestjs/common";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { CalendarFeedService } from "./calendar-feed.service.js";
@@ -14,22 +14,19 @@ export class MyCalendarFeedController {
   constructor(private readonly feeds: CalendarFeedService) {}
 
   @Get()
-  mine(@CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  mine(@SignedIn() user: AuthenticatedUser) {
     return this.feeds.mine(user.id);
   }
 
   /** A new link (made, or reset: the old one stops working). */
   @Post()
-  reset(@CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  reset(@SignedIn() user: AuthenticatedUser) {
     return this.feeds.reset(user.id);
   }
 
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
-  turnOff(@CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  turnOff(@SignedIn() user: AuthenticatedUser) {
     return this.feeds.turnOff(user.id);
   }
 }

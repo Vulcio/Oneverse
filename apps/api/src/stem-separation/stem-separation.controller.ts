@@ -1,10 +1,10 @@
-import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Headers, HttpCode, HttpStatus, NotFoundException, Param, Post, Put, Req, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Headers, HttpCode, HttpStatus, NotFoundException, Param, Post, Put, Req, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { SaveSonicServerSchema, SaveStemSeparationSettingsSchema, StartStemSeparationSchema } from "@oneverse/core";
 import { decryptSecret } from "@oneverse/secret-crypto";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { Request } from "express";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -46,23 +46,20 @@ export class StemSeparationController {
 
   @Get("song-versions/:songVersionId/stem-separations")
   @ApiOkResponse({ description: "Whether the viewer may split the song's recordings (or why not), and its separations: theirs, or all for who may." })
-  list(@Param("songVersionId") songVersionId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  list(@Param("songVersionId") songVersionId: string, @SignedIn() user: AuthenticatedUser) {
     return this.separations.list(user, songVersionId);
   }
 
   @RateLimit("heavy")
   @Post("song-versions/:songVersionId/attachments/:attachmentId/separate")
-  start(@Param("songVersionId") songVersionId: string, @Param("attachmentId") attachmentId: string, @Body() dto: StartStemSeparationDto, @CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  start(@Param("songVersionId") songVersionId: string, @Param("attachmentId") attachmentId: string, @Body() dto: StartStemSeparationDto, @SignedIn() user: AuthenticatedUser) {
     return this.separations.start(user, songVersionId, attachmentId, dto.parts, callbackUrl(), dto.replace ?? false);
   }
 
   @RateLimit("heavy")
   @Post("stem-separations/:separationId/retry")
   @HttpCode(HttpStatus.NO_CONTENT)
-  retry(@Param("separationId") separationId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  retry(@Param("separationId") separationId: string, @SignedIn() user: AuthenticatedUser) {
     return this.separations.retry(user, separationId, callbackUrl());
   }
 
@@ -102,8 +99,7 @@ export class SonicServersController {
     private readonly access: AccessPolicyService,
   ) {}
 
-  private async admin(user: AuthenticatedUser | undefined, owner: SonicServerOwner): Promise<SonicServerOwner> {
-    if (!user) throw new UnauthorizedException();
+  private async admin(user: AuthenticatedUser, owner: SonicServerOwner): Promise<SonicServerOwner> {
     if (owner.kind === "team") {
       if (!(await this.prisma.client.team.count({ where: { id: owner.id } }))) throw new NotFoundException("Team not found");
       if (!user.isGlobalAdmin && (await this.access.teamRole(user.id, owner.id)) !== "ADMIN") throw new ForbiddenException("Only the team's admins connect its Sonic server");
@@ -133,50 +129,50 @@ export class SonicServersController {
   }
 
   @Get("teams/:teamId/sonic-server")
-  async getTeam(@Param("teamId") teamId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async getTeam(@Param("teamId") teamId: string, @SignedIn() user: AuthenticatedUser) {
     return sonicServerSummary(await this.admin(user, { kind: "team", id: teamId }));
   }
 
   @Put("teams/:teamId/sonic-server")
   @HttpCode(HttpStatus.NO_CONTENT)
-  async saveTeam(@Param("teamId") teamId: string, @Body() dto: SaveSonicServerDto, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async saveTeam(@Param("teamId") teamId: string, @Body() dto: SaveSonicServerDto, @SignedIn() user: AuthenticatedUser) {
     await this.save(await this.admin(user, { kind: "team", id: teamId }), dto);
   }
 
   @Delete("teams/:teamId/sonic-server")
   @HttpCode(HttpStatus.NO_CONTENT)
-  async removeTeam(@Param("teamId") teamId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async removeTeam(@Param("teamId") teamId: string, @SignedIn() user: AuthenticatedUser) {
     await removeSonicServer(await this.admin(user, { kind: "team", id: teamId }));
   }
 
   @RateLimit("heavy")
   @Post("teams/:teamId/sonic-server/test")
   @HttpCode(HttpStatus.OK)
-  async testTeam(@Param("teamId") teamId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async testTeam(@Param("teamId") teamId: string, @SignedIn() user: AuthenticatedUser) {
     return this.test(await this.admin(user, { kind: "team", id: teamId }));
   }
 
   @Get("organizations/:organizationId/sonic-server")
-  async getOrganization(@Param("organizationId") organizationId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async getOrganization(@Param("organizationId") organizationId: string, @SignedIn() user: AuthenticatedUser) {
     return sonicServerSummary(await this.admin(user, { kind: "organization", id: organizationId }));
   }
 
   @Put("organizations/:organizationId/sonic-server")
   @HttpCode(HttpStatus.NO_CONTENT)
-  async saveOrganization(@Param("organizationId") organizationId: string, @Body() dto: SaveSonicServerDto, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async saveOrganization(@Param("organizationId") organizationId: string, @Body() dto: SaveSonicServerDto, @SignedIn() user: AuthenticatedUser) {
     await this.save(await this.admin(user, { kind: "organization", id: organizationId }), dto);
   }
 
   @Delete("organizations/:organizationId/sonic-server")
   @HttpCode(HttpStatus.NO_CONTENT)
-  async removeOrganization(@Param("organizationId") organizationId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async removeOrganization(@Param("organizationId") organizationId: string, @SignedIn() user: AuthenticatedUser) {
     await removeSonicServer(await this.admin(user, { kind: "organization", id: organizationId }));
   }
 
   @RateLimit("heavy")
   @Post("organizations/:organizationId/sonic-server/test")
   @HttpCode(HttpStatus.OK)
-  async testOrganization(@Param("organizationId") organizationId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
+  async testOrganization(@Param("organizationId") organizationId: string, @SignedIn() user: AuthenticatedUser) {
     return this.test(await this.admin(user, { kind: "organization", id: organizationId }));
   }
 }

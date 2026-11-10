@@ -1,6 +1,6 @@
-import { Controller, Get, UnauthorizedException } from "@nestjs/common";
+import { Controller, Get } from "@nestjs/common";
 import { ApiBearerAuth, ApiOkResponse, ApiTags as ApiSwaggerTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { TagCategoryResponseDto, TagResponseDto } from "./dto/tag-response.dto.js";
 import { TagsService } from "./tags.service.js";
@@ -19,8 +19,7 @@ export class TagsController {
 
   @Get()
   @ApiOkResponse({ type: TagResponseDto, isArray: true })
-  findAll(@CurrentUser() user?: AuthenticatedUser): ReturnType<TagsService["findVisibleToUser"]> {
-    if (!user) throw new UnauthorizedException();
+  findAll(@SignedIn() user: AuthenticatedUser): ReturnType<TagsService["findVisibleToUser"]> {
     return this.tagsService.findVisibleToUser(user.id);
   }
 }

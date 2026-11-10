@@ -13,7 +13,6 @@ import {
   Query,
   Res,
   StreamableFile,
-  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -25,6 +24,7 @@ import { ApiBearerAuth, ApiConsumes, ApiExcludeEndpoint, ApiTags } from "@nestjs
 import type { Response } from "express";
 import { isValidArtistImageSignature } from "../artwork/song-image-url.js";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -57,16 +57,14 @@ export class ArtistsController {
   constructor(private readonly artists: ArtistsService) {}
 
   @Get("artists/detail")
-  detail(@CurrentUser() user: AuthenticatedUser | undefined, @Query() query: ArtistQueryDto) {
-    if (!user) throw new UnauthorizedException();
+  detail(@SignedIn() user: AuthenticatedUser, @Query() query: ArtistQueryDto) {
     return this.artists.detail(user, query.name);
   }
 
   /** Anyone who can see a song by them may have them looked up once; asking again is for admins. */
   @RateLimit("heavy")
   @Post("artists/lookup")
-  lookUp(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: LookUpArtistDto) {
-    if (!user) throw new UnauthorizedException();
+  lookUp(@SignedIn() user: AuthenticatedUser, @Body() dto: LookUpArtistDto) {
     if (dto.force && !user.isGlobalAdmin) throw new ForbiddenException("Global admin role required");
     return this.artists.lookUp(user, dto.name, !!dto.force);
   }

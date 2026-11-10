@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { SongbookOwnerGuard } from "../common/guards/songbook-owner.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AddSongbookEntryDto } from "./dto/add-songbook-entry.dto.js";
@@ -19,48 +19,43 @@ export class SongbooksController {
 
   @Get()
   @ApiOkResponse({ type: SongbookResponseDto, isArray: true })
-  findAll(@CurrentUser() user?: AuthenticatedUser): ReturnType<SongbooksService["findVisibleToUser"]> {
-    if (!user) throw new UnauthorizedException();
+  findAll(@SignedIn() user: AuthenticatedUser): ReturnType<SongbooksService["findVisibleToUser"]> {
     return this.songbooksService.findVisibleToUser(user);
   }
 
   @Post()
   @ApiCreatedResponse({ type: SongbookResponseDto })
   create(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Body() dto: CreateSongbookDto,
   ): ReturnType<SongbooksService["create"]> {
-    if (!user) throw new UnauthorizedException();
     return this.songbooksService.create(user, dto);
   }
 
   @Post("import-from-catalog")
   @ApiCreatedResponse({ type: SongbookResponseDto })
   importFromCatalog(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Body() dto: ImportSongbookFromCatalogDto,
   ): ReturnType<SongbooksService["importFromCatalog"]> {
-    if (!user) throw new UnauthorizedException();
     return this.songbooksService.importFromCatalog(user, dto);
   }
 
   /** A catalogue's entries already songs in the songbooks you can see started from it (issue #210). */
   @Get("from-catalog/:catalogId")
   catalogLibrary(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("catalogId") catalogId: string,
   ): ReturnType<SongbooksService["catalogLibrary"]> {
-    if (!user) throw new UnauthorizedException();
     return this.songbooksService.catalogLibrary(user, catalogId);
   }
 
   @Get(":songbookId")
   @ApiOkResponse({ type: SongbookResponseDto })
   findOne(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("songbookId") songbookId: string,
   ): ReturnType<SongbooksService["findOne"]> {
-    if (!user) throw new UnauthorizedException();
     return this.songbooksService.findOne(user, songbookId);
   }
 
@@ -77,8 +72,7 @@ export class SongbooksController {
   /** Deleting it stays its owner's, not someone it's shared with to edit (issue #211). */
   @Delete(":songbookId")
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string): Promise<void> {
-    if (!user) throw new UnauthorizedException();
+  async remove(@SignedIn() user: AuthenticatedUser, @Param("songbookId") songbookId: string): Promise<void> {
     await this.songbooksService.assertOwns(user, songbookId);
     return this.songbooksService.remove(songbookId);
   }
@@ -86,11 +80,10 @@ export class SongbooksController {
   @Post(":songbookId/entries")
   @UseGuards(SongbookOwnerGuard)
   addEntry(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("songbookId") songbookId: string,
     @Body() dto: AddSongbookEntryDto,
   ): ReturnType<SongbooksService["addEntry"]> {
-    if (!user) throw new UnauthorizedException();
     return this.songbooksService.addEntry(user, songbookId, dto);
   }
 
@@ -124,8 +117,7 @@ export class SongbookEntriesController {
     description:
       'Reads `q` as a songbook reference - "HY 42", "HY42", "Hymns 42", "42", "A-17" - and returns matching entries in songbooks the user can see, whose songs they can see too (issue #213): exactly that number (up to 10), then numbers starting with it and numbers containing it (from two digits, up to 20 each), each marked by `match`. `more` gives more of each; `addableTo` (a set the user can change) only songs that can go in it. Empty when `q` has no number.',
   })
-  search(@CurrentUser() user: AuthenticatedUser | undefined, @Query() query: SongbookEntrySearchQueryDto) {
-    if (!user) throw new UnauthorizedException();
+  search(@SignedIn() user: AuthenticatedUser, @Query() query: SongbookEntrySearchQueryDto) {
     return this.songbooksService.searchEntries(user, query.q, query.more ?? false, query.addableTo);
   }
 }

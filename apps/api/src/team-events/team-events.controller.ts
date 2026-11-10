@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { isCalendarDate } from "@oneverse/core";
 import { BadRequestException } from "@nestjs/common";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -46,8 +47,7 @@ export class TeamEventsController {
 
   @Post("calendar-feed")
   @UseGuards(TeamAdminGuard)
-  resetFeed(@Param("teamId") teamId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  resetFeed(@Param("teamId") teamId: string, @SignedIn() user: AuthenticatedUser) {
     return this.feeds.resetTeam(teamId, user.id);
   }
 
@@ -71,8 +71,7 @@ export class TeamEventsController {
    */
   @Get("event-dates")
   @UseGuards(TeamMemberGuard)
-  async dates(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Query() query: TeamEventDatesQueryDto) {
-    if (!user) throw new UnauthorizedException();
+  async dates(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Query() query: TeamEventDatesQueryDto) {
     const isAdmin = user.isGlobalAdmin || (await this.access.teamRole(user.id, teamId)) === "ADMIN";
     return this.availability.withAnswers(teamId, user.id, isAdmin, await this.events.dates(teamId, query.from, query.to));
   }
@@ -80,16 +79,14 @@ export class TeamEventsController {
   /** The viewer's answer for a date: Available, If needed or Not available, with a note for the team's admins. */
   @Put("events/:eventId/dates/:date/answer")
   @UseGuards(TeamMemberGuard)
-  answer(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: AnswerEventDateDto) {
-    if (!user) throw new UnauthorizedException();
+  answer(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: AnswerEventDateDto) {
     return this.availability.answer(teamId, eventId, dateParam(date), user.id, dto);
   }
 
   @Delete("events/:eventId/dates/:date/answer")
   @UseGuards(TeamMemberGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  clearAnswer(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string) {
-    if (!user) throw new UnauthorizedException();
+  clearAnswer(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string) {
     return this.availability.clear(teamId, eventId, dateParam(date), user.id);
   }
 
@@ -104,14 +101,13 @@ export class TeamEventsController {
   @Put("events/:eventId/dates/:date/answers/:userId")
   @UseGuards(TeamAdminGuard)
   answerFor(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("teamId") teamId: string,
     @Param("eventId") eventId: string,
     @Param("date") date: string,
     @Param("userId") memberId: string,
     @Body() dto: AnswerEventDateDto,
   ) {
-    if (!user) throw new UnauthorizedException();
     return this.availability.answer(teamId, eventId, dateParam(date), memberId, dto, user.id);
   }
 
@@ -124,8 +120,7 @@ export class TeamEventsController {
 
   @Post("events")
   @UseGuards(TeamAdminGuard)
-  create(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Body() dto: CreateTeamEventDto) {
-    if (!user) throw new UnauthorizedException();
+  create(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Body() dto: CreateTeamEventDto) {
     return this.events.create(teamId, user.id, dto);
   }
 
@@ -159,16 +154,14 @@ export class TeamEventsController {
   /** A member put on a part for a date (issue #235, phase 7): they're asked, and told. */
   @Post("events/:eventId/dates/:date/lineup")
   @UseGuards(TeamAdminGuard)
-  assign(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: AssignPartDto) {
-    if (!user) throw new UnauthorizedException();
+  assign(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Body() dto: AssignPartDto) {
     return this.lineup.assign(teamId, eventId, dateParam(date), dto, user.id);
   }
 
   @Delete("events/:eventId/dates/:date/lineup/:assignmentId")
   @UseGuards(TeamAdminGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  unassign(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
-    if (!user) throw new UnauthorizedException();
+  unassign(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
     return this.lineup.unassign(teamId, eventId, dateParam(date), assignmentId, user.id);
   }
 
@@ -176,14 +169,13 @@ export class TeamEventsController {
   @Put("events/:eventId/dates/:date/lineup/:assignmentId/response")
   // Not only members: a guest answers for their own place (the service checks it is theirs).
   respond(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("teamId") teamId: string,
     @Param("eventId") eventId: string,
     @Param("date") date: string,
     @Param("assignmentId") assignmentId: string,
     @Body() dto: RespondAssignmentDto,
   ) {
-    if (!user) throw new UnauthorizedException();
     return this.lineup.respond(teamId, eventId, dateParam(date), assignmentId, user.id, dto);
   }
 
@@ -191,38 +183,34 @@ export class TeamEventsController {
   @Post("events/:eventId/dates/:date/lineup/:assignmentId/swap")
   // Not only members: a guest answers for their own place (the service checks it is theirs).
   requestSwap(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("teamId") teamId: string,
     @Param("eventId") eventId: string,
     @Param("date") date: string,
     @Param("assignmentId") assignmentId: string,
     @Body() dto: RequestSwapDto,
   ) {
-    if (!user) throw new UnauthorizedException();
     return this.lineup.requestSwap(teamId, eventId, dateParam(date), assignmentId, user.id, dto);
   }
 
   @Delete("events/:eventId/dates/:date/lineup/:assignmentId/swap")
   // Not only members: a guest answers for their own place (the service checks it is theirs).
   @HttpCode(HttpStatus.NO_CONTENT)
-  cancelSwap(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
-    if (!user) throw new UnauthorizedException();
+  cancelSwap(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
     return this.lineup.cancelSwap(teamId, eventId, dateParam(date), assignmentId, user.id);
   }
 
   /** A member takes the place offered: the first one gets it. */
   @Post("events/:eventId/dates/:date/lineup/:assignmentId/take")
   @UseGuards(TeamMemberGuard)
-  takeSwap(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
-    if (!user) throw new UnauthorizedException();
+  takeSwap(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string, @Param("assignmentId") assignmentId: string) {
     return this.lineup.takeSwap(teamId, eventId, dateParam(date), assignmentId, user.id);
   }
 
   /** The set for a date is ready: the people signed up for it are told (issue #235). */
   @Post("events/:eventId/dates/:date/set-ready")
   @UseGuards(TeamAdminGuard)
-  setReady(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string) {
-    if (!user) throw new UnauthorizedException();
+  setReady(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("eventId") eventId: string, @Param("date") date: string) {
     return this.reminders.setReady(teamId, eventId, dateParam(date), user.id);
   }
 
@@ -236,8 +224,7 @@ export class TeamEventsController {
   /** Answers asked for, by a deadline: members missing some are told now, and reminded the day before it. */
   @Post("answer-requests")
   @UseGuards(TeamAdminGuard)
-  askForAnswers(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Body() dto: CreateAnswerRequestDto) {
-    if (!user) throw new UnauthorizedException();
+  askForAnswers(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Body() dto: CreateAnswerRequestDto) {
     return this.reminders.createRequest(teamId, user.id, dto);
   }
 

@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -10,11 +10,6 @@ import { TeamPositionDto } from "./dto/team-position.dto.js";
 import { UpdateGroupDto } from "./dto/update-group.dto.js";
 import { GroupsService } from "./groups.service.js";
 
-function signedIn(user: AuthenticatedUser | undefined): AuthenticatedUser {
-  if (!user) throw new UnauthorizedException();
-  return user;
-}
-
 /** An organisation's groups and their positions (issue #241). */
 @ApiTags("teams")
 @ApiBearerAuth()
@@ -23,14 +18,14 @@ export class GroupsController {
   constructor(private readonly groups: GroupsService) {}
 
   @Post("organizations/:organizationId/groups")
-  create(@CurrentUser() user: AuthenticatedUser | undefined, @Param("organizationId") organizationId: string, @Body() dto: CreateGroupDto) {
-    return this.groups.create(signedIn(user), organizationId, dto);
+  create(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Body() dto: CreateGroupDto) {
+    return this.groups.create(user, organizationId, dto);
   }
 
   @Patch("teams/:teamId/group")
   @UseGuards(TeamAdminGuard)
-  update(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Body() dto: UpdateGroupDto) {
-    return this.groups.update(signedIn(user), teamId, dto);
+  update(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Body() dto: UpdateGroupDto) {
+    return this.groups.update(user, teamId, dto);
   }
 
   @Get("teams/:teamId/positions")
@@ -60,7 +55,7 @@ export class GroupsController {
 
   @Put("teams/:teamId/members/:userId/positions")
   @UseGuards(TeamMemberGuard)
-  setMemberPositions(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string, @Param("userId") userId: string, @Body() dto: SetMemberPositionsDto) {
-    return this.groups.setMemberPositions(signedIn(user), teamId, userId, dto.positionIds);
+  setMemberPositions(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string, @Param("userId") userId: string, @Body() dto: SetMemberPositionsDto) {
+    return this.groups.setMemberPositions(user, teamId, userId, dto.positionIds);
   }
 }

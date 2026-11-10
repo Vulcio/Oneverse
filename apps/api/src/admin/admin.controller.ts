@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { DEFAULT_TRANSFER_RETENTION_DAYS } from "@oneverse/core";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AdminUsersService } from "../user-management/admin-users.service.js";
@@ -64,9 +64,8 @@ export class AdminController {
   updateUser(
     @Param("userId") userId: string,
     @Body() dto: UpdateUserByAdminDto,
-    @CurrentUser() admin: AuthenticatedUser | undefined,
+    @SignedIn() admin: AuthenticatedUser,
   ): Promise<void> {
-    if (!admin) throw new UnauthorizedException();
     return this.adminUsers.update(admin.id, userId, dto);
   }
 
@@ -76,9 +75,8 @@ export class AdminController {
   deleteUser(
     @Param("userId") userId: string,
     @Body() dto: DeleteUserDto,
-    @CurrentUser() admin: AuthenticatedUser | undefined,
+    @SignedIn() admin: AuthenticatedUser,
   ): ReturnType<AdminUsersService["remove"]> {
-    if (!admin) throw new UnauthorizedException();
     return this.adminUsers.remove(admin.id, userId, dto.contentAction, dto.retentionDays ?? DEFAULT_TRANSFER_RETENTION_DAYS);
   }
 

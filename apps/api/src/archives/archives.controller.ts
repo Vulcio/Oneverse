@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Req, Res, UnauthorizedException, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { ArchiveOwnerSchema, ArchiveScheduleSchema } from "@oneverse/core";
 import type { Request, Response } from "express";
 import multer from "multer";
 import { tmpdir } from "node:os";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { UPLOAD_OPTIONS } from "../common/uploads.js";
@@ -34,21 +34,18 @@ export class ArchivesController {
   ) {}
 
   @Get()
-  list(@CurrentUser() user: AuthenticatedUser | undefined, @Query() query: ArchiveOwnerDto) {
-    if (!user) throw new UnauthorizedException();
+  list(@SignedIn() user: AuthenticatedUser, @Query() query: ArchiveOwnerDto) {
     return this.archives.list(user, query.scope, query.id);
   }
 
   @Post()
   @RateLimit("heavy")
-  create(@CurrentUser() user: AuthenticatedUser | undefined, @Body() body: ArchiveOwnerDto) {
-    if (!user) throw new UnauthorizedException();
+  create(@SignedIn() user: AuthenticatedUser, @Body() body: ArchiveOwnerDto) {
     return this.archives.requestExport(user, body.scope, body.id);
   }
 
   @Put("schedule")
-  schedule(@CurrentUser() user: AuthenticatedUser | undefined, @Body() body: ArchiveScheduleDto) {
-    if (!user) throw new UnauthorizedException();
+  schedule(@SignedIn() user: AuthenticatedUser, @Body() body: ArchiveScheduleDto) {
     return this.archives.setSchedule(user, body.scope, body.id, body.weekly);
   }
 
@@ -57,21 +54,18 @@ export class ArchivesController {
   @ApiConsumes("multipart/form-data")
   // Written to a temporary file as it comes, never held in memory: an archive can be big.
   @UseInterceptors(FileInterceptor("file", { ...UPLOAD_OPTIONS, storage: multer.diskStorage({ destination: tmpdir() }), limits: { fileSize: ARCHIVE_IMPORT_MAX_BYTES } }))
-  import(@CurrentUser() user: AuthenticatedUser | undefined, @Body() body: ArchiveOwnerDto, @UploadedFile() file: Express.Multer.File | undefined) {
-    if (!user) throw new UnauthorizedException();
+  import(@SignedIn() user: AuthenticatedUser, @Body() body: ArchiveOwnerDto, @UploadedFile() file: Express.Multer.File | undefined) {
     return this.archives.requestImport(user, body.scope, body.id, file);
   }
 
   @Get(":id")
-  get(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string) {
-    if (!user) throw new UnauthorizedException();
+  get(@SignedIn() user: AuthenticatedUser, @Param("id") id: string) {
     return this.archives.get(user, id);
   }
 
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string): Promise<void> {
-    if (!user) throw new UnauthorizedException();
+  async remove(@SignedIn() user: AuthenticatedUser, @Param("id") id: string): Promise<void> {
     await this.archives.remove(user, id);
   }
 
