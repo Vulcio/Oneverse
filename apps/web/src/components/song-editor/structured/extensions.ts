@@ -943,24 +943,6 @@ export function duplicateSection(view: EditorView, pos: number) {
   view.dispatch(tr);
 }
 
-export function moveSection(view: EditorView, pos: number, direction: -1 | 1) {
-  const { state } = view;
-  const $pos = state.doc.resolve(pos);
-  const index = $pos.index(0);
-  const node = state.doc.child(index);
-  const neighbour = index + direction;
-  if (neighbour < 0 || neighbour >= state.doc.childCount) return;
-  const other = state.doc.child(neighbour);
-  const tr = state.tr;
-  if (direction === -1) {
-    const start = pos - other.nodeSize;
-    tr.replaceWith(start, pos + node.nodeSize, [node, other]);
-  } else {
-    tr.replaceWith(pos, pos + node.nodeSize + other.nodeSize, [other, node]);
-  }
-  view.dispatch(tr.scrollIntoView());
-}
-
 /** Every chord rewritten by `change` (transposing the song) - one undoable step. */
 /** Every chord changed by `change`, and the song's key set to `key` with them (one step to undo). */
 export function transposeChords(view: EditorView, change: (raw: string) => string, key?: string | null) {

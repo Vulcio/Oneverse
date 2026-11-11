@@ -14,17 +14,6 @@ export function libpqUrl(databaseUrl: string): string {
   return url.toString();
 }
 
-/** A tool's version line ("pg_dump (PostgreSQL) 16.4"), or null when it isn't installed. */
-export function toolVersion(tool: "pg_dump" | "pg_restore"): Promise<string | null> {
-  return new Promise((resolve) => {
-    const child = spawn(tool, ["--version"], { stdio: ["ignore", "pipe", "ignore"] });
-    let out = "";
-    child.stdout.on("data", (chunk: Buffer) => (out += chunk.toString()));
-    child.on("error", () => resolve(null));
-    child.on("close", (code) => resolve(code === 0 ? out.trim() : null));
-  });
-}
-
 /** Runs a tool, its stderr kept for the error; resolves on exit 0. */
 export function run(tool: string, args: string[], options: { stdout?: NodeJS.WritableStream } = {}): Promise<void> {
   return new Promise((resolve, reject) => {

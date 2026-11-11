@@ -298,4 +298,3 @@ async function copyToDisk(body: Readable, path: string): Promise<{ sha256: strin
   return { sha256: hash.digest("hex"), sizeBytes };
 }
 
-export type { StorageLocation };

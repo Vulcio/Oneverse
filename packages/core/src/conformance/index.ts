@@ -2,7 +2,7 @@ import { CONFORMANCE, type ConformanceArea } from "./suites.js";
 import { CONFORMANCE_SCHEMA, THROWS, normalizeIds, toJson, type ConformanceFile } from "./format.js";
 
 export * from "./format.js";
-export { CONFORMANCE, type ConformanceArea, type ConformanceFunction } from "./suites.js";
+export { CONFORMANCE, type ConformanceArea } from "./suites.js";
 
 /** One case's answer from this implementation, as the files hold it. */
 export function answer(run: (...args: unknown[]) => unknown, args: unknown[]): unknown {
