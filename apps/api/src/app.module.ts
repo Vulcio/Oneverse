@@ -57,6 +57,12 @@ import { LookupsModule } from "./lookups/lookups.module.js";
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         connection: { url: config.getOrThrow<string>("REDIS_URL") },
+        // BullMQ keeps every finished job in Redis unless told otherwise: the
+        // schedulers alone (stem separations polled every 2 minutes, live
+        // sessions recorded every minute) would add some 2,000 a day, forever.
+        // The last ones are kept for Admin > Background jobs; a job's own
+        // options still win.
+        defaultJobOptions: { removeOnComplete: { count: 200 }, removeOnFail: { count: 500 } },
       }),
     }),
     PrismaModule,
