@@ -31,16 +31,28 @@ interface DeviceStoreOptions<T> {
 
 export function createDeviceStore<T>(key: string, { fallback, parse, format }: DeviceStoreOptions<T>): DeviceStore<T> {
   const listeners = new Set<() => void>();
-  let known = false;
+  // The stored text `current` was read from; undefined before the first read.
+  let seen: string | null | undefined;
   let current = fallback;
+  // A value storage refused (a private window): kept for the page, storage no longer read.
+  let unkept = false;
 
   function get(): T {
-    if (!known) {
-      known = true;
+    if (unkept) return current;
+    let raw: string | null;
+    try {
+      raw = localStorage.getItem(key);
+    } catch {
+      // Storage blocked: what was chosen on this page, else the fallback.
+      return current;
+    }
+    // Read afresh when it changed (another part of the page wrote it), the same value otherwise, as useSyncExternalStore needs.
+    if (raw !== seen) {
+      seen = raw;
       try {
-        current = parse(localStorage.getItem(key));
+        current = parse(raw);
       } catch {
-        // Storage blocked, or not ours: the fallback.
+        // Not ours.
         current = fallback;
       }
     }
@@ -48,14 +60,16 @@ export function createDeviceStore<T>(key: string, { fallback, parse, format }: D
   }
 
   function set(value: T) {
-    known = true;
     current = value;
     try {
       const text = format(value);
       if (text === null) localStorage.removeItem(key);
       else localStorage.setItem(key, text);
+      seen = text;
+      unkept = false;
     } catch {
-      // Not kept (a private window): still changed for this page.
+      // Not kept: still changed for this page.
+      unkept = true;
     }
     for (const listener of listeners) listener();
   }
