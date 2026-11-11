@@ -1,22 +1,8 @@
 import type { Attachment } from "@oneverse/core";
 import { Recorder, type Beat, type Take } from "#/lib/recorder";
 import { downloadOnce } from "#/lib/song-files";
-import {
-  directStemsOutput,
-  getStemState,
-  isAudible,
-  pauseStems,
-  playStems,
-  seekStems,
-  setStemsTake,
-  stemBuffer,
-  stemMono,
-  stemsAudioContext,
-  stemsZeroAt,
-  TAKE_ID,
-  toggleStemMute,
-  type StemSong,
-} from "#/lib/stem-engine";
+import { directStemsOutput, getStemState, pauseStems, playStems, seekStems, setStemsTake, stemBuffer, stemMono, stemsAudioContext, stemsZeroAt, toggleStemMute } from "#/lib/stem-engine";
+import { isAudible, TAKE_ID, type StemSong } from "#/lib/stem-files";
 
 /**
  * What the recording screen records with (issue #365), one way or the

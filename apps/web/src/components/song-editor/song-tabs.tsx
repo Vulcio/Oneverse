@@ -40,7 +40,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { KeySelect } from "#/components/key-select";
 import { setMode, useMode } from "#/lib/mode";
-import { stemsOf } from "#/lib/stem-engine";
+import { stemsOf } from "#/lib/stem-files";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { NEW_TARGET, RecordScreen } from "#/components/record-screen";
 import { StoredTakes } from "#/components/stored-takes";

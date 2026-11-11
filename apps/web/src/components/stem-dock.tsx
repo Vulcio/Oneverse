@@ -45,39 +45,9 @@ import { setMode } from "#/lib/mode";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { setRecordingClick, useRecordingClick } from "#/lib/recording-click";
 import { unlockSyncAudio } from "#/lib/sync-client";
-import {
-  chooseMultitrack,
-  RECORDING_CHOICE,
-  chooseStemSpeed,
-  chooseStemTranspose,
-  dockStems,
-  isTransposed,
-  setStemsSpeed,
-  setStemsTranspose,
-  useChosenSpeed,
-  useChosenTranspose,
-  isAudible,
-  pauseStems,
-  playStems,
-  prefetchStems,
-  setStemLoop,
-  stopStems,
-  resetStemVolumes,
-  setStemVolume,
-  shownDuration,
-  seekStems,
-  songBeatTempo,
-  stemKey,
-  TAKE_ID,
-  toggleStemMute,
-  toggleStemSolo,
-  tracksOf,
-  undockStems,
-  useStems,
-  volumeGain,
-  type StemSong,
-  type StemTrack,
-} from "#/lib/stem-engine";
+import { dockStems, setStemsSpeed, setStemsTranspose, pauseStems, playStems, prefetchStems, setStemLoop, stopStems, resetStemVolumes, setStemVolume, seekStems, toggleStemMute, toggleStemSolo, undockStems, useStems } from "#/lib/stem-engine";
+import { RECORDING_CHOICE, isTransposed, isAudible, shownDuration, songBeatTempo, stemKey, TAKE_ID, tracksOf, volumeGain, type StemSong, type StemTrack } from "#/lib/stem-files";
+import { chooseMultitrack, chooseStemSpeed, chooseStemTranspose, useChosenSpeed, useChosenTranspose } from "#/lib/stem-choices";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { cn } from "@oneverse/ui/lib/utils";
 import { Spinner } from "@oneverse/ui/components/spinner";

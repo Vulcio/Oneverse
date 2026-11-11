@@ -1,7 +1,8 @@
 import { beatTempoUnit, clicksBetween, metronomeForSong, secondsPerBeat, type MetronomeClick, type MetronomeSettings } from "@oneverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { getMetronomeState, ownMetronomeSettings, playMetronomeOn, stopMetronome, useMetronome } from "#/lib/metronome-engine";
-import { isAudible, useStems, type StemState } from "#/lib/stem-engine";
+import { useStems } from "#/lib/stem-engine";
+import { isAudible, type StemState } from "#/lib/stem-files";
 
 /**
  * The metronome with the recording (issue #100): while it's on, the

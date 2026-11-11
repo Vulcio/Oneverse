@@ -13,7 +13,9 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { cn } from "@oneverse/ui/lib/utils";
 import { startMetronome, stopMetronome, useMetronome, useMetronomeBeat } from "#/lib/metronome-engine";
 import { usePlaybackChoice, type PlaybackStore } from "#/lib/playback";
-import { getStemState, pauseStems, playStems, RECORDING_CHOICE, sourceFilesOf, useChosenMultitrack, type StemSong } from "#/lib/stem-engine";
+import { getStemState, pauseStems, playStems } from "#/lib/stem-engine";
+import { RECORDING_CHOICE, sourceFilesOf, type StemSong } from "#/lib/stem-files";
+import { useChosenMultitrack } from "#/lib/stem-choices";
 import { publishPlayback, unlockSyncAudio, useSync } from "#/lib/sync-client";
 import { pauseYouTube, useYouTube } from "#/lib/youtube-player";
 

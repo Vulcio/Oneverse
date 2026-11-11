@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { apiClient } from "#/lib/api-client";
-import { pauseStems, stemMono, stemsAudioContext, TAKE_ID, type StemSong, type StemTrack } from "#/lib/stem-engine";
+import { pauseStems, stemMono, stemsAudioContext } from "#/lib/stem-engine";
+import { TAKE_ID, type StemSong, type StemTrack } from "#/lib/stem-files";
 import { Spinner } from "@oneverse/ui/components/spinner";
 
 /** Two takes mixed into one (issue #142): each is silent where the other sings, so they add up; brought down if they'd clip. */

@@ -1,4 +1,4 @@
-import { songBeatTempo, timeSignatureOf } from "#/lib/stem-engine";
+import { songBeatTempo, timeSignatureOf } from "#/lib/stem-files";
 import {
   ApiError,
   ISO_639_1_CODES,

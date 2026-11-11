@@ -1,6 +1,7 @@
 import { barAt, barsLength, metronomeForSong, recordingBeatPosition, recordingSecondsAt, type ChartBar, type TempoUnit, type BeatLevel } from "@oneverse/core";
 import { startMetronome, stopMetronome, useMetronome } from "#/lib/metronome-engine";
-import { pauseStems, playLoadedStems, setStemLoop, useStems, type StemState } from "#/lib/stem-engine";
+import { pauseStems, playLoadedStems, setStemLoop, useStems } from "#/lib/stem-engine";
+import type { StemState } from "#/lib/stem-files";
 import { unlockSyncAudio } from "#/lib/sync-client";
 
 /** What the chord grid plays: the song's stems when they're loaded, else the click at the song's tempo. */

@@ -2,7 +2,8 @@ import { playsFiles, resolvePlaybackSource, type PlaybackSource } from "@onevers
 import { useEffect, useRef, useState } from "react";
 import { apiClient } from "#/lib/api-client";
 import { prefetchFiles, songFiles } from "#/lib/song-files";
-import { chosenMultitrack, sourceFilesOf } from "#/lib/stem-engine";
+import { sourceFilesOf } from "#/lib/stem-files";
+import { chosenMultitrack } from "#/lib/stem-choices";
 import { syncState } from "#/lib/sync-client";
 
 /**

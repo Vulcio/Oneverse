@@ -37,7 +37,8 @@ import {
 } from "#/lib/metronome-engine";
 import { getApiUrl } from "@oneverse/app/public-env";
 import { fileLoader, songFiles } from "#/lib/song-files";
-import { followStems, getStemState, playableOf, realignStems, setStemsDirectOutput, setStemsSpeed, setStemsTranspose, unfollowStems, unlockStemsAudio, useStems, type StemSong, type StemState } from "#/lib/stem-engine";
+import { followStems, getStemState, realignStems, setStemsDirectOutput, setStemsSpeed, setStemsTranspose, unfollowStems, unlockStemsAudio, useStems } from "#/lib/stem-engine";
+import { playableOf, type StemSong, type StemState } from "#/lib/stem-files";
 
 /**
  * Sync play in the browser (issue #13): one connection per tab to the API's

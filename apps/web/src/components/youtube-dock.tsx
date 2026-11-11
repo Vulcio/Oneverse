@@ -8,7 +8,7 @@ import { SpeedControl, speedPercent } from "#/components/speed-control";
 import { StemDockSlot } from "#/components/stem-dock-slot";
 import { Button } from "@oneverse/ui/components/button";
 import { setMode } from "#/lib/mode";
-import { chooseStemSpeed, useChosenSpeed } from "#/lib/stem-engine";
+import { chooseStemSpeed, useChosenSpeed } from "#/lib/stem-choices";
 import { cn } from "@oneverse/ui/lib/utils";
 import {
   dockYouTube,

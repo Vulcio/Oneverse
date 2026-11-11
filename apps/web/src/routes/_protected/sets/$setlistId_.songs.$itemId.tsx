@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { MetronomeSongButton } from "#/components/metronome";
 import { PlayerChart, renderPlayerChart } from "#/components/player-chart";
 import { TracksView } from "#/components/tracks-view";
-import { stemsOf } from "#/lib/stem-engine";
+import { stemsOf } from "#/lib/stem-files";
 import { TempoControl } from "#/components/tempo-control";
 import { SyncControl } from "#/components/sync-control";
 import { useSongPlayback } from "#/components/song-playback";

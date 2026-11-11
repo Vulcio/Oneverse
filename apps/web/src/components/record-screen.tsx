@@ -38,7 +38,8 @@ import { getMetronomeState, ownMetronomeSettings, stopMetronome } from "#/lib/me
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { openOwnEngine, openPlayerEngine, type RecordEngine } from "#/lib/record-engine";
 import type { Beat, Take } from "#/lib/recorder";
-import { getStemState, pauseStems, type StemSong } from "#/lib/stem-engine";
+import { getStemState, pauseStems } from "#/lib/stem-engine";
+import type { StemSong } from "#/lib/stem-files";
 import { keepTake, TakeLog, type TakeTarget } from "#/lib/take-store";
 import { Spinner } from "@oneverse/ui/components/spinner";
 import { FieldError } from "@oneverse/ui/components/field";
