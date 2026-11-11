@@ -17,7 +17,7 @@ import { getEffectiveOrganizationSettings } from "../organizations/organization-
 import { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
 import { ownStorageDriver, ownStorageProblem } from "../storage/own-storage.js";
-import { StorageService, type StorageLocation } from "../storage/storage.service.js";
+import { StorageService } from "../storage/storage.service.js";
 
 export const RELOCATE_JOB = "relocate";
 export const OWN_STORAGE_TICK = "own-storage-tick";
