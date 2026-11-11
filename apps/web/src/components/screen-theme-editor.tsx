@@ -860,7 +860,6 @@ function PartPicker({ slot, value, parts, onPick }: { slot: ScreenPartKind; valu
   const { t } = useTranslation();
   const builtIns = slot === "content" ? SCREEN_CONTENT_THEMES : slot === "background" ? SCREEN_BACKGROUND_THEMES : SCREEN_EFFECTS;
   const current = value ? ("builtIn" in value ? `b:${value.builtIn}` : `s:${value.id}`) : "";
-  const saved = value && "id" in value ? parts.find((one) => one.id === value.id) : undefined;
   return (
     <Field label={t(`screens.parts.kinds.${slot}`)}>
       <div className="flex items-center gap-2">
