@@ -1,7 +1,7 @@
-import { Body, Controller, Param, PayloadTooLargeException, Post, UnauthorizedException, UseGuards, UseInterceptors, UploadedFiles } from "@nestjs/common";
+import { Body, Controller, Param, PayloadTooLargeException, Post, UseGuards, UseInterceptors, UploadedFiles } from "@nestjs/common";
 import { ApiBearerAuth, ApiConsumes, ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { BULK_UPLOAD_MAX_FILES_PER_REQUEST } from "@oneverse/core";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { SongbookManagerGuard } from "../common/guards/songbook-manager.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { BulkUploadService } from "./bulk-upload.service.js";
@@ -39,9 +39,8 @@ export class BulkUploadController {
     @Param("songbookId") songbookId: string,
     @Body() dto: BulkUploadCommitDto,
     @UploadedFiles() files: Express.Multer.File[] | undefined,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): Promise<Awaited<ReturnType<BulkUploadService["commit"]>>> {
-    if (!user) throw new UnauthorizedException();
     // Each file within its type's limit (issue #163), set in Admin > Storage.
     const limitMb = (await fileSizeLimitsFor(user))[dto.type];
     const tooBig = (files ?? []).find((file) => file.size > limitMb * BYTES_PER_MB);

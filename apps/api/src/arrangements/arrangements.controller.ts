@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { requireUser } from "../setlists/setlists.controller.js";
 import { ArrangementsService } from "./arrangements.service.js";
 import { ChartPreferencesDto, CreateArrangementDto, UpdateArrangementDto } from "./dto/arrangement.dto.js";
 
@@ -14,47 +13,47 @@ export class ArrangementsController {
   constructor(private readonly arrangements: ArrangementsService) {}
 
   @Get("song-versions/:songVersionId/arrangements")
-  list(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string) {
-    return this.arrangements.listForSong(requireUser(user), songVersionId);
+  list(@SignedIn() user: AuthenticatedUser, @Param("songVersionId") songVersionId: string) {
+    return this.arrangements.listForSong(user, songVersionId);
   }
 
   @Post("song-versions/:songVersionId/arrangements")
-  create(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string, @Body() dto: CreateArrangementDto) {
-    return this.arrangements.create(requireUser(user), songVersionId, dto);
+  create(@SignedIn() user: AuthenticatedUser, @Param("songVersionId") songVersionId: string, @Body() dto: CreateArrangementDto) {
+    return this.arrangements.create(user, songVersionId, dto);
   }
 
   @Get("arrangements/:id")
-  findOne(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string) {
-    return this.arrangements.findOne(requireUser(user), id);
+  findOne(@SignedIn() user: AuthenticatedUser, @Param("id") id: string) {
+    return this.arrangements.findOne(user, id);
   }
 
   @Patch("arrangements/:id")
-  update(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string, @Body() dto: UpdateArrangementDto) {
-    return this.arrangements.update(requireUser(user), id, dto);
+  update(@SignedIn() user: AuthenticatedUser, @Param("id") id: string, @Body() dto: UpdateArrangementDto) {
+    return this.arrangements.update(user, id, dto);
   }
 
   @Post("arrangements/:id/reviewed")
-  markReviewed(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string) {
-    return this.arrangements.markReviewed(requireUser(user), id);
+  markReviewed(@SignedIn() user: AuthenticatedUser, @Param("id") id: string) {
+    return this.arrangements.markReviewed(user, id);
   }
 
   @Delete("arrangements/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string): Promise<void> {
-    return this.arrangements.remove(requireUser(user), id);
+  remove(@SignedIn() user: AuthenticatedUser, @Param("id") id: string): Promise<void> {
+    return this.arrangements.remove(user, id);
   }
 
   @Get("chart-preferences")
   preferences(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Query("songVersionId") songVersionId: string,
     @Query("arrangementId") arrangementId?: string,
   ) {
-    return this.arrangements.preferencesForSong(requireUser(user), songVersionId, arrangementId || null);
+    return this.arrangements.preferencesForSong(user, songVersionId, arrangementId || null);
   }
 
   @Put("chart-preferences")
-  savePreferences(@CurrentUser() user: AuthenticatedUser | undefined, @Body() dto: ChartPreferencesDto) {
-    return this.arrangements.savePreferencesForSong(requireUser(user), dto.songVersionId, dto.arrangementId ?? null, dto.preferences);
+  savePreferences(@SignedIn() user: AuthenticatedUser, @Body() dto: ChartPreferencesDto) {
+    return this.arrangements.savePreferencesForSong(user, dto.songVersionId, dto.arrangementId ?? null, dto.preferences);
   }
 }

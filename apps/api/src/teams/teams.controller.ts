@@ -9,11 +9,11 @@ import {
   Patch,
   Post,
   Query,
-  UnauthorizedException,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -36,18 +36,16 @@ export class TeamsController {
 
   @Get()
   @ApiOkResponse({ type: TeamResponseDto, isArray: true })
-  findMyTeams(@CurrentUser() user: AuthenticatedUser | undefined, @Query() query: ListTeamsQueryDto): ReturnType<TeamsService["findMyTeams"]> {
-    if (!user) throw new UnauthorizedException();
+  findMyTeams(@SignedIn() user: AuthenticatedUser, @Query() query: ListTeamsQueryDto): ReturnType<TeamsService["findMyTeams"]> {
     return this.teamsService.findMyTeams(user.id, query.all ?? false);
   }
 
   @Post()
   @ApiCreatedResponse({ type: TeamResponseDto })
   create(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Body() dto: CreateTeamDto,
   ): ReturnType<TeamsService["create"]> {
-    if (!user) throw new UnauthorizedException();
     return this.teamsService.create(user.id, dto);
   }
 
@@ -55,10 +53,9 @@ export class TeamsController {
   @Post("join/:token")
   @ApiCreatedResponse({ type: TeamResponseDto })
   joinByToken(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("token") token: string,
   ): ReturnType<TeamsService["joinByToken"]> {
-    if (!user) throw new UnauthorizedException();
     return this.teamsService.joinByToken(user.id, token);
   }
 
@@ -66,10 +63,9 @@ export class TeamsController {
   @UseGuards(TeamMemberGuard)
   @ApiOkResponse({ type: TeamResponseDto })
   findOne(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("teamId") teamId: string,
   ): ReturnType<TeamsService["findOne"]> {
-    if (!user) throw new UnauthorizedException();
     return this.teamsService.findOne(user.id, teamId);
   }
 
@@ -78,11 +74,10 @@ export class TeamsController {
   @UseGuards(TeamAdminGuard)
   @ApiOkResponse({ type: TeamResponseDto })
   update(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("teamId") teamId: string,
     @Body() dto: UpdateTeamDto,
   ): ReturnType<TeamsService["update"]> {
-    if (!user) throw new UnauthorizedException();
     return this.teamsService.update(user.id, teamId, dto);
   }
 
@@ -122,8 +117,7 @@ export class TeamsController {
   @Post(":teamId/leave")
   @UseGuards(TeamMemberGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  leave(@CurrentUser() user: AuthenticatedUser | undefined, @Param("teamId") teamId: string): Promise<void> {
-    if (!user) throw new UnauthorizedException();
+  leave(@SignedIn() user: AuthenticatedUser, @Param("teamId") teamId: string): Promise<void> {
     return this.teamsService.leaveTeam(teamId, user.id);
   }
 

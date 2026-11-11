@@ -1,41 +1,22 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
+import { createDeviceStore } from "#/lib/device-store";
 
 /**
  * Whether searches look in the songs' words too (issue #221): off unless
  * turned on, then remembered on the device, the same for the search box
  * and the library's.
  */
-const KEY = "songverse.search.lyrics";
-const listeners = new Set<() => void>();
+const inLyrics = createDeviceStore<boolean>("songverse.search.lyrics", {
+  fallback: false,
+  parse: (raw) => raw === "1",
+  // Off is the key gone, as it always was.
+  format: (on) => (on ? "1" : null),
+});
 
-function read(): boolean {
-  try {
-    return localStorage.getItem(KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+export const setInLyrics = inLyrics.set;
 
 export function useInLyrics(): [boolean, (on: boolean) => void] {
-  const on = useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    read,
-    () => false,
-  );
-  return [on, setInLyrics];
-}
-
-export function setInLyrics(on: boolean) {
-  try {
-    if (on) localStorage.setItem(KEY, "1");
-    else localStorage.removeItem(KEY);
-  } catch {
-    // Storage blocked: not remembered.
-  }
-  for (const listener of listeners) listener();
+  return [inLyrics.use(), setInLyrics];
 }
 
 /**

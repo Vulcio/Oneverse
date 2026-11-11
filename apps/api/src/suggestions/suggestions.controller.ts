@@ -1,14 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { CreateSuggestionDto, ListSuggestionsQueryDto, ReviewSuggestionDto } from "./suggestions.dto.js";
 import { SuggestionsService } from "./suggestions.service.js";
-
-function requireUser(user: AuthenticatedUser | undefined): AuthenticatedUser {
-  if (!user) throw new UnauthorizedException();
-  return user;
-}
 
 /** Suggested changes to catalogue songs (issue #74). */
 @ApiTags("suggestions")
@@ -18,46 +13,46 @@ export class SuggestionsController {
   constructor(private readonly suggestions: SuggestionsService) {}
 
   @Post("song-versions/:songVersionId/suggestions")
-  create(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string, @Body() dto: CreateSuggestionDto) {
-    return this.suggestions.create(requireUser(user), songVersionId, dto);
+  create(@SignedIn() user: AuthenticatedUser, @Param("songVersionId") songVersionId: string, @Body() dto: CreateSuggestionDto) {
+    return this.suggestions.create(user, songVersionId, dto);
   }
 
   /** Your own suggestions on this song. */
   @Get("song-versions/:songVersionId/suggestions")
-  forSong(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string) {
-    return this.suggestions.mine(requireUser(user), songVersionId);
+  forSong(@SignedIn() user: AuthenticatedUser, @Param("songVersionId") songVersionId: string) {
+    return this.suggestions.mine(user, songVersionId);
   }
 
   @Get("suggestions")
-  list(@CurrentUser() user: AuthenticatedUser | undefined, @Query() query: ListSuggestionsQueryDto) {
-    return this.suggestions.list(requireUser(user), query.state ?? "open");
+  list(@SignedIn() user: AuthenticatedUser, @Query() query: ListSuggestionsQueryDto) {
+    return this.suggestions.list(user, query.state ?? "open");
   }
 
   @Get("suggestions/mine")
-  mine(@CurrentUser() user: AuthenticatedUser | undefined) {
-    return this.suggestions.mine(requireUser(user));
+  mine(@SignedIn() user: AuthenticatedUser) {
+    return this.suggestions.mine(user);
   }
 
   @Get("suggestions/:id")
-  findOne(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string) {
-    return this.suggestions.findOne(requireUser(user), id);
+  findOne(@SignedIn() user: AuthenticatedUser, @Param("id") id: string) {
+    return this.suggestions.findOne(user, id);
   }
 
   @Post("suggestions/:id/accept")
   @HttpCode(HttpStatus.OK)
-  accept(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string, @Body() dto: ReviewSuggestionDto) {
-    return this.suggestions.accept(requireUser(user), id, dto.notes);
+  accept(@SignedIn() user: AuthenticatedUser, @Param("id") id: string, @Body() dto: ReviewSuggestionDto) {
+    return this.suggestions.accept(user, id, dto.notes);
   }
 
   @Post("suggestions/:id/decline")
   @HttpCode(HttpStatus.OK)
-  decline(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string, @Body() dto: ReviewSuggestionDto) {
-    return this.suggestions.decline(requireUser(user), id, dto.notes);
+  decline(@SignedIn() user: AuthenticatedUser, @Param("id") id: string, @Body() dto: ReviewSuggestionDto) {
+    return this.suggestions.decline(user, id, dto.notes);
   }
 
   @Post("suggestions/:id/withdraw")
   @HttpCode(HttpStatus.OK)
-  withdraw(@CurrentUser() user: AuthenticatedUser | undefined, @Param("id") id: string) {
-    return this.suggestions.withdraw(requireUser(user), id);
+  withdraw(@SignedIn() user: AuthenticatedUser, @Param("id") id: string) {
+    return this.suggestions.withdraw(user, id);
   }
 }

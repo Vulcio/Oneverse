@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Param, Post, Put, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { OwnStorageLimitsSchema, SaveOwnStorageSchema } from "@oneverse/core";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { zodDto } from "../common/zod-validation.js";
 import { RateLimit } from "../security/rate-limit.decorator.js";
@@ -23,27 +23,23 @@ export class OwnStorageController {
   constructor(private readonly ownStorage: OwnStorageService) {}
 
   @Get()
-  get(@CurrentUser() user: AuthenticatedUser | undefined, @Param("organizationId") organizationId: string) {
-    if (!user) throw new UnauthorizedException();
+  get(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {
     return this.ownStorage.summary(user, organizationId);
   }
 
   @Put()
   @RateLimit("heavy")
-  save(@CurrentUser() user: AuthenticatedUser | undefined, @Param("organizationId") organizationId: string, @Body() body: SaveOwnStorageDto) {
-    if (!user) throw new UnauthorizedException();
+  save(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Body() body: SaveOwnStorageDto) {
     return this.ownStorage.save(user, organizationId, body);
   }
 
   @Put("limits")
-  limits(@CurrentUser() user: AuthenticatedUser | undefined, @Param("organizationId") organizationId: string, @Body() body: OwnStorageLimitsDto) {
-    if (!user) throw new UnauthorizedException();
+  limits(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string, @Body() body: OwnStorageLimitsDto) {
     return this.ownStorage.setLimits(user, organizationId, body);
   }
 
   @Post("stop")
-  stop(@CurrentUser() user: AuthenticatedUser | undefined, @Param("organizationId") organizationId: string) {
-    if (!user) throw new UnauthorizedException();
+  stop(@SignedIn() user: AuthenticatedUser, @Param("organizationId") organizationId: string) {
     return this.ownStorage.stop(user, organizationId);
   }
 }

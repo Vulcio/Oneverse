@@ -1,10 +1,9 @@
 import { Controller, Get, Param, Post } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { SetlistSharingService } from "./setlist-sharing.service.js";
-import { requireUser } from "./setlists.controller.js";
 import { RateLimit } from "../security/rate-limit.decorator.js";
 
 /** A set's share link, as opened by the person it was sent to. */
@@ -23,7 +22,7 @@ export class SetInvitesController {
   @ApiBearerAuth()
   @RateLimit("heavy")
   @Post(":token/join")
-  join(@CurrentUser() user: AuthenticatedUser | undefined, @Param("token") token: string) {
-    return this.sharing.join(requireUser(user), token);
+  join(@SignedIn() user: AuthenticatedUser, @Param("token") token: string) {
+    return this.sharing.join(user, token);
   }
 }

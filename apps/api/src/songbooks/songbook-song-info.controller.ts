@@ -1,7 +1,7 @@
-import { Body, Controller, Get, HttpCode, Param, Post, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ApplySongInfoRefreshSchema, StartSongInfoRefreshSchema } from "@oneverse/core";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { SongbookOwnerGuard } from "../common/guards/songbook-owner.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { zodDto } from "../common/zod-validation.js";
@@ -23,35 +23,30 @@ class ApplySongInfoRefreshDto extends zodDto(ApplySongInfoRefreshSchema) {}
 export class SongbookSongInfoController {
   constructor(private readonly songInfo: SongbookSongInfoService) {}
 
-  private static who(user: AuthenticatedUser | undefined): AuthenticatedUser {
-    if (!user) throw new UnauthorizedException();
-    return user;
-  }
-
   @Get()
-  table(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string) {
-    return this.songInfo.table(SongbookSongInfoController.who(user), songbookId);
+  table(@SignedIn() user: AuthenticatedUser, @Param("songbookId") songbookId: string) {
+    return this.songInfo.table(user, songbookId);
   }
 
   @Post("refreshes")
   @RateLimit("heavy")
-  start(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string, @Body() dto: StartSongInfoRefreshDto) {
-    return this.songInfo.start(SongbookSongInfoController.who(user), songbookId, dto.songVersionIds);
+  start(@SignedIn() user: AuthenticatedUser, @Param("songbookId") songbookId: string, @Body() dto: StartSongInfoRefreshDto) {
+    return this.songInfo.start(user, songbookId, dto.songVersionIds);
   }
 
   @Get("refreshes/latest")
-  latest(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string) {
-    return this.songInfo.latest(SongbookSongInfoController.who(user), songbookId);
+  latest(@SignedIn() user: AuthenticatedUser, @Param("songbookId") songbookId: string) {
+    return this.songInfo.latest(user, songbookId);
   }
 
   @Get("refreshes/:refreshId")
-  view(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string, @Param("refreshId") refreshId: string) {
-    return this.songInfo.view(SongbookSongInfoController.who(user), songbookId, refreshId);
+  view(@SignedIn() user: AuthenticatedUser, @Param("songbookId") songbookId: string, @Param("refreshId") refreshId: string) {
+    return this.songInfo.view(user, songbookId, refreshId);
   }
 
   @Post("refreshes/:refreshId/apply")
   @HttpCode(200)
-  apply(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songbookId") songbookId: string, @Param("refreshId") refreshId: string, @Body() dto: ApplySongInfoRefreshDto) {
-    return this.songInfo.apply(SongbookSongInfoController.who(user), songbookId, refreshId, dto.songs);
+  apply(@SignedIn() user: AuthenticatedUser, @Param("songbookId") songbookId: string, @Param("refreshId") refreshId: string, @Body() dto: ApplySongInfoRefreshDto) {
+    return this.songInfo.apply(user, songbookId, refreshId, dto.songs);
   }
 }

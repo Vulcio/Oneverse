@@ -1,5 +1,5 @@
 import type { StemPart } from "@oneverse/core";
-import { useSyncExternalStore } from "react";
+import { deviceChoice } from "#/lib/device-store";
 import type { WaveStyle } from "#/lib/wave-shape";
 
 /**
@@ -28,41 +28,6 @@ export function partColour(part: StemPart | null, index: number): string {
   if (part === "CLICK") return "oklch(0.62 0 0)";
   const hue = part ? HUES[part] : SPARE[index % SPARE.length]!;
   return `oklch(0.66 0.15 ${hue})`;
-}
-
-/** A choice kept on the device, for every Tracks view on the page. */
-function deviceChoice<T extends string>(key: string, fallback: T, allowed: readonly T[]) {
-  const listeners = new Set<() => void>();
-  let shown: T | null = null;
-  const read = (): T => {
-    try {
-      const value = localStorage.getItem(key) as T | null;
-      return value && allowed.includes(value) ? value : fallback;
-    } catch {
-      return fallback;
-    }
-  };
-  return {
-    set(value: T) {
-      try {
-        localStorage.setItem(key, value);
-      } catch {
-        // Not kept (a private window): still changed for this page.
-      }
-      shown = value;
-      for (const listener of listeners) listener();
-    },
-    use(): T {
-      return useSyncExternalStore(
-        (listener) => {
-          listeners.add(listener);
-          return () => listeners.delete(listener);
-        },
-        () => (shown ??= read()),
-        () => fallback,
-      );
-    },
-  };
 }
 
 const colours = deviceChoice("songverse.tracksColours", "on", ["on", "off"] as const);

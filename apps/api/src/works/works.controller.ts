@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { LinkMusicBrainzDto } from "../musicbrainz/dto/link-musicbrainz.dto.js";
 import { WorksService } from "./works.service.js";
@@ -12,31 +12,27 @@ export class WorksController {
   constructor(private readonly worksService: WorksService) {}
 
   @Get(":workId")
-  findOne(@CurrentUser() user: AuthenticatedUser | undefined, @Param("workId") workId: string): ReturnType<WorksService["findOne"]> {
-    if (!user) throw new UnauthorizedException();
+  findOne(@SignedIn() user: AuthenticatedUser, @Param("workId") workId: string): ReturnType<WorksService["findOne"]> {
     return this.worksService.findOne(user, workId);
   }
 
   @Post(":workId/musicbrainz-link")
   linkMusicBrainz(
     @Param("workId") workId: string,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Body() dto: LinkMusicBrainzDto,
   ) {
-    if (!user) throw new UnauthorizedException();
     return this.worksService.linkMusicBrainzWork(workId, user, dto.mbid);
   }
 
   @Delete(":workId/musicbrainz-link")
   @HttpCode(HttpStatus.NO_CONTENT)
-  unlinkMusicBrainz(@Param("workId") workId: string, @CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  unlinkMusicBrainz(@Param("workId") workId: string, @SignedIn() user: AuthenticatedUser) {
     return this.worksService.unlinkMusicBrainzWork(workId, user);
   }
 
   @Get(":workId/musicbrainz")
-  getMusicBrainz(@CurrentUser() user: AuthenticatedUser | undefined, @Param("workId") workId: string) {
-    if (!user) throw new UnauthorizedException();
+  getMusicBrainz(@SignedIn() user: AuthenticatedUser, @Param("workId") workId: string) {
     return this.worksService.getMusicBrainzInfo(user, workId);
   }
 }

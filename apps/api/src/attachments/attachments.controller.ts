@@ -16,7 +16,6 @@ import {
   Req,
   Res,
   StreamableFile,
-  UnauthorizedException,
   UnsupportedMediaTypeException,
   UploadedFile,
   UseInterceptors,
@@ -24,7 +23,7 @@ import {
 import { ApiBearerAuth, ApiConsumes, ApiCreatedResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { AccessPolicyService } from "../access/access-policy.service.js";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AttachmentsService } from "./attachments.service.js";
 import { AttachmentResponseDto, WaveformResponseDto } from "./dto/attachment-response.dto.js";
@@ -65,9 +64,8 @@ export class AttachmentsController {
   @ApiOkResponse({ type: AttachmentResponseDto, isArray: true })
   async list(
     @Param("songVersionId") songVersionId: string,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): Promise<Awaited<ReturnType<AttachmentsService["listForSongVersion"]>>> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     return this.attachmentsService.listForSongVersion(user, songVersionId);
   }
@@ -80,8 +78,7 @@ export class AttachmentsController {
    */
   @Get("waveforms")
   @ApiOkResponse({ type: WaveformResponseDto, isArray: true })
-  async waveforms(@Param("songVersionId") songVersionId: string, @CurrentUser() user: AuthenticatedUser | undefined): Promise<WaveformResponseDto[]> {
-    if (!user) throw new UnauthorizedException();
+  async waveforms(@Param("songVersionId") songVersionId: string, @SignedIn() user: AuthenticatedUser): Promise<WaveformResponseDto[]> {
     await this.access.assertCanSeeSong(user, songVersionId);
     return this.attachmentsService.waveforms(user, songVersionId);
   }
@@ -96,9 +93,8 @@ export class AttachmentsController {
     @Param("songVersionId") songVersionId: string,
     @Body() dto: UploadAttachmentDto,
     @UploadedFile() file: Express.Multer.File | undefined,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): ReturnType<AttachmentsService["upload"]> {
-    if (!user) throw new UnauthorizedException();
     if (!file) throw new BadRequestException("A file is required");
     await this.access.assertCanSeeSong(user, songVersionId);
     // Its type's limit (issue #163), set in Admin > Storage; a global admin's, the server's (#183).
@@ -144,9 +140,8 @@ export class AttachmentsController {
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
     @Body() dto: UpdateAttachmentDto,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): ReturnType<AttachmentsService["update"]> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     return this.attachmentsService.update(user, songVersionId, attachmentId, dto);
   }
@@ -159,9 +154,8 @@ export class AttachmentsController {
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
     @Body() dto: UseTakeDto,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): ReturnType<AttachmentsService["useTake"]> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     return this.attachmentsService.useTake(user, songVersionId, attachmentId, dto.instead ?? null);
   }
@@ -174,9 +168,8 @@ export class AttachmentsController {
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
     @Body() dto: ProcessAttachmentDto,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): ReturnType<AttachmentsService["process"]> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     return this.attachmentsService.process(user, songVersionId, attachmentId, dto.steps);
   }
@@ -192,11 +185,10 @@ export class AttachmentsController {
   async download(
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     const attachment = await this.attachmentsService.find(user, songVersionId, attachmentId);
     await sendFile(this.storage, attachment, req, res, "attachment");
@@ -208,11 +200,10 @@ export class AttachmentsController {
   async original(
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     const attachment = await this.attachmentsService.find(user, songVersionId, attachmentId);
     if (!attachment.originalStorageKey) throw new NotFoundException("This file has no original kept");
@@ -245,9 +236,8 @@ export class AttachmentsController {
   async link(
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): Promise<{ path: string; expiresAt: string }> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     const attachment = await this.attachmentsService.find(user, songVersionId, attachmentId);
     const pdf = attachment.mimeType === "application/pdf";
@@ -262,10 +252,9 @@ export class AttachmentsController {
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
     @Query("w") width: string | undefined,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    if (!user) throw new UnauthorizedException();
     if (width === undefined) throw new BadRequestException("The w (width) query parameter is required");
     await this.access.assertCanSeeSong(user, songVersionId);
     const { body, contentType } = await this.attachmentsService.resizedImage(user, songVersionId, attachmentId, Number(width));
@@ -283,9 +272,8 @@ export class AttachmentsController {
   async remove(
     @Param("songVersionId") songVersionId: string,
     @Param("attachmentId") attachmentId: string,
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
   ): Promise<void> {
-    if (!user) throw new UnauthorizedException();
     await this.access.assertCanSeeSong(user, songVersionId);
     return this.attachmentsService.remove(user, songVersionId, attachmentId);
   }

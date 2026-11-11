@@ -1,7 +1,7 @@
-import { Body, Controller, Get, NotFoundException, Param, Put, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Get, NotFoundException, Param, Put } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import type { ChordShapeChoice } from "@oneverse/core";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { ChooseChordShapeDto } from "./dto/chord-shapes.dto.js";
@@ -19,8 +19,7 @@ export class ChordShapesController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
-  async list(@CurrentUser() user: AuthenticatedUser | undefined, @Param("songVersionId") songVersionId: string): Promise<ChordShapeChoice[]> {
-    if (!user) throw new UnauthorizedException();
+  async list(@SignedIn() user: AuthenticatedUser, @Param("songVersionId") songVersionId: string): Promise<ChordShapeChoice[]> {
     return this.prisma.client.chordShapeChoice.findMany({
       where: { userId: user.id, songVersionId },
       select: { instrument: true, tuning: true, chord: true, frets: true },
@@ -31,11 +30,10 @@ export class ChordShapesController {
   /** Keeps the shape chosen for a chord of this song; `frets` null forgets it (back to the usual one). */
   @Put()
   async choose(
-    @CurrentUser() user: AuthenticatedUser | undefined,
+    @SignedIn() user: AuthenticatedUser,
     @Param("songVersionId") songVersionId: string,
     @Body() dto: ChooseChordShapeDto,
   ): Promise<ChordShapeChoice[]> {
-    if (!user) throw new UnauthorizedException();
     await this.assertSong(songVersionId);
     const key = { userId: user.id, songVersionId, instrument: dto.instrument, tuning: dto.tuning, chord: dto.chord };
     if (dto.frets === null) {

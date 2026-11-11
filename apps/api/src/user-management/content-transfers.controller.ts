@@ -1,6 +1,6 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Post, UnauthorizedException } from "@nestjs/common";
+import { Controller, Get, HttpCode, HttpStatus, Param, Post } from "@nestjs/common";
 import { ApiBearerAuth, ApiOkResponse, ApiProperty, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { ContentTransfersService } from "./content-transfers.service.js";
 
@@ -24,15 +24,13 @@ export class ContentTransfersController {
 
   @Get()
   @ApiOkResponse({ type: TransferPreviewResponseDto })
-  preview(@Param("token") token: string, @CurrentUser() user: AuthenticatedUser | undefined) {
-    if (!user) throw new UnauthorizedException();
+  preview(@Param("token") token: string, @SignedIn() _user: AuthenticatedUser) {
     return this.transfers.preview(token);
   }
 
   @Post("claim")
   @HttpCode(HttpStatus.NO_CONTENT)
-  claim(@Param("token") token: string, @CurrentUser() user: AuthenticatedUser | undefined): Promise<void> {
-    if (!user) throw new UnauthorizedException();
+  claim(@Param("token") token: string, @SignedIn() user: AuthenticatedUser): Promise<void> {
     return this.transfers.claim(token, user.id);
   }
 }

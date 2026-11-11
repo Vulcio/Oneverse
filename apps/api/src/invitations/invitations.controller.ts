@@ -1,8 +1,8 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, Res, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { CreateSignupInvitationSchema, SignupPassSchema } from "@oneverse/core";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import { GlobalAdminGuard } from "../common/guards/global-admin.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -28,8 +28,7 @@ export class AdminInvitationsController {
   }
 
   @Post()
-  create(@CurrentUser() admin: AuthenticatedUser | undefined, @Body() dto: CreateSignupInvitationDto) {
-    if (!admin) throw new UnauthorizedException();
+  create(@SignedIn() admin: AuthenticatedUser, @Body() dto: CreateSignupInvitationDto) {
     return this.invitations.create(admin, dto);
   }
 

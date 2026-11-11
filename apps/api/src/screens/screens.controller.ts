@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Pa
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, StartScreenPairingSchema, UpdateScreenSchema } from "@oneverse/core";
 import type { Response } from "express";
-import { CurrentUser } from "../common/decorators/current-user.decorator.js";
+import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { zodDto } from "../common/zod-validation.js";
@@ -16,11 +16,6 @@ class UpdateScreenDto extends zodDto(UpdateScreenSchema) {}
 class ScreenCurrentQueryDto extends zodDto(ScreenCurrentQuerySchema) {}
 class PickScreenSetDto extends zodDto(PickScreenSetSchema) {}
 class PickScreenThemeDto extends zodDto(PickScreenThemeSchema) {}
-
-function requireUser(user: AuthenticatedUser | undefined): AuthenticatedUser {
-  if (!user) throw new UnauthorizedException();
-  return user;
-}
 
 /** A screen's token, sent as `Authorization: Screen <token>`. */
 function screenToken(header: string | undefined): string {
@@ -56,14 +51,13 @@ export class ScreensController {
 
   /** A code someone typed or scanned, before they confirm it. */
   @Get("pairings/:code")
-  checkCode(@Param("code") code: string, @CurrentUser() user: AuthenticatedUser | undefined): ReturnType<ScreensService["checkCode"]> {
-    requireUser(user);
+  checkCode(@Param("code") code: string, @SignedIn() _user: AuthenticatedUser): ReturnType<ScreensService["checkCode"]> {
     return this.screens.checkCode(code);
   }
 
   @Post("pairings/:code/confirm")
-  confirm(@Param("code") code: string, @Body() dto: ConfirmScreenPairingDto, @CurrentUser() user: AuthenticatedUser | undefined): ReturnType<ScreensService["confirm"]> {
-    return this.screens.confirm(requireUser(user), code, dto);
+  confirm(@Param("code") code: string, @Body() dto: ConfirmScreenPairingDto, @SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["confirm"]> {
+    return this.screens.confirm(user, code, dto);
   }
 
   /** What the screen signed in by its token shows: itself and its set. */
@@ -106,32 +100,32 @@ export class ScreensController {
 
   /** The screens showing a set (for who leads it), or the user's own. */
   @Get()
-  list(@Query("setlistId") setlistId: string | undefined, @CurrentUser() user: AuthenticatedUser | undefined): ReturnType<ScreensService["list"]> {
-    return this.screens.list(requireUser(user), typeof setlistId === "string" && setlistId ? setlistId : undefined);
+  list(@Query("setlistId") setlistId: string | undefined, @SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["list"]> {
+    return this.screens.list(user, typeof setlistId === "string" && setlistId ? setlistId : undefined);
   }
 
   /** Whose a screen paired now can be (issues #222, #322): the teams and organisations they run, or whose screens they manage by a role. */
   @Get("owners")
-  owners(@CurrentUser() user: AuthenticatedUser | undefined): ReturnType<ScreensService["pairingOwners"]> {
-    return this.screens.pairingOwners(requireUser(user));
+  owners(@SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["pairingOwners"]> {
+    return this.screens.pairingOwners(user);
   }
 
   @Patch(":screenId")
-  update(@Param("screenId") screenId: string, @Body() dto: UpdateScreenDto, @CurrentUser() user: AuthenticatedUser | undefined): ReturnType<ScreensService["update"]> {
-    return this.screens.update(requireUser(user), screenId, dto);
+  update(@Param("screenId") screenId: string, @Body() dto: UpdateScreenDto, @SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["update"]> {
+    return this.screens.update(user, screenId, dto);
   }
 
   /** A pairing code shown on it again (issue #284): another profile, beside this one. */
   @Post(":screenId/pair-again")
   @HttpCode(HttpStatus.NO_CONTENT)
-  pairAgain(@Param("screenId") screenId: string, @CurrentUser() user: AuthenticatedUser | undefined): Promise<void> {
-    return this.screens.pairAgain(requireUser(user), screenId);
+  pairAgain(@Param("screenId") screenId: string, @SignedIn() user: AuthenticatedUser): Promise<void> {
+    return this.screens.pairAgain(user, screenId);
   }
 
   /** Disconnects it: its token stops working, and it goes back to showing a code. */
   @Delete(":screenId")
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param("screenId") screenId: string, @CurrentUser() user: AuthenticatedUser | undefined): Promise<void> {
-    return this.screens.remove(requireUser(user), screenId);
+  remove(@Param("screenId") screenId: string, @SignedIn() user: AuthenticatedUser): Promise<void> {
+    return this.screens.remove(user, screenId);
   }
 }
