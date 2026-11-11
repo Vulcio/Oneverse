@@ -9,7 +9,7 @@ import { useSongSearch } from "#/lib/song-search";
 import { LyricsSnippet } from "#/components/lyrics-snippet";
 import { AddToSetIconButton } from "#/components/add-to-set";
 import { useMode } from "#/lib/mode";
-import { formatSetDate, setlistTitle } from "#/lib/setlists";
+import { formatSetDate, setlistTitle, todayIso } from "#/lib/setlists";
 import { Command, CommandDialog, CommandDialogClose, CommandDialogTrigger, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@oneverse/ui/components/command";
 import { cn } from "@oneverse/ui/lib/utils";
 
@@ -350,7 +350,8 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
 /** Sets from the next one on (then the past, most recent first); undated ones last. */
 function sortSets<T extends { eventDate: string | null }>(sets: T[], q: string): T[] {
   if (q) return sets;
-  const today = new Date().toISOString().slice(0, 10);
+  // The device's own day: in UTC, a set from last night was still "upcoming" after midnight in Europe.
+  const today = todayIso();
   const rank = (set: T) => (!set.eventDate ? 2 : set.eventDate >= today ? 0 : 1);
   return [...sets].sort((a, b) => {
     const byRank = rank(a) - rank(b);

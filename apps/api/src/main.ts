@@ -16,6 +16,7 @@ import { registerOAuthClients } from "./auth/oauth-clients.js";
 import { webOrigins } from "./common/utils/web-apps.js";
 import { apiDocsAllowed } from "./security/security-settings.js";
 import { requestMemoMiddleware } from "./common/request-memo.js";
+import { serverVersion } from "./common/version.js";
 
 async function bootstrap() {
   // rawBody: a webhook's signature is checked against the bytes it came as (the Demucs API's, issue #63).
@@ -87,9 +88,10 @@ async function bootstrap() {
   app.useGlobalPipes(new ZodValidationPipe());
 
   const config = new DocumentBuilder()
-    .setTitle("Songverse API")
-    .setDescription("Song library, arrangement, and performance API for Songverse.")
-    .setVersion("0.1.0")
+    .setTitle("Oneverse API")
+    .setDescription("The API of Oneverse's apps - Songverse, Planiverse, the screens and Pulse: songs, sets, teams, planning and live sessions.")
+    // The product's one version (issue #164), as /health reports it.
+    .setVersion(serverVersion().version)
     // 3.1: nullable fields are type lists ("string" or null), as zod describes them (issue #118).
     .setOpenAPIVersion("3.1.0")
     .addBearerAuth()
@@ -113,7 +115,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3001;
   await app.listen(port);
-  console.log(`Songverse API listening on :${port} (docs at /api/docs)`);
+  console.log(`Oneverse API listening on :${port} (docs at /api/docs)`);
   // Background jobs are the Worker's (issue #92); the API runs them too only with JOBS_IN_API (by default, out of production).
   if (jobsInApi()) startJobs(app, "api");
 }
