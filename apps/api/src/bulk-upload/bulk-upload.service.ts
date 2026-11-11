@@ -71,6 +71,8 @@ export class BulkUploadService {
     let queued = 0;
     for (const { file, entryCode } of accepted) {
       const { hash, sizeBytes } = await this.storage.put(file.buffer, file.mimetype);
+      // Its row is the Worker's to make: kept until then (BulkUploadProcessor releases it).
+      await this.storage.hold(hash);
       await this.queue.add("process-file", {
         songbookId,
         entryCode,

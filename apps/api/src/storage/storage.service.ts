@@ -10,6 +10,7 @@ import type { ByteRange, ObjectStorageDriver } from "./object-storage-driver.js"
 import type { Readable } from "node:stream";
 import { S3StorageDriver } from "./s3-storage.driver.js";
 import { ownStorageDriver } from "./own-storage.js";
+import { redis } from "../jobs/redis.js";
 
 /** Where an object is: the server's storage (null), or an organisation's own bucket by its id (issue #206). */
 export type StorageLocation = string | null;
@@ -42,6 +43,19 @@ export interface SaveStorageConfigInput {
 }
 
 const SINGLETON_ID = "singleton";
+
+/**
+ * An object stored before what references it is written (a bulk upload's
+ * files: stored at once, their rows made by the Worker, maybe much later on
+ * a busy day) is held (hold()) until then (release()), or HELD_S at most:
+ * deleteUnreferenced() leaves it alone meanwhile. Without it, removing a
+ * file with the same bytes in that time deleted the object the new rows
+ * then pointed at.
+ */
+const HELD_S = 24 * 60 * 60;
+const heldKey = (hash: string, location: StorageLocation) => `songverse:storage:held:${location ?? ""}:${hash}`;
+/** Objects deleteUnreferenced() left because they were held, looked at again by sweepDeferred(): "location|hash". */
+const DEFERRED_KEY = "songverse:storage:deferred";
 
 function hasCompleteDbCredentials(
   settings: StorageSettings | null,
@@ -220,7 +234,7 @@ export class StorageService {
       // In an organisation's bucket (issue #206), only its files are there.
       if (location) {
         const files = await this.prisma.client.attachment.count({ where: { storedInOrganizationId: location, OR: [{ storageKey: hash }, { originalStorageKey: hash }] } });
-        if (files === 0) await this.delete(hash, location);
+        if (files === 0 && !(await deferIfHeld(hash, location))) await this.delete(hash, location);
         continue;
       }
       const [attachments, avatars, songImages, artistPictures, teamPictures, songbookPictures, themeFiles, brandFiles, bibleFiles, archives] = await Promise.all([
@@ -244,9 +258,54 @@ export class StorageService {
         this.prisma.client.contentArchive.count({ where: { storageKey: hash } }),
       ]);
       if (attachments === 0 && avatars === 0 && songImages === 0 && artistPictures === 0 && teamPictures === 0 && songbookPictures === 0 && themeFiles === 0 && brandFiles === 0 && bibleFiles === 0 && archives === 0) {
-        await this.delete(hash);
+        if (!(await deferIfHeld(hash, null))) await this.delete(hash);
       }
     }
+  }
+
+  /** Keeps `hash` from deleteUnreferenced() until release() (see HELD_S). Without Redis, it isn't held. */
+  async hold(hash: string, location: StorageLocation = null): Promise<void> {
+    // Counted: the same bytes may be waiting for more than one row.
+    await redis()
+      .multi()
+      .incr(heldKey(hash, location))
+      .expire(heldKey(hash, location), HELD_S)
+      .exec()
+      .catch(() => undefined);
+  }
+
+  /** What hold() kept: deleteUnreferenced() may take it again (sweepDeferred(), if it was asked to meanwhile). */
+  async release(hash: string, location: StorageLocation = null): Promise<void> {
+    try {
+      if ((await redis().decr(heldKey(hash, location))) <= 0) await redis().del(heldKey(hash, location));
+    } catch {
+      // Without Redis, nothing was held.
+    }
+  }
+
+  /**
+   * The objects deleteUnreferenced() left because they were held, checked
+   * again once they no longer are: deleted if nothing references them.
+   * Run by the Worker with the own-storage tick (every ten minutes).
+   */
+  async sweepDeferred(): Promise<{ checked: number }> {
+    let members: string[];
+    try {
+      members = await redis().smembers(DEFERRED_KEY);
+    } catch {
+      return { checked: 0 };
+    }
+    let checked = 0;
+    for (const member of members) {
+      const split = member.indexOf("|");
+      const location = member.slice(0, split) || null;
+      const hash = member.slice(split + 1);
+      if (await isHeld(hash, location)) continue;
+      await redis().srem(DEFERRED_KEY, member);
+      await this.deleteUnreferenced([hash], location);
+      checked++;
+    }
+    return { checked };
   }
 
   /**
@@ -353,4 +412,21 @@ export class StorageService {
       data: { r2AccountId: null, r2AccessKeyId: null, r2SecretAccessKeyEnc: null, r2Bucket: null, r2Endpoint: null },
     });
   }
+}
+
+async function isHeld(hash: string, location: StorageLocation): Promise<boolean> {
+  try {
+    return Number((await redis().get(heldKey(hash, location))) ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Whether `hash` is held, then kept for sweepDeferred() to look at again. */
+async function deferIfHeld(hash: string, location: StorageLocation): Promise<boolean> {
+  if (!(await isHeld(hash, location))) return false;
+  await redis()
+    .sadd(DEFERRED_KEY, `${location ?? ""}|${hash}`)
+    .catch(() => undefined);
+  return true;
 }

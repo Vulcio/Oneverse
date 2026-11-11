@@ -37,6 +37,9 @@ export class BulkUploadProcessor extends WorkerHost {
     const target = await this.songbooksService.ensureEntryForCode(songbookId, entryCode);
     if (!target) {
       this.logger.warn(`Skipping ${filename}: no entry (existing or catalog-backed) for code ${entryCode}`);
+      // Stored for nothing: gone, unless something else has the same bytes.
+      await this.storage.release(storageKey);
+      await this.storage.deleteUnreferenced([storageKey]);
       return;
     }
 
@@ -59,6 +62,8 @@ export class BulkUploadProcessor extends WorkerHost {
         uploadedByUserId: uploadedByUserId ?? null,
       },
     });
+    // Referenced now: deleteUnreferenced() may look at it again (BulkUploadService held it).
+    await this.storage.release(storageKey);
     // What the song doesn't have yet, from the metadata providers (issue #352): a job of its own, one at a time.
     await this.songInfo.fill(target.songVersionId, uploadedByUserId ?? null);
   }

@@ -271,7 +271,7 @@ export class OwnStorageService {
   }
 
   /** Every ten minutes: buckets that stopped answering tried again, and files moved. */
-  async tick(): Promise<{ retried: number }> {
+  async tick(): Promise<{ retried: number; deferredChecked: number }> {
     const down = await this.prisma.client.organizationStorage.findMany({ where: { reachable: false } });
     const key = this.config.get<string>("SETTINGS_ENCRYPTION_KEY");
     for (const row of down) {
@@ -283,7 +283,9 @@ export class OwnStorageService {
       }
     }
     await this.relocate();
-    return { retried: down.length };
+    // Files removed while the same bytes waited for their rows (StorageService's hold()).
+    const deferred = await this.storage.sweepDeferred();
+    return { retried: down.length, deferredChecked: deferred.checked };
   }
 }
 
