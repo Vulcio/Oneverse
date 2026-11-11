@@ -1,4 +1,4 @@
-import { PROVIDER_TIMEOUT_MS } from "../metadata/provider-timeout.js";
+import { providerFetch } from "../metadata/provider-timeout.js";
 /**
  * Where artists' pictures and bios come from (issue #86): Deezer for the
  * picture, Wikipedia (found through MusicBrainz and Wikidata) for the bio.
@@ -20,7 +20,7 @@ export const fold = (text: string) =>
     .trim();
 
 async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { "User-Agent": userAgent(), Accept: "application/json" }, signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
+  const res = await providerFetch(url, { headers: { "User-Agent": userAgent(), Accept: "application/json" } });
   if (res.status === 404) throw Object.assign(new Error("Not found"), { status: 404 });
   if (!res.ok) throw new Error(`${new URL(url).hostname} answered ${res.status}`);
   return (await res.json()) as T;

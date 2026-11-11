@@ -1,4 +1,4 @@
-import { PROVIDER_TIMEOUT_MS } from "../metadata/provider-timeout.js";
+import { providerFetch } from "../metadata/provider-timeout.js";
 /** Where the iTunes Search API is; pointed elsewhere only by the e2e suites. */
 export const itunesBase = () => (process.env.ITUNES_SEARCH_URL ?? "https://itunes.apple.com").replace(/\/$/, "");
 
@@ -15,7 +15,7 @@ export interface ITunesSong {
 }
 
 async function get(path: string, query: Record<string, string>): Promise<ITunesSong[]> {
-  const res = await fetch(`${itunesBase()}${path}?${new URLSearchParams(query)}`, { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
+  const res = await providerFetch(`${itunesBase()}${path}?${new URLSearchParams(query)}`);
   if (!res.ok) throw new Error(`Apple Music answered ${res.status}`);
   const { results = [] } = (await res.json()) as { results?: ITunesSong[] };
   return results.filter((result) => !result.wrapperType || result.wrapperType === "track");

@@ -1,5 +1,5 @@
 import type { LinkCandidate } from "@oneverse/core";
-import { PROVIDER_TIMEOUT_MS } from "./provider-timeout.js";
+import { providerFetch } from "./provider-timeout.js";
 
 /** Where the YouTube Data API is; pointed elsewhere only by the e2e suites. */
 const apiBase = () => (process.env.YOUTUBE_API_URL ?? "https://www.googleapis.com/youtube/v3").replace(/\/$/, "");
@@ -34,7 +34,7 @@ function unescape(text: string): string {
  */
 export async function youtubeSearch(title: string, artist: string | null | undefined, apiKey: string, limit = 8): Promise<LinkCandidate[]> {
   const params = new URLSearchParams({ part: "snippet", type: "video", maxResults: String(limit), q: [title, artist].filter(Boolean).join(" "), key: apiKey });
-  const res = await fetch(`${apiBase()}/search?${params}`, { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
+  const res = await providerFetch(`${apiBase()}/search?${params}`);
   if (res.status === 400 || res.status === 403) {
     const body = (await res.json().catch(() => null)) as { error?: { message?: string; errors?: { reason?: string }[] } } | null;
     const reason = body?.error?.errors?.[0]?.reason;

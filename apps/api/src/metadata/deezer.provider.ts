@@ -1,5 +1,5 @@
 import type { ProviderMatch } from "@oneverse/core";
-import { PROVIDER_TIMEOUT_MS } from "./provider-timeout.js";
+import { providerFetch } from "./provider-timeout.js";
 
 /** Where Deezer's API is; pointed elsewhere only by the e2e suites. */
 const apiBase = () => (process.env.DEEZER_API_URL ?? "https://api.deezer.com").replace(/\/$/, "");
@@ -22,7 +22,7 @@ interface DeezerTrack {
 
 async function get<T>(path: string, query: Record<string, string> = {}): Promise<T> {
   const url = `${apiBase()}${path}${Object.keys(query).length ? `?${new URLSearchParams(query)}` : ""}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
+  const res = await providerFetch(url);
   if (!res.ok) throw new Error(`Deezer answered ${res.status}`);
   const body = (await res.json()) as T & { error?: { message?: string } };
   // Deezer reports errors (a quota, an unknown ID) with a 200.
