@@ -11,6 +11,7 @@ import compression from "compression";
 import type { Express, NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module.js";
 import { getAuth } from "./auth/better-auth.js";
+import { markClientAddress } from "./auth/auth-rate-limit.js";
 import { registerOAuthClients } from "./auth/oauth-clients.js";
 import { webOrigins } from "./common/utils/web-apps.js";
 import { apiDocsAllowed } from "./security/security-settings.js";
@@ -75,7 +76,9 @@ async function bootstrap() {
   });
   // "*path": Express 5 names its wildcards (issue #420).
   expressApp.all("/api/auth/*path", (req, res, next) => {
-    getAuth()
+    // BetterAuth's rate limits count by the client's address, worked out here.
+    markClientAddress(req)
+      .then(() => getAuth())
       .then((auth) => toNodeHandler(auth)(req, res))
       .catch(next);
   });

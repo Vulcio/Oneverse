@@ -12,6 +12,7 @@ import { oneverseUrl, planiverseUrl, songverseUrl, webOrigins } from "../common/
 import { passkeyRpId, sharedCookieDomain, signInOrigins } from "./auth-domains.js";
 import { OAUTH_SCOPES, apiResource } from "./oauth-clients.js";
 import { capabilitiesOf } from "../roles/capabilities.js";
+import { CLIENT_ADDRESS_HEADER, authRateLimitStorage } from "./auth-rate-limit.js";
 import { markInvitationAccepted, passFromCookies, signupAllowed } from "../invitations/signup-gate.js";
 import {
   sendChangeEmailConfirmation,
@@ -78,6 +79,9 @@ function buildAuth(settings: EffectiveAuthSettings) {
     advanced: {
       // See sharedCookieDomain above.
       crossSubDomainCookies: cookieDomain ? { enabled: true, domain: cookieDomain } : { enabled: false },
+      // The client's address as main.ts works it out (Admin > Security's
+      // trusted proxies), for the rate limits below.
+      ipAddress: { ipAddressHeaders: [CLIENT_ADDRESS_HEADER] },
     },
     emailAndPassword: {
       enabled: true,
@@ -115,6 +119,8 @@ function buildAuth(settings: EffectiveAuthSettings) {
     // hammering the endpoints that actually send email (or repeatedly
     // re-registering accounts).
     rateLimit: {
+      // Counted in Redis: one count for all the API's instances.
+      customStorage: authRateLimitStorage,
       customRules: {
         "/request-password-reset": { window: 600, max: 3 },
         "/send-verification-email": { window: 600, max: 3 },
@@ -127,6 +133,13 @@ function buildAuth(settings: EffectiveAuthSettings) {
         // token"). Guessing a session token isn't feasible either way.
         "/get-session": false,
         "/token": false,
+        // The same for the OAuth provider's (issue #303): the apps' servers
+        // trade codes and refresh tokens here for everyone who signs in or
+        // opens a page with an expired token, all from their one address -
+        // the provider's 20 a minute per address would sign people out.
+        // Codes and refresh tokens are long random strings, not guessable.
+        "/oauth2/token": false,
+        "/oauth2/revoke": false,
       },
     },
     user: {
