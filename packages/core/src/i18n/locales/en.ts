@@ -351,6 +351,7 @@ const en = {
       usedBy_other: "Used by {{count}} templates",
       sharedBy_one: "Used by {{count}} template.",
       sharedBy_other: "Used by {{count}} templates: the others keep their look, and offer to update.",
+      builtInTitle: "Built-in presets",
       builtIn: {
         content: { classic: "Classic", concert: "Concert", chapel: "Chapel", sunrise: "Sunrise", starlight: "Starlight", spotlight: "Spotlight", stream: "Stream", minimal: "Minimal", "stage-display": "Stage display", "stage-monitor": "Stage monitor", chart: "Chord chart" },
         background: { classic: "Black", concert: "Aurora", chapel: "Warm gradient", sunrise: "Sunrise waves", starlight: "Starlight", spotlight: "Spotlights", stream: "Black (stream)", minimal: "Near black", "stage-display": "Black (stage)", "stage-monitor": "Black (monitor)", flow: "Flow", strings: "Strings", grid: "Neon grid", bokeh: "Bokeh", "mesh-gradient": "Mesh gradient", "paper-mesh": "Paper mesh gradient", "neuro-noise": "Neuro noise", "slow-mesh": "Slow mesh", "turning-mesh": "Turning mesh", "glow-lines": "Glow lines", embers: "Embers" },

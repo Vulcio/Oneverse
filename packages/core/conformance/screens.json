@@ -10303,9 +10303,9 @@
               }
             },
             "title": {
-              "show": true,
+              "show": false,
               "font": null,
-              "when": "every"
+              "when": "first"
             },
             "credits": {
               "show": false,

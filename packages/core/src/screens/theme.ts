@@ -950,7 +950,8 @@ export const SCREEN_THEME_TEMPLATES: ScreenThemeTemplate[] = [
     lines: { group: "section", before: 0, after: 0, contextStyle: "dim" },
     layout: { position: "top", margin: 3 },
     background: { kind: "color", colors: ["#000000"] },
-    title: { when: "every" },
+    // The words start at the top, where a title would be drawn over them.
+    title: { show: false },
     credits: { show: false },
     motion: { transition: "cut", duration: 0, reveal: "none" },
     chords: { color: "#facc15", scale: 1.2 },

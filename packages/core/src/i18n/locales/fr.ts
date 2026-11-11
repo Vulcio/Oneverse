@@ -351,6 +351,7 @@ const fr: typeof en = {
       usedBy_other: "Utilisé par {{count}} modèles",
       sharedBy_one: "Utilisé par {{count}} modèle.",
       sharedBy_other: "Utilisé par {{count}} modèles : les autres gardent leur apparence et proposent de se mettre à jour.",
+      builtInTitle: "Préréglages intégrés",
       builtIn: {
         content: { classic: "Classique", concert: "Concert", chapel: "Chapelle", sunrise: "Aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Diffusion", minimal: "Minimal", "stage-display": "Affichage de scène", "stage-monitor": "Retour de scène", chart: "Grille d'accords" },
         background: { classic: "Noir", concert: "Aurore boréale", chapel: "Dégradé chaud", sunrise: "Vagues d'aurore", starlight: "Lumière d'étoiles", spotlight: "Projecteurs", stream: "Noir (diffusion)", minimal: "Presque noir", "stage-display": "Noir (scène)", "stage-monitor": "Noir (retour)", flow: "Courants", strings: "Cordes", grid: "Grille néon", bokeh: "Bokeh", "mesh-gradient": "Dégradé maillé", "paper-mesh": "Dégradé maillé Paper", "neuro-noise": "Bruit neuronal", "slow-mesh": "Dégradé lent", "turning-mesh": "Dégradé tournant", "glow-lines": "Lignes lumineuses", embers: "Braises" },

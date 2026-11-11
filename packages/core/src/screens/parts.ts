@@ -327,6 +327,8 @@ export function splitScreenTheme(input: unknown): { content: ScreenContentTheme;
 export interface ScreenBuiltInPart<T> {
   id: string;
   part: T;
+  /** The built-in part this one repeats (issue #431): kept for what was saved with it, not listed. */
+  sameAs?: string;
 }
 
 /** A built-in template (issue #281): its parts by their built-in ids, its tags and layout. Its name is `screens.templates.<id>`. */
@@ -398,21 +400,25 @@ export const SCREEN_CONTENT_THEMES: ScreenBuiltInPart<ScreenContentTheme>[] = [
 ];
 /** The built-in background themes: each built-in template's. */
 export const SCREEN_BACKGROUND_THEMES: ScreenBuiltInPart<ScreenBackgroundTheme>[] = [
-  ...split.map((one) => ({ id: one.id, part: one.background })),
+  // A template's background that is another's over again (the plain blacks) keeps its id, for the templates saved with it, and isn't listed (issue #431).
+  ...split.map((one, at) => {
+    const first = split.findIndex((other) => JSON.stringify(other.background) === JSON.stringify(one.background));
+    return first === at ? { id: one.id, part: one.background } : { id: one.id, part: one.background, sameAs: split[first]!.id };
+  }),
   // The backgrounds that follow the words (issue #296).
   { id: "flow", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "flow", colors: ["#050816", "#22d3ee", "#a855f7", "#f472b6"], motion: 0.5 }, reacts: { movement: 0.7, hue: 0.4, elements: 0.6 } }) },
   { id: "strings", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "strings", colors: ["#03040a", "#38bdf8", "#f472b6", "#facc15"], motion: 0.5 }, reacts: { movement: 0.6, elements: 0.8, brightness: 0.6 } }) },
   { id: "grid", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "grid", colors: ["#020617", "#2dd4bf", "#0ea5e9"], motion: 0.4 }, reacts: { elements: 0.8, brightness: 0.6, hue: 0.2 } }) },
   { id: "bokeh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "bokeh", colors: ["#0b0a1f", "#4f46e5", "#7c3aed", "#db2777"], motion: 0.4 }, reacts: { elements: 0.7, movement: 0.5, hue: 0.3 } }) },
   // Shaders (issue #297), drawn with WebGL.
-  { id: "mesh-gradient", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0b0620", "#7c3aed", "#ec4899", "#0ea5e9"], shader: { builtIn: "mesh-gradient" } }, reacts: { movement: 0.5, hue: 0.3, brightness: 0.5 } }) },
+  { id: "mesh-gradient", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#0b0620", "#7c3aed", "#ec4899", "#0ea5e9"], shader: { builtIn: "mesh-gradient" } }, reacts: { movement: 0.5, hue: 0.3, brightness: 0.5 } }) },
   // Ported from Paper Shaders (issue #324).
-  { id: "paper-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#120a2e", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], shader: { builtIn: "paper-mesh" } }, reacts: { movement: 0.5, hue: 0.2, brightness: 0.4 } }) },
+  { id: "paper-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#120a2e", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], shader: { builtIn: "paper-mesh" } }, reacts: { movement: 0.5, hue: 0.2, brightness: 0.4 } }) },
   { id: "neuro-noise", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#000000", "#ffffff", "#47a6ff"], motion: 0.3, shader: { builtIn: "neuro-noise", values: { sv_brightness: 0.03, sv_contrast: 0.55 } } }, reacts: { movement: 0.8, brightness: 0.4 } }) },
   // Slow, for effects that speed it up (ramp) or turn it (turn).
-  { id: "slow-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0c0a24", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], motion: 0.15, shader: { builtIn: "paper-mesh" } }, reacts: { movement: 1, hue: 0.2, brightness: 0.3 } }) },
-  { id: "turning-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#06121f", "#0ea5e9", "#22d3ee", "#a855f7", "#f472b6"], motion: 0.25, spin: 3, shader: { builtIn: "paper-mesh", values: { sv_swirl: 0.35 } } }, reacts: { movement: 0.3, rotation: 1, scale: 0.8 } }) },
-  { id: "glow-lines", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#02030a", "#22d3ee", "#a855f7", "#f43f5e"], shader: { builtIn: "glow-lines" } }, reacts: { movement: 0.6, elements: 0.7, brightness: 0.5 } }) },
+  { id: "slow-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#0c0a24", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], motion: 0.15, shader: { builtIn: "paper-mesh" } }, reacts: { movement: 1, hue: 0.2, brightness: 0.3 } }) },
+  { id: "turning-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#06121f", "#0ea5e9", "#22d3ee", "#a855f7", "#f472b6"], motion: 0.25, spin: 3, shader: { builtIn: "paper-mesh", values: { sv_swirl: 0.35 } } }, reacts: { movement: 0.3, rotation: 1, scale: 0.8 } }) },
+  { id: "glow-lines", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.2, colors: ["#02030a", "#22d3ee", "#a855f7", "#f43f5e"], shader: { builtIn: "glow-lines" } }, reacts: { movement: 0.6, elements: 0.7, brightness: 0.5 } }) },
   { id: "embers", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0a0503", "#f97316", "#facc15", "#ef4444"], shader: { builtIn: "embers" } }, reacts: { movement: 0.5, elements: 0.6, brightness: 0.6 } }) },
 ];
 export const SCREEN_EFFECTS: ScreenBuiltInPart<ScreenEffects>[] = BUILT_IN_EFFECTS;
@@ -422,7 +428,7 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
   ...split.map((one) => ({
     id: one.id,
     content: one.id,
-    background: one.id,
+    background: SCREEN_BACKGROUND_THEMES.find((background) => background.id === one.id)?.sameAs ?? one.id,
     effects: one.effects ? (BUILT_IN_EFFECTS.some((effects) => effects.id === one.id) ? one.id : "pulse") : null,
     template: ScreenTemplateSchema.parse({ ...one.template, tags: TAGS[one.id] ?? [], madeFor: ["songs"] }),
   })),
@@ -437,7 +443,7 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
   {
     id: "stage-scripture",
     content: "stage-display",
-    background: "stage-display",
+    background: "classic",
     effects: null,
     template: ScreenTemplateSchema.parse({
       tags: ["stage", "scripture"],
@@ -461,7 +467,7 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
   {
     id: "stream-scripture",
     content: "stream",
-    background: "stream",
+    background: "classic",
     effects: null,
     template: ScreenTemplateSchema.parse({
       tags: ["presentation", "scripture"],
@@ -525,4 +531,9 @@ export function composeBuiltInTemplate(id: string | null | undefined, options: {
 /** Templates with all of these tags (issue #281); none, all of them. */
 export function filterScreenTemplates<T extends { tags: readonly string[] }>(templates: T[], tags: readonly string[]): T[] {
   return templates.filter((one) => tags.every((tag) => one.tags.includes(tag)));
+}
+
+/** The built-in presets to offer in a list (issue #431): all of them but a background that is another's over again, unless it's the one in use. */
+export function screenPresetsListed<T extends ScreenBuiltInPart<ScreenPart>>(presets: readonly T[], current?: string | null): T[] {
+  return presets.filter((one) => !one.sameAs || one.id === current);
 }

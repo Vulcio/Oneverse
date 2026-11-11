@@ -3,6 +3,7 @@ import {
   composeScreenTheme,
   filterScreenTemplates,
   SCREEN_BACKGROUND_THEMES,
+  screenPresetsListed,
   SCREEN_CONTENT_THEMES,
   SCREEN_EFFECTS,
   SCREEN_TEMPLATES,
@@ -236,7 +237,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
 function PartsList({ kind, parts, onOpen, onChanged }: { kind: ScreenPartKind; parts: ScreenPartSummary[]; onOpen: (draft: ThemeDraft) => void; onChanged: () => Promise<void> }) {
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
-  const builtIns = kind === "content" ? SCREEN_CONTENT_THEMES : kind === "background" ? SCREEN_BACKGROUND_THEMES : SCREEN_EFFECTS;
+  const builtIns = kind === "content" ? SCREEN_CONTENT_THEMES : kind === "background" ? screenPresetsListed(SCREEN_BACKGROUND_THEMES) : SCREEN_EFFECTS;
   return (
     <div className="flex flex-col gap-6" data-testid={`parts-${kind}`}>
       <p className="text-sm text-muted-foreground">{t(`screens.parts.about.${kind}`)}</p>
@@ -295,7 +296,7 @@ function PartsList({ kind, parts, onOpen, onChanged }: { kind: ScreenPartKind; p
         </section>
       ) : null}
       <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold">{t("screens.builtIn")}</h3>
+        <h3 className="text-sm font-semibold">{t("screens.parts.builtInTitle")}</h3>
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {builtIns.map((one) => (
             <li key={one.id} className="flex flex-col gap-2" data-testid={`builtin-part-${one.id}`}>

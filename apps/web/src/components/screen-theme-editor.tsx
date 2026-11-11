@@ -16,6 +16,7 @@ import {
   SCREEN_EFFECT_TRIGGERS,
   SCREEN_EFFECTS,
   SCREEN_BACKGROUND_THEMES,
+  screenPresetsListed,
   SCREEN_CONTENT_THEMES,
   SCREEN_MASK_KINDS,
   SCREEN_MASK_SHAPES,
@@ -858,7 +859,7 @@ function LayerRail({ tab, onTab, names }: { tab: Layer; onTab: (tab: Layer) => v
 /** A template's part (issue #281): built-in or saved, picked from a list; opened to change it (a saved one) or to customize it into one's own. */
 function PartPicker({ slot, value, parts, onPick }: { slot: ScreenPartKind; value: ScreenPartRef | null; parts: ScreenPartSummary[]; onPick: (ref: ScreenPartRef | null) => void }) {
   const { t } = useTranslation();
-  const builtIns = slot === "content" ? SCREEN_CONTENT_THEMES : slot === "background" ? SCREEN_BACKGROUND_THEMES : SCREEN_EFFECTS;
+  const builtIns = slot === "content" ? SCREEN_CONTENT_THEMES : slot === "background" ? screenPresetsListed(SCREEN_BACKGROUND_THEMES, value && "builtIn" in value ? value.builtIn : null) : SCREEN_EFFECTS;
   const current = value ? ("builtIn" in value ? `b:${value.builtIn}` : `s:${value.id}`) : "";
   return (
     <Field label={t(`screens.parts.kinds.${slot}`)}>
@@ -882,7 +883,7 @@ function PartPicker({ slot, value, parts, onPick }: { slot: ScreenPartKind; valu
               ))}
             </optgroup>
           ) : null}
-          <optgroup label={t("screens.builtIn")}>
+          <optgroup label={t("screens.parts.builtInTitle")}>
             {builtIns.map((one) => (
               <option key={one.id} value={`b:${one.id}`}>
                 {t(`screens.parts.builtIn.${slot}.${one.id}`)}
