@@ -68,7 +68,8 @@ import { HistoryTab } from "./history-tab";
 import { ShareDialog } from "./share-dialog";
 import { DeleteSongDialog } from "./delete-song-dialog";
 import { ArtworkCard } from "./artwork-card";
-import { AttachmentsTab, LinksTab, SaveFirst } from "./song-tabs";
+import { AttachmentsTab, SaveFirst } from "./song-tabs";
+import { LinksTab } from "./links-tab";
 import type { SongNotice, SongTab } from "./song-tabs-list";
 
 // The editor (Tiptap and ProseMirror) loads when the Editor tab first opens, not with the song page.
