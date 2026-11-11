@@ -2,7 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { SongVersionsService, type ListItem } from "../song-versions/song-versions.service.js";
+import { SongVersionsService } from "../song-versions/song-versions.service.js";
+import type { ListItem } from "../song-versions/song-version-rows.js";
 
 /** Songs per shelf. */
 const SHELF = 12;

@@ -17,13 +17,14 @@ import { SongBinService } from "./song-bin.service.js";
 import { SongRepeatsService } from "./song-repeats.service.js";
 import { SongHistoryService } from "./song-history.service.js";
 import { SongVersionsService } from "./song-versions.service.js";
+import { SongProgressionsService } from "./song-progressions.service.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 
 @Module({
   imports: [BullModule.registerQueue({ name: SONG_INFO_QUEUE }), MusicBrainzModule, StorageModule, ArtworkModule, MetadataModule, ArtistsModule, LookupsModule],
   controllers: [SongVersionsController, SongUsageController, SongBinController, ChordShapesController, ProgressionsController],
   // SetlistAccessService: the songs that can go in a set, for its Add songs (issue #328).
-  providers: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService, SongBinService, SongInfoService, SongInfoProcessor, SongbookSongInfoService],
+  providers: [SongVersionsService, SongProgressionsService, SongHistoryService, SongRepeatsService, SetlistAccessService, SongBinService, SongInfoService, SongInfoProcessor, SongbookSongInfoService],
   exports: [SongVersionsService, SongHistoryService, SongRepeatsService, SetlistAccessService, SongInfoService, SongbookSongInfoService],
 })
 export class SongVersionsModule {}

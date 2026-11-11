@@ -31,17 +31,11 @@ import {
   type StreamingIdentifierType,
   type SupportedImportFormat,
   type SongFields,
-  findProgression,
   lyricsLines,
   lyricsSearchText,
   matchLyrics,
   parseLyricsQuery,
   type LyricsMatch,
-  parseProgressionQuery,
-  progressionGrams,
-  progressionSimilarity,
-  songProgressions,
-  type SectionProgression,
 } from "@oneverse/core";
 import type { ContributorRole, Prisma, VersionRelationshipType } from "@oneverse/db";
 import { recordingAsMatch } from "./metadata-match-backfill.js";
@@ -49,7 +43,6 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService, OPEN_SUBMISSION_STATES } from "../access/access-policy.service.js";
 import { songbookReferencesOf } from "../songbooks/songbook-references.js";
-import { setOrder } from "../common/utils/set-order.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { songSearchWhere } from "./song-search.js";
 import type { CreateSongVersionDto } from "./dto/create-song-version.dto.js";
@@ -57,10 +50,11 @@ import type { ListSongVersionsQueryDto } from "./dto/list-song-versions-query.dt
 import type { UpdateSongVersionDto } from "./dto/update-song-version.dto.js";
 import { ArtistsService, artistKey } from "../artists/artists.service.js";
 import { ArtworkService } from "../artwork/artwork.service.js";
-import { songImageUrl } from "../artwork/song-image-url.js";
 import { MetadataService } from "../metadata/metadata.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { SongHistoryService } from "./song-history.service.js";
+import { creditListsFrom, mergeCredits, replaceAutoAttachedArtist, replaceCredits } from "./song-credits.js";
+import { DETAIL_SELECT, LIST_SELECT, STREAMING_TYPE_OF, tagsVisibleWhere, toDetailItem, toListItem, type DetailItem, type ListItem, type ListRow, type Rights, type SeesTag, type SharedBy, type SongPage, type SongVersionOwner } from "./song-version-rows.js";
 
 /** A version's own fields: the columns (the document holds only the music). */
 type VersionFields = {
@@ -97,48 +91,6 @@ type CreateExtras = {
   authorUserId?: string;
 };
 
-/** One credit per person (ignoring case), with all their roles. */
-function mergeCredits(entries: readonly (readonly [string, ContributorRole])[]): { source: string; roles: ContributorRole[] }[] {
-  const credits: { source: string; roles: ContributorRole[] }[] = [];
-  for (const [name, role] of entries) {
-    const existing = credits.find((credit) => credit.source.toLowerCase() === name.toLowerCase());
-    if (!existing) credits.push({ source: name, roles: [role] });
-    else if (!existing.roles.includes(role)) existing.roles.push(role);
-  }
-  return credits;
-}
-
-/**
- * Swaps the artist a MusicBrainz link added (isAutoAttached) for `artist`
- * - or removes it, for null. A previous link's row is replaced so
- * re-linking doesn't leave the old artist alongside the new one, and rows
- * added by hand (a composer, say) aren't touched. Two rules on top: no
- * second copy of an artist the song already credits, and a song never
- * ends up with no artist - the old one is then kept, as an ordinary one.
- */
-async function replaceAutoAttachedArtist(tx: Prisma.TransactionClient, songVersionId: string, artist: string | null): Promise<void> {
-  const performers = await tx.versionContributor.findMany({
-    where: { songVersionId, roles: { has: "PERFORMER" } },
-    select: { id: true, source: true, isAutoAttached: true },
-  });
-  const manual = performers.filter((p) => !p.isAutoAttached);
-  const auto = performers.filter((p) => p.isAutoAttached);
-  const same = (a: string | null, b: string) => a?.toLowerCase() === b.toLowerCase();
-
-  if (artist && !manual.some((p) => same(p.source, artist))) {
-    if (auto.length === 1 && same(auto[0]!.source, artist)) return;
-    await tx.versionContributor.deleteMany({ where: { songVersionId, isAutoAttached: true } });
-    await tx.versionContributor.create({ data: { songVersionId, userId: null, source: artist, roles: ["PERFORMER"], isAutoAttached: true } });
-    return;
-  }
-  if (manual.length > 0 || auto.length === 0) {
-    await tx.versionContributor.deleteMany({ where: { songVersionId, isAutoAttached: true } });
-    return;
-  }
-  // The link's artist is the only one: keep it, now as the song's own.
-  await tx.versionContributor.updateMany({ where: { songVersionId, isAutoAttached: true }, data: { isAutoAttached: false } });
-}
-
 /** The chart's defaults a DTO sets (undefined leaves one alone, null clears it). */
 function defaultsFrom(dto: SongFields): SongDefaultsV2 {
   return {
@@ -149,90 +101,6 @@ function defaultsFrom(dto: SongFields): SongDefaultsV2 {
     ...(dto.timeSignature !== undefined && { timeSignature: parseTimeSignature(dto.timeSignature) }),
     ...(dto.durationSeconds !== undefined && { durationSeconds: dto.durationSeconds }),
   };
-}
-
-/** The credits a DTO lists, by role; roles it leaves out aren't there. */
-function creditListsFrom(dto: SongFields & { artists?: string[] }): Partial<Record<ContributorRole, string[]>> {
-  return {
-    ...(dto.artists && { PERFORMER: dto.artists }),
-    ...(dto.composers && { COMPOSER: dto.composers }),
-    ...(dto.lyricists && { LYRICIST: dto.lyricists }),
-    ...(dto.writers && { AUTHOR: dto.writers }),
-    ...(dto.arrangers && { ARRANGER: dto.arrangers }),
-    ...(dto.translators && { TRANSLATOR: dto.translators }),
-    ...(dto.adaptors && { ADAPTOR: dto.adaptors }),
-  };
-}
-
-/**
- * Makes `lists[role]` exactly who the song credits in each listed role,
- * leaving other roles alone: a person keeps one row with all their roles
- * (a composer who's also the lyricist), rows left with no role go, and
- * artists come first, in the order given.
- */
-async function replaceCredits(
-  tx: Prisma.TransactionClient,
-  songVersionId: string,
-  lists: Partial<Record<ContributorRole, string[]>>,
-): Promise<void> {
-  const roles = Object.keys(lists) as ContributorRole[];
-  if (roles.length === 0) return;
-  const wanted = new Map<string, { name: string; roles: ContributorRole[] }>();
-  for (const role of roles) {
-    for (const name of lists[role] ?? []) {
-      const entry = wanted.get(name.toLowerCase()) ?? { name, roles: [] };
-      if (!entry.roles.includes(role)) entry.roles.push(role);
-      wanted.set(name.toLowerCase(), entry);
-    }
-  }
-
-  const rows = await tx.versionContributor.findMany({
-    where: { songVersionId },
-    select: { id: true, source: true, roles: true },
-    orderBy: { displayOrder: "asc" },
-  });
-  // `id` is null for the people added now.
-  const kept: { id: string | null; source: string | null; roles: ContributorRole[] }[] = [];
-  const removed: string[] = [];
-  for (const row of rows) {
-    const nextRoles = row.roles.filter((role) => !roles.includes(role));
-    const match = row.source ? wanted.get(row.source.toLowerCase()) : undefined;
-    if (match) {
-      nextRoles.push(...match.roles.filter((role) => !nextRoles.includes(role)));
-      wanted.delete(row.source!.toLowerCase());
-    }
-    if (nextRoles.length === 0) {
-      removed.push(row.id);
-      continue;
-    }
-    if (nextRoles.length !== row.roles.length || nextRoles.some((role) => !row.roles.includes(role))) {
-      await tx.versionContributor.update({ where: { id: row.id }, data: { roles: nextRoles } });
-    }
-    kept.push({ id: row.id, source: row.source, roles: nextRoles });
-  }
-  for (const entry of wanted.values()) kept.push({ id: null, source: entry.name, roles: entry.roles });
-
-  const artistOrder = (lists.PERFORMER ?? []).map((name) => name.toLowerCase());
-  const rank = (row: (typeof kept)[number]) => {
-    const index = row.source ? artistOrder.indexOf(row.source.toLowerCase()) : -1;
-    return row.roles.includes("PERFORMER") ? (index === -1 ? artistOrder.length : index) : artistOrder.length + 1;
-  };
-  const ordered = kept
-    .map((row, index) => ({ row, index }))
-    .sort((a, b) => rank(a.row) - rank(b.row) || a.index - b.index)
-    .map(({ row }, order) => ({ ...row, order }));
-
-  if (removed.length > 0) await tx.versionContributor.deleteMany({ where: { id: { in: removed } } });
-  await tx.versionContributor.createMany({
-    data: ordered
-      .filter((row) => row.id === null)
-      .map((row) => ({ songVersionId, userId: null, source: row.source, roles: row.roles, displayOrder: row.order })),
-  });
-  await setOrder(
-    tx,
-    "VersionContributor",
-    ordered.flatMap(({ id, order }) => (id ? [{ id, order }] : [])),
-  );
 }
 
 function staleRevision(): ConflictException {
@@ -274,172 +142,6 @@ function parseTimeSignature(text: string | null): { numerator: number; denominat
 
 function foldName(name: string): string {
   return foldForSearch(name).trim().replace(/\s+/g, " ");
-}
-
-const LIST_SELECT = {
-  id: true,
-  workId: true,
-  title: true,
-  alternateTitle: true,
-  versionName: true,
-  language: true,
-  ownerScope: true,
-  ownerUserId: true,
-  ownerTeamId: true,
-  publicationState: true,
-  ccli: true,
-  createdAt: true,
-  updatedAt: true,
-  // Its image (issue #85): handed out as a signed address, never the key itself.
-  imageStorageKey: true,
-  // Who put it in the catalogue (issue #73).
-  contributedBy: { select: { id: true, displayName: true } },
-  contributedByTeam: { select: { id: true, name: true } },
-  // Just the artist(s) — enough for the library list to show "Title —
-  // Artist" without pulling in the full contributor list (composer,
-  // lyricist, etc.), which only the detail page needs.
-  contributors: {
-    where: { roles: { has: "PERFORMER" as ContributorRole } },
-    select: { id: true, userId: true, source: true },
-    orderBy: { displayOrder: "asc" },
-  },
-  versionTags: {
-    select: {
-      id: true,
-      tag: { select: { id: true, categoryId: true, slug: true, label: true, translations: true, scope: true, ownerUserId: true, ownerTeamId: true } },
-    },
-  },
-} satisfies Prisma.SongVersionSelect;
-
-const STREAMING_IDENTIFIER_TYPES = ["SPOTIFY", "APPLE_MUSIC", "DEEZER", "YOUTUBE"] as const;
-/** The streaming link a metadata provider's track is (issue #22). */
-const STREAMING_TYPE_OF: Partial<Record<MetadataSource["provider"], (typeof STREAMING_IDENTIFIER_TYPES)[number]>> = { apple_music: "APPLE_MUSIC", deezer: "DEEZER", spotify: "SPOTIFY" };
-
-export interface SongVersionOwner {
-  ownerScope: "GLOBAL" | "TEAM" | "USER";
-  ownerUserId: string | null;
-  ownerTeamId: string | null;
-}
-
-const DETAIL_SELECT = {
-  ...LIST_SELECT,
-  sortTitle: true,
-  album: true,
-  year: true,
-  copyright: true,
-  copyrightYear: true,
-  publisher: true,
-  isrc: true,
-  reference: true,
-  notes: true,
-  relationshipType: true,
-  // The version this one derives from (e.g. the original of a translation).
-  parentVersion: { select: { id: true, title: true, language: true } },
-  documentJson: true,
-  capo: true,
-  contributors: {
-    select: { id: true, userId: true, source: true, roles: true, isAutoAttached: true, displayOrder: true },
-    orderBy: { displayOrder: "asc" },
-  },
-  // CCLI has its own column and the song info match its own endpoint -
-  // this is just the plain "links" (Spotify/Apple Music/Deezer/YouTube/custom),
-  // which have nothing more to fetch than what's stored.
-  identifiers: {
-    where: { type: { in: [...STREAMING_IDENTIFIER_TYPES, "CUSTOM"] } },
-    select: { id: true, type: true, value: true, sourceUrl: true },
-  },
-} satisfies Prisma.SongVersionSelect;
-
-type ListRow = Prisma.SongVersionGetPayload<{ select: typeof LIST_SELECT }>;
-/** One page of a song list, with the total across all pages. */
-export interface SongPage {
-  items: ListItem[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-export type ListItem = Omit<ListRow, "contributors" | "versionTags" | "imageStorageKey"> & {
-  /** The song's image, signed for the viewer (issue #85); null when it has none. */
-  imageUrl: string | null;
-  artists: ListRow["contributors"];
-  tags: ListRow["versionTags"][number]["tag"][];
-  /** Shared with the viewer by its owner (issue #77). */
-  sharedBy: SharedBy | null;
-  /** Only the viewer can see it (issue #172): theirs, shared with nobody, in no team's or shared set, not sent to the catalogue. */
-  private?: boolean;
-  /** Where it is in the viewer's numbered songbooks, when asked (issue #213). */
-  songbookReferences?: string[];
-  /** Found by its words (issue #221): the line, and the words in it. */
-  lyricsMatch?: LyricsMatch;
-};
-
-type TagRow = ListRow["versionTags"][number]["tag"];
-/** Which of a song's tags a viewer sees: global ones, their own and their teams' (a catalogue song keeps its contributor's, #73). */
-type SeesTag = (tag: Pick<TagRow, "scope" | "ownerUserId" | "ownerTeamId">) => boolean;
-const ALL_TAGS: SeesTag = () => true;
-
-function tagsVisibleWhere(userId: string, teamIds: string[]): Prisma.TagWhereInput {
-  return { OR: [{ scope: "GLOBAL" }, { scope: "USER", ownerUserId: userId }, { scope: "TEAM", ownerTeamId: { in: teamIds } }] };
-}
-
-// The Prisma relations are named `contributors`/`versionTags` no matter
-// how they're filtered; renamed here (`artists`, `tags`) so the
-// (performer-only) list/create payload and the (all-roles) detail payload
-// don't share a field name that means two different things, and so the
-// join row (versionTags' own `id`, not useful to the client) doesn't leak
-// into what's otherwise just a list of tags.
-function toListItem({ contributors, versionTags, imageStorageKey, ...rest }: ListRow, seesTag: SeesTag = ALL_TAGS, sharedBy: SharedBy | null = null, privateIds?: ReadonlySet<string>): ListItem {
-  return {
-    ...rest,
-    imageUrl: songImageUrl(rest.id, imageStorageKey),
-    artists: contributors,
-    tags: versionTags.map((vt) => vt.tag).filter(seesTag),
-    sharedBy,
-    ...(privateIds && { private: privateIds.has(rest.id) }),
-  };
-}
-
-/** Someone who shared the song with the viewer (issue #77), and whether to edit. */
-/** Who shared a song with the viewer; `team`, when it's shared with one of their teams (issue #331). */
-type SharedBy = { id: string; displayName: string; canEdit: boolean; team?: { id: string; name: string }; organization?: { id: string; name: string } };
-
-/** What the viewer may do with a song (see AccessPolicyService). */
-interface Rights {
-  /** Change its chart, details and credits: who can edit it, or someone it's shared with to edit. */
-  canEdit: boolean;
-  /** Everything else: delete, publish, share it, its links and files for everyone. */
-  canManage: boolean;
-  sharedBy: SharedBy | null;
-}
-
-type DetailRow = Prisma.SongVersionGetPayload<{ select: typeof DETAIL_SELECT }>;
-type DetailItem = Omit<DetailRow, "versionTags" | "documentJson" | "imageStorageKey"> & {
-  imageUrl: string | null;
-  /** Always v2 (issue #60). */
-  documentJson: SongDocumentV2;
-  artists: DetailRow["contributors"];
-  tags: DetailRow["versionTags"][number]["tag"][];
-  /** Whether the current user may change its chart, details and credits (see SongVersionEditorGuard). */
-  canEdit: boolean;
-  /** Whether they may delete, publish or share it, or change its links (see SongVersionOwnerGuard). */
-  canManage: boolean;
-  sharedBy: SharedBy | null;
-  /** Only the viewer can see it (issue #172), as in lists. */
-  private?: boolean;
-};
-
-function toDetailItem(version: DetailRow, { canEdit, canManage, sharedBy }: Rights, seesTag: SeesTag = ALL_TAGS): DetailItem {
-  const { versionTags, documentJson, imageStorageKey, ...rest } = version;
-  return {
-    ...rest,
-    imageUrl: songImageUrl(rest.id, imageStorageKey),
-    documentJson: readSongDocument(documentJson),
-    artists: version.contributors.filter((c) => c.roles.includes("PERFORMER")),
-    tags: versionTags.map((vt) => vt.tag).filter(seesTag),
-    canEdit,
-    canManage,
-    sharedBy,
-  };
 }
 
 /** A name someone's already credited under, for autocomplete. */
@@ -555,132 +257,6 @@ export class SongVersionsService {
       ...toListItem(version, seesTag, shared.get(version.id) ?? null, privateIds),
       ...(references && { songbookReferences: references.get(version.id) ?? [] }),
     }));
-  }
-
-  /**
-   * Songs whose chords go like `text` ("1 5 6m 4", "I V vi IV", issue #204),
-   * in whatever key: those the user can see, with the sections it's in. Most
-   * sections first, then by title; at most 100.
-   */
-  async searchProgressions(user: AuthenticatedUser, text: string): Promise<{ query: string[] | null; songs: (ListItem & { sections: SectionProgression[] })[] }> {
-    const query = parseProgressionQuery(text);
-    if (!query) return { query: null, songs: [] };
-    const visibleWhere = await this.access.songsVisibleTo(user);
-    const visible = await this.prisma.client.songVersion.findMany({ where: visibleWhere, select: { id: true } });
-    const ids = visible.map((row) => row.id);
-    await this.refreshProgressions(ids);
-    // The runs of 3 and 4 in the query must all be in a song's runs; shorter queries are checked one by one.
-    const runs = new Set<string>();
-    for (const size of [4, 3]) {
-      if (query.length < size) continue;
-      for (let i = 0; i + size <= query.length; i++) runs.add(query.slice(i, i + size).join("-"));
-      break;
-    }
-    const rows = await this.prisma.client.songProgression.findMany({
-      // The songs seen as a condition, not a list of their IDs: a big library is more than a query's 32,767 values.
-      where: { songVersion: visibleWhere, ...(runs.size > 0 && { grams: { hasEvery: [...runs] } }) },
-      select: { songVersionId: true, sections: true },
-    });
-    const found = rows
-      .map((row) => ({ id: row.songVersionId, sections: findProgression(row.sections as unknown as SectionProgression[], query) }))
-      .filter((match) => match.sections.length > 0);
-    // The most sections first, then by title: the titles of a short query's many songs read in parts, under the 32,767 values a query takes.
-    const titles = new Map<string, string>();
-    for (let i = 0; i < found.length; i += 10_000) {
-      const part = await this.prisma.client.songVersion.findMany({ where: { id: { in: found.slice(i, i + 10_000).map((match) => match.id) } }, select: { id: true, title: true } });
-      for (const row of part) titles.set(row.id, row.title);
-    }
-    const best = found
-      .filter((match) => titles.has(match.id))
-      .sort((a, b) => b.sections.length - a.sections.length || titles.get(a.id)!.localeCompare(titles.get(b.id)!))
-      .slice(0, 100);
-    const versions = await this.prisma.client.songVersion.findMany({ where: { id: { in: best.map((match) => match.id) } }, select: LIST_SELECT });
-    const byId = new Map(versions.map((version) => [version.id, version]));
-    const seesTag = await this.seesTag(user);
-    const [shared, privateIds] = await Promise.all([this.sharedByOf(user, versions.map((version) => version.id)), this.privateAmong(user, versions)]);
-    const songs = best.filter((match) => byId.has(match.id)).map((match) => ({ ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null, privateIds), sections: match.sections }));
-    return { query, songs };
-  }
-
-  /**
-   * A song's progressions, and the songs the user can see that move most
-   * like it (issue #204): the runs of chords they share, each weighted by
-   * how rare it is among those songs - 1-4-5 is everywhere, so sharing it
-   * says little. At most 10, alike enough to be worth showing.
-   */
-  async progressionsOf(user: AuthenticatedUser, id: string) {
-    await this.access.assertCanSeeSong(user, id);
-    const visibleWhere = await this.access.songsVisibleTo(user);
-    const visible = await this.prisma.client.songVersion.findMany({ where: visibleWhere, select: { id: true } });
-    const ids = [...new Set([id, ...visible.map((row) => row.id)])];
-    await this.refreshProgressions(ids);
-    const rows = await this.prisma.client.songProgression.findMany({
-      where: { OR: [{ songVersionId: id }, { songVersion: visibleWhere }] },
-      select: { songVersionId: true, sections: true, grams: true },
-    });
-    const own = rows.find((row) => row.songVersionId === id);
-    const sections = (own?.sections as unknown as SectionProgression[] | undefined) ?? [];
-    if (!own || own.grams.length === 0) return { sections, similar: [] };
-    // How many songs have each run: the rarer, the more it counts.
-    const counts = new Map<string, number>();
-    for (const row of rows) for (const gram of row.grams) counts.set(gram, (counts.get(gram) ?? 0) + 1);
-    const weight = (gram: string) => Math.log(1 + rows.length / (counts.get(gram) ?? 1));
-    const scored = rows
-      .filter((row) => row.songVersionId !== id && row.grams.length > 0)
-      .map((row) => ({
-        id: row.songVersionId,
-        score: progressionSimilarity(own.grams, row.grams, weight),
-        shared: own.grams.filter((gram) => row.grams.includes(gram)),
-      }))
-      .filter((match) => match.score >= 0.12 && match.shared.length > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
-    const versions = await this.prisma.client.songVersion.findMany({ where: { id: { in: scored.map((match) => match.id) } }, select: LIST_SELECT });
-    const byId = new Map(versions.map((version) => [version.id, version]));
-    const seesTag = await this.seesTag(user);
-    const [shared, privateIds] = await Promise.all([this.sharedByOf(user, versions.map((version) => version.id)), this.privateAmong(user, versions)]);
-    const similar = scored
-      .filter((match) => byId.has(match.id))
-      .map((match) => ({
-        ...toListItem(byId.get(match.id)!, seesTag, shared.get(match.id) ?? null, privateIds),
-        score: Math.round(match.score * 100) / 100,
-        // The longest runs they share, the rarest first: what makes them alike.
-        shared: match.shared.sort((a, b) => b.split("-").length - a.split("-").length || weight(b) - weight(a)).slice(0, 3),
-      }));
-    return { sections, similar };
-  }
-
-  /**
-   * Works out again the progressions of those songs whose chart has moved on
-   * since (or never had them): whichever way a chart was changed, the next
-   * search sees it.
-   */
-  private async refreshProgressions(ids: string[]): Promise<void> {
-    if (ids.length === 0) return;
-    const stale = await this.prisma.client.$queryRaw<{ id: string }[]>`
-      SELECT sv.id FROM "SongVersion" sv
-      LEFT JOIN "SongProgression" p ON p."songVersionId" = sv.id
-      WHERE sv.id = ANY(${ids}::text[])
-        AND (p."songVersionId" IS NULL OR p.revision <> COALESCE((sv."documentJson"->>'revision')::int, 0))`;
-    for (let i = 0; i < stale.length; i += 200) {
-      const batch = await this.prisma.client.songVersion.findMany({
-        where: { id: { in: stale.slice(i, i + 200).map((row) => row.id) } },
-        select: { id: true, documentJson: true },
-      });
-      for (const song of batch) {
-        let revision = 0;
-        let sections: SectionProgression[] = [];
-        try {
-          const doc = readSongDocument(song.documentJson);
-          revision = doc.revision;
-          sections = songProgressions(doc);
-        } catch {
-          // Not a chart it can read: no progressions.
-        }
-        const data = { revision, sections: sections as unknown as Prisma.InputJsonValue, grams: progressionGrams(sections) };
-        await this.prisma.client.songProgression.upsert({ where: { songVersionId: song.id }, create: { songVersionId: song.id, ...data }, update: data });
-      }
-    }
   }
 
   /**
