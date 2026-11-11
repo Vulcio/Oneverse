@@ -236,6 +236,15 @@ theme is what they compose to (`composeScreenTheme` in core):
 - **screen-template/v1** (`ScreenTemplateSchema`): `tags` (audience, stage,
   presentation, lyrics, chords, signage), `grid`, `masks`; its parts are
   referred to beside it, each a built-in id or a saved part.
+  A part is a preset (issue #428): the template keeps each one as it was
+  when the template was saved, in `look` (`content`, `background`,
+  `effects`, whole documents), and that is what its screens draw, whatever
+  happens to the part afterwards. `tweaks` says what it set differently
+  from the part at that time, two levels deep as the part is written
+  (`{ background: { background: { motion: 0.2 } } }`). Saved without a
+  `look` for a part, it takes the part as it is now, with its `tweaks`
+  over it. `GET /screen-themes` lists under `updates` the parts that have
+  changed since and that the template set nothing of its own on.
 
 A composed theme carries `shows`, `reacts` and `effects` (null with none,
 or when the screen has effects turned off). A screen draws the chart when

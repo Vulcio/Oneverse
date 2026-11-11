@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { SCREEN_PART_KINDS, ScreenTemplateSchema, screenBuiltInPart, splitScreenTheme, type CreateScreenThemeRequest, type ScreenPartKind, type ScreenPartRef, type UpdateScreenThemeRequest } from "@oneverse/core";
+import { SCREEN_PART_KINDS, SCREEN_PART_REQUEST_SCHEMAS, ScreenTemplateSchema, applyScreenTweaks, readScreenBackgroundTheme, readScreenContentTheme, readScreenEffects, readScreenTemplate, screenBuiltInPart, screenPartKept, splitScreenTheme, type CreateScreenThemeRequest, type ScreenPartKind, type ScreenPartRef, type UpdateScreenThemeRequest } from "@oneverse/core";
 import type { Request, Response } from "express";
 import type { Prisma } from "@oneverse/db";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
@@ -8,7 +8,7 @@ import { sendFile } from "../files/send-file.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { StorageService } from "../storage/storage.service.js";
 import { isValidScreenThemeAssetSignature } from "./screen-theme-assets.js";
-import { isWholeTheme, templateLayout, templateLook, templateParts, TEMPLATE_PARTS_SELECT } from "./screen-templates.js";
+import { isWholeTheme, templateLayout, templateLook, templatePart, templateParts, TEMPLATE_PARTS_SELECT } from "./screen-templates.js";
 import { SCREEN_CHANNEL } from "./screen-channel.js";
 
 const THEME_SELECT = {
@@ -59,8 +59,9 @@ export class ScreenThemesService {
       return present(await this.prisma.client.screenTheme.findUniqueOrThrow({ where: { id: created.id }, select: THEME_SELECT }), true);
     }
     const parts = await this.partColumns(user, data.teamId ?? null, { content: data.content ?? { builtIn: "classic" }, background: data.background ?? { builtIn: "classic" }, effects: data.effects ?? null });
+    await this.assertTweaks(data.template?.tweaks, parts);
     const theme = await this.prisma.client.screenTheme.create({
-      data: { name: data.name, document: ScreenTemplateSchema.parse(data.template ?? {}) as Prisma.InputJsonValue, ...owner, ...parts },
+      data: { name: data.name, document: await this.kept(ScreenTemplateSchema.parse(data.template ?? {}), parts), ...owner, ...parts },
       select: THEME_SELECT,
     });
     return present(theme, true);
@@ -71,9 +72,24 @@ export class ScreenThemesService {
     const current = await this.changeable(user, themeId);
     if (isWholeTheme(current.document)) await this.split(themeId);
     const parts = await this.partColumns(user, current.ownerTeamId, { content: data.content, background: data.background, effects: data.effects });
+    const before = isWholeTheme(current.document) ? await this.changeable(user, themeId) : current;
+    const refs = { ...partRefs(before), ...parts };
+    if (data.template?.tweaks) await this.assertTweaks(data.template.tweaks, refs);
+    // Its document again when it or a part changes: a part picked without the template's own document starts as the part is.
+    let document: Prisma.InputJsonValue | undefined;
+    if (data.template !== undefined) document = await this.kept(ScreenTemplateSchema.parse(data.template), refs);
+    else if (Object.keys(parts).length > 0) {
+      const layout = readScreenTemplate(before.document);
+      for (const kind of SCREEN_PART_KINDS) {
+        if (!(`${kind}PartId` in parts)) continue;
+        delete layout.look[kind];
+        delete layout.tweaks[kind];
+      }
+      document = await this.kept(layout, refs);
+    }
     const theme = await this.prisma.client.screenTheme.update({
       where: { id: themeId },
-      data: { ...(data.name != null && { name: data.name }), ...(data.template !== undefined && { document: ScreenTemplateSchema.parse(data.template) as Prisma.InputJsonValue }), ...parts },
+      data: { ...(data.name != null && { name: data.name }), ...(document !== undefined && { document }), ...parts },
       select: THEME_SELECT,
     });
     await this.announce(themeId);
@@ -149,6 +165,45 @@ export class ScreenThemesService {
     return columns;
   }
 
+  /**
+   * A template's document as it's kept (issue #428): each of its parts as it
+   * is now, with the template's tweaks, unless the template came with its
+   * own - so its screens draw the same whatever happens to the parts later.
+   */
+  private async kept(layout: ReturnType<typeof readScreenTemplate>, refs: Record<string, string | null>): Promise<Prisma.InputJsonValue> {
+    const look = { ...layout.look };
+    for (const kind of SCREEN_PART_KINDS) {
+      const part = await this.partNow(kind, refs);
+      if (!part) delete look[kind];
+      else if (!look[kind]) Object.assign(look, { [kind]: screenPartKept(kind, part, layout.tweaks[kind]) });
+    }
+    return { ...layout, look } as Prisma.InputJsonValue;
+  }
+
+  /** A template's part as it is now: its saved one, else its built-in one (the classic; no effects). */
+  private async partNow(kind: ScreenPartKind, refs: Record<string, string | null>): Promise<unknown> {
+    const partId = refs[`${kind}PartId`];
+    const saved = partId ? (await this.prisma.client.screenPart.findUnique({ where: { id: partId }, select: { document: true } }))?.document : undefined;
+    return saved ?? screenBuiltInPart(kind as "content", refs[`${kind}BuiltIn`] ?? (kind === "effects" ? null : "classic")) ?? null;
+  }
+
+  /**
+   * A template's tweaks (issue #428), checked against the parts they're over:
+   * each part with its tweaks must still be one the API would take.
+   */
+  private async assertTweaks(tweaks: Partial<Record<ScreenPartKind, Record<string, unknown>>> | undefined, refs: Record<string, string | null>) {
+    for (const kind of SCREEN_PART_KINDS) {
+      const tweak = tweaks?.[kind];
+      if (!tweak || Object.keys(tweak).length === 0) continue;
+      const part = await this.partNow(kind, refs);
+      // No effects: nothing to tweak, and nothing drawn from them.
+      if (!part) continue;
+      const read = kind === "content" ? readScreenContentTheme(part) : kind === "background" ? readScreenBackgroundTheme(part) : readScreenEffects(part);
+      const checked = SCREEN_PART_REQUEST_SCHEMAS[kind].safeParse(applyScreenTweaks(read, tweak));
+      if (!checked.success) throw new BadRequestException([`template.tweaks.${kind} doesn't fit its ${kind === "effects" ? "effects" : `${kind} theme`}: ${checked.error.issues[0]?.path.join(".") ?? ""} ${checked.error.issues[0]?.message ?? ""}`.trim()]);
+    }
+  }
+
 /** A theme the user may put on a screen: theirs or one of their teams'. */
   async assertCanUse(user: AuthenticatedUser, themeId: string) {
     const theme = await this.prisma.client.screenTheme.findUnique({ where: { id: themeId }, select: { ownerUserId: true, ownerTeamId: true } });
@@ -162,7 +217,7 @@ export class ScreenThemesService {
   }
 
   private async changeable(user: AuthenticatedUser, themeId: string) {
-    const theme = await this.prisma.client.screenTheme.findUnique({ where: { id: themeId }, select: { ownerUserId: true, ownerTeamId: true, document: true } });
+    const theme = await this.prisma.client.screenTheme.findUnique({ where: { id: themeId }, select: { ownerUserId: true, ownerTeamId: true, document: true, contentPartId: true, contentBuiltIn: true, backgroundPartId: true, backgroundBuiltIn: true, effectsPartId: true, effectsBuiltIn: true } });
     if (!theme) throw new NotFoundException("Screen theme not found");
     if (theme.ownerUserId === user.id || user.isGlobalAdmin) return theme;
     if (theme.ownerTeamId && (await this.member(user.id, theme.ownerTeamId)) === "ADMIN") return theme;
@@ -181,13 +236,26 @@ export class ScreenThemesService {
   }
 }
 
+/** A template's parts as its columns have them. */
+function partRefs(row: { contentPartId: string | null; contentBuiltIn: string | null; backgroundPartId: string | null; backgroundBuiltIn: string | null; effectsPartId: string | null; effectsBuiltIn: string | null }): Record<string, string | null> {
+  return { contentPartId: row.contentPartId, contentBuiltIn: row.contentBuiltIn, backgroundPartId: row.backgroundPartId, backgroundBuiltIn: row.backgroundBuiltIn, effectsPartId: row.effectsPartId, effectsBuiltIn: row.effectsBuiltIn };
+}
+
 function present(theme: ThemeRow, canEdit: boolean) {
   const { theme: look, assets } = templateLook(theme);
+  const layout = templateLayout(theme);
+  // Behind its parts (issue #428): one changed since it was saved, that the template set nothing of its own on.
+  const updates = SCREEN_PART_KINDS.filter((kind) => {
+    const kept = layout.look[kind];
+    const part = templatePart(kind, theme);
+    return !!kept && !!part && Object.keys(layout.tweaks[kind] ?? {}).length === 0 && JSON.stringify(kept) !== JSON.stringify(screenPartKept(kind, part));
+  });
   return {
     id: theme.id,
     name: theme.name,
     theme: look,
-    template: templateLayout(theme),
+    template: layout,
+    updates,
     parts: templateParts(theme),
     ownerUserId: theme.ownerUserId,
     ownerTeamId: theme.ownerTeamId,

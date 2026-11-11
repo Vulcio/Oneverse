@@ -211,19 +211,19 @@ try {
     await desk.goto(`${WEB}/screens?tab=templates`);
     await desk.getByTestId("new-theme").click();
     const editor = desk.getByTestId("theme-editor");
-    // The base and the video input are the background theme's (issue #281).
+    // The base and the video input are the background theme's (issue #281), set in the template's own tab (issue #428).
     await editor.getByTestId("theme-tab-background").click();
-    await editor.getByTestId("theme-part-background-open").click();
-    const part = desk.getByTestId("part-editor");
-    await part.getByTestId("theme-group-layers").locator("summary").click();
-    await part.getByTestId("theme-base-same").uncheck();
-    await part.getByTestId("theme-base-color").fill("#204060");
-    await part.getByTestId("theme-video-source").locator('[data-value="camera"]').click();
+    await editor.getByTestId("theme-group-layers").locator("summary").click();
+    await editor.getByTestId("theme-base-same").uncheck();
+    await editor.getByTestId("theme-base-color").fill("#204060");
+    await editor.getByTestId("theme-video-source").locator('[data-value="camera"]').click();
     // A preview doesn't open a camera: a placeholder where it goes.
-    await part.getByTestId("screen-video-placeholder").waitFor();
-    await part.locator("#theme-name").fill(`Camera background ${stamp}`);
-    await part.getByTestId("theme-save").click();
-    await part.waitFor({ state: "detached" });
+    await editor.getByTestId("screen-video-placeholder").waitFor();
+    // Saved as a preset of their own, to use in other templates.
+    await editor.getByTestId("theme-tweaks-save-new").click();
+    await editor.getByTestId("theme-tweaks-name").fill(`Camera background ${stamp}`);
+    await editor.getByTestId("theme-tweaks-save").click();
+    await editor.locator('[data-testid="theme-tweaks"][data-count="0"]').waitFor();
     await editor.getByTestId("screen-video-placeholder").waitFor();
     await editor.getByTestId("theme-tab-widgets").click();
     await editor.getByTestId("theme-group-masks").locator("summary").click();

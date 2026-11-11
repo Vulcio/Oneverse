@@ -239,3 +239,12 @@ export async function pickDay(scope, day) {
   }
   throw new Error(`The calendar never showed ${day}`);
 }
+
+/**
+ * A screen template takes its presets as they are now (issue #428): it keeps the look it was saved with, so a suite
+ * that changes a content theme, a background theme or effects through the API presses "Update" this way.
+ */
+export async function takePresets(who, templateId) {
+  const template = (await api(who, "GET", "/screen-themes")).find((one) => one.id === templateId);
+  return api(who, "PATCH", `/screen-themes/${templateId}`, { template: { ...template.template, look: {} } });
+}

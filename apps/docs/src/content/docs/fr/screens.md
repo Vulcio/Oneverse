@@ -149,7 +149,8 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 
 **Un modèle est fait de** liste ce qu'il combine, une ligne chacun avec celui qu'il utilise ; choisissez une ligne pour ne changer que cette partie :
 
-- **Paroles**, **Fond** et **Effets** - les trois parties du modèle : intégrées, ou les vôtres et celles de vos équipes. **Personnaliser** à côté d'une partie intégrée en fait une copie à vous et l'ouvre ; **Modifier** ouvre une des vôtres. Une partie utilisée par plusieurs modèles le dit : la changer les change tous.
+- **Paroles**, **Fond** et **Effets** - les trois parties du modèle, chacune dans son onglet. Choisissez un préréglage dans chacun - un thème de contenu, un thème de fond ou des effets intégrés, ou les vôtres et ceux de vos équipes - et changez ses réglages sur place : ce que vous changez reste dans ce modèle, le préréglage n'est pas modifié. L'onglet liste ce qui diffère du préréglage ; **×** rétablit un groupe, **Tout rétablir** tout l'onglet. **Enregistrer comme nouveau préréglage** garde ces réglages pour un autre modèle ; **Mettre à jour « … »** les écrit dans le préréglage lui-même.
+- Un modèle garde l'apparence avec laquelle il a été enregistré. Quand un préréglage qu'il utilise tel quel est modifié ensuite, sa carte le dit, avec **Mettre à jour** pour prendre ses nouvelles valeurs ; un modèle qui a ses propres changements les garde, sans qu'on le lui propose.
 - **Widgets et masques** - **Mise en page et widgets** place des [widgets](/fr/screens/#widgets) sur une grille (voir plus bas) ; les **Masques** mettent du noir sur une partie de l'image, ou une fenêtre sur l'entrée vidéo (voir [Calques](/fr/screens/#calques)).
 - **Marque** - les polices et couleurs de votre organisation, bientôt.
 - **Étiquettes et passages** - **Tags** : ce à quoi sert le modèle. **Passages de la Bible** - **Versets par diapositive** : combien de versets d'un passage vont sur une diapositive quand un passage d'une liste est affiché avec ce modèle (voir [Bible](/fr/bible/#lajouter-à-une-liste)). Étiquetez-le **Écriture** pour le proposer en premier pour les passages.
@@ -158,7 +159,7 @@ Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous ad
 
 ### Thèmes de contenu
 
-L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thème de contenu**, ou **Personnaliser** un thème intégré) ou depuis un modèle. **Aperçu dans** le montre **Seul**, dans **Le modèle d'où il vient**, ou dans n'importe lequel de vos modèles ou des modèles intégrés, avec leur fond et leurs widgets ; les widgets se changent dans **Widgets et masques** du modèle :
+L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thème de contenu**, ou **Personnaliser** un thème intégré) ou, pour un seul modèle, dans son onglet **Paroles**. **Aperçu dans** le montre **Seul** ou dans n'importe lequel de vos modèles ou des modèles intégrés, avec leur fond et leurs widgets ; les widgets se changent dans **Widgets et masques** du modèle :
 
 - **Affichage** - comment les paroles sont montrées :
   - **Diapositives** - une diapositive à la fois, avec les lignes autour comme le dit **Lignes**.

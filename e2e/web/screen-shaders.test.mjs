@@ -3,7 +3,7 @@
 // controls take the theme's values, its sv_ inputs the theme's colours; one that doesn't compile shows the colours
 // instead. In the editor: the shader picked, its controls built from its header. Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { API, SCREEN, SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SCREEN, SP, WEB, api, call, finish, takePresets, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
 
 let page;
@@ -118,12 +118,14 @@ try {
 
   await step("on the screen: its controls take the theme's values, its sv_ inputs the theme's colours", async () => {
     await api(admin, "PATCH", `/screen-parts/${part.id}`, { document: { background: { kind: "shader", colors: ["#00ff00"], shader: { asset: flat.id, values: { tint: [1, 0, 0, 1] } } } } });
+    await takePresets(admin, template.id);
     await api(admin, "PATCH", `/screen-themes/${template.id}`, { background: { id: part.id } });
     await drawing();
     await tv.waitForTimeout(500);
     const red = await look();
     if (!(red.corner[0] > 200 && red.corner[1] < 40 && red.corner[2] < 40)) throw new Error(`not the tint: ${JSON.stringify(red.corner)}`);
     await api(admin, "PATCH", `/screen-parts/${part.id}`, { document: { background: { kind: "shader", colors: ["#00ff00"], shader: { asset: flat.id, values: { useTheme: true } } } } });
+    await takePresets(admin, template.id);
     await tv.waitForTimeout(1500);
     const green = await look();
     if (!(green.corner[1] > 200 && green.corner[0] < 40 && green.corner[2] < 40)) throw new Error(`not the theme's colour: ${JSON.stringify(green.corner)}`);
@@ -133,6 +135,7 @@ try {
     const broken = await uploadShader(part.id, "broken.fs", '/*{ "INPUTS": [] }*/\nvoid main() { gl_FragColor = nope; }\n');
     if (broken.status !== 201) throw new Error(JSON.stringify(broken));
     await api(admin, "PATCH", `/screen-parts/${part.id}`, { document: { background: { kind: "shader", colors: ["#00ff00", "#0000ff"], shader: { asset: broken.body.id } } } });
+    await takePresets(admin, template.id);
     await tv.locator('[data-testid="screen-shader"][data-state="failed"]').waitFor({ timeout: 15000 });
     await tv.getByTestId("screen-lines").getByText("Amazing grace", { exact: false }).waitFor();
   });
@@ -164,40 +167,43 @@ try {
     page = tv;
     const still = (tint) => ({ document: { background: { kind: "shader", motion: 0, colors: ["#00ff00"], shader: { asset: flat.id, values: { tint } } } } });
     await api(admin, "PATCH", `/screen-parts/${part.id}`, still([1, 0, 0, 1]));
+    await takePresets(admin, template.id);
     await tv.locator('[data-testid="screen-shader"][data-state="drawing"] canvas[data-state="still"]').waitFor({ timeout: 15000 });
     await tv.waitForTimeout(500);
     const red = await look();
     if (!(red.corner[0] > 200 && red.corner[2] < 40)) throw new Error(`not the tint: ${JSON.stringify(red.corner)}`);
     await api(admin, "PATCH", `/screen-parts/${part.id}`, still([0, 0, 1, 1]));
+    await takePresets(admin, template.id);
     await tv.waitForTimeout(1500);
     const blue = await look();
     if (!(blue.corner[2] > 200 && blue.corner[0] < 40)) throw new Error(`still the old tint: ${JSON.stringify(blue.corner)}`);
   });
 
-  await step("a background customized inside a saved template: the template has it at once, and so the screen (issue #428)", async () => {
+  await step("a shader's settings changed in a template's own tab: the template's tweaks, on the screen once it's saved, the preset untouched (issue #428)", async () => {
     page = desk;
     await api(admin, "PATCH", `/screen-themes/${template.id}`, { background: { builtIn: "neuro-noise" } });
     await desk.goto(`${WEB}/screens?tab=templates`);
     await desk.getByTestId(`saved-theme-Shaded ${stamp}`).getByTestId("edit-theme").click();
     const editor = desk.getByTestId("theme-editor");
     await editor.getByTestId("theme-tab-background").click();
-    await editor.getByTestId("theme-part-background-open").click();
-    const own = desk.getByTestId("part-editor");
-    await own.locator('[data-testid="theme-shader-input"][data-name="sv_contrast"] input[type="range"]').fill("0.9");
-    await own.locator("#theme-name").fill(`My noise ${stamp}`);
-    await own.getByTestId("theme-save").click();
-    await own.waitFor({ state: "detached" });
-    // Without the template's own Save.
-    const now = (await api(admin, "GET", "/screen-themes")).find((one) => one.id === template.id);
-    if (now.parts.background.name !== `My noise ${stamp}` || now.theme.background.shader.values.sv_contrast !== 0.9) throw new Error(JSON.stringify([now.parts.background, now.theme.background.shader]));
-    // Saved and opened again at once: its parts are the ones just saved, changed in place.
+    const contrast = editor.locator('[data-testid="theme-shader-input"][data-name="sv_contrast"] input[type="range"]');
+    await contrast.fill("0.9");
+    await editor.locator('[data-testid="theme-tweak"][data-group="background"]').waitFor();
     await editor.getByTestId("theme-save").click();
     await editor.waitFor({ state: "detached" });
+    const now = (await api(admin, "GET", "/screen-themes")).find((one) => one.id === template.id);
+    if (now.parts.background.builtIn !== "neuro-noise" || now.theme.background.shader.values.sv_contrast !== 0.9 || now.theme.background.shader.values.sv_brightness !== 0.03 || now.template.tweaks.background?.background?.shader?.values?.sv_contrast !== 0.9 || "colors" in now.template.tweaks.background.background)
+      throw new Error(JSON.stringify([now.parts.background, now.theme.background.shader, now.template.tweaks]));
+    // Opened again at once: the tweak is there, and one press puts the preset's value back.
     await desk.getByTestId(`saved-theme-Shaded ${stamp}`).getByTestId("edit-theme").click();
     await editor.getByTestId("theme-tab-background").click();
-    await editor.getByTestId("theme-part-background-open").click();
-    await desk.locator('[data-testid="part-editor"] #theme-name').waitFor();
-    if ((await desk.locator('[data-testid="part-editor"] #theme-name').inputValue()) !== `My noise ${stamp}`) throw new Error(`opened as ${await desk.locator('[data-testid="part-editor"] #theme-name').inputValue()}`);
+    if ((await contrast.inputValue()) !== "0.9") throw new Error(`contrast opened at ${await contrast.inputValue()}`);
+    await editor.getByTestId("theme-tweaks-reset").click();
+    await editor.locator('[data-testid="theme-tweaks"][data-count="0"]').waitFor();
+    if ((await contrast.inputValue()) !== "0.55") throw new Error(`contrast reset to ${await contrast.inputValue()}`);
+    // A tweak the API can't fit over the preset is refused, by name.
+    const refused = await call(admin, "PATCH", `/screen-themes/${template.id}`, { template: { tweaks: { background: { background: { kind: "nope" } } } } });
+    if (refused.status !== 400 || !String(refused.body?.message).includes("template.tweaks.background")) throw new Error(JSON.stringify(refused));
   });
 
   await step("no page errors", async () => {

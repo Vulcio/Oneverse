@@ -4759,6 +4759,946 @@
             },
             "effects": null
           }
+        },
+        {
+          "name": "a template's tweaks over its parts (issue #428): the settings it names, the rest the parts'",
+          "args": [
+            {
+              "content": {
+                "text": {
+                  "font": "elegant",
+                  "color": "#fff7e6"
+                }
+              },
+              "background": {
+                "background": {
+                  "kind": "waves",
+                  "colors": [
+                    "#1e1b4b",
+                    "#f97316"
+                  ],
+                  "motion": 0.8
+                }
+              },
+              "effects": {
+                "reactions": [
+                  {
+                    "on": "slide",
+                    "target": "pulse",
+                    "amount": 0.7
+                  }
+                ]
+              },
+              "template": {
+                "tweaks": {
+                  "content": {
+                    "text": {
+                      "color": "#ffffff"
+                    }
+                  },
+                  "background": {
+                    "background": {
+                      "motion": 0.2
+                    },
+                    "reacts": {
+                      "hue": 1
+                    }
+                  },
+                  "effects": {
+                    "reactions": []
+                  }
+                }
+              }
+            },
+            {}
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "elegant",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              },
+              "chart": {
+                "next": 2
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "waves",
+              "colors": [
+                "#1e1b4b",
+                "#f97316"
+              ],
+              "reactive": false,
+              "motion": 0.2,
+              "spin": 0,
+              "media": null,
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
+            },
+            "title": {
+              "show": false,
+              "font": null,
+              "when": "first"
+            },
+            "credits": {
+              "show": false,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "pace": null,
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1,
+              "font": null,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
+            },
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "stage",
+                  "kind": "stage",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 12,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "every",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song-title",
+                  "kind": "song-title",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 55,
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "credits",
+                  "kind": "credits",
+                  "layer": null,
+                  "x": 0,
+                  "y": 11,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first-and-last",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 38,
+                    "radius": 1
+                  }
+                }
+              ]
+            },
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 1,
+              "brightness": 0.5,
+              "elements": 0.5,
+              "rotation": 0.5,
+              "scale": 0.5
+            },
+            "effects": {
+              "reactions": [],
+              "text": {
+                "animation": "none",
+                "amount": 0.5,
+                "speed": 1
+              }
+            }
+          }
+        },
+        {
+          "name": "a part the template kept from when it was saved (issue #428): drawn whatever the part is now",
+          "args": [
+            {
+              "content": {},
+              "background": {
+                "background": {
+                  "kind": "waves"
+                }
+              },
+              "template": {
+                "look": {
+                  "background": {
+                    "background": {
+                      "kind": "aurora",
+                      "colors": [
+                        "#0b1026",
+                        "#22d3ee"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {}
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              },
+              "chart": {
+                "next": 2
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "aurora",
+              "colors": [
+                "#0b1026",
+                "#22d3ee"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "spin": 0,
+              "media": null,
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
+            },
+            "title": {
+              "show": false,
+              "font": null,
+              "when": "first"
+            },
+            "credits": {
+              "show": false,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "pace": null,
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1,
+              "font": null,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
+            },
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "stage",
+                  "kind": "stage",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 12,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "every",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song-title",
+                  "kind": "song-title",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 55,
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "credits",
+                  "kind": "credits",
+                  "layer": null,
+                  "x": 0,
+                  "y": 11,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first-and-last",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 38,
+                    "radius": 1
+                  }
+                }
+              ]
+            },
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5,
+              "rotation": 0.5,
+              "scale": 0.5
+            },
+            "effects": null
+          }
+        },
+        {
+          "name": "tweaks that can't be read: left out, the parts as they are",
+          "args": [
+            {
+              "content": {},
+              "background": {},
+              "template": {
+                "tweaks": {
+                  "content": "bold",
+                  "background": {
+                    "background": {
+                      "kind": "nope"
+                    }
+                  }
+                }
+              }
+            },
+            {}
+          ],
+          "expected": {
+            "$schema": "screen-theme/v1",
+            "base": {
+              "color": null
+            },
+            "video": {
+              "source": "none",
+              "fit": "cover",
+              "opacity": 1
+            },
+            "text": {
+              "font": "sans",
+              "customFont": null,
+              "size": "auto",
+              "weight": 600,
+              "upperCase": false,
+              "color": "#ffffff",
+              "effect": "shadow",
+              "lineHeight": 1.15,
+              "align": "center",
+              "letterSpacing": 0,
+              "italic": false,
+              "shadow": null,
+              "outline": null,
+              "glow": null
+            },
+            "display": {
+              "mode": "slides",
+              "follow": "off",
+              "scroll": {
+                "anchor": "middle",
+                "past": "dim",
+                "coming": 0,
+                "others": 0.82,
+                "soften": false,
+                "labels": false
+              },
+              "grid": {
+                "words": true
+              },
+              "chart": {
+                "next": 2
+              }
+            },
+            "sections": {
+              "chorus": null,
+              "bridge": null
+            },
+            "lines": {
+              "group": "slide",
+              "before": 1,
+              "after": 1,
+              "contextStyle": "dim"
+            },
+            "layout": {
+              "position": "center",
+              "margin": 5
+            },
+            "background": {
+              "kind": "color",
+              "colors": [
+                "#000000"
+              ],
+              "reactive": false,
+              "motion": 0.5,
+              "spin": 0,
+              "media": null,
+              "dim": 0,
+              "shader": {
+                "builtIn": null,
+                "asset": null,
+                "values": {}
+              }
+            },
+            "title": {
+              "show": false,
+              "font": null,
+              "when": "first"
+            },
+            "credits": {
+              "show": false,
+              "where": "bottom",
+              "when": "first-and-last"
+            },
+            "motion": {
+              "transition": "fade",
+              "pace": null,
+              "duration": 350,
+              "reveal": "none",
+              "stagger": 60
+            },
+            "chords": {
+              "color": "#7dd3fc",
+              "scale": 1,
+              "font": null,
+              "show": "off",
+              "notation": "letters",
+              "size": 0.55,
+              "simple": false,
+              "current": true
+            },
+            "grid": {
+              "columns": 12,
+              "rows": 12,
+              "gap": 1,
+              "black": "all",
+              "widgets": [
+                {
+                  "id": "stage",
+                  "kind": "stage",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 12,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "every",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": "auto",
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "song-title",
+                  "kind": "song-title",
+                  "layer": null,
+                  "x": 0,
+                  "y": 0,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 55,
+                    "radius": 1
+                  }
+                },
+                {
+                  "id": "credits",
+                  "kind": "credits",
+                  "layer": null,
+                  "x": 0,
+                  "y": 11,
+                  "w": 12,
+                  "h": 1,
+                  "options": {
+                    "format": "24h",
+                    "seconds": false,
+                    "date": false,
+                    "source": "operator",
+                    "duration": 300,
+                    "until": "10:00",
+                    "overtime": "count",
+                    "warn": 60,
+                    "label": "",
+                    "text": "",
+                    "details": true,
+                    "breakpoints": [],
+                    "dateFormat": "long",
+                    "time": false,
+                    "scope": "song",
+                    "progress": "thin",
+                    "when": "first-and-last",
+                    "qr": {
+                      "kind": "url",
+                      "url": "",
+                      "title": "",
+                      "start": "",
+                      "end": "",
+                      "place": "",
+                      "name": "",
+                      "phone": "",
+                      "email": "",
+                      "organization": "",
+                      "ssid": "",
+                      "password": "",
+                      "security": "WPA"
+                    }
+                  },
+                  "style": {
+                    "font": null,
+                    "color": null,
+                    "background": "#000000",
+                    "opacity": 0,
+                    "align": "center",
+                    "size": 38,
+                    "radius": 1
+                  }
+                }
+              ]
+            },
+            "masks": [],
+            "shows": "lyrics",
+            "reacts": {
+              "movement": 0.5,
+              "hue": 0.3,
+              "brightness": 0.5,
+              "elements": 0.5,
+              "rotation": 0.5,
+              "scale": 0.5
+            },
+            "effects": null
+          }
         }
       ]
     },
@@ -4896,7 +5836,9 @@
               "masks": [],
               "versesPerSlide": 1,
               "titleWidgets": false,
-              "madeFor": []
+              "madeFor": [],
+              "tweaks": {},
+              "look": {}
             }
           }
         },
@@ -5131,7 +6073,9 @@
               "masks": [],
               "versesPerSlide": 1,
               "titleWidgets": false,
-              "madeFor": []
+              "madeFor": [],
+              "tweaks": {},
+              "look": {}
             }
           }
         }
@@ -5225,7 +6169,9 @@
             "masks": [],
             "versesPerSlide": 1,
             "titleWidgets": false,
-            "madeFor": []
+            "madeFor": [],
+            "tweaks": {},
+            "look": {}
           }
         },
         {
@@ -5264,7 +6210,9 @@
             ],
             "versesPerSlide": 1,
             "titleWidgets": false,
-            "madeFor": []
+            "madeFor": [],
+            "tweaks": {},
+            "look": {}
           }
         },
         {
@@ -5286,7 +6234,9 @@
             "masks": [],
             "versesPerSlide": 3,
             "titleWidgets": false,
-            "madeFor": []
+            "madeFor": [],
+            "tweaks": {},
+            "look": {}
           }
         },
         {
@@ -5303,7 +6253,9 @@
             "masks": [],
             "versesPerSlide": 1,
             "titleWidgets": false,
-            "madeFor": []
+            "madeFor": [],
+            "tweaks": {},
+            "look": {}
           }
         },
         {
@@ -5320,7 +6272,9 @@
             "masks": [],
             "versesPerSlide": 1,
             "titleWidgets": true,
-            "madeFor": []
+            "madeFor": [],
+            "tweaks": {},
+            "look": {}
           }
         },
         {
@@ -5343,7 +6297,9 @@
             "titleWidgets": false,
             "madeFor": [
               "scripture"
-            ]
+            ],
+            "tweaks": {},
+            "look": {}
           }
         }
       ]

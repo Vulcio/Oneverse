@@ -149,7 +149,8 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 
 **A template is made of** lists what it combines, a row each with the one it uses; pick a row to change that part alone:
 
-- **Words**, **Background** and **Effects** - the template's three parts: built-in ones, or yours and your teams'. **Customize** beside a built-in part makes a copy of your own and opens it; **Edit** opens one of yours. A part used by several templates says so: changing it changes them all.
+- **Words**, **Background** and **Effects** - the template's three parts, each a tab. Pick a preset in each - a built-in content theme, background theme or effects, or one of yours or your teams' - and change its settings right there: what you change stays in this template, and the preset isn't touched. The tab lists what differs from the preset; **×** puts one group back, **Reset all** the whole tab. **Save as a new preset** keeps those settings to use in another template; **Update "…"** writes them into the preset itself.
+- A template keeps the look it was saved with. When a preset it uses unchanged is edited later, its card says so, with **Update** to take the preset's new values; a template with changes of its own keeps them and isn't asked.
 - **Widgets and masks** - **Layout and widgets** places [widgets](/screens/#widgets) on a grid (below); **Masks** put black over part of the picture, or a window to the video input (see [Layers](/screens/#layers)).
 - **Brand** - your organisation's fonts and colours, coming soon.
 - **Tags and passages** - **Tags**: what the template is for. **Bible passages** - **Verses per slide**: how many verses of a passage go on a slide when a set's passage is shown with this template (see [Bible](/bible/#adding-it-to-a-set)). Tag it **Scripture** to offer it first for passages.
@@ -158,7 +159,7 @@ Name the template and **Save template**: it's yours, or - if you're an admin of 
 
 ### Content themes
 
-How the words look, edited from **Content themes** (**New content theme**, or **Customize** a built-in one) or from a template. **Preview in** shows it **On its own**, in **The template it's from**, or in any of your templates or the built-in ones, with their background and widgets; the widgets are changed on the template's own **Widgets and masks**:
+How the words look, edited from **Content themes** (**New content theme**, or **Customize** a built-in one) or, for one template, in its **Words** tab. **Preview in** shows it **On its own** or in any of your templates or the built-in ones, with their background and widgets; the widgets are changed on the template's own **Widgets and masks**:
 
 - **Display** - how the words are shown:
   - **Slides** - a slide at a time, with the lines around it as **Lines** says.

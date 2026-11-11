@@ -14,7 +14,7 @@ import {
   type ScreenWidgetDefault,
 } from "@oneverse/core";
 import { useRouteContext, useRouter } from "@tanstack/react-router";
-import { Copy, Palette, Pencil, Plus, Users } from "lucide-react";
+import { CircleAlert, Copy, Palette, Pencil, Plus, Users } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -121,6 +121,28 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
                     <li key={theme.id} className="flex flex-col gap-2" data-testid={`saved-theme-${theme.name}`}>
                       <ScreenThemePreview theme={theme.theme} assets={theme.assets} sample={sampleFor(theme.template)} versesPerSlide={theme.template.versesPerSlide} />
                       <Tags tags={theme.template.tags} />
+                      {theme.updates?.length ? (
+                        // A preset it uses as it was has changed since (issue #428): its look is kept until they take the new one.
+                        <div className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 text-xs" data-testid="theme-updates">
+                          <CircleAlert className="size-4 shrink-0 text-warning" aria-hidden />
+                          <span className="min-w-0 flex-1">{t("screens.presetChanged", { parts: theme.updates.map((kind) => t(`screens.parts.kinds.${kind}`)).join(", ") })}</span>
+                          {theme.canEdit ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={async () => {
+                                const look = Object.fromEntries(Object.entries(theme.template.look).filter(([kind]) => !theme.updates!.includes(kind as ScreenPartKind)));
+                                await apiClient.updateScreenTheme(theme.id, { template: { ...theme.template, look } as never });
+                                await changed();
+                              }}
+                              data-testid="theme-update"
+                            >
+                              {t("screens.presetUpdate")}
+                            </Button>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <div className="flex items-center gap-2">
                         <p className="min-w-0 flex-1 truncate text-sm font-medium">{theme.name}</p>
                         <TeamMark team={theme.teamName} />
@@ -130,7 +152,7 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
                               size="sm"
                               variant="outline"
                               onClick={() =>
-                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, titleWidgets: theme.template.titleWidgets, madeFor: theme.template.madeFor ?? [], refs: theme.parts })
+                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, titleWidgets: theme.template.titleWidgets, madeFor: theme.template.madeFor ?? [], tweaks: theme.template.tweaks, look: theme.template.look, updates: theme.updates, refs: theme.parts })
                               }
                               data-testid="edit-theme"
                             >

@@ -1010,6 +1010,8 @@ export interface ScreenThemeSummary {
   theme: ScreenTheme;
   /** Its tags, widget grid and masks. */
   template: ScreenTemplateLayout;
+  /** The parts that changed since it was saved, which it set nothing of its own on (issue #428): saved again without its `look` for them, it takes them as they are now. Left out by an older API. */
+  updates?: ScreenPartKind[];
   /** Its parts (issue #281); effects null: none. */
   parts: { content: ScreenPartRefView; background: ScreenPartRefView; effects: ScreenPartRefView | null };
   ownerUserId: string | null;

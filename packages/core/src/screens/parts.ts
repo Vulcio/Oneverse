@@ -42,6 +42,52 @@ export type ScreenTemplateTag = (typeof SCREEN_TEMPLATE_TAGS)[number];
 export const SCREEN_PART_KINDS = ["content", "background", "effects"] as const;
 export type ScreenPartKind = (typeof SCREEN_PART_KINDS)[number];
 
+/**
+ * A template's tweaks to its parts (issue #428): what it sets differently
+ * from the content theme, the background theme or the effects it uses,
+ * without changing them - two levels deep, as the part is written
+ * (`{ text: { color } }`, `{ background: { colors, motion } }`); a setting it
+ * doesn't name stays the part's, and follows it when the part changes.
+ */
+const tweak = z.record(z.string().max(40), z.unknown());
+const screenTweaksSchema = z
+  .strictObject({ content: tweak.optional(), background: tweak.optional(), effects: tweak.optional() })
+  .refine((tweaks) => JSON.stringify(tweaks).length <= 20_000, "tweaks must be at most 20 KB")
+  .prefault({});
+export type ScreenTweaks = Partial<Record<"content" | "background" | "effects", Record<string, unknown>>>;
+
+const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
+
+/** A part with a template's tweaks over it (issue #428): a group's settings one by one, anything else whole. */
+export function applyScreenTweaks(part: unknown, tweaks: unknown): unknown {
+  if (!isRecord(tweaks) || Object.keys(tweaks).length === 0) return part;
+  const merged: Record<string, unknown> = { ...(isRecord(part) ? part : {}) };
+  for (const [key, value] of Object.entries(tweaks)) {
+    if (key === "$schema" || value === undefined) continue;
+    merged[key] = isRecord(value) && isRecord(merged[key]) ? { ...(merged[key] as Record<string, unknown>), ...value } : value;
+  }
+  return merged;
+}
+
+/** What a part as it's set now differs by from the part it started as (issue #428): the tweaks that, applied to the second, give the first. Both read the same way (every setting there). */
+export function screenTweaksBetween(now: unknown, part: unknown): Record<string, unknown> {
+  const tweaks: Record<string, unknown> = {};
+  if (!isRecord(now)) return tweaks;
+  const before = isRecord(part) ? part : {};
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  for (const [key, value] of Object.entries(now)) {
+    if (key === "$schema" || value === undefined || same(value, before[key])) continue;
+    const old = before[key];
+    if (isRecord(value) && isRecord(old)) {
+      const group: Record<string, unknown> = {};
+      for (const [name, one] of Object.entries(value)) if (one !== undefined && !same(one, old[name])) group[name] = one;
+      // A setting the part has and this hasn't can't be said setting by setting: the whole group then.
+      tweaks[key] = Object.keys(old).some((name) => old[name] !== undefined && value[name] === undefined) ? value : group;
+    } else tweaks[key] = value;
+  }
+  return tweaks;
+}
+
 function contentSchema(strict: boolean) {
   const theme = strict ? ScreenThemeRequestSchema.shape : ScreenThemeSchema.shape;
   const object = strict ? z.strictObject : z.object;
@@ -98,6 +144,14 @@ function templateSchema(strict: boolean) {
     titleWidgets: z.boolean().default(false),
     /** What it's made for (issue #402); none: anything. It never stops a screen showing something else with it. */
     madeFor: z.array(z.enum(SCREEN_CONTENT_KINDS)).max(SCREEN_CONTENT_KINDS.length).default([]),
+    /** What it sets differently from its parts (issue #428), without changing them. */
+    tweaks: screenTweaksSchema,
+    /**
+     * Its parts as they were when it was saved, tweaks included (issue #428):
+     * what its screens draw, whatever happens to the parts afterwards. Left
+     * out (a template from before, a part just picked): the part as it is.
+     */
+    look: object({ content: contentSchema(strict).optional(), background: backgroundSchema(strict).optional(), effects: effectsSchema(strict).optional() }).prefault({}),
   });
 }
 
@@ -152,6 +206,24 @@ export function readScreenEffects(input: unknown): ScreenEffects {
   return ScreenEffectsSchema.parse(resolveEffects(input));
 }
 
+/** A template's tweaks as a client reads them: each part's, when it's an object. */
+function readTweaks(input: unknown): ScreenTweaks {
+  if (!isRecord(input)) return {};
+  const tweaks: ScreenTweaks = {};
+  for (const kind of SCREEN_PART_KINDS) if (isRecord(input[kind]) && Object.keys(input[kind]).length > 0) tweaks[kind] = input[kind];
+  return screenTweaksSchema.safeParse(tweaks).success ? tweaks : {};
+}
+
+/** A template's kept parts as a client reads them, each read like the part it is; one that isn't an object is left out. */
+function readLook(input: unknown): ScreenTemplateLayout["look"] {
+  if (!isRecord(input)) return {};
+  return {
+    ...(isRecord(input.content) && { content: readScreenContentTheme(input.content) }),
+    ...(isRecord(input.background) && { background: readScreenBackgroundTheme(input.background) }),
+    ...(isRecord(input.effects) && { effects: readScreenEffects(input.effects) }),
+  };
+}
+
 /** A template's layout as a client reads it: a widget or a mask it can't read is left out, the rest stays. Never throws. */
 export function readScreenTemplate(input: unknown): ScreenTemplateLayout {
   const raw = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
@@ -171,7 +243,30 @@ export function readScreenTemplate(input: unknown): ScreenTemplateLayout {
     versesPerSlide: verses.success ? verses.data : undefined,
     titleWidgets: raw.titleWidgets === true,
     madeFor,
+    tweaks: readTweaks(raw.tweaks),
+    look: readLook(raw.look),
   });
+}
+
+/**
+ * A template's part as it's kept (issue #428): the part with the template's
+ * tweaks, every setting there. And whether a kept one is behind its part: the
+ * part has changed since, and the template set nothing of its own on it.
+ */
+export function screenPartKept(kind: ScreenPartKind, part: unknown, tweaks?: Record<string, unknown>): ScreenPart {
+  if (kind === "content") return tweaked(ScreenContentThemeSchema, readScreenContentTheme(part), tweaks);
+  if (kind === "background") return tweaked(ScreenBackgroundThemeSchema, readScreenBackgroundTheme(part), tweaks);
+  return tweaked(ScreenEffectsSchema, readScreenEffects(part), tweaks);
+}
+
+/** A part with a template's tweaks, group by group: one the part can't be read with (from a later version) is left out, the part's own kept. */
+function tweaked<T>(schema: z.ZodType<T>, part: T, tweaks: Record<string, unknown> | undefined): T {
+  let now = part;
+  for (const [key, value] of Object.entries(tweaks ?? {})) {
+    const next = schema.safeParse(applyScreenTweaks(now, { [key]: value }));
+    if (next.success) now = next.data;
+  }
+  return now;
 }
 
 /**
@@ -185,10 +280,11 @@ export function composeScreenTheme(
   parts: { content: unknown; background: unknown; effects?: unknown | null; template?: unknown },
   options: { effects?: boolean } = {},
 ): ScreenTheme {
-  const content = readScreenContentTheme(parts.content);
-  const background = readScreenBackgroundTheme(parts.background);
-  const effects = parts.effects && options.effects !== false ? readScreenEffects(parts.effects) : null;
   const template = readScreenTemplate(parts.template);
+  // Each part as the template kept it (issue #428); else the part as it is, with the template's tweaks over it.
+  const content = template.look.content ?? tweaked(ScreenContentThemeSchema, readScreenContentTheme(parts.content), template.tweaks.content);
+  const background = template.look.background ?? tweaked(ScreenBackgroundThemeSchema, readScreenBackgroundTheme(parts.background), template.tweaks.background);
+  const effects = parts.effects && options.effects !== false ? (template.look.effects ?? tweaked(ScreenEffectsSchema, readScreenEffects(parts.effects), template.tweaks.effects)) : null;
   const { $schema: _content, ...words } = content;
   const { $schema: _background, ...look } = background;
   void _content;

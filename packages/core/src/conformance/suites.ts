@@ -2020,6 +2020,20 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the same, effects off on the screen", args: [{ content: {}, background: { background: { kind: "waves" } }, effects: { reactions: [{ on: "slide", target: "pulse" }] } }, { effects: false }] },
           { name: "the chord chart, for the band", args: [{ content: { shows: "chart", chords: { color: "#facc15" } }, background: {} }, {}] },
           { name: "parts that can't be read: their defaults", args: [{ content: { text: { color: "red" } }, background: "nothing", effects: null }, {}] },
+          {
+            name: "a template's tweaks over its parts (issue #428): the settings it names, the rest the parts'",
+            args: [
+              {
+                content: { text: { font: "elegant", color: "#fff7e6" } },
+                background: { background: { kind: "waves", colors: ["#1e1b4b", "#f97316"], motion: 0.8 } },
+                effects: { reactions: [{ on: "slide", target: "pulse", amount: 0.7 }] },
+                template: { tweaks: { content: { text: { color: "#ffffff" } }, background: { background: { motion: 0.2 }, reacts: { hue: 1 } }, effects: { reactions: [] } } },
+              },
+              {},
+            ],
+          },
+          { name: "a part the template kept from when it was saved (issue #428): drawn whatever the part is now", args: [{ content: {}, background: { background: { kind: "waves" } }, template: { look: { background: { background: { kind: "aurora", colors: ["#0b1026", "#22d3ee"] } } } } }, {}] },
+          { name: "tweaks that can't be read: left out, the parts as they are", args: [{ content: {}, background: {}, template: { tweaks: { content: "bold", background: { background: { kind: "nope" } } } } }, {}] },
         ],
       },
       splitScreenTheme: {

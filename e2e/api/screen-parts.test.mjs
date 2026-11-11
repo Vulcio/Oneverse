@@ -70,7 +70,20 @@ check("…a tag no client knows is refused", r.status === 400, JSON.stringify(r.
 // A part changed: every template using it.
 await api(admin, "PATCH", `/screen-parts/${content.id}`, { document: { text: { font: "serif" } } });
 r = await call(member, "GET", "/screen-themes");
-check("a content theme changed: the template using it changes", r.body.find((one) => one.id === night.id)?.theme.text.font === "serif", JSON.stringify(r.body.find((one) => one.id === night.id)?.theme.text));
+// The template keeps the look it was saved with (issue #428), and says which of its parts changed; saved again without its own copy, it takes it.
+let held = r.body.find((one) => one.id === night.id);
+check("a content theme changed: the template using it keeps its look", held?.theme.text.font === "display" && held.theme.text.upperCase === true, JSON.stringify(held?.theme.text));
+check("…and says its content theme has changed", held?.updates.join() === "content", JSON.stringify(held?.updates));
+r = await call(admin, "PATCH", `/screen-themes/${night.id}`, { template: { ...held.template, look: { background: held.template.look.background } } });
+check("…updated, it has the content theme as it is now", r.status === 200 && r.body.theme.text.font === "serif" && r.body.updates.length === 0, JSON.stringify([r.body.theme?.text, r.body.updates]));
+// Its own tweaks over a part (issue #428): the settings it names, held with it; then a change to the part isn't offered.
+r = await call(admin, "PATCH", `/screen-themes/${night.id}`, { template: { ...held.template, look: {}, tweaks: { content: { text: { color: "#ffeecc" } } } } });
+check("a template's tweak over its content theme: that setting, the rest the part's", r.status === 200 && r.body.theme.text.color === "#ffeecc" && r.body.theme.text.font === "serif" && r.body.template.look.content.text.color === "#ffeecc", JSON.stringify(r.body.theme?.text));
+await api(admin, "PATCH", `/screen-parts/${content.id}`, { document: { text: { font: "mono" } } });
+held = (await api(member, "GET", "/screen-themes")).find((one) => one.id === night.id);
+check("…a tweaked template isn't told its part changed, and keeps its look", held.updates.length === 0 && held.theme.text.font === "serif" && held.theme.text.color === "#ffeecc", JSON.stringify([held.updates, held.theme.text]));
+r = await call(admin, "PATCH", `/screen-themes/${night.id}`, { template: { tweaks: { content: { text: { color: "red" } } } } });
+check("…a tweak that doesn't fit its part is refused, by name", r.status === 400 && String(r.body.message).includes("template.tweaks.content"), JSON.stringify(r.body));
 r = await call(admin, "GET", "/screen-parts?kind=content");
 check("…and it says how many templates use it", r.body.find((one) => one.id === content.id)?.templates === 1, JSON.stringify(r.body));
 r = await call(admin, "DELETE", `/screen-parts/${content.id}`);

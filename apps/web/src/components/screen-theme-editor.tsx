@@ -1,5 +1,7 @@
 import {
   composeScreenTheme,
+  screenTweaksBetween,
+  type ScreenTweaks,
   SCREEN_BACKGROUNDS,
   SCREEN_SHADERS,
   SHADER_COLORS_MAX,
@@ -46,7 +48,7 @@ import {
   type ScreenWidgetDefault,
   type TeamSummary,
 } from "@oneverse/core";
-import { ChevronLeft, ChevronRight, Copy, Image as ImageIcon, LayoutGrid, Minus, Palette, Pause, Pencil, Play, Plus, Sparkles, Tag, Trash2, TriangleAlert, Type } from "lucide-react";
+import { ChevronLeft, ChevronRight, Image as ImageIcon, LayoutGrid, Minus, Palette, Pause, Play, Plus, RotateCcw, Sparkles, Tag, Trash2, TriangleAlert, Type, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
@@ -87,6 +89,12 @@ export interface ThemeDraft {
   versesPerSlide?: number;
   grid?: ScreenTheme["grid"];
   masks?: ScreenMask[];
+  /** What a template sets differently from its parts (issue #428). */
+  tweaks?: ScreenTweaks;
+  /** Its parts as it was saved with them (issue #428): what it opens on, whatever its presets are now. */
+  look?: Partial<Record<ScreenPartKind, unknown>>;
+  /** Its parts that changed since it was saved, which it set nothing of its own on (issue #428). */
+  updates?: ScreenPartKind[];
   /** The title and credits are widgets in its grid (issue #398); false, a template from before: its content theme's are made widgets. */
   titleWidgets?: boolean;
   /** What it's made for (issue #402); a part opened from a template: what that template is made for, to preview it with. */
@@ -139,16 +147,18 @@ function extractPart(kind: ScreenPartKind, theme: ScreenTheme, original?: unknow
  * A template or one of its parts being made or changed (issues #194, #281):
  * its settings on the left, grouped; the screen on the right, playing a
  * sample song, changing as they're changed. A template is its tags, its
- * parts - a content theme, a background theme, effects - and its layout;
- * a part is edited on its own, previewed with the template it's edited
- * from (`context`) or with built-in ones. Saved for the user, or for a team
+ * parts - a content theme, a background theme, effects - and its layout.
+ * A part is a preset (issue #428): a template picks one in each tab and
+ * changes its settings there - tweaks kept with the template, the preset
+ * untouched, reset one group at a time or all at once - or saves them as a
+ * preset to use elsewhere. A part is also edited on its own, previewed with
+ * built-in ones or in a template. Saved for the user, or for a team
  * they're an admin of.
  */
 export function ScreenThemeEditor({
   draft,
   teams,
   parts: listed,
-  context,
   widgetDefaults = [],
   templates = [],
   onClose,
@@ -158,8 +168,6 @@ export function ScreenThemeEditor({
   teams: TeamSummary[];
   /** The saved parts one can use (the user's own and their teams'). */
   parts: ScreenPartSummary[];
-  /** Editing a part from a template: the template's other parts, for the preview. */
-  context?: TemplateRefs & { grid: ScreenTheme["grid"]; masks: ScreenMask[] };
   /** Widgets' default looks (issue #273): the team's for a team's template, else the user's own. */
   widgetDefaults?: ScreenWidgetDefault[];
   /** The saved templates, for a part's preview in one of them (issue #398). */
@@ -184,7 +192,7 @@ export function ScreenThemeEditor({
     setMadeFor(next);
     if (next.length === 1) setPreviewWith(next[0]!);
   }
-  const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[]; titleWidgets: boolean }, own?: unknown) =>
+  const compose = (with_: TemplateRefs, layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[]; titleWidgets: boolean; tweaks?: ScreenTweaks; look?: Partial<Record<ScreenPartKind, unknown>> }, own?: unknown) =>
     composeScreenTheme({
       content: kind === "content" ? own : partDocument("content", with_.content, parts),
       background: kind === "background" ? own : partDocument("background", with_.background, parts),
@@ -193,10 +201,12 @@ export function ScreenThemeEditor({
     });
   const [theme, setTheme] = useState<ScreenTheme>(() =>
     kind === "template"
-      ? compose(refs, { grid: draft.grid ?? null, masks: draft.masks ?? [], titleWidgets: draft.titleWidgets ?? true })
+      ? compose(refs, { grid: draft.grid ?? null, masks: draft.masks ?? [], titleWidgets: draft.titleWidgets ?? true, tweaks: draft.tweaks, look: draft.look })
       : // A part is previewed on its own (issue #398): the template's other parts, never its widgets or masks.
-        compose(context ?? PREVIEW_WITH[kind], { grid: null, masks: [], titleWidgets: true }, draft.document ?? {}),
+        compose(PREVIEW_WITH[kind], { grid: null, masks: [], titleWidgets: true }, draft.document ?? {}),
   );
+  // As it was opened: a part behind its preset stays "behind" until something is set on it here.
+  const [opened] = useState(theme);
   const [name, setName] = useState(draft.name);
   const [owner, setOwner] = useState(draft.ownerTeamId ?? "");
   const [aspect, setAspect] = useState<"16/9" | "4/3">("16/9");
@@ -206,13 +216,23 @@ export function ScreenThemeEditor({
   const [assets, setAssets] = useState<ScreenThemeAsset[]>(draft.assets ?? []);
   const [uploading, setUploading] = useState<ScreenThemeAsset["kind"] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // A part opened from the template (issue #281): changed, or customized into one of the user's own.
-  const [editing, setEditing] = useState<ThemeDraft | null>(null);
+  // A template's tweaks saved as a preset (issue #428): its name being typed, and the save under way.
+  const [presetName, setPresetName] = useState<string | null>(null);
+  const [savingPreset, setSavingPreset] = useState(false);
   // The layout (issue #268): the widget picked, and the grid drawn over the preview to move them.
   const [selected, setSelected] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   // A template's parts, one at a time (issue #398).
   const [layer, setLayer] = useState<Layer>("content");
+  // What's being set: a part's own editor, or the template's tab for one of its parts.
+  const part: ScreenPartKind | null = kind !== "template" ? kind : layer === "content" || layer === "background" || layer === "effects" ? (refs[layer] ? layer : null) : null;
+  // The template's part in this tab, when it's a saved one; its files are the ones offered, and new ones go to it when it's theirs to change.
+  const tabRef = kind === "template" && part ? refs[part] : null;
+  const tabPart = tabRef && "id" in tabRef ? parts.find((one) => one.id === tabRef.id) : undefined;
+  const partId = kind === "template" ? (tabPart?.canEdit ? tabPart.id : undefined) : draft.id;
+  const files = kind === "template" ? [...(tabPart?.assets ?? []), ...assets.filter((one) => !tabPart?.assets.some((asset) => asset.id === one.id))] : assets;
+  // The part as it was before anything was set here: a title and credits it had are kept.
+  const original = (slot: ScreenPartKind) => (kind === "template" ? partDocument(slot, refs[slot], parts) : draft.document);
   const setGrid = (grid: Grid | null) => setTheme((before) => ScreenThemeSchema.parse({ ...before, grid }));
   const sampleSong = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
   const samplePassage = useSamplePassage(versesPerSlide);
@@ -224,14 +244,13 @@ export function ScreenThemeEditor({
   const usable = parts.filter((one) => (teamId ? one.ownerTeamId === teamId : true));
   // The files the preview needs: a part's own, or those of the template's saved parts.
   const previewAssets = useMemo(() => {
-    if (kind !== "template") return [...assets, ...(context ? savedAssets(context, parts) : [])];
-    return savedAssets(refs, parts);
-  }, [kind, assets, refs, parts, context]);
+    if (kind !== "template") return assets;
+    return [...savedAssets(refs, parts), ...assets];
+  }, [kind, assets, refs, parts]);
   // A part previewed on its own, or in a template (issue #398): "this" the one it's opened from, "s:<id>" a saved one, "b:<id>" a built-in one.
   const [previewIn, setPreviewIn] = useState("");
   const inTemplate = useMemo((): (TemplateRefs & { layout: { grid: ScreenTheme["grid"]; masks: ScreenMask[]; titleWidgets: boolean } }) | null => {
     if (kind === "template" || !previewIn) return null;
-    if (previewIn === "this" && context) return { ...context, layout: { grid: context.grid, masks: context.masks, titleWidgets: true } };
     if (previewIn.startsWith("s:")) {
       const one = templates.find((template) => template.id === previewIn.slice(2));
       if (!one) return null;
@@ -241,7 +260,7 @@ export function ScreenThemeEditor({
     const builtIn = SCREEN_TEMPLATES.find((one) => one.id === previewIn.slice(2));
     if (!builtIn) return null;
     return { content: { builtIn: builtIn.content }, background: { builtIn: builtIn.background }, effects: builtIn.effects ? { builtIn: builtIn.effects } : null, layout: builtIn.template };
-  }, [kind, previewIn, context, templates]);
+  }, [kind, previewIn, templates]);
   // The part as it is now, with the template's other parts and its layout.
   const shown = useMemo(() => {
     if (!inTemplate) return theme;
@@ -263,7 +282,58 @@ export function ScreenThemeEditor({
   function pickPart(slot: ScreenPartKind, ref: ScreenPartRef | null) {
     const next = { ...refs, [slot]: ref } as TemplateRefs;
     setRefs(next);
-    setTheme((before) => compose(next, { grid: before.grid, masks: before.masks, titleWidgets: true }));
+    setPresetName(null);
+    // The other tabs keep their tweaks; this one starts as the preset picked.
+    setTheme((before) => compose(next, { grid: before.grid, masks: before.masks, titleWidgets: true, look: { ...lookOf(before), [slot]: undefined } }));
+  }
+
+  /** The template's parts as they're set now (issue #428): what it's saved with, and what its screens draw. */
+  function lookOf(now: ScreenTheme, with_: TemplateRefs = refs): Partial<Record<ScreenPartKind, Record<string, unknown>>> {
+    const look: Partial<Record<ScreenPartKind, Record<string, unknown>>> = {};
+    for (const slot of ["content", "background", "effects"] as const) if (with_[slot]) look[slot] = extractPart(slot, now, partDocument(slot, with_[slot], parts)) as Record<string, unknown>;
+    return look;
+  }
+
+  /** What the template sets differently from its parts (issue #428): each tab's settings against its preset's. */
+  function tweaksOf(now: ScreenTheme, with_: TemplateRefs = refs): ScreenTweaks {
+    const plain = compose(with_, { grid: null, masks: [], titleWidgets: true });
+    const tweaks: ScreenTweaks = {};
+    for (const slot of ["content", "background", "effects"] as const) {
+      if (!with_[slot]) continue;
+      const before = partDocument(slot, with_[slot], parts);
+      const one = screenTweaksBetween(extractPart(slot, now, before), extractPart(slot, plain, before));
+      if (Object.keys(one).length > 0) tweaks[slot] = one;
+    }
+    return tweaks;
+  }
+  const tweaks = useMemo(() => (kind === "template" ? tweaksOf(theme) : {}), [kind, theme, refs, parts]);
+
+  /** A tab's tweaks dropped, all or one group's: its preset's settings again. */
+  function resetTweaks(slot: ScreenPartKind, group?: string) {
+    setTheme((before) => {
+      const now = lookOf(before);
+      const preset = extractPart(slot, compose(refs, { grid: null, masks: [], titleWidgets: true }), partDocument(slot, refs[slot], parts)) as Record<string, unknown>;
+      return compose(refs, { grid: before.grid, masks: before.masks, titleWidgets: true, look: { ...now, [slot]: group ? { ...now[slot], [group]: preset[group] } : undefined } });
+    });
+  }
+
+  /** A tab's settings saved as a preset (issue #428): a new one of the owner's, or over the one it uses; the template then uses it as it is. */
+  async function savePreset(slot: ScreenPartKind, asNew: string | null) {
+    setSavingPreset(true);
+    setError(null);
+    try {
+      const document = extractPart(slot, theme, original(slot)) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
+      const ref = refs[slot];
+      const saved = asNew !== null || !ref || !("id" in ref) ? await apiClient.createScreenPart({ kind: slot, name: (asNew ?? "").trim(), document, ...(teamId && { teamId }) }) : await apiClient.updateScreenPart(ref.id, { document });
+      setSavedHere((before) => [saved, ...before.filter((one) => one.id !== saved.id)]);
+      setRefs((before) => ({ ...before, [slot]: { id: saved.id } }));
+      setPresetName(null);
+      await onSaved(saved);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSavingPreset(false);
+    }
   }
 
   async function save(asNew: boolean) {
@@ -272,7 +342,7 @@ export function ScreenThemeEditor({
     try {
       let saved: ScreenThemeSummary | ScreenPartSummary;
       if (kind === "template") {
-        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide, titleWidgets: true, madeFor }, content: refs.content, background: refs.background, effects: refs.effects };
+        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide, titleWidgets: true, madeFor, tweaks: tweaksOf(theme), look: lookOf(theme) as never }, content: refs.content, background: refs.background, effects: refs.effects };
         saved = draft.id && !asNew ? await apiClient.updateScreenTheme(draft.id, body) : await apiClient.createScreenTheme({ ...body, ...(teamId && { teamId }) });
       } else {
         const document = extractPart(kind, theme, draft.document) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
@@ -288,11 +358,11 @@ export function ScreenThemeEditor({
 
   /** A font for this (saved) content theme, or a picture, video or shader for this background theme: uploaded, then used at once. */
   async function upload(assetKind: ScreenThemeAsset["kind"], file: File | undefined) {
-    if (!file || !draft.id) return;
+    if (!file || !partId) return;
     setUploading(assetKind);
     setError(null);
     try {
-      const asset = await apiClient.uploadScreenPartAsset(draft.id, assetKind, file, file.name);
+      const asset = await apiClient.uploadScreenPartAsset(partId, assetKind, file, file.name);
       setAssets((before) => [...before, asset]);
       if (assetKind === "font") set("text", { customFont: asset.id });
       else if (assetKind === "shader") set("background", { kind: "shader", shader: { builtIn: null, asset: asset.id, values: {} } });
@@ -305,9 +375,9 @@ export function ScreenThemeEditor({
   }
 
   async function removeAsset(asset: ScreenThemeAsset) {
-    if (!draft.id) return;
+    if (!partId || kind === "template") return;
     try {
-      await apiClient.deleteScreenPartAsset(draft.id, asset.id);
+      await apiClient.deleteScreenPartAsset(partId, asset.id);
       setAssets((before) => before.filter((one) => one.id !== asset.id));
       if (theme.background.media === asset.id) set("background", { media: null });
       if (theme.text.customFont === asset.id) set("text", { customFont: null });
@@ -317,7 +387,6 @@ export function ScreenThemeEditor({
     }
   }
 
-  /** A template's part opened: a saved one to change, a built-in one to customize into one of the user's own. */
   /** A widget picked on the preview: its settings, on the Widgets tab. */
   function pickWidget(id: string | null) {
     setSelected(id);
@@ -329,17 +398,6 @@ export function ScreenThemeEditor({
     if (!ref) return t("screens.parts.noEffects");
     if ("builtIn" in ref) return t(`screens.parts.builtIn.${slot}.${ref.builtIn}`);
     return parts.find((one) => one.id === ref.id)?.name ?? "";
-  }
-
-  function openPart(slot: ScreenPartKind) {
-    const ref = refs[slot];
-    const saved = ref && "id" in ref ? parts.find((one) => one.id === ref.id) : undefined;
-    const document = partDocument(slot, ref ?? { builtIn: "pulse" }, parts) ?? {};
-    setEditing(
-      saved?.canEdit
-        ? { kind: slot, id: saved.id, name: saved.name, ownerTeamId: saved.ownerTeamId, document: saved.document, assets: saved.assets, madeFor: [previewWith] }
-        : { kind: slot, name: t("screens.parts.copyOf", { name: saved?.name ?? (ref && "builtIn" in ref ? t(`screens.parts.builtIn.${slot}.${ref.builtIn}`) : name) }), ownerTeamId: teamId, document, madeFor: [previewWith] },
-    );
   }
 
   const step = (by: 1 | -1) => {
@@ -393,7 +451,23 @@ export function ScreenThemeEditor({
                 {layer === "content" || layer === "background" || layer === "effects" ? (
                   <div className="flex flex-col gap-3 px-4 py-4" data-testid={`theme-layer-${layer}`}>
                     <p className="text-xs text-muted-foreground">{t(`screens.editor.partRowHints.${layer}`)}</p>
-                    <PartPicker slot={layer} value={refs[layer]} parts={usable.filter((one) => one.kind === layer)} onPick={(ref) => pickPart(layer, ref)} onOpen={() => openPart(layer)} />
+                    <PartPicker slot={layer} value={refs[layer]} parts={usable.filter((one) => one.kind === layer)} onPick={(ref) => pickPart(layer, ref)} />
+                    {refs[layer] ? (
+                      <TweaksBar
+                        slot={layer}
+                        tweaks={tweaks[layer] ?? {}}
+                        behind={!!draft.updates?.includes(layer) && sameRef(refs[layer], draft.refs?.[layer]) && JSON.stringify(lookOf(theme)[layer]) === JSON.stringify(lookOf(opened)[layer])}
+                        preset={partName(layer, refs[layer])}
+                        canUpdate={!!tabPart?.canEdit}
+                        shared={tabPart?.templates ?? 0}
+                        busy={savingPreset}
+                        name={presetName}
+                        onName={setPresetName}
+                        suggested={t("screens.parts.copyOf", { name: partName(layer, refs[layer]) })}
+                        onReset={(group) => resetTweaks(layer, group)}
+                        onSave={(asNew) => void savePreset(layer, asNew)}
+                      />
+                    ) : null}
                   </div>
                 ) : null}
                 {layer === "template" ? (
@@ -442,13 +516,13 @@ export function ScreenThemeEditor({
                 ) : null}
               </>
             ) : null}
-            {kind === "content" ? (
+            {part === "content" ? (
               <>
             <DisplaySettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
             <TextMotionSettings
               theme={theme}
               onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))}
-              fonts={{ assets, uploading: uploading === "font", onUpload: draft.id ? (file) => void upload("font", file) : null }}
+              fonts={{ assets: files, uploading: uploading === "font", onUpload: partId ? (file) => void upload("font", file) : null }}
             />
             {/* Lines around the slide's: not for Charts, which shows the section (issue #398). */}
             {!screenShowsChart(theme) ? (
@@ -482,7 +556,7 @@ export function ScreenThemeEditor({
             <ChordSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
               </>
             ) : null}
-            {kind === "background" ? (
+            {part === "background" ? (
               <>
                 <Group title={t("screens.editor.baseAndVideo")} testId="theme-group-layers">
                   <BaseVideoSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
@@ -493,11 +567,11 @@ export function ScreenThemeEditor({
               </Field>
               {theme.background.kind === "image" || theme.background.kind === "video" ? (
                 <Field label={t("screens.editor.media")}>
-                  {draft.id ? (
+                  {partId || files.some((asset) => asset.kind === "media") ? (
                     <div className="flex flex-col gap-1.5">
-                      {assets.filter((asset) => asset.kind === "media").length === 0 ? <span className="text-xs text-muted-foreground">{t("screens.editor.noMedia")}</span> : null}
+                      {files.filter((asset) => asset.kind === "media").length === 0 ? <span className="text-xs text-muted-foreground">{t("screens.editor.noMedia")}</span> : null}
                       <ul className="flex flex-col gap-1">
-                        {assets
+                        {files
                           .filter((asset) => asset.kind === "media")
                           .map((asset) => (
                             <li key={asset.id} className="flex items-center gap-2 text-xs" data-testid="theme-media">
@@ -509,14 +583,16 @@ export function ScreenThemeEditor({
                               >
                                 {asset.filename}
                               </button>
-                              <button type="button" className="text-destructive hover:underline" onClick={() => void removeAsset(asset)}>
-                                {t("screens.editor.removeFile")}
-                              </button>
+                              {kind === "template" ? null : (
+                                <button type="button" className="text-destructive hover:underline" onClick={() => void removeAsset(asset)}>
+                                  {t("screens.editor.removeFile")}
+                                </button>
+                              )}
                             </li>
                           ))}
                       </ul>
-                      <FileButton accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" busy={uploading === "media"} onFile={(file) => void upload("media", file)} testId="theme-upload-media" />
-                      <span className="text-xs text-muted-foreground">{t("screens.editor.mediaHint")}</span>
+                      {partId ? <FileButton accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm" busy={uploading === "media"} onFile={(file) => void upload("media", file)} testId="theme-upload-media" /> : null}
+                      <span className="text-xs text-muted-foreground">{partId ? t("screens.editor.mediaHint") : t("screens.editor.saveFirst")}</span>
                     </div>
                   ) : (
                     <span className="text-xs text-muted-foreground">{t("screens.editor.saveFirst")}</span>
@@ -526,12 +602,12 @@ export function ScreenThemeEditor({
               {theme.background.kind === "shader" ? (
                 <ShaderSettings
                   theme={theme}
-                  assets={assets}
-                  saved={!!draft.id}
+                  assets={files}
+                  saved={!!partId}
                   uploading={uploading === "shader"}
                   onShader={(shader) => set("background", { shader })}
                   onUpload={(file) => void upload("shader", file)}
-                  onRemove={(asset) => void removeAsset(asset)}
+                  onRemove={kind === "template" ? null : (asset) => void removeAsset(asset)}
                 />
               ) : null}
               <Field label={t("screens.editor.colors")}>
@@ -613,7 +689,7 @@ export function ScreenThemeEditor({
                 </Group>
               </>
             ) : null}
-            {kind === "effects" ? (
+            {part === "effects" ? (
               <EffectsSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
             ) : null}
           </div>
@@ -630,7 +706,6 @@ export function ScreenThemeEditor({
               {kind !== "template" ? (
                 <NativeSelect className="h-8 w-auto max-w-56 text-xs" value={previewIn} onChange={(event) => setPreviewIn(event.target.value)} aria-label={t("screens.editor.previewIn")} data-testid="theme-preview-in">
                   <option value="">{t("screens.editor.previewAlone")}</option>
-                  {context ? <option value="this">{t("screens.editor.previewThis")}</option> : null}
                   {templates.length > 0 ? (
                     <optgroup label={t("screens.parts.saved")}>
                       {templates.map((one) => (
@@ -682,7 +757,7 @@ export function ScreenThemeEditor({
             <Label htmlFor="theme-name">{t(`screens.editor.nameOf.${draft.kind}`)}</Label>
             <Input id="theme-name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
           </div>
-          {!draft.id && !context && adminTeams.length > 0 ? (
+          {!draft.id && adminTeams.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="theme-owner">{t("screens.themeOwner")}</Label>
               {/* Its parts saved from here are that owner's (issue #428): a team's template takes the team's parts only. */}
@@ -716,41 +791,14 @@ export function ScreenThemeEditor({
           </div>
         </div>
       </DialogContent>
-      {editing ? (
-        <ScreenThemeEditor
-          draft={editing}
-          teams={teams}
-          parts={parts}
-          templates={templates}
-          context={{ ...refs, grid: theme.grid, masks: theme.masks }}
-          onClose={() => setEditing(null)}
-          onSaved={async (saved) => {
-            setEditing(null);
-            // The part saved, in the template at once; the list of parts comes again with the page.
-            const part = saved as ScreenPartSummary;
-            const before = refs[part.kind];
-            setSavedHere((before) => [part, ...before.filter((one) => one.id !== part.id)]);
-            pickPart(part.kind, { id: part.id });
-            setTheme((before) => composeScreenTheme({ ...splitParts(before), [part.kind]: part.document, template: { grid: before.grid, masks: before.masks, titleWidgets: true } }));
-            // A saved template takes its new part at once (issue #428): the screens showing it change now, not at its next save.
-            if (draft.id && !(before && "id" in before && before.id === part.id)) {
-              try {
-                await apiClient.updateScreenTheme(draft.id, { [part.kind]: { id: part.id } });
-              } catch (err) {
-                setError(err instanceof Error ? err.message : String(err));
-              }
-            }
-            await onSaved(saved);
-          }}
-        />
-      ) : null}
     </Dialog>
   );
 }
 
-/** A theme as its three parts again, for one of them to be swapped. */
-function splitParts(theme: ScreenTheme) {
-  return { content: extractPart("content", theme), background: extractPart("background", theme), effects: theme.effects ? extractPart("effects", theme) : null };
+/** The same part picked: both built-in with one id, or both saved with one id. */
+function sameRef(a: ScreenPartRef | null | undefined, b: ScreenPartRef | null | undefined): boolean {
+  if (!a || !b) return false;
+  return "id" in a ? "id" in b && a.id === b.id : "builtIn" in b && a.builtIn === b.builtIn;
 }
 
 /** The files a template's saved parts refer to. */
@@ -808,7 +856,7 @@ function LayerRail({ tab, onTab, names }: { tab: Layer; onTab: (tab: Layer) => v
 }
 
 /** A template's part (issue #281): built-in or saved, picked from a list; opened to change it (a saved one) or to customize it into one's own. */
-function PartPicker({ slot, value, parts, onPick, onOpen }: { slot: ScreenPartKind; value: ScreenPartRef | null; parts: ScreenPartSummary[]; onPick: (ref: ScreenPartRef | null) => void; onOpen: () => void }) {
+function PartPicker({ slot, value, parts, onPick }: { slot: ScreenPartKind; value: ScreenPartRef | null; parts: ScreenPartSummary[]; onPick: (ref: ScreenPartRef | null) => void }) {
   const { t } = useTranslation();
   const builtIns = slot === "content" ? SCREEN_CONTENT_THEMES : slot === "background" ? SCREEN_BACKGROUND_THEMES : SCREEN_EFFECTS;
   const current = value ? ("builtIn" in value ? `b:${value.builtIn}` : `s:${value.id}`) : "";
@@ -843,13 +891,113 @@ function PartPicker({ slot, value, parts, onPick, onOpen }: { slot: ScreenPartKi
             ))}
           </optgroup>
         </NativeSelect>
-        <Button type="button" variant="outline" size="sm" onClick={onOpen} data-testid={`theme-part-${slot}-open`}>
-          {saved?.canEdit ? <Pencil /> : <Copy />}
-          {saved?.canEdit ? t("screens.parts.edit") : t("screens.customize")}
+      </div>
+    </Field>
+  );
+}
+
+/**
+ * A template's tab over its preset (issue #428): what it sets differently,
+ * one group at a time, each put back on its own or all at once; and those
+ * settings saved as a preset - a new one, or over the one it uses, which
+ * changes every template using it.
+ */
+function TweaksBar({
+  slot,
+  tweaks,
+  behind,
+  preset,
+  canUpdate,
+  shared,
+  busy,
+  name,
+  onName,
+  suggested,
+  onReset,
+  onSave,
+}: {
+  slot: ScreenPartKind;
+  tweaks: Record<string, unknown>;
+  /** The preset has changed since the template was saved, and nothing was set here: its new values are offered, not shown as the template's changes. */
+  behind: boolean;
+  preset: string;
+  canUpdate: boolean;
+  shared: number;
+  busy: boolean;
+  /** The new preset's name being typed; null: not asked for. */
+  name: string | null;
+  onName: (name: string | null) => void;
+  suggested: string;
+  onReset: (group?: string) => void;
+  onSave: (asNew: string | null) => void;
+}) {
+  const { t } = useTranslation();
+  const groups = Object.keys(tweaks);
+  if (groups.length === 0)
+    return (
+      <p className="text-xs text-muted-foreground" data-testid="theme-tweaks" data-count={0}>
+        {t("screens.editor.tweaks.none", { name: preset })}
+      </p>
+    );
+  if (behind)
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 p-2.5 text-xs" data-testid="theme-tweaks" data-behind>
+        <span className="min-w-0 flex-1">{t("screens.editor.tweaks.behind", { name: preset })}</span>
+        <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => onReset()} data-testid="theme-tweaks-reset">
+          {t("screens.editor.tweaks.takeNew")}
         </Button>
       </div>
-      {saved && saved.templates > 1 ? <span className="text-xs text-muted-foreground">{t("screens.parts.sharedBy", { count: saved.templates })}</span> : null}
-    </Field>
+    );
+  const label = (group: string) => t(`screens.editor.tweaks.groups.${slot}.${group}`, { defaultValue: group });
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-2.5" data-testid="theme-tweaks" data-count={groups.length}>
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 text-xs font-medium">{t("screens.editor.tweaks.some", { name: preset })}</span>
+        <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onReset()} data-testid="theme-tweaks-reset">
+          <RotateCcw />
+          {t("screens.editor.tweaks.reset")}
+        </Button>
+      </div>
+      <ul className="flex flex-wrap gap-1">
+        {groups.map((group) => (
+          <li key={group} className="flex items-center gap-0.5 rounded-full border bg-background py-0.5 pr-0.5 pl-2 text-xs" data-testid="theme-tweak" data-group={group}>
+            {label(group)}
+            <button type="button" className="flex size-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("screens.editor.tweaks.resetGroup", { group: label(group) })} onClick={() => onReset(group)}>
+              <X className="size-3" aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
+      {name === null ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button type="button" variant="outline" size="sm" className="h-7 text-xs" disabled={busy} onClick={() => onName(suggested)} data-testid="theme-tweaks-save-new">
+            {t("screens.editor.tweaks.saveNew")}
+          </Button>
+          {canUpdate ? (
+            <Button type="button" variant="outline" size="sm" className="h-7 text-xs" disabled={busy} onClick={() => onSave(null)} data-testid="theme-tweaks-update">
+              {t("screens.editor.tweaks.update", { name: preset })}
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <form
+          className="flex items-center gap-1.5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (name.trim()) onSave(name);
+          }}
+        >
+          <Input className="h-7 min-w-0 flex-1 text-xs" value={name} maxLength={60} autoFocus aria-label={t("screens.editor.tweaks.presetName")} onChange={(event) => onName(event.target.value)} data-testid="theme-tweaks-name" />
+          <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy || !name.trim()} data-testid="theme-tweaks-save">
+            {t("screens.editor.tweaks.save")}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onName(null)}>
+            {t("admin.cancel")}
+          </Button>
+        </form>
+      )}
+      {canUpdate && shared > 1 ? <span className="text-xs text-muted-foreground">{t("screens.parts.sharedBy", { count: shared })}</span> : null}
+    </div>
   );
 }
 
@@ -1079,7 +1227,7 @@ function ShaderSettings({
   uploading: boolean;
   onShader: (shader: ScreenTheme["background"]["shader"]) => void;
   onUpload: (file: File | undefined) => void;
-  onRemove: (asset: ScreenThemeAsset) => void;
+  onRemove: ((asset: ScreenThemeAsset) => void) | null;
 }) {
   const { t } = useTranslation();
   const shader = theme.background.shader;
@@ -1144,9 +1292,11 @@ function ShaderSettings({
                   >
                     {asset.filename}
                   </button>
-                  <button type="button" className="text-destructive hover:underline" onClick={() => onRemove(asset)}>
-                    {t("screens.editor.removeFile")}
-                  </button>
+                  {onRemove ? (
+                    <button type="button" className="text-destructive hover:underline" onClick={() => onRemove(asset)}>
+                      {t("screens.editor.removeFile")}
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>

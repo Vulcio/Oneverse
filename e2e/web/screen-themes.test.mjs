@@ -4,7 +4,7 @@
 // device. Every client reads the same documents.
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
-import { API, SCREEN, SP, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SCREEN, SP, WEB, api, call, check, finish, takePresets, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { png } from "../lib/fake-providers.mjs";
 
 const FONT = new URL("../../packages/screen/node_modules/@fontsource/bebas-neue/files/bebas-neue-latin-400-normal.woff2", import.meta.url);
@@ -84,18 +84,24 @@ try {
     await editor.getByTestId("theme-preview").waitFor();
     // The background, customized into one of the user's own: its own tab among the template's parts (issue #398).
     await editor.getByTestId("theme-tab-background").click();
-    await editor.getByTestId("theme-part-background-open").click();
-    let part = tablet.getByTestId("part-editor");
-    await part.getByTestId("theme-background").locator('[data-value="particles"]').click();
-    await part.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor();
-    await part.locator("#theme-name").fill(`Starry sky ${stamp}`);
-    await part.getByTestId("theme-save").click();
-    await part.waitFor({ state: "detached" });
+    // Its settings are right there (issue #428): changed for this template, the preset untouched...
+    await editor.locator('[data-testid="theme-tweaks"][data-count="0"]').waitFor();
+    await editor.getByTestId("theme-background").locator('[data-value="particles"]').click();
+    await editor.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor();
+    await editor.locator('[data-testid="theme-tweak"][data-group="background"]').waitFor();
+    // ...put back as the preset has them...
+    await editor.getByTestId("theme-tweaks-reset").click();
+    await editor.locator('[data-testid="theme-tweaks"][data-count="0"]').waitFor();
+    await editor.getByTestId("theme-background").locator('[data-value="particles"]').click();
+    // ...or saved as a preset of one's own, to use elsewhere.
+    await editor.getByTestId("theme-tweaks-save-new").click();
+    await editor.getByTestId("theme-tweaks-name").fill(`Starry sky ${stamp}`);
+    await editor.getByTestId("theme-tweaks-save").click();
+    await editor.locator('[data-testid="theme-tweaks"][data-count="0"]').waitFor();
     await editor.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor();
     // The words too.
     await editor.getByTestId("theme-tab-content").click();
-    await editor.getByTestId("theme-part-content-open").click();
-    part = tablet.getByTestId("part-editor");
+    const part = editor;
     await part.getByTestId("theme-transition").locator('[data-value="zoom"]').click();
     await part.getByTestId("theme-reveal").locator('[data-value="letters"]').click();
     // A step in the preview: the next slide comes in letter by letter, over the template's background.
@@ -113,9 +119,10 @@ try {
     await part.getByTestId("theme-section-mark").locator('[data-value="band"]').click();
     await part.getByTestId("theme-text-tab-default").click();
     await tablet.screenshot({ path: `${SP}/screen-theme-editor.png` });
-    await part.locator("#theme-name").fill(`Starry words ${stamp}`);
-    await part.getByTestId("theme-save").click();
-    await part.waitFor({ state: "detached" });
+    await editor.getByTestId("theme-tweaks-save-new").click();
+    await editor.getByTestId("theme-tweaks-name").fill(`Starry words ${stamp}`);
+    await editor.getByTestId("theme-tweaks-save").click();
+    await editor.locator('[data-testid="theme-tweaks"][data-count="0"]').waitFor();
     // Made for songs (the chapel's), and passages too (issue #402): previewed with a passage, the widgets for songs still offered.
     await editor.getByTestId("theme-made-for").locator('[data-value="scripture"]').click();
     await editor.getByTestId("theme-preview-with").getByRole("button", { name: "A passage" }).click();
@@ -154,10 +161,22 @@ try {
     await tv.locator(`[data-testid="screen-showing"][data-theme]`).waitFor();
   });
 
-  await step("its background theme changed: the screen showing the template follows", async () => {
+  await step("its background theme changed: the template keeps its look and offers to update; updated, its screen follows", async () => {
     const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
     const [background] = (await api(leader, "GET", "/screen-parts?kind=background")).filter((one) => one.id === saved.parts.background.id);
     await api(leader, "PATCH", `/screen-parts/${background.id}`, { document: { ...background.document, background: { ...background.document.background, kind: "waves" } } });
+    // The template keeps the look it was saved with (issue #428), and says its preset has changed...
+    const kept = (await api(leader, "GET", "/screen-themes")).find((one) => one.id === saved.id);
+    if (kept.theme.background.kind !== "particles" || kept.updates.join() !== "background") throw new Error(JSON.stringify([kept.theme.background.kind, kept.updates]));
+    page = tablet;
+    await tablet.goto(`${WEB}/screens?tab=templates`);
+    const card = tablet.getByTestId(`saved-theme-Starry ${stamp}`);
+    await card.getByTestId("theme-updates").waitFor();
+    await tablet.screenshot({ path: `${SP}/screen-theme-preset-changed.png` });
+    // ...until Update is pressed: then its screens draw the preset as it is now.
+    await card.getByTestId("theme-update").click();
+    await card.getByTestId("theme-updates").waitFor({ state: "detached" });
+    page = tv;
     await tv.locator('[data-testid="screen-stage"][data-background="waves"]').waitFor();
   });
 
@@ -193,6 +212,7 @@ try {
     const [content] = (await api(leader, "GET", "/screen-parts?kind=content")).filter((one) => one.id === saved.parts.content.id);
     const changed = { ...content.document, lines: { ...content.document.lines, group: "slide", before: 1, after: 1, contextStyle: "dim" }, motion: { ...content.document.motion, transition: "move", duration: 1500, reveal: "none" } };
     await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: changed });
+    await takePresets(leader, saved.id);
     await tv.locator('[data-testid="screen-stage"][data-transition="move"]').waitFor();
     page = tablet;
     await tablet.getByTestId("present-previous").click();
@@ -219,6 +239,7 @@ try {
     const [content] = (await api(leader, "GET", "/screen-parts?kind=content")).filter((one) => one.id === saved.parts.content.id);
     const before = content.document;
     await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: { ...before, display: { mode: "scroll", follow: "line", scroll: { anchor: "high", past: "fade", labels: true } }, text: { ...before.text, font: "cormorant" } } });
+    await takePresets(leader, saved.id);
     page = tv;
     // The slide shown (the second) is the current one in the column; the first is still there above it.
     await tv.locator('[data-testid="screen-scroll"] [data-testid="screen-lines"]').getByText("third line here").waitFor();
@@ -229,9 +250,11 @@ try {
     await tv.screenshot({ path: `${SP}/screen-theme-scroll.png` });
     // Grid: every bar, the slide's lit.
     await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: { ...before, display: { mode: "grid" } } });
+    await takePresets(leader, saved.id);
     await tv.getByTestId("screen-grid").waitFor();
     await tv.getByTestId("screen-grid-now").first().waitFor();
     await api(leader, "PATCH", `/screen-parts/${content.id}`, { document: before });
+    await takePresets(leader, saved.id);
     await tv.locator('[data-testid="screen-lyrics"] [data-testid="screen-lines"]').getByText("third line here").waitFor();
   });
 
@@ -258,6 +281,8 @@ try {
     await editor.getByTestId("theme-font").getByText("bebas.woff2").waitFor();
     await editor.getByTestId("theme-save").click();
     await editor.waitFor({ state: "detached" });
+    // The template takes them once it's updated (issue #428).
+    await takePresets(leader, (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`).id);
     page = tv;
     await tv.locator('[data-testid="screen-stage"][data-background="image"] img[data-testid="screen-media"]').waitFor();
     await tv.waitForFunction(() => getComputedStyle(document.querySelector('[data-testid="screen-stage"]')).fontFamily.includes("sv-theme-"));

@@ -41,6 +41,12 @@ function partOf(kind: ScreenPartKind, saved: Part, builtIn: string | null): unkn
   return kind === "content" ? (screenBuiltInPart("content", builtIn) ?? screenBuiltInPart("content", "classic")) : (screenBuiltInPart("background", builtIn) ?? screenBuiltInPart("background", "classic"));
 }
 
+/** A template's part as it is now (issue #428), to tell one kept from before it changed; null: no effects, or a template made before parts. */
+export function templatePart(kind: ScreenPartKind, row: TemplateParts): unknown {
+  if (isWholeTheme(row.document)) return null;
+  return partOf(kind, kind === "content" ? row.contentPart : kind === "background" ? row.backgroundPart : row.effectsPart, kind === "content" ? row.contentBuiltIn : kind === "background" ? row.backgroundBuiltIn : row.effectsBuiltIn);
+}
+
 /** What a screen using a template draws (issue #281), effects on or off, and the files its parts refer to. */
 export function templateLook(row: TemplateParts, options: { effects?: boolean } = {}): { theme: ScreenTheme; assets: ReturnType<typeof presentScreenThemeAssets> } {
   if (isWholeTheme(row.document)) return { theme: composeScreenTheme(splitScreenTheme(row.document), options), assets: presentScreenThemeAssets(row.assets) };
