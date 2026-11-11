@@ -174,7 +174,7 @@ pnpm dev                                     # Songverse :3000, API :3001, Plani
 `pnpm lint`, `pnpm type-check` and `pnpm test` run the checks across the
 workspace, through Vite+'s task runner (`vp run`), which replays a package's
 result when nothing it reads has changed; `pnpm exec vp cache clean` starts
-over. The lint rules are in the root `vite.config.ts`. `pnpm e2e` runs the end-to-end suites (API and browser) against
+over. The lint rules are in the root `vite.config.ts`. `pnpm unused` reports files, exports and dependencies nothing uses (knip, `knip.json`). `pnpm e2e` runs the end-to-end suites (API and browser) against
 the running app - see [e2e/README.md](e2e/README.md). See [Deploy.md](Deploy.md) for production setup.
 
 ## Licence

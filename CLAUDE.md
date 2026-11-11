@@ -274,6 +274,13 @@ The workspace's checks run on Vite+ (issue #159): `pnpm lint` (Oxlint, its
 rules in the root `vite.config.ts`), `pnpm type-check` and `pnpm test`, through
 `vp run`, which replays a package's result when nothing it reads changed. Unit
 tests import from `vite-plus/test`, not `vitest`.
+`pnpm unused` (knip, issue #427; CI runs it) fails on a file nothing imports,
+an export nothing reads or a dependency nothing needs: remove it, or, for a
+file started on its own (a script, a second build's entry), add it to
+`knip.json`. Before writing a helper, look for the one there is: `@SignedIn()`
+for the person signed in, `providerFetch` for an outside provider,
+`createDeviceStore` (`apps/web/src/lib/device-store.ts`) for a choice kept on
+the device, `AppDocument` for an app's root document.
 
 What `@oneverse/core` does - the song format, chords, the chart, the
 timeline, what the API accepts - is also written down as shared test cases

@@ -65,6 +65,11 @@ jobs:
       - name: Type-check
         run: pnpm type-check
 
+      # Nothing left unused (issue #427): a file nothing imports, an export nothing reads, a dependency
+      # nothing needs. Its entry points and exceptions are in knip.json.
+      - name: Unused code
+        run: pnpm unused
+
       - name: Test
         run: pnpm test
 

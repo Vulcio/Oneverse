@@ -12,6 +12,7 @@
     "build": "vp run -r build",
     "dev": "vp run --filter \"./packages/*\" build && vp run -r --parallel --no-cache dev",
     "lint": "vp run -r lint",
+    "unused": "knip --no-progress",
     "type-check": "vp run --filter \"./packages/*\" build && vp run -r type-check",
     "test": "vp run --filter \"./packages/*\" build && vp run -r test",
     "db:migrate": "pnpm --filter @oneverse/db exec prisma migrate dev",
@@ -21,6 +22,7 @@
     "e2e": "pnpm --filter @oneverse/e2e e2e"
   },
   "devDependencies": {
+    "knip": "6.45.1",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",
     "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0",

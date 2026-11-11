@@ -1,0 +1,60 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": [
+    "openssl",
+    "ffmpeg",
+    "ffprobe",
+    "psql"
+  ],
+  "ignoreDependencies": [
+    "vite",
+    "zod",
+    "prettier",
+    "@fontsource/bebas-neue"
+  ],
+  "workspaces": {
+    "apps/api": {
+      "entry": [
+        "src/main.ts",
+        "src/worker.ts",
+        "src/backups/restore.ts",
+        "src/**/*.spec.ts"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "src/player-screen/main.tsx",
+        "vite.player.config.ts",
+        "scripts/*.mjs",
+        "public/sw.js"
+      ]
+    },
+    "apps/screen": {
+      "entry": [
+        "src/pulse/main.tsx",
+        "vite.pulse.config.ts"
+      ]
+    },
+    "apps/planiverse": {
+      "entry": [
+        "public/sw.js"
+      ]
+    },
+    "apps/docs": {
+      "entry": [
+        "public/audience.js"
+      ]
+    },
+    "e2e": {
+      "entry": [
+        "affected.mjs",
+        "purge-users.mjs",
+        "{api,web,docs,perf}/**/*.mjs"
+      ]
+    }
+  },
+  "rules": {
+    "duplicates": "off"
+  }
+}
