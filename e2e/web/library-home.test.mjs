@@ -115,13 +115,7 @@ await step("See all favorites: Songs, filtered to them, with no shelves", async 
   await page.getByRole("heading", { name: "Songs", exact: true }).waitFor();
 });
 
-await step("searching from the home opens Songs; an old /library?q= address too", async () => {
-  await page.goto(`${WEB}/library`);
-  await page.waitForLoadState("networkidle");
-  await page.getByRole("searchbox").fill(`Yonder song ${stamp}`);
-  await page.keyboard.press("Enter");
-  await page.waitForURL(/\/library\/songs\?q=/);
-  await page.getByTestId("library-range").getByText("1–1 of 1").waitFor();
+await step("an old /library?q= address opens Songs, searched", async () => {
   await page.goto(`${WEB}/library?q=${encodeURIComponent(`Zephyr hymn ${stamp}`)}`);
   await page.waitForURL(/\/library\/songs\?q=/);
   await page.getByTestId("library-range").getByText("1–1 of 1").waitFor();

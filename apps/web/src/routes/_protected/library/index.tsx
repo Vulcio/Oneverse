@@ -1,13 +1,11 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Search } from "lucide-react";
-import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { GettingStarted } from "#/components/getting-started";
 import { LibraryShelves } from "#/components/library-home";
 import { Button } from "@oneverse/ui/components/button";
 import { Card } from "@oneverse/ui/components/card";
 import { DataTable } from "@oneverse/ui/components/data-table";
-import { Input } from "@oneverse/ui/components/input";
 import { apiClient } from "#/lib/api-client";
 import { useColumnPrefs, useLibraryColumns } from "./-columns";
 import { parseLibrarySearch } from "./-library-search";
@@ -18,8 +16,7 @@ const PREVIEW = 8;
 
 /**
  * The Library's home (issue #81): its shelves - newly added, recently
- * viewed, favorites, popular in your teams - and the songs changed last,
- * with a search. The whole list, filtered and sorted, is Songs
+ * viewed, favorites, popular in your teams - and the songs changed last. The whole list, filtered and sorted, is Songs
  * (/library/songs); an address with a search or filters goes there.
  */
 export const Route = createFileRoute("/_protected/library/")({
@@ -46,24 +43,12 @@ function LibraryHomePage() {
   // As chosen for Songs (issue #150).
   const [columnPrefs] = useColumnPrefs();
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{t("library.title")}</h1>
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-          {/* Searching takes you to Songs, with its filters. */}
-          <form
-            className="relative w-full max-w-64 min-w-0"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (query.trim()) void navigate({ to: "/library/songs", search: { q: query.trim() } });
-            }}
-          >
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <Input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("library.searchPlaceholder")} aria-label={t("library.searchPlaceholder")} className="pl-9" />
-          </form>
+        <div className="flex items-center gap-2">
           <Button render={<Link to="/library/new" />}>{t("library.addASong")}</Button>
         </div>
       </div>
