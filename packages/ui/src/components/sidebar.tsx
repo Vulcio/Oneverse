@@ -211,7 +211,7 @@ function SidebarContent({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       data-slot="sidebar-content"
-      className={cn("flex min-h-0 flex-1 flex-col gap-2 overflow-auto", className)}
+      className={cn("flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
       {...props}
     />
   );
