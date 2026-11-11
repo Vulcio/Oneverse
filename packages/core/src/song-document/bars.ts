@@ -322,8 +322,9 @@ function lineOf(chart: Pick<RenderedChart, "passes">, bar: Pick<ChartBar, "passI
   return bar.lineId === null ? undefined : chart.passes[bar.passIndex]?.lines.find((one) => one.id === bar.lineId);
 }
 
-function wordStart(text: string, at: number): number {
-  let start = Math.min(at, text.length);
+/** Where the word holding character `at` starts: where the grid cuts a line for a chord pinned there, where a note on a word sits. */
+export function wordStart(text: string, at: number): number {
+  let start = Math.min(Math.max(at, 0), text.length);
   while (start > 0 && /\S/.test(text[start - 1]!)) start--;
   return start;
 }

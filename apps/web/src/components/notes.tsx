@@ -14,6 +14,7 @@ import {
   type RenderedPass,
   type SongDocumentV2,
   type SongNote,
+  wordStart,
 } from "@oneverse/core";
 import { CheckCheck, CloudOff, MessageSquare, MessageSquarePlus, MoveUp, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -66,13 +67,6 @@ function useAnchorLabel(chart: RenderedChart, document: SongDocumentV2 | null) {
 /** The word (or syllable run) starting at `at`. */
 function wordAt(text: string, at: number): string {
   return /^\S+/.exec(text.slice(at))?.[0] ?? short(text);
-}
-
-/** Where the word holding character `at` starts. */
-export function wordStart(text: string, at: number): number {
-  let start = Math.min(Math.max(at, 0), text.length);
-  while (start > 0 && /\S/.test(text[start - 1]!)) start--;
-  return start;
 }
 
 function short(text: string, max = 32): string {

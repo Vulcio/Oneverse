@@ -1,4 +1,5 @@
 import type { Rhythm, SectionV2 } from "../schemas/song-document-v2.js";
+import { wordStart } from "./bars.js";
 
 /**
  * Editing a section's bars in the chord grid (issue #238): its chords placed
@@ -14,12 +15,6 @@ type RhythmBar = Rhythm["bars"][number];
 const MAX_BARS = 512;
 const MAX_BEATS = 32;
 
-/** The words a chord pinned at `at` starts with: where the grid cuts a line. */
-function wordStart(text: string, at: number): number {
-  let start = Math.min(at, text.length);
-  while (start > 0 && /\S/.test(text[start - 1]!)) start--;
-  return start;
-}
 
 /**
  * A section's rhythm, to edit: its own, else the bars `chartBars()` fills in
