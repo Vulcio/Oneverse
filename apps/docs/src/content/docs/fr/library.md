@@ -13,12 +13,16 @@ La **Bibliothèque** contient tous les chants que vous pouvez voir : les vôtres
 
 - **Nouveautés** - les derniers chants que vous pouvez voir ; **Tout voir** les liste tous dans **Chants**, les plus récents d'abord.
 - **Consultés récemment** - les chants que vous avez ouverts en dernier (sur leur page, dans une liste de chants ou en Live). Vous seul·e voyez les vôtres.
-- **Favoris** - les chants que vous avez marqués d'une étoile : l'étoile à côté de **Partager** sur la page d'un chant (**Ajouter aux favoris**, **Retirer des favoris**). La rangée apparaît dès que vous en avez un. **Tout voir** les liste, comme le filtre **Favoris** au-dessus de la liste et dans le panneau de la barre latérale. Vos favoris sont à vous.
+- **Favoris** - les chants que vous avez marqués d'une étoile : l'étoile sur la carte d'un chant ici, ou à côté de **Partager** sur sa page (**Ajouter aux favoris**, **Retirer des favoris**). La rangée apparaît dès que vous en avez un. **Tout voir** les liste, comme le filtre **Favoris** au-dessus de la liste et dans le panneau de la barre latérale. Vos favoris sont à vous.
 - **Populaires dans vos équipes** - ce que vos équipes jouent et consultent le plus : les chants de leurs listes et ouverts par leurs membres ces 90 derniers jours.
 
 Quand une rangée a plus de chants qu'il n'en tient, faites-la glisser, ou utilisez à la souris les flèches à côté de son titre.
 
-Un chant sans image à lui a une couverture tirée de son titre : une couleur et ses initiales. Sous les rangées, **Modifiés récemment** montre les chants modifiés en dernier, et son lien ouvre **Chants**. La recherche en haut de l'accueil cherche dans **Chants**.
+Un chant sans image à lui a une couverture tirée de son titre : une couleur et ses initiales. Sous les rangées, **Modifiés récemment** montre les chants modifiés en dernier, et son lien ouvre **Chants**.
+
+Pointez la carte d'un chant et trois boutons apparaissent sur sa couverture : l'étoile, **Ajouter à une liste** et **Aperçu**. **Aperçu** montre le chant d'un coup d'œil sans quitter la page : sa couverture, ses artistes, sa tonalité, son tempo et sa mesure, ses numéros de recueil et ses étiquettes, et ses premières lignes, avec l'étoile, **Ajouter à une liste** et **Ouvrir le chant**. **Précédent** et **Suivant** - ou les flèches gauche et droite du clavier - parcourent les chants de la rangée. Sur un écran tactile, appuyez longuement sur une carte pour ouvrir l'aperçu, et balayez-le vers la gauche ou la droite pour le chant suivant ou le précédent ; un simple appui ouvre toujours le chant.
+
+Pour chercher, utilisez **Rechercher** en haut de chaque page, ou le champ au-dessus de **Chants**.
 
 ## Chercher et filtrer
 

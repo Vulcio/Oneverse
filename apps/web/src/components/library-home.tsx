@@ -1,14 +1,17 @@
 import type { LibraryHome, SongVersionSummary } from "@oneverse/core";
-import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Lock, Music2 } from "lucide-react";
+import { Link, useRouter } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, Lock, Maximize2, Music2 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { cn } from "@oneverse/ui/lib/utils";
+import { AddToSetIconButton } from "#/components/add-to-set";
+import { FavoriteButton } from "#/components/favorite-button";
+import { SongPeek } from "#/components/song-peek";
 import { coverColors, initialsOf } from "#/lib/song-cover";
 
 /** A song as a card shows it; `imageUrl` for when songs have images of their own. */
-type CardSong = Pick<SongVersionSummary, "id" | "title" | "artists"> & { workId?: string; imageUrl?: string | null; private?: boolean };
+type CardSong = Pick<SongVersionSummary, "id" | "title" | "artists"> & Partial<Pick<SongVersionSummary, "isFavorite" | "tags" | "songbookReferences" | "versionName">> & { workId?: string; imageUrl?: string | null; private?: boolean };
 
 /**
  * A song's cover (issue #81): its image, once songs have one; until then, a
@@ -62,22 +65,90 @@ function CoverImage({ song, className, size }: { song: CardSong; className?: str
   );
 }
 
-function SongCard({ song, from }: { song: CardSong; from?: string }) {
+/** How long a finger stays on a card before its preview opens (ms), and how far it may move meanwhile (px). */
+const LONG_PRESS_MS = 450;
+const LONG_PRESS_SLOP = 10;
+
+/** A small round button over a card's cover. */
+const CARD_ACTION = "flex size-7 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-sm outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5";
+
+/**
+ * A song on a shelf: its cover and name open it. With a mouse or the
+ * keyboard, three small buttons come over the cover (issue #434): star it,
+ * add it to a set, look at it without leaving (`onPeek`). A touch screen has
+ * no hover: a long press opens that preview, where the same actions are.
+ */
+function SongCard({ song, from, onPeek, onFavoriteChange }: { song: CardSong; from?: string; onPeek: () => void; onFavoriteChange: () => void }) {
+  const { t } = useTranslation();
   const artists = song.artists.map((artist) => artist.source).filter(Boolean).join(", ");
+  const press = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
+  // A long press opened the preview: the click that ends it isn't the link's.
+  const pressed = useRef(false);
+  const cancelPress = () => {
+    if (press.current) clearTimeout(press.current.timer);
+    press.current = null;
+  };
+  useEffect(() => cancelPress, []);
   return (
-    <Link
-      to="/library/$songVersionId"
-      params={{ songVersionId: song.id }}
-      search={from ? { from } : {}}
-      className="group flex w-36 shrink-0 snap-start flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-40"
+    <div
+      className="group/card relative w-36 shrink-0 snap-start [-webkit-touch-callout:none] sm:w-40"
       data-testid="song-card"
+      data-song={song.id}
+      onPointerDown={(event) => {
+        pressed.current = false;
+        if (event.pointerType !== "touch") return;
+        cancelPress();
+        press.current = {
+          x: event.clientX,
+          y: event.clientY,
+          timer: setTimeout(() => {
+            press.current = null;
+            pressed.current = true;
+            onPeek();
+          }, LONG_PRESS_MS),
+        };
+      }}
+      onPointerMove={(event) => {
+        if (press.current && Math.hypot(event.clientX - press.current.x, event.clientY - press.current.y) > LONG_PRESS_SLOP) cancelPress();
+      }}
+      onPointerUp={cancelPress}
+      onPointerCancel={cancelPress}
+      onContextMenu={(event) => {
+        // A touch screen's own menu for a long press on a link: the preview has what one wants there.
+        if (pressed.current || press.current) event.preventDefault();
+      }}
+      onClickCapture={(event) => {
+        if (!pressed.current) return;
+        pressed.current = false;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
     >
-      <SongCover song={song} className="transition-transform group-hover:scale-[1.02]" />
-      <span className="flex min-w-0 flex-col">
-        <span className="truncate text-sm font-medium group-hover:underline">{song.title}</span>
-        {artists ? <span className="truncate text-xs text-muted-foreground">{artists}</span> : null}
-      </span>
-    </Link>
+      <Link
+        to="/library/$songVersionId"
+        params={{ songVersionId: song.id }}
+        search={from ? { from } : {}}
+        className="flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        draggable={false}
+      >
+        <SongCover song={song} className="transition-transform group-hover/card:scale-[1.02]" />
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-sm font-medium group-hover/card:underline">{song.title}</span>
+          {artists ? <span className="truncate text-xs text-muted-foreground">{artists}</span> : null}
+        </span>
+      </Link>
+      {/* Over the cover's top left (the lock of a private song is on its right). Not on a touch screen: see the long press. */}
+      <div
+        className="absolute top-1.5 left-1.5 hidden items-center gap-1 opacity-0 transition-opacity group-focus-within/card:opacity-100 group-hover/card:opacity-100 has-[[aria-expanded=true]]:opacity-100 [@media(hover:hover)]:flex"
+        data-testid="song-card-actions"
+      >
+        <FavoriteButton songVersionId={song.id} initial={!!song.isFavorite} variant="card" onChange={onFavoriteChange} />
+        <AddToSetIconButton songVersionId={song.id} songTitle={song.title} className={CARD_ACTION} testId="song-card-add-to-set" />
+        <button type="button" className={CARD_ACTION} aria-label={t("library.peek.expand")} title={t("library.peek.expand")} onClick={onPeek} data-testid="song-card-expand">
+          <Maximize2 />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -113,7 +184,13 @@ function useScrollEnds() {
 
 function Shelf({ id, title, songs, more, from }: { id: string; title: string; songs: CardSong[]; more?: ReactNode; from?: string }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const { ref, ends, scroll } = useScrollEnds();
+  // The song looked at without leaving the shelf (issue #434), by its place in it.
+  const [peek, setPeek] = useState<string | null>(null);
+  const peekIndex = peek === null ? -1 : songs.findIndex((song) => song.id === peek);
+  // A star given or taken: the Favorites shelf follows.
+  const refresh = () => void router.invalidate();
   // Its songs in another order (a song just opened leads Recently viewed): back to the start. Otherwise the browser
   // keeps the card that was first in place (scroll snapping), pushing the new first one out past the column's edge.
   const order = songs.map((song) => song.id).join();
@@ -143,9 +220,10 @@ function Shelf({ id, title, songs, more, from }: { id: string; title: string; so
       </div>
       <div ref={ref} data-testid="shelf-row" className="bleed-x flex snap-x gap-4 overflow-x-auto pt-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {songs.map((song) => (
-          <SongCard key={song.id} song={song} from={from} />
+          <SongCard key={song.id} song={song} from={from} onPeek={() => setPeek(song.id)} onFavoriteChange={refresh} />
         ))}
       </div>
+      <SongPeek songs={songs} index={peekIndex < 0 ? null : peekIndex} onIndexChange={(index) => setPeek(songs[index]?.id ?? null)} onClose={() => setPeek(null)} from={from} onFavoriteChange={refresh} />
     </section>
   );
 }

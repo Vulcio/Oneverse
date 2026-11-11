@@ -13,12 +13,16 @@ The **Library** holds every song you can see: your own, your teams', and the glo
 
 - **Newly added** - the latest songs you can see; **See all** lists them all on **Songs**, newest first.
 - **Recently viewed** - the songs you opened last (on their page, in a set or in Live). Only you see yours.
-- **Favorites** - the songs you starred: the star beside **Share** on a song's page (**Add to favorites**, **Remove from favorites**). It shows once you have one. **See all** lists them, as the **Favorites** filter above the list and in the sidebar's panel do. Your favorites are your own.
+- **Favorites** - the songs you starred: the star on a song's card here, or beside **Share** on its page (**Add to favorites**, **Remove from favorites**). It shows once you have one. **See all** lists them, as the **Favorites** filter above the list and in the sidebar's panel do. Your favorites are your own.
 - **Popular in your teams** - what your teams play and look at most: songs in your teams' sets and opened by their members over the last 90 days.
 
 When a row has more songs than fit, swipe it, or use the arrows beside its title with a mouse.
 
-A song without an image of its own gets a cover from its title's colour and initials. Below the rows, **Recently updated** shows the songs changed last, and its link opens **Songs**. The search box at the top of the home searches **Songs**.
+A song without an image of its own gets a cover from its title's colour and initials. Below the rows, **Recently updated** shows the songs changed last, and its link opens **Songs**.
+
+Point at a song's card and three buttons show on its cover: the star, **Add to set** and **Preview**. **Preview** opens the song at a glance without leaving the page: its cover, artists, key, tempo and time signature, its songbook numbers and tags, and its first lines, with the star, **Add to set** and **Open song**. **Previous** and **Next** - or the left and right arrow keys - go through the row's songs. On a touch screen, press and hold a card to open the preview, and swipe it left or right for the next or the previous song; a tap still opens the song.
+
+To search, use **Search** at the top of every page, or the box above **Songs**.
 
 ## Searching and filtering
 

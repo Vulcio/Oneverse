@@ -11,11 +11,14 @@ const POPULAR_DAYS = 90;
 /** A view within this long of the last one doesn't count again. */
 const VIEW_GAP_MS = 60 * 60 * 1000;
 
+/** A song on a shelf: as in a list, and whether the user starred it. */
+type ShelfItem = ListItem & { isFavorite: boolean };
+
 export interface LibraryHome {
-  newest: ListItem[];
-  recent: ListItem[];
-  favorites: ListItem[];
-  popular: ListItem[];
+  newest: ShelfItem[];
+  recent: ShelfItem[];
+  favorites: ShelfItem[];
+  popular: ShelfItem[];
 }
 
 /**
@@ -46,7 +49,13 @@ export class LibraryHomeService {
       // Ranked on more than a shelf's worth, since some may not be visible to this user.
       this.songs.listItems(user, popular).then((items) => items.slice(0, SHELF)),
     ]);
-    return { newest: newestItems, recent: recentItems, favorites: favoriteItems, popular: popularItems };
+    // Which of them the user starred (issue #434): a card's star is right before it's opened.
+    const shown = [...newestItems, ...recentItems, ...popularItems].map((item) => item.id);
+    const starred = new Set(
+      (await this.prisma.client.favoriteSong.findMany({ where: { userId: user.id, songVersionId: { in: shown } }, select: { songVersionId: true } })).map((row) => row.songVersionId),
+    );
+    const marked = (items: ListItem[], all = false) => items.map((item) => ({ ...item, isFavorite: all || starred.has(item.id) }));
+    return { newest: marked(newestItems), recent: marked(recentItems), favorites: marked(favoriteItems, true), popular: marked(popularItems) };
   }
 
   /**

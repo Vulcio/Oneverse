@@ -2116,6 +2116,8 @@ export interface SongVersionSummary {
   songbookReferences?: string[];
   /** Searched in the lyrics (issue #221): the line found, the words found in it. */
   lyricsMatch?: LyricsMatch;
+  /** In the viewer's favorites (issue #81): on the Library's home (issue #434) and a song's own page; left out elsewhere. */
+  isFavorite?: boolean;
 }
 
 
@@ -2576,8 +2578,6 @@ export interface SongVersionDetail extends SongVersionSummary {
   canEdit: boolean;
   /** Whether they may delete, publish or share it, or change its links and everyone's files (#77). */
   canManage: boolean;
-  /** In the user's favorites (issue #81). */
-  isFavorite?: boolean;
 }
 
 /** A song's optional fields. A field left out is left alone; null clears it. */

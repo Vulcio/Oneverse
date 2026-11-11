@@ -67,7 +67,20 @@ export function AddToSetPopover({ songVersionId, songTitle, open, onOpenChange, 
  * The same, as a small button on a song found by the search box (Ctrl K):
  * `onLeave` closes the search when a set is opened from it.
  */
-export function AddToSetIconButton({ songVersionId, songTitle, onLeave }: { songVersionId: string; songTitle: string; onLeave: () => void }) {
+export function AddToSetIconButton({
+  songVersionId,
+  songTitle,
+  onLeave,
+  className = "flex h-7 items-center rounded-md border bg-background px-2 text-foreground hover:bg-accent [&_svg]:size-3.5",
+  testId = "search-add-to-set",
+}: {
+  songVersionId: string;
+  songTitle: string;
+  onLeave?: () => void;
+  /** Its looks elsewhere: on a card in the Library (issue #434). */
+  className?: string;
+  testId?: string;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const adding = useAdding();
@@ -81,8 +94,8 @@ export function AddToSetIconButton({ songVersionId, songTitle, onLeave }: { song
               type="button"
               aria-label={t("sets.addToSet.button")}
               title={t("sets.addToSet.button")}
-              className="flex h-7 items-center rounded-md border bg-background px-2 text-foreground hover:bg-accent [&_svg]:size-3.5"
-              data-testid="search-add-to-set"
+              className={className}
+              data-testid={testId}
             />
           }
         >

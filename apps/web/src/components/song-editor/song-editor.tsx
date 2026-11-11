@@ -27,7 +27,8 @@ import { sendDoc, usePresence, useSongPresence, watchSong } from "#/lib/live-not
 import { useChartNotes } from "#/components/notes";
 import { useDisplaySettings } from "#/lib/display-settings";
 import { useSongNotes } from "#/lib/notes";
-import { FileText, History, Info, Layers, Link2, MoreHorizontal, Music, PenLine, Share2, Star } from "lucide-react";
+import { FileText, History, Info, Layers, Link2, MoreHorizontal, Music, PenLine, Share2 } from "lucide-react";
+import { FavoriteButton } from "#/components/favorite-button";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { OfflinePinButton } from "#/components/offline-pin-button";
@@ -1049,35 +1050,6 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         </DialogContent>
       </Dialog>
     </form>
-  );
-}
-
-/** A star: the song in the user's favorites, or not (issue #81). */
-function FavoriteButton({ songVersionId, initial }: { songVersionId: string; initial: boolean }) {
-  const { t } = useTranslation();
-  const [on, setOn] = useState(initial);
-  const [busy, setBusy] = useState(false);
-  const label = on ? t("library.home.unfavorite") : t("library.home.favorite");
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      aria-label={label}
-      title={label}
-      aria-pressed={on}
-      disabled={busy}
-      onClick={() => {
-        setBusy(true);
-        setOn(!on);
-        apiClient
-          .setFavorite(songVersionId, !on)
-          .catch(() => setOn(on))
-          .finally(() => setBusy(false));
-      }}
-    >
-      <Star className={on ? "fill-amber-400 text-amber-500" : undefined} />
-    </Button>
   );
 }
 
