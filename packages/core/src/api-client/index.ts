@@ -9,6 +9,8 @@ import type {
   WordsLayoutValue,
   WordsRepeatsValue,
   WordsSungValue,
+  MetronomeDisplayValue,
+  MetronomeLightUpValue,
   DisplayFontValue,
   ControlsLayoutValue,
   DiagramPositionValue,
@@ -667,6 +669,13 @@ export interface DisplaySettings {
   wordsSung?: WordsSungValue;
   wordsFill?: boolean;
   wordsChords?: boolean;
+  /** The metronome's beat on a song's page (issue #443). */
+  metronomeDisplay?: MetronomeDisplayValue;
+  metronomeBrightness?: number;
+  metronomeLightUp?: MetronomeLightUpValue;
+  /** The Drums view (issue #107). */
+  drumsWords?: boolean;
+  drumsNext?: boolean;
   /** Live's controls (issue #224). */
   controls?: ControlsLayoutValue;
   controlsPosition?: ControlsPositionValue;

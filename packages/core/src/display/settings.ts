@@ -13,6 +13,8 @@ import type {
   WordsLayoutValue,
   WordsRepeatsValue,
   WordsSungValue,
+  MetronomeDisplayValue,
+  MetronomeLightUpValue,
   DisplayFontValue,
   DisplaySpacingValue,
 } from "../constants/index.js";
@@ -64,6 +66,17 @@ export interface EffectiveDisplaySettings {
     fill: boolean;
     /** The chords, small over the words. */
     chords: boolean;
+  };
+  /** The metronome's beat on a song's page (issue #443), while it plays: how it shows, the background's brightness (0.1-1), which beats light up. */
+  metronome: {
+    display: MetronomeDisplayValue;
+    brightness: number;
+    lightUp: MetronomeLightUpValue;
+  };
+  /** The Drums view (issue #107): the words sung under the beat, and the next section's cue. */
+  drums: {
+    words: boolean;
+    next: boolean;
   };
   /** Live's controls (issue #224): a footer, floating buttons or none; which are hidden; floating ones' opacity. */
   controls: ControlsLayoutValue;
@@ -139,6 +152,15 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
       sung: own.wordsSung ?? "dim",
       fill: own.wordsFill ?? true,
       chords: own.wordsChords ?? false,
+    },
+    metronome: {
+      display: own.metronomeDisplay ?? "pill",
+      brightness: own.metronomeBrightness ?? 0.3,
+      lightUp: own.metronomeLightUp ?? "every",
+    },
+    drums: {
+      words: own.drumsWords ?? true,
+      next: own.drumsNext ?? true,
     },
     controls: own.controls ?? "footer",
     controlsPosition: own.controlsPosition ?? "bottom-right",

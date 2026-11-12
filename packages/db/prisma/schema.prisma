@@ -80,6 +80,7 @@ enum LiveView {
   GRID
   PDF
   WORDS
+  DRUMS
 }
 
 enum MidiEventType {

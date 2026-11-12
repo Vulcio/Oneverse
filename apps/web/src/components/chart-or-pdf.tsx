@@ -1,5 +1,5 @@
 import type { Attachment, ChartPreferences, LiveViewValue } from "@oneverse/core";
-import { AudioLines, FileText, LayoutGrid, MicVocal, Music } from "lucide-react";
+import { AudioLines, Drum, FileText, LayoutGrid, MicVocal, Music } from "lucide-react";
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -49,6 +49,8 @@ export interface ReadingView {
   grid: boolean;
   /** The words laid out for singers (issue #416), rather than the chart (never with a PDF). */
   words: boolean;
+  /** What a drummer needs (issue #107): the sections, the beat and the words, big (never with a PDF). */
+  drums: boolean;
   choose: (view: LiveViewValue, pdfId?: string) => void;
   /** Where to read a PDF from: its signed address online (streamed by ranges), its bytes offline. */
   source: (file: Attachment) => Promise<PdfSource>;
@@ -106,6 +108,7 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
     shown,
     grid: view === "GRID",
     words: view === "WORDS",
+    drums: view === "DRUMS",
     choose: (next, pdfId) => {
       chosen.current = true;
       const change: ViewChoice = next === "PDF" ? { view: next, ...(pdfId ? { pdfId } : {}) } : { view: next };
@@ -126,12 +129,12 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
   };
 }
 
-/** The Chart / Grid / Words / PDF switch - PDF when the song has one - and which PDF when there are several. */
+/** The Chart / Grid / Words / Drums / PDF switch - PDF when the song has one - and which PDF when there are several. */
 export function ViewSwitch({ reading, compact = false, tracks }: { reading: ReadingView; compact?: boolean; /** The Tracks view (issue #374), where the page offers it: shown or not, and how to show it. */ tracks?: { shown: boolean; show: () => void } }) {
   const { t } = useTranslation();
-  const { pdfs, shown, grid, words, choose } = reading;
+  const { pdfs, shown, grid, words, drums, choose } = reading;
   const onTracks = !!tracks?.shown;
-  const chart = !shown && !grid && !words && !onTracks;
+  const chart = !shown && !grid && !words && !drums && !onTracks;
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="chart-view">
       <div className="inline-flex rounded-md border p-0.5" role="group" aria-label={t("chartView.label")}>
@@ -139,7 +142,7 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
           type="button"
           aria-pressed={chart}
           onClick={() => choose("CHART")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", chart ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", chart ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
           title={compact ? t("chartView.chart") : undefined}
           data-testid="chart-view-chart"
         >
@@ -150,7 +153,7 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
           type="button"
           aria-pressed={grid && !onTracks}
           onClick={() => choose("GRID")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", grid && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", grid && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
           title={compact ? t("chartView.grid") : undefined}
           data-testid="chart-view-grid"
         >
@@ -161,19 +164,30 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
           type="button"
           aria-pressed={words && !onTracks}
           onClick={() => choose("WORDS")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", words && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", words && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
           title={compact ? t("chartView.words") : undefined}
           data-testid="chart-view-words"
         >
           <MicVocal />
           <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.words")}</span>
         </button>
+        <button
+          type="button"
+          aria-pressed={drums && !onTracks}
+          onClick={() => choose("DRUMS")}
+          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", drums && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+          title={compact ? t("chartView.drums") : undefined}
+          data-testid="chart-view-drums"
+        >
+          <Drum />
+          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.drums")}</span>
+        </button>
         {pdfs.length > 0 ? (
           <button
             type="button"
             aria-pressed={!!shown && !onTracks}
             onClick={() => choose("PDF", shown?.id ?? pdfs[0]!.id)}
-            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", shown && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", shown && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
             title={compact ? t("chartView.pdf") : undefined}
             data-testid="chart-view-pdf"
           >
@@ -186,7 +200,7 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
             type="button"
             aria-pressed={onTracks}
             onClick={tracks.show}
-            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1.5 sm:px-2.5" : "px-2.5", onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
             title={compact ? t("chartView.tracks") : undefined}
             data-testid="chart-view-tracks"
           >
@@ -223,6 +237,7 @@ export function ChartOrPdf({
   store,
   grid,
   words,
+  drums,
   structure,
   tracks,
   overlay,
@@ -236,6 +251,8 @@ export function ChartOrPdf({
   grid?: ReactNode;
   /** Its words laid out for singers (issue #416); without them (no chart), the chart's place shows. */
   words?: ReactNode;
+  /** What a drummer needs (issue #107): its own sections and beat, so no sections bar over it. */
+  drums?: ReactNode;
   /** The sections bar (issue #416), over the grid and the words. */
   structure?: ReactNode;
   /** Its parts as lanes (issue #374), where the song has stems. */
@@ -272,6 +289,8 @@ export function ChartOrPdf({
           {structure}
           {grid}
         </>
+      ) : reading.drums && drums ? (
+        drums
       ) : reading.words && words ? (
         <>
           {structure}

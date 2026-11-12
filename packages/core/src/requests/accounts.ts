@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { NEW_NOTES, NOTE_COLORS, NOTE_LOOKS, NOTE_PLACEMENTS, NOTE_SHOWS, NOTE_SIZES } from "../notes/index.js";
-import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, WORDS_SUNG, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
+import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, WORDS_SUNG, METRONOME_DISPLAYS, METRONOME_LIGHT_UP, METRONOME_BRIGHTNESSES, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
 import { isTuningId, type InstrumentId } from "../chords/shapes.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
@@ -90,6 +90,13 @@ export const DisplaySettingsSchema = z.strictObject({
   wordsSung: z.enum(WORDS_SUNG).nullable().optional(),
   wordsFill: z.boolean().nullable().optional(),
   wordsChords: z.boolean().nullable().optional(),
+  /** The metronome's beat on a song's page (issue #443): how it shows, how bright the background's columns are, which beats light up. */
+  metronomeDisplay: z.enum(METRONOME_DISPLAYS).nullable().optional(),
+  metronomeBrightness: z.union(METRONOME_BRIGHTNESSES.map((value) => z.literal(value)) as [z.ZodLiteral<number>, ...z.ZodLiteral<number>[]]).nullable().optional(),
+  metronomeLightUp: z.enum(METRONOME_LIGHT_UP).nullable().optional(),
+  /** The Drums view (issue #107): the words sung (the line and the next), and the next section's cue. */
+  drumsWords: z.boolean().nullable().optional(),
+  drumsNext: z.boolean().nullable().optional(),
   /** Live's controls (issue #224): where they are, which are hidden, and floating ones' opacity. */
   controls: z.enum(CONTROLS_LAYOUTS).nullable().optional(),
   controlsPosition: z.enum(CONTROLS_POSITIONS).nullable().optional(),

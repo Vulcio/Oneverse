@@ -15,6 +15,8 @@ import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
 import { cn } from "@oneverse/ui/lib/utils";
 import { FieldError } from "@oneverse/ui/components/field";
+import { DrumsView } from "#/components/drums-view";
+import { SongBeatDisplay } from "#/components/metronome-display";
 
 const EMPTY: ChartPreferences = { $schema: "chart-preferences/v1", hiddenChordIds: [], simplifyChords: false, hideBassNotes: false };
 
@@ -45,9 +47,10 @@ export function renderPlayerChart(
  * key on top, and the player's own view - chords they've hidden, simpler
  * chords, no bass notes, capo shapes, solfège. Changes save as they're
  * made, for this player only. `grid`: as its chord grid (issue #238);
- * `words`: its words laid out for singers (issue #416).
+ * `words`: its words laid out for singers (issue #416); `drums`: what a
+ * drummer needs (issue #107).
  */
-export function PlayerChart({ view, openNoteId, grid = false, words = false }: { view: SetlistSongView; /** A note's thread to open (a notification's link). */ openNoteId?: string; grid?: boolean; words?: boolean }) {
+export function PlayerChart({ view, openNoteId, grid = false, words = false, drums = false }: { view: SetlistSongView; /** A note's thread to open (a notification's link). */ openNoteId?: string; grid?: boolean; words?: boolean; drums?: boolean }) {
   const { t } = useTranslation();
   const song = view.song!;
   const [preferences, setPreferences] = useState<ChartPreferences>(view.view.preferences ?? EMPTY);
@@ -95,13 +98,13 @@ export function PlayerChart({ view, openNoteId, grid = false, words = false }: {
         <DisplayPanel mode={displayMode} settings={display} player={player} className="mr-1" />
         <span className="mr-1 [&>button]:h-7 [&>button]:text-xs">{notes.button}</span>
         <span className="mr-1 text-xs font-medium text-muted-foreground">{t("player.myView")}</span>
-        {grid || words ? null : (
+        {grid || words || drums ? null : (
           <Toggle pressed={hiding} onClick={() => setHiding(!hiding)}>
             <EyeOff className="size-3.5" aria-hidden />
             {t("player.hideChords")}
           </Toggle>
         )}
-        {words ? null : (
+        {words || drums ? null : (
         <>
         <Toggle pressed={preferences.simplifyChords} onClick={() => savePreferences({ ...preferences, simplifyChords: !preferences.simplifyChords })}>
           {t("player.simplify")}
@@ -138,8 +141,11 @@ export function PlayerChart({ view, openNoteId, grid = false, words = false }: {
       ) : null}
       {notes.top}
       {(grid || words) && display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : null}
-      <div ref={chartArea} style={{ zoom: display.textSize }}>
-        {words ? (
+      {/* The metronome's beat as the player chose (issue #443). */}
+      <SongBeatDisplay songId={song.id} chart={chart} document={song.document} settings={display.metronome} />
+      {drums ? <DrumsView songId={song.id} chart={chart} document={song.document} settings={display} /> : null}
+      <div ref={chartArea} style={{ zoom: display.textSize }} hidden={drums}>
+        {drums ? null : words ? (
           <WordsView songId={song.id} chart={chart} document={song.document} settings={display.words} currentPass={currentPass} zoom={display.textSize} emptyText={t("sets.noChart")} />
         ) : grid ? (
           <ChordGrid songId={song.id} chart={chart} document={song.document} chordColors={display.chordColors} barsPerRow={display.gridBarsPerRow} emptyText={t("sets.noChart")} />

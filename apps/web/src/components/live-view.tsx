@@ -14,6 +14,9 @@ import { ChordGrid } from "#/components/chord-grid";
 import { StructureBar, useCurrentPass } from "#/components/structure-bar";
 import { WordsView } from "#/components/words-view";
 import { useWordsOnScreen } from "#/lib/words-view";
+import { useDrumsOnScreen } from "#/lib/song-beat";
+import { DrumsView } from "#/components/drums-view";
+import { SongBeatDisplay } from "#/components/metronome-display";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
 import { DisplayPanel } from "#/components/display-panel";
@@ -375,6 +378,8 @@ export function LiveView({
   const gridOnScreen = !!useGridControls();
   // Nor over the Words view (issue #416).
   const wordsOnScreen = useWordsOnScreen();
+  // Nor over the Drums view (issue #107), which has its own sections and beat.
+  const drumsOnScreen = useDrumsOnScreen();
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const columns = display.columns;
   const [current, pickPass] = useCurrentPass(scroller, steps, song.id, columns !== "1", () => sections.current[at] ?? null);
@@ -427,7 +432,7 @@ export function LiveView({
   return (
     <div className="relative flex h-dvh flex-col bg-background text-foreground" data-testid="live-view">
       {/* Always the same height; the song's own title is at the top of its chart (issue #68). */}
-      <header className="flex h-14 shrink-0 items-center gap-1 border-b-2 border-b-primary px-2 sm:gap-3 sm:px-4">
+      <header className="flex h-14 shrink-0 items-center gap-0.5 border-b-2 border-b-primary px-2 sm:gap-3 sm:px-4">
         {/* The sidebar (issue #154): beside the song on a wider screen, a sheet on a phone. */}
         <SidebarTrigger className="size-10 text-muted-foreground [&_svg]:size-5" data-testid="live-sidebar" />
         {song.exit ? (
@@ -457,8 +462,10 @@ export function LiveView({
       </header>
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, following the music. */}
-      {chart && !pdf && display.bars && !gridOnScreen && !wordsOnScreen ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
-      {steps.length > 0 && !pdf && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} /> : null}
+      {chart && !pdf && display.bars && !gridOnScreen && !wordsOnScreen && !drumsOnScreen ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
+      {/* The metronome's beat as the player chose (issue #443). */}
+      {chart && !pdf ? <SongBeatDisplay songId={song.id} chart={chart} document={song.notes?.document} settings={display.metronome} /> : null}
+      {steps.length > 0 && !pdf && !drumsOnScreen && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} /> : null}
 
       <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {/* The whole screen's width (issue #177): a long song flows into columns rather than down. */}
@@ -685,6 +692,9 @@ function LiveSongSection({
         ) : chart && song.reading?.grid ? (
           // Its chords in bars (issue #238), following the music as the bars row does.
           <ChordGrid songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} barsPerRow={display.gridBarsPerRow} emptyText={t("sets.noChart")} />
+        ) : chart && song.reading?.drums ? (
+          // What a drummer needs (issue #107): the sections, the beat and the words, big.
+          <DrumsView songId={song.id} chart={chart} document={song.notes?.document} settings={display} live />
         ) : chart && song.reading?.words ? (
           // Its words laid out for singers (issue #416), at their own size.
           <WordsView songId={song.id} chart={chart} document={song.notes?.document} settings={display.words} currentPass={currentPass} zoom={display.textSize} live emptyText={t("sets.noChart")} />

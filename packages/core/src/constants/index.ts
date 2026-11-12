@@ -131,6 +131,14 @@ export type WordsRepeatsValue = (typeof WORDS_REPEATS)[number];
 /** Lines already sung, while following the music: dimmed, or gone. */
 export const WORDS_SUNG = ["dim", "hide"] as const;
 export type WordsSungValue = (typeof WORDS_SUNG)[number];
+/** How the metronome's beat shows on a song's page (issue #443): today's pill only, a row of beat blocks, the beat's number big, or the whole background in columns, one per beat. */
+export const METRONOME_DISPLAYS = ["pill", "blocks", "count", "background"] as const;
+export type MetronomeDisplayValue = (typeof METRONOME_DISPLAYS)[number];
+/** Which beats light up (issue #443): every one, the accents only, or the accents and the medium beats. */
+export const METRONOME_LIGHT_UP = ["every", "accents", "strong"] as const;
+export type MetronomeLightUpValue = (typeof METRONOME_LIGHT_UP)[number];
+/** How bright a lit beat is, behind the chart (issue #443): 10% to 100%. */
+export const METRONOME_BRIGHTNESSES = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] as const;
 /** Text size, as a zoom of the chart: its own proportions kept. */
 export const DISPLAY_TEXT_SIZES = [0.75, 0.875, 1, 1.25, 1.5, 1.75, 2, 2.5, 3] as const;
 /** Where Live's controls are (issue #224): a bar along the bottom, round buttons over the chart, or none. */
@@ -145,8 +153,8 @@ export type LiveControlValue = (typeof LIVE_CONTROLS)[number];
 /** How opaque floating controls are, 20% to 100%. */
 export const CONTROLS_OPACITIES = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] as const;
 
-/** How a song reads (issue #155): its chart (chords and lyrics), its chords in bars (the chord grid, issue #238), its PDF, or its words laid out for singers (issue #416). More to come: drummer (#107). */
-export const LIVE_VIEWS = ["CHART", "GRID", "PDF", "WORDS"] as const;
+/** How a song reads (issue #155): its chart (chords and lyrics), its chords in bars (the chord grid, issue #238), its PDF, its words laid out for singers (issue #416), or what a drummer needs (issue #107): the sections, the beat and the words, big. */
+export const LIVE_VIEWS = ["CHART", "GRID", "PDF", "WORDS", "DRUMS"] as const;
 export type LiveViewValue = (typeof LIVE_VIEWS)[number];
 
 /**

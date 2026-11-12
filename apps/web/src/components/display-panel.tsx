@@ -1,4 +1,4 @@
-import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings } from "@oneverse/core";
+import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings, METRONOME_BRIGHTNESSES, METRONOME_DISPLAYS, METRONOME_LIGHT_UP } from "@oneverse/core";
 import {
   ArrowDown,
   Superscript,
@@ -50,14 +50,18 @@ import {
   Square,
   MicVocal,
   ListOrdered,
+  Drum,
+  Activity,
 } from "lucide-react";
 import { GRID_LYRICS, setGridLyrics, useGridLyrics, type GridLyrics } from "#/lib/grid-lyrics";
 import { useGridControls, type GridControls } from "#/lib/grid-controls";
 import { useWordsOnScreen } from "#/lib/words-view";
+import { useDrumsOnScreen } from "#/lib/song-beat";
 import { setTrackColours, setTrackWaves, setTrackZoom, TRACK_ZOOMS, useTrackColours, useTrackWaves, useTrackZoom } from "#/lib/track-colours";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
+import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { ButtonGroup } from "@oneverse/ui/components/button-group";
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle, DrawerTrigger } from "@oneverse/ui/components/drawer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@oneverse/ui/components/select";
@@ -69,11 +73,12 @@ import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@oneverse/ui/lib/utils";
 
-const SECTIONS = ["grid", "words", "text", "chords", "instrument", "layout", "notes", "controls", "tracks"] as const;
+const SECTIONS = ["grid", "words", "drums", "text", "chords", "metronome", "instrument", "layout", "notes", "controls", "tracks"] as const;
 type Section = (typeof SECTIONS)[number];
-const SECTION_ICONS: Record<Section, LucideIcon> = { grid: Grid2x2, words: MicVocal, text: Type, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
-/** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390); the chord grid's and the Words view's, while one is on screen (issues #408, #416). */
-const sectionsFor = (mode: AppModeValue, tracks: boolean, grid: boolean, words: boolean) => SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks) && (one !== "grid" || grid) && (one !== "words" || words));
+const SECTION_ICONS: Record<Section, LucideIcon> = { grid: Grid2x2, words: MicVocal, drums: Drum, text: Type, metronome: Activity, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
+/** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390); the chord grid's, the Words view's and the Drums view's, while one is on screen (issues #408, #416, #107). */
+const sectionsFor = (mode: AppModeValue, tracks: boolean, grid: boolean, words: boolean, drums: boolean) =>
+  SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks) && (one !== "grid" || grid) && (one !== "words" || words) && (one !== "drums" || drums));
 
 const KEY = "songverse.display.section";
 /** From here the panel is a column down the right, every section in it (issue #209). */
@@ -120,11 +125,12 @@ export function DisplayPanel({
   const [kept, setSection] = useState<Section>(keptSection);
   const grid = useGridControls();
   const words = useWordsOnScreen();
-  const sections = sectionsFor(mode, tracks, !!grid, words);
+  const drums = useDrumsOnScreen();
+  const sections = sectionsFor(mode, tracks, !!grid, words, drums);
   const [open, setOpen] = useState(false);
   // Opened over the chord grid or the Words view, it shows its section first (issues #408, #416); picked again, another.
   const [onView, setOnView] = useState(false);
-  const section = onView && grid ? "grid" : onView && words ? "words" : sections.includes(kept) ? kept : "text";
+  const section = onView && grid ? "grid" : onView && words ? "words" : onView && drums ? "drums" : sections.includes(kept) ? kept : "text";
   // A large screen has room for a column down the right with every section in it; a phone, the bottom.
   const wide = useMediaQuery(WIDE);
   const shown = (one: Section) => wide || section === one;
@@ -135,7 +141,7 @@ export function DisplayPanel({
 
   function pick(next: Section) {
     setOnView(false);
-    if (next === "grid" || next === "words") return setOnView(true);
+    if (next === "grid" || next === "words" || next === "drums") return setOnView(true);
     setSection(next);
     try {
       localStorage.setItem(KEY, next);
@@ -150,7 +156,7 @@ export function DisplayPanel({
       disablePointerDismissal
       open={open}
       onOpenChange={(next) => {
-        if (next) setOnView(!!grid || words);
+        if (next) setOnView(!!grid || words || drums);
         setOpen(next);
       }}
       swipeDirection={wide ? "right" : "down"}
@@ -191,7 +197,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, structureBar: null, wordsSize: null, wordsLayout: null, wordsLabels: null, wordsRepeats: null, wordsInstrumental: null, wordsNext: null, wordsSung: null, wordsFill: null, wordsChords: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, structureBar: null, wordsSize: null, wordsLayout: null, wordsLabels: null, wordsRepeats: null, wordsInstrumental: null, wordsNext: null, wordsSung: null, wordsFill: null, wordsChords: null, metronomeDisplay: null, metronomeBrightness: null, metronomeLightUp: null, drumsWords: null, drumsNext: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -211,6 +217,11 @@ export function DisplayPanel({
           {words && shown("words") ? (
             <SectionBlock section="words" heading={wide}>
               <WordsSection mode={mode} settings={settings} onChange={change} />
+            </SectionBlock>
+          ) : null}
+          {drums && shown("drums") ? (
+            <SectionBlock section="drums" heading={wide}>
+              <DrumsSection settings={settings} onChange={change} />
             </SectionBlock>
           ) : null}
           {shown("text") ? (
@@ -310,6 +321,11 @@ export function DisplayPanel({
                   ]}
                 />
               </Row>
+            </SectionBlock>
+          ) : null}
+          {shown("metronome") ? (
+            <SectionBlock section="metronome" heading={wide}>
+              <MetronomeSection settings={settings} onChange={change} />
             </SectionBlock>
           ) : null}
           {shown("instrument") ? (
@@ -556,6 +572,69 @@ function SectionsBarRow({ mode, settings, onChange }: { mode: AppModeValue; sett
 }
 
 /** The Words view's section (issue #416): how the words read for a singer. */
+/** How the metronome's beat shows on a song's page, while it plays (issue #443). */
+function MetronomeSection({ settings, onChange }: { settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
+  const { t } = useTranslation();
+  const metronome = settings.metronome;
+  return (
+    <>
+      <Row label={t("display.metronomeDisplay")}>
+        <Choices
+          value={metronome.display}
+          onChange={(metronomeDisplay) => onChange({ metronomeDisplay })}
+          name="metronomeDisplay"
+          options={METRONOME_DISPLAYS.map((value) => ({ value, label: t(`display.metronomeDisplays.${value}Hint`), content: t(`display.metronomeDisplays.${value}`) }))}
+        />
+      </Row>
+      {metronome.display === "background" ? (
+        <Row label={t("display.metronomeBrightness")}>
+          <NativeSelect compact value={String(metronome.brightness)} onChange={(event) => onChange({ metronomeBrightness: Number(event.target.value) })} aria-label={t("display.metronomeBrightness")} data-testid="display-metronomeBrightness">
+            {METRONOME_BRIGHTNESSES.map((value) => (
+              <option key={value} value={String(value)}>
+                {Math.round(value * 100)}%
+              </option>
+            ))}
+          </NativeSelect>
+        </Row>
+      ) : null}
+      {metronome.display !== "pill" ? (
+        <Row label={t("display.metronomeLightUp")}>
+          <Choices
+            value={metronome.lightUp}
+            onChange={(metronomeLightUp) => onChange({ metronomeLightUp })}
+            name="metronomeLightUp"
+            options={METRONOME_LIGHT_UP.map((value) => ({ value, label: t(`display.metronomeLightUps.${value}`), content: t(`display.metronomeLightUps.${value}`) }))}
+          />
+        </Row>
+      ) : null}
+      <p className="text-xs text-muted-foreground">{t("display.metronomeHint")}</p>
+    </>
+  );
+}
+
+/** The Drums view's options (issue #107): the words under the beat, the next section's cue. */
+function DrumsSection({ settings, onChange }: { settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
+  const { t } = useTranslation();
+  const both = (name: string, value: boolean, change: (value: boolean) => void) => (
+    <Choices
+      value={value ? "on" : "off"}
+      onChange={(next) => change(next === "on")}
+      name={name}
+      options={[
+        { value: "on", label: t("display.shown"), content: t("display.shown") },
+        { value: "off", label: t("display.hidden"), content: t("display.hidden") },
+      ]}
+    />
+  );
+  return (
+    <>
+      <Row label={t("display.drumsWords")}>{both("drumsWords", settings.drums.words, (drumsWords) => onChange({ drumsWords }))}</Row>
+      <Row label={t("display.drumsNext")}>{both("drumsNext", settings.drums.next, (drumsNext) => onChange({ drumsNext }))}</Row>
+      <p className="text-xs text-muted-foreground">{t("display.drumsHint")}</p>
+    </>
+  );
+}
+
 function WordsSection({ mode, settings, onChange }: { mode: AppModeValue; settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
   const { t } = useTranslation();
   const words = settings.words;

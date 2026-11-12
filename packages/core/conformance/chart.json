@@ -15165,6 +15165,15 @@
               "fill": true,
               "chords": false
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -15236,6 +15245,15 @@
               "fill": true,
               "chords": false
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -15301,6 +15319,15 @@
               "sung": "dim",
               "fill": true,
               "chords": false
+            },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
             },
             "controls": "footer",
             "controlsPosition": "bottom-right",
@@ -15369,6 +15396,15 @@
               "sung": "dim",
               "fill": true,
               "chords": false
+            },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
             },
             "controls": "footer",
             "controlsPosition": "bottom-right",
@@ -15452,6 +15488,15 @@
               "fill": true,
               "chords": false
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -15520,6 +15565,15 @@
               "sung": "dim",
               "fill": true,
               "chords": false
+            },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
             },
             "controls": "footer",
             "controlsPosition": "bottom-right",
@@ -15603,6 +15657,15 @@
               "fill": true,
               "chords": false
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -15669,6 +15732,15 @@
               "fill": true,
               "chords": false
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -15734,6 +15806,15 @@
               "sung": "dim",
               "fill": true,
               "chords": false
+            },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
             },
             "controls": "footer",
             "controlsPosition": "bottom-right",
@@ -15803,6 +15884,15 @@
               "fill": true,
               "chords": false
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -15870,6 +15960,15 @@
               "fill": true,
               "chords": false
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -15934,6 +16033,15 @@
               "sung": "dim",
               "fill": true,
               "chords": false
+            },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
             },
             "controls": "footer",
             "controlsPosition": "bottom-right",
@@ -16005,6 +16113,15 @@
               "sung": "dim",
               "fill": true,
               "chords": false
+            },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
             },
             "controls": "floating",
             "controlsPosition": "right",
@@ -16083,6 +16200,15 @@
               "fill": false,
               "chords": true
             },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
+            },
             "controls": "footer",
             "controlsPosition": "bottom-right",
             "hiddenControls": [],
@@ -16143,6 +16269,15 @@
               "sung": "dim",
               "fill": true,
               "chords": false
+            },
+            "metronome": {
+              "display": "pill",
+              "brightness": 0.3,
+              "lightUp": "every"
+            },
+            "drums": {
+              "words": true,
+              "next": true
             },
             "controls": "footer",
             "controlsPosition": "bottom-right",

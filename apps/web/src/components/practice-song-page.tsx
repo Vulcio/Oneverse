@@ -22,6 +22,9 @@ import { ChordGrid } from "#/components/chord-grid";
 import { WordsView } from "#/components/words-view";
 import { StructureBar, usePagePass } from "#/components/structure-bar";
 import { useWordsOnScreen } from "#/lib/words-view";
+import { useDrumsOnScreen } from "#/lib/song-beat";
+import { DrumsView } from "#/components/drums-view";
+import { SongBeatDisplay } from "#/components/metronome-display";
 import { Button } from "@oneverse/ui/components/button";
 import { AddToSetButton, AddToSetPopover } from "#/components/add-to-set";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -90,6 +93,7 @@ export function PracticeSongPage({
   const gridOnScreen = !!useGridControls();
   // The Words view (issue #416): no bars row over it either, its words are all there is.
   const wordsOnScreen = useWordsOnScreen();
+  const drumsOnScreen = useDrumsOnScreen();
   const player = useDiagramPlayer(accountPlayer);
   // Their own tempo for it, practising (issue #382): kept with their chart preferences, the song's own untouched.
   const [practiceTempo, setPracticeTempo] = useState<number | null>(null);
@@ -279,7 +283,10 @@ export function PracticeSongPage({
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls - under the header (h-14), never behind it. */}
       {/* Not over the chord grid (issue #408): it shows the same bars. */}
-      {display.bars && !gridOnScreen && !wordsOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
+      {display.bars && !gridOnScreen && !wordsOnScreen && !drumsOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
+
+      {/* The metronome's beat as the player chose (issue #443): beat blocks, the count big, or the background in columns. */}
+      <SongBeatDisplay songId={version.id} chart={chart} document={version.documentJson} settings={display.metronome} />
 
       {/* The chart, its chord grid (issue #238), its words (issue #416) or its PDF (issue #152). */}
       <div ref={reading}>
@@ -296,6 +303,7 @@ export function PracticeSongPage({
             </CardContent>
           </Card>
         }
+        drums={<DrumsView songId={version.id} chart={chart} document={version.documentJson} settings={display} />}
         // Autoscroll, over the chart, the grid or the PDF; the tracks have their own playhead.
         overlay={
           <FloatingAutoscroll
