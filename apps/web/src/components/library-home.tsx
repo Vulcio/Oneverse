@@ -74,7 +74,7 @@ const LONG_PRESS_SLOP = 10;
 const CARD_ACTION = "flex size-7 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-sm outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5";
 
 /** What comes over a card's cover with the mouse or the keyboard, or while its set picker is open. */
-const CARD_HOVER = "opacity-0 transition-opacity group-focus-within/card:opacity-100 card-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100";
+const CARD_HOVER = "opacity-0 transition-opacity group-focus-within/card:opacity-100 group-hover/card:opacity-100 has-[[aria-expanded=true]]:opacity-100";
 
 /**
  * A song on a shelf: its cover and name open it. With a mouse or the
@@ -136,9 +136,9 @@ function SongCard({ song, from, onPeek, onFavoriteChange }: { song: CardSong; fr
         className="flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
         draggable={false}
       >
-        <SongCover song={song} className="transition-transform card-hover:scale-[1.02]" />
+        <SongCover song={song} className="transition-transform group-hover/card:scale-[1.02]" />
         <span className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium card-hover:underline">{song.title}</span>
+          <span className="truncate text-sm font-medium group-hover/card:underline">{song.title}</span>
           {artists ? <span className="truncate text-xs text-muted-foreground">{artists}</span> : null}
         </span>
       </Link>

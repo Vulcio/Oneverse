@@ -10,6 +10,20 @@
 
 /* dark: a .dark class on a parent (each app decides when: its mode, the device's). */
 @custom-variant dark (&:where(.dark, .dark *));
+/* Hover effects with any pointer that hovers (issue #445). Tailwind's own asks
+   the device's main pointer, which a laptop with a touch screen reports as
+   touch even with a trackpad or a mouse: nothing hovered there. A phone has
+   no pointer that hovers, so a tap still leaves nothing stuck. group-hover
+   and peer-hover follow. */
+@custom-variant hover {
+  @media (any-hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+/* A device with a pointer that hovers (a mouse, a trackpad), even if its touch screen is the main one. */
+@custom-variant can-hover (@media (any-hover: hover));
 
 :root {
   --radius: 0.625rem;
