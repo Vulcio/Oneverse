@@ -135,6 +135,8 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
   const { pdfs, shown, grid, words, drums, choose } = reading;
   const onTracks = !!tracks?.shown;
   const chart = !shown && !grid && !words && !drums && !onTracks;
+  // On a phone only the view shown is named, the others are their icons (and their titles); compact, none is.
+  const labelClass = (on: boolean) => (compact ? "sr-only sm:not-sr-only" : on ? undefined : "max-sm:sr-only");
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="chart-view">
       <div className="inline-flex rounded-md border p-0.5" role="group" aria-label={t("chartView.label")}>
@@ -143,44 +145,44 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
           aria-pressed={chart}
           onClick={() => choose("CHART")}
           className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", chart ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact ? t("chartView.chart") : undefined}
+          title={compact || !(chart) ? t("chartView.chart") : undefined}
           data-testid="chart-view-chart"
         >
           <Music />
-          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.chart")}</span>
+          <span className={labelClass(chart)}>{t("chartView.chart")}</span>
         </button>
         <button
           type="button"
           aria-pressed={grid && !onTracks}
           onClick={() => choose("GRID")}
           className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", grid && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact ? t("chartView.grid") : undefined}
+          title={compact || !(grid && !onTracks) ? t("chartView.grid") : undefined}
           data-testid="chart-view-grid"
         >
           <LayoutGrid />
-          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.grid")}</span>
+          <span className={labelClass(grid && !onTracks)}>{t("chartView.grid")}</span>
         </button>
         <button
           type="button"
           aria-pressed={words && !onTracks}
           onClick={() => choose("WORDS")}
           className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", words && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact ? t("chartView.words") : undefined}
+          title={compact || !(words && !onTracks) ? t("chartView.words") : undefined}
           data-testid="chart-view-words"
         >
           <MicVocal />
-          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.words")}</span>
+          <span className={labelClass(words && !onTracks)}>{t("chartView.words")}</span>
         </button>
         <button
           type="button"
           aria-pressed={drums && !onTracks}
           onClick={() => choose("DRUMS")}
           className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", drums && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact ? t("chartView.drums") : undefined}
+          title={compact || !(drums && !onTracks) ? t("chartView.drums") : undefined}
           data-testid="chart-view-drums"
         >
           <Drum />
-          <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.drums")}</span>
+          <span className={labelClass(drums && !onTracks)}>{t("chartView.drums")}</span>
         </button>
         {pdfs.length > 0 ? (
           <button
@@ -188,11 +190,11 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
             aria-pressed={!!shown && !onTracks}
             onClick={() => choose("PDF", shown?.id ?? pdfs[0]!.id)}
             className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", shown && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-            title={compact ? t("chartView.pdf") : undefined}
+            title={compact || !(!!shown && !onTracks) ? t("chartView.pdf") : undefined}
             data-testid="chart-view-pdf"
           >
             <FileText />
-            <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.pdf")}</span>
+            <span className={labelClass(!!shown && !onTracks)}>{t("chartView.pdf")}</span>
           </button>
         ) : null}
         {tracks ? (
@@ -201,11 +203,11 @@ export function ViewSwitch({ reading, compact = false, tracks }: { reading: Read
             aria-pressed={onTracks}
             onClick={tracks.show}
             className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-            title={compact ? t("chartView.tracks") : undefined}
+            title={compact || !(onTracks) ? t("chartView.tracks") : undefined}
             data-testid="chart-view-tracks"
           >
             <AudioLines />
-            <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t("chartView.tracks")}</span>
+            <span className={labelClass(onTracks)}>{t("chartView.tracks")}</span>
           </button>
         ) : null}
       </div>
