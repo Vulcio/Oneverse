@@ -1,4 +1,4 @@
-import { chordProFromPdfText, detectImportFormatDetails, SUPPORTED_IMPORT_FORMATS, type SupportedImportFormat } from "@oneverse/core";
+import { CHART_FILE_EXTENSIONS, chordProFromPdfText, decodeSongFile, detectImportFormatDetails, readSongFile, SUPPORTED_IMPORT_FORMATS, type SongFileDetails, type SupportedImportFormat } from "@oneverse/core";
 import { ClipboardPaste, FileText, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,7 @@ import { FindChords } from "./find-chords";
 import type { ChordContent, MetadataMatch } from "@oneverse/core";
 import { FieldError } from "@oneverse/ui/components/field";
 
-export const SOURCE_FILE_ACCEPT = ".cho,.chordpro,.chopro,.crd,.pro,.txt,.pdf,text/plain,application/pdf";
+export const SOURCE_FILE_ACCEPT = [...CHART_FILE_EXTENSIONS, ".pdf", "text/plain", "application/pdf"].join(",");
 const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
 
 export interface SourceFile {
@@ -149,6 +149,7 @@ export function SongContentCard({
   onSourceFile,
   find,
   incoming,
+  onFileDetails,
 }: {
   content: string;
   format: SupportedImportFormat | null;
@@ -160,16 +161,21 @@ export function SongContentCard({
   find?: { title: string; artist?: string; language?: string; onDetails?: (chart: ChordContent, match: MetadataMatch | null) => void };
   /** A file shared to Songverse or opened with it (issue #407): read as if dropped here. */
   incoming?: File | null;
+  /** A file's details (its title, artist, key… issue #438): where they go, and the names of the fields they filled. */
+  onFileDetails?: (details: SongFileDetails, fileName: string) => string[];
 }) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [pdfState, setPdfState] = useState<"reading" | "read" | "noText" | "unreadable" | null>(null);
+  // The fields the last file filled, said under it.
+  const [filled, setFilled] = useState<string[]>([]);
 
   async function take(file: File) {
     setFileError(null);
     setPdfState(null);
+    setFilled([]);
     if (file.size > MAX_SOURCE_BYTES) {
       setFileError(t("songEditor.fileTooBig", { size: "10 MB" }));
       return;
@@ -188,13 +194,19 @@ export function SongContentCard({
       }
       return;
     }
+    let text: string | null;
     try {
-      onContentChange(await file.text());
-      onFormatChange(null);
-      onSourceFile({ file, keep: true });
+      text = decodeSongFile(new Uint8Array(await file.arrayBuffer()));
     } catch {
       setFileError(t("songEditor.fileUnreadable"));
+      return;
     }
+    // Not text: a ProPresenter 7 ".pro", an image renamed.
+    if (text === null) return setFileError(t("songEditor.fileNotText"));
+    onContentChange(text);
+    onFormatChange(null);
+    onSourceFile({ file, keep: true });
+    if (onFileDetails) setFilled(onFileDetails(readSongFile(text).details, file.name));
   }
 
   // Taken once, as a drop would be.
@@ -279,6 +291,11 @@ export function SongContentCard({
               <X className="size-4" />
             </button>
           </div>
+          {filled.length > 0 ? (
+            <p className="text-xs text-muted-foreground" data-testid="file-details-filled" role="status">
+              {t("songEditor.fromFile.filled", { fields: filled.join(", ") })}
+            </p>
+          ) : null}
           {isPdf(sourceFile.file) ? (
             <p className="text-xs text-muted-foreground" data-testid="pdf-state" data-state={pdfState ?? "kept"} role={pdfState === "noText" || pdfState === "unreadable" ? "status" : undefined}>
               {t("songEditor.pdfKept")}

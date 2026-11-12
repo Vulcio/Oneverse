@@ -15,6 +15,8 @@ import {
   type SupportedImportFormat,
   type UpdateSongVersionInput,
   type LanguageCode,
+  type SongFileDetails,
+  titleFromFileName,
 } from "@oneverse/core";
 import { sameFlow, sameSections } from "./structured/document";
 
@@ -289,3 +291,41 @@ export const KEY_OPTIONS = {
 export const TIME_SIGNATURE_OPTIONS = ["2/2", "2/4", "3/4", "4/4", "5/4", "6/4", "3/8", "6/8", "7/8", "9/8", "12/8"];
 
 export const CAPO_OPTIONS = Array.from({ length: 11 }, (_, index) => String(index + 1));
+
+/**
+ * A file's details (issue #438) in the form's empty fields - never over what's
+ * there - with the file's name as the title when it gives none; and which
+ * fields it filled.
+ */
+export function withFileDetails(form: SongForm, details: SongFileDetails, fileName: string): { form: SongForm; filled: (TextField | CreditField)[] } {
+  const next = { ...form };
+  const filled: (TextField | CreditField)[] = [];
+  const text = (field: TextField, value: string | number | undefined) => {
+    if (value === undefined || String(value).trim() === "" || next[field].trim() !== "") return;
+    next[field] = String(value).trim();
+    filled.push(field);
+  };
+  const credits = (field: CreditField, names: string[]) => {
+    if (names.length === 0 || next[field].length > 0) return;
+    next[field] = [...new Set(names)];
+    filled.push(field);
+  };
+  text("title", details.title ?? (titleFromFileName(fileName) || undefined));
+  text("alternateTitle", details.subtitle);
+  credits("artists", details.artists);
+  if (next.writers.length === 0 && next.composers.length === 0 && next.lyricists.length === 0) {
+    credits("writers", details.writers);
+    credits("composers", details.composers);
+    credits("lyricists", details.lyricists);
+  }
+  text("album", details.album);
+  text("year", details.year);
+  text("key", details.key);
+  text("tempo", details.tempo);
+  text("timeSignature", details.timeSignature);
+  text("capo", details.capo);
+  text("ccli", details.ccli);
+  text("copyright", details.copyright);
+  text("duration", details.durationSeconds ? formatDuration(details.durationSeconds) : undefined);
+  return { form: next, filled };
+}

@@ -1079,22 +1079,32 @@ export class SongVersionsService {
   async importText(id: string, content: string, format: SupportedImportFormat, authorUserId: string | null = null): Promise<void> {
     const existing = await this.prisma.client.songVersion.findUnique({
       where: { id },
-      select: { documentJson: true, copyright: true },
+      select: { documentJson: true, copyright: true, ccli: true, capo: true, album: true, year: true },
     });
     if (!existing) throw new NotFoundException("Song version not found");
 
     const previous = readSongDocument(existing.documentJson);
     const read = songFromText(content, format);
-    const documentJson = songDocumentFromText(previous, {
-      content,
-      format,
-      mergeRepeats: true,
-      ...(!previous.defaults.key && read.key && read.key.length <= 12 && { defaults: { key: read.key } }),
-    });
+    // What the file says of the song (issue #438), where the song says nothing.
+    const { details } = read;
+    const time = details.timeSignature ? /^(\d+)\/(\d+)$/.exec(details.timeSignature) : null;
+    const defaults = {
+      ...(!previous.defaults.key && read.key && read.key.length <= 12 && { key: read.key }),
+      ...(!previous.defaults.tempo && details.tempo && { tempo: details.tempo }),
+      ...(!previous.defaults.timeSignature && time && { timeSignature: { numerator: Number(time[1]), denominator: Number(time[2]) } }),
+    };
+    const documentJson = songDocumentFromText(previous, { content, format, mergeRepeats: true, ...(Object.keys(defaults).length > 0 && { defaults }) });
+    const columns = {
+      ...(!existing.copyright?.trim() && read.copyright && { copyright: read.copyright.slice(0, 500) }),
+      ...(!existing.ccli?.trim() && details.ccli && { ccli: details.ccli }),
+      ...(!existing.capo && details.capo && { capo: details.capo }),
+      ...(!existing.album?.trim() && details.album && { album: details.album.slice(0, 300) }),
+      ...(!existing.year && details.year && { year: details.year }),
+    };
     await this.prisma.client.$transaction(async (tx) => {
       const before = await this.history.before(tx, id);
       await this.writeDocument(tx, id, existing.documentJson, documentJson);
-      if (!existing.copyright?.trim() && read.copyright) await tx.songVersion.update({ where: { id }, data: { copyright: read.copyright.slice(0, 500) } });
+      if (Object.keys(columns).length > 0) await tx.songVersion.update({ where: { id }, data: columns });
       await this.history.record(tx, id, { kind: "EDITED", authorUserId, before });
     });
     // Nothing returned: its caller is the Worker's bulk upload (issue #92), which runs without

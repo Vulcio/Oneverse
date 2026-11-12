@@ -29,6 +29,9 @@ export interface SongFileDetails {
   durationSeconds?: number;
 }
 
+/** The extensions of the chart files a song is made from (besides PDFs): ChordPro's, OnSong's, plain text, LRC. */
+export const CHART_FILE_EXTENSIONS = [".cho", ".chordpro", ".chopro", ".crd", ".pro", ".chord", ".onsong", ".txt", ".text", ".tab", ".lrc"] as const;
+
 const emptyDetails = (): SongFileDetails => ({ artists: [], composers: [], lyricists: [], writers: [] });
 
 const DIRECTIVE = /^\s*\{\s*([a-z_]+)\s*:\s*(.*?)\s*\}\s*$/i;

@@ -1,4 +1,5 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { decodeSongFile, detectImportFormat } from "@oneverse/core";
 import { JOB_WORKER_OPTIONS } from "../jobs/jobs.constants.js";
 import { Logger } from "@nestjs/common";
 import type { Job } from "bullmq";
@@ -44,8 +45,10 @@ export class BulkUploadProcessor extends WorkerHost {
     }
 
     if (type === "CHORDPRO") {
-      const buffer = await this.storage.get(storageKey);
-      await this.songVersionsService.importText(target.songVersionId, buffer.toString("utf-8"), "CHORDPRO", uploadedByUserId ?? null);
+      // Read as a single file is (issue #438): any encoding, its format guessed; a file that isn't text is only kept.
+      const text = decodeSongFile(await this.storage.get(storageKey));
+      if (text === null) this.logger.warn(`${filename} isn't text: kept, not read`);
+      else await this.songVersionsService.importText(target.songVersionId, text, detectImportFormat(text), uploadedByUserId ?? null);
     }
 
     // Kept alongside the parsed content, not instead of it - this is the

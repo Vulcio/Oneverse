@@ -54,6 +54,7 @@ import {
   toUpdateInput,
   validate,
   withContent,
+  withFileDetails,
   withSections,
   type SongForm,
 } from "./song-form";
@@ -663,6 +664,11 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                   sourceFile={sourceFile}
                   onSourceFile={setSourceFile}
                   incoming={props.mode === "create" ? props.incoming : null}
+                  onFileDetails={(details, fileName) => {
+                    const { filled } = withFileDetails(form, details, fileName);
+                    updateForm((current) => withFileDetails(current, details, fileName).form);
+                    return filled.map((field) => t(`songEditor.fields.${field}`));
+                  }}
                   find={{
                     title: form.title,
                     artist: form.artists[0],

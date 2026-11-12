@@ -7,6 +7,8 @@
  * filename ("0245.cho", "JEM_0245.pdf" -> "245").
  */
 
+import { CHART_FILE_EXTENSIONS } from "../import-detection/song-details.js";
+
 export type BulkUploadMatchStatus = "MATCHED" | "UNMATCHED" | "DUPLICATE" | "IGNORED";
 
 export interface BulkUploadFileMatch {
@@ -24,7 +26,7 @@ export const BULK_UPLOAD_MAX_FILES_PER_REQUEST = 200;
 
 /** The kinds of file a bulk upload takes, by extension (issue #201): another kind is left out rather than matched. */
 export const BULK_UPLOAD_EXTENSIONS = {
-  CHORDPRO: [".chordpro", ".cho", ".crd", ".pro", ".chopro", ".txt"],
+  CHORDPRO: CHART_FILE_EXTENSIONS,
   PDF: [".pdf"],
 } as const;
 

@@ -56,7 +56,7 @@ export function textAsFile(incoming: Pick<Incoming, "title" | "text">): File | n
 
 /** What a new song can be made from: a chart (ChordPro, plain text) or a PDF. */
 export function isChartFile(file: File): boolean {
-  return /\.(cho|chordpro|chopro|crd|pro|txt|pdf)$/i.test(file.name) || file.type === "text/plain" || file.type === "application/pdf";
+  return /\.(cho|chordpro|chopro|crd|pro|chord|onsong|txt|text|tab|lrc|pdf)$/i.test(file.name) || file.type === "text/plain" || file.type === "application/pdf";
 }
 
 // Handed from the Import page to the new song's page, in the same tab.

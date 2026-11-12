@@ -35,6 +35,11 @@
             ".pro",
             ".crd",
             ".txt",
+            ".text",
+            ".chord",
+            ".onsong",
+            ".tab",
+            ".lrc",
             "application/pdf",
             ".pdf",
             "image/*",
@@ -55,7 +60,10 @@
           ".chordpro",
           ".chopro",
           ".pro",
-          ".crd"
+          ".crd",
+          ".chord",
+          ".onsong",
+          ".lrc"
         ],
         "application/pdf": [
           ".pdf"

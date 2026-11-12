@@ -86,6 +86,28 @@ check("the chorus written again is sung again", doc.flow.length === 4 && doc.flo
 check("no notes from the header", doc.sections.every((s) => s.lines.every((l) => l.kind !== "note")) && doc.flow.every((i) => !i.note), JSON.stringify(doc.flow));
 check("the key and copyright taken from the file", doc.defaults.key === "C" && read.copyright === "© 2020 Rolf Schneider", `${doc.defaults.key} ${read.copyright}`);
 check("and kept the file", files.some((f) => f.filename === "7.cho"), JSON.stringify(files.map((f) => f.filename)));
+// Issue #438: a plain text file from an old Windows computer (Windows-1252), chords over the words,
+// its details on top, is read as a single file is; a file that isn't text is only kept.
+const plain = await api(me, "POST", "/song-versions", { title: `Plain ${stamp}`, language: "fr", artists: ["Uploader"] });
+await api(me, "POST", `/songbooks/${songbook.id}/entries`, { songVersionId: plain.id, entryCode: "8" });
+const latin1 = (text) => Uint8Array.from([...text].map((c) => c.charCodeAt(0)));
+const txt = ["Tempo: 72", "Mesure: 3/4", "", "Refrain:", "G          D", `Gloire à Dieu ${stamp}`, "", "Refrain x2", ""].join("\r\n");
+const second = new FormData();
+second.append("type", "CHORDPRO");
+second.append("files", new Blob([latin1(txt)], { type: "text/plain" }), "8.txt");
+check("a .txt is queued", (await fetch(`${API}/songbooks/${songbook.id}/bulk-upload`, { method: "POST", headers: { Authorization: `Bearer ${me.bearer}` }, body: second })).status === 201);
+let plainDoc = null;
+for (let i = 0; i < 60; i++) {
+  plainDoc = (await api(me, "GET", `/song-versions/${plain.id}`)).documentJson;
+  if (plainDoc.sections.length > 0) break;
+  await new Promise((resolve) => setTimeout(resolve, 250));
+}
+const refrain = plainDoc.sections[0];
+check("its accents read", refrain?.lines[0]?.text === `Gloire à Dieu ${stamp}`, JSON.stringify(refrain?.lines[0]));
+check("its chords over the words", JSON.stringify(refrain?.lines[0]?.chords.map((c) => [c.at, c.raw])) === JSON.stringify([[0, "G"], [11, "D"]]), JSON.stringify(refrain?.lines[0]?.chords));
+check("its repeat in words sung twice more", plainDoc.flow.length === 3 && plainDoc.flow.every((item) => item.sectionId === refrain.id), JSON.stringify(plainDoc.flow));
+check("its tempo and time taken", plainDoc.defaults.tempo === 72 && plainDoc.defaults.timeSignature?.numerator === 3, JSON.stringify(plainDoc.defaults));
+
 check("only its owner uploads", (await call(await user("Other"), "POST", `/songbooks/${songbook.id}/bulk-upload/preview`, { filenames: ["7.cho"] })).status === 403);
 
 fake.close();

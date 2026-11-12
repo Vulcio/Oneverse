@@ -99,7 +99,7 @@ Installé comme une app, Songverse fonctionne aussi avec le reste de votre appar
 
 - **Partager…** - sur un chant (son menu **Plus**, en Session), à côté du lien de partage d'une liste et des liens d'invitation d'une équipe : le menu de partage de l'appareil (Messages, WhatsApp, Mail…). Là où le navigateur n'en a pas, **Copier le lien** reste là comme avant.
 - **Partager vers Songverse** - sur Android, Songverse est dans le menu **Partager** des autres apps : un fichier ChordPro ou texte, une grille en PDF, une image ou un enregistrement ouvre **Importer**. Une grille ou un PDF devient un **Nouveau chant à partir de ceci** ; tout fichier va sur un chant avec **Ajouter à un chant…** ; un lien Songverse ouvre sa page.
-- **Ouvrir avec Songverse** - sur un ordinateur (Chrome ou Edge), ouvrez un fichier ChordPro (`.cho`, `.chordpro`, `.chopro`, `.pro`) ou un PDF avec Songverse : il s'ouvre dans **Importer** de la même façon.
+- **Ouvrir avec Songverse** - sur un ordinateur (Chrome ou Edge), ouvrez un fichier ChordPro (`.cho`, `.chordpro`, `.chopro`, `.pro`), un fichier OnSong, un `.lrc` ou un PDF avec Songverse : il s'ouvre dans **Importer** de la même façon.
 - **La pastille de l'icône** - le nombre de [notifications](/fr/account/#notifications) non lues s'affiche sur l'icône de Songverse, et disparaît une fois lues.
 
 Sur un iPhone ou un iPad, **Partager…** et la pastille fonctionnent (la pastille une fois les notifications activées) ; Partager vers Songverse et Ouvrir avec non, Safari ne les propose pas.
