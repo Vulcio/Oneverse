@@ -35,6 +35,15 @@ const MAX_DIFFERENT = 1 / 3;
 
 const lineShape = (line: LineV2) => JSON.stringify([line.kind, line.text, line.chords.map((chord) => chord.at)]);
 const sameLine = (a: LineV2, b: LineV2) => lineShape(a) === lineShape(b) && a.chords.every((chord, i) => chord.raw === b.chords[i]!.raw);
+const words = (text: string) => text.trim().replace(/\s+/g, " ").toLowerCase();
+/** Loosely (a file read in, issue #438): the same words and the same number of chords, wherever over the words they sit. */
+const looseShape = (a: LineV2, b: LineV2) => a.kind === b.kind && words(a.text) === words(b.text) && a.chords.length === b.chords.length;
+const looseLine = (a: LineV2, b: LineV2) => looseShape(a, b) && a.chords.every((chord, i) => sameChord(chord.raw, b.chords[i]!.raw));
+
+/** How to match: `loose` for a file read in, where chords written out again are often a letter or a word off, and a repeat may have no heading. */
+export interface RepeatOptions {
+  loose?: boolean;
+}
 const rootOf = (raw: string): number | null => {
   const parsed = parseChord(raw);
   return parsed && parsed.kind === "chord" ? semitoneOf(parsed.root) : null;
@@ -60,10 +69,12 @@ function idMap(sections: [string, string], lines: [LineV2, LineV2][]): ChartIdMa
  * third of them different; or exactly a run of its lines (two or more).
  * `key` is the song's, for spelling the chords a pass has of its own.
  */
-export function matchRepeat(earlier: SectionV2, later: SectionV2, key: string | null): { match: RepeatMatch; ids: ChartIdMap } | null {
+export function matchRepeat(earlier: SectionV2, later: SectionV2, key: string | null, options: RepeatOptions = {}): { match: RepeatMatch; ids: ChartIdMap } | null {
   if (earlier.id === later.id || later.lines.length === 0) return null;
   const sections: [string, string] = [later.id, earlier.id];
-  if (earlier.type === later.type && earlier.lines.length === later.lines.length && earlier.lines.every((line, i) => lineShape(line) === lineShape(later.lines[i]!))) {
+  const sameType = earlier.type === later.type || (options.loose === true && later.type === "other" && !later.label);
+  const shaped = (a: LineV2, b: LineV2) => lineShape(a) === lineShape(b) || (options.loose === true && looseShape(a, b));
+  if (sameType && earlier.lines.length === later.lines.length && earlier.lines.every((line, i) => shaped(line, later.lines[i]!))) {
     const pairs = earlier.lines.flatMap((line, i) => line.chords.map((chord, c) => [chord, later.lines[i]!.chords[c]!] as const));
     const ids = idMap(sections, later.lines.map((line, i) => [line, earlier.lines[i]!]));
     // The shift most chords agree on (none first, on a tie).
@@ -86,7 +97,7 @@ export function matchRepeat(earlier: SectionV2, later: SectionV2, key: string | 
   const run = later.lines.length;
   if (run >= 2 && run < earlier.lines.length) {
     for (let start = 0; start + run <= earlier.lines.length; start++) {
-      if (!later.lines.every((line, i) => sameLine(earlier.lines[start + i]!, line))) continue;
+      if (!later.lines.every((line, i) => sameLine(earlier.lines[start + i]!, line) || (options.loose === true && looseLine(earlier.lines[start + i]!, line)))) continue;
       const kept = new Set(earlier.lines.slice(start, start + run).map((line) => line.id));
       return {
         match: { kind: "lines", hiddenLines: earlier.lines.filter((line) => !kept.has(line.id)).map((line) => line.id) },
@@ -100,10 +111,10 @@ export function matchRepeat(earlier: SectionV2, later: SectionV2, key: string | 
 const ORDER: RepeatMatch["kind"][] = ["same", "transposed", "chords", "lines"];
 
 /** The earlier section `later` repeats best (as it is first, then moved, then with chords of its own, then in part), among `earlier`. */
-export function bestRepeat(earlier: SectionV2[], later: SectionV2, key: string | null): { of: SectionV2; match: RepeatMatch; ids: ChartIdMap } | null {
+export function bestRepeat(earlier: SectionV2[], later: SectionV2, key: string | null, options: RepeatOptions = {}): { of: SectionV2; match: RepeatMatch; ids: ChartIdMap } | null {
   let best: { of: SectionV2; match: RepeatMatch; ids: ChartIdMap } | null = null;
   for (const of of earlier) {
-    const found = matchRepeat(of, later, key);
+    const found = matchRepeat(of, later, key, options);
     if (found && (!best || ORDER.indexOf(found.match.kind) < ORDER.indexOf(best.match.kind))) best = { of, ...found };
   }
   return best;

@@ -2145,6 +2145,454 @@
           }
         },
         {
+          "name": "a file that runs sections together: a chorus headed again for the second verse, chords a letter off, a block sung three times, the chorus twice with no headings",
+          "args": [
+            "{title: Run together}\n{key: Bb}\n\n[Gm]   [Eb]   [Bb]   [F]\n{c: Verse}\n[Gm]Come and fill [Eb]us\nOpen the [Bb]sky, come down on [F]us\n[Gm]Come and fill [Eb]us\nFire of [Bb]old, burn in [F]us\n\n{c: Chorus}\nBe the f[Gm]ire that heals me\nBe the lo[Eb]ve that keeps me\nHere is my [Bb]heart, here is my [F]heart\n\n{c: Chorus}\n[Gm]Come and fill [Eb]us\nBreak through the [Bb]air, come down on [F]us\n[Gm]Come and fill [Eb]us\nLight of the [Bb]world, flood all of [F]us\n\n{c: Chorus}\nBe the [Gm]fire that heals me\nBe the lo[Eb]ve that keeps me\nHere is my [Bb]heart, here is my [F]heart\n\nRain of [Gm]healing\nFor this [Eb]generation\nRain of [Gm]healing\nFor this [Eb]generation\nRain of h[Gm]ealing\nFor this gen[Eb]eration\nBe the fire[Gm] that heals me\nBe the love [Eb]that keeps me\nHere is my [Bb]heart, here is my [F]heart\n",
+            "CHORDPRO",
+            {
+              "mergeRepeats": true
+            }
+          ],
+          "expected": {
+            "sections": [
+              {
+                "id": "sec_@1",
+                "type": "intro",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@2",
+                    "kind": "lyric",
+                    "text": "         ",
+                    "chords": [
+                      {
+                        "id": "chd_@3",
+                        "at": 0,
+                        "raw": "Gm"
+                      },
+                      {
+                        "id": "chd_@4",
+                        "at": 3,
+                        "raw": "Eb"
+                      },
+                      {
+                        "id": "chd_@5",
+                        "at": 6,
+                        "raw": "Bb"
+                      },
+                      {
+                        "id": "chd_@6",
+                        "at": 9,
+                        "raw": "F"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              },
+              {
+                "id": "sec_@7",
+                "type": "verse",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@8",
+                    "kind": "lyric",
+                    "text": "Come and fill us",
+                    "chords": [
+                      {
+                        "id": "chd_@9",
+                        "at": 0,
+                        "raw": "Gm"
+                      },
+                      {
+                        "id": "chd_@10",
+                        "at": 14,
+                        "raw": "Eb"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@11",
+                    "kind": "lyric",
+                    "text": "Open the sky, come down on us",
+                    "chords": [
+                      {
+                        "id": "chd_@12",
+                        "at": 9,
+                        "raw": "Bb"
+                      },
+                      {
+                        "id": "chd_@13",
+                        "at": 27,
+                        "raw": "F"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@14",
+                    "kind": "lyric",
+                    "text": "Come and fill us",
+                    "chords": [
+                      {
+                        "id": "chd_@15",
+                        "at": 0,
+                        "raw": "Gm"
+                      },
+                      {
+                        "id": "chd_@16",
+                        "at": 14,
+                        "raw": "Eb"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@17",
+                    "kind": "lyric",
+                    "text": "Fire of old, burn in us",
+                    "chords": [
+                      {
+                        "id": "chd_@18",
+                        "at": 8,
+                        "raw": "Bb"
+                      },
+                      {
+                        "id": "chd_@19",
+                        "at": 21,
+                        "raw": "F"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              },
+              {
+                "id": "sec_@20",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@21",
+                    "kind": "lyric",
+                    "text": "Be the fire that heals me",
+                    "chords": [
+                      {
+                        "id": "chd_@22",
+                        "at": 8,
+                        "raw": "Gm"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@23",
+                    "kind": "lyric",
+                    "text": "Be the love that keeps me",
+                    "chords": [
+                      {
+                        "id": "chd_@24",
+                        "at": 9,
+                        "raw": "Eb"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@25",
+                    "kind": "lyric",
+                    "text": "Here is my heart, here is my heart",
+                    "chords": [
+                      {
+                        "id": "chd_@26",
+                        "at": 11,
+                        "raw": "Bb"
+                      },
+                      {
+                        "id": "chd_@27",
+                        "at": 29,
+                        "raw": "F"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              },
+              {
+                "id": "sec_@28",
+                "type": "verse",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@29",
+                    "kind": "lyric",
+                    "text": "Come and fill us",
+                    "chords": [
+                      {
+                        "id": "chd_@30",
+                        "at": 0,
+                        "raw": "Gm"
+                      },
+                      {
+                        "id": "chd_@31",
+                        "at": 14,
+                        "raw": "Eb"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@32",
+                    "kind": "lyric",
+                    "text": "Break through the air, come down on us",
+                    "chords": [
+                      {
+                        "id": "chd_@33",
+                        "at": 18,
+                        "raw": "Bb"
+                      },
+                      {
+                        "id": "chd_@34",
+                        "at": 36,
+                        "raw": "F"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@35",
+                    "kind": "lyric",
+                    "text": "Come and fill us",
+                    "chords": [
+                      {
+                        "id": "chd_@36",
+                        "at": 0,
+                        "raw": "Gm"
+                      },
+                      {
+                        "id": "chd_@37",
+                        "at": 14,
+                        "raw": "Eb"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@38",
+                    "kind": "lyric",
+                    "text": "Light of the world, flood all of us",
+                    "chords": [
+                      {
+                        "id": "chd_@39",
+                        "at": 13,
+                        "raw": "Bb"
+                      },
+                      {
+                        "id": "chd_@40",
+                        "at": 33,
+                        "raw": "F"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              },
+              {
+                "id": "sec_@41",
+                "type": "other",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@42",
+                    "kind": "lyric",
+                    "text": "Rain of healing",
+                    "chords": [
+                      {
+                        "id": "chd_@43",
+                        "at": 8,
+                        "raw": "Gm"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@44",
+                    "kind": "lyric",
+                    "text": "For this generation",
+                    "chords": [
+                      {
+                        "id": "chd_@45",
+                        "at": 9,
+                        "raw": "Eb"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              }
+            ],
+            "flow": [
+              {
+                "id": "fi_@1",
+                "sectionId": "sec_@1"
+              },
+              {
+                "id": "fi_@7",
+                "sectionId": "sec_@7"
+              },
+              {
+                "id": "fi_@20",
+                "sectionId": "sec_@20"
+              },
+              {
+                "id": "fi_@28",
+                "sectionId": "sec_@28"
+              },
+              {
+                "id": "fi_@46",
+                "sectionId": "sec_@20"
+              },
+              {
+                "id": "fi_@41",
+                "sectionId": "sec_@41"
+              },
+              {
+                "id": "fi_@47",
+                "sectionId": "sec_@41"
+              },
+              {
+                "id": "fi_@48",
+                "sectionId": "sec_@41"
+              },
+              {
+                "id": "fi_@49",
+                "sectionId": "sec_@20"
+              }
+            ],
+            "key": "Bb",
+            "copyright": null,
+            "details": {
+              "artists": [],
+              "composers": [],
+              "lyricists": [],
+              "writers": [],
+              "title": "Run together",
+              "key": "Bb"
+            }
+          }
+        },
+        {
+          "name": "(x2) on a section's first line: sung twice",
+          "args": [
+            "{c: Pre-Chorus}\nYour [G]name is great\nYour [A]name is strong\n\n{c: Chorus}\n[D]Holy\n[G]Holy\n\n{c: Pre-Chorus}\n(x2)\nYour [G]name is great\nYour [A]name is strong\n",
+            "CHORDPRO",
+            {
+              "mergeRepeats": true
+            }
+          ],
+          "expected": {
+            "sections": [
+              {
+                "id": "sec_@1",
+                "type": "pre-chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@2",
+                    "kind": "lyric",
+                    "text": "Your name is great",
+                    "chords": [
+                      {
+                        "id": "chd_@3",
+                        "at": 5,
+                        "raw": "G"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@4",
+                    "kind": "lyric",
+                    "text": "Your name is strong",
+                    "chords": [
+                      {
+                        "id": "chd_@5",
+                        "at": 5,
+                        "raw": "A"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              },
+              {
+                "id": "sec_@6",
+                "type": "chorus",
+                "label": null,
+                "showLabel": true,
+                "lines": [
+                  {
+                    "id": "line_@7",
+                    "kind": "lyric",
+                    "text": "Holy",
+                    "chords": [
+                      {
+                        "id": "chd_@8",
+                        "at": 0,
+                        "raw": "D"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "line_@9",
+                    "kind": "lyric",
+                    "text": "Holy",
+                    "chords": [
+                      {
+                        "id": "chd_@10",
+                        "at": 0,
+                        "raw": "G"
+                      }
+                    ]
+                  }
+                ],
+                "rhythm": null,
+                "groove": null
+              }
+            ],
+            "flow": [
+              {
+                "id": "fi_@1",
+                "sectionId": "sec_@1"
+              },
+              {
+                "id": "fi_@6",
+                "sectionId": "sec_@6"
+              },
+              {
+                "id": "fi_@11",
+                "sectionId": "sec_@1"
+              },
+              {
+                "id": "fi_@12",
+                "sectionId": "sec_@1"
+              }
+            ],
+            "key": null,
+            "copyright": null,
+            "details": {
+              "artists": [],
+              "composers": [],
+              "lyricists": [],
+              "writers": []
+            }
+          }
+        },
+        {
           "name": "an LRC file: its words in the order sung, its tags as details",
           "args": [
             "[ti:Amazing Grace]\n[ar:John Newton]\n[length: 03:12]\n[00:12.34]Amazing grace how sweet the sound\n[00:17.80]That saved a wretch like me\n[00:23.10][01:05.00]I once was lost but now am found\n[00:28.50]Was blind but now I see\n[00:40.00]\n[00:52.00]'Twas grace that taught my heart to fear\n[00:58.00]And grace my fears relieved\n",

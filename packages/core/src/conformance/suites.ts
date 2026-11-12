@@ -977,6 +977,15 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a hymn's numbered verses", args: ["1. Amazing grace how sweet the sound\nThat saved a wretch like me\n\n2. 'Twas grace that taught my heart to fear\nAnd grace my fears relieved\n", "RAW_TEXT", { mergeRepeats: true }] },
           { name: "chords lined up with tabs", args: ["G\tD\tEm\nAmazing\tgrace\thow\n", "CHORDS_OVER_LYRICS", {}] },
           {
+            name: "a file that runs sections together: a chorus headed again for the second verse, chords a letter off, a block sung three times, the chorus twice with no headings",
+            args: [
+              "{title: Run together}\n{key: Bb}\n\n[Gm]   [Eb]   [Bb]   [F]\n{c: Verse}\n[Gm]Come and fill [Eb]us\nOpen the [Bb]sky, come down on [F]us\n[Gm]Come and fill [Eb]us\nFire of [Bb]old, burn in [F]us\n\n{c: Chorus}\nBe the f[Gm]ire that heals me\nBe the lo[Eb]ve that keeps me\nHere is my [Bb]heart, here is my [F]heart\n\n{c: Chorus}\n[Gm]Come and fill [Eb]us\nBreak through the [Bb]air, come down on [F]us\n[Gm]Come and fill [Eb]us\nLight of the [Bb]world, flood all of [F]us\n\n{c: Chorus}\nBe the [Gm]fire that heals me\nBe the lo[Eb]ve that keeps me\nHere is my [Bb]heart, here is my [F]heart\n\nRain of [Gm]healing\nFor this [Eb]generation\nRain of [Gm]healing\nFor this [Eb]generation\nRain of h[Gm]ealing\nFor this gen[Eb]eration\nBe the fire[Gm] that heals me\nBe the love [Eb]that keeps me\nHere is my [Bb]heart, here is my [F]heart\n",
+              "CHORDPRO",
+              { mergeRepeats: true },
+            ],
+          },
+          { name: "(x2) on a section's first line: sung twice", args: ["{c: Pre-Chorus}\nYour [G]name is great\nYour [A]name is strong\n\n{c: Chorus}\n[D]Holy\n[G]Holy\n\n{c: Pre-Chorus}\n(x2)\nYour [G]name is great\nYour [A]name is strong\n", "CHORDPRO", { mergeRepeats: true }] },
+          {
             name: "an LRC file: its words in the order sung, its tags as details",
             args: [
               "[ti:Amazing Grace]\n[ar:John Newton]\n[length: 03:12]\n[00:12.34]Amazing grace how sweet the sound\n[00:17.80]That saved a wretch like me\n[00:23.10][01:05.00]I once was lost but now am found\n[00:28.50]Was blind but now I see\n[00:40.00]\n[00:52.00]'Twas grace that taught my heart to fear\n[00:58.00]And grace my fears relieved\n",

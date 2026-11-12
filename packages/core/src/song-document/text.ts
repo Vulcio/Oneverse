@@ -18,6 +18,7 @@ import {
   type SongDocumentV2,
 } from "../schemas/song-document-v2.js";
 import { reconcileFlow, reconcileSections } from "./reconcile.js";
+import { chordsOnly, retypeByWords, splitRunTogether, takeRepeatCount } from "./tidy-import.js";
 import { withoutPlainLabels } from "./section-names.js";
 
 // A ChordPro comment ("{comment: x2}") is a note line for the band. The import
@@ -201,12 +202,19 @@ export function songFromText(text: string, format: SupportedImportFormat, option
     keyChange = null;
     return { ...item, ...(note && { note }), ...(change && { keyChange: change }) };
   };
+  // The pass just added, sung again as many more times.
+  const again = (more: number) => {
+    const before = flow.at(-1);
+    for (let time = 0; before && time < more; time++) flow.push({ ...before, id: generateId(ID_PREFIXES.flowItem) });
+  };
   const addSection = (section: SectionV2) => {
     sections.push(section);
     flow.push({ id: flowItemId(section.id), sectionId: section.id });
   };
 
-  for (const section of parsedSectionsToV2(parseSongText(marked, format))) {
+  const queue = parsedSectionsToV2(parseSongText(marked, format));
+  for (let index = 0; index < queue.length; index++) {
+    const section = queue[index]!;
     const only = section.lines.length === 1 ? section.lines[0]!.text : "";
     if (only.startsWith(KEY_MARK)) {
       const key = unmark(only.slice(KEY_MARK.length)).trim();
@@ -284,10 +292,24 @@ export function songFromText(text: string, format: SupportedImportFormat, option
         line.chords = line.chords.map((chord) => ({ ...chord, raw: transposeChord(chord.raw, -shift, songKey) }));
       }
     }
+    // A file read in, tidied (issue #438): "(x2)", sections run together, a wrong heading, chords alone.
+    let times = 1;
+    if (options.mergeRepeats) {
+      times = takeRepeatCount(section);
+      const parts = splitRunTogether(section, sections);
+      if (parts) {
+        queue.splice(index, 1, ...parts);
+        index--;
+        // Its cue and key change stay with the first part.
+        continue;
+      }
+      retypeByWords(section, sections);
+      if (section.type === "other" && !section.label && chordsOnly(section)) section.type = sections.length === 0 ? "intro" : "instrumental";
+    }
     // Sung again (issue #231): as written, moved up or down, with a few chords of its own, or the end of it -
     // a pass of the earlier section; after a key change, only as written.
     const earlier = options.mergeRepeats
-      ? bestRepeat(sections, section, songKey)
+      ? bestRepeat(sections, section, songKey, { loose: true })
       : shift % 12 !== 0
         ? (() => {
             const same = sections.find((other) => sameContent(other, section));
@@ -303,11 +325,16 @@ export function songFromText(text: string, format: SupportedImportFormat, option
           ...repeatPass(earlier.match),
         }),
       );
+      again(times - 1);
       continue;
     }
     sections.push(section);
     flow.push(pass({ id: flowItemId(section.id), sectionId: section.id }));
+    again(times - 1);
   }
+  // Chords alone at the very end: the outro.
+  const last = sections.at(-1);
+  if (options.mergeRepeats && last && last.type === "instrumental" && !last.label && chordsOnly(last) && flow.at(-1)?.sectionId === last.id && sections.length > 1) last.type = "outro";
   // Notes at the very end: nothing follows, so they stay a section.
   if (cue) addSection(cue);
   // Imported (issue #344): a "Verse 2" that only says what the name would is left out, so it's named by the rule, in the reader's language.
