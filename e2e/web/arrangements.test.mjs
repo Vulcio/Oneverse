@@ -111,8 +111,9 @@ await step("a song added to the band's set plays its usual arrangement; it can b
   await page.reload();
   await page.waitForLoadState("networkidle");
   if ((await selected()) !== "As written") throw new Error(`after switching: ${await selected()}`);
+  const back = page.waitForResponse((response) => response.request().method() === "PATCH" && response.url().includes(`/setlists/${set.id}/items/`) && response.ok());
   await select.selectOption({ label: "Sunday band (usual)" });
-  await page.waitForLoadState("networkidle");
+  await back;
 });
 
 const chord = (label) => page.locator(`[data-chord="${label}"]`);
