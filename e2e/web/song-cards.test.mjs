@@ -204,8 +204,13 @@ await step("a laptop with a touch screen and a mouse: the cards still come alive
     await tab.goto(`${WEB}/library`);
     if (!(await tab.evaluate(() => matchMedia("(hover: none) and (any-hover: hover)").matches))) throw new Error("not a touch laptop");
     const there = tab.getByTestId("shelf-newest").locator(`[data-testid="song-card"][data-song="${carol.id}"]`);
+    // The shelves are drawn again once the page has its data: hover the card that's there then.
+    await tab.waitForLoadState("networkidle");
     await there.hover();
-    await tab.waitForFunction((el) => getComputedStyle(el).opacity === "1", await there.getByTestId("song-card-more").elementHandle());
+    await tab.waitForFunction((id) => {
+      const more = document.querySelector(`[data-testid="shelf-newest"] [data-song="${id}"] [data-testid="song-card-more"]`);
+      return !!more && getComputedStyle(more).opacity === "1";
+    }, carol.id);
     await there.getByTestId("song-card-expand").click();
     await tab.getByTestId("song-peek").and(tab.locator(`[data-song="${carol.id}"]`)).waitFor();
   } finally {
