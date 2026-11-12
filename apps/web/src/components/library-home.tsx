@@ -1,6 +1,6 @@
 import type { LibraryHome, SongVersionSummary } from "@oneverse/core";
 import { Link, useRouter } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Lock, Maximize2, Music2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, Maximize2, Music2, Star } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -8,6 +8,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { AddToSetIconButton } from "#/components/add-to-set";
 import { FavoriteButton } from "#/components/favorite-button";
 import { SongPeek } from "#/components/song-peek";
+import { useIsFavorite } from "#/lib/favorites";
 import { coverColors, initialsOf } from "#/lib/song-cover";
 
 /** A song as a card shows it; `imageUrl` for when songs have images of their own. */
@@ -72,6 +73,9 @@ const LONG_PRESS_SLOP = 10;
 /** A small round button over a card's cover. */
 const CARD_ACTION = "flex size-7 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-sm outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5";
 
+/** What comes over a card's cover with the mouse or the keyboard, or while its set picker is open. */
+const CARD_HOVER = "opacity-0 transition-opacity group-focus-within/card:opacity-100 group-hover/card:opacity-100 has-[[aria-expanded=true]]:opacity-100";
+
 /**
  * A song on a shelf: its cover and name open it. With a mouse or the
  * keyboard, three small buttons come over the cover (issue #434): star it,
@@ -81,6 +85,7 @@ const CARD_ACTION = "flex size-7 items-center justify-center rounded-full bg-sec
 function SongCard({ song, from, onPeek, onFavoriteChange }: { song: CardSong; from?: string; onPeek: () => void; onFavoriteChange: () => void }) {
   const { t } = useTranslation();
   const artists = song.artists.map((artist) => artist.source).filter(Boolean).join(", ");
+  const favorite = useIsFavorite(song.id, !!song.isFavorite);
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
   // A long press opened the preview: the click that ends it isn't the link's.
   const pressed = useRef(false);
@@ -137,16 +142,25 @@ function SongCard({ song, from, onPeek, onFavoriteChange }: { song: CardSong; fr
           {artists ? <span className="truncate text-xs text-muted-foreground">{artists}</span> : null}
         </span>
       </Link>
-      {/* Over the cover's top left (the lock of a private song is on its right). Not on a touch screen: see the long press. */}
-      <div
-        className="absolute top-1.5 left-1.5 hidden items-center gap-1 opacity-0 transition-opacity group-focus-within/card:opacity-100 group-hover/card:opacity-100 has-[[aria-expanded=true]]:opacity-100 [@media(hover:hover)]:flex"
-        data-testid="song-card-actions"
-      >
-        <FavoriteButton songVersionId={song.id} initial={!!song.isFavorite} variant="card" onChange={onFavoriteChange} />
-        <AddToSetIconButton songVersionId={song.id} songTitle={song.title} className={CARD_ACTION} testId="song-card-add-to-set" />
-        <button type="button" className={CARD_ACTION} aria-label={t("library.peek.expand")} title={t("library.peek.expand")} onClick={onPeek} data-testid="song-card-expand">
-          <Maximize2 />
-        </button>
+      {/* Over the cover's top left (the lock of a private song is on its right). The star stays once the song is a
+          favorite (issue #445); the rest come with the mouse or the keyboard. Not on a touch screen: see the long press. */}
+      <div className="absolute top-1.5 left-1.5 flex items-center gap-1" data-testid="song-card-actions">
+        <div className={cn("hidden [@media(hover:hover)]:block", favorite ? undefined : CARD_HOVER)} data-testid="song-card-star">
+          <FavoriteButton songVersionId={song.id} initial={!!song.isFavorite} variant="card" onChange={onFavoriteChange} />
+        </div>
+        <div className={cn("hidden items-center gap-1 [@media(hover:hover)]:flex", CARD_HOVER)} data-testid="song-card-more">
+          <AddToSetIconButton songVersionId={song.id} songTitle={song.title} className={CARD_ACTION} testId="song-card-add-to-set" />
+          <button type="button" className={CARD_ACTION} aria-label={t("library.peek.expand")} title={t("library.peek.expand")} onClick={onPeek} data-testid="song-card-expand">
+            <Maximize2 />
+          </button>
+        </div>
+        {favorite ? (
+          // A touch screen's star: shown, not pressed (the long press's preview has the button).
+          <span className={cn(CARD_ACTION, "[@media(hover:hover)]:hidden")} data-testid="song-card-favorite-mark">
+            <Star className="fill-amber-400 text-amber-500" aria-hidden />
+            <span className="sr-only">{t("library.home.favorites")}</span>
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -223,7 +237,20 @@ function Shelf({ id, title, songs, more, from }: { id: string; title: string; so
           <SongCard key={song.id} song={song} from={from} onPeek={() => setPeek(song.id)} onFavoriteChange={refresh} />
         ))}
       </div>
-      <SongPeek songs={songs} index={peekIndex < 0 ? null : peekIndex} onIndexChange={(index) => setPeek(songs[index]?.id ?? null)} onClose={() => setPeek(null)} from={from} onFavoriteChange={refresh} />
+      <SongPeek
+        songs={songs}
+        index={peekIndex < 0 ? null : peekIndex}
+        onIndexChange={(index) => setPeek(songs[index]?.id ?? null)}
+        onClose={() => setPeek(null)}
+        from={from}
+        onFavoriteChange={refresh}
+        finalFocus={(id) => {
+          // Back on the card of the song last shown, scrolled to.
+          const link = ref.current?.querySelector<HTMLElement>(`[data-song="${CSS.escape(id)}"] a`) ?? null;
+          link?.scrollIntoView({ block: "nearest", inline: "nearest" });
+          return link;
+        }}
+      />
     </section>
   );
 }
