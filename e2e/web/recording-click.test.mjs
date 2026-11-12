@@ -78,9 +78,19 @@ try {
 
   await step("Move the 1 a beat later on the Audio tab: the bars move, the beats stay", async () => {
     await page.goto(`${WEB}/library/${song.id}?tab=audio`);
+    await page.waitForLoadState("networkidle");
     const move = page.getByTestId("recording-move-one").first();
     await move.waitFor({ timeout: 15000 });
-    await move.getByRole("button", { name: "Move the 1 a beat later" }).click();
+    const later = move.getByRole("button", { name: "Move the 1 a beat later" });
+    await later.click({ timeout: 10000 }).catch(async (error) => {
+      // What stood in the way, for the log.
+      const state = await later.evaluate((button) => {
+        const box = button.getBoundingClientRect();
+        const top = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+        return { disabled: button.disabled, box: [box.x, box.y, box.width, box.height].map(Math.round), viewport: [innerWidth, innerHeight], top: top?.closest("[data-testid]")?.getAttribute("data-testid") ?? top?.tagName, url: location.pathname + location.search };
+      }).catch((reason) => String(reason));
+      throw new Error(`${error.message.split("\n")[0]} ${JSON.stringify(state)}`);
+    });
     let moved = null;
     for (let i = 0; i < 30 && !moved; i++) {
       const files = await api(me, "GET", `/song-versions/${song.id}/attachments`);

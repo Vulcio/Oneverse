@@ -113,6 +113,37 @@ function frequency(samples, start, span = 0.4) {
   for (let i = a + 1; i < b; i++) if (samples[i - 1] < 0 !== samples[i] < 0) crossings++;
   return crossings / 2 / span;
 }
+/**
+ * Where the A starts after `from` (s): the first 10 ms where 440 Hz is half as loud as it gets. Slowed, the
+ * metronome stands in for the click stem in the same mix (issue #448), so the first sound is its click, not the A.
+ */
+function toneStart(samples, from = 0) {
+  const window = RATE / 100;
+  const levels = [];
+  for (let s = Math.round(from * RATE); s + window < samples.length; s += window) levels.push(band(samples, 440, s, window));
+  const loudest = Math.max(...levels);
+  return from + (levels.findIndex((value) => value > loudest * 0.5) * window) / RATE;
+}
+/** The tone's frequency (Hz) over `span` s from `start`: the strongest between 300 and 600 Hz, by correlation, so the metronome's clicks (above 600 Hz) don't count. */
+function pitchOf(samples, start, span = 0.4) {
+  let best = { f: 0, level: 0 };
+  for (let f = 300; f <= 600; f += 0.5) {
+    const level = band(samples, f, Math.round(start * RATE), Math.round(span * RATE));
+    if (level > best.level) best = { f, level };
+  }
+  return best.f;
+}
+/** How much of `frequency` there is in `length` samples from `at`. */
+function band(samples, frequency, at, length) {
+  let re = 0;
+  let im = 0;
+  for (let k = 0; k < length; k++) {
+    const phase = (2 * Math.PI * frequency * k) / RATE;
+    re += samples[at + k] * Math.cos(phase);
+    im += samples[at + k] * Math.sin(phase);
+  }
+  return Math.hypot(re, im) / length;
+}
 /** How loud the tone is over 0.6 s from `start`, and how much that moves (%, in 20 ms windows): a wobble. */
 function loudness(samples, start) {
   const window = RATE / 50;
@@ -185,8 +216,8 @@ await step("at 80%: still an A (440 Hz), the clicks 1.25 s apart, the position 8
   await player().locator('[data-testid="stem-speed"][data-speed="0.8"]').waitFor();
   if ((await player().getByTestId("stem-speed-label").textContent()) !== "80%") throw new Error("not 80%");
   const { samples, position } = await recordMix(4.2);
-  const start = measure(samples);
-  const f = frequency(samples, start + 0.3);
+  const start = toneStart(samples);
+  const f = pitchOf(samples, start + 0.3);
   if (Math.abs(f - 440) > 440 * 0.02) throw new Error(`${f} Hz: the key moved`);
   const first = clickAt(samples, start);
   const gap = clickAt(samples, first + 1.25) - first;
