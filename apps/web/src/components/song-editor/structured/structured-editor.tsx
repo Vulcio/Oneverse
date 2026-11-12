@@ -12,6 +12,7 @@ import {
   transposeChord,
   transposeKey,
   type SectionInstance,
+  type ChordCheck,
   type SectionV2,
 } from "@oneverse/core";
 import { getSchema } from "@tiptap/core";
@@ -36,6 +37,8 @@ import { CAPO_OPTIONS, KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from "../song-form"
 import { editorToSections, editorToSong, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { startChordDrag } from "./drag";
 import { ChordBar } from "./chord-bar";
+import { ChordCheckNotice, ChordChecksCard } from "./chord-checks";
+import { useChordChecks } from "#/lib/chord-checks";
 import { BarPopover, BarsMenu, NewBarLine } from "./bar-tools";
 import { SectionInserter } from "./section-inserter";
 import { SongOrder } from "./song-order";
@@ -52,6 +55,7 @@ import {
   replaceDocument,
   setDocumentBeats,
   setDocumentKey,
+  setOutOfPlaceChords,
   duplicateLinked,
   replaceLinked,
   selectedChord,
@@ -412,6 +416,12 @@ function EditorBody({
     if (editor) remeasureChords(editor.view);
   }, [editor, display.font]);
 
+  // Chords that seem out of place (issue #356): marked on the chart, explained above it and in the chord's tools.
+  const chordChecks = useChordChecks(sections, songKey);
+  useEffect(() => {
+    if (editor && !readOnly) setOutOfPlaceChords(editor.view, new Set(chordChecks.chords.map((check) => check.chordId)));
+  }, [editor, readOnly, chordChecks]);
+
   if (readOnly) {
     return <EditPreview chart={chartOfSections(sections, flow, songKey || null)} />;
   }
@@ -423,6 +433,7 @@ function EditorBody({
       {sections.length > 0 ? (
         <SongOrder sections={sections} flow={flow} onChange={onFlowChange} songKey={songKey} selected={selectedPass} onSelect={choosePass} onDuplicateUnique={duplicateUnique} />
       ) : null}
+      {mode === "visual" && editor ? <ChordChecksCard editor={editor} checks={chordChecks} sections={sections} onSongKeyChange={onSongKeyChange} /> : null}
       {/* With room (issue #177), the chart as it will read beside the editor. */}
       <div
         className={cn(
@@ -439,12 +450,12 @@ function EditorBody({
           </SongOrderActionsContext.Provider>
           {/* A section at the end; between two, the "+" in the gap (issue #250). */}
           {editor ? <SectionInserter editor={editor} at={() => endOfOrder(editor)} testId="section-insert-end" /> : null}
-          {editor ? <ChordPopover editor={editor} songKey={songKey} editTick={editTick} /> : null}
+          {editor ? <ChordPopover editor={editor} songKey={songKey} editTick={editTick} checks={chordChecks.chords} /> : null}
           {editor ? <BarPopover editor={editor} /> : null}
           <p className="mt-4 text-xs text-muted-foreground">{t("structuredEditor.hints")}</p>
         </div>
         {mode === "visual" && editor ? <Palette editor={editor} songKey={songKey} sections={sections} /> : null}
-        {mode === "visual" && editor ? <ChordBar editor={editor} songKey={songKey} used={chordsUsed(sections)} /> : null}
+        {mode === "visual" && editor ? <ChordBar editor={editor} songKey={songKey} used={chordsUsed(sections)} checks={chordChecks.chords} /> : null}
         {mode === "text" ? <TextMode sections={sections} onChange={(next) => onChangeRef.current(next)} locked={othersHere > 0} /> : null}
         {mode === "preview" ? <EditPreview chart={chartOfSections(sections, flow, songKey || null)} withPanel /> : null}
         {mode !== "preview" ? (
@@ -781,7 +792,7 @@ function Palette({ editor, songKey, sections }: { editor: Editor; songKey: strin
 const VARIATIONS = ["", "m", "7", "maj7", "m7", "sus2", "sus4", "add9"];
 
 /** The selected chord's details, just under it: its symbol, the key's chords, variations, move and delete. */
-function ChordPopover({ editor, songKey, editTick }: { editor: Editor; songKey: string; editTick: number }) {
+function ChordPopover({ editor, songKey, editTick, checks }: { editor: Editor; songKey: string; editTick: number; checks: ChordCheck[] }) {
   const { t } = useTranslation();
   const chord = useEditorState({
     editor,
@@ -825,6 +836,7 @@ function ChordPopover({ editor, songKey, editTick }: { editor: Editor; songKey: 
   const root = /^\(?([A-G][#b]?)/.exec(chord.raw)?.[1];
   const variations = root ? VARIATIONS.map((suffix) => root + suffix).filter((raw) => raw !== chord.raw) : [];
   const valid = !!parseChord(draft);
+  const outOfPlace = checks.find((check) => check.chordId === chord.id);
 
   const chip = (raw: string, sub?: string) => (
     <button
@@ -892,6 +904,7 @@ function ChordPopover({ editor, songKey, editTick }: { editor: Editor; songKey: 
         </div>
       </div>
       {!valid && draft.trim() ? <p className="text-xs text-warning">{t("structuredEditor.unknownChord")}</p> : null}
+      {outOfPlace ? <ChordCheckNotice editor={editor} check={outOfPlace} /> : null}
       {inKey.length > 0 ? (
         <div className="flex flex-col gap-1">
           <span className="text-xs text-muted-foreground">{t("structuredEditor.inKey", { key: songKey })}</span>

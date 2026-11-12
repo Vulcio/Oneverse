@@ -28,6 +28,16 @@ Les trois modes :
 
 Modifier les paroles garde les accords avec elles : taper avant un accord l'emmène, et supprimer des mots qui portent des accords laisse les accords à l'endroit des mots, pour que vous les replaciez. Entrée coupe une ligne, et ses accords suivent leurs mots.
 
+### Les accords qui semblent mal placés
+
+Quand un accord semble mal placé, il est souligné d'une vague sur la grille, et un encadré au-dessus de la grille dit lequel et pourquoi, en toutes lettres. Rien ne change sans votre choix.
+
+- **Un accord hors de la tonalité** : il n'est pas parmi les accords de la tonalité du chant, ni parmi ceux que les chants dans cette tonalité empruntent souvent (en G : F, Eb, Cm, A et B), et le chant ne l'utilise presque nulle part ailleurs. `Dm` en G, par exemple : « Vouliez-vous dire D ? »
+- **Une section pas comme les autres** : un refrain avec `Bm` là où tous les autres refrains (trois ou plus) ont `D` au même endroit.
+- **Une tonalité qui ne va pas aux accords** : quand la plupart des accords ne sont pas dans la tonalité du chant mais vont à une autre, l'encadré le dit une fois au lieu de marquer chaque accord. **Passer la tonalité en …** ne change que la tonalité : les accords restent tels qu'écrits.
+
+Chacun a **Mettre …** pour mettre l'accord suggéré, **Garder …** pour le laisser tel qu'écrit (il n'est plus marqué sur cet appareil, sauf si vous le changez), et **Voir** pour le sélectionner sur la grille. Sélectionner un accord marqué montre aussi pourquoi dans ses outils (dans la barre du bas sur un téléphone ou une tablette). Un chant sans tonalité est lu dans la tonalité où vont ses accords.
+
 ## Les barres de mesure
 
 Les barres de mesure marquent le début de chaque mesure, dans les paroles, comme sur une grille de jazz : `|Amazing |grace how |sweet the |sound`. La [ligne des mesures et la grille en mesures](/fr/metronome/#grille-en-mesures) les suivent, le clic aussi. Sans elles, les mesures viennent des accords (voir [Mesures](/fr/metronome/#mesures)).

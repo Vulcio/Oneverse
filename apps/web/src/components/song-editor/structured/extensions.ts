@@ -760,6 +760,72 @@ export function setChordSymbol(view: EditorView, pos: number, raw: string) {
   view.dispatch(tr);
 }
 
+/** The chord with this ID, selected and scrolled into view (a chord that seems out of place, shown from the list). */
+export function selectChordById(view: EditorView, chordId: string): boolean {
+  let found: number | null = null;
+  view.state.doc.descendants((node, pos) => {
+    if (found !== null) return false;
+    if (isChord(node) && node.attrs.id === chordId) found = pos;
+    return true;
+  });
+  if (found === null) return false;
+  view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, found)).scrollIntoView());
+  focusUnlessTouch(view);
+  (view.nodeDOM(found) as HTMLElement | null)?.scrollIntoView?.({ block: "center" });
+  return true;
+}
+
+/** The chord with this ID put in place as `raw`, wherever it is. */
+export function setChordById(view: EditorView, chordId: string, raw: string): boolean {
+  let found: number | null = null;
+  view.state.doc.descendants((node, pos) => {
+    if (found !== null) return false;
+    if (isChord(node) && node.attrs.id === chordId) found = pos;
+    return true;
+  });
+  if (found === null) return false;
+  setChordSymbol(view, found, raw);
+  return true;
+}
+
+// --- chords that seem out of place (issue #356): a mark on each, the reasons kept by the React side
+
+const OUT_OF_PLACE_META = "songverse:outOfPlace";
+const outOfPlaceKey = new PluginKey<ReadonlySet<string>>("songverseOutOfPlace");
+
+/** Marks these chords (by ID) as seeming out of place; the others lose their mark. */
+export function setOutOfPlaceChords(view: EditorView, chordIds: ReadonlySet<string>) {
+  const current = outOfPlaceKey.getState(view.state);
+  if (current && current.size === chordIds.size && [...chordIds].every((id) => current.has(id))) return;
+  view.dispatch(view.state.tr.setMeta(OUT_OF_PLACE_META, chordIds).setMeta("addToHistory", false));
+}
+
+function outOfPlaceMarks() {
+  let cached: { doc: PMNode; marked: ReadonlySet<string>; set: DecorationSet } | null = null;
+  return new Plugin<ReadonlySet<string>>({
+    key: outOfPlaceKey,
+    state: {
+      init: () => new Set(),
+      apply: (tr, previous) => (tr.getMeta(OUT_OF_PLACE_META) as ReadonlySet<string> | undefined) ?? previous,
+    },
+    props: {
+      decorations(state) {
+        const marked = outOfPlaceKey.getState(state)!;
+        if (cached && cached.doc === state.doc && cached.marked === marked) return cached.set;
+        const decorations: Decoration[] = [];
+        if (marked.size > 0) {
+          state.doc.descendants((node, pos) => {
+            if (isChord(node) && marked.has(node.attrs.id as string)) decorations.push(Decoration.node(pos, pos + node.nodeSize, { class: "sv-chord-odd", "data-out-of-place": "" }));
+            return true;
+          });
+        }
+        cached = { doc: state.doc, marked, set: DecorationSet.create(state.doc, decorations) };
+        return cached.set;
+      },
+    },
+  });
+}
+
 /** Adds a chord at `at` (default: the cursor), selected so it can be moved or changed straight away. */
 export function insertChord(view: EditorView, raw: string, at?: number): boolean {
   const { state } = view;
@@ -1120,6 +1186,7 @@ export function songEditorExtensions(events: ChordViewEvents) {
         chordSpacing(),
         dropTarget(),
         beatDots(events),
+        outOfPlaceMarks(),
         new Plugin({
           key: new PluginKey("songverseKeys"),
           props: {

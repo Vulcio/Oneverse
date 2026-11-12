@@ -1,4 +1,4 @@
-import { diatonicChords } from "@oneverse/core";
+import { diatonicChords, type ChordCheck } from "@oneverse/core";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
@@ -7,6 +7,7 @@ import { Button } from "@oneverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { deleteChord, insertChord, nudgeChord, selectedChord, setChordSymbol } from "./extensions";
 import { BarLineTools, NewBarLine, useSelectedBar } from "./bar-tools";
+import { ChordCheckNotice } from "./chord-checks";
 
 const VARIATIONS = ["", "m", "7", "maj7", "m7", "sus2", "sus4", "add9"];
 
@@ -49,12 +50,15 @@ const keepFocus = (event: SyntheticEvent) => event.preventDefault();
  * A bar line (issue #238) is added from its end, and one selected gets its
  * tools there instead of the chords.
  */
-export function ChordBar({ editor, songKey, used }: { editor: Editor; songKey: string; used: string[] }) {
+export function ChordBar({ editor, songKey, used, checks = [] }: { editor: Editor; songKey: string; used: string[]; checks?: ChordCheck[] }) {
   const { t } = useTranslation();
   const inset = useKeyboardInset();
   const [other, setOther] = useState("");
   const [otherOpen, setOtherOpen] = useState(false);
   const selected = useEditorState({ editor, selector: ({ editor: current }) => (current ? ((selectedChord(current.state)?.node.attrs.raw as string | undefined) ?? null) : null) });
+  const selectedId = useEditorState({ editor, selector: ({ editor: current }) => (current ? ((selectedChord(current.state)?.node.attrs.id as string | undefined) ?? null) : null) });
+  // A chord that seems out of place (issue #356): why, above the chords, with Use and Keep.
+  const outOfPlace = selectedId ? checks.find((check) => check.chordId === selectedId) : undefined;
   const bar = useSelectedBar(editor);
   const inKey = diatonicChords(songKey);
   const others = used.filter((raw) => !inKey.some((chord) => chord.chord === raw));
@@ -103,6 +107,11 @@ export function ChordBar({ editor, songKey, used }: { editor: Editor; songKey: s
       className="fixed inset-x-0 z-30 border-t bg-background/95 px-2 pt-1.5 pb-2 font-sans backdrop-blur supports-[backdrop-filter]:bg-background/85 lg:pointer-fine:hidden"
       style={{ bottom: inset > 0 ? inset : "var(--save-bar-h, 0px)" }}
     >
+      {outOfPlace && !bar ? (
+        <div className="mb-1.5 max-h-40 overflow-y-auto">
+          <ChordCheckNotice editor={editor} check={outOfPlace} large />
+        </div>
+      ) : null}
       <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[11px] text-muted-foreground">
         <span className="truncate">{bar ? t("structuredEditor.bars.toolsHint") : selected ? t("structuredEditor.barReplace", { chord: selected }) : t("structuredEditor.barHint")}</span>
         {songKey && inKey.length ? <span className="shrink-0">{t("structuredEditor.inKey", { key: songKey })}</span> : null}

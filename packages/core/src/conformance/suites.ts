@@ -4,6 +4,7 @@ import { effectiveDisplaySettings, mergeDisplaySettings } from "../display/setti
 import { chordRowLabel, chordRowShowsShapes } from "../display/chord-rows.js";
 import { prettyChord } from "../display/accidentals.js";
 import { chartEdgeChords, degreeChord, transitionDegrees, transitionProgressions } from "../chords/transitions.js";
+import { checkChartChords } from "../chords/context.js";
 import { findProgression, parseProgressionQuery, progressionDegree, progressionGrams, progressionSimilarity, songProgressions } from "../chords/progressions.js";
 import { chordFamily, diatonicChords, formatChord, keyUsesFlats, nashvilleChord, parseChord, romanChord, sameChord, simplifyChord, transposeChord } from "../chords/chord.js";
 import { formatKey, parseKey, semitonesBetween, transposeKey } from "../music-keys/transpose.js";
@@ -58,6 +59,18 @@ import { defaultPlaybackSource, filesForSource, playbackSourcesOf, resolvePlayba
  * the behaviour matters to every client (the web app and the native apps,
  * #165): the song format, chords, the timeline, what the API accepts.
  */
+
+/** A section of a chart for the chord checks: each line's chords, one per word. */
+function conformanceSection(id: string, type: string, lines: string[]) {
+  return {
+    id,
+    type,
+    lines: lines.map((chords, index) => {
+      const raws = chords.split(" ");
+      return { id: `${id}_l${index}`, text: raws.map(() => "word").join(" "), chords: raws.map((raw, at) => ({ id: `${id}_l${index}_c${at}`, raw, at: at * 5 })) };
+    }),
+  };
+}
 
 export interface ConformanceFunction {
   about: string;
@@ -543,6 +556,28 @@ export const CONFORMANCE: ConformanceArea[] = [
         params: ["song"],
         run: (song: unknown) => songProgressions(read(song)),
         cases: [{ name: "verse and chorus", args: [SONG] }],
+      },
+      checkChartChords: {
+        about:
+          "Chords that seem out of context (issue #356): outside the key and what songs in it often borrow, and rare in the song; or the only difference from every other section of its kind. Each with why and a suggestion; a key the chords mostly don't fit said once instead; a song without a key read in the one its chords fit.",
+        params: ["chart"],
+        run: checkChartChords,
+        cases: [
+          { name: "a song with its key's chords only", args: [{ key: "G", sections: read(SONG).sections }] },
+          {
+            name: "a minor chord where the key has a major one",
+            args: [{ key: "G", sections: [conformanceSection("s1", "verse", ["G D Em C", "G Dm7 C G"]), conformanceSection("s2", "chorus", ["C D G Em", "C D G"])] }],
+          },
+          {
+            name: "one chorus unlike the three others",
+            args: [{ key: "D", sections: ["G D A D", "G Bm A D", "G D A D", "G D A D"].map((chords, index) => conformanceSection(`c${index}`, "chorus", [chords])) }],
+          },
+          {
+            name: "a key the chords don't fit",
+            args: [{ key: "Ab", sections: [conformanceSection("s1", "verse", ["D A Bm G", "D A G D"]), conformanceSection("s2", "chorus", ["G D A Bm", "G D A D"])] }],
+          },
+          { name: "no key: the one the chords fit", args: [{ key: null, sections: [conformanceSection("s1", "verse", ["A E F#m D", "A E D A"]), conformanceSection("s2", "chorus", ["D E A Fm", "D E A"])] }] },
+        ],
       },
       progressionGrams: {
         about: "The runs of 3 and 4 chords in a song's sections, each section read as a loop, each run once: what songs are compared by.",

@@ -4426,6 +4426,721 @@
         }
       ]
     },
+    "checkChartChords": {
+      "about": "Chords that seem out of context (issue #356): outside the key and what songs in it often borrow, and rare in the song; or the only difference from every other section of its kind. Each with why and a suggestion; a key the chords mostly don't fit said once instead; a song without a key read in the one its chords fit.",
+      "params": [
+        "chart"
+      ],
+      "cases": [
+        {
+          "name": "a song with its key's chords only",
+          "args": [
+            {
+              "key": "G",
+              "sections": [
+                {
+                  "id": "sec_verse",
+                  "type": "verse",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_v1",
+                      "kind": "lyric",
+                      "text": "Amazing grace how sweet the sound",
+                      "chords": [
+                        {
+                          "id": "chd_v1",
+                          "at": 0,
+                          "raw": "G"
+                        },
+                        {
+                          "id": "chd_v2",
+                          "at": 18,
+                          "raw": "G7"
+                        },
+                        {
+                          "id": "chd_v3",
+                          "at": 28,
+                          "raw": "C"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "line_v2",
+                      "kind": "note",
+                      "text": "softly",
+                      "chords": []
+                    },
+                    {
+                      "id": "line_v3",
+                      "kind": "lyric",
+                      "text": "That saved a wretch like me",
+                      "chords": [
+                        {
+                          "id": "chd_v4",
+                          "at": 0,
+                          "raw": "D/F#"
+                        },
+                        {
+                          "id": "chd_v5",
+                          "at": 20,
+                          "raw": "Em7"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "sec_chorus",
+                  "type": "chorus",
+                  "label": null,
+                  "showLabel": true,
+                  "lines": [
+                    {
+                      "id": "line_c1",
+                      "kind": "lyric",
+                      "text": "I once was lost but now am found",
+                      "chords": [
+                        {
+                          "id": "chd_c1",
+                          "at": 2,
+                          "raw": "C"
+                        },
+                        {
+                          "id": "chd_c2",
+                          "at": 17,
+                          "raw": "Dsus4"
+                        },
+                        {
+                          "id": "chd_c3",
+                          "at": 26,
+                          "raw": "Bm7b5"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "key": "G",
+            "keyGuessed": false,
+            "keyCheck": null,
+            "chords": []
+          }
+        },
+        {
+          "name": "a minor chord where the key has a major one",
+          "args": [
+            {
+              "key": "G",
+              "sections": [
+                {
+                  "id": "s1",
+                  "type": "verse",
+                  "lines": [
+                    {
+                      "id": "s1_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s1_l0_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "s1_l0_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "s1_l0_c2",
+                          "raw": "Em",
+                          "at": 10
+                        },
+                        {
+                          "id": "s1_l0_c3",
+                          "raw": "C",
+                          "at": 15
+                        }
+                      ]
+                    },
+                    {
+                      "id": "s1_l1",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s1_l1_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "s1_l1_c1",
+                          "raw": "Dm7",
+                          "at": 5
+                        },
+                        {
+                          "id": "s1_l1_c2",
+                          "raw": "C",
+                          "at": 10
+                        },
+                        {
+                          "id": "s1_l1_c3",
+                          "raw": "G",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "s2",
+                  "type": "chorus",
+                  "lines": [
+                    {
+                      "id": "s2_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s2_l0_c0",
+                          "raw": "C",
+                          "at": 0
+                        },
+                        {
+                          "id": "s2_l0_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "s2_l0_c2",
+                          "raw": "G",
+                          "at": 10
+                        },
+                        {
+                          "id": "s2_l0_c3",
+                          "raw": "Em",
+                          "at": 15
+                        }
+                      ]
+                    },
+                    {
+                      "id": "s2_l1",
+                      "text": "word word word",
+                      "chords": [
+                        {
+                          "id": "s2_l1_c0",
+                          "raw": "C",
+                          "at": 0
+                        },
+                        {
+                          "id": "s2_l1_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "s2_l1_c2",
+                          "raw": "G",
+                          "at": 10
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "key": "G",
+            "keyGuessed": false,
+            "keyCheck": null,
+            "chords": [
+              {
+                "chordId": "s1_l1_c1",
+                "sectionId": "s1",
+                "lineId": "s1_l1",
+                "raw": "Dm7",
+                "reason": {
+                  "kind": "outsideKey",
+                  "key": "G",
+                  "inKey": [
+                    "G",
+                    "Am",
+                    "Bm",
+                    "C",
+                    "D",
+                    "Em",
+                    "F#dim"
+                  ],
+                  "borrowed": [
+                    "F",
+                    "Eb",
+                    "Cm",
+                    "A",
+                    "B"
+                  ],
+                  "times": 1
+                },
+                "suggestion": "D7"
+              }
+            ]
+          }
+        },
+        {
+          "name": "one chorus unlike the three others",
+          "args": [
+            {
+              "key": "D",
+              "sections": [
+                {
+                  "id": "c0",
+                  "type": "chorus",
+                  "lines": [
+                    {
+                      "id": "c0_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "c0_l0_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "c0_l0_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "c0_l0_c2",
+                          "raw": "A",
+                          "at": 10
+                        },
+                        {
+                          "id": "c0_l0_c3",
+                          "raw": "D",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "c1",
+                  "type": "chorus",
+                  "lines": [
+                    {
+                      "id": "c1_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "c1_l0_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "c1_l0_c1",
+                          "raw": "Bm",
+                          "at": 5
+                        },
+                        {
+                          "id": "c1_l0_c2",
+                          "raw": "A",
+                          "at": 10
+                        },
+                        {
+                          "id": "c1_l0_c3",
+                          "raw": "D",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "c2",
+                  "type": "chorus",
+                  "lines": [
+                    {
+                      "id": "c2_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "c2_l0_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "c2_l0_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "c2_l0_c2",
+                          "raw": "A",
+                          "at": 10
+                        },
+                        {
+                          "id": "c2_l0_c3",
+                          "raw": "D",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "c3",
+                  "type": "chorus",
+                  "lines": [
+                    {
+                      "id": "c3_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "c3_l0_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "c3_l0_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "c3_l0_c2",
+                          "raw": "A",
+                          "at": 10
+                        },
+                        {
+                          "id": "c3_l0_c3",
+                          "raw": "D",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "key": "D",
+            "keyGuessed": false,
+            "keyCheck": null,
+            "chords": [
+              {
+                "chordId": "c1_l0_c1",
+                "sectionId": "c1",
+                "lineId": "c1_l0",
+                "raw": "Bm",
+                "reason": {
+                  "kind": "unlikeOthers",
+                  "usual": "D",
+                  "others": 3,
+                  "sectionType": "chorus"
+                },
+                "suggestion": "D"
+              }
+            ]
+          }
+        },
+        {
+          "name": "a key the chords don't fit",
+          "args": [
+            {
+              "key": "Ab",
+              "sections": [
+                {
+                  "id": "s1",
+                  "type": "verse",
+                  "lines": [
+                    {
+                      "id": "s1_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s1_l0_c0",
+                          "raw": "D",
+                          "at": 0
+                        },
+                        {
+                          "id": "s1_l0_c1",
+                          "raw": "A",
+                          "at": 5
+                        },
+                        {
+                          "id": "s1_l0_c2",
+                          "raw": "Bm",
+                          "at": 10
+                        },
+                        {
+                          "id": "s1_l0_c3",
+                          "raw": "G",
+                          "at": 15
+                        }
+                      ]
+                    },
+                    {
+                      "id": "s1_l1",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s1_l1_c0",
+                          "raw": "D",
+                          "at": 0
+                        },
+                        {
+                          "id": "s1_l1_c1",
+                          "raw": "A",
+                          "at": 5
+                        },
+                        {
+                          "id": "s1_l1_c2",
+                          "raw": "G",
+                          "at": 10
+                        },
+                        {
+                          "id": "s1_l1_c3",
+                          "raw": "D",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "s2",
+                  "type": "chorus",
+                  "lines": [
+                    {
+                      "id": "s2_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s2_l0_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "s2_l0_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "s2_l0_c2",
+                          "raw": "A",
+                          "at": 10
+                        },
+                        {
+                          "id": "s2_l0_c3",
+                          "raw": "Bm",
+                          "at": 15
+                        }
+                      ]
+                    },
+                    {
+                      "id": "s2_l1",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s2_l1_c0",
+                          "raw": "G",
+                          "at": 0
+                        },
+                        {
+                          "id": "s2_l1_c1",
+                          "raw": "D",
+                          "at": 5
+                        },
+                        {
+                          "id": "s2_l1_c2",
+                          "raw": "A",
+                          "at": 10
+                        },
+                        {
+                          "id": "s2_l1_c3",
+                          "raw": "D",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "key": "Ab",
+            "keyGuessed": false,
+            "keyCheck": {
+              "written": "Ab",
+              "fits": "D",
+              "outsideWritten": 12,
+              "outsideFits": 0,
+              "total": 16
+            },
+            "chords": []
+          }
+        },
+        {
+          "name": "no key: the one the chords fit",
+          "args": [
+            {
+              "key": null,
+              "sections": [
+                {
+                  "id": "s1",
+                  "type": "verse",
+                  "lines": [
+                    {
+                      "id": "s1_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s1_l0_c0",
+                          "raw": "A",
+                          "at": 0
+                        },
+                        {
+                          "id": "s1_l0_c1",
+                          "raw": "E",
+                          "at": 5
+                        },
+                        {
+                          "id": "s1_l0_c2",
+                          "raw": "F#m",
+                          "at": 10
+                        },
+                        {
+                          "id": "s1_l0_c3",
+                          "raw": "D",
+                          "at": 15
+                        }
+                      ]
+                    },
+                    {
+                      "id": "s1_l1",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s1_l1_c0",
+                          "raw": "A",
+                          "at": 0
+                        },
+                        {
+                          "id": "s1_l1_c1",
+                          "raw": "E",
+                          "at": 5
+                        },
+                        {
+                          "id": "s1_l1_c2",
+                          "raw": "D",
+                          "at": 10
+                        },
+                        {
+                          "id": "s1_l1_c3",
+                          "raw": "A",
+                          "at": 15
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "s2",
+                  "type": "chorus",
+                  "lines": [
+                    {
+                      "id": "s2_l0",
+                      "text": "word word word word",
+                      "chords": [
+                        {
+                          "id": "s2_l0_c0",
+                          "raw": "D",
+                          "at": 0
+                        },
+                        {
+                          "id": "s2_l0_c1",
+                          "raw": "E",
+                          "at": 5
+                        },
+                        {
+                          "id": "s2_l0_c2",
+                          "raw": "A",
+                          "at": 10
+                        },
+                        {
+                          "id": "s2_l0_c3",
+                          "raw": "Fm",
+                          "at": 15
+                        }
+                      ]
+                    },
+                    {
+                      "id": "s2_l1",
+                      "text": "word word word",
+                      "chords": [
+                        {
+                          "id": "s2_l1_c0",
+                          "raw": "D",
+                          "at": 0
+                        },
+                        {
+                          "id": "s2_l1_c1",
+                          "raw": "E",
+                          "at": 5
+                        },
+                        {
+                          "id": "s2_l1_c2",
+                          "raw": "A",
+                          "at": 10
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "key": "A",
+            "keyGuessed": true,
+            "keyCheck": null,
+            "chords": [
+              {
+                "chordId": "s2_l0_c3",
+                "sectionId": "s2",
+                "lineId": "s2_l0",
+                "raw": "Fm",
+                "reason": {
+                  "kind": "outsideKey",
+                  "key": "A",
+                  "inKey": [
+                    "A",
+                    "Bm",
+                    "C#m",
+                    "D",
+                    "E",
+                    "F#m",
+                    "G#dim"
+                  ],
+                  "borrowed": [
+                    "G",
+                    "F",
+                    "Dm",
+                    "B",
+                    "C#"
+                  ],
+                  "times": 1
+                },
+                "suggestion": "F#m"
+              }
+            ]
+          }
+        }
+      ]
+    },
     "progressionGrams": {
       "about": "The runs of 3 and 4 chords in a song's sections, each section read as a loop, each run once: what songs are compared by.",
       "params": [

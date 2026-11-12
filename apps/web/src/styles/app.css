@@ -222,6 +222,12 @@
   background: var(--color-primary);
   color: var(--color-primary-foreground);
 }
+/* A chord that seems out of place (issue #356): a wavy underline, its reason in the chord's tools. */
+.sv-chord-odd .sv-chord-chip {
+  text-decoration: underline wavy var(--color-warning);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+}
 .sv-chord-moving .sv-chord-chip {
   opacity: 0.3;
 }

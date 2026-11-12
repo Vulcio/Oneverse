@@ -28,6 +28,16 @@ The three modes:
 
 Editing the words keeps the chords with them: typing before a chord carries it along, and deleting words that carry chords leaves the chords where the words were, so you can place them again. Enter splits a line and its chords go with their words.
 
+### Chords that seem out of place
+
+When a chord seems out of place, it gets a wavy underline on the chart, and a box above the chart says which one and why, in words. Nothing changes unless you choose it.
+
+- **A chord outside the key**: one that isn't among the chords of the song's key, nor one songs in that key often borrow (in G, those are F, Eb, Cm, A and B), and that the song hardly uses elsewhere. `Dm` in G, for example: "Did you mean D?"
+- **A section unlike the others**: one chorus with `Bm` where every other chorus (three or more) has `D` at the same place.
+- **A key the chords don't fit**: when most chords aren't in the song's key but fit another, the box says so once instead of marking every chord. **Set the key to …** changes only the key: the chords stay as written.
+
+Each one has **Use …** to put in the chord it suggests, **Keep …** to leave it as written (it isn't marked again on this device unless you change it), and **Show** to select it on the chart. Selecting a marked chord also shows why in its tools (in the bar at the bottom on a phone or tablet). A song with no key is read in the key its chords fit.
+
 ## Bar lines
 
 Bar lines mark where each bar starts, in the words, as on a lead sheet: `|Amazing |grace how |sweet the |sound`. The [bars row and the chord grid](/metronome/#chord-grid) follow them, the click too. Without any, the bars come from the chords (see [Bars](/metronome/#bars)).

@@ -45,6 +45,7 @@ export * from "./chords/shapes.js";
 export * from "./chords/piano.js";
 export * from "./chords/progressions.js";
 export * from "./chords/transitions.js";
+export * from "./chords/context.js";
 export * from "./display/settings.js";
 export * from "./display/chord-rows.js";
 export * from "./display/accidentals.js";
