@@ -565,9 +565,13 @@ export function AttachmentsTab({
         <CardContent className="flex flex-col gap-3">
           <div
             className={cn(
-              "flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center text-sm",
+              "flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center text-sm transition-colors hover:border-primary/60 hover:bg-muted/40",
               dragging ? "border-primary bg-primary/5" : "border-input",
             )}
+            // The whole box opens the file picker, not only "browse" (its button and the input handle their own clicks).
+            onClick={(event) => {
+              if (!(event.target as HTMLElement).closest("button, a, input, label, select")) inputRef.current?.click();
+            }}
             onDragOver={(event) => {
               event.preventDefault();
               setDragging(true);

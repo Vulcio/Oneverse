@@ -36,6 +36,9 @@ await signIn(page, me);
 await step("a file that isn't text is refused, saying why", async () => {
   await page.goto(`${WEB}/library/new`);
   await page.waitForLoadState("networkidle");
+  // The whole drop zone opens the file picker, not only its "browse" link.
+  const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByText(/up to 10 MB/).click()]);
+  if (chooser.isMultiple()) throw new Error("the song's file picker takes one file");
   await page.getByTestId("source-file-input").setInputFiles({ name: "Song.pro", mimeType: "application/octet-stream", buffer: Buffer.from([0x0a, 0x12, 0x08, 0x00, 0x01, 0x02, 0x03, 0x88, 0x00, 0x00, 0x12, 0x1a]) });
   await page.getByText(/isn't text Songverse can read/).waitFor();
 });
