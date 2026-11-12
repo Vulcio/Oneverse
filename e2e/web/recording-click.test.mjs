@@ -77,6 +77,8 @@ try {
   });
 
   await step("Move the 1 a beat later on the Audio tab: the bars move, the beats stay", async () => {
+    // Its fields are for editing: practice mode (step 1's) shows them read-only once the page hydrates.
+    await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
     await page.goto(`${WEB}/library/${song.id}?tab=audio`);
     await page.waitForLoadState("networkidle");
     const move = page.getByTestId("recording-move-one").first();

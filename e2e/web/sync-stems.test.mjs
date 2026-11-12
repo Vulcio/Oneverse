@@ -181,13 +181,15 @@ await step("the leader slows to 80% (issue #139): the follower's at 80% too, sti
   page = leader;
   const after = Date.now();
   await leader.waitForFunction((s) => (window.songverseMetronome?.clicks ?? []).filter((c) => c.heardAt > s).length >= 4, after, { timeout: 15000 });
-  const [clicks, start] = await leader.evaluate(() => [window.songverseMetronome.clicks, window.songverseStems.starts.at(-1)]);
-  // Beat n now falls every 0.5 / 0.8 s of real time after the first beat's.
-  const worst = Math.max(...clicks.filter((c) => c.heardAt > after).map((c) => {
-    const n = c.position - 4;
-    return Math.abs(c.heardAt - (start.zeroAt + ((0.5 + n * 0.5) / 0.8) * 1000));
-  }));
-  check("the click on the slowed beat (ms off, at most)", worst < 2, `${worst.toFixed(2)} ms`);
+  const clicks = (await leader.evaluate(() => window.songverseMetronome.clicks)).filter((c) => c.heardAt > after);
+  // On the stems' own audio clock (issue #448): each click at its beat of the recording, and the
+  // beats 0.5 / 0.8 s apart on that clock. (Against the device's clock, a restart's pairing and a
+  // click's are taken at different moments and can differ by a few ms on their own.)
+  const worst = Math.max(...clicks.map((c) => Math.abs(c.recording - (0.5 + (c.position - 4) * 0.5)) * 1000));
+  check("the click on the slowed beat of the recording (ms off, at most)", worst < 2, `${worst.toFixed(2)} ms`);
+  const steps = clicks.slice(1).map((c, i) => [c.position - clicks[i].position, c.time - clicks[i].time]).filter(([beats]) => beats > 0);
+  const spacing = Math.max(...steps.map(([beats, seconds]) => Math.abs(seconds - (beats * 0.5) / 0.8) * 1000));
+  check("the slowed beats apart on the audio clock (ms off, at most)", steps.length >= 2 && spacing < 1, `${spacing.toFixed(3)} ms`);
 });
 
 await step("the leader turns the click off and ends the session: the follower's stems stop", async () => {
