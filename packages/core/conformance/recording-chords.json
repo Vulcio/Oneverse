@@ -874,6 +874,309 @@
           "expected": 0
         }
       ]
+    },
+    "clickGrid": {
+      "about": "Where the metronome clicks with a recording (issue #448): the recording's time of each beat asked (0 = its first beat, bar 1; fractions for subdivisions; negative before it), on its beat map smoothed over 6 beats each side (a parabola) and moved so beat 0 is the first beat; before the map and past it, at the tempo of the nearest beats; a steady grid at `tempo` with no map or one more than a quarter beat from the first beat. Rounded to 0.1 ms here",
+      "params": [
+        "beat",
+        "beats"
+      ],
+      "cases": [
+        {
+          "name": "no map",
+          "args": [
+            {
+              "tempo": 120,
+              "firstBeat": 1.5,
+              "map": null
+            },
+            [
+              -3,
+              0,
+              0.5,
+              4
+            ]
+          ],
+          "expected": [
+            0,
+            1.5,
+            1.75,
+            3.5
+          ]
+        },
+        {
+          "name": "a band slowing down, one beat 12 ms late",
+          "args": [
+            {
+              "tempo": 100,
+              "firstBeat": 0.8,
+              "map": {
+                "beats": [
+                  0.8,
+                  1.4,
+                  2.002,
+                  2.604,
+                  3.206,
+                  3.81,
+                  4.414,
+                  5.02,
+                  5.626,
+                  6.244,
+                  6.84,
+                  7.448,
+                  8.058,
+                  8.668,
+                  9.278,
+                  9.89,
+                  10.502,
+                  11.116,
+                  11.73,
+                  12.344,
+                  12.96,
+                  13.576,
+                  14.194,
+                  14.812,
+                  15.43,
+                  16.05,
+                  16.67,
+                  17.292,
+                  17.914,
+                  18.536,
+                  19.16,
+                  19.784
+                ],
+                "downbeats": [
+                  0.8,
+                  3.206,
+                  5.626,
+                  8.058,
+                  10.502,
+                  12.96,
+                  15.43,
+                  17.914
+                ]
+              }
+            },
+            [
+              -2,
+              0,
+              0.5,
+              9,
+              20,
+              31,
+              35
+            ]
+          ],
+          "expected": [
+            -0.4053,
+            0.8,
+            1.1003,
+            6.2346,
+            12.9602,
+            19.7841,
+            22.2734
+          ]
+        },
+        {
+          "name": "a first beat set away from the map",
+          "args": [
+            {
+              "tempo": 120,
+              "firstBeat": 3.2,
+              "map": {
+                "beats": [
+                  2,
+                  2.5,
+                  3,
+                  3.5,
+                  4,
+                  4.5
+                ],
+                "downbeats": [
+                  2,
+                  4
+                ]
+              }
+            },
+            [
+              0,
+              1
+            ]
+          ],
+          "expected": [
+            3.2,
+            3.7
+          ]
+        }
+      ]
+    },
+    "shiftRecordingBeat": {
+      "about": "The recording's beat moved by hand (issue #448): `seconds` moves every beat and bar, `beats` moves the bars that many beats later (earlier when negative) on the same beats, a beat added before the first when they move back; nothing before 0:00; the first beat is the first bar's, beats listed from it, to the millisecond. With no map, only the first beat moves (a beat is 60 / tempo)",
+      "params": [
+        "beat",
+        "shift"
+      ],
+      "cases": [
+        {
+          "name": "20 ms later",
+          "args": [
+            {
+              "tempo": 120,
+              "firstBeat": 1,
+              "map": {
+                "beats": [
+                  1,
+                  1.5,
+                  2,
+                  2.5,
+                  3,
+                  3.5,
+                  4,
+                  4.5
+                ],
+                "downbeats": [
+                  1,
+                  3
+                ]
+              }
+            },
+            {
+              "seconds": 0.02
+            }
+          ],
+          "expected": {
+            "firstBeat": 1.02,
+            "map": {
+              "beats": [
+                1.02,
+                1.52,
+                2.02,
+                2.52,
+                3.02,
+                3.52,
+                4.02,
+                4.52
+              ],
+              "downbeats": [
+                1.02,
+                3.02
+              ]
+            }
+          }
+        },
+        {
+          "name": "the 1 a beat later",
+          "args": [
+            {
+              "tempo": 120,
+              "firstBeat": 1,
+              "map": {
+                "beats": [
+                  1,
+                  1.5,
+                  2,
+                  2.5,
+                  3,
+                  3.5,
+                  4,
+                  4.5
+                ],
+                "downbeats": [
+                  1,
+                  3
+                ]
+              }
+            },
+            {
+              "beats": 1
+            }
+          ],
+          "expected": {
+            "firstBeat": 1.5,
+            "map": {
+              "beats": [
+                1.5,
+                2,
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5
+              ],
+              "downbeats": [
+                1.5,
+                3.5
+              ]
+            }
+          }
+        },
+        {
+          "name": "the 1 a beat earlier",
+          "args": [
+            {
+              "tempo": 120,
+              "firstBeat": 1,
+              "map": {
+                "beats": [
+                  1,
+                  1.5,
+                  2,
+                  2.5,
+                  3,
+                  3.5,
+                  4,
+                  4.5
+                ],
+                "downbeats": [
+                  1,
+                  3
+                ]
+              }
+            },
+            {
+              "beats": -1
+            }
+          ],
+          "expected": {
+            "firstBeat": 0.5,
+            "map": {
+              "beats": [
+                0.5,
+                1,
+                1.5,
+                2,
+                2.5,
+                3,
+                3.5,
+                4,
+                4.5
+              ],
+              "downbeats": [
+                0.5,
+                2.5
+              ]
+            }
+          }
+        },
+        {
+          "name": "no map",
+          "args": [
+            {
+              "tempo": 90,
+              "firstBeat": 0.4,
+              "map": null
+            },
+            {
+              "beats": 1,
+              "seconds": -0.01
+            }
+          ],
+          "expected": {
+            "firstBeat": 1.057,
+            "map": null
+          }
+        }
+      ]
     }
   }
 }

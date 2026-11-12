@@ -28,6 +28,7 @@ import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, scr
 import { cuesFromSections } from "../recording/cues.js";
 import { readRecordingChords, type RecordingChord } from "../recording/chords.js";
 import { cuesFromChords, downbeatShift, recordingBars, recordingChordSymbol, recordingSteps } from "../recording/chord-bars.js";
+import { clickGrid, shiftRecordingBeat } from "../recording/click-grid.js";
 import { applyLiveOp, cueItem, cueTarget, liveSessionAt, mayCue, mayPresent, mayRoute } from "../live/index.js";
 import { formatTimer, orderScreenSets, pickDaySet, timerColors, lyricSlides, lyricSlideLines, screenChordLabel, screenAutoTextSize, screenSectionKind, screenTextEffects, screenShowsChart, screenWidgetShows, screenSectionText, ScreenSectionStyleSchema, slideAtPosition, sungAtPosition, textSlides, passageSlides, slideKey, normalizeScreenCode, composeScreenTheme, filterScreenTemplates, placeScreenWidget, readScreenEffects, readScreenTemplate, readScreenTimer, resolveScreenTheme, screenBaseColor, splitScreenTheme, screenWidgetLayer, SCREEN_LAYOUT_PRESETS, SCREEN_THEME_TEMPLATES, ScreenWidgetSchema, screenQrPayload, screenSlideCount, screenThemeContrast, sectionEnergy, readIsf, readIsfValues, readScreenReport, screenTier, shaderControlValue, advanceShaderClock, reactionLevel } from "../screens/index.js";
 import { rankSongbookHits, songbookReferences } from "../songbook-references/index.js";
@@ -3266,6 +3267,43 @@ export const CONFORMANCE: ConformanceArea[] = [
             ],
           },
           { name: "every chord on the 1", args: [chordRecording({ bars: ["G", "C", "D", "Em", "G", "C", "D", "Em", "G", "C"] })] },
+        ],
+      },
+      clickGrid: {
+        about: "Where the metronome clicks with a recording (issue #448): the recording's time of each beat asked (0 = its first beat, bar 1; fractions for subdivisions; negative before it), on its beat map smoothed over 6 beats each side (a parabola) and moved so beat 0 is the first beat; before the map and past it, at the tempo of the nearest beats; a steady grid at `tempo` with no map or one more than a quarter beat from the first beat. Rounded to 0.1 ms here",
+        params: ["beat", "beats"],
+        run: (beat: { tempo: number; firstBeat: number; map: { beats: number[]; downbeats: number[] } | null }, beats: number[]) => {
+          const grid = clickGrid(beat);
+          return beats.map((n) => Math.round(grid.secondsAt(n) * 10000) / 10000);
+        },
+        cases: [
+          { name: "no map", args: [{ tempo: 120, firstBeat: 1.5, map: null }, [-3, 0, 0.5, 4]] },
+          {
+            name: "a band slowing down, one beat 12 ms late",
+            args: [
+              {
+                tempo: 100,
+                firstBeat: 0.8,
+                map: {
+                  beats: Array.from({ length: 32 }, (_, i) => Math.round((0.8 + i * 0.6 + i * i * 0.0004 + (i === 9 ? 0.012 : 0)) * 1000) / 1000),
+                  downbeats: Array.from({ length: 8 }, (_, i) => Math.round((0.8 + i * 4 * 0.6 + 16 * i * i * 0.0004) * 1000) / 1000),
+                },
+              },
+              [-2, 0, 0.5, 9, 20, 31, 35],
+            ],
+          },
+          { name: "a first beat set away from the map", args: [{ tempo: 120, firstBeat: 3.2, map: { beats: [2, 2.5, 3, 3.5, 4, 4.5], downbeats: [2, 4] } }, [0, 1]] },
+        ],
+      },
+      shiftRecordingBeat: {
+        about: "The recording's beat moved by hand (issue #448): `seconds` moves every beat and bar, `beats` moves the bars that many beats later (earlier when negative) on the same beats, a beat added before the first when they move back; nothing before 0:00; the first beat is the first bar's, beats listed from it, to the millisecond. With no map, only the first beat moves (a beat is 60 / tempo)",
+        params: ["beat", "shift"],
+        run: shiftRecordingBeat,
+        cases: [
+          { name: "20 ms later", args: [{ tempo: 120, firstBeat: 1, map: { beats: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5], downbeats: [1, 3] } }, { seconds: 0.02 }] },
+          { name: "the 1 a beat later", args: [{ tempo: 120, firstBeat: 1, map: { beats: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5], downbeats: [1, 3] } }, { beats: 1 }] },
+          { name: "the 1 a beat earlier", args: [{ tempo: 120, firstBeat: 1, map: { beats: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5], downbeats: [1, 3] } }, { beats: -1 }] },
+          { name: "no map", args: [{ tempo: 90, firstBeat: 0.4, map: null }, { beats: 1, seconds: -0.01 }] },
         ],
       },
     },
