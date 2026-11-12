@@ -194,6 +194,25 @@ await step("the title opens the song, an artist opens their page; a star taken i
   await page.waitForURL(new RegExp(`/library/${hymn.id}`));
 });
 
+await step("a laptop with a touch screen and a mouse: the cards still come alive under the mouse", async () => {
+  // Its touch screen is the main pointer (no hover, as the browser says), but its mouse or trackpad hovers.
+  const laptop = await chromium.launch({ args: ["--blink-settings=primaryHoverType=1,primaryPointerType=2,availableHoverTypes=3,availablePointerTypes=6"] });
+  try {
+    const context = await laptop.newContext({ viewport: { width: 1280, height: 900 } });
+    await context.addCookies(await page.context().cookies());
+    const tab = await context.newPage();
+    await tab.goto(`${WEB}/library`);
+    if (!(await tab.evaluate(() => matchMedia("(hover: none) and (any-hover: hover)").matches))) throw new Error("not a touch laptop");
+    const there = tab.getByTestId("shelf-newest").locator(`[data-testid="song-card"][data-song="${carol.id}"]`);
+    await there.hover();
+    await tab.waitForFunction((el) => getComputedStyle(el).opacity === "1", await there.getByTestId("song-card-more").elementHandle());
+    await there.getByTestId("song-card-expand").click();
+    await tab.getByTestId("song-peek").and(tab.locator(`[data-song="${carol.id}"]`)).waitFor();
+  } finally {
+    await laptop.close();
+  }
+});
+
 await step("on a touch screen: a favorite's star on its cover, no buttons; a long press opens the preview, a swipe goes on with the buttons in place, a tap still opens the song", async () => {
   await api(me, "PUT", `/song-versions/${hymn.id}/favorite`);
   await page.context().close();

@@ -28,7 +28,7 @@ const LINES = 7;
 
 /** A key's hint, beside what it does: only where there's a keyboard to press it. */
 function KeyHint({ children }: { children: string }) {
-  return <Kbd className="hidden [@media(hover:hover)]:inline-flex">{children}</Kbd>;
+  return <Kbd className="hidden can-hover:inline-flex">{children}</Kbd>;
 }
 
 /**

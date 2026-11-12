@@ -7,6 +7,19 @@
 @source "../../../../packages/screen/src";
 @source "../../../../packages/operator/src";
 
+/* A song card hovered (issue #445). Tailwind's hover asks the device's main
+   pointer to hover, which a laptop with a touch screen may say it can't
+   while its mouse or trackpad can: any pointer that hovers will do here. */
+@custom-variant card-hover {
+  @media (any-hover: hover) {
+    &:is(:where(.group\/card):hover *) {
+      @slot;
+    }
+  }
+}
+/* A device with a pointer that hovers (a mouse, a trackpad), even if its touch screen is the main one. */
+@custom-variant can-hover (@media (any-hover: hover));
+
 /* Each mode (lib/mode.ts) has its own look, so it's clear which one you're
    in. Edit is neutral; its dark theme is a plain dark grey. */
 :root[data-mode="edit"].dark {

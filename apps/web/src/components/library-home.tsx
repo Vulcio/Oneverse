@@ -74,7 +74,7 @@ const LONG_PRESS_SLOP = 10;
 const CARD_ACTION = "flex size-7 items-center justify-center rounded-full bg-secondary text-secondary-foreground shadow-sm outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5";
 
 /** What comes over a card's cover with the mouse or the keyboard, or while its set picker is open. */
-const CARD_HOVER = "opacity-0 transition-opacity group-focus-within/card:opacity-100 group-hover/card:opacity-100 has-[[aria-expanded=true]]:opacity-100";
+const CARD_HOVER = "opacity-0 transition-opacity group-focus-within/card:opacity-100 card-hover:opacity-100 has-[[aria-expanded=true]]:opacity-100";
 
 /**
  * A song on a shelf: its cover and name open it. With a mouse or the
@@ -136,19 +136,19 @@ function SongCard({ song, from, onPeek, onFavoriteChange }: { song: CardSong; fr
         className="flex flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
         draggable={false}
       >
-        <SongCover song={song} className="transition-transform group-hover/card:scale-[1.02]" />
+        <SongCover song={song} className="transition-transform card-hover:scale-[1.02]" />
         <span className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium group-hover/card:underline">{song.title}</span>
+          <span className="truncate text-sm font-medium card-hover:underline">{song.title}</span>
           {artists ? <span className="truncate text-xs text-muted-foreground">{artists}</span> : null}
         </span>
       </Link>
       {/* Over the cover's top left (the lock of a private song is on its right). The star stays once the song is a
           favorite (issue #445); the rest come with the mouse or the keyboard. Not on a touch screen: see the long press. */}
       <div className="absolute top-1.5 left-1.5 flex items-center gap-1" data-testid="song-card-actions">
-        <div className={cn("hidden [@media(hover:hover)]:block", favorite ? undefined : CARD_HOVER)} data-testid="song-card-star">
+        <div className={cn("hidden can-hover:block", favorite ? undefined : CARD_HOVER)} data-testid="song-card-star">
           <FavoriteButton songVersionId={song.id} initial={!!song.isFavorite} variant="card" onChange={onFavoriteChange} />
         </div>
-        <div className={cn("hidden items-center gap-1 [@media(hover:hover)]:flex", CARD_HOVER)} data-testid="song-card-more">
+        <div className={cn("hidden items-center gap-1 can-hover:flex", CARD_HOVER)} data-testid="song-card-more">
           <AddToSetIconButton songVersionId={song.id} songTitle={song.title} className={CARD_ACTION} testId="song-card-add-to-set" />
           <button type="button" className={CARD_ACTION} aria-label={t("library.peek.expand")} title={t("library.peek.expand")} onClick={onPeek} data-testid="song-card-expand">
             <Maximize2 />
@@ -156,7 +156,7 @@ function SongCard({ song, from, onPeek, onFavoriteChange }: { song: CardSong; fr
         </div>
         {favorite ? (
           // A touch screen's star: shown, not pressed (the long press's preview has the button).
-          <span className={cn(CARD_ACTION, "[@media(hover:hover)]:hidden")} data-testid="song-card-favorite-mark">
+          <span className={cn(CARD_ACTION, "can-hover:hidden")} data-testid="song-card-favorite-mark">
             <Star className="fill-amber-400 text-amber-500" aria-hidden />
             <span className="sr-only">{t("library.home.favorites")}</span>
           </span>
@@ -221,7 +221,7 @@ function Shelf({ id, title, songs, more, from }: { id: string; title: string; so
           {more}
           {ends.back || ends.on ? (
             // Touch screens swipe: the buttons are for a mouse (issue #94).
-            <div className="hidden items-center gap-1 [@media(pointer:fine)]:flex">
+            <div className="hidden items-center gap-1 [@media(any-pointer:fine)]:flex">
               <Button variant="outline" size="icon" className="size-7 rounded-full" disabled={!ends.back} onClick={() => scroll(-1)} aria-label={t("library.home.scrollBack", { title })} data-testid="shelf-back">
                 <ChevronLeft className="size-4" />
               </Button>
