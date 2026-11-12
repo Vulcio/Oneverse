@@ -39,3 +39,50 @@ export function sectionHeading(text: string): { type: SectionType; number: strin
   if (!match) return null;
   return { type: normalizeSectionType(match[1]!), number: match[2] ?? match[3] ?? null };
 }
+
+const NUMBER = "\\s*\\.?\\s*(\\d+[a-d]?|[a-d])(?![x×\\d])";
+
+// A heading with the section's first words or chords after it on the same
+// line: "Verse 1: Amazing grace", "[Intro] G D Em C", "Chorus : [C]My chains".
+const HEADING_WITH_CONTENT = new RegExp(`^(\\[\\s*(?:${NAMES})(?:${NUMBER})?\\s*\\]|(?:${NAMES})(?:${NUMBER})?\\s*:)\\s*(\\S.*)$`, "iu");
+
+/** A line that starts with a heading and goes on with words or chords: the two parts; null otherwise. */
+export function headingWithContent(text: string): { heading: string; rest: string } | null {
+  const match = HEADING_WITH_CONTENT.exec(text.trim());
+  if (!match) return null;
+  return { heading: match[1]!.replace(/\s*:$/, ""), rest: match[match.length - 1]! };
+}
+
+// "Repeat chorus", "Chorus x2", "(Chorus 2x)", "Refrain (bis)", "Back to the bridge", "Reprendre le refrain".
+const REPEAT_WORDS = "repeat|rpt\\.?|back\\s+to|go\\s+to|again|reprise(?:\\s+(?:du|de\\s+la|de\\s+l'))?|reprendre|r[ée]p[ée]ter|au|al|zum|wiederhole|repetir|repita|ripeti(?:re)?";
+const ARTICLES = "(?:the|le|la|l'|el|o|a|den|die|der|das|il)\\s*";
+const TIMES = "(?:[x×]\\s*(\\d{1,2})|(\\d{1,2})\\s*[x×]|\\(\\s*[x×]?\\s*(\\d{1,2})\\s*[x×]?\\s*\\)|\\(?\\s*(bis)\\s*\\)?|(twice)|(\\d{1,2})\\s+(?:times|fois|veces|vezes|mal))";
+const REPEAT_CALL = new RegExp(`^(?:(${REPEAT_WORDS})\\s+)?(?:${ARTICLES})?(${NAMES})(?:${NUMBER})?\\s*:?\\s*(?:${TIMES})?\\s*:?$`, "iu");
+
+/** A section sung again, called by name: which one, and how many times. */
+export interface RepeatCall {
+  type: SectionType;
+  /** "Verse 2": the second of that type; null for the last one sung. */
+  number: string | null;
+  times: number;
+}
+
+/**
+ * A line that only says to sing a section again - "Repeat chorus", "Chorus
+ * x2", "(Chorus 2x)", "Refrain (bis)", "Reprendre le refrain" - read; null
+ * for anything else, a heading alone ("Chorus") included.
+ */
+export function repeatCall(text: string): RepeatCall | null {
+  let inner = text.trim();
+  // In brackets or stars: "(Repeat chorus)", "[Chorus x2]", "*Chorus x2*".
+  for (const [open, close] of [["(", ")"], ["[", "]"], ["*", "*"], ["<", ">"]] as const) {
+    if (inner.startsWith(open) && inner.endsWith(close) && inner.length > 2) inner = inner.slice(1, -1).trim();
+  }
+  const match = REPEAT_CALL.exec(inner);
+  if (!match) return null;
+  const [, word, name, number, ...counts] = match;
+  const count = counts.find((value) => value !== undefined);
+  if (!word && count === undefined) return null;
+  const times = count === undefined || /^(bis|twice)$/i.test(count) ? (count ? 2 : 1) : Number(count);
+  return { type: normalizeSectionType(name!), number: number ?? null, times: Math.min(Math.max(times, 1), 8) };
+}

@@ -8,7 +8,8 @@
  * importers; the bars become the section's rhythm (see parsedSectionsToV2).
  */
 
-const CHORD = /^[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m|M|\+|°|ø)?[0-9]*(?:(?:add|sus|maj|b|#)[0-9]+)*(?:\/[A-G](?:#|b)?)?$/;
+import { isChordToken } from "../chords/chord-token.js";
+
 const BEAT_MARKS = new Set([".", "/", "-"]);
 const NO_CHORD = new Set(["N.C.", "NC", "N.C"]);
 const REPEAT = /\s*\(?\s*[x×]\s*(\d{1,2})\s*\)?$/i;
@@ -71,7 +72,7 @@ export function readBarNotation(trimmedLine: string): BarNotation | null {
         marked = true;
         continue;
       }
-      if (!CHORD.test(token) && !NO_CHORD.has(token.toUpperCase())) return null;
+      if (!isChordToken(token) && !NO_CHORD.has(token.toUpperCase())) return null;
       chords.push(token);
       at.push(position);
     }

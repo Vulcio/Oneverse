@@ -1,35 +1,29 @@
 import type { ParsedSection } from "../schemas/parsed-song.js";
 import type { SectionType } from "../constants/index.js";
 import { generateId, ID_PREFIXES } from "../ids/index.js";
-import { parseLine } from "../chordpro/parser.js";
+import { parseLine } from "../chordpro/line.js";
+import { isChordLineMark, isChordsOnly } from "../chords/chord-token.js";
 import { barNotationMarkup, readBarNotation } from "./bar-notation.js";
 import { LABEL_LINE, normalizeSectionType } from "../chordpro/section-labels.js";
-
-// A chord token: a root note with an optional accidental, quality,
-// extension digits, and an optional slash bass note - "G", "F#m7",
-// "Csus4", "D/F#". Deliberately permissive (this classifies whole lines,
-// it doesn't validate individual chords) so one unusual chord doesn't make
-// an otherwise-obvious chord line get read as lyrics.
-const CHORD_TOKEN = /^[A-G](?:#|b)?(?:maj|min|dim|aug|sus|add|m)?[0-9]*(?:\/[A-G](?:#|b)?)?$/;
-const NON_CHORD_TOKENS = new Set(["N.C.", "NC", "%"]);
 
 /** Exported for the format auto-detector, which uses the same "is this
  * line nothing but chord tokens" test to recognize the format. */
 export function isChordLine(trimmedLine: string): boolean {
   if (trimmedLine === "") return false;
   if (readBarNotation(trimmedLine)) return true;
-  const tokens = trimmedLine.split(/\s+/);
-  return tokens.every((t) => CHORD_TOKEN.test(t) || NON_CHORD_TOKENS.has(t.toUpperCase()));
+  return isChordsOnly(trimmedLine);
 }
 
 /** Finds each whitespace-delimited token's raw text and column offset in
  * the (untrimmed) original line, left to right. */
 function findTokenPositions(rawLine: string): Array<{ token: string; column: number }> {
   const positions: Array<{ token: string; column: number }> = [];
-  const re = /\S+/g;
+  // "(x 2)" is one mark.
+  const re = /\(\s*[x×]\s*\d{1,2}\s*\)|\S+/gi;
   let match: RegExpExecArray | null;
   while ((match = re.exec(rawLine)) !== null) {
-    positions.push({ token: match[0], column: match.index });
+    // Only chords go over the words: "-", "|", "x2" are how the line was laid out.
+    if (!isChordLineMark(match[0].replace(/\s+/g, ""))) positions.push({ token: match[0], column: match.index });
   }
   return positions;
 }
@@ -40,7 +34,7 @@ function findTokenPositions(rawLine: string): Array<{ token: string; column: num
  * ChordPro uses inline - so the shared `parseLine` can split it into
  * segments without a second implementation of that logic.
  */
-function overlayChords(chordLine: string, lyricLine: string): string {
+export function overlayChords(chordLine: string, lyricLine: string): string {
   const positions = findTokenPositions(chordLine);
   if (positions.length === 0) return lyricLine;
 

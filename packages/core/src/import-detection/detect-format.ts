@@ -4,6 +4,7 @@ import { parseChordPro } from "../chordpro/parser.js";
 import { LABEL_LINE } from "../chordpro/section-labels.js";
 import { isChordLine, parseChordsOverLyrics } from "../chords-over-lyrics/parser.js";
 import { parseLyricsOnly } from "../lyrics-only/parser.js";
+import { isLrc } from "./lrc.js";
 
 export type ImportFormatConfidence = "high" | "medium" | "low";
 
@@ -26,6 +27,8 @@ export interface ImportFormatDetection {
  * with more signals wins, and the confidence says how lopsided that was.
  */
 export function detectImportFormatDetails(text: string): ImportFormatDetection {
+  // Timed lyrics are words.
+  if (isLrc(text)) return { format: "RAW_TEXT", confidence: "high" };
   let chordPro = 0;
   let chordLines = 0;
   let lyricLines = 0;

@@ -918,6 +918,7 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "bars among words: chords alone, no rhythm", args: ["{start_of_verse}\n[G]Words\n| G | C |\n{end_of_verse}\n", "CHORDPRO"] },
           { name: "plain lyrics: a section per paragraph", args: ["One\nTwo\n\nThree\n", "RAW_TEXT"] },
           { name: "labels in other languages", args: ["Strophe 1\n[G]Un\n\nRefrain\n[C]Deux\n\nPuente:\n[D]Tres\n", "CHORDS_OVER_LYRICS"] },
+          { name: "chords of every kind, and the marks a line of chords has (issue #438)", args: ["F#7sus4   G(add9) - Em7b5 / D6/9   B°  Bø  C+  (A)  N.C.  (x2)\nWords under them all here and some more words to fill\n", "CHORDS_OVER_LYRICS"] },
         ],
       },
       songFromText: {
@@ -951,6 +952,37 @@ export const CONFORMANCE: ConformanceArea[] = [
           {
             name: "the end of the chorus written out: a pass of its last lines",
             args: ["{soc}\n[G]Holy, [D]holy\n[Em]Lord God [C]almighty\n[G]Early in the [D]morning\n{eoc}\n{soc}\n[Em]Lord God [C]almighty\n[G]Early in the [D]morning\n{eoc}\n", "CHORDPRO", { mergeRepeats: true }],
+          },
+          // Messy files (issue #438).
+          {
+            name: "a chord site's page: details on top, chords above the words, a repeat in words",
+            args: [
+              "Amazing Grace chords by Chris Tomlin\nCapo 2\nKey: G\n\n[Intro]\nG  D/F#  Em  C   x2\n\n[Verse 1]\nG       G7          C        G\nAmazing grace how sweet the sound\n\n[Chorus]\nCadd9     G/B    Dsus4  D\nMy chains are gone\nEm7        C2      G(add9)\nI've been set free\n\n(Repeat Chorus)\n",
+              "CHORDS_OVER_LYRICS",
+              { mergeRepeats: true },
+            ],
+          },
+          {
+            name: "ChordPro with its details, ChordPro 6 labels and a # comment",
+            args: [
+              "{title: Holy Holy Holy}\n{subtitle: Nicaea}\n{artist: Reginald Heber}\n{composer: John B. Dykes}\n{tempo: 92}\n{time: 3/4}\n{ccli: 1156}\n{meta: album Hymns}\n# for the editor\n{start_of_verse: label=\"Verse 1\"}\n[D]Holy, holy, [Bm]holy\n{end_of_verse}\n{start_of_chorus label=\"Refrain\"}\n[G]Early in the [D]morning\n{end_of_chorus}\n",
+              "CHORDPRO",
+              { mergeRepeats: true },
+            ],
+          },
+          { name: "ChordPro written as chords above the words", args: ["{t: Blessed Assurance}\n\nVerse 1:\nD            G       D\nBlessed assurance, Jesus is mine\n", "CHORDPRO", { mergeRepeats: true }] },
+          { name: "comments as headings, with no blank line between sections, and Chorus x2", args: ["{c: Verse 1}\n[C]When peace like a [F]river\n{c: Chorus}\n[C]It is well\n{c: Verse 2}\n[C]Though Satan should [F]buffet\n{c: Chorus x2}\n", "CHORDPRO", { mergeRepeats: true }] },
+          { name: "a heading alone is that section again", args: ["[Verse 1]\nG         C\nLine one here\n\n[Chorus]\nD         G\nLine two here\n\n[Verse 2]\nG         C\nLine three here\n\n[Chorus]\n", "CHORDS_OVER_LYRICS", { mergeRepeats: true }] },
+          { name: "a heading and its words on one line", args: ["Intro: G D Em C\nVerse 1: [G]Amazing grace\nChorus: [C]My chains are gone\n", "CHORDPRO", { mergeRepeats: true }] },
+          { name: "a hymn's numbered verses", args: ["1. Amazing grace how sweet the sound\nThat saved a wretch like me\n\n2. 'Twas grace that taught my heart to fear\nAnd grace my fears relieved\n", "RAW_TEXT", { mergeRepeats: true }] },
+          { name: "chords lined up with tabs", args: ["G\tD\tEm\nAmazing\tgrace\thow\n", "CHORDS_OVER_LYRICS", {}] },
+          {
+            name: "an LRC file: its words in the order sung, its tags as details",
+            args: [
+              "[ti:Amazing Grace]\n[ar:John Newton]\n[length: 03:12]\n[00:12.34]Amazing grace how sweet the sound\n[00:17.80]That saved a wretch like me\n[00:23.10][01:05.00]I once was lost but now am found\n[00:28.50]Was blind but now I see\n[00:40.00]\n[00:52.00]'Twas grace that taught my heart to fear\n[00:58.00]And grace my fears relieved\n",
+              "RAW_TEXT",
+              { mergeRepeats: true },
+            ],
           },
         ],
       },

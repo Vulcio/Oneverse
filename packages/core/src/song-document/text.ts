@@ -1,8 +1,10 @@
 import { bestRepeat, repeatPass, type RepeatMatch } from "./repeats.js";
-import type { SupportedImportFormat } from "../constants/index.js";
+import type { SectionType, SupportedImportFormat } from "../constants/index.js";
 import { passChanged, passLines } from "./pass.js";
 import { parseSongText } from "../import-detection/detect-format.js";
-import { sectionHeading } from "../chordpro/section-labels.js";
+import { isLrc } from "../import-detection/lrc.js";
+import { readSongFile, type SongFileDetails } from "../import-detection/song-details.js";
+import { headingWithContent, repeatCall, sectionHeading, type RepeatCall } from "../chordpro/section-labels.js";
 import { transposeChord } from "../chords/chord.js";
 import { generateId, ID_PREFIXES } from "../ids/index.js";
 import { parseKey } from "../music-keys/transpose.js";
@@ -35,6 +37,30 @@ const KEY_LINE = /^\s*\{\s*key\s*:\s*(.*?)\s*\}\s*$/i;
 const BLOCK_START = /^\s*\{\s*(start_of_\w[\w-]*|so[vcbt])\b/i;
 const BLOCK_END = /^\s*\{\s*(end_of_\w[\w-]*|eo[vcbt])\b/i;
 const REPEAT_MARK = "\u2063repeat\u2063";
+const FIELD = "\u2063";
+// The first line of a block of words numbered as a hymn's verse is: "1. Amazing grace".
+const NUMBERED_VERSE = /^\d{1,2}[.)]\s+\S/;
+const TAB_WIDTH = 8;
+
+/** Tabs as the spaces they stood for (8 columns, as browsers and text editors show them), so chords stay over their words. */
+function expandTabs(text: string): string {
+  if (!text.includes("\t")) return text;
+  return text
+    .split("\n")
+    .map((line) => {
+      let out = "";
+      for (const character of line) out += character === "\t" ? " ".repeat(TAB_WIDTH - (out.length % TAB_WIDTH)) : character;
+      return out;
+    })
+    .join("\n");
+}
+
+/** The section a repeat calls: the numbered one of its type ("Verse 2"), else the last of its type written. */
+function calledSection(sections: SectionV2[], type: SectionType, number: string | null): SectionV2 | null {
+  const ofType = sections.filter((section) => section.type === type);
+  if (number && /^\d+$/.test(number)) return ofType[Number(number) - 1] ?? ofType.at(-1) ?? null;
+  return ofType.at(-1) ?? null;
+}
 const KEY_MARK = "\u2063key\u2063";
 
 // Comments before the first section that aren't about the music: the
@@ -52,6 +78,8 @@ export interface SongChart {
   key: string | null;
   /** A copyright line before the first section ("{comment: © 2020 …}"), if there is one. */
   copyright: string | null;
+  /** The song's details the text gives (its "{title}", "Capo 2" on top, an LRC file's tags; issue #438). */
+  details: SongFileDetails;
 }
 
 /**
@@ -100,32 +128,53 @@ const sameContent = (a: SectionV2, b: SectionV2) =>
  * matchRepeat).
  */
 export function songFromText(text: string, format: SupportedImportFormat, options: { mergeRepeats?: boolean } = {}): SongChart {
-  if (!text.trim()) return { sections: [], flow: [], key: null, copyright: null };
+  const file = readSongFile(text);
+  const details = file.details;
+  if (!file.body.trim()) return { sections: [], flow: [], key: details.key ?? null, copyright: details.copyright ?? null, details };
+  // An LRC file is its words.
+  if (file.body !== text && isLrc(text)) format = "RAW_TEXT";
+  text = file.body;
   const hide = (value: string) => value.replaceAll("[", OPEN).replaceAll("]", CLOSE);
   const unmark = (value: string) => value.replaceAll(OPEN, "[").replaceAll(CLOSE, "]");
-  let marked = text;
-  if (format === "CHORDPRO") {
-    let inBlock = false;
-    const marker = (mark: string, value: string) => (inBlock ? "" : `{start_of_other}\n${mark}${hide(value)}\n{end_of_other}`);
-    marked = text
-      .split(/\r\n|\r|\n/)
-      .map((line) => {
+  const chordPro = format === "CHORDPRO";
+  let inBlock = false;
+  // A marker is a section of its own: in ChordPro an environment (blank lines don't end one), elsewhere a block between blank lines.
+  const marker = (mark: string, value: string) => (inBlock ? "" : chordPro ? `{start_of_other}\n${mark}${hide(value)}\n{end_of_other}` : `\n${mark}${hide(value)}\n`);
+  const repeatMarker = (call: RepeatCall, label: string, written: string) => marker(REPEAT_MARK, [call.type, call.number ?? "", call.times, label, written].join(FIELD));
+  const lines = expandTabs(text).split(/\r\n|\r|\n/);
+  const nextLine = (from: number) => lines.slice(from + 1).find((line) => line.trim() !== "")?.trim() ?? "";
+  const marked = lines
+    .map((line, index) => {
+      if (chordPro) {
         if (BLOCK_START.test(line)) inBlock = true;
         else if (BLOCK_END.test(line)) inBlock = false;
         const comment = COMMENT_LINE.exec(line);
-        if (comment) return NOTE_MARK + hide(comment[1]!);
+        if (comment) {
+          const said = comment[1]!;
+          const call = inBlock ? null : repeatCall(said);
+          if (call) return repeatMarker(call, "", said);
+          // A comment that only names a section starts it, unless an environment follows to say so.
+          if (!inBlock && sectionHeading(said) && !BLOCK_START.test(nextLine(index))) return `\n${said}`;
+          return NOTE_MARK + hide(said);
+        }
         const repeat = REPEAT_CHORUS.exec(line);
-        if (repeat) return marker(REPEAT_MARK, repeat[1] ?? "");
+        if (repeat) return repeatMarker({ type: "chorus", number: null, times: 1 }, repeat[1] ?? "", "");
         const key = KEY_LINE.exec(line);
         if (key) return marker(KEY_MARK, key[1]!);
-        return line;
-      })
-      .join("\n");
-  }
+      }
+      if (inBlock) return line;
+      // "Repeat chorus", "Chorus x2", "Refrain (bis)": the section sung again.
+      const call = repeatCall(line);
+      if (call) return repeatMarker(call, "", line.trim());
+      // "Verse 1: Amazing grace…", "[Intro] G D Em C": the heading, then what follows it.
+      const split = headingWithContent(line);
+      if (split) return `${split.heading}\n${split.rest}`;
+      return line;
+    })
+    .join("\n");
 
   const sections: SectionV2[] = [];
   const flow: SectionInstance[] = [];
-  let lastChorus: SectionV2 | null = null;
   // Comments standing between sections: a cue for the pass that follows.
   let cue: SectionV2 | null = null;
   let songKey: string | null = null;
@@ -175,10 +224,27 @@ export function songFromText(text: string, format: SupportedImportFormat, option
       continue;
     }
     if (only.startsWith(REPEAT_MARK)) {
-      const written = unmark(only.slice(REPEAT_MARK.length)).trim();
-      const label = written || takeHeading()?.label;
-      if (lastChorus) flow.push(pass({ id: generateId(ID_PREFIXES.flowItem), sectionId: lastChorus.id, ...(label && { label }) }));
+      const [type, number, times, written, said] = unmark(only.slice(REPEAT_MARK.length)).split(FIELD);
+      const label = written?.trim() || takeHeading()?.label;
+      const target = calledSection(sections, type as SectionType, number || null);
+      if (target) {
+        for (let time = 0; time < Number(times); time++) flow.push(pass({ id: generateId(ID_PREFIXES.flowItem), sectionId: target.id, ...(label && { label }) }));
+      } else if (said?.trim()) {
+        // Nothing of that kind sung yet: kept as the note it was.
+        const note: SectionV2 = { id: generateId(ID_PREFIXES.section), type: "other", label: null, showLabel: true, lines: [{ id: generateId(ID_PREFIXES.line), kind: "note", text: said.trim(), chords: [] }] };
+        if (cue) cue.lines.push(...note.lines);
+        else cue = note;
+      }
       continue;
+    }
+    // A heading with nothing under it ("[Chorus]" alone): that section sung again, when there is one.
+    if (section.lines.length === 0 && section.label) {
+      const heading = sectionHeading(section.label);
+      const target = heading ? calledSection(sections, heading.type, heading.number) : null;
+      if (target) {
+        flow.push(pass({ id: generateId(ID_PREFIXES.flowItem), sectionId: target.id }));
+        continue;
+      }
     }
     section.lines = section.lines.map((line) =>
       line.text.startsWith(NOTE_MARK) ? { ...line, kind: "note", text: unmark(line.text.slice(NOTE_MARK.length)), chords: [] } : line,
@@ -207,6 +273,11 @@ export function songFromText(text: string, format: SupportedImportFormat, option
     }
     const named = heading ?? (section.label ? sectionHeading(section.label) : null);
     if (named) withoutVerseNumber(section, named.number);
+    else if (section.type === "other" && !section.label && NUMBERED_VERSE.test(section.lines.find((line) => line.kind !== "note")?.text ?? "")) {
+      // A hymn's verses numbered "1. ", "2. " with no headings.
+      section.type = "verse";
+      withoutVerseNumber(section, null);
+    }
     if (shift % 12 !== 0) {
       // Written in the key it's sung in: stored in the song's key.
       for (const line of section.lines) {
@@ -236,13 +307,13 @@ export function songFromText(text: string, format: SupportedImportFormat, option
     }
     sections.push(section);
     flow.push(pass({ id: flowItemId(section.id), sectionId: section.id }));
-    if (section.type === "chorus") lastChorus = section;
   }
   // Notes at the very end: nothing follows, so they stay a section.
   if (cue) addSection(cue);
   // Imported (issue #344): a "Verse 2" that only says what the name would is left out, so it's named by the rule, in the reader's language.
-  if (options.mergeRepeats) return { ...withoutPlainLabels({ sections, flow }), key: songKey, copyright };
-  return { sections, flow, key: songKey, copyright };
+  const found = { key: songKey ?? details.key ?? null, copyright: copyright ?? details.copyright ?? null, details };
+  if (options.mergeRepeats) return { ...withoutPlainLabels({ sections, flow }), ...found };
+  return { sections, flow, ...found };
 }
 
 /** Pasted or typed text as v2 sections, with fresh IDs (see songFromText). */
