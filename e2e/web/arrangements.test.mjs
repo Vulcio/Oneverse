@@ -104,8 +104,10 @@ await step("a song added to the band's set plays its usual arrangement; it can b
   const select = page.getByTestId("set-song-row").getByLabel("Version");
   const selected = () => select.evaluate((el) => el.selectedOptions[0].textContent);
   if ((await selected()) !== "Sunday band (usual)") throw new Error(`arrangement: ${await selected()}`);
+  // The change saved before the reload (networkidle alone can come before the PATCH is sent).
+  const saved = page.waitForResponse((response) => response.request().method() === "PATCH" && response.url().includes(`/setlists/${set.id}/items/`) && response.ok());
   await select.selectOption({ label: "As written" });
-  await page.waitForLoadState("networkidle");
+  await saved;
   await page.reload();
   await page.waitForLoadState("networkidle");
   if ((await selected()) !== "As written") throw new Error(`after switching: ${await selected()}`);
