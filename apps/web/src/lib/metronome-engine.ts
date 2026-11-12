@@ -1,4 +1,4 @@
-import { beatAt, changeMetronome, clicksBetween, normalizeMetronome, patternFor, secondsPerBeat, sharedMetronomeSettings, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
+import { beatAt, changeMetronome, clicksBetween, normalizeMetronome, patternFor, secondsPerBeat, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
