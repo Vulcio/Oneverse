@@ -1,7 +1,7 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnsupportedMediaTypeException } from "@nestjs/common";
 import type { Queue } from "bullmq";
-import { parseKey, type StemPart, type WaveformWire } from "@oneverse/core";
+import { parseKey, shiftRecordingBeat, type StemPart, type WaveformWire } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import type { AttachmentVisibilityValue, UpdateAttachmentDto } from "./dto/upload-attachment.dto.js";
@@ -286,11 +286,26 @@ export class AttachmentsService {
       data.recordingBeats = [];
       data.recordingDownbeats = [];
     }
+    // Moved by hand (issue #448): the detected beats and bars move with it, rather than being dropped.
+    const shift = change.recordingBeatShift;
+    if (shift && change.recordingFirstBeat === undefined && change.recordingTempo === undefined) {
+      const map = attachment.recordingBeats.length >= 2 ? { beats: attachment.recordingBeats, downbeats: attachment.recordingDownbeats } : null;
+      const tempo = attachment.recordingTempo ?? (map ? 60 / ((map.beats.at(-1)! - map.beats[0]!) / (map.beats.length - 1)) : null);
+      if (!tempo) throw new BadRequestException("recordingBeatShift needs the recording's tempo or beats");
+      const moved = shiftRecordingBeat({ tempo, firstBeat: attachment.recordingFirstBeat ?? map?.downbeats[0] ?? 0, map }, shift);
+      data.recordingFirstBeat = moved.firstBeat;
+      if (moved.map) {
+        data.recordingBeats = [...moved.map.beats];
+        data.recordingDownbeats = [...moved.map.downbeats];
+      }
+    }
     // What a separation's analysis found (issue #175): confirmed as it is, or by changing it.
     if (attachment.detected.length > 0) {
       const confirmed = change.confirmDetected
         ? attachment.detected
-        : attachment.detected.filter((detail) => (DETECTED_FIELDS[detail] && change[DETECTED_FIELDS[detail]] !== undefined) || (detail === "beats" && beatSetByHand));
+        : attachment.detected.filter(
+            (detail) => (DETECTED_FIELDS[detail] && change[DETECTED_FIELDS[detail]] !== undefined) || (detail === "beats" && beatSetByHand) || (shift !== undefined && (detail === "firstBeat" || detail === "beats")),
+          );
       if (confirmed.length > 0) data.detected = attachment.detected.filter((detail) => !confirmed.includes(detail));
     }
     // Locked or not (issue #145): its uploader's to decide, as who sees it is.

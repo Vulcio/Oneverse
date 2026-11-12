@@ -158,7 +158,7 @@ export function RecordingFields({
   songTempo: string;
   canEdit: boolean;
   busy: boolean;
-  onChange: (change: { recordingKey?: string | null; recordingTempo?: number | null; recordingFirstBeat?: number | null; recordingFreeIntro?: boolean; recordingTimeSignature?: string | null }) => void;
+  onChange: (change: { recordingKey?: string | null; recordingTempo?: number | null; recordingFirstBeat?: number | null; recordingFreeIntro?: boolean; recordingTimeSignature?: string | null; recordingBeatShift?: { seconds?: number; beats?: number } }) => void;
 }) {
   const { t } = useTranslation();
   const first = files[0];
@@ -258,6 +258,24 @@ export function RecordingFields({
           }}
         />
       </label>
+      {first?.recordingFirstBeat != null || first?.recordingBeats?.length ? (
+        // Its 1 moved by ear (issue #448), the detected beats kept: a beat either way, or a few ms.
+        <div className="flex items-center gap-1" role="group" aria-label={t("stems.moveOne")} title={t("stems.moveOneHint")} data-testid="recording-move-one">
+          {t("stems.moveOne")}
+          {(
+            [
+              ["−1", "moveOneEarlierBeat", { beats: -1 }],
+              ["−10 ms", "moveOneEarlierMs", { seconds: -0.01 }],
+              ["+10 ms", "moveOneLaterMs", { seconds: 0.01 }],
+              ["+1", "moveOneLaterBeat", { beats: 1 }],
+            ] as const
+          ).map(([text, name, shift]) => (
+            <Button key={name} type="button" variant="outline" size="sm" className="h-8 px-2 text-xs tabular-nums" disabled={busy} aria-label={t(`stems.${name}`)} onClick={() => onChange({ recordingBeatShift: shift })}>
+              {text}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       <label className="flex items-center gap-2">
         {t("stems.timeSignatureLabel")}
         <NativeSelect

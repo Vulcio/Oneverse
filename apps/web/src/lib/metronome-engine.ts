@@ -139,22 +139,88 @@ function makeBuffers(ctx: AudioContext): Map<string, AudioBuffer> {
   return made;
 }
 
+/** The metronome's own audio: its context, clock, output and sounds. */
+let own: { context: AudioContext; clock: OutputClock; output: GainNode; buffers: Map<string, AudioBuffer> } | null = null;
+
+/**
+ * Playing with the recording (issue #448): the stems' own audio context and
+ * mix, so each click is placed on the same clock as the stems, sample for
+ * sample, and heard the same way (on an iPhone their <audio> element, whose
+ * delay can't be known). `passes` says where the recording's 0:00 is on that
+ * clock from `from` to `to` (two passes across a loop's end); `secondsAt` and
+ * `beatAt` where the metronome's positions fall in the recording (its beat
+ * map, see clickGrid in core).
+ */
+export interface MetronomeHost {
+  context: AudioContext;
+  output: AudioNode;
+  /** The stems' pairing of that clock with the device's, so both say the same of when a sound is heard. */
+  clock: OutputClock;
+  speed: number;
+  passes(from: number, to: number): { from: number; to: number; zero: number }[];
+  secondsAt(position: number): number;
+  positionAt(seconds: number): number;
+}
+let host: MetronomeHost | null = null;
+/** The host's own output and sounds, made once per audio context. */
+const hosted = new WeakMap<AudioContext, { clock: OutputClock; output: GainNode; buffers: Map<string, AudioBuffer> }>();
+/** With a host: scheduled up to here on its clock (s). */
+let hostScheduledUntil = 0;
+
 function audio(): AudioContext {
-  if (!context) {
-    context = new AudioContext({ latencyHint: "interactive" });
-    clock = new OutputClock(context);
-    output = context.createGain();
-    output.connect(context.destination);
-    buffers = makeBuffers(context);
+  if (host) return host.context;
+  if (!own) {
+    const ctx = new AudioContext({ latencyHint: "interactive" });
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+    own = { context: ctx, clock: new OutputClock(ctx), output: gain, buffers: makeBuffers(ctx) };
   }
+  context = own.context;
+  clock = own.clock;
+  output = own.output;
+  buffers = own.buffers;
   return context;
+}
+
+/** Plays through the stems' audio from now on (or, with null, its own again), what was scheduled silenced. */
+function useHost(next: MetronomeHost | null) {
+  if (next === host && (next === null || context === next.context)) {
+    host = next;
+    return;
+  }
+  cancelFrom(0);
+  host = next;
+  if (!next) {
+    audio();
+    return;
+  }
+  let made = hosted.get(next.context);
+  if (!made) {
+    const gain = next.context.createGain();
+    gain.connect(next.output);
+    made = { clock: next.clock, output: gain, buffers: makeBuffers(next.context) };
+    hosted.set(next.context, made);
+  }
+  context = next.context;
+  clock = next.clock;
+  output = made.output;
+  buffers = made.buffers;
+}
+
+/** The pass of the recording playing at `time` on the host's clock. */
+function hostZero(time: number): number | null {
+  return host?.passes(time, time + 1e-4)[0]?.zero ?? null;
 }
 
 /** Where the beat is on the audio clock, in beats from the start. */
 function positionAt(time: number): number {
+  const zero = hostZero(time);
+  if (host && zero !== null) return host.positionAt((time - zero) * host.speed);
   return anchorPosition + (time - anchorTime) / secondsPerBeat(state.settings);
 }
 function timeOf(position: number): number {
+  const zero = host ? hostZero(context?.currentTime ?? 0) : null;
+  if (host && zero !== null) return zero + host.secondsAt(position) / host.speed;
   return anchorTime + (position - anchorPosition) * secondsPerBeat(state.settings);
 }
 
@@ -165,9 +231,10 @@ interface MetronomeProbe {
    * the epoch), from the timeline's anchor there; `outputAt`: when the
    * audio output said it would be, as it was scheduled; `clockAt`: when
    * the audio clock itself plays it (its time against the device's, with
-   * no output timestamp - what a wrong one can't hide, issue #102).
+   * no output timestamp - what a wrong one can't hide, issue #102);
+   * `recording`: played with the recording (issue #448), where in it (s).
    */
-  clicks: (Pick<MetronomeClick, "position" | "bar" | "beat" | "sub" | "level"> & { time: number; heardAt: number; outputAt: number; clockAt: number })[];
+  clicks: (Pick<MetronomeClick, "position" | "bar" | "beat" | "sub" | "level"> & { time: number; heardAt: number; outputAt: number; clockAt: number; recording?: number })[];
   now: () => number;
   /** When a time on the audio clock is heard, in ms since the epoch on this device's clock. */
   epoch: (time: number) => number;
@@ -202,6 +269,7 @@ function schedule() {
   const ctx = context;
   if (!ctx || !output || !buffers || !state.playing) return;
   const horizon = ctx.currentTime + (document.hidden ? HIDDEN_LOOKAHEAD : LOOKAHEAD);
+  if (host) return scheduleHosted(ctx, horizon);
   const until = positionAt(horizon);
   const log = probe();
   for (const click of clicksBetween(state.settings, scheduledUntil, until)) {
@@ -219,6 +287,31 @@ function schedule() {
   scheduled = scheduled.filter((entry) => entry.time > ctx.currentTime - 1);
 }
 
+/** With the recording: each pass of it on the stems' clock, its clicks where its beats are. */
+function scheduleHosted(ctx: AudioContext, horizon: number) {
+  const from = Math.max(hostScheduledUntil, ctx.currentTime);
+  if (horizon <= from || !host) return;
+  const log = probe();
+  for (const pass of host.passes(from, horizon)) {
+    const start = host.positionAt((pass.from - pass.zero) * host.speed);
+    const end = host.positionAt((pass.to - pass.zero) * host.speed);
+    for (const click of clicksBetween(state.settings, Math.max(0, start - 1e-6), end + 1e-6)) {
+      const time = pass.zero + host.secondsAt(click.position) / host.speed;
+      // Each stretch of the clock once: from where the last left off, up to where this one ends.
+      if (!(time >= pass.from - 1e-7 && time < pass.to - 1e-7) || time < ctx.currentTime) continue;
+      const source = ctx.createBufferSource();
+      source.buffer = buffers!.get(`${state.settings.sound}:${click.level}`)!;
+      source.connect(output!);
+      source.start(time);
+      scheduled.push({ source, time });
+      log?.clicks.push({ time, heardAt: epochFromAudioTime(time), outputAt: epochFromAudioTime(time), clockAt: deviceNow() + (time - ctx.currentTime) * 1000, position: click.position, bar: click.bar, beat: click.beat, sub: click.sub, level: click.level, recording: (time - pass.zero) * host.speed });
+    }
+  }
+  if (log && log.clicks.length > 200) log.clicks.splice(0, log.clicks.length - 200);
+  hostScheduledUntil = horizon;
+  scheduled = scheduled.filter((entry) => entry.time > ctx.currentTime - 1);
+}
+
 /** Silences what's scheduled from `time` on. */
 function cancelFrom(time: number) {
   scheduled = scheduled.filter((entry) => {
@@ -233,6 +326,7 @@ function cancelFrom(time: number) {
   });
   const log = probe();
   if (log) log.clicks = log.clicks.filter((click) => click.time < time - 0.001);
+  hostScheduledUntil = Math.min(hostScheduledUntil, time);
 }
 
 // --- what pages call
@@ -249,6 +343,7 @@ export function startMetronome(settings?: MetronomeSettings, songId: string | nu
   if (state.following) return unlockMetronomeAudio();
   adopted = null;
   placing = null;
+  useHost(null);
   const ctx = audio();
   // Within the press: browsers only let sound start from one.
   void ctx.resume();
@@ -276,6 +371,7 @@ function halt() {
   if (timer) clearInterval(timer);
   timer = null;
   cancelFrom(0);
+  useHost(null);
   if (state.playing) emit({ playing: false, anchor: null });
 }
 
@@ -300,6 +396,14 @@ export function updateMetronome(change: Partial<MetronomeSettings>) {
     (key) => JSON.stringify(previous[key]) !== JSON.stringify(next[key]),
   );
   if (!timing) return emit({ settings: next });
+  if (host) {
+    // With the recording: its beat stays, the rest (pattern, subdivisions, sound) from the next beat.
+    const kept = { ...next, tempo: previous.tempo, tempoUnit: previous.tempoUnit, numerator: previous.numerator, denominator: previous.denominator, countIn: previous.countIn, countInOnly: previous.countInOnly };
+    const at = timeOf(Math.floor(positionAt(context.currentTime)) + 1);
+    cancelFrom(at);
+    emit({ settings: kept });
+    return schedule();
+  }
   const nextBeat = Math.floor(positionAt(context.currentTime)) + 1;
   const at = timeOf(nextBeat);
   cancelFrom(at);
@@ -332,7 +436,8 @@ const REPLACE_BEYOND = 0.003;
  */
 export function realignMetronome() {
   const ctx = context;
-  if (!ctx || !state.playing || state.following) return;
+  // With the recording, on its own clock: nothing to drift from.
+  if (!ctx || !state.playing || state.following || host) return;
   const placed = audioTimeFromEpoch(anchorEpoch);
   if (Math.abs(placed - anchorTime) < REPLACE_BEYOND) return;
   const now = ctx.currentTime;
@@ -388,6 +493,7 @@ export function followMetronome(timeline: FollowedTimeline | null, leader: strin
     halt();
     return emit({ settings, following: leader, songId: null });
   }
+  useHost(null);
   const ctx = audio();
   output!.gain.value = settings.volume;
   const placed = audioTimeFromEpoch(timeline.anchorEpoch);
@@ -466,24 +572,31 @@ export function takeOverMetronome(timeline: FollowedTimeline | null) {
 }
 
 /**
- * This device's own metronome on a given timeline (the recording's beat,
- * issue #100): placed on the audio clock from its anchor on the device's
- * clock, as a leader's is followed - but its own, so it's shared when
- * leading. Not while following a leader.
+ * This device's own metronome with the recording (issue #448): `timeline`
+ * as a leader's (its settings, and the first beat's position), its
+ * clicks placed on the stems' clock where the recording's beats are. The
+ * anchor kept for Sync play is bar 1's, on the device's clock.
  */
-export function playMetronomeOn(timeline: FollowedTimeline) {
+export function playMetronomeWithRecording(timeline: FollowedTimeline, through: MetronomeHost) {
   load();
   if (state.following) return;
-  const same =
-    state.playing &&
-    anchorEpoch === timeline.anchorEpoch &&
-    anchorPosition === timeline.anchorPosition &&
-    JSON.stringify(sharedMetronomeSettings(state.settings)) === JSON.stringify(sharedMetronomeSettings({ ...state.settings, ...timeline.settings }));
-  if (same) return;
-  followMetronome(timeline, "");
-  followed = null;
+  const settings = normalizeMetronome({ ...timeline.settings, sound: state.settings.sound, volume: state.settings.volume });
+  useHost(through);
+  cancelFrom(0);
+  const ctx = through.context;
+  state = { ...state, settings };
+  output!.gain.value = settings.volume;
+  anchorPosition = timeline.anchorPosition;
+  anchorTime = timeOf(anchorPosition);
+  anchorEpoch = epochFromAudioTime(anchorTime);
+  scheduledUntil = Math.max(0, positionAt(ctx.currentTime));
+  hostScheduledUntil = ctx.currentTime;
   adopted = timeline;
-  emit({ following: null, songId: null });
+  placing = null;
+  followed = null;
+  emit({ playing: true, following: null, songId: null, audioBlocked: false, anchor: { time: anchorTime, position: anchorPosition, epoch: anchorEpoch } });
+  timer ??= setInterval(schedule, TICK_MS);
+  schedule();
 }
 
 /** From a press: lets the browser make sound, then catches up with the leader. */

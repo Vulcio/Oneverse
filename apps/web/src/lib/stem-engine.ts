@@ -5,6 +5,7 @@ import { deviceNow, OutputClock } from "#/lib/output-clock";
 import { mediaArtwork } from "#/lib/song-cover";
 import { songWaveforms, type StoredWave } from "#/lib/song-files";
 import { waveformSlices } from "@oneverse/core";
+import type { MetronomeHost } from "#/lib/metronome-engine";
 import { beatOf, isAudible, stemKey, TAKE_ID, tracksOf, volumeGain, type StemFile, type StemSong, type StemState, type StemTrack } from "#/lib/stem-files";
 
 /**
@@ -834,6 +835,13 @@ export function prefetchStems(song: StemSong) {
   void load(song);
 }
 
+/** The loaded song's beat as it is now (its first beat or beats moved by hand, issue #448): the metronome follows. */
+export function refreshStemsBeat(song: StemSong) {
+  if (state.key !== stemKey(song)) return;
+  const beat = beatOf(song);
+  if (JSON.stringify(beat) !== JSON.stringify(state.beat)) set({ beat });
+}
+
 /** Other players (YouTube, #66) paused when the stems start: one thing plays at a time. */
 export const otherPlayers = new Set<() => void>();
 
@@ -1119,6 +1127,43 @@ export function useStems(): StemState {
     () => state,
     () => EMPTY,
   );
+}
+
+// --- the metronome with the recording (issue #448)
+
+/**
+ * The stems' audio for the metronome to play its clicks through, on the
+ * recording's beat (`secondsAt` and `positionAt`: its click grid): the same
+ * clock and the same mix, so what the click plays with is what's heard,
+ * whatever the output's delay. Null while they don't play (or follow Sync
+ * play's leader).
+ */
+export function stemsMetronomeHost(grid: { secondsAt(position: number): number; positionAt(seconds: number): number }): MetronomeHost | null {
+  if (!context || !bus || !clock || !state.playing || state.following) return null;
+  const ctx = context;
+  return {
+    context: ctx,
+    output: bus,
+    clock,
+    speed: state.speed,
+    secondsAt: grid.secondsAt,
+    positionAt: grid.positionAt,
+    passes(from, to) {
+      if (!state.playing || context !== ctx) return [];
+      // Past the song's end, nothing; across a loop's end, the next pass from there.
+      const end = startedAt + state.duration / state.speed;
+      const out: { from: number; to: number; zero: number }[] = [];
+      const loop = nextLoop;
+      if (loop && to > loop.switchAt) {
+        if (from < loop.switchAt) out.push({ from, to: loop.switchAt, zero: startedAt });
+        out.push({ from: Math.max(from, loop.switchAt), to, zero: loop.startedAt });
+      } else {
+        const stop = state.loop ? Math.min(end, startedAt + state.loop.end / state.speed) : end;
+        if (from < stop) out.push({ from, to: Math.min(to, stop), zero: startedAt });
+      }
+      return out;
+    },
+  };
 }
 
 // --- recording in the player (issue #134)

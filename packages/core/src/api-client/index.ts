@@ -3202,7 +3202,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     updateAttachment: (
       songVersionId: string,
       attachmentId: string,
-      change: { stemPart?: StemPart | null; visibility?: AttachmentVisibility; teamId?: string | null } & { [K in Exclude<keyof RecordingDetails, "process" | "otherTake">]?: RecordingDetails[K] | null } & { otherTake?: boolean; cuePoints?: CuePoint[] | null; locked?: boolean; confirmDetected?: true },
+      change: { stemPart?: StemPart | null; visibility?: AttachmentVisibility; teamId?: string | null } & { [K in Exclude<keyof RecordingDetails, "process" | "otherTake">]?: RecordingDetails[K] | null } & { otherTake?: boolean; cuePoints?: CuePoint[] | null; locked?: boolean; confirmDetected?: true; recordingBeatShift?: { seconds?: number; beats?: number } },
     ) => request<Attachment>(`/song-versions/${songVersionId}/attachments/${attachmentId}`, { method: "PATCH", body: JSON.stringify(change) }),
     /** Cleans up an audio file afterwards (issue #132): RNNoise on a voice, its level, its noise - in the background, back as Opus. */
     processAttachment: (songVersionId: string, attachmentId: string, steps: ("voice" | "level" | "noise")[]) =>

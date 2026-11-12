@@ -1,14 +1,15 @@
-import { beatTempoUnit, clicksBetween, metronomeForSong, secondsPerBeat, type MetronomeClick, type MetronomeSettings } from "@oneverse/core";
+import { beatTempoUnit, clickGrid, clicksBetween, metronomeForSong, type MetronomeClick, type MetronomeSettings } from "@oneverse/core";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { getMetronomeState, ownMetronomeSettings, playMetronomeOn, stopMetronome, useMetronome } from "#/lib/metronome-engine";
-import { useStems } from "#/lib/stem-engine";
+import { getMetronomeState, ownMetronomeSettings, playMetronomeWithRecording, stopMetronome, useMetronome } from "#/lib/metronome-engine";
+import { stemsMetronomeHost, useStems } from "#/lib/stem-engine";
 import { isAudible, type StemState } from "#/lib/stem-files";
 
 /**
  * The metronome with the recording (issue #100): while it's on, the
  * metronome plays the stems' beat - their recording's tempo (or the
- * song's), its first beat where the recording's falls - and follows their
- * play, pause and seek. It clicks from 0:00 on that beat's grid (issue
+ * song's), its first beat where the recording's falls, each click on the
+ * recording's own beats where it has a beat map (issue #448) - and follows
+ * their play, pause, seek and loop, scheduled on their audio clock. It clicks from 0:00 on that beat's grid (issue
  * #178), not only from the first beat; a recording whose beginning is
  * played freely gets the count-in before its first beat instead, as does
  * the metronome set to count in only. When leading Sync play, that
@@ -37,18 +38,50 @@ export function recordingClickSettings(own: MetronomeSettings, beat: NonNullable
 }
 
 /**
+ * Where the metronome's positions (the plan's: its first beat at
+ * `anchorPosition`) fall in the recording, and back (issue #448): on the
+ * recording's own beats when it has a beat map, so the click stays with a
+ * band that drifts; a steady grid from its first beat otherwise.
+ */
+export function recordingClickTimes(beat: NonNullable<StemState["beat"]>, anchorPosition: number) {
+  const grid = clickGrid({ tempo: beat.tempo, firstBeat: beat.firstBeat, map: beat.map });
+  return {
+    secondsAt: (position: number) => grid.secondsAt(position - anchorPosition),
+    positionAt: (seconds: number) => grid.beatAt(seconds) + anchorPosition,
+  };
+}
+
+/**
  * The clicks the metronome plays with the recording from `from` to `to`
  * (s, in the recording's time), at the level each sounds (issue #410: the
- * Tracks view's metronome lane): the plan above, its first beat on the
- * recording's.
+ * Tracks view's metronome lane): the plan above, on the recording's beats.
  */
 export function recordingClicksBetween(own: MetronomeSettings, beat: NonNullable<StemState["beat"]>, from: number, to: number): { at: number; level: MetronomeClick["level"]; countIn: boolean }[] {
   const plan = recordingClickPlan(recordingClickSettings(own, beat), beat);
-  const each = secondsPerBeat(plan.settings);
-  if (!(each > 0)) return [];
-  // Beat `anchorPosition` falls on the first beat.
-  const start = beat.firstBeat - plan.anchorPosition * each;
-  return clicksBetween(plan.settings, Math.max(0, (from - start) / each), (to - start) / each).map((click) => ({ at: start + click.position * each, level: click.level, countIn: click.countIn }));
+  const times = recordingClickTimes(beat, plan.anchorPosition);
+  const start = times.positionAt(from);
+  const end = times.positionAt(to);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return [];
+  return clicksBetween(plan.settings, Math.max(0, start), end).map((click) => ({ at: times.secondsAt(click.position), level: click.level, countIn: click.countIn }));
+}
+
+/**
+ * The recording's bar line nearest `seconds` (issue #448), when one is
+ * within half a bar: where a section's loop starts and ends, so it loops
+ * whole bars and the click carries on across the seam. Its detected
+ * downbeats when it has a beat map, else bars of its time signature from
+ * its first beat. `seconds` as it is otherwise.
+ */
+export function barLineNear(beat: NonNullable<StemState["beat"]> | null, seconds: number): number {
+  if (!beat || !(beat.tempo > 0) || !Number.isFinite(seconds)) return seconds;
+  const numerator = beat.timeSignature?.numerator ?? 4;
+  const lines = beat.map?.downbeats.filter(Number.isFinite) ?? [];
+  const grid = clickGrid({ tempo: beat.tempo, firstBeat: beat.firstBeat, map: beat.map });
+  const bar = Math.round(grid.beatAt(seconds) / numerator);
+  const candidates = [...lines, grid.secondsAt(bar * numerator)].filter((line) => line >= 0);
+  const best = candidates.reduce((near, line) => (Math.abs(line - seconds) < Math.abs(near - seconds) ? line : near), Number.POSITIVE_INFINITY);
+  const half = ((60 / beat.tempo) * numerator) / 2;
+  return Math.abs(best - seconds) <= half ? best : seconds;
 }
 
 let on = false;
@@ -98,12 +131,18 @@ export function useRecordingClickBridge() {
     }
     // Slower or faster (issue #139): the beat at the speed the stems play.
     const plan = recordingClickPlan(recordingClickSettings(ownMetronomeSettings(), beat, speed), beat);
-    playMetronomeOn({
-      settings: plan.settings,
-      playing: true,
-      // The song's bar 1 on the recording's first beat; the bars before it from 0:00, or a count-in.
-      anchorEpoch: stems.anchor.epoch + ((beat.firstBeat - stems.anchor.position) / speed) * 1000,
-      anchorPosition: plan.anchorPosition,
-    });
+    // On the stems' own clock and through their mix (issue #448): locked to them, on the recording's beats.
+    const host = stemsMetronomeHost(recordingClickTimes(beat, plan.anchorPosition));
+    if (!host) return;
+    playMetronomeWithRecording(
+      {
+        settings: plan.settings,
+        playing: true,
+        // The song's bar 1 on the recording's first beat; the bars before it from 0:00, or a count-in.
+        anchorEpoch: stems.anchor.epoch + ((beat.firstBeat - stems.anchor.position) / speed) * 1000,
+        anchorPosition: plan.anchorPosition,
+      },
+      host,
+    );
   }, [anchorKey]);
 }

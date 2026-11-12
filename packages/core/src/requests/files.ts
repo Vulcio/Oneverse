@@ -78,6 +78,12 @@ export const UpdateAttachmentSchema = z.strictObject({
   recordingKey: z.string().max(12).nullable().optional(),
   recordingTempo: z.number().min(20).max(400).nullable().optional(),
   recordingFirstBeat: z.number().min(0).max(600).nullable().optional(),
+  /**
+   * Its beat moved by hand (issue #448), the detected beats and bars kept:
+   * `seconds` moves them all, `beats` moves the bars that many beats later
+   * (earlier when negative) on the same beats.
+   */
+  recordingBeatShift: z.strictObject({ seconds: z.number().min(-2).max(2).optional(), beats: z.number().int().min(-16).max(16).optional() }).optional(),
   /** Played freely before its first beat (issue #178): the click waits for it, rather than clicking from 0:00. */
   recordingFreeIntro: z.boolean().optional(),
   recordingTimeSignature: timeSignature.nullable().optional(),

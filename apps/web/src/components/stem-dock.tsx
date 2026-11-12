@@ -43,10 +43,10 @@ import { StemTrackActions } from "#/components/stem-track-actions";
 import { Button } from "@oneverse/ui/components/button";
 import { setMode } from "#/lib/mode";
 import { useMultitrackName } from "#/lib/multitrack-name";
-import { setRecordingClick, useRecordingClick } from "#/lib/recording-click";
+import { barLineNear, setRecordingClick, useRecordingClick } from "#/lib/recording-click";
 import { unlockSyncAudio } from "#/lib/sync-client";
-import { dockStems, setStemsSpeed, setStemsTranspose, pauseStems, playStems, prefetchStems, setStemLoop, stopStems, resetStemVolumes, setStemVolume, seekStems, toggleStemMute, toggleStemSolo, undockStems, useStems } from "#/lib/stem-engine";
-import { RECORDING_CHOICE, isTransposed, isAudible, shownDuration, songBeatTempo, stemKey, TAKE_ID, tracksOf, volumeGain, type StemSong, type StemTrack } from "#/lib/stem-files";
+import { dockStems, refreshStemsBeat, setStemsSpeed, setStemsTranspose, pauseStems, playStems, prefetchStems, setStemLoop, stopStems, resetStemVolumes, setStemVolume, seekStems, toggleStemMute, toggleStemSolo, undockStems, useStems } from "#/lib/stem-engine";
+import { RECORDING_CHOICE, beatOf, isTransposed, isAudible, shownDuration, songBeatTempo, stemKey, TAKE_ID, tracksOf, volumeGain, type StemSong, type StemTrack } from "#/lib/stem-files";
 import { chooseMultitrack, chooseStemSpeed, chooseStemTranspose, useChosenSpeed, useChosenTranspose } from "#/lib/stem-choices";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
 import { cn } from "@oneverse/ui/lib/utils";
@@ -395,6 +395,10 @@ export function StemDock({ song: page }: { song: StemSong }) {
     // Once per set of stems (`key`); `song` is a new object on every render.
   }, [key]);
 
+  // Its beat changed (moved by hand, issue #448): the stems loaded already play with the new one.
+  const beatKey = JSON.stringify(beatOf(song));
+  useEffect(() => refreshStemsBeat(song), [beatKey]);
+
   // Minimised as a page opens (issue #182); minimised, no mixer: the parts' controls are for the expanded player.
   function expand(next: boolean) {
     setExpanded(next);
@@ -484,11 +488,15 @@ export function StemDock({ song: page }: { song: StemSong }) {
   // The transport (issue #162): back to the start, and - with the sections placed - from one to the next, and round one.
   const ready = active && engine.status === "ready" && !following;
   const loop = active ? engine.loop : null;
-  /** The section at `at` (s): from its cue to the next one's (before the first: from 0:00 to it). */
+  /**
+   * The section at `at` (s): from its cue to the next one's (before the first: from 0:00 to it),
+   * each end on the recording's nearest bar line (issue #448), so the loop is whole bars.
+   */
   const sectionAt = (at: number) => {
     const index = cueAt(cues, at);
-    if (index === null) return { start: 0, end: cues[0]?.at ?? duration };
-    return { start: cues[index]!.at, end: cues[index + 1]?.at ?? duration };
+    const bar = (seconds: number) => Math.min(duration, barLineNear(engine.beat, seconds));
+    if (index === null) return { start: 0, end: cues[0] ? bar(cues[0].at) : duration };
+    return { start: bar(cues[index]!.at), end: cues[index + 1] ? bar(cues[index + 1]!.at) : duration };
   };
   /** To `at`, the section there looped instead if one is. */
   const goTo = (at: number) => {
