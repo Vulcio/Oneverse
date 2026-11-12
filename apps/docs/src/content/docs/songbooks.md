@@ -30,6 +30,8 @@ A team's songbook holds songs everyone in the team can open: the team's, the glo
 
 Songs are listed in number order (1, 2, 10, 100), and a plain number is kept without leading zeros: "0245" is 245.
 
+The songs are a table, like the Library's **Songs**: the number and the title, then the section, the artist, the key and the tempo. **Columns** chooses which others show - Time (the time signature), Length, Tags, Language, CCLI, Updated and Added - and their order, remembered on this device. Click a column's name to sort by it, and a song to open it. Each song has a star (**Add to favorites**), **Add to set**, and **…** with **Open** and, if you can change the songbook, **Remove**, which takes the song out of the songbook (the song itself stays in your library).
+
 A numbered songbook can have **sections**: ranges of numbers with a label, like a hymnal's printed volumes (1-371 is "JEM1", 372-721 "JEM2"…). You can then filter the songbook by section.
 
 A song's page lists its songbooks with its full reference - the songbook's abbreviation, the number and the volume: **JEM 855 · JEM3** - and **Copy** puts "Title — JEM 855 · JEM3" on the clipboard, to give someone who doesn't use Songverse. A set shows it under each song too.

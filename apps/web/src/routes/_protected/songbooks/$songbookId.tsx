@@ -1,7 +1,7 @@
 import { ApiError, BULK_UPLOAD_EXTENSIONS, isNetworkError, keptSongbook, onlineOrKept, type BulkUploadContentType, type BulkUploadFileMatch, type LanguageCode, type SongbookSection } from "@oneverse/core";
 import { cn } from "@oneverse/ui/lib/utils";
 import { droppedFiles } from "#/lib/dropped-files";
-import { createFileRoute, Link, redirect, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { ChevronDown, Settings2, Share2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,7 @@ import { SectionsEditor } from "#/components/sections-editor";
 import { SongbookSongInfoCard } from "#/components/songbook-song-info";
 import { deviceStorage } from "#/lib/offline-data";
 import { FieldError } from "@oneverse/ui/components/field";
+import { SongbookSongs, type SongbookRow } from "./-songbook-songs";
 
 /** A bulk upload's files go in batches of at most this many files and bytes (issue #202): within the API's limit per request, and its memory. */
 const BULK_UPLOAD_BATCH_FILES = 100;
@@ -32,6 +33,8 @@ const BULK_UPLOAD_BATCH_BYTES = 50 * 1024 * 1024;
 export const Route = createFileRoute("/_protected/songbooks/$songbookId")({
   // Offline, the copy kept with "Keep a local copy" (issue #52), read-only.
   loader: async ({ context, params }) => {
+    // Its songs as the Library lists them (issue #440), asked alongside; offline, or from an older API, the entries alone.
+    const songsLoading = context.offline ? Promise.resolve(null) : apiClient.getSongbookSongs(params.songbookId).then((found) => found.songs, () => null);
     const songbook = await onlineOrKept(
       () =>
         apiClient.getSongbook(params.songbookId).catch((error: unknown) => {
@@ -41,7 +44,8 @@ export const Route = createFileRoute("/_protected/songbooks/$songbookId")({
       () => keptSongbook(deviceStorage(), params.songbookId),
     );
     if (!songbook) throw redirect({ to: "/songbooks" });
-    return { session: context.session, teams: context.teams, songbook, offline: !!context.offline };
+    const songs = await songsLoading;
+    return { session: context.session, teams: context.teams, songbook, songs, offline: !!context.offline };
   },
   component: SongbookDetail,
 });
@@ -50,7 +54,7 @@ function SongbookDetail() {
   const { t } = useTranslation();
   const router = useRouter();
   const navigate = useNavigate();
-  const { session, teams, songbook, offline } = Route.useLoaderData();
+  const { session, teams, songbook, songs, offline } = Route.useLoaderData();
 
   // Its owner (or its team's admins) change, share and delete it; someone it's shared with to edit changes its entries and details (issue #211).
   const owns =
@@ -117,10 +121,11 @@ function SongbookDetail() {
   // Songs already in the book aren't offered again.
   const alreadyAdded = useMemo(() => new Set(songbook.entries.map((entry) => entry.songVersionId)), [songbook.entries]);
 
-  const visibleEntries = useMemo(() => {
-    if (!sectionFilter) return songbook.entries;
-    return songbook.entries.filter((entry) => entry.sectionLabel === sectionFilter);
-  }, [songbook.entries, sectionFilter]);
+  const visibleRows = useMemo<SongbookRow[]>(() => {
+    const byId = new Map((songs ?? []).map((song) => [song.id, song]));
+    const entries = sectionFilter ? songbook.entries.filter((entry) => entry.sectionLabel === sectionFilter) : songbook.entries;
+    return entries.map((entry) => ({ entry, song: byId.get(entry.songVersionId) ?? null }));
+  }, [songbook.entries, songs, sectionFilter]);
 
   async function save() {
     setSaving(true);
@@ -473,58 +478,34 @@ function SongbookDetail() {
       ) : null}
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardHeader>
           <CardTitle className="text-sm">{t("songbooks.entries")}</CardTitle>
-          {isNumbered && sections.length > 0 ? (
-            <NativeSelect
-              value={sectionFilter}
-              onChange={(e) => setSectionFilter(e.target.value)}
-              compact
-            >
-              <option value="">{t("songbooks.allSections")}</option>
-              {sections.map((section) => (
-                <option key={section.label} value={section.label}>
-                  {section.label}
-                </option>
-              ))}
-            </NativeSelect>
-          ) : null}
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {visibleEntries.length === 0 ? (
+          {songbook.entries.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("songbooks.noEntriesYet")}</p>
           ) : (
-            <ul className="flex flex-col divide-y">
-              {visibleEntries.map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
-                  <div className="flex items-center gap-3">
-                    {entry.entryCode ? (
-                      <span className="w-14 shrink-0 rounded-md bg-muted px-2 py-1 text-center text-xs font-medium">
-                        {entry.entryCode}
-                      </span>
-                    ) : null}
-                    {entry.sectionLabel ? (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                        {entry.sectionLabel}
-                      </span>
-                    ) : null}
-                    <Link
-                      to="/library/$songVersionId"
-                      params={{ songVersionId: entry.songVersionId }}
-                      search={{ songbook: songbook.id }}
-                      className="text-sm hover:text-primary"
-                    >
-                      {entry.songVersionTitle ?? entry.songVersionId}
-                    </Link>
-                  </div>
-                  {canEdit ? (
-                    <Button variant="ghost" size="sm" onClick={() => void removeEntry(entry.id)}>
-                      {t("songbooks.remove")}
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            // Library-like columns, chosen on this device; a star, Add to set and "…" on each (issue #440).
+            <SongbookSongs
+              songbookId={songbook.id}
+              rows={visibleRows}
+              numbered={isNumbered}
+              hasSections={isNumbered && sections.length > 0}
+              canEdit={canEdit}
+              onRemove={(entryId) => void removeEntry(entryId)}
+              filter={
+                isNumbered && sections.length > 0 ? (
+                  <NativeSelect value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)} compact>
+                    <option value="">{t("songbooks.allSections")}</option>
+                    {sections.map((section) => (
+                      <option key={section.label} value={section.label}>
+                        {section.label}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                ) : undefined
+              }
+            />
           )}
 
           {canEdit ? (

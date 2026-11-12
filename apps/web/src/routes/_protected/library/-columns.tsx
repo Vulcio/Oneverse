@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { artistNames } from "#/lib/artists";
-import { createDeviceStore } from "#/lib/device-store";
+import { columnPrefsStore } from "#/lib/column-prefs";
 import { QuickSelectToggle } from "#/components/quick-selection";
 
 function tagLabel(tags: SongVersionSummary["tags"], locale: LocaleValue): string {
@@ -151,40 +151,17 @@ export const LIBRARY_COLUMNS = ["artist", "tags", "language", "publicationState"
 export type LibraryColumn = (typeof LIBRARY_COLUMNS)[number];
 // Title, Artist and Tags to start with (issue #168); the rest a pick away.
 const HIDDEN_AT_FIRST: LibraryColumn[] = ["language", "publicationState", "updatedAt", "createdAt", "ccli"];
-const COLUMNS_KEY = "songverse.library.columns";
 
-export interface ColumnPrefs {
-  /** The chosen columns in order, each shown or not. */
-  columns: { id: LibraryColumn; shown: boolean }[];
-}
+/** The Songs list's columns as chosen on this device (issue #150): which show, in what order. */
+export const { useColumnPrefs } = columnPrefsStore<LibraryColumn>("songverse.library.columns", LIBRARY_COLUMNS, HIDDEN_AT_FIRST);
 
-const DEFAULT_PREFS: ColumnPrefs = { columns: LIBRARY_COLUMNS.map((id) => ({ id, shown: !HIDDEN_AT_FIRST.includes(id) })) };
-
-/** What's kept, made whole: a column it doesn't know is dropped, one it lacks (added since) comes at the end as it starts. */
-export function readColumnPrefs(raw: string | null): ColumnPrefs {
-  try {
-    const saved = JSON.parse(raw ?? "null") as ColumnPrefs | null;
-    if (!saved || !Array.isArray(saved.columns)) return DEFAULT_PREFS;
-    const known = saved.columns.filter((column): column is ColumnPrefs["columns"][number] => (LIBRARY_COLUMNS as readonly string[]).includes(column?.id) && typeof column.shown === "boolean");
-    const missing = DEFAULT_PREFS.columns.filter((column) => !known.some((kept) => kept.id === column.id));
-    return { columns: [...known, ...missing] };
-  } catch {
-    return DEFAULT_PREFS;
-  }
-}
-
-const columnPrefs = createDeviceStore<ColumnPrefs>(COLUMNS_KEY, {
-  fallback: DEFAULT_PREFS,
-  parse: readColumnPrefs,
-  format: (prefs) => JSON.stringify(prefs),
-});
-
-/**
- * The Songs list's columns as chosen on this device (issue #150): which
- * show, in what order. Read while rendering on the client (the defaults on
- * the server), not in an effect after it - so the choice is there from the
- * first render, whatever else the page does meanwhile.
- */
-export function useColumnPrefs(): [ColumnPrefs, (next: ColumnPrefs) => void] {
-  return [columnPrefs.use(), columnPrefs.set];
-}
+/** Their names in the Columns menu. */
+export const LIBRARY_COLUMN_LABELS: Record<LibraryColumn, string> = {
+  artist: "library.columnArtist",
+  language: "library.columnLanguage",
+  publicationState: "library.columnStatus",
+  tags: "library.columnTags",
+  updatedAt: "library.columnUpdated",
+  createdAt: "library.columnAdded",
+  ccli: "library.columnCcli",
+};
