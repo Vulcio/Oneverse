@@ -24,6 +24,7 @@ import {
   type Multitrack,
   type SongLink,
 } from "@oneverse/core";
+import { TuningPicker } from "#/components/tuning-picker";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Eye, EyeOff, MessageSquare, MoveHorizontal, Pencil, Plus, RotateCcw, Star, Trash2 } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -276,6 +277,18 @@ export function ArrangementEditor({
                 {!doc.defaults.capo && version.capo ? (
                   <p className="text-xs text-muted-foreground">{t("arrangements.songSuggestsCapo", { capo: version.capo })}</p>
                 ) : null}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="arrangement-tuning">{t("tunings.arrangement")}</Label>
+                <TuningPicker
+                  id="arrangement-tuning"
+                  instrument="guitar"
+                  value={doc.defaults.guitarTuning ?? null}
+                  noneLabel={t("tunings.arrangementNone")}
+                  onChange={(guitarTuning) => setDefaults({ guitarTuning, guitarTuningNotes: null })}
+                  testId="arrangement-tuning"
+                />
+                <p className="text-xs text-muted-foreground">{t("tunings.arrangementHint")}</p>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="arrangement-tempo">{t("arrangements.tempo")}</Label>

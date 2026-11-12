@@ -19,7 +19,7 @@ If your device pauses the microphone (a call, another app), **Tap to resume** pi
 
 ## Your instrument
 
-Choose your **instrument** - **Chromatic** for any note, **Guitar**, **Bass**, **Ukulele**, **Violin**, **Viola** or **Cello** - and, for some, its **tuning**: **Standard**, **Drop D**, **DADGAD**, **Open G**, **Half step down**... Its strings show under the tuner, with their notes, and the one you're playing lights up (green once it's in tune).
+Choose your **instrument** - **Chromatic** for any note, **Guitar**, **Bass**, **Ukulele**, **Violin**, **Viola** or **Cello** - and, for some, its **tuning**: **Standard**, **Drop D**, **DADGAD**, **Open G**, **Half step down**... - or **Your tuning**, the one you typed as your own for chord diagrams. **Tune**, beside a chart's chords when its version is in another tuning, opens the tuner set to it. Its strings show under the tuner, with their notes, and the one you're playing lights up (green once it's in tune).
 
 ## Displays
 

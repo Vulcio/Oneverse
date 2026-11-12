@@ -19,7 +19,7 @@ Si votre appareil met le micro en pause (un appel, une autre application), **Tou
 
 ## Votre instrument
 
-Choisissez votre **instrument** - **Chromatique** pour n'importe quelle note, **Guitare**, **Basse**, **Ukulélé**, **Violon**, **Alto** ou **Violoncelle** - et, pour certains, son **accordage** : **Standard**, **Drop D**, **DADGAD**, **Open G**, **Un demi-ton plus bas**... Ses cordes s'affichent sous l'accordeur, avec leurs notes, et celle que vous jouez s'allume (en vert une fois juste).
+Choisissez votre **instrument** - **Chromatique** pour n'importe quelle note, **Guitare**, **Basse**, **Ukulélé**, **Violon**, **Alto** ou **Violoncelle** - et, pour certains, son **accordage** : **Standard**, **Drop D**, **DADGAD**, **Open G**, **Un demi-ton plus bas**... - ou **Votre accordage**, celui que vous avez tapé comme le vôtre pour les diagrammes d'accords. **Accorder**, à côté des accords d'une grille dont la version est dans un autre accordage, ouvre l'accordeur réglé dessus. Ses cordes s'affichent sous l'accordeur, avec leurs notes, et celle que vous jouez s'allume (en vert une fois juste).
 
 ## Affichages
 

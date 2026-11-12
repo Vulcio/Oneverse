@@ -2,11 +2,11 @@ import {
   type CapoDisplayModeValue,
   type ChordNotationValue,
   type ChordDiagramsValue,
-  TUNINGS,
   type LiveViewValue,
   type StorageUsage,
   type UserProfile,
 } from "@oneverse/core";
+import { TuningPicker } from "#/components/tuning-picker";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -178,19 +178,14 @@ export function ChartDisplayCard({ profile }: { profile: Pick<UserProfile, "chor
           <>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="instrument-tuning">{t(profile.chordDiagrams === "UKULELE" ? "dashboard.ukuleleTuning" : "dashboard.guitarTuning")}</Label>
-              <NativeSelect
+              <TuningPicker
                 id="instrument-tuning"
+                instrument={profile.chordDiagrams === "UKULELE" ? "ukulele" : "guitar"}
                 value={profile.chordDiagrams === "UKULELE" ? profile.ukuleleTuning : profile.guitarTuning}
-                disabled={saving}
-                onChange={(e) => void save(profile.chordDiagrams === "UKULELE" ? { ukuleleTuning: e.target.value } : { guitarTuning: e.target.value })}
+                onChange={(next) => void save(profile.chordDiagrams === "UKULELE" ? { ukuleleTuning: next ?? "standard" } : { guitarTuning: next ?? "standard" })}
                 className="w-full max-w-xs"
-              >
-                {TUNINGS[profile.chordDiagrams === "UKULELE" ? "ukulele" : "guitar"].map((tuning) => (
-                  <option key={tuning.id} value={tuning.id}>
-                    {tuning.name}
-                  </option>
-                ))}
-              </NativeSelect>
+                testId="account-tuning"
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="left-handed">{t("dashboard.leftHanded")}</Label>

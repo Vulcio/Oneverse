@@ -97,6 +97,8 @@ export interface RenderedChart {
   /** The key it starts in, as sounding. */
   key: string | null;
   capo: number | null;
+  /** The guitar tuning the arrangement is played in (issue #355; a tuning ID), null when it sets none: the player's own. */
+  guitarTuning?: string | null;
   /** Its chords are named as the shapes played with the capo on, not as they sound: shown so (in italics), never mistaken for the sounding chords. */
   capoShapes: boolean;
   tempo: number | null;
@@ -271,6 +273,7 @@ export function renderChart(song: SongDocumentV2, arrangement: ArrangementDocume
   return {
     key: keyAt(baseSteps),
     capo,
+    ...(arrangement?.defaults.guitarTuning ? { guitarTuning: arrangement.defaults.guitarTuning } : {}),
     capoShapes: !!capo && view.capoDisplay === "shapes" && view.notation !== "nashville" && view.notation !== "roman",
     tempo: defaults?.tempo ?? song.defaults.tempo ?? null,
     tempoUnit: song.defaults.tempoUnit ?? null,

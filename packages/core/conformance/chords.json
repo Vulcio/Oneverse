@@ -8603,6 +8603,316 @@
         }
       ]
     },
+    "chordBassOptions": {
+      "about": "A chord's bass notes (issue #228): root position, its inversions spelled from the chord, then the key's other notes walking up from its root.",
+      "params": [
+        "raw",
+        "key"
+      ],
+      "cases": [
+        {
+          "name": "C in G",
+          "args": [
+            "C",
+            "G"
+          ],
+          "expected": [
+            {
+              "chord": "C",
+              "bass": "C",
+              "role": "root"
+            },
+            {
+              "chord": "C/E",
+              "bass": "E",
+              "role": "third"
+            },
+            {
+              "chord": "C/G",
+              "bass": "G",
+              "role": "fifth"
+            },
+            {
+              "chord": "C/D",
+              "bass": "D",
+              "role": "key"
+            },
+            {
+              "chord": "C/F#",
+              "bass": "F#",
+              "role": "key"
+            },
+            {
+              "chord": "C/A",
+              "bass": "A",
+              "role": "key"
+            },
+            {
+              "chord": "C/B",
+              "bass": "B",
+              "role": "key"
+            }
+          ]
+        },
+        {
+          "name": "D in no key",
+          "args": [
+            "D",
+            null
+          ],
+          "expected": [
+            {
+              "chord": "D",
+              "bass": "D",
+              "role": "root"
+            },
+            {
+              "chord": "D/F#",
+              "bass": "F#",
+              "role": "third"
+            },
+            {
+              "chord": "D/A",
+              "bass": "A",
+              "role": "fifth"
+            }
+          ]
+        },
+        {
+          "name": "Bb in F",
+          "args": [
+            "Bb",
+            "F"
+          ],
+          "expected": [
+            {
+              "chord": "Bb",
+              "bass": "Bb",
+              "role": "root"
+            },
+            {
+              "chord": "Bb/D",
+              "bass": "D",
+              "role": "third"
+            },
+            {
+              "chord": "Bb/F",
+              "bass": "F",
+              "role": "fifth"
+            },
+            {
+              "chord": "Bb/C",
+              "bass": "C",
+              "role": "key"
+            },
+            {
+              "chord": "Bb/E",
+              "bass": "E",
+              "role": "key"
+            },
+            {
+              "chord": "Bb/G",
+              "bass": "G",
+              "role": "key"
+            },
+            {
+              "chord": "Bb/A",
+              "bass": "A",
+              "role": "key"
+            }
+          ]
+        },
+        {
+          "name": "G7/B in C",
+          "args": [
+            "G7/B",
+            "C"
+          ],
+          "expected": [
+            {
+              "chord": "G7",
+              "bass": "G",
+              "role": "root"
+            },
+            {
+              "chord": "G7/B",
+              "bass": "B",
+              "role": "third"
+            },
+            {
+              "chord": "G7/D",
+              "bass": "D",
+              "role": "fifth"
+            },
+            {
+              "chord": "G7/F",
+              "bass": "F",
+              "role": "seventh"
+            },
+            {
+              "chord": "G7/A",
+              "bass": "A",
+              "role": "key"
+            },
+            {
+              "chord": "G7/C",
+              "bass": "C",
+              "role": "key"
+            },
+            {
+              "chord": "G7/E",
+              "bass": "E",
+              "role": "key"
+            }
+          ]
+        },
+        {
+          "name": "Bm7b5 in A",
+          "args": [
+            "Bm7b5",
+            "A"
+          ],
+          "expected": [
+            {
+              "chord": "Bm7b5",
+              "bass": "B",
+              "role": "root"
+            },
+            {
+              "chord": "Bm7b5/D",
+              "bass": "D",
+              "role": "third"
+            },
+            {
+              "chord": "Bm7b5/F",
+              "bass": "F",
+              "role": "fifth"
+            },
+            {
+              "chord": "Bm7b5/A",
+              "bass": "A",
+              "role": "seventh"
+            },
+            {
+              "chord": "Bm7b5/C#",
+              "bass": "C#",
+              "role": "key"
+            },
+            {
+              "chord": "Bm7b5/E",
+              "bass": "E",
+              "role": "key"
+            },
+            {
+              "chord": "Bm7b5/F#",
+              "bass": "F#",
+              "role": "key"
+            },
+            {
+              "chord": "Bm7b5/G#",
+              "bass": "G#",
+              "role": "key"
+            }
+          ]
+        },
+        {
+          "name": "Dsus4 in D",
+          "args": [
+            "Dsus4",
+            "D"
+          ],
+          "expected": [
+            {
+              "chord": "Dsus4",
+              "bass": "D",
+              "role": "root"
+            },
+            {
+              "chord": "Dsus4/G",
+              "bass": "G",
+              "role": "third"
+            },
+            {
+              "chord": "Dsus4/A",
+              "bass": "A",
+              "role": "fifth"
+            },
+            {
+              "chord": "Dsus4/E",
+              "bass": "E",
+              "role": "key"
+            },
+            {
+              "chord": "Dsus4/F#",
+              "bass": "F#",
+              "role": "key"
+            },
+            {
+              "chord": "Dsus4/B",
+              "bass": "B",
+              "role": "key"
+            },
+            {
+              "chord": "Dsus4/C#",
+              "bass": "C#",
+              "role": "key"
+            }
+          ]
+        },
+        {
+          "name": "(Am) in C",
+          "args": [
+            "(Am)",
+            "C"
+          ],
+          "expected": [
+            {
+              "chord": "(Am)",
+              "bass": "A",
+              "role": "root"
+            },
+            {
+              "chord": "(Am/C)",
+              "bass": "C",
+              "role": "third"
+            },
+            {
+              "chord": "(Am/E)",
+              "bass": "E",
+              "role": "fifth"
+            },
+            {
+              "chord": "(Am/B)",
+              "bass": "B",
+              "role": "key"
+            },
+            {
+              "chord": "(Am/D)",
+              "bass": "D",
+              "role": "key"
+            },
+            {
+              "chord": "(Am/F)",
+              "bass": "F",
+              "role": "key"
+            },
+            {
+              "chord": "(Am/G)",
+              "bass": "G",
+              "role": "key"
+            }
+          ]
+        },
+        {
+          "name": "N.C. in C",
+          "args": [
+            "N.C.",
+            "C"
+          ],
+          "expected": []
+        }
+      ]
+    },
     "sameChord": {
       "about": "Whether two symbols are the same chord, however written.",
       "params": [

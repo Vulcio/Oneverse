@@ -1,4 +1,4 @@
-import { diatonicChords, type ChordCheck } from "@oneverse/core";
+import { chordBassOptions, diatonicChords, type ChordCheck } from "@oneverse/core";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
@@ -64,6 +64,8 @@ export function ChordBar({ editor, songKey, used, checks = [] }: { editor: Edito
   const others = used.filter((raw) => !inKey.some((chord) => chord.chord === raw));
   const root = selected ? /^\(?([A-G][#b]?)/.exec(selected)?.[1] : undefined;
   const variations = root ? VARIATIONS.map((suffix) => root + suffix).filter((raw) => raw !== selected && !inKey.some((chord) => chord.chord === raw)) : [];
+  // Its bass notes (issue #228): the inversions, then the key's other notes.
+  const basses = selected ? chordBassOptions(selected, songKey).filter((one) => one.chord !== selected && !others.includes(one.chord) && !variations.includes(one.chord)) : [];
   const atSelected = () => selectedChord(editor.state)?.pos;
   const tool = (label: string, icon: ReactNode, onClick: (pos: number) => void, testId: string, destructive = false) => (
     <button
@@ -132,6 +134,8 @@ export function ChordBar({ editor, songKey, used, checks = [] }: { editor: Edito
         ) : null}
         {inKey.map((chord) => chip(chord.chord, chord.degree))}
         {variations.map((raw) => chip(raw))}
+        {basses.length ? <span className="mx-0.5 w-px shrink-0 self-stretch bg-border" aria-hidden /> : null}
+        {basses.map((one) => chip(one.chord, one.role === "key" ? undefined : t(`structuredEditor.bassRoles.${one.role}`)))}
         {others.map((raw) => chip(raw))}
         <Popover open={otherOpen} onOpenChange={setOtherOpen}>
           <PopoverTrigger

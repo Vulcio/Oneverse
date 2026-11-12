@@ -1,4 +1,5 @@
-import { hzToMidi, parseNoteName } from "./notes.js";
+import { hzToMidi, noteName, octaveOf, parseNoteName } from "./notes.js";
+import { findTuning, TUNINGS, type InstrumentId, type Tuning } from "../chords/shapes.js";
 
 /**
  * Instruments and their tunings for the tuner (issue #3): the open strings,
@@ -14,21 +15,22 @@ export interface TunerInstrument {
   tunings: TunerTuning[];
 }
 
+/** A chord diagrams' tuning (issue #355) as the tuner lists it: the same ID, its strings named (in flats when it's tuned down). */
+function tunerTuningOf(tuning: Tuning): TunerTuning {
+  const flats = tuning.id === "half-step-down";
+  return { id: tuning.id, strings: tuning.strings.map((midi) => `${noteName(midi, flats)}${octaveOf(midi)}`) };
+}
+
+// The tuner's own names for tunings before it shared the chord diagrams' (kept on devices).
+const OLD_TUNER_IDS: Record<string, string> = { dropD: "drop-d", openG: "open-g", openD: "open-d", openE: "open-e", halfDown: "half-step-down", fullDown: "whole-step-down", lowG: "low-g" };
+
+/**
+ * The guitar and ukulele tunings are the chord diagrams' (TUNINGS), so a song's
+ * tuning is one the tuner knows; a player's own ("custom:...") is tuned to as well.
+ */
 export const TUNER_INSTRUMENTS: TunerInstrument[] = [
   { id: "chromatic", tunings: [] },
-  {
-    id: "guitar",
-    tunings: [
-      { id: "standard", strings: ["E2", "A2", "D3", "G3", "B3", "E4"] },
-      { id: "dropD", strings: ["D2", "A2", "D3", "G3", "B3", "E4"] },
-      { id: "dadgad", strings: ["D2", "A2", "D3", "G3", "A3", "D4"] },
-      { id: "openG", strings: ["D2", "G2", "D3", "G3", "B3", "D4"] },
-      { id: "openD", strings: ["D2", "A2", "D3", "F#3", "A3", "D4"] },
-      { id: "openE", strings: ["E2", "B2", "E3", "G#3", "B3", "E4"] },
-      { id: "halfDown", strings: ["Eb2", "Ab2", "Db3", "Gb3", "Bb3", "Eb4"] },
-      { id: "fullDown", strings: ["D2", "G2", "C3", "F3", "A3", "D4"] },
-    ],
-  },
+  { id: "guitar", tunings: TUNINGS.guitar.map((tuning) => tunerTuningOf(tuning)) },
   {
     id: "bass",
     tunings: [
@@ -39,14 +41,7 @@ export const TUNER_INSTRUMENTS: TunerInstrument[] = [
       { id: "dropA5", strings: ["A0", "E1", "A1", "D2", "G2"] },
     ],
   },
-  {
-    id: "ukulele",
-    tunings: [
-      { id: "standard", strings: ["G4", "C4", "E4", "A4"] },
-      { id: "lowG", strings: ["G3", "C4", "E4", "A4"] },
-      { id: "baritone", strings: ["D3", "G3", "B3", "E4"] },
-    ],
-  },
+  { id: "ukulele", tunings: TUNINGS.ukulele.map((tuning) => tunerTuningOf(tuning)) },
   { id: "violin", tunings: [{ id: "standard", strings: ["G3", "D4", "A4", "E5"] }] },
   { id: "viola", tunings: [{ id: "standard", strings: ["C3", "G3", "D4", "A4"] }] },
   { id: "cello", tunings: [{ id: "standard", strings: ["C2", "G2", "D3", "A3"] }] },
@@ -56,9 +51,16 @@ export function tunerInstrument(id: string | null | undefined): TunerInstrument 
   return TUNER_INSTRUMENTS.find((instrument) => instrument.id === id) ?? TUNER_INSTRUMENTS[0]!;
 }
 
-/** The tuning of `instrument` by id, else its first; null for chromatic. */
+/** The tuning of `instrument` by id (a player's own too, on a guitar or a ukulele), else its first; null for chromatic. */
 export function tunerTuning(instrument: TunerInstrument, id: string | null | undefined): TunerTuning | null {
-  return instrument.tunings.find((tuning) => tuning.id === id) ?? instrument.tunings[0] ?? null;
+  const wanted = id ? (OLD_TUNER_IDS[id] ?? id) : id;
+  const listed = instrument.tunings.find((tuning) => tuning.id === wanted);
+  if (listed) return listed;
+  if (wanted && (instrument.id === "guitar" || instrument.id === "ukulele")) {
+    const own = findTuning(instrument.id as InstrumentId, wanted);
+    if (own) return tunerTuningOf(own);
+  }
+  return instrument.tunings[0] ?? null;
 }
 
 /** Which open string `hz` is being tuned to: the nearest within a semitone, else -1. */

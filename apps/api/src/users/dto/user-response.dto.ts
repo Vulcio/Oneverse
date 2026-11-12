@@ -15,8 +15,8 @@ export class UserResponseDto {
   @ApiProperty({ description: "Chords coloured by family (issue #9)" }) chordColors!: boolean;
   @ApiProperty({ description: "Chord diagrams mirrored for a left-handed player (issue #207)" }) leftHanded!: boolean;
   @ApiProperty({ description: "Calendars' first day of the week (issue #235): 0 Sunday, 1 Monday, 6 Saturday; null from the language", nullable: true, type: Number }) weekStartsOn!: number | null;
-  @ApiProperty({ description: "The guitar's tuning: one of TUNINGS.guitar's ids in core" }) guitarTuning!: string;
-  @ApiProperty({ description: "The ukulele's tuning: one of TUNINGS.ukulele's ids in core" }) ukuleleTuning!: string;
+  @ApiProperty({ description: "The guitar's tuning: an id of TUNINGS.guitar in core, or the player's own (\"custom:D2-A2-D3-F#3-A3-D4\", issue #355)" }) guitarTuning!: string;
+  @ApiProperty({ description: "The ukulele's tuning: an id of TUNINGS.ukulele in core, or the player's own (\"custom:A4-D4-F#4-B4\")" }) ukuleleTuning!: string;
   @ApiProperty({ description: "Piano diagrams: each chord's inversion nearest the one before (issue #207)" }) pianoSmooth!: boolean;
   @ApiProperty({ enum: PIANO_HANDS }) pianoHands!: string;
   @ApiProperty({ enum: PIANO_NOTE_NAMES }) pianoNoteNames!: string;

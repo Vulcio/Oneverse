@@ -77,10 +77,10 @@ await step("a chord tapped on the chart shows its card, with its other shapes", 
   await card.waitFor();
   // D sounding with the capo on 2: a C shape.
   if ((await card.getAttribute("data-chord")) !== "C") throw new Error(await card.getAttribute("data-chord"));
-  const first = await card.locator("svg[data-shape]").getAttribute("data-shape");
+  const first = await card.getByTestId("chord-card-diagram").locator("svg[data-shape]").getAttribute("data-shape");
   if (first !== "x32010") throw new Error(`C drawn as ${first}`);
   await card.getByRole("button", { name: "Next shape" }).click();
-  const second = await card.locator("svg[data-shape]").getAttribute("data-shape");
+  const second = await card.getByTestId("chord-card-diagram").locator("svg[data-shape]").getAttribute("data-shape");
   if (second === first) throw new Error("the next shape is the same");
   await card.getByTestId("chord-card-position").getByText(/^2 of /).waitFor();
   await page.keyboard.press("Escape");
@@ -170,7 +170,7 @@ await step("your own shape for a chord, for this song only (issue #207 phase 3)"
   await page.getByRole("button", { name: "Show how to play G" }).click();
   const card = page.getByTestId("chord-card");
   await card.getByRole("button", { name: "Next shape" }).click();
-  const second = await card.locator("svg[data-shape]").getAttribute("data-shape");
+  const second = await card.getByTestId("chord-card-diagram").locator("svg[data-shape]").getAttribute("data-shape");
   await card.getByRole("button", { name: "Use this shape for this song" }).click();
   await card.getByTestId("chord-card-chosen").waitFor();
   await page.keyboard.press("Escape");

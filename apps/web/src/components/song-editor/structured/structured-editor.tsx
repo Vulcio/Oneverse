@@ -9,6 +9,7 @@ import {
   sectionsFromText,
   sectionsToChordPro,
   simplifyChord,
+  chordBassOptions,
   transposeChord,
   transposeKey,
   type SectionInstance,
@@ -835,6 +836,7 @@ function ChordPopover({ editor, songKey, editTick, checks }: { editor: Editor; s
   const degree = inKey.find((option) => sameChord(option.chord, triad))?.degree;
   const root = /^\(?([A-G][#b]?)/.exec(chord.raw)?.[1];
   const variations = root ? VARIATIONS.map((suffix) => root + suffix).filter((raw) => raw !== chord.raw) : [];
+  const basses = chordBassOptions(chord.raw, songKey);
   const valid = !!parseChord(draft);
   const outOfPlace = checks.find((check) => check.chordId === chord.id);
 
@@ -844,6 +846,7 @@ function ChordPopover({ editor, songKey, editTick, checks }: { editor: Editor; s
       type="button"
       onMouseDown={(event) => event.preventDefault()}
       onClick={() => apply(raw)}
+      data-option={raw}
       className={cn(
         "flex items-baseline gap-1 rounded border px-1.5 py-0.5 font-mono text-xs font-bold hover:bg-primary/10",
         sameChord(raw, chord.raw) ? "border-primary bg-primary/10 text-primary" : "text-foreground",
@@ -915,6 +918,12 @@ function ChordPopover({ editor, songKey, editTick, checks }: { editor: Editor; s
         <div className="flex flex-col gap-1">
           <span className="text-xs text-muted-foreground">{t("structuredEditor.variations")}</span>
           <div className="flex flex-wrap gap-1">{variations.map((raw) => chip(raw))}</div>
+        </div>
+      ) : null}
+      {basses.length > 1 ? (
+        <div className="flex flex-col gap-1" data-testid="chord-bass">
+          <span className="text-xs text-muted-foreground">{t("structuredEditor.bass")}</span>
+          <div className="flex flex-wrap gap-1">{basses.map((one) => chip(one.chord, one.role === "key" ? undefined : t(`structuredEditor.bassRoles.${one.role}`)))}</div>
         </div>
       ) : null}
     </div>

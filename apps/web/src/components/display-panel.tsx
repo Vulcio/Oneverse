@@ -1,4 +1,4 @@
-import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, TUNINGS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings } from "@oneverse/core";
+import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings } from "@oneverse/core";
 import {
   ArrowDown,
   Superscript,
@@ -64,6 +64,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMediaQuery } from "@oneverse/ui/hooks/use-media-query";
 import { useSidePanelRoom } from "#/lib/side-panel";
 import { changeDiagramPlayer, changeDisplaySettings, stepTextSize } from "#/lib/display-settings";
+import { TuningPicker } from "#/components/tuning-picker";
 import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@oneverse/ui/lib/utils";
@@ -1017,19 +1018,14 @@ function InstrumentSection({
       {fretted ? (
         <>
           <Row label={t("display.tuning")}>
-            <select
+            <TuningPicker
+              instrument={instrument}
               value={tuning}
-              onChange={(e) => changeDiagramPlayer(instrument === "ukulele" ? { ukuleleTuning: e.target.value } : { guitarTuning: e.target.value })}
-              className="h-8 w-full rounded-md border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-              aria-label={t("display.tuning")}
-              data-testid="display-tuning"
-            >
-              {TUNINGS[instrument].map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
+              compact
+              onChange={(next) => changeDiagramPlayer(instrument === "ukulele" ? { ukuleleTuning: next ?? "standard" } : { guitarTuning: next ?? "standard" })}
+              testId="display-tuning"
+              className="w-full"
+            />
           </Row>
           <Row label={t("display.leftHanded")}>
             <Choices

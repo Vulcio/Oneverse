@@ -28,7 +28,11 @@ export const ArrangementDefaultsV2Schema = z.object({
   timeSignature: TimeSignatureSchema.nullable().optional(),
   /** Capo fret for guitars. Display only: chords are stored at concert pitch. */
   capo: z.number().int().min(0).max(11).nullable().optional(),
-  /** Tuning preset slug ("dadgad", "drop_d"...); null is standard tuning. */
+  /**
+   * The guitar tuning it's played in (issue #355): an ID of TUNINGS ("drop-d", "dadgad"), a
+   * tuning of its own ("custom:D2-A2-D3-F#3-A3-D4"), or an older preset's slug ("drop_d");
+   * null is the player's own. Chord diagrams follow it.
+   */
   guitarTuning: z.string().max(40).nullable().optional(),
   /** Open strings low to high, set alongside guitarTuning. */
   guitarTuningNotes: z.array(z.string().max(3)).max(12).nullable().optional(),

@@ -17,7 +17,8 @@ A team's versions are seen by the team's members and changed by its admins.
 
 ![The version editor](../../assets/screenshots/en/version-editor.jpg)
 
-- **Settings** - its **Key** (from the song's), **Capo**, **Tempo**, what it plays along to, and a description:
+- **Settings** - its **Key** (from the song's), **Capo**, **Guitar tuning**, **Tempo**, what it plays along to, and a description:
+  - **Guitar tuning** - **Each player's own** (each guitarist's, from their account), or a tuning everyone plays this version in: Drop D, Open G, DADGAD… or **Your own tuning…**. Chord diagrams follow it for everyone playing this version, and the chords' strip says **Tuning: Open G**, with **Tune** to open the [tuner](/tuner/) set to it.
   - **Reference recording** - one of the song's [reference recordings](/library/#reference-recordings) ("Live 2019", "Acoustic"), or **The song's own**. In a set played in this version, a YouTube video plays in the player from its start, and any other link shows under the song's title (**Reference: Live 2019**).
   - **Stems** - one of the song's [multitracks](/library/#multitracks), or **The song's own**. In a set, a multitrack recorded for that set still comes first, then this one, then the song's own.
 - **Song order** - which passes are played, in what order, with key changes and notes, like [the song's own order](/song-editor/#the-song-order).
@@ -61,12 +62,12 @@ With **Chord colours** set to **By chord type**, each chord on the chart is colo
 Choose **Guitar**, **Ukulele** or **Piano** under **Chord diagrams** in [Chart display](/account/#chart-display) (or **Instrument** in the [Display](/display/) panel, for one mode), and the charts you read - in Practice, a set's songs, Live and offline - show how to play their chords. They're off until you choose; nothing ever covers the words, and the chart itself doesn't move.
 
 - At the top of the chart, the song's chords as small diagrams, each once, in the order they come. Tap one to hear it strummed (down, then up on the next tap). The arrow beside **Guitar chords** folds them to a single line of names, remembered on the device.
-- Tap a chord on the chart for its diagram, bigger, with the fingers to use. **‹ ›** go through the other ways to play it; tap the diagram to hear it. **Use this shape for this song** keeps the one shown for that chord in this song, for you only, on every device: the strip and the card show it first from then on. **Back to the usual one** undoes it. Other songs keep the usual shape.
+- Tap a chord on the chart for its diagram, bigger, with the fingers to use. **‹ ›** go through the other ways to play it; tap the diagram to hear it. Under it, every shape at once, small: tap one to hear it and keep it for this song, two taps from the chart. **Use this shape for this song** keeps the one shown for that chord in this song, for you only, on every device: the strip and the card show it first from then on. **Back to the usual one** undoes it. Other songs keep the usual shape.
 - A diagram shows the strings up and down and the frets across: × is a string not played, ○ an open one, each dot a finger (its number in the bigger diagram), and a bar one finger across several strings. Near the nut, it's drawn thick; further up the neck, the number on the left is the fret it starts at.
 - With a capo, guitar diagrams are the shapes you play with the capo on (**capo 2, shapes as played**), whatever your **With a capo** setting shows on the chart. Ukulele diagrams are the chords as they sound.
 - They follow everything else: the set's key, a last-minute transpose in Live, a key change, **Simpler chords** and **No bass notes**. Every chord Songverse can read has a diagram, worked out on the device, so they work offline too.
 
-Under **Chord diagrams** in [Chart display](/account/#chart-display), once an instrument is chosen: its **tuning** (guitar: EADGBE, drop D, DADGAD, open G, half a step down; ukulele: high G, low G, baritone) - the shapes are worked out for its strings - and **Left-handed diagrams**, drawn mirrored, the lowest string on the right.
+Under **Chord diagrams** in [Chart display](/account/#chart-display), once an instrument is chosen: its **tuning** (guitar: standard, Drop D, Double drop D, Drop C, DADGAD, Open G, Open D, Open E, Open C, half or a whole step down; ukulele: high G, low G, baritone), or **Your own tuning…**: type its open strings from the lowest, as you'd write them (`C G D G B D`), and the shapes are worked out for its strings. A version can set a tuning of its own (see [Editing it](/versions/#editing-it)); when it does, the strip says which, with **Tune** to open the tuner set to it. Beside it, **Left-handed diagrams**, drawn mirrored, the lowest string on the right.
 
 ### Piano
 

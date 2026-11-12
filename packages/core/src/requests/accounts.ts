@@ -2,13 +2,16 @@ import "../zod-config.js";
 import { z } from "zod";
 import { NEW_NOTES, NOTE_COLORS, NOTE_LOOKS, NOTE_PLACEMENTS, NOTE_SHOWS, NOTE_SIZES } from "../notes/index.js";
 import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, WORDS_SUNG, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
-import { TUNINGS } from "../chords/shapes.js";
+import { isTuningId, type InstrumentId } from "../chords/shapes.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
-const TUNING_IDS = {
-  guitar: TUNINGS.guitar.map((tuning) => tuning.id) as [string, ...string[]],
-  ukulele: TUNINGS.ukulele.map((tuning) => tuning.id) as [string, ...string[]],
-};
+/** A tuning for the instrument: one of TUNINGS, or the player's own ("custom:D2-A2-D3-F#3-A3-D4", issue #355). */
+const tuningField = (instrument: InstrumentId) =>
+  z
+    .string()
+    .trim()
+    .max(40)
+    .refine((id) => isTuningId(instrument, id), `${instrument}Tuning must be a ${instrument} tuning`);
 
 /**
  * PUT /song-versions/:id/chord-shapes: the shape a player chose for a chord
@@ -122,8 +125,8 @@ export const UpdateUserSchema = z.strictObject({
   leftHanded: optional(z.boolean()),
   // Calendars' first day of the week (issue #235): null goes back to the language's.
   weekStartsOn: z.union([z.literal(0), z.literal(1), z.literal(6)]).nullable().optional().describe("0 Sunday, 1 Monday, 6 Saturday; null from the language"),
-  guitarTuning: optional(z.enum(TUNING_IDS.guitar)),
-  ukuleleTuning: optional(z.enum(TUNING_IDS.ukulele)),
+  guitarTuning: optional(tuningField("guitar")),
+  ukuleleTuning: optional(tuningField("ukulele")),
   pianoSmooth: optional(z.boolean()),
   pianoHands: optional(z.enum(PIANO_HANDS)),
   pianoNoteNames: optional(z.enum(PIANO_NOTE_NAMES)),

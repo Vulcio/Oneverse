@@ -1,4 +1,5 @@
 import {
+  findTuning,
   sectionChords,
   type DiagramPositionValue,
   chordRowLabel,
@@ -22,6 +23,7 @@ import {
   type RenderedChart,
   type RenderedChord,
 } from "@oneverse/core";
+import { Link } from "@tanstack/react-router";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
@@ -261,6 +263,9 @@ function ChordStrip({ chords, chart, setup, notation }: { chords: string[]; char
   }
   if (chords.length === 0) return null;
   const capo = instrument === "guitar" && chart.capo ? t("chords.capoShapes", { capo: chart.capo }) : null;
+  // Not in standard tuning (issue #355): which one, and the tuner set to it.
+  const tuning = instrument !== "piano" ? findTuning(instrument, setup.tuning) : null;
+  const tuned = tuning && tuning.id !== "standard" ? tuning : null;
   return (
     <div className="flex flex-col gap-1 font-sans" data-testid="chord-strip" data-instrument={instrument} data-folded={folded ? "" : undefined}>
       <button
@@ -273,7 +278,17 @@ function ChordStrip({ chords, chart, setup, notation }: { chords: string[]; char
         <span className="shrink-0">{t(STRIP_TITLE[instrument])}</span>
         {folded ? <span className="truncate font-normal">{chords.map((chord) => shownName(chord, notation)).join(" · ")}</span> : null}
         {capo ? <span className="shrink-0 font-normal">· {capo}</span> : null}
+        {tuned ? (
+          <span className="shrink-0 font-normal" data-testid="chord-strip-tuning" data-tuning={tuned.id}>
+            · {t("tunings.badge", { name: tuned.name })}
+          </span>
+        ) : null}
       </button>
+      {tuned && !folded ? (
+        <Link to="/tuner" search={{ instrument, tuning: tuned.id }} className="self-start text-xs text-primary hover:underline" data-testid="chord-strip-tune">
+          {t("tunings.tune")}
+        </Link>
+      ) : null}
       {folded ? null : (
         <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
           {chords.map((chord) => (
@@ -423,7 +438,7 @@ function ChordCard({ chord, setup, notation, also = null }: { chord: string; set
       ) : null}
       {option ? (
         <>
-          <button type="button" className="rounded-md p-1 hover:bg-muted" aria-label={t("chords.play", { chord: name })} onClick={() => play(option, setup, up)}>
+          <button type="button" className="rounded-md p-1 hover:bg-muted" aria-label={t("chords.play", { chord: name })} onClick={() => play(option, setup, up)} data-testid="chord-card-diagram">
             <OptionDiagram option={option} setup={setup} chord={chord} name={name} notation={notation} large />
           </button>
           {options.length > 1 ? (
@@ -443,6 +458,31 @@ function ChordCard({ chord, setup, notation, also = null }: { chord: string; set
               >
                 <ChevronRight className="size-4" />
               </button>
+            </div>
+          ) : null}
+          {options.length > 1 ? (
+            // Every shape at once, small (issue #355): one tap shows it, hears it and keeps it for this song - two taps from the chart.
+            <div className="flex max-w-72 flex-wrap justify-center gap-0.5" role="group" aria-label={t("chords.allShapes")} data-testid="chord-card-shapes">
+              {options.map((one, at) => (
+                <button
+                  key={one.text}
+                  type="button"
+                  aria-label={t("chords.shapeOf", { n: at + 1, count: options.length })}
+                  aria-pressed={at === index}
+                  onClick={() => {
+                    setIndex(at);
+                    play(one, setup, up);
+                    if (setup.choose && one.text !== chosen && (chosen || at > 0)) setup.choose(chord, one.text);
+                  }}
+                  className={`rounded-md border p-0.5 ${at === index ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted"}`}
+                  data-shape={one.text}
+                  data-chosen={one.text === chosen ? "" : undefined}
+                >
+                  <span className="block" style={{ zoom: 0.7 }}>
+                    <OptionDiagram option={one} setup={setup} chord={chord} name={name} notation={notation} />
+                  </span>
+                </button>
+              ))}
             </div>
           ) : null}
           {setup.choose ? (
@@ -497,7 +537,8 @@ export function ChartWithDiagrams({
   const used = instrument ? [instrument] : [];
   const usedKey = used.join(",");
   const [open, setOpen] = useState<{ chord: string; anchor: HTMLElement; also: string | null; instrument: Instrument } | null>(null);
-  const tuningOf = (one: Instrument) => (one === "piano" ? "standard" : ((one === "ukulele" ? player?.ukuleleTuning : player?.guitarTuning) ?? "standard"));
+  // A guitar plays in the arrangement's tuning when it sets one (issue #355), else the player's own.
+  const tuningOf = (one: Instrument) => (one === "piano" ? "standard" : ((one === "ukulele" ? player?.ukuleleTuning : (chart.guitarTuning ?? player?.guitarTuning)) ?? "standard"));
   const pianoHands = player?.pianoHands === "right" ? "right" : "both";
   const smooth = player?.pianoSmooth !== false;
   // The chords at the top, as fretted with the capo on (a guitar) or as they sound.

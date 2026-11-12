@@ -15,6 +15,11 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { IN_TUNE_CENTS, resumeTuner, startTuner, stopTuner, TUNER_DISPLAYS, updateTunerSettings, useTuner, type TunerDisplay, type TunerSettings } from "#/lib/tuner-engine";
 
 export const Route = createFileRoute("/_protected/tuner")({
+  // A song's tuning (issue #355): "Tune" beside its chord diagrams opens the tuner set to it.
+  validateSearch: (search: Record<string, unknown>): { instrument?: string; tuning?: string } => ({
+    ...(typeof search.instrument === "string" && { instrument: search.instrument }),
+    ...(typeof search.tuning === "string" && { tuning: search.tuning }),
+  }),
   component: TunerPage,
 });
 
@@ -36,7 +41,13 @@ function TunerPage() {
   const listening = status === "listening" || status === "paused";
   // The microphone is let go when the page is.
   useEffect(() => () => stopTuner(), []);
+  const search = Route.useSearch();
+  useEffect(() => {
+    if (search.instrument) updateTunerSettings({ instrument: search.instrument, tuning: search.tuning ?? null });
+  }, [search.instrument, search.tuning]);
 
+  // A tuning of the player's own ("custom:...") isn't a name to look up.
+  const tuningName = (id: string) => (id.startsWith("custom:") ? t("tuner.tunings.custom") : t(`tuner.tunings.${id}`));
   const instrument = tunerInstrument(settings.instrument);
   const tuning = tunerTuning(instrument, settings.tuning);
   const flats = FLAT_KEYS.has(settings.tonic) || !!tuning?.strings.some((name) => /b\d/.test(name));
@@ -72,12 +83,12 @@ function TunerPage() {
               {instrument.tunings.length > 1 && tuning ? (
                 <Select value={tuning.id} onValueChange={(value) => value && updateTunerSettings({ tuning: value as string })}>
                   <SelectTrigger className="w-auto min-w-36" aria-label={t("tuner.tuning")} data-testid="tuner-tuning">
-                    <SelectValue>{(value: string) => t(`tuner.tunings.${value}`)}</SelectValue>
+                    <SelectValue>{(value: string) => tuningName(value)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {instrument.tunings.map((item) => (
+                    {(instrument.tunings.some((item) => item.id === tuning.id) ? instrument.tunings : [...instrument.tunings, tuning]).map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        {t(`tuner.tunings.${item.id}`)} <span className="text-muted-foreground">{item.strings.map((name) => name.replace(/-?\d+$/, "")).join(" ")}</span>
+                        {tuningName(item.id)} <span className="text-muted-foreground">{item.strings.map((name) => name.replace(/-?\d+$/, "")).join(" ")}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>

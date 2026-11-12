@@ -1,4 +1,5 @@
 import { parseChord, semitoneOf, type ParsedChord } from "./chord.js";
+import { noteName, octaveOf, parseNoteName } from "../tuner/notes.js";
 
 /**
  * Chord shapes for fretted instruments (issue #207, phase 1 of #111): where
@@ -123,6 +124,12 @@ export const TUNINGS: Record<InstrumentId, Tuning[]> = {
     { id: "dadgad", name: "DADGAD", strings: [38, 45, 50, 55, 57, 62], knownShapes: false },
     { id: "open-g", name: "Open G (DGDGBD)", strings: [38, 43, 50, 55, 59, 62], knownShapes: false },
     { id: "half-step-down", name: "Half step down (Eb)", strings: [39, 44, 49, 54, 58, 63], knownShapes: false },
+    { id: "whole-step-down", name: "Whole step down (D standard)", strings: [38, 43, 48, 53, 57, 62], knownShapes: false },
+    { id: "drop-c", name: "Drop C (CGCFAD)", strings: [36, 43, 48, 53, 57, 62], knownShapes: false },
+    { id: "double-drop-d", name: "Double drop D (DADGBD)", strings: [38, 45, 50, 55, 59, 62], knownShapes: false },
+    { id: "open-d", name: "Open D (DADF#AD)", strings: [38, 45, 50, 54, 57, 62], knownShapes: false },
+    { id: "open-e", name: "Open E (EBEG#BE)", strings: [40, 47, 52, 56, 59, 64], knownShapes: false },
+    { id: "open-c", name: "Open C (CGCGCE)", strings: [36, 43, 48, 55, 60, 64], knownShapes: false },
   ],
   ukulele: [
     { id: "standard", name: "GCEA (high G)", strings: [67, 60, 64, 69], knownShapes: true },
@@ -131,9 +138,72 @@ export const TUNINGS: Record<InstrumentId, Tuning[]> = {
   ],
 };
 
+const CUSTOM = "custom:";
+// The names the database's tuning presets (TuningPreset.slug) and older arrangements used.
+const LEGACY_IDS: Record<string, string> = { standard_guitar: "standard", drop_d: "drop-d", open_g: "open-g", open_d: "open-d", open_e: "open-e", half_step_down: "half-step-down" };
+
+/**
+ * A player's own tuning (issue #355) as a tuning ID: "custom:D2-A2-D3-F#3-A3-D4",
+ * the open strings in drawing order with their octaves. Null when a note
+ * can't be read or there are too many or too few for the instrument.
+ */
+export function customTuningId(instrumentId: InstrumentId, notes: readonly (string | number)[]): string | null {
+  const midi = notes.map((note) => (typeof note === "number" ? note : parseNoteName(note)));
+  if (midi.length !== FRETTED_INSTRUMENTS[instrumentId].strings.length || midi.some((note) => note === null || note < 21 || note > 88)) return null;
+  return CUSTOM + (midi as number[]).map((note) => `${noteName(note)}${octaveOf(note)}`).join("-");
+}
+
+/**
+ * A player's own tuning from the names of its open strings as they'd write
+ * them, without octaves ("D A D F# A D", "DADF#AD", "C G C G C E"): each string
+ * taken in the octave nearest the instrument's standard one. Null when it
+ * can't be read or has the wrong number of strings.
+ */
+export function customTuningFromNames(instrumentId: InstrumentId, text: string): string | null {
+  const names = text.replace(/♯/g, "#").replace(/♭/g, "b").match(/[A-Ga-g][#b]?/g);
+  const standard = FRETTED_INSTRUMENTS[instrumentId].strings;
+  if (!names || names.length !== standard.length) return null;
+  // Only note names, nothing else (spaces, commas and dashes between them).
+  if (text.replace(/♯|♭/g, "").replace(/[A-Ga-g][#b]?/g, "").replace(/[\s,\-/]/g, "") !== "") return null;
+  const midi = names.map((name, index) => {
+    const pitch = parseNoteName(`${name[0]!.toUpperCase()}${name.slice(1)}4`)! % 12;
+    const near = standard[index]!;
+    // The nearest to the standard string; a tie goes down (strings are tuned down more often than up).
+    const below = near - (((near - pitch) % 12) + 12) % 12;
+    return near - below <= 6 ? below : below + 12;
+  });
+  return customTuningId(instrumentId, midi);
+}
+
+/**
+ * The tuning an ID names: one of TUNINGS, a player's own ("custom:..."), or an
+ * older preset's name ("drop_d"); null for anything else.
+ */
+export function findTuning(instrumentId: InstrumentId, tuningId: string | null | undefined): Tuning | null {
+  if (!tuningId) return null;
+  const id = LEGACY_IDS[tuningId] ?? tuningId;
+  const builtIn = TUNINGS[instrumentId].find((one) => one.id === id);
+  if (builtIn) return builtIn;
+  if (!id.startsWith(CUSTOM)) return null;
+  const notes = id.slice(CUSTOM.length).split("-");
+  const canonical = customTuningId(instrumentId, notes);
+  if (canonical !== id) return null;
+  const strings = notes.map((note) => parseNoteName(note)!);
+  // The same strings as a built-in tuning: that one, under its name.
+  const same = TUNINGS[instrumentId].find((one) => one.strings.join() === strings.join());
+  if (same) return same;
+  const standard = TUNINGS[instrumentId][0]!.strings;
+  return { id, name: notes.map((note) => note.replace(/-?\d+$/, "")).join(""), strings, knownShapes: strings.every((note, index) => note % 12 === standard[index]! % 12) };
+}
+
+/** Whether an ID names a tuning (a built-in one or a player's own): what a request may set. */
+export function isTuningId(instrumentId: InstrumentId, tuningId: string): boolean {
+  return findTuning(instrumentId, tuningId) !== null;
+}
+
 /** An instrument in a tuning (its standard one when the tuning isn't known). */
 export function tunedInstrument(instrumentId: InstrumentId, tuningId = "standard"): FrettedInstrument & { tuning: Tuning } {
-  const tuning = TUNINGS[instrumentId].find((one) => one.id === tuningId) ?? TUNINGS[instrumentId][0]!;
+  const tuning = findTuning(instrumentId, tuningId) ?? TUNINGS[instrumentId][0]!;
   return { ...FRETTED_INSTRUMENTS[instrumentId], strings: tuning.strings, knownShapes: tuning.knownShapes, tuning };
 }
 

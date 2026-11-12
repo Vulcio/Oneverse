@@ -493,6 +493,75 @@ export function simplifyChord(raw: string, options: SimplifyOptions): string {
   });
 }
 
+export type BassRole = "root" | "third" | "fifth" | "seventh" | "key";
+
+export interface ChordBassOption {
+  /** The chord with this note in the bass: "C/E" (or "C" for its root). */
+  chord: string;
+  /** The bass note as written: "E". */
+  bass: string;
+  /** Which of the chord's notes it is (root position, 1st, 2nd or 3rd inversion), or "key": another note of the key under it. */
+  role: BassRole;
+}
+
+const LETTERS: NoteLetter[] = ["C", "D", "E", "F", "G", "A", "B"];
+
+/** The note `interval` semitones above the root, spelled `steps` letters above it (E in C, F# in D, D in Bb), or by the key's spelling when that would need a double sharp or flat. */
+function spellAbove(root: NoteName, interval: number, steps: number, flats: boolean): NoteName {
+  const pitch = mod12(semitoneOf(root) + interval);
+  const letter = LETTERS[(LETTERS.indexOf(root.letter) + steps) % 7]!;
+  const off = mod12(pitch - LETTER_SEMITONES[letter]);
+  if (off === 0) return { letter, accidental: null };
+  if (off === 1) return { letter, accidental: "sharp" };
+  if (off === 11) return { letter, accidental: "flat" };
+  return (flats ? FLAT_SPELLING : SHARP_SPELLING)[pitch]!;
+}
+
+/**
+ * The bass notes a chord can take (issue #228), for a quick pick in the
+ * editor: its own notes first - root position, then the 1st, 2nd and (for a
+ * seventh) 3rd inversions, spelled from the chord (D/F#, Bb/D) - then the
+ * key's other notes, for a bass line walking under it (C/B, C/D in G).
+ * Empty for something that isn't a chord.
+ */
+export function chordBassOptions(raw: string, key?: string | null): ChordBassOption[] {
+  const parts = splitChord(raw);
+  const parsed = parseChord(raw);
+  if (!parts || !parsed || parsed.kind !== "chord") return [];
+  const flats = keyUsesFlats(key) || (!key && parts.root.accidental === "flat");
+  const thirds: Record<ParsedChordQuality, [number, number] | null> = {
+    major: [4, 2],
+    augmented: [4, 2],
+    minor: [3, 2],
+    diminished: [3, 2],
+    "half-diminished": [3, 2],
+    sus2: [2, 1],
+    sus4: [5, 3],
+    power: null,
+  };
+  let fifth = parsed.quality === "diminished" || parsed.quality === "half-diminished" ? 6 : parsed.quality === "augmented" ? 8 : 7;
+  if (parsed.alterations.includes("b5")) fifth = 6;
+  if (parsed.alterations.includes("#5")) fifth = 8;
+  const tones: [BassRole, NoteName][] = [["root", parts.root]];
+  const third = thirds[parsed.quality];
+  if (third) tones.push(["third", spellAbove(parts.root, third[0], third[1], flats)]);
+  tones.push(["fifth", spellAbove(parts.root, fifth, 4, flats)]);
+  if (parsed.seventh) tones.push(["seventh", spellAbove(parts.root, parsed.seventh === "major" ? 11 : parsed.seventh === "minor" ? 10 : 9, 6, flats)]);
+  const own = new Set(tones.map(([, note]) => semitoneOf(note)));
+  const rootPitch = semitoneOf(parts.root);
+  const scale = diatonicChords(key)
+    .map((one) => splitChord(one.chord)?.root)
+    .filter((note): note is NoteName => !!note && !own.has(semitoneOf(note)))
+    // Upward from the chord's root, as a bass walks.
+    .sort((a, b) => mod12(semitoneOf(a) - rootPitch) - mod12(semitoneOf(b) - rootPitch));
+  const options = [...tones, ...scale.map((note): [BassRole, NoteName] => ["key", note])];
+  return options.map(([role, note]) => ({
+    chord: rebuild({ ...parts, bass: role === "root" ? null : note }),
+    bass: noteText(note),
+    role,
+  }));
+}
+
 /** Whether two chord symbols sound the same (same notes, however they're spelled or written). */
 export function sameChord(a: string, b: string): boolean {
   if (a.trim() === b.trim()) return true;

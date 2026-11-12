@@ -6,7 +6,7 @@ import { prettyChord } from "../display/accidentals.js";
 import { chartEdgeChords, degreeChord, transitionDegrees, transitionProgressions } from "../chords/transitions.js";
 import { checkChartChords } from "../chords/context.js";
 import { findProgression, parseProgressionQuery, progressionDegree, progressionGrams, progressionSimilarity, songProgressions } from "../chords/progressions.js";
-import { chordFamily, diatonicChords, formatChord, keyUsesFlats, nashvilleChord, parseChord, romanChord, sameChord, simplifyChord, transposeChord } from "../chords/chord.js";
+import { chordBassOptions, chordFamily, diatonicChords, formatChord, keyUsesFlats, nashvilleChord, parseChord, romanChord, sameChord, simplifyChord, transposeChord } from "../chords/chord.js";
 import { formatKey, parseKey, semitonesBetween, transposeKey } from "../music-keys/transpose.js";
 import { parseArrangementDocumentV2, findArrangementProblems } from "../schemas/arrangement-document-v2.js";
 import { chordPositionProblem } from "../schemas/song-document-v2.js";
@@ -721,6 +721,21 @@ export const CONFORMANCE: ConformanceArea[] = [
           ["Am7/G", { dropExtensions: true, dropBass: true }],
           ["G", {}],
         ].map((args) => ({ name: `${args[0]} ${JSON.stringify(args[1])}`, args })),
+      },
+      chordBassOptions: {
+        about: "A chord's bass notes (issue #228): root position, its inversions spelled from the chord, then the key's other notes walking up from its root.",
+        params: ["raw", "key"],
+        run: chordBassOptions,
+        cases: [
+          ["C", "G"],
+          ["D", null],
+          ["Bb", "F"],
+          ["G7/B", "C"],
+          ["Bm7b5", "A"],
+          ["Dsus4", "D"],
+          ["(Am)", "C"],
+          ["N.C.", "C"],
+        ].map((args) => ({ name: `${args[0]} in ${args[1] ?? "no key"}`, args })),
       },
       sameChord: {
         about: "Whether two symbols are the same chord, however written.",
