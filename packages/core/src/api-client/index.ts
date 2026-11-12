@@ -1834,6 +1834,17 @@ export interface PendingSongbookEntry {
   title: string;
 }
 
+/** A songbook's song as the Library lists it, with what its list shows besides (issue #440). */
+export interface SongbookSong extends SongVersionSummary {
+  /** As written ("G", "Bbm"), from the chart. */
+  key: string | null;
+  tempo: number | null;
+  /** "6/8". */
+  timeSignature: string | null;
+  durationSeconds: number | null;
+  isFavorite: boolean;
+}
+
 /** A songbook's song with the details it's known by, for editing them in place (issue #353). */
 export interface SongbookSongInfo {
   entryId: string;
@@ -2997,6 +3008,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createSongbook: (data: CreateSongbookInput) =>
       request<SongbookSummary>("/songbooks", { method: "POST", body: JSON.stringify(data) }),
     getSongbook: (songbookId: string) => request<SongbookDetail>(`/songbooks/${songbookId}`),
+    /** Its songs as the Library lists them, with key, tempo, time signature, length and the viewer's star (issue #440). */
+    getSongbookSongs: (songbookId: string) => request<{ songs: SongbookSong[] }>(`/songbooks/${songbookId}/songs`),
     /** Its songs with their details, to edit in place (issue #353). */
     getSongbookSongInfo: (songbookId: string) => request<SongbookSongInfo[]>(`/songbooks/${songbookId}/song-info`),
     /** Its songs looked up again at the providers, by the Worker (issue #353): the running one if there is. */

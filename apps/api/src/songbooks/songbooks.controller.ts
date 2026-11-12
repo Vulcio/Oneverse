@@ -59,6 +59,13 @@ export class SongbooksController {
     return this.songbooksService.findOne(user, songbookId);
   }
 
+  /** Its songs as the Library lists them, with their key, tempo, time signature, length and star (issue #440). */
+  @Get(":songbookId/songs")
+  @ApiOperation({ summary: "A songbook's songs, as the Library lists them, with key, tempo, time signature, length and the viewer's star" })
+  songs(@SignedIn() user: AuthenticatedUser, @Param("songbookId") songbookId: string): ReturnType<SongbooksService["songs"]> {
+    return this.songbooksService.songs(user, songbookId);
+  }
+
   @Patch(":songbookId")
   @UseGuards(SongbookOwnerGuard)
   @ApiOkResponse({ type: SongbookResponseDto })

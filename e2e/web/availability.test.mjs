@@ -72,6 +72,8 @@ try {
   await step("the first day of the week: from the language, or as chosen on the account page", async () => {
     const firstWeekday = async () => {
       await page.goto(`${WEB}/calendar`);
+      // Hydrated before the click, or the editor never opens (seen on CI).
+      await page.waitForLoadState("networkidle");
       await page.getByTestId("away-add-open").click();
       return (await page.getByTestId("away-editor").locator(".rdp-weekday").first().getAttribute("aria-label")) ?? "";
     };

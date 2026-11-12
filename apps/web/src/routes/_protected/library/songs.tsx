@@ -5,8 +5,8 @@ import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react
 import { useTranslation } from "react-i18next";
 import { apiClient } from "#/lib/api-client";
 import { filtersOf, parseLibrarySearch, sameFilters, SORTS, type LibrarySearch } from "./-library-search";
-import { useColumnPrefs, useLibraryColumns } from "./-columns";
-import { ColumnsMenu } from "./-columns-menu";
+import { LIBRARY_COLUMN_LABELS, useColumnPrefs, useLibraryColumns } from "./-columns";
+import { ColumnsMenu } from "#/components/columns-menu";
 import { Button } from "@oneverse/ui/components/button";
 import { Card } from "@oneverse/ui/components/card";
 import { DataTable } from "@oneverse/ui/components/data-table";
@@ -189,7 +189,7 @@ function LibraryIndex() {
               {t("library.home.favoritesFilter")}
             </Button>
             <span className="sm:ml-auto">
-              <ColumnsMenu prefs={columnPrefs} onChange={setColumnPrefs} />
+              <ColumnsMenu prefs={columnPrefs} onChange={setColumnPrefs} labels={LIBRARY_COLUMN_LABELS} />
             </span>
             {search.artist ? (
               <span className="flex items-center gap-1 rounded-full border bg-muted px-3 py-1 text-sm" data-testid="artist-filter">

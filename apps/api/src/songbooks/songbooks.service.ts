@@ -59,6 +59,18 @@ function toDetail(songbook: SongbookWithEntries) {
   };
 }
 
+/** A chart's key, tempo, time signature ("6/8") and length, from its stored defaults; null for what it doesn't say. */
+function chartFacts(stored: unknown): { key: string | null; tempo: number | null; timeSignature: string | null; durationSeconds: number | null } {
+  const defaults = (stored && typeof stored === "object" ? stored : {}) as { key?: unknown; tempo?: unknown; timeSignature?: unknown; durationSeconds?: unknown };
+  const signature = defaults.timeSignature as { numerator?: unknown; denominator?: unknown } | null | undefined;
+  return {
+    key: typeof defaults.key === "string" && defaults.key ? defaults.key : null,
+    tempo: typeof defaults.tempo === "number" ? defaults.tempo : null,
+    timeSignature: signature && typeof signature.numerator === "number" && typeof signature.denominator === "number" ? `${signature.numerator}/${signature.denominator}` : null,
+    durationSeconds: typeof defaults.durationSeconds === "number" ? defaults.durationSeconds : null,
+  };
+}
+
 @Injectable()
 export class SongbooksService {
   constructor(
@@ -221,6 +233,31 @@ export class SongbooksService {
     // Shared with them themselves (not only through a team): theirs to leave (issue #211).
     const sharedWithMe = (await this.prisma.client.songbookShare.count({ where: { songbookId, userId: user.id } })) > 0;
     return { ...toDetail(songbook), pendingEntries, catalogSections, access: (await this.accessChecker(user))(songbook), sharedWithMe };
+  }
+
+  /**
+   * Its songs as the Library lists them (issue #440), in its order, with what
+   * a songbook's list shows besides: key, tempo, time signature and length
+   * (the chart's defaults, read in the database rather than the whole chart)
+   * and whether the viewer starred it. Songs they can't see are left out.
+   */
+  async songs(user: AuthenticatedUser, songbookId: string) {
+    const songbook = await this.prisma.client.songbook.findUnique({
+      where: { id: songbookId },
+      select: { ownerScope: true, ownerUserId: true, ownerTeamId: true, entries: { where: { songVersion: { deletedAt: null } }, select: { songVersionId: true } } },
+    });
+    if (!songbook) throw new NotFoundException("Songbook not found");
+    await this.assertVisible(user, songbook);
+    const ids = [...new Set(songbook.entries.map((entry) => entry.songVersionId))];
+    if (ids.length === 0) return { songs: [] };
+    const [items, defaults, favorites] = await Promise.all([
+      this.songVersionsService.listItems(user, ids),
+      this.prisma.client.$queryRaw<{ id: string; defaults: unknown }[]>`SELECT id, "documentJson"->'defaults' AS defaults FROM "SongVersion" WHERE id = ANY(${ids})`,
+      this.prisma.client.favoriteSong.findMany({ where: { userId: user.id, songVersionId: { in: ids } }, select: { songVersionId: true } }),
+    ]);
+    const byId = new Map(defaults.map((row) => [row.id, chartFacts(row.defaults)]));
+    const starred = new Set(favorites.map((row) => row.songVersionId));
+    return { songs: items.map((item) => ({ ...item, ...(byId.get(item.id) ?? chartFacts(null)), isFavorite: starred.has(item.id) })) };
   }
 
   private async assertVisible(
