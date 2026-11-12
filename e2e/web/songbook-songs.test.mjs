@@ -64,8 +64,11 @@ await step("a column picked shows, and stays picked", async () => {
 });
 
 await step("starred from the row", async () => {
+  // The star turns at once; the server has it when its PUT answers.
+  const saved = page.waitForResponse((response) => response.request().method() === "PUT" && response.url().includes(`/song-versions/${grace.id}/favorite`) && response.ok());
   await row(`Grace ${stamp}`).getByRole("button", { name: "Add to favorites" }).click();
   await row(`Grace ${stamp}`).getByRole("button", { name: "Remove from favorites" }).waitFor();
+  await saved;
   const { songs } = await api(me, "GET", `/songbooks/${book.id}/songs`);
   if (!songs.find((song) => song.id === grace.id)?.isFavorite) throw new Error("not starred");
 });
