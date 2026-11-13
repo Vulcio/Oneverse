@@ -33,6 +33,7 @@ const FURNITURE = [
   /\bfor use solely\b|\bsongselect\b|\bterms of use\b|\bpraisecharts\b|\bultimate-guitar\b|\bworshiptogether\b|\bmultitracks\b|\bonsong\b/i,
   /\bhttps?:\/\/|\bwww\.|\.(?:com|org|net|fr|de|io)\b/i,
   /^(?:page|p\.?)\s*\d+(?:\s*(?:of|sur|\/|de|von)\s*\d+)?$/i,
+  /\b(?:page|p\.)\s*\d+\s*(?:of|sur|\/|de|von)\s*\d+\b/i,
   /^[-–—\s]*\d{1,3}[-–—\s]*$/,
   /^\d{1,3}\s*\/\s*\d{1,3}$/,
   /^(?:printed|generated|imprim[ée])\b.*\d/i,
@@ -72,11 +73,15 @@ function furniture(lines: PdfLine[], sizes: Map<number, PdfPageSize>, details: S
     const key = shape(line.text);
     pagesWith.set(key, (pagesWith.get(key) ?? new Set()).add(line.page));
   }
+  // The first page's own header (its title, its artist, repeated on every page) is the song's details, read later.
+  const firstPage = Math.min(...lines.map((line) => line.page));
+  const firstSong = lines.find((line) => line.page === firstPage && (isChordLine(line.text.trim()) || LABEL_LINE.test(line.text.trim())));
   const dropped = new Set<PdfLine>();
   for (const line of lines) {
     const text = line.text.trim();
     if (isChordLine(text) || LABEL_LINE.test(text)) continue;
-    const repeated = inBand(line) && (pagesWith.get(shape(text))?.size ?? 0) > 1;
+    const ownHeader = line.page === firstPage && firstSong !== undefined && line.y < firstSong.y;
+    const repeated = inBand(line) && !ownHeader && (pagesWith.get(shape(text))?.size ?? 0) > 1;
     if (!repeated && !FURNITURE.some((pattern) => pattern.test(text))) continue;
     dropped.add(line);
     // "CCLI Song # 4768151 · © 2006 sixsteps Music": its parts.

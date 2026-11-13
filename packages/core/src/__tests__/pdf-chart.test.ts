@@ -110,6 +110,14 @@ describe("a whole PDF chart: header, footer, columns and details (issue #124)", 
     expect(dropped).toEqual(["worshipcharts - Page 1 of 2", "worshipcharts - Page 2 of 2"]);
   });
 
+  it("takes the first page's title, repeated at the top of every page, as the title", () => {
+    const items = [piece("Amazing Grace", 50, 30, 1, 20), piece("Key: G", 50, 50), ...verse(50, 140), piece("Amazing Grace", 50, 30, 2, 20), ...verse(50, 140, 2)];
+    const { chart, details, dropped } = readPdfChart(items, pages);
+    expect(details).toMatchObject({ title: "Amazing Grace", key: "G" });
+    expect(dropped).toEqual(["Amazing Grace"]);
+    expect(chart).not.toContain("Amazing Grace\n");
+  });
+
   it("keeps a line in the page's band that is the song", () => {
     const { chart } = readPdfChart([...verse(50, 30)], pages);
     expect(chart.split("\n")[0]).toBe("Verse 1");
@@ -149,10 +157,20 @@ describe("a scanned chart read by OCR (issue #124)", () => {
     baseline: { x0: 0, y0: y - 4, x1: 1000, y1: y - 4 },
   });
 
-  it("puts each chord on the letter under it, from the letters' boxes", async () => {
-    const lines = [line(100, 18, word("G", 130), word("D", 210)), line(130, 24, word("Amazing", 100), word("grace", 180))];
+  it("in a fixed-width font, puts each chord on the letter under it", async () => {
+    // Letters 10 px apart, evenly: Courier.
+    const lines = [
+      line(100, 18, word("G", 130), word("D", 210)),
+      line(130, 24, word("Amazing", 100), word("grace", 180)),
+      line(160, 24, word("that", 100), word("saved", 150), word("wretch", 210), word("like", 280)),
+    ];
     const items = await readOcrPage(1, async () => lines);
-    expect(readPdfChart(items).chart).toBe("Ama[G]zing gra[D]ce");
+    expect(readPdfChart(items).chart).toBe("Ama[G]zing gra[D]ce\nthat saved wretch like");
+  });
+
+  it("puts back a capital I OCR read as an l", async () => {
+    const items = await readOcrPage(1, async () => [line(130, 24, word("l've", 100), word("been", 150))]);
+    expect(readPdfChart(items).chart).toBe("I've been");
   });
 
   it("puts back the chords' signs OCR misreads", async () => {

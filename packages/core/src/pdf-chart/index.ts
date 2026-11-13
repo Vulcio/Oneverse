@@ -1,4 +1,5 @@
 import { isChordLine } from "../chords-over-lyrics/parser.js";
+import { isChordLineMark } from "../chords/chord-token.js";
 import { LABEL_LINE } from "../chordpro/section-labels.js";
 
 /**
@@ -21,9 +22,8 @@ export interface PdfTextItem {
   /** The font size (the text's height). */
   height: number;
   /**
-   * Where each character starts and ends, when the reader knows (OCR does,
-   * issue #124): then a chord is placed on exactly the letter under it,
-   * not on an estimate from the piece's width.
+   * Where each character starts and ends, when the reader knows better than
+   * an estimate from the piece's width (OCR of a fixed-width font, issue #124).
    */
   chars?: { x0: number; x1: number }[];
   /** Which part of the page it's in (a header, a column…), counted down the page: set by `readPdfChart`. */
@@ -34,8 +34,6 @@ export interface PlacedChar {
   char: string;
   x0: number;
   x1: number;
-  /** Its box is the letter's ink, as OCR saw it, not an estimate. */
-  ink?: boolean;
 }
 
 export interface PdfLine {
@@ -83,7 +81,7 @@ function isMonospaced(items: PdfTextItem[]): boolean {
 /** Each character of a piece of text, with where it starts and ends. */
 function placeChars(item: PdfTextItem, monospaced: boolean): PlacedChar[] {
   const chars = [...item.text];
-  if (item.chars?.length === chars.length) return chars.map((char, i) => ({ char, x0: item.chars![i]!.x0, x1: item.chars![i]!.x1, ink: true }));
+  if (item.chars?.length === chars.length) return chars.map((char, i) => ({ char, x0: item.chars![i]!.x0, x1: item.chars![i]!.x1 }));
   const weight = (char: string) => (monospaced ? 1 : charWidth(char));
   const total = chars.reduce((sum, char) => sum + weight(char), 0) || 1;
   let x = item.x;
@@ -130,7 +128,9 @@ function chordsOf(line: PdfLine): { chord: string; x: number }[] {
     if (char && char.char.trim() !== "") {
       if (start < 0) start = i;
     } else if (start >= 0) {
-      chords.push({ chord: line.chars.slice(start, i).map((c) => c.char).join(""), x: line.chars[start]!.x0 });
+      const chord = line.chars.slice(start, i).map((c) => c.char).join("");
+      // Only chords go over the words: "-", "|", "x2" are how the line was laid out.
+      if (!isChordLineMark(chord)) chords.push({ chord, x: line.chars[start]!.x0 });
       start = -1;
     }
   }
@@ -144,9 +144,7 @@ function chordsOf(line: PdfLine): { chord: string; x: number }[] {
 function withChords(lyric: PdfLine, chords: { chord: string; x: number }[]): string {
   const text = lyric.text.replace(/\s+$/, "");
   const at = chords.map(({ chord, x }) => {
-    // The first letter mostly to the chord's right; a letter's ink box (OCR's, blurred, overlapping
-    // its neighbours) by most of it.
-    let index = lyric.chars.findIndex((char) => (char.ink ? char.x1 - (char.x1 - char.x0) * 0.25 : (char.x0 + char.x1) / 2) > x - 0.5);
+    let index = lyric.chars.findIndex((char) => (char.x0 + char.x1) / 2 > x - 0.5);
     if (index < 0 || index > text.length) index = text.length;
     // Chords mostly start words: one printed within a quarter em of a word's start goes there
     // (letters' widths are estimates, and a scan's edges blur).
@@ -183,7 +181,9 @@ export function chordProFromLines(lines: PdfLine[]): string {
     const line = lines[i]!;
     const previous = lines[i - 1];
     // A gap of more than about a line and a half, or a new page, is a break between parts.
-    if (previous && (previous.page !== line.page || previous.part !== line.part || line.y - previous.y > Math.max(line.height, previous.height) * 1.9) && out[out.length - 1] !== "") out.push("");
+    // Never right under a section's label: it heads what follows.
+    const underLabel = previous && LABEL_LINE.test(previous.text.trim());
+    if (previous && !underLabel && (previous.page !== line.page || previous.part !== line.part || line.y - previous.y > Math.max(line.height, previous.height) * 1.9) && out[out.length - 1] !== "") out.push("");
     const text = line.text.trim();
     if (isChordLine(text)) {
       const next = lines[i + 1];
