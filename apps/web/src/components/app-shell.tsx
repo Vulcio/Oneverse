@@ -15,6 +15,7 @@ import type { AppSession } from "@oneverse/app/server-auth";
 import { nestedSidebarFor } from "#/lib/sidebar-kind";
 import { ItemPanel, NestedSidebar } from "#/components/nested-sidebar";
 import { SidebarInset, SidebarProvider, useSidebar } from "@oneverse/ui/components/sidebar";
+import { PageBeatBackdrop } from "#/components/metronome-display";
 
 export function AppShell({
   session,
@@ -62,7 +63,9 @@ export function AppShell({
     <StemDockSlot.Provider value={dockSlot}>
       <SidebarProvider>
         <ShellSidebar session={session} teams={teams} songbooks={songbooks} setlists={setlists} />
-        <SidebarInset>
+        {/* Positioned and isolated: the beat behind the page (issue #107) sits under everything in it, the sidebar aside. */}
+        <SidebarInset className="relative isolate">
+          <PageBeatBackdrop />
           <SiteHeader />
           <OfflineBanner />
           {/* The page: the whole main area, less its gutter (issue #177) - a page with room to spare uses it rather than
