@@ -67,7 +67,7 @@ try {
     await card.getByTestId("sonic-server-connected").getByText(sonic.url).waitFor();
     if ((await card.getByTestId("sonic-api-key").inputValue()) !== "") throw new Error("the key is shown again");
     await card.getByTestId("sonic-test").click();
-    await card.getByTestId("sonic-test-result").getByText("Connected: songverse-sonic 1.6.0").waitFor();
+    await card.getByTestId("sonic-test-result").getByText("Connected: songverse-sonic 1.11.0").waitFor();
     await card.screenshot({ path: `${SP}/sonic-server-card.png` });
   });
 
