@@ -87,7 +87,7 @@ try {
     await card.getByTestId("check-key").getByText("D", { exact: true }).waitFor();
     await card.getByTestId("check-key").getByText("sure", { exact: false }).waitFor();
     await card.getByTestId("check-tempo").getByText("84 BPM").waitFor();
-    await card.getByTestId("check-timeSignature").getByText("a guess").waitFor();
+    await card.getByTestId("check-timeSignature").getByText("fairly sure").waitFor();
     await card.getByTestId("check-key").getByRole("button", { name: "Use Bm" }).waitFor();
   });
 
