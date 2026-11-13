@@ -71,6 +71,7 @@
 "api/split-control": 7,
 "api/spotify": 3,
 "api/stem-separation": 8,
+"api/stem-separation-check": 17,
 "api/stem-separation-details": 5,
 "api/suggestions": 2,
 "api/swaps": 5,
