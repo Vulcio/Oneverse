@@ -1,4 +1,4 @@
-import { defaultBeats, drumsBeatAt, type BeatLevel, type ChartBar, type DrumsBeat } from "@oneverse/core";
+import { defaultBeats, drumsBeatAt, type BeatLevel, type ChartBar, type DrumsBeat, type MetronomeLightUpValue, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useBarsClock } from "#/lib/bars-clock";
 import { useMetronome } from "#/lib/metronome-engine";
@@ -69,5 +69,53 @@ export function useDrumsOnScreen(): boolean {
     subscribe,
     () => drumsShown > 0,
     () => false,
+  );
+}
+
+/**
+ * The beat behind the whole page (issues #107, #443): the Drums view, or the
+ * metronome's Background display, asks for it; the page's shell draws it,
+ * behind its header and everything on the page but the sidebar.
+ */
+export interface PageBeatSource {
+  songId: string;
+  chart: RenderedChart;
+  document: Pick<SongDocumentV2, "sections"> | null | undefined;
+  brightness: number;
+  lightUp: MetronomeLightUpValue;
+  /** How much of its colour a column keeps between beats. */
+  idle: number;
+  /** Shown while nothing plays too (the Drums view); else only as the music plays. */
+  always: boolean;
+}
+
+let pageBeat: PageBeatSource | null = null;
+const pageBeatListeners = new Set<() => void>();
+const subscribePageBeat = (listener: () => void) => {
+  pageBeatListeners.add(listener);
+  return () => pageBeatListeners.delete(listener);
+};
+const setPageBeat = (next: PageBeatSource | null) => {
+  pageBeat = next;
+  for (const listener of pageBeatListeners) listener();
+};
+
+/** Asks for the beat behind the page while mounted (a memoised source; null for none). */
+export function useRequestPageBeat(source: PageBeatSource | null): void {
+  useEffect(() => {
+    if (!source) return;
+    setPageBeat(source);
+    return () => {
+      if (pageBeat === source) setPageBeat(null);
+    };
+  }, [source]);
+}
+
+/** What the beat behind the page follows, if anything asked for it. */
+export function usePageBeat(): PageBeatSource | null {
+  return useSyncExternalStore(
+    subscribePageBeat,
+    () => pageBeat,
+    () => null,
   );
 }

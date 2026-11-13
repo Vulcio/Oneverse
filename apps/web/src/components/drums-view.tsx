@@ -3,15 +3,16 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@oneverse/ui/lib/utils";
-import { BeatColumns } from "#/components/metronome-display";
-import { useBeatLevels, useRegisterDrumsView, useSongBeat } from "#/lib/song-beat";
+import { useBeatLevels, useRegisterDrumsView, useRequestPageBeat, useSongBeat, type PageBeatSource } from "#/lib/song-beat";
 
-/** Behind the Drums view the beat is the whole background: never so faint it can't be read from behind a kit. */
-const DRUMS_BRIGHTNESS = 0.45;
+/** Behind the Drums view the beat is the whole page: never so faint it can't be read from behind a kit. */
+const DRUMS_BRIGHTNESS = 0.55;
+/** Its columns between beats: still there, so the bar's shape fills the view. */
+const DRUMS_IDLE = 0.14;
 
 /**
  * What a drummer needs (issue #107), readable from behind a kit: the whole
- * background is the metronome, one column per beat lit in its level's colour
+ * page behind it is the metronome (drawn by the shell, `PageBeatBackdrop`), one column per beat lit in its level's colour
  * (issue #443); the song's sections as big badges, the one being played
  * marked with its bar; the tempo and time signature big, with the beat
  * counted; the words being sung and the next line; the band's notes; and
@@ -33,6 +34,9 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
   const next = sections[current + 1] ?? null;
   const timeSignature = chart.passes[current]?.timeSignature ?? chart.timeSignature;
   const levels = useBeatLevels(beat?.beats ?? timeSignature?.numerator ?? 4, timeSignature?.denominator ?? 4);
+  const brightness = Math.max(DRUMS_BRIGHTNESS, settings.metronome.brightness);
+  const backdrop = useMemo<PageBeatSource>(() => ({ songId, chart, document, brightness, lightUp: settings.metronome.lightUp, idle: DRUMS_IDLE, always: true }), [songId, chart, document, brightness, settings.metronome.lightUp]);
+  useRequestPageBeat(backdrop);
   const words = settings.drums.words ? drumsWordsAt(chart, bars, beat?.bar ?? null, current) : null;
   const typeName = (type: string) => t(`chart.sections.${type}`);
   const nameOf = (index: number) => {
@@ -41,6 +45,8 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
     if (!pass || !one) return "";
     return passName(pass, pass.section, pass.section.number, typeName) ?? `${typeName(one.type)}${one.number ? ` ${one.number}` : ""}`;
   };
+  // A long song's sections wrap onto a second row, a little smaller, rather than run off the side.
+  const many = sections.length > 8;
   const step = (by: number) => setManual((at) => Math.max(0, Math.min(sections.length - 1, Math.min(at, sections.length - 1) + by)));
 
   // A pedal's page keys step through the sections when the music doesn't say where it is; before Live's own keys.
@@ -65,17 +71,15 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
 
   return (
     <section
-      className={cn("relative isolate flex flex-col overflow-hidden rounded-xl bg-zinc-950 text-zinc-50 max-sm:-mx-(--gutter) max-sm:rounded-none", live ? "min-h-[calc(100dvh-14rem)]" : "min-h-[70vh]")}
+      className={cn("flex flex-col", live ? "min-h-[calc(100dvh-14rem)]" : "min-h-[70vh]")}
       aria-label={t("drums.label")}
       data-testid="drums-view"
       data-following={following || undefined}
       data-current={section?.passId}
     >
-      <BeatColumns levels={levels} beat={beat} brightness={Math.max(DRUMS_BRIGHTNESS, settings.metronome.brightness)} lightUp={settings.metronome.lightUp} labels className="absolute inset-0 -z-10 gap-1.5 px-1.5" />
-
-      <div className="flex flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-5">
+      <div className="flex flex-1 flex-col gap-3 sm:gap-4">
         {/* The song's sections, the one being played marked; a tap goes there when the music doesn't say. */}
-        <nav className="flex gap-2 overflow-x-auto pb-1" aria-label={t("live.structure")}>
+        <nav className="flex flex-wrap gap-2" aria-label={t("live.structure")}>
           {sections.map((one, index) => {
             const isCurrent = index === current;
             return (
@@ -86,38 +90,39 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
                 aria-current={isCurrent ? "step" : undefined}
                 aria-label={t("live.goToPass", { name: nameOf(index) })}
                 className={cn(
-                  "flex min-w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 transition-colors sm:min-w-20 sm:py-3",
-                  isCurrent ? "bg-zinc-50 text-zinc-950" : "border-2 border-zinc-50/25 bg-zinc-950/80",
+                  "flex shrink-0 flex-col items-center justify-center rounded-xl px-2 transition-colors",
+                  many ? "min-w-14 gap-0.5 py-1.5 sm:min-w-16" : "min-w-16 gap-1 py-2 sm:min-w-20 sm:py-3",
+                  isCurrent ? "bg-foreground text-background" : "border-2 border-foreground/25 bg-background/40",
                   index < current && "opacity-45",
                 )}
                 data-testid="drums-section"
               >
-                <span className="text-xl leading-none font-extrabold sm:text-2xl">
+                <span className={cn("leading-none font-extrabold", many ? "text-lg sm:text-xl" : "text-xl sm:text-2xl")}>
                   {t(`live.short.${one.type}`)}
                   {one.number ?? ""}
                 </span>
-                <span className={cn("text-xs font-semibold", isCurrent ? "text-zinc-600" : "text-zinc-400")}>{isCurrent && beat && !beat.countIn ? `${beat.barInPass}/${one.bars}` : one.bars > 0 ? t("drums.barsShort", { count: one.bars }) : "–"}</span>
+                <span className={cn("text-xs font-semibold", isCurrent ? "opacity-70" : "text-muted-foreground")}>{isCurrent && beat && !beat.countIn ? `${beat.barInPass}/${one.bars}` : one.bars > 0 ? t("drums.barsShort", { count: one.bars }) : "–"}</span>
               </button>
             );
           })}
         </nav>
 
         <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:gap-4">
-          <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-2xl bg-zinc-950/80 p-4 sm:p-5">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-2xl border border-foreground/10 bg-background/40 p-4 sm:p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="text-2xl font-bold sm:text-3xl" data-testid="drums-current">
                 {nameOf(current)}
               </h3>
               {barText ? (
-                <span className="text-lg text-zinc-300 tabular-nums" data-testid="drums-bar">
+                <span className="text-lg text-muted-foreground tabular-nums" data-testid="drums-bar">
                   {barText}
                 </span>
               ) : null}
             </div>
             {words && (words.now || words.next) ? (
-              <div className="flex flex-col gap-1.5 border-t border-zinc-50/15 pt-3" data-testid="drums-words">
+              <div className="flex flex-col gap-1.5 border-t border-foreground/15 pt-3" data-testid="drums-words">
                 {words.now ? <p className="text-2xl leading-snug font-semibold sm:text-3xl">{words.now}</p> : null}
-                {words.next ? <p className="text-lg leading-snug text-zinc-400 sm:text-xl">{words.next}</p> : null}
+                {words.next ? <p className="text-lg leading-snug text-muted-foreground sm:text-xl">{words.next}</p> : null}
               </div>
             ) : null}
             {section && section.notes.length > 0 ? (
@@ -131,21 +136,21 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
             ) : null}
             {!following ? (
               <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
-                <button type="button" onClick={() => step(-1)} disabled={current === 0} className="flex h-12 items-center gap-1 rounded-xl border-2 border-zinc-50/30 px-3 text-base font-semibold disabled:opacity-40" aria-label={t("drums.previous")} data-testid="drums-previous">
+                <button type="button" onClick={() => step(-1)} disabled={current === 0} className="flex h-12 items-center gap-1 rounded-xl border-2 border-foreground/30 bg-background/40 px-3 text-base font-semibold disabled:opacity-40" aria-label={t("drums.previous")} data-testid="drums-previous">
                   <ChevronLeft className="size-5" aria-hidden />
                 </button>
-                <button type="button" onClick={() => step(1)} disabled={!next} className="flex h-12 items-center gap-1 rounded-xl border-2 border-dashed border-zinc-50/40 px-4 text-base font-semibold disabled:opacity-40" data-testid="drums-next">
+                <button type="button" onClick={() => step(1)} disabled={!next} className="flex h-12 items-center gap-1 rounded-xl border-2 border-dashed border-foreground/40 bg-background/40 px-4 text-base font-semibold disabled:opacity-40" data-testid="drums-next">
                   {t("drums.next")}
                   <ChevronRight className="size-5" aria-hidden />
                 </button>
-                <span className="text-xs text-zinc-400">{t("drums.manualHint")}</span>
+                <span className="text-xs text-muted-foreground">{t("drums.manualHint")}</span>
               </div>
             ) : null}
           </div>
 
-          <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-zinc-950/80 p-4 sm:w-64 sm:p-5" data-testid="drums-tempo">
+          <div className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-foreground/10 bg-background/40 p-4 sm:w-64 sm:p-5" data-testid="drums-tempo">
             <span className="text-7xl leading-none font-extrabold tracking-tight tabular-nums sm:text-8xl">{chart.passes[current]?.tempo ?? chart.tempo ?? "–"}</span>
-            <span className="text-base text-zinc-300">
+            <span className="text-base text-muted-foreground">
               {t("drums.bpm")}
               {timeSignature ? ` · ${timeSignature.numerator}/${timeSignature.denominator}` : ""}
             </span>
@@ -153,7 +158,7 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
               {levels.map((level, index) => {
                 const on = !!beat && beat.beat === index;
                 return (
-                  <span key={index} className={cn("w-7 text-center text-xl leading-10 font-extrabold tabular-nums", on ? (beat.countIn ? "text-amber-300" : level === "accent" ? "text-amber-400" : level === "medium" ? "text-blue-400" : "text-zinc-50") : "text-zinc-600")}>
+                  <span key={index} className={cn("w-7 text-center text-xl leading-10 font-extrabold tabular-nums", on ? (beat.countIn ? "text-amber-400" : level === "accent" ? "text-amber-500" : level === "medium" ? "text-blue-500" : "text-foreground") : "text-muted-foreground/50")}>
                     {index + 1}
                   </span>
                 );
@@ -163,11 +168,11 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
         </div>
 
         {settings.drums.next && next ? (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-zinc-950/80 px-4 py-3" data-testid="drums-next-cue">
-            <span className="text-xs font-semibold tracking-wider text-zinc-400 uppercase">{t("drums.nextLabel")}</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-foreground/10 bg-background/40 px-4 py-3" data-testid="drums-next-cue">
+            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{t("drums.nextLabel")}</span>
             <span className="text-xl font-bold">{nameOf(current + 1)}</span>
-            {next.bars > 0 ? <span className="text-base text-zinc-400">{t("drums.bars", { count: next.bars })}</span> : null}
-            {next.firstWords ? <span className="min-w-0 truncate text-base text-zinc-300">“{next.firstWords}”</span> : null}
+            {next.bars > 0 ? <span className="text-base text-muted-foreground">{t("drums.bars", { count: next.bars })}</span> : null}
+            {next.firstWords ? <span className="min-w-0 truncate text-base text-muted-foreground">“{next.firstWords}”</span> : null}
           </div>
         ) : null}
       </div>

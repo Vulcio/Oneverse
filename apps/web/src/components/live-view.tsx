@@ -14,9 +14,9 @@ import { ChordGrid } from "#/components/chord-grid";
 import { StructureBar, useCurrentPass } from "#/components/structure-bar";
 import { WordsView } from "#/components/words-view";
 import { useWordsOnScreen } from "#/lib/words-view";
-import { useDrumsOnScreen } from "#/lib/song-beat";
+import { useDrumsOnScreen, usePageBeat } from "#/lib/song-beat";
 import { DrumsView } from "#/components/drums-view";
-import { SongBeatDisplay } from "#/components/metronome-display";
+import { PageBeatBackdrop, SongBeatDisplay } from "#/components/metronome-display";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
 import { DisplayPanel } from "#/components/display-panel";
@@ -380,6 +380,7 @@ export function LiveView({
   const wordsOnScreen = useWordsOnScreen();
   // Nor over the Drums view (issue #107), which has its own sections and beat.
   const drumsOnScreen = useDrumsOnScreen();
+  const pageBeat = !!usePageBeat();
   const steps = useMemo(() => (chart ? structureOf(chart) : []), [chart]);
   const columns = display.columns;
   const [current, pickPass] = useCurrentPass(scroller, steps, song.id, columns !== "1", () => sections.current[at] ?? null);
@@ -430,7 +431,9 @@ export function LiveView({
   );
 
   return (
-    <div className="relative flex h-dvh flex-col bg-background text-foreground" data-testid="live-view">
+    <div className="relative isolate flex h-dvh flex-col bg-background text-foreground" data-testid="live-view">
+      {/* The beat behind everything (issue #107): the Drums view, or the metronome as the background. */}
+      <PageBeatBackdrop />
       {/* Always the same height; the song's own title is at the top of its chart (issue #68). */}
       <header className="flex h-14 shrink-0 items-center gap-0.5 border-b-2 border-b-primary px-2 sm:gap-3 sm:px-4">
         {/* The sidebar (issue #154): beside the song on a wider screen, a sheet on a phone. */}
@@ -516,7 +519,7 @@ export function LiveView({
       ) : null}
 
       {layout === "footer" ? (
-        <footer className="flex shrink-0 items-center gap-1 border-t bg-card px-2 py-2 sm:gap-2 sm:px-4" data-testid="live-controls" data-layout="footer">
+        <footer className={cn("flex shrink-0 items-center gap-1 border-t px-2 py-2 sm:gap-2 sm:px-4", pageBeat ? "bg-card/50 backdrop-blur-sm" : "bg-card")} data-testid="live-controls" data-layout="footer">
           {shows("songs") && inSet ? (
             <IconButton label={t("sets.previousSong")} onClick={() => previous?.()} disabled={!previous}>
               <ChevronLeft />

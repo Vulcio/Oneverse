@@ -18,6 +18,10 @@ const sections = [intro, verse, chorus];
 const flow = [intro, verse, chorus].map((section, i) => ({ id: `f${i}${stamp}`, sectionId: section.id }));
 const song = await api(me, "POST", "/song-versions", { title: `Drums ${stamp}`, language: "en", artists: ["Someone"], key: "G", tempo: 160, timeSignature: "4/4" });
 await api(me, "PATCH", `/song-versions/${song.id}`, { sections, flow });
+// A long song: twelve sections, as many worship songs have.
+const long = await api(me, "POST", "/song-versions", { title: `Drums long ${stamp}`, language: "en", artists: ["Someone"], key: "G", tempo: 71, timeSignature: "6/8" });
+const longFlow = [verse, chorus, verse, chorus, chorus, intro, chorus, verse, chorus, intro, chorus, chorus].map((section, i) => ({ id: `l${i}${stamp}`, sectionId: section.id.replace(stamp, `L${stamp}`) }));
+await api(me, "PATCH", `/song-versions/${long.id}`, { sections: sections.map((section) => ({ ...section, id: section.id.replace(stamp, `L${stamp}`), lines: section.lines.map((one) => ({ ...one, id: `L${one.id}`, chords: one.chords.map((chord) => ({ ...chord, id: `L${chord.id}` })) })) })), flow: longFlow });
 
 const browser = await chromium.launch();
 try {
@@ -48,7 +52,7 @@ try {
     if ((await current()) !== "intro") throw new Error(await current());
     if (!/160/.test(await drums().getByTestId("drums-tempo").innerText())) throw new Error(await drums().getByTestId("drums-tempo").innerText());
     if (!/4\/4/.test(await drums().getByTestId("drums-tempo").innerText())) throw new Error("no time signature");
-    if ((await drums().getByTestId("beat-columns").getAttribute("data-beats")) !== "4") throw new Error("not 4 columns");
+    if ((await page.getByTestId("beat-columns").getAttribute("data-beats")) !== "4") throw new Error("not 4 columns");
     if (!/verse/i.test(await drums().getByTestId("drums-next-cue").innerText())) throw new Error(await drums().getByTestId("drums-next-cue").innerText());
     if (!/Amazing grace/.test(await drums().getByTestId("drums-next-cue").innerText())) throw new Error("the next section's first words don't show");
     if (await page.getByTestId("bars-row").count()) throw new Error("the bars row shows over the drums");
@@ -89,10 +93,10 @@ try {
   await step("following the metronome: the background lights up beat by beat", async () => {
     await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="drums-view"][data-following]').waitFor({ timeout: 10000 });
-    await drums().locator('[data-testid="beat-columns"] [data-lit]').waitFor();
+    await page.locator('[data-testid="beat-columns"] [data-lit]').waitFor();
     const seen = new Set();
     for (let i = 0; i < 40 && seen.size < 2; i++) {
-      const lit = await drums().locator('[data-testid="beat-columns"] > div').evaluateAll((columns) => columns.findIndex((one) => one.hasAttribute("data-lit")));
+      const lit = await page.locator('[data-testid="beat-columns"] > div').evaluateAll((columns) => columns.findIndex((one) => one.hasAttribute("data-lit")));
       if (lit >= 0) seen.add(lit);
       await page.waitForTimeout(60);
     }
@@ -112,7 +116,7 @@ try {
     if (await page.getByTestId("beat-columns").count()) throw new Error("the beat shows while nothing plays");
     await page.getByTestId("practice-metronome").click();
     await page.locator('[data-testid="beat-columns"] [data-lit]').waitFor({ timeout: 10000 });
-    if ((await page.getByTestId("beat-columns").evaluate((one) => getComputedStyle(one).position)) !== "fixed") throw new Error("not the whole page");
+    if ((await page.getByTestId("beat-columns").evaluate((one) => getComputedStyle(one).position)) !== "absolute" || (await page.getByTestId("beat-columns").evaluate((one) => one.parentElement?.dataset.slot)) !== "sidebar-inset") throw new Error("not behind the whole page");
     await page.screenshot({ path: `${SP}/drums-metronome-background.png` });
     await display("display-metronomeDisplay-count");
     await closeDisplay();
@@ -122,6 +126,26 @@ try {
     await page.getByTestId("beat-count").waitFor({ state: "detached" });
     await display("display-metronomeDisplay-pill");
     await closeDisplay();
+  });
+
+  await step("a long song's sections wrap, none cut off; six columns in 6/8, the beat showing through the panels", async () => {
+    await page.goto(`${WEB}/library/${long.id}`);
+    await page.getByTestId("song-chart").waitFor();
+    await page.getByTestId("chart-view-drums").click();
+    await drums().waitFor();
+    if ((await drums().getByTestId("drums-section").count()) !== 12) throw new Error(`${await drums().getByTestId("drums-section").count()} badges`);
+    const view = await drums().boundingBox();
+    for (const badge of await drums().getByTestId("drums-section").all()) {
+      const box = await badge.boundingBox();
+      if (box.x + box.width > view.x + view.width) throw new Error(`a badge runs off the side: ${JSON.stringify(box)}`);
+    }
+    if ((await page.getByTestId("beat-columns").getAttribute("data-beats")) !== "6") throw new Error("not 6 columns");
+    await page.getByTestId("practice-metronome").click();
+    await page.locator('[data-testid="beat-columns"] [data-lit]').waitFor({ timeout: 10000 });
+    await page.screenshot({ path: `${SP}/drums-long.png` });
+    await page.getByTestId("practice-metronome").click();
+    await page.goto(`${WEB}/library/${song.id}`);
+    await page.getByTestId("chart-view").waitFor();
   });
 
   await step("kept for the song: Drums again in Live", async () => {
