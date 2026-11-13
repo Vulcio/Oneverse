@@ -112,6 +112,12 @@ try {
     JSON.stringify(one.cuePoints),
   );
 
+  check(
+    "the song's words sent with it, in the order sung, a block per pass (issue #450)",
+    demucs.received.at(-1)?.lyrics === "{c: Verse 1}\n[G]Hello\n\n{c: Chorus}\n[C]World\n\n{c: Verse 2}\n[G]Again\n\n{c: Chorus}\n[C]World\n",
+    JSON.stringify(demucs.received.at(-1)?.lyrics),
+  );
+
   // --- Confirmed, or changed
   r = await call(singer, "PATCH", `/song-versions/${song.id}/attachments/${one.id}`, { recordingKey: "G" });
   check("changing the key confirms it", r.status === 200 && r.body.recordingKey === "G" && r.body.detected.join() === "timeSignature,firstBeat,beats,chords,sections", JSON.stringify(r.body.detected));
@@ -158,6 +164,21 @@ try {
     JSON.stringify(separated.map((file) => [file.multitrackName, file.cuePoints, file.detected])),
   );
   check("the recording moved over with them", now.some((file) => file.origin === "RECORDED" && file.stemPart === "VOCALS" && file.multitrackName === `Live take ${stamp}`), JSON.stringify(now.map((file) => [file.stemPart, file.origin])));
+
+  // --- Sonic 1.9 places the song's own passes (issue #450): each cue the section its pass sings, whatever the label says
+  const placed = await api(singer, "POST", "/song-versions", { title: `Placed ${stamp}`, language: "en", artists: ["Band"], content: "{start_of_verse}\n[G]Hello\n{end_of_verse}\n{start_of_chorus}\n[C]World\n{end_of_chorus}\n{start_of_verse: Verse 2}\n[G]Again\n{end_of_verse}\n{chorus}\n", contentFormat: "CHORDPRO" });
+  const [placedVerse1, placedChorus, placedVerse2] = (await api(singer, "GET", `/song-versions/${placed.id}`)).documentJson.sections.map((section) => section.id);
+  const placedRecording = await upload(placed.id, "Placed mix.wav", toneWav(300, 2));
+  demucs.analysis.next = { passStarts: [1.2, 9.6, 17.9, 26.4] };
+  r = await call(singer, "POST", `/song-versions/${placed.id}/attachments/${placedRecording.id}/separate`, { parts: "4" });
+  const placedList = await waitFor(placed.id, (body) => body.separations[0]?.status === "FAST_READY");
+  const [placedStem] = await filesOf(placed.id, placedList.separations[0].multitrackId);
+  check(
+    "each section on its pass's section: verse 1, the chorus, verse 2, the chorus",
+    JSON.stringify(placedStem.cuePoints) === JSON.stringify([{ at: 1.2, sectionId: placedVerse1 }, { at: 9.6, sectionId: placedChorus }, { at: 17.9, sectionId: placedVerse2 }, { at: 26.4, sectionId: placedChorus }]),
+    JSON.stringify(placedStem.cuePoints),
+  );
+  demucs.analysis.next = null;
 
   // --- The recording deleted: the list still names it
   await call(singer, "PATCH", `/song-versions/${song.id}/attachments/${recording.id}`, { locked: false });

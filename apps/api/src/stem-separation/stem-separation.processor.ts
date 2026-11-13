@@ -11,7 +11,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { encodeStem, FfmpegMissingError } from "../recordings/ffmpeg.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
-import { readRecordingChords, readSongDocument, type CuePoint } from "@oneverse/core";
+import { lyricsForAnalysis, readRecordingChords, readSongDocument, type CuePoint } from "@oneverse/core";
 import en from "@oneverse/core/i18n/locales/en";
 import fr from "@oneverse/core/i18n/locales/fr";
 import { detailsWithAnalysis } from "./analysis.js";
@@ -99,6 +99,8 @@ export class StemSeparationProcessor extends WorkerHost {
       const parts = separation.parts;
       const fastModel = parts === "6" ? "htdemucs_6s" : settings.fastModel;
       const hqModel = separation.hqRequested ? settings.hqModel : null;
+      // The song's words in the order they're sung (issue #450): the server places its sections on the recording's bars.
+      const words = await this.wordsOf(separation.songVersionId);
       // Its lossless original when one was kept (issue #182): separated from the best copy there is.
       const submitted = await submitDemucsJob(settings, await this.storage.get(source.originalStorageKey ?? source.storageKey, source.storedInOrganizationId), source.originalStorageKey ? source.filename.replace(/\.[a-z0-9]{1,5}$/i, ".flac") : source.filename, source.originalStorageKey ? (source.originalMimeType ?? "audio/flac") : source.mimeType, {
         model: fastModel,
@@ -106,6 +108,7 @@ export class StemSeparationProcessor extends WorkerHost {
         hq: hqModel ? { model: hqModel } : undefined,
         callbackUrl: job.data.callbackUrl ?? undefined,
         callbackSecret: settings.callbackSecret ?? undefined,
+        lyrics: words?.text,
       });
       // A server started afresh can number its jobs again: an older separation on it holding the same ID lost its job with it.
       await this.prisma.client.$transaction([
@@ -114,7 +117,7 @@ export class StemSeparationProcessor extends WorkerHost {
           data: { jobId: null, status: "FAILED", error: "The separation server forgot this job" },
         }),
         // The models it's sent with (issue #175): Admin's can change later.
-        this.prisma.client.stemSeparation.update({ where: { id: separation.id }, data: { status: "SUBMITTED", jobId: submitted.id, error: null, fastModel, hqModel, sourceFilename: source.filename } }),
+        this.prisma.client.stemSeparation.update({ where: { id: separation.id }, data: { status: "SUBMITTED", jobId: submitted.id, error: null, fastModel, hqModel, sourceFilename: source.filename, lyricsPasses: words?.passes ?? [] } }),
       ]);
       this.logger.log(`Sent ${source.filename} to the Demucs API: job ${submitted.id}`);
       return { jobId: submitted.id };
@@ -124,6 +127,18 @@ export class StemSeparationProcessor extends WorkerHost {
       const final = error instanceof DemucsError && error.status !== undefined && error.status < 500;
       if (final || job.attemptsMade + 1 >= (job.opts.attempts ?? 1)) await this.fail(separation.id, message);
       throw final ? new UnrecoverableError(message) : error;
+    }
+  }
+
+  /** The song's words for the analysis, and the section each pass sings; null for a song without a chart. */
+  private async wordsOf(songVersionId: string) {
+    const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { documentJson: true } });
+    try {
+      const words = song ? lyricsForAnalysis(readSongDocument(song.documentJson)) : null;
+      // Within what the server takes (64 KB).
+      return words && Buffer.byteLength(words.text) <= 64 * 1024 ? words : null;
+    } catch {
+      return null;
     }
   }
 
@@ -255,6 +270,7 @@ export class StemSeparationProcessor extends WorkerHost {
       },
       analysis,
       song,
+      separation.lyricsPasses,
     );
     // Seen by whoever sees the recording it came from (or the stems it replaces); the requester's alone if both are gone.
     const audience = source ?? earlierFirst;

@@ -1,4 +1,4 @@
-import { cuesFromSections, parseKey, readRecordingChords, type CuePoint, type DetectedDetail, type RecordingChord, type SongDocumentV2 } from "@oneverse/core";
+import { cuesFromHints, cuesFromSections, parseKey, readRecordingChords, type CuePoint, type DetectedDetail, type RecordingChord, type SongDocumentV2 } from "@oneverse/core";
 import type { DemucsAnalysis } from "./demucs-client.js";
 
 /** Below this, what the analysis says is left out (issue #175). */
@@ -38,9 +38,15 @@ const sure = (confidence: number | undefined) => confidence === undefined || con
  * The stems' details (issue #175): each the recording's where it has one -
  * never replaced by a guess - else what the analysis found, if it's sure
  * enough and reads as one; those listed in `detected` until confirmed.
- * Sections are placed on the song's own (cuesFromSections).
+ * Sections are placed on the song's own: by the pass of its words the server
+ * says each is (`passes`, issue #450), else by their labels (cuesFromSections).
  */
-export function detailsWithAnalysis(source: SourceDetails, analysis: DemucsAnalysis | null | undefined, song: Pick<SongDocumentV2, "sections" | "flow"> | null): SourceDetails & { detected: DetectedDetail[] } {
+export function detailsWithAnalysis(
+  source: SourceDetails,
+  analysis: DemucsAnalysis | null | undefined,
+  song: Pick<SongDocumentV2, "sections" | "flow"> | null,
+  passes: readonly string[] = [],
+): SourceDetails & { detected: DetectedDetail[] } {
   const details = { ...source };
   const detected: DetectedDetail[] = [];
   if (!analysis) return { ...details, detected };
@@ -90,8 +96,9 @@ export function detailsWithAnalysis(source: SourceDetails, analysis: DemucsAnaly
     detected.push("chords");
   }
   if (!details.cuePoints?.length && song && analysis.sections?.length) {
-    const found = analysis.sections.flatMap((section) => (typeof section.start === "number" && typeof section.label === "string" ? [{ start: section.start, label: section.label }] : []));
-    const cues = cuesFromSections(found, song);
+    const found = analysis.sections.flatMap((section) => (typeof section.start === "number" && typeof section.label === "string" ? [{ start: section.start, label: section.label, hint: section.hint }] : []));
+    const hinted = passes.length > 0 ? cuesFromHints(found, passes, song) : [];
+    const cues = hinted.length > 0 ? hinted : cuesFromSections(found, song);
     if (cues.length > 0) {
       details.cuePoints = cues;
       detected.push("sections");

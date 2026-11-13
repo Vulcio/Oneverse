@@ -66,4 +66,4 @@ On the team's page - or the organisation's - its admins find **Stem separation**
 - **Your own songs:** this Songverse's own server.
 - **Who can separate:** on a team's or an organisation's server, its admins and the song's team's members who have one of its own roles that splits recordings (made under **Roles** on its page: see [Teams](/teams/#roles-on-the-team) and [Organisations](/organizations/#its-own-roles)), within the role's limit, else the server's. On this Songverse's own server, whoever its admin allowed.
 
-When you separate a recording, the window names the server it goes to: **On Grace Church's Sonic server**.
+When you separate a recording, the window names the server it goes to: **On Grace Church's Sonic server**. The recording goes there with the song's words and chords, which the server uses to find the song's sections, then deletes.

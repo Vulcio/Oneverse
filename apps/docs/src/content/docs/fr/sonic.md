@@ -66,4 +66,4 @@ Sur la page de l'équipe - ou de l'organisation - ses admins trouvent **Séparat
 - **Vos propres chants :** le serveur de ce Songverse.
 - **Qui peut séparer :** sur le serveur d'une équipe ou d'une organisation, ses administrateurs et les membres de l'équipe du chant qui ont l'un de ses rôles propres qui sépare les enregistrements (créés sous **Rôles** sur sa page : voir [Équipes](/fr/teams/#rôles-dans-léquipe) et [Organisations](/fr/organizations/#ses-rôles-propres)), dans la limite du rôle, sinon celle du serveur. Sur celui de ce Songverse, ceux que son admin a autorisés.
 
-Quand vous séparez un enregistrement, la fenêtre nomme le serveur où il part : **Sur le serveur Sonic de Grace Church**.
+Quand vous séparez un enregistrement, la fenêtre nomme le serveur où il part : **Sur le serveur Sonic de Grace Church**. L'enregistrement y part avec les paroles et les accords du chant, dont le serveur se sert pour trouver ses sections, puis qu'il efface.

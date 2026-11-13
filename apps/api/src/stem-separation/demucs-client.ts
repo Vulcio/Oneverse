@@ -55,7 +55,8 @@ export interface DemucsAnalysis {
   intro_free?: boolean | null;
   time_signature?: { numerator?: number; denominator?: number; confidence?: number } | null;
   key?: { name?: string; confidence?: number } | null;
-  sections?: { start?: number; label?: string }[] | null;
+  /** Since API 1.9 (issue #450), placed from the song's words sent with the job: which pass (`hint`) and its heading (`name`). */
+  sections?: { start?: number; label?: string; hint?: number; name?: string }[] | null;
   /** The recording's chords (API v1.7, issue #393), when the server has chords on; read with readRecordingChords. */
   chords?: unknown[] | null;
   /** For each of `beats`, the index in `chords` of the chord sounding there. */
@@ -146,7 +147,7 @@ export async function submitDemucsJob(
   audio: Buffer,
   filename: string,
   mimeType: string,
-  options: { model: string; twoStems?: string; hq?: { model: string }; callbackUrl?: string; callbackSecret?: string },
+  options: { model: string; twoStems?: string; hq?: { model: string }; callbackUrl?: string; callbackSecret?: string; lyrics?: string },
 ): Promise<DemucsJob> {
   const form = new FormData();
   form.append("file", new Blob([new Uint8Array(audio)], { type: mimeType }), filename);
@@ -158,6 +159,8 @@ export async function submitDemucsJob(
     form.append("callback_url", options.callbackUrl);
     form.append("callback_secret", options.callbackSecret);
   }
+  // The song's words (API 1.9, issue #450): a server before 1.9 leaves an unknown field unread.
+  if (options.lyrics) form.append("lyrics", options.lyrics);
   return call<DemucsJob>(settings, "/api/v1/jobs", { method: "POST", body: form }, TRANSFER_TIMEOUT_MS);
 }
 

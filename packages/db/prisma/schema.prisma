@@ -2784,6 +2784,9 @@ model StemSeparation {
   sourceFilename       String?
   // The earlier separation's multitrack its stems replace (issue #175), once in.
   replacesMultitrackId String?
+  // The section each pass of the song's words sent with it sings (issue #450),
+  // in order: the server's answer names a pass by its index here.
+  lyricsPasses         String[]             @default([])
   error                String?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt

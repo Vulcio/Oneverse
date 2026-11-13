@@ -107,4 +107,23 @@ describe("detailsWithAnalysis", () => {
     expect(detailsWithAnalysis({ ...none, recordingChords: own }, { chords }, song).recordingChords).toBe(own);
     expect(detailsWithAnalysis(none, { chords: [chords[1], { ...chords[2], root: 13 }] }, song).recordingChords).toBeNull();
   });
+
+  it("places the sections by the pass of the song's words the server says each is (issue #450), the labels aside", () => {
+    const hinted = {
+      sections: [
+        { start: 0, label: "intro" },
+        { start: 8.3, label: "chorus", hint: 0, name: "Verse" },
+        { start: 40.1, label: "verse", hint: 1, name: "Chorus" },
+      ],
+    };
+    expect(detailsWithAnalysis(none, hinted, song, ["sec_v", "sec_c"]).cuePoints).toEqual([
+      { at: 8.3, sectionId: "sec_v" },
+      { at: 40.1, sectionId: "sec_c" },
+    ]);
+    // Without the passes sent (an older server, or none sent), by their labels.
+    expect(detailsWithAnalysis(none, hinted, song).cuePoints).toEqual([
+      { at: 8.3, sectionId: "sec_c" },
+      { at: 40.1, sectionId: "sec_v" },
+    ]);
+  });
 });

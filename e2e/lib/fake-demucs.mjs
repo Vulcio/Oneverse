@@ -42,6 +42,17 @@ const STEMS = {
   htdemucs_6s: ["vocals", "drums", "bass", "guitar", "piano", "other"],
 };
 
+/**
+ * As Sonic 1.9 does with a job's words (issue #450): `passStarts` (a suite's) are where the
+ * passes of the words sent start, each section then naming its pass (`hint`) and heading.
+ */
+function withHints(found, job) {
+  const { passStarts, ...rest } = found;
+  if (!passStarts || !job.lyrics) return rest;
+  const names = [...job.lyrics.matchAll(/^\{c: (.*)\}$/gm)].map((match) => match[1]);
+  return { ...rest, sections: passStarts.slice(0, names.length).map((start, hint) => ({ start, label: "verse", hint, name: names[hint] })) };
+}
+
 export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMUCS_KEY } = {}) {
   const base = `http://localhost:${port}`;
   const jobs = new Map();
@@ -65,7 +76,7 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
     hq: { enabled: job.hqEnabled, status: job.hq, model: job.hqModel, device: "cpu", files: job.hq === "completed" ? stage(job, "hq") : [], r2: null },
     callback_configured: !!job.callbackUrl,
     // What it found in the recording (issue #175), once the fast pass is done, when a suite gave one.
-    ...(job.fast === "completed" && analysis.next && { analysis: analysis.next }),
+    ...(job.fast === "completed" && analysis.next && { analysis: withHints(analysis.next, job) }),
   });
   const notify = async (job, event) => {
     if (!job.callbackUrl) return;
@@ -96,12 +107,14 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
         hqModel: form.get("hq_model") ?? "htdemucs_ft",
         callbackUrl: form.get("callback_url"),
         secret: form.get("callback_secret"),
+        // The song's words (API 1.9, issue #450).
+        lyrics: form.get("lyrics") || null,
         status: "queued",
         fast: "queued",
         hq: form.get("hq_enabled") === "true" ? "scheduled" : null,
       };
       if (!STEMS[job.model]) return json(400, { detail: `Unknown model ${job.model}` });
-      received.push({ id: job.id, bytes: file ? (await file.arrayBuffer()).byteLength : 0, model: job.model, twoStems: job.twoStems, hqEnabled: job.hqEnabled, hqModel: job.hqModel, callbackUrl: job.callbackUrl });
+      received.push({ id: job.id, bytes: file ? (await file.arrayBuffer()).byteLength : 0, model: job.model, twoStems: job.twoStems, hqEnabled: job.hqEnabled, hqModel: job.hqModel, callbackUrl: job.callbackUrl, lyrics: job.lyrics });
       jobs.set(job.id, job);
       json(202, view(job));
       // The fast pass: done in a moment.
