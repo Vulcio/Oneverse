@@ -23,6 +23,15 @@ async function waitFor(songId, ready) {
   }
   throw new Error(`waited: ${JSON.stringify(body)}`);
 }
+async function waitForAs(who, songId, ready) {
+  let body;
+  for (let i = 0; i < 60; i++) {
+    body = (await call(who, "GET", `/song-versions/${songId}/stem-separations`)).body;
+    if (ready(body)) return body;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`waited: ${JSON.stringify(body)}`);
+}
 const filesOf = async (songId, multitrackId) => (await api(singer, "GET", `/song-versions/${songId}/attachments`)).filter((file) => file.multitrackId === multitrackId);
 // Beats from `first` at `bpm`, a bar every `per` beats.
 const grid = (bpm, first, per, count) => {
@@ -139,6 +148,48 @@ try {
   list = await waitFor(song.id, (body) => body.separations[0]?.id === r.body.id && body.separations[0].status === "FAILED");
   check("a server before 1.11: failed, saying why, nothing sent", /version 1.11/.test(list.separations[0].error) && demucs.received.at(-1).hints?.bpm === 140, list.separations[0].error);
   check("the stems as they were", (await filesOf(song.id, separation.multitrackId))[0].recordingFirstBeat === 0.37);
+
+  // --- Separated before the song had words (part 2 of #452)
+  demucs.offers.hints = true;
+  const bare = await api(admin, "POST", "/song-versions", { title: `No words yet ${stamp}`, language: "en", artists: ["Band"], content: "", contentFormat: "CHORDPRO" });
+  const bareForm = new FormData();
+  bareForm.append("type", "AUDIO");
+  bareForm.append("file", new Blob([toneWav(320, 2)], { type: "audio/wav" }), "Bare.wav");
+  const bareMix = await (await fetch(`${API}/song-versions/${bare.id}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${admin.bearer}` }, body: bareForm })).json();
+  demucs.analysis.next = { tempo: { bpm: 90, confidence: 0.9 }, passStarts: [1, 9], sections: [{ start: 1, label: "verse" }, { start: 9, label: "chorus" }] };
+  await call(admin, "POST", `/song-versions/${bare.id}/attachments/${bareMix.id}/separate`, { parts: "2" });
+  const bareSeparation = (await waitForAs(admin, bare.id, (body) => body.separations[0]?.status === "COMPLETED" || body.separations[0]?.status === "FAST_READY")).separations[0];
+  check("separated with no words to send: said so", bareSeparation.withWords === false && demucs.received.at(-1).lyrics === null, JSON.stringify(bareSeparation));
+  const bareStem = (await api(admin, "GET", `/song-versions/${bare.id}/attachments`)).find((file) => file.multitrackId === bareSeparation.multitrackId);
+  r = await call(admin, "POST", `/song-versions/${bare.id}/attachments/${bareStem.id}/analyse`, { sections: true });
+  check("its sections from the words, while it has none: refused", r.status === 400 && /no words/.test(String(r.body.message)), JSON.stringify(r.body));
+  // The HQ pass done, so it's complete: then the words come.
+  if (bareSeparation.status === "FAST_READY") {
+    await demucs.completeHq(sql(`select "jobId" from "StemSeparation" where id='${bareSeparation.id}'`));
+    await waitForAs(admin, bare.id, (body) => body.separations[0]?.status === "COMPLETED");
+  }
+  const sentBefore = demucs.received.length;
+  await call(admin, "PATCH", `/song-versions/${bare.id}`, { contentFormat: "CHORDPRO", content: "{start_of_verse}\n[G]Now with words\n{end_of_verse}\n{start_of_chorus}\n[C]And a chorus\n{end_of_chorus}\n" });
+  const words = await waitForAs(admin, bare.id, (body) => body.separations[0]?.analysisOnly && body.separations[0].status === "COMPLETED");
+  const auto = demucs.received.at(-1);
+  check(
+    "words added: its recording analysed again with them, on its own, once",
+    demucs.received.length === sentBefore + 1 && auto.separate === false && auto.lyrics?.includes("Now with words") && words.separations[0].sectionsAgain === "words" && words.separations[0].withWords === true,
+    JSON.stringify({ sent: demucs.received.length - sentBefore, auto, row: words.separations[0] }),
+  );
+  const [verseId, chorusId] = (await api(admin, "GET", `/song-versions/${bare.id}`)).documentJson.sections.map((section) => section.id);
+  const placed = (await api(admin, "GET", `/song-versions/${bare.id}/attachments`)).find((file) => file.id === bareStem.id) ?? (await api(admin, "GET", `/song-versions/${bare.id}/attachments`)).find((file) => file.multitrackId === bareSeparation.multitrackId);
+  check(
+    "its sections now the song's, still to check",
+    JSON.stringify(placed.cuePoints) === JSON.stringify([{ at: 1, sectionId: verseId }, { at: 9, sectionId: chorusId }]) && placed.detected.includes("sections"),
+    JSON.stringify({ cues: placed.cuePoints, detected: placed.detected }),
+  );
+  await call(admin, "PATCH", `/song-versions/${bare.id}`, { contentFormat: "CHORDPRO", content: "{start_of_verse}\n[G]Other words\n{end_of_verse}\n" });
+  await new Promise((resolve) => setTimeout(resolve, 6000));
+  check("saved again: not asked twice", demucs.received.length === sentBefore + 1, `${demucs.received.length - sentBefore}`);
+  r = await call(admin, "POST", `/song-versions/${bare.id}/attachments/${placed.id}/analyse`, { sections: true });
+  await waitForAs(admin, bare.id, (body) => body.separations[0]?.id === r.body.id && body.separations[0].status === "COMPLETED");
+  check("asked for: placed again from the words as they are", r.status === 201 && r.body.sectionsAgain === "asked" && demucs.received.at(-1).lyrics?.includes("Other words"), JSON.stringify(r.body));
 } finally {
   await call(admin, "DELETE", "/admin/stem-separation");
   await demucs.close();

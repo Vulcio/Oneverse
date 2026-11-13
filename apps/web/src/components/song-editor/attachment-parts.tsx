@@ -421,6 +421,25 @@ export function MultitrackBox({
         busy={busy}
         onChange={(change) => onChange(changeable, change)}
       />
+      {/* Separated without the song's words (issue #452): its sections guessed until the chart has some. */}
+      {separation?.withWords === false && !asking?.withWords && changeable.length > 0 && multitrack.files.some((file) => file.origin === "SEPARATED" && (!file.cuePoints?.length || file.detected?.includes("sections"))) ? (
+        <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground" data-testid="sections-without-words">
+          <span className="min-w-0 flex-1">{t("stems.sectionsWithoutWords")}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy || asking?.status === "QUEUED" || asking?.status === "SUBMITTED"}
+            onClick={() => {
+              const stem = changeable.find((file) => file.origin === "SEPARATED");
+              if (stem) onAnalyse(stem, { sections: true });
+            }}
+            data-testid="sections-from-words"
+          >
+            {t("stems.sectionsFromWords")}
+          </Button>
+        </p>
+      ) : null}
       <DetectedNotice
         files={multitrack.files}
         canEdit={changeable.length > 0}
@@ -465,8 +484,8 @@ export function DetectedNotice({
   onAnalyse: (hints: AnalyseRecordingRequest) => void;
 }) {
   const { t } = useTranslation();
-  const holder = files.find((file) => file.detected?.length || file.recordingAnalysis?.alternatives) ?? files.find((file) => file.recordingAnalysis);
   const pending = asking && (asking.status === "QUEUED" || asking.status === "SUBMITTED");
+  const holder = files.find((file) => file.detected?.length || file.recordingAnalysis?.alternatives) ?? files.find((file) => file.recordingAnalysis) ?? (pending ? files[0] : undefined);
   const failed = asking?.status === "FAILED" ? asking : null;
   if (!holder || (!holder.detected?.length && !pending && !unsureDetails(holder).length)) return null;
   const detected = holder.detected ?? [];
@@ -501,7 +520,7 @@ export function DetectedNotice({
       </div>
       {pending ? (
         <p className="text-muted-foreground" role="status" data-testid="check-asking">
-          {t("stems.checkAsking", { hints })}
+          {asking?.sectionsAgain || !hints ? t("stems.checkAskingSections") : t("stems.checkAsking", { hints })}
         </p>
       ) : failed ? (
         <p className="text-destructive" data-testid="check-failed">

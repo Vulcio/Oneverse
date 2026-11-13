@@ -11,10 +11,10 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { encodeStem, FfmpegMissingError } from "../recordings/ffmpeg.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
-import { lyricsForAnalysis, readRecordingAnalysis, readRecordingChords, readSongDocument, type CuePoint, type DetectedDetail } from "@oneverse/core";
+import { readRecordingAnalysis, readRecordingChords, readSongDocument, type CuePoint, type DetectedDetail } from "@oneverse/core";
 import en from "@oneverse/core/i18n/locales/en";
 import fr from "@oneverse/core/i18n/locales/fr";
-import { detailsWithAnalysis, recordingAnalysisOf } from "./analysis.js";
+import { detailsWithAnalysis, hintsFor, recordingAnalysisOf, sectionsAgainOf, wordsOfSong } from "./analysis.js";
 import { DemucsError, demucsHealth, downloadDemucsFile, getDemucsJob, submitDemucsJob, takesHints, type DemucsAnalysis, type DemucsFile, type DemucsJob } from "./demucs-client.js";
 import { serverOfSeparation, type SeparationServer } from "./sonic-servers.js";
 import { partOfStem, twoStemsOf } from "./stem-parts.js";
@@ -74,6 +74,11 @@ export class StemSeparationProcessor extends WorkerHost {
   async process(job: Job): Promise<unknown> {
     if (job.name === POLL_SCHEDULER_ID) return this.pollAll();
     if (job.name === "submit") return this.submit(job as Job<SubmitSeparationJob>);
+    // A song saved (issue #452): its stems separated without words, if it has some now.
+    if (job.name === "words-added") {
+      const { songVersionId, callbackUrl } = job.data as { songVersionId: string; callbackUrl?: string | null };
+      return { wordsAdded: await this.wordsAddedSince(songVersionId, callbackUrl ?? null) };
+    }
     if (job.name === "sync") {
       const synced = await this.sync((job.data as SyncSeparationJob).separationId);
       // The stems it brought in (issue #388).
@@ -141,20 +146,65 @@ export class StemSeparationProcessor extends WorkerHost {
   /** The song's words for the analysis, and the section each pass sings; null for a song without a chart. */
   private async wordsOf(songVersionId: string) {
     const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { documentJson: true } });
-    try {
-      const words = song ? lyricsForAnalysis(readSongDocument(song.documentJson)) : null;
-      // Within what the server takes (64 KB).
-      return words && Buffer.byteLength(words.text) <= 64 * 1024 ? words : null;
-    } catch {
-      return null;
-    }
+    return wordsOfSong(song?.documentJson);
   }
 
   private async pollAll() {
     // Each asked of its own server (issue #300); one whose server isn't set up (any more) waits, or fails if it was removed.
     const open = await this.prisma.client.stemSeparation.findMany({ where: { status: { in: ["SUBMITTED", "FAST_READY"] }, jobId: { not: null } }, select: { id: true } });
     for (const { id } of open) await this.queue.add("sync", { separationId: id }, { jobId: `sync-${id}-${Math.floor(Date.now() / POLL_EVERY_MS)}`, removeOnComplete: { count: 200 }, removeOnFail: { count: 200 } });
-    return { polled: open.length };
+    const words = await this.wordsAddedSince();
+    return { polled: open.length, ...(words && { wordsAdded: words }) };
+  }
+
+  /**
+   * Stems separated without the song's words, whose song has some now
+   * (issue #452): their recording analysed again with them, once, so its
+   * sections are the song's - where they're still guesses or missing. As
+   * whoever separated it; never twice for the same stems.
+   */
+  private async wordsAddedSince(songVersionId?: string, callbackUrl: string | null = null): Promise<number> {
+    const candidates = await this.prisma.client.stemSeparation.findMany({
+      where: { ...(songVersionId && { songVersionId }), analysisOnly: false, status: "COMPLETED", multitrackId: { not: null }, lyricsPasses: { isEmpty: true } },
+      include: { songVersion: { select: { documentJson: true, updatedAt: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    let started = 0;
+    for (const separation of candidates) {
+      if (separation.songVersion.updatedAt <= separation.createdAt || !wordsOfSong(separation.songVersion.documentJson)) continue;
+      // Once per stems: a separation of them with words since, or this asked already.
+      const since = await this.prisma.client.stemSeparation.count({
+        where: { multitrackId: separation.multitrackId, OR: [{ lyricsPasses: { isEmpty: false } }, { analysisOnly: true, hints: { path: ["sections"], equals: "words" } }] },
+      });
+      if (since > 0) continue;
+      const stems = await this.prisma.client.attachment.findMany({ where: { songVersionId: separation.songVersionId, multitrackId: separation.multitrackId!, origin: "SEPARATED" } });
+      const stem = stems[0];
+      // Sections someone placed stay theirs; its recording deleted, nothing to listen to.
+      if (!stem || (stem.cuePoints !== null && !stem.detected.includes("sections"))) continue;
+      if (!(await this.prisma.client.attachment.count({ where: { id: separation.sourceAttachmentId } }))) continue;
+      if (!(await serverOfSeparation(separation))) continue;
+      const again = await this.prisma.client.stemSeparation.create({
+        data: {
+          songVersionId: separation.songVersionId,
+          sourceAttachmentId: separation.sourceAttachmentId,
+          sourceFilename: separation.sourceFilename,
+          requestedByUserId: separation.requestedByUserId,
+          parts: separation.parts,
+          hqRequested: false,
+          multitrackId: separation.multitrackId,
+          analysisOnly: true,
+          hints: { ...hintsFor(stem, {}), sections: "words" },
+          sonicServerId: separation.sonicServerId,
+          ownServer: separation.ownServer,
+        },
+      });
+      // A team's or an organisation's server's webhooks name it (issue #300); without an address, it's looked for every two minutes.
+      const callback = callbackUrl && separation.ownServer && separation.sonicServerId ? `${callbackUrl}/${separation.sonicServerId}` : callbackUrl;
+      await this.queue.add("submit", { separationId: again.id, callbackUrl: callback } satisfies SubmitSeparationJob, { attempts: 3, backoff: { type: "exponential", delay: 30000 }, removeOnComplete: { count: 200 }, removeOnFail: { count: 200 } });
+      started++;
+    }
+    return started;
   }
 
   private async sync(separationId: string) {
@@ -350,6 +400,8 @@ export class StemSeparationProcessor extends WorkerHost {
   private async applyAnalysis(separationId: string, analysis: DemucsAnalysis | null | undefined) {
     const separation = await this.prisma.client.stemSeparation.findUniqueOrThrow({ where: { id: separationId }, include: { songVersion: { select: { documentJson: true } } } });
     const hints = readRecordingAnalysis({ hints: separation.hints })?.hints ?? {};
+    // Its sections placed again on request: those on the stems give way (to new ones only).
+    const sectionsAsked = sectionsAgainOf(separation.hints) === "asked";
     const stems = await this.prisma.client.attachment.findMany({ where: { songVersionId: separation.songVersionId, multitrackId: separation.multitrackId ?? "-", origin: "SEPARATED" } });
     let song = null;
     try {
@@ -376,7 +428,7 @@ export class StemSeparationProcessor extends WorkerHost {
           recordingBeats: beatsOpen ? [] : stem.recordingBeats,
           recordingDownbeats: beatsOpen ? [] : stem.recordingDownbeats,
           recordingChords: guessed("chords") ? null : readRecordingChords(stem.recordingChords),
-          cuePoints: guessed("sections") ? null : ((stem.cuePoints as CuePoint[] | null) ?? null),
+          cuePoints: guessed("sections") || sectionsAsked ? null : ((stem.cuePoints as CuePoint[] | null) ?? null),
         },
         analysis,
         song,
@@ -396,6 +448,8 @@ export class StemSeparationProcessor extends WorkerHost {
       keep("firstBeat", details.recordingFirstBeat === null, () => (details.recordingFirstBeat = stem.recordingFirstBeat));
       keep("chords", details.recordingChords === null, () => (details.recordingChords = readRecordingChords(stem.recordingChords)));
       keep("sections", !details.cuePoints?.length, () => (details.cuePoints = (stem.cuePoints as CuePoint[] | null) ?? null));
+      // Asked for and none found: those it had stay, as they were.
+      if (sectionsAsked && !details.cuePoints?.length && !guessed("sections")) details.cuePoints = (stem.cuePoints as CuePoint[] | null) ?? null;
       if (!said) keep("beats", details.recordingBeats.length === 0, () => ((details.recordingBeats = stem.recordingBeats), (details.recordingDownbeats = stem.recordingDownbeats)));
       // What they said is kept as they said it, and is theirs, not a guess.
       if (hints.timeSignature) details.recordingTimeSignature = hints.timeSignature;

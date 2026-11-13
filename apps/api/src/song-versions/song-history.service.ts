@@ -1,4 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import { BadRequestException, Injectable, NotFoundException, Optional } from "@nestjs/common";
+import type { Queue } from "bullmq";
+import { STEM_SEPARATION_QUEUE } from "../jobs/jobs.constants.js";
 import { snapshotChanges, songSnapshot, readSongDocument, type SongChange, type SongSnapshot } from "@oneverse/core";
 import type { Prisma, SongRevisionKind } from "@oneverse/db";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -73,7 +76,11 @@ const newestFirst = [{ createdAt: "desc" }, { id: "desc" }] satisfies Prisma.Son
  */
 @Injectable()
 export class SongHistoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    /** Stems separated without the song's words hear when it's saved (issue #452); left out by scripts. */
+    @Optional() @InjectQueue(STEM_SEPARATION_QUEUE) private readonly separations?: Queue,
+  ) {}
 
   /** The song as it is now, and when it was last saved: taken before a save, for `record`. */
   async before(tx: Prisma.TransactionClient, songVersionId: string): Promise<SongBefore | null> {
@@ -99,7 +106,14 @@ export class SongHistoryService {
       tx.songVersion.findUniqueOrThrow({ where: { id: songVersionId }, select: { documentJson: true } }),
       change.authorUserId ? tx.user.findUnique({ where: { id: change.authorUserId }, select: { displayName: true } }) : null,
     ]);
-    announceSongSaved({ songVersionId, revision: readSongDocument(song.documentJson).revision, byId: change.authorUserId, by: author?.displayName ?? null });
+    const revision = readSongDocument(song.documentJson).revision;
+    announceSongSaved({ songVersionId, revision, byId: change.authorUserId, by: author?.displayName ?? null });
+    // Separated before the song had words (issue #452): the Worker looks whether it has some now, once this save is in.
+    if (this.separations && (await tx.stemSeparation.count({ where: { songVersionId, analysisOnly: false, lyricsPasses: { isEmpty: true }, status: "COMPLETED" } }))) {
+      // Where Sonic's webhooks come (this API's address, which the Worker doesn't know).
+      const own = process.env.AUTH_URL?.replace(/\/+$/, "");
+      await this.separations.add("words-added", { songVersionId, callbackUrl: own ? `${own}/stem-separation/callback` : null }, { jobId: `words-${songVersionId}-${revision}`, delay: 3000, removeOnComplete: { count: 200 }, removeOnFail: { count: 200 } });
+    }
   }
 
   /** The history entry for a change; false when it changed nothing. */

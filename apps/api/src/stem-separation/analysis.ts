@@ -1,4 +1,4 @@
-import { cuesFromHints, cuesFromSections, parseKey, readRecordingAnalysis, readRecordingChords, type CuePoint, type DetectedDetail, type RecordingAnalysis, type RecordingChord, type SongDocumentV2 } from "@oneverse/core";
+import { cuesFromHints, cuesFromSections, lyricsForAnalysis, parseKey, readSongDocument, readRecordingAnalysis, readRecordingChords, type CuePoint, type DetectedDetail, type RecordingAnalysis, type RecordingChord, type SongDocumentV2 } from "@oneverse/core";
 import type { DemucsAnalysis } from "./demucs-client.js";
 
 /** Below this, what the analysis says is left out (issue #175). */
@@ -105,6 +105,50 @@ export function detailsWithAnalysis(
     }
   }
   return { ...details, detected };
+}
+
+/** The song's words for the analysis (issue #450), and the section each pass sings; null without any, or too long for the server (64 KB). */
+export function wordsOfSong(documentJson: unknown): { text: string; passes: string[] } | null {
+  try {
+    const words = documentJson ? lyricsForAnalysis(readSongDocument(documentJson)) : null;
+    return words && Buffer.byteLength(words.text) <= 64 * 1024 ? words : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * What's sent with a recording analysed again (issue #452): what someone
+ * says now, and what they had confirmed - bar 1, and the time signature when
+ * it isn't what changes; the tempo when neither the time signature nor it
+ * changes (another time signature counts another note).
+ */
+export function hintsFor(
+  stem: { detected: string[]; recordingTimeSignature: string | null; recordingTempo: number | null; recordingFirstBeat: number | null },
+  said: { timeSignature?: string | null; tempo?: number | null; firstBeat?: number | null },
+): NonNullable<RecordingAnalysis["hints"]> {
+  const confirmed = (detail: DetectedDetail) => !stem.detected.includes(detail);
+  return (
+    readRecordingAnalysis({
+      hints: {
+        timeSignature: said.timeSignature ?? (confirmed("timeSignature") && stem.recordingTimeSignature ? stem.recordingTimeSignature : undefined),
+        tempo: said.tempo ?? (!said.timeSignature && confirmed("tempo") && stem.recordingTempo !== null ? stem.recordingTempo : undefined),
+        firstBeat: said.firstBeat ?? (confirmed("firstBeat") && stem.recordingFirstBeat !== null ? stem.recordingFirstBeat : undefined),
+      },
+    })?.hints ?? {}
+  );
+}
+
+/**
+ * Why a recording is analysed again without new hints (issue #452), kept
+ * with them: "asked", its sections placed again from the words on request
+ * (replacing those on the stems); "words", words added to the song since it
+ * was separated without any (only sections still guesses are replaced).
+ */
+export type SectionsAgain = "asked" | "words";
+export function sectionsAgainOf(hints: unknown): SectionsAgain | null {
+  const value = hints && typeof hints === "object" ? (hints as { sections?: unknown }).sections : null;
+  return value === "asked" || value === "words" ? value : null;
 }
 
 /**

@@ -34,8 +34,12 @@ export const AnalyseRecordingSchema = z
     ),
     tempo: optional(z.number().min(20).max(400)),
     firstBeat: optional(z.number().min(0).max(600)),
+    /** Its sections placed again from the song's words as they are now (issue #452), replacing those on the stems. */
+    sections: optional(z.literal(true)),
   })
-  .refine((hints) => hints.timeSignature !== undefined || hints.tempo !== undefined || hints.firstBeat !== undefined, { message: "Give at least one of timeSignature, tempo and firstBeat" });
+  .refine((hints) => hints.timeSignature !== undefined || hints.tempo !== undefined || hints.firstBeat !== undefined || hints.sections !== undefined, {
+    message: "Give at least one of timeSignature, tempo, firstBeat and sections",
+  });
 export type AnalyseRecordingRequest = z.input<typeof AnalyseRecordingSchema>;
 
 const modelName = z.string().trim().regex(/^[a-z0-9_]{1,40}$/, "model must be a Demucs model's name, like htdemucs");

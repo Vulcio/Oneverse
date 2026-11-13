@@ -817,6 +817,10 @@ export interface StemSeparation {
   /** Not a separation (issue #452): its recording analysed again with what someone said of it (`hints`), the answer written on `multitrackId`'s stems. */
   analysisOnly?: boolean;
   hints?: RecordingAnalysis["hints"] | null;
+  /** The song's words went with it (issue #450); without them its sections were guessed, and are placed again once it has some (issue #452). */
+  withWords?: boolean;
+  /** Analysed again for its sections (issue #452): on request ("asked"), or because words were added to the song ("words"). */
+  sectionsAgain?: "asked" | "words" | null;
   requestedBy: string | null;
   createdAt: string;
 }

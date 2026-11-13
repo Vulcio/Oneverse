@@ -10,6 +10,7 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { capabilitiesOf, monthlyLimitOf, ownCapabilities } from "../roles/capabilities.js";
 import type { SubmitSeparationJob } from "./stem-separation.processor.js";
 import { serverById, serverForSong, serverOfSeparation, type SeparationServer } from "./sonic-servers.js";
+import { hintsFor, sectionsAgainOf, wordsOfSong, type SectionsAgain } from "./analysis.js";
 import { callbackSecret } from "./stem-separation-settings.js";
 
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
@@ -108,6 +109,10 @@ export class StemSeparationService {
         error: row.error,
         /** The recording analysed again with what someone said of it (issue #452), its answer written on `multitrackId`'s stems: not a separation. */
         analysisOnly: row.analysisOnly,
+        /** Whether the song's words went with it (issue #450): without them, its sections were guessed (issue #452). */
+        withWords: row.lyricsPasses.length > 0,
+        /** Analysed again for its sections (issue #452): on request ("asked"), or because words were added ("words"). */
+        sectionsAgain: sectionsAgainOf(row.hints),
         hints: readRecordingAnalysis({ hints: row.hints })?.hints ?? null,
         requestedBy: row.requestedBy?.displayName ?? null,
         createdAt: row.createdAt.toISOString(),
@@ -189,14 +194,14 @@ export class StemSeparationService {
     if (!source) throw new BadRequestException("The recording these stems were separated from was deleted: it can't be analysed again");
     const running = await this.prisma.client.stemSeparation.count({ where: { songVersionId, multitrackId: stem.multitrackId, analysisOnly: true, status: { in: ["QUEUED", "SUBMITTED"] } } });
     if (running) throw new BadRequestException("These stems are already being analysed again");
+    // Its sections from the words: only once the song has some.
+    if (request.sections) {
+      const song = await this.prisma.client.songVersion.findUnique({ where: { id: songVersionId }, select: { documentJson: true } });
+      if (!wordsOfSong(song?.documentJson)) throw new BadRequestException("The song has no words to place its sections with: add them in the Editor first");
+    }
     if (!server.owner) await callbackSecret();
-    // What they confirmed stays: bar 1, and the time signature when only the tempo or bar 1 changes.
-    const confirmed = (detail: "firstBeat" | "timeSignature") => !stem.detected.includes(detail);
-    const hints = {
-      timeSignature: request.timeSignature ?? (confirmed("timeSignature") && stem.recordingTimeSignature ? stem.recordingTimeSignature : undefined),
-      tempo: request.tempo ?? (request.timeSignature === undefined && !stem.detected.includes("tempo") && stem.recordingTempo !== null ? stem.recordingTempo : undefined),
-      firstBeat: request.firstBeat ?? (confirmed("firstBeat") && stem.recordingFirstBeat !== null ? stem.recordingFirstBeat : undefined),
-    };
+    // What they confirmed stays.
+    const hints = { ...hintsFor(stem, request), ...(request.sections && { sections: "asked" satisfies SectionsAgain }) };
     const separation = await this.prisma.client.stemSeparation.create({
       data: {
         songVersionId,
@@ -207,7 +212,7 @@ export class StemSeparationService {
         hqRequested: false,
         multitrackId: stem.multitrackId,
         analysisOnly: true,
-        hints: readRecordingAnalysis({ hints })?.hints ?? {},
+        hints,
         sonicServerId: server.id,
         ownServer: Boolean(server.owner),
       },
