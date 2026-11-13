@@ -96,7 +96,7 @@ On an iPhone or iPad, holding Songverse's icon on the home screen shows only iOS
 Installed as an app, Songverse also works with the rest of your device:
 
 - **Share…** - on a song (its **More** menu, in Practice), beside a set's share link and beside a team's invite links: the device's own share menu (Messages, WhatsApp, Mail…). Where the browser has none, **Copy link** is there as before.
-- **Share to Songverse** - on Android, Songverse is in other apps' **Share** menu: a ChordPro or text file, a PDF chart, an image or a recording opens **Import**. A chart or a PDF becomes a **New song from it**; any file goes on a song with **Add to a song…**; a Songverse link opens its page.
+- **Share to Songverse** - on Android, Songverse is in other apps' **Share** menu: a ChordPro or text file, a PDF chart, an image or a recording opens **Import**. A chart, a PDF or a photo of a chart becomes a **New song from it**; any file goes on a song with **Add to a song…**; a Songverse link opens its page.
 - **Open with Songverse** - on a computer (Chrome or Edge), open a ChordPro file (`.cho`, `.chordpro`, `.chopro`, `.pro`), an OnSong file, an `.lrc` or a PDF with Songverse, and it opens in **Import** the same way.
 - **The icon's badge** - the number of unread [notifications](/account/#notifications) shows on Songverse's icon, and goes once they're read.
 

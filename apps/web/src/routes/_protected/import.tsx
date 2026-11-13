@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
-import { attachmentTypeFor } from "#/components/song-editor/attachment-types";
+import { attachmentTypeFor, isChartImage } from "#/components/song-editor/attachment-types";
 import { apiClient } from "#/lib/api-client";
 import { formatBytes } from "#/lib/format-bytes";
 import { handOver, isChartFile, onLaunchedFiles, takeShared, textAsFile, type Incoming } from "#/lib/incoming";
@@ -15,7 +15,7 @@ import { FieldError } from "@oneverse/ui/components/field";
  * What another app gave Songverse (issue #407): shared to it from another
  * app's Share menu (Android, ChromeOS: the manifest's `share_target`, kept by
  * the service worker), or a file opened with it on a computer (`file_handlers`).
- * A chart or a PDF makes a new song; any file can go on a song one picks; a
+ * A chart or a PDF makes a new song (a photo of a chart can too, issue #124); any file can go on a song one picks; a
  * Songverse address opens.
  */
 export const Route = createFileRoute("/_protected/import")({
@@ -84,6 +84,8 @@ function IncomingFile({ file }: { file: File }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const chart = isChartFile(file);
+  // A picture may be a chart's photo, read by OCR, or one for a song's Files.
+  const picture = !chart && isChartImage(file);
 
   const newSong = () => {
     handOver(file);
@@ -114,8 +116,8 @@ function IncomingFile({ file }: { file: File }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-2">
-          {chart ? (
-            <Button type="button" onClick={newSong} data-testid="import-new-song">
+          {chart || picture ? (
+            <Button type="button" variant={chart ? "default" : "outline"} onClick={newSong} data-testid="import-new-song">
               <FilePlus2 />
               {t("incoming.newSong")}
             </Button>

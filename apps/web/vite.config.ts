@@ -39,6 +39,45 @@ function pdfjsWasm(): Plugin {
   };
 }
 
+/**
+ * Tesseract (tesseract.js, Apache 2.0), the OCR that reads a scanned chart
+ * or a photo of one (issue #124): its Web Worker, its WebAssembly core (the
+ * LSTM-only builds, one picked by what the device's browser can do) and the
+ * English and French language data, served at /assets/tesseract-<version>/
+ * rather than fetched from a CDN. Loaded only when a scan is read, and left
+ * out of the offline precache (server.mjs's precacheSkip): 4 MB of core and
+ * 3.6 MB of language data.
+ */
+function tesseractAssets(): Plugin {
+  const require = createRequire(import.meta.url);
+  const root = dirname(require.resolve("tesseract.js/package.json"));
+  const version = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string }).version;
+  const core = dirname(createRequire(join(root, "package.json")).resolve("tesseract.js-core/package.json"));
+  const files = new Map<string, string>([["worker.min.js", join(root, "dist", "worker.min.js")]]);
+  for (const name of readdirSync(core).filter((name) => name.endsWith("-lstm.wasm.js"))) files.set(`core/${name}`, join(core, name));
+  for (const language of ["eng", "fra"]) {
+    files.set(`lang/${language}.traineddata.gz`, join(dirname(require.resolve(`@tesseract.js-data/${language}/package.json`)), "4.0.0_best_int", `${language}.traineddata.gz`));
+  }
+  const base = `/assets/tesseract-${version}/`;
+  return {
+    name: "songverse-tesseract",
+    config: () => ({ define: { __TESSERACT_ASSETS__: JSON.stringify(base) } }),
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        const name = request.url?.startsWith(base) ? request.url.slice(base.length).split("?")[0]! : null;
+        const file = name ? files.get(name) : undefined;
+        if (!file) return next();
+        response.setHeader("Content-Type", name!.endsWith(".gz") ? "application/gzip" : "text/javascript");
+        response.end(readFileSync(file));
+      });
+    },
+    generateBundle() {
+      if (this.environment?.name !== "client") return;
+      for (const [name, file] of files) this.emitFile({ type: "asset", fileName: `${base.slice(1)}${name}`, source: readFileSync(file) });
+    },
+  };
+}
+
 export default defineConfig({
   // An OAuth client of the API: people sign in at Oneverse (issue #303,
   // packages/app/src/oauth.ts); its address from WEB_URL.
@@ -60,5 +99,5 @@ export default defineConfig({
   // resolves to ::1 for the server and 127.0.0.1 for the prerender's fetch,
   // and the build failed with ECONNREFUSED.
   preview: { allowedHosts: true, host: "127.0.0.1" },
-  plugins: [tailwindcss(), tanstackStart({ spa: { enabled: true } }), viteReact(), pdfjsWasm()],
+  plugins: [tailwindcss(), tanstackStart({ spa: { enabled: true } }), viteReact(), pdfjsWasm(), tesseractAssets()],
 });

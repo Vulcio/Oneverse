@@ -1,4 +1,4 @@
-import { CHART_FILE_EXTENSIONS, chordProFromPdfText, decodeSongFile, detectImportFormatDetails, readSongFile, SUPPORTED_IMPORT_FORMATS, type SongFileDetails, type SupportedImportFormat } from "@oneverse/core";
+import { CHART_FILE_EXTENSIONS, decodeSongFile, detectImportFormatDetails, readSongFile, SUPPORTED_IMPORT_FORMATS, type SongFileDetails, type SupportedImportFormat } from "@oneverse/core";
 import { ClipboardPaste, FileText, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,13 +7,13 @@ import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { cn } from "@oneverse/ui/lib/utils";
 import { formatBytes } from "#/lib/format-bytes";
-import { pdfTextItems } from "#/lib/pdf-text";
-import { isPdf } from "./attachment-types";
+import { readChartOnDevice, readChartOnServer, type ReadProgress } from "#/lib/read-chart";
+import { isChartImage, isPdf } from "./attachment-types";
 import { FindChords } from "./find-chords";
 import type { ChordContent, MetadataMatch } from "@oneverse/core";
 import { FieldError } from "@oneverse/ui/components/field";
 
-export const SOURCE_FILE_ACCEPT = [...CHART_FILE_EXTENSIONS, ".pdf", "text/plain", "application/pdf"].join(",");
+export const SOURCE_FILE_ACCEPT = [...CHART_FILE_EXTENSIONS, ".pdf", "text/plain", "application/pdf", ".png", ".jpg", ".jpeg", ".webp", "image/png", "image/jpeg", "image/webp"].join(",");
 const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
 
 export interface SourceFile {
@@ -168,7 +168,10 @@ export function SongContentCard({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  // A PDF's or a picture's reading (issue #124): how far it got, and what came of it.
   const [pdfState, setPdfState] = useState<"reading" | "read" | "noText" | "unreadable" | null>(null);
+  const [progress, setProgress] = useState<ReadProgress | null>(null);
+  const [readBy, setReadBy] = useState<{ ocr: boolean; server: boolean; dropped: number } | null>(null);
   // The fields the last file filled, said under it.
   const [filled, setFilled] = useState<string[]>([]);
 
@@ -180,17 +183,29 @@ export function SongContentCard({
       setFileError(t("songEditor.fileTooBig", { size: "10 MB" }));
       return;
     }
-    if (isPdf(file)) {
+    if (isPdf(file) || isChartImage(file)) {
+      // A PDF is always kept (under Files); a picture as a text file is, if they want.
       onSourceFile({ file, keep: true });
       setPdfState("reading");
+      setProgress(null);
+      setReadBy(null);
+      let server = false;
       try {
-        const chart = chordProFromPdfText(await pdfTextItems(file));
-        if (!chart) return setPdfState("noText");
-        onContentChange(chart);
+        // On this device first; the server when the device can't.
+        const chart = await readChartOnDevice(file, setProgress).catch(() => {
+          server = true;
+          return readChartOnServer(file, setProgress);
+        });
+        if (!chart.chart) return setPdfState("noText");
+        onContentChange(chart.chart);
         onFormatChange(null);
+        setReadBy({ ocr: chart.ocr, server, dropped: chart.dropped.length });
+        if (onFileDetails) setFilled(onFileDetails(chart.details, file.name));
         setPdfState("read");
       } catch {
         setPdfState("unreadable");
+      } finally {
+        setProgress(null);
       }
       return;
     }
@@ -300,15 +315,24 @@ export function SongContentCard({
               {t("songEditor.fromFile.filled", { fields: filled.join(", ") })}
             </p>
           ) : null}
-          {isPdf(sourceFile.file) ? (
-            <p className="text-xs text-muted-foreground" data-testid="pdf-state" data-state={pdfState ?? "kept"} role={pdfState === "noText" || pdfState === "unreadable" ? "status" : undefined}>
-              {t("songEditor.pdfKept")}
-              {pdfState === "reading" ? ` ${t("songEditor.pdfReading")}` : null}
-              {pdfState === "read" ? ` ${t("songEditor.pdfRead")}` : null}
+          {isPdf(sourceFile.file) || isChartImage(sourceFile.file) ? (
+            <p
+              className="text-xs text-muted-foreground"
+              data-testid="pdf-state"
+              data-state={pdfState ?? "kept"}
+              data-ocr={readBy?.ocr ? "true" : undefined}
+              data-server={readBy?.server ? "true" : undefined}
+              role={pdfState === "noText" || pdfState === "unreadable" ? "status" : undefined}
+            >
+              {isPdf(sourceFile.file) ? t("songEditor.pdfKept") : null}
+              {pdfState === "reading" ? ` ${progress?.ocr ? t("songEditor.pdfRecognising", { page: progress.page, pages: progress.pages }) : t("songEditor.pdfReading")}` : null}
+              {pdfState === "read" ? ` ${readBy?.ocr ? t("songEditor.pdfReadOcr") : t("songEditor.pdfRead")}` : null}
+              {pdfState === "read" && readBy?.dropped ? ` ${t("songEditor.pdfDropped", { count: readBy.dropped })}` : null}
               {pdfState === "noText" ? ` ${t("songEditor.pdfNoText")}` : null}
               {pdfState === "unreadable" ? ` ${t("songEditor.pdfUnreadable")}` : null}
             </p>
-          ) : (
+          ) : null}
+          {isPdf(sourceFile.file) ? null : (
             <label className="flex items-center gap-2 text-xs">
               <input type="checkbox" checked={sourceFile.keep} onChange={(event) => onSourceFile({ ...sourceFile, keep: event.target.checked })} />
               {t("songEditor.keepSourceFile")}

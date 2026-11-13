@@ -11,7 +11,9 @@
     "vite",
     "zod",
     "prettier",
-    "@fontsource/bebas-neue"
+    "@fontsource/bebas-neue",
+    "@tesseract.js-data/eng",
+    "@tesseract.js-data/fra"
   ],
   "workspaces": {
     "apps/api": {
