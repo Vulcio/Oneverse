@@ -1,5 +1,5 @@
 import { createCanvas } from "@napi-rs/canvas";
-import { CHORD_CHARACTERS, OCR_LANGUAGES, ocrLinesFromTesseract, pageNeedsOcr, readOcrPage, readPdfChart, type OcrBox, type OcrReader, type PdfChart, type PdfPageSize, type PdfTextItem } from "@oneverse/core";
+import { CHORD_CHARACTERS, OCR_LANGUAGES, ocrLinesFromTesseract, pageNeedsOcr, readOcrPage, readPdfChart, shownText, type OcrBox, type OcrReader, type PdfChart, type PdfPageSize, type PdfTextItem } from "@oneverse/core";
 import { copyFile, mkdtemp } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -64,10 +64,13 @@ async function readPdf(bytes: Uint8Array, onProgress: ChartProgress): Promise<Pd
       const page = await pdf.getPage(number);
       const viewport = page.getViewport({ scale: 1 });
       const text: PdfTextItem[] = [];
-      for (const item of (await page.getTextContent()).items) {
-        if (!("str" in item) || item.str === "") continue;
+      const content = (await page.getTextContent()).items.filter((item) => "str" in item && item.str !== "") as { str: string; transform: number[]; width: number; height: number }[];
+      // Only what the page shows: some charts join words with white full stops, or hide a summary outside the page.
+      const shown = shownText(content, await page.getOperatorList(), pdfjs.OPS);
+      for (const [index, item] of content.entries()) {
+        if (shown[index]!.trim() === "") continue;
         const [, , c, d, x, y] = pdfjs.Util.transform(viewport.transform, item.transform) as number[];
-        text.push({ page: number, text: item.str, x: x!, y: y!, width: item.width, height: Math.hypot(c!, d!) || item.height });
+        text.push({ page: number, text: shown[index]!, x: x!, y: y!, width: item.width, height: Math.hypot(c!, d!) || item.height });
       }
       if (!pageNeedsOcr(text)) {
         items.push(...text);

@@ -1,6 +1,6 @@
 import { isChordLine } from "../chords-over-lyrics/parser.js";
-import { isChordLineMark } from "../chords/chord-token.js";
-import { LABEL_LINE } from "../chordpro/section-labels.js";
+import { isChordLineMark, isChordToken } from "../chords/chord-token.js";
+import { LABEL_LINE, sectionHeading } from "../chordpro/section-labels.js";
 
 /**
  * A chart read from a PDF's text (issue #124): chords above lyrics, placed
@@ -119,6 +119,20 @@ export function linesOf(items: PdfTextItem[]): PdfLine[] {
   });
 }
 
+/** Where two chords printed together ("EbsusEb") part, or -1. */
+function joinedAt(token: string): number {
+  if (isChordToken(token) || isChordLineMark(token)) return -1;
+  for (let i = 1; i < token.length; i++) if (/[A-G]/.test(token[i]!) && isChordToken(token.slice(0, i)) && isChordToken(token.slice(i))) return i;
+  return -1;
+}
+
+/** A line's text with chords printed together set apart, to tell whether it's a line of chords. */
+const apart = (text: string) =>
+  text
+    .split(" ")
+    .map((token) => (joinedAt(token) > 0 ? `${token.slice(0, joinedAt(token))} ${token.slice(joinedAt(token))}` : token))
+    .join(" ");
+
 /** The chords of a chord line, each with where it starts on the page. */
 function chordsOf(line: PdfLine): { chord: string; x: number }[] {
   const chords: { chord: string; x: number }[] = [];
@@ -128,14 +142,21 @@ function chordsOf(line: PdfLine): { chord: string; x: number }[] {
     if (char && char.char.trim() !== "") {
       if (start < 0) start = i;
     } else if (start >= 0) {
-      const chord = line.chars.slice(start, i).map((c) => c.char).join("");
+      // A bar line before or after a chord ("|C#m", "E|") marks the bar: the chord is what follows it.
+      let first = start;
+      while (first < i && /[|:]/.test(line.chars[first]!.char)) first++;
+      const chord = line.chars.slice(first, i).map((c) => c.char).join("").replace(/[|:]+$/, "");
       // Only chords go over the words: "-", "|", "x2" are how the line was laid out.
-      if (!isChordLineMark(chord)) chords.push({ chord, x: line.chars[start]!.x0 });
+      const join = joinedAt(chord);
+      if (join > 0) chords.push({ chord: chord.slice(0, join), x: line.chars[first]!.x0 }, { chord: chord.slice(join), x: line.chars[first + join]!.x0 });
+      else if (chord && !isChordLineMark(chord)) chords.push({ chord, x: line.chars[first]!.x0 });
       start = -1;
     }
   }
   return chords;
 }
+
+const wordStarts = (lyric: PdfLine) => lyric.chars.flatMap((char, i) => (char.char !== " " && (i === 0 || lyric.chars[i - 1]!.char === " ") ? [i] : []));
 
 /**
  * A lyric line with its chords: each goes before the first character that
@@ -143,13 +164,14 @@ function chordsOf(line: PdfLine): { chord: string; x: number }[] {
  */
 function withChords(lyric: PdfLine, chords: { chord: string; x: number }[]): string {
   const text = lyric.text.replace(/\s+$/, "");
+  const starts = wordStarts(lyric);
   const at = chords.map(({ chord, x }) => {
     let index = lyric.chars.findIndex((char) => (char.x0 + char.x1) / 2 > x - 0.5);
     if (index < 0 || index > text.length) index = text.length;
     // Chords mostly start words: one printed within a quarter em of a word's start goes there
     // (letters' widths are estimates, and a scan's edges blur).
-    const starts = lyric.chars.flatMap((char, i) => (char.char !== " " && (i === 0 || lyric.chars[i - 1]!.char === " ") ? [i] : []));
-    const near = starts.find((i) => Math.abs(lyric.chars[i]!.x0 - x) <= lyric.height * 0.25);
+    const distance = (i: number) => Math.abs(lyric.chars[i]!.x0 - x);
+    const near = starts.filter((i) => distance(i) <= lyric.height * 0.25).sort((a, b) => distance(a) - distance(b))[0];
     if (near !== undefined) index = near;
     return { chord, index };
   });
@@ -177,27 +199,36 @@ export function chordProFromPdfText(items: PdfTextItem[]): string {
 /** The same, from lines already put together. */
 export function chordProFromLines(lines: PdfLine[]): string {
   const out: string[] = [];
+  const lyricUnder = (i: number) => {
+    const line = lines[i]!;
+    const next = lines[i + 1];
+    return next && next.page === line.page && next.part === line.part && next.y - line.y < Math.max(line.height, next.height) * 1.9 && !isChordLine(apart(next.text.trim())) && !LABEL_LINE.test(next.text.trim()) ? next : undefined;
+  };
+  // "C2" alone over a line of chords is a section's name (a French chart's second couplet), not a chord.
+  const heading = (i: number) => /^[CV]\d{1,2}$/.test(lines[i]?.text.trim() ?? "") && lines[i + 1] !== undefined && isChordLine(apart(lines[i + 1]!.text.trim()));
+  // "V2" is a verse; "C2" too where the chart also has a chorus (it's a couplet), else it stays as written.
+  const hasChorus = lines.some((line) => sectionHeading(line.text)?.type === "chorus");
+  const headingText = (text: string) => (text[0] === "V" || hasChorus ? `Verse ${text.slice(1)}` : text);
+  const chordLine = (i: number) => isChordLine(apart(lines[i]!.text.trim())) && !heading(i);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     const previous = lines[i - 1];
     // A gap of more than about a line and a half, or a new page, is a break between parts.
     // Never right under a section's label: it heads what follows.
-    const underLabel = previous && LABEL_LINE.test(previous.text.trim());
+    const underLabel = previous && (LABEL_LINE.test(previous.text.trim()) || heading(i - 1));
     if (previous && !underLabel && (previous.page !== line.page || previous.part !== line.part || line.y - previous.y > Math.max(line.height, previous.height) * 1.9) && out[out.length - 1] !== "") out.push("");
     const text = line.text.trim();
-    if (isChordLine(text)) {
-      const next = lines[i + 1];
-      const lyricBelow =
-        next && next.page === line.page && next.part === line.part && next.y - line.y < Math.max(line.height, next.height) * 1.9 && !isChordLine(next.text.trim()) && !LABEL_LINE.test(next.text.trim());
-      if (lyricBelow) {
-        out.push(withChords(next, chordsOf(line)));
+    if (chordLine(i)) {
+      const lyric = lyricUnder(i);
+      if (lyric) {
+        out.push(withChords(lyric, chordsOf(line)));
         i++;
       } else {
         out.push(chordsOf(line).map(({ chord }) => `[${chord}]`).join(" "));
       }
       continue;
     }
-    out.push(text);
+    out.push(heading(i) ? headingText(text) : text);
   }
   return out.join("\n").trim();
 }

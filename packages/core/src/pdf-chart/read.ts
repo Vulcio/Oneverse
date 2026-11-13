@@ -30,7 +30,7 @@ export interface PdfChart {
 const FURNITURE = [
   /\bccli\b/i,
   /©|\(c\)\s*\d{4}|\bcopyright\b|\ball rights reserved\b|\btous droits r[ée]serv[ée]s\b|\bused by permission\b|\badmin(?:istered|\.)? by\b/i,
-  /\bfor use solely\b|\bsongselect\b|\bterms of use\b|\bpraisecharts\b|\bultimate-guitar\b|\bworshiptogether\b|\bmultitracks\b|\bonsong\b/i,
+  /\bworship\s*[:·]?\s*together\b|\bfor use solely\b|\bsongselect\b|\bterms of use\b|\bpraisecharts\b|\bultimate-guitar\b|\bworshiptogether\b|\bmultitracks\b|\bonsong\b/i,
   /\bhttps?:\/\/|\bwww\.|\.(?:com|org|net|fr|de|io)\b/i,
   /^(?:page|p\.?)\s*\d+(?:\s*(?:of|sur|\/|de|von)\s*\d+)?$/i,
   /\b(?:page|p\.)\s*\d+\s*(?:of|sur|\/|de|von)\s*\d+\b/i,
@@ -77,13 +77,26 @@ function furniture(lines: PdfLine[], sizes: Map<number, PdfPageSize>, details: S
   const firstPage = Math.min(...lines.map((line) => line.page));
   const firstSong = lines.find((line) => line.page === firstPage && (isChordLine(line.text.trim()) || LABEL_LINE.test(line.text.trim())));
   const dropped = new Set<PdfLine>();
+  // A footer's next lines, as small as it and right under it in the bottom band, are the rest of it
+  // (a copyright's list of publishers).
+  const drop = (line: PdfLine) => {
+    dropped.add(line);
+    const height = sizes.get(line.page)?.height ?? 0;
+    for (let i = lines.indexOf(line) + 1, above = line; i < lines.length; i++) {
+      const next = lines[i]!;
+      if (next.page !== line.page || next.y <= height * (1 - BAND) || next.height > above.height * 1.1 || next.y - above.y > above.height * 2) break;
+      dropped.add(next);
+      above = next;
+    }
+  };
   for (const line of lines) {
     const text = line.text.trim();
+    if (dropped.has(line)) continue;
     if (isChordLine(text) || LABEL_LINE.test(text)) continue;
     const ownHeader = line.page === firstPage && firstSong !== undefined && line.y < firstSong.y;
     const repeated = inBand(line) && !ownHeader && (pagesWith.get(shape(text))?.size ?? 0) > 1;
     if (!repeated && !FURNITURE.some((pattern) => pattern.test(text))) continue;
-    dropped.add(line);
+    drop(line);
     // "CCLI Song # 4768151 · © 2006 sixsteps Music": its parts.
     for (const part of text.split(/\s+[|·•]\s+|\s{2,}|\s+-\s+(?=©|\(c\)|copyright|ccli|for use)/i)) {
       const ccli = /\bccli\s*(?:song|#|no\.?|number|n°|\s)*\s*:?\s*#?\s*(\d{3,9})\b/i.exec(part);
@@ -139,9 +152,11 @@ function partsOf(items: PdfTextItem[], sizes: Map<number, PdfPageSize>): PdfText
       out.push(...lines.flatMap((line) => line.items.map((item) => ({ ...item, part: 0 }))));
       continue;
     }
-    const top = Math.min(...lines.filter((line) => !spans(line, gap)).map((line) => line.y));
+    // The columns start where the right one does: what's above (a title, names, on the left only) is read first.
+    const top = Math.min(...lines.filter((line) => !spans(line, gap) && line.items.some((item) => item.x >= gap)).map((line) => line.y));
     for (const line of lines) {
-      if (spans(line, gap)) out.push(...line.items.map((item) => ({ ...item, part: line.y < top ? 0 : 3 })));
+      if (line.y < top - line.height * 0.5) out.push(...line.items.map((item) => ({ ...item, part: 0 })));
+      else if (spans(line, gap)) out.push(...line.items.map((item) => ({ ...item, part: 3 })));
       else out.push(...line.items.map((item) => ({ ...item, part: item.x >= gap ? 2 : 1 })));
     }
   }
@@ -150,12 +165,28 @@ function partsOf(items: PdfTextItem[], sizes: Map<number, PdfPageSize>): PdfText
 
 /** "Key - G | Tempo - 72 | Time - 3/4", "Key of G": as the lines a text file starts with. */
 function detailParts(text: string): string[] {
-  return text
+  const parts = text
     .replace(/\b(key|tonalit[ée]|tempo|bpm|time|capo|ccli)\s*[-–—=]\s*/gi, "$1: ")
     .replace(/\bkey of\s+/gi, "Key: ")
-    .split(/\s+[-–—|·•]\s+|\s{3,}|\t/)
+    .split(/\s*[|·•]\s*|\s+[-–—]\s+|\s{3,}|\t/)
     .map((part) => part.trim().replace(/^(capo)\s*:\s*/i, "$1 "))
+    // "65.5 bpm": a tempo, as a whole number.
+    .map((part) => part.replace(/^(\d{2,3}[.,]\d+)\s*bpm$/i, (_, bpm: string) => `${Math.round(Number(bpm.replace(",", ".")))} bpm`))
     .filter(Boolean);
+  // Among other details, a bare "4/4" is the time and a bare "Db" or "Mi" the key ("Db | 72 bpm | 4/4").
+  if (parts.length < 2) return parts;
+  return parts.map((part) => (/^\d{1,2}\s*\/\s*\d{1,2}$/.test(part) ? `Time: ${part}` : /^[A-G][#b♯♭]?m?$/.test(part) ? `Key: ${part}` : (solfegeKey(part) ?? part)));
+}
+
+const SOLFEGE: Record<string, string> = { do: "C", ré: "D", re: "D", mi: "E", fa: "F", sol: "G", la: "A", si: "B" };
+
+/** A key written alone in a header among other details, as French charts do ("Mi", "Sol m", "Si b"): "Key: E". */
+function solfegeKey(part: string): string | null {
+  const match = /^(do|ré|re|mi|fa|sol|la|si)\s*(#|♯|b|♭|dièse|bémol)?\s*(m|mineur|min|majeur|maj)?$/i.exec(part.trim());
+  if (!match) return null;
+  const accidental = match[2] ? (/^(#|♯|dièse)$/i.test(match[2]) ? "#" : "b") : "";
+  const minor = match[3] && /^m(in|ineur)?$/i.test(match[3]) ? "m" : "";
+  return `Key: ${SOLFEGE[match[1]!.toLowerCase()]}${accidental}${minor}`;
 }
 
 /**
@@ -184,15 +215,23 @@ function headerDetails(lines: PdfLine[], details: SongFileDetails): Set<PdfLine>
   if (!title && loose.length === header.length) return taken;
   const used = new Set<{ line: PdfLine; text: string }>();
   const titleLine = title ?? loose[0]?.line;
-  if (title) found.title = title.text.trim();
+  // Without the number a book gives it ("01 - Il est la vie").
+  const untracked = (title: string) => title.replace(/^\d{1,3}\s*[-–—.)]\s+(?=\S)/, "");
+  if (title) found.title = untracked(title.text.trim());
   else if (loose[0]) {
-    found.title = loose[0].text;
+    found.title = untracked(loose[0].text);
     used.add(loose[0]);
   }
   // Names under the title ("Chris Tomlin | John Newton"), not a sentence.
   const names = loose.filter((part) => !used.has(part) && part.line !== titleLine && part.text.length <= 80 && !/[.!?]$/.test(part.text));
-  const artistLine = names[0]?.line;
-  for (const part of names.filter((part) => part.line === artistLine)) {
+  // A long list of names goes on to the next line, the same size.
+  const artistLines = new Set<PdfLine>();
+  for (const part of names) {
+    const last = [...artistLines].pop();
+    if (!last) artistLines.add(part.line);
+    else if (part.line !== last && Math.abs(part.line.height - last.height) < last.height * 0.1 && part.line.y - last.y < last.height * 1.6 && last.text.includes(",")) artistLines.add(part.line);
+  }
+  for (const part of names.filter((part) => artistLines.has(part.line))) {
     found.artists.push(
       ...part.text
         .split(/\s*(?:[,;/&]|\band\b|\bet\b)\s*/i)

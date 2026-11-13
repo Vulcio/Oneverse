@@ -1,4 +1,4 @@
-import { OCR_LANGUAGES, CHORD_CHARACTERS, ocrLinesFromTesseract, pageNeedsOcr, readOcrPage, readPdfChart, type OcrBox, type OcrReader, type PdfChart, type PdfPageSize, type PdfTextItem } from "@oneverse/core";
+import { OCR_LANGUAGES, CHORD_CHARACTERS, ocrLinesFromTesseract, pageNeedsOcr, readOcrPage, readPdfChart, shownText, type OcrBox, type OcrReader, type PdfChart, type PdfPageSize, type PdfTextItem } from "@oneverse/core";
 import type { Worker as Tesseract } from "tesseract.js";
 import { isChartImage } from "#/components/song-editor/attachment-types";
 import { apiClient } from "#/lib/api-client";
@@ -75,11 +75,14 @@ async function readPdf(file: Blob, onProgress?: (progress: ReadProgress) => void
       const page = await pdf.getPage(number);
       const viewport = page.getViewport({ scale: 1 });
       const text: PdfTextItem[] = [];
-      for (const item of (await page.getTextContent()).items) {
-        if (!("str" in item) || item.str === "") continue;
+      const content = (await page.getTextContent()).items.filter((item) => "str" in item && item.str !== "") as { str: string; transform: number[]; width: number; height: number }[];
+      // Only what the page shows: some charts join words with white full stops, or hide a summary outside the page.
+      const shown = shownText(content, await page.getOperatorList(), pdfjs.OPS);
+      for (const [index, item] of content.entries()) {
+        if (shown[index]!.trim() === "") continue;
         // The page's own transform turns PDF space (y up) into the viewport's (y down).
         const [, , c, d, x, y] = pdfjs.Util.transform(viewport.transform, item.transform);
-        text.push({ page: number, text: item.str, x, y, width: item.width, height: Math.hypot(c, d) || item.height });
+        text.push({ page: number, text: shown[index]!, x, y, width: item.width, height: Math.hypot(c, d) || item.height });
       }
       if (!pageNeedsOcr(text)) {
         onProgress?.({ page: number, pages: pdf.numPages, ocr: false });
