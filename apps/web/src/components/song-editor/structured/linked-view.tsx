@@ -13,14 +13,14 @@ import {
   sectionName,
 } from "@oneverse/core";
 import { NodeViewWrapper, useEditorState, type ReactNodeViewProps } from "@tiptap/react";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Copy, Eye, EyeOff, Link2, Lock, LockOpen, Minus, MoreHorizontal, Plus, RotateCcw, Trash2, Unlink2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Copy, Eye, EyeOff, Link2, Lock, LockOpen, Minus, MoreHorizontal, Plus, RotateCcw, Split, Trash2, Unlink2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { cn } from "@oneverse/ui/lib/utils";
 import { editorToSections, sectionNumberIn } from "./document";
-import { BlockTools, ToolButton } from "./block-tools";
-import { deleteLinked, moveBlock } from "./extensions";
+import { BlockTools, RepeatAddTool, RepeatCounter, ToolButton } from "./block-tools";
+import { deleteLinked, moveBlock, separateRepeats } from "./extensions";
 import { SectionInserter } from "./section-inserter";
 import { useSongOrderActions } from "./song-order-context";
 
@@ -58,6 +58,8 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
   const index = editor.state.doc.resolve(Math.max(0, at())).index(0);
   const count = editor.state.doc.childCount;
   const update = (change: Partial<SectionInstance>) => actions?.updatePass(passId, change);
+  // Sung again straight after, the same way (×2).
+  const repeats = (node.attrs.repeats as string[] | null) ?? [];
   // Named as the section it sings, by the one rule (issue #344): "Chorus", "Verse 2".
   const number = useEditorState({ editor, selector: ({ editor: current }) => (current ? sectionNumberIn(current.state.doc, sectionId) : null) });
   const name = section ? (sectionName(section, number, (type) => t(`chart.sections.${type as SectionType}`)) ?? t("chart.sections.other")) : "";
@@ -110,14 +112,18 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
             *
           </span>
         ) : null}
+        <RepeatCounter editor={editor} at={at} repeats={repeats} />
         <BlockTools
           editor={editor}
           at={at}
           tools={
-            // Another copy of the section, with this one's changes.
+            <>
+            <RepeatAddTool editor={editor} at={at} repeats={repeats} />
+            {/* Another copy of the section, with this one's changes. */}
             <ToolButton className="hidden @xl/block:flex" label={t("structuredEditor.duplicateLinked")} onClick={() => actions?.duplicatePass(passId, at())} testId="block-duplicate-linked">
               <Copy />
             </ToolButton>
+            </>
           }
           leading={
             <>
@@ -184,6 +190,12 @@ export function LinkedView({ node, editor, getPos }: ReactNodeViewProps) {
                 <DropdownMenuItem onClick={() => update({ transpose: null, chords: undefined, hiddenLines: undefined, lyrics: undefined })} data-testid="linked-as-written">
                   <RotateCcw />
                   {t("linkedCopy.asWritten")}
+                </DropdownMenuItem>
+              ) : null}
+              {repeats.length > 0 ? (
+                <DropdownMenuItem onClick={() => separateRepeats(editor.view, at())} data-testid="repeat-separate">
+                  <Split />
+                  {t("structuredEditor.repeat.separate")}
                 </DropdownMenuItem>
               ) : null}
               <DropdownMenuItem onClick={() => actions?.makeUnique(passId, at())} data-testid="linked-make-unique">

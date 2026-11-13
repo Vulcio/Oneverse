@@ -21,7 +21,7 @@ The three modes:
 
 - **Type a chord** in square brackets where it's played: `[G]Amazing grace`.
 - **Move a chord** by dragging it onto another letter, or select it and use the ← → arrow keys.
-- **Click a chord** to change it (with suggestions from the song's key and variations like `G7` or `Gsus4`) or delete it.
+- **Click a chord** to change it (with suggestions from the song's key and variations like `G7` or `Gsus4`) or delete it. Its tools close when you click anywhere outside them, or press Escape; click the chord again to open them.
 - Under **Bass note**, the chord with another note in the bass, in one click: its inversions first (`C/E` **1st inv.**, `C/G` **2nd inv.**, and for a seventh the 3rd), then the key's other notes, for a bass line walking under it (`C/B`, `C/A`). The first one, **root**, takes the bass note away. On a phone or a tablet they're in the chord bar, after the variations.
 - The **chords panel**, at the right of the chart and in view as you scroll, lists the **chords in the song's key** (with their degree: I, IV, V…) and the chords **In this song**. Click one to add it at the cursor, or drag it onto a word. **Another chord** adds any other.
 - On a phone or a tablet, the chords are in a bar along the bottom of the screen, above the keyboard. Tap one to add it at the cursor; no need to type `[G]`. Tapping a chord on the chart selects it and puts the keyboard away, so nothing is covered; with a chord selected, tap another in the bar to put it in its place. The bar then starts with that chord's tools - move it a letter left or right, or delete it - and adds its variations (G7, Gsus4…).
@@ -93,6 +93,8 @@ Key changes and notes show on the chart at that pass.
 ### Linked copies
 
 The editor shows the song in the order it's sung. A section's first appearance is the block you edit; wherever it's sung again, it's a **linked copy** - marked with a link, "Linked to Chorus", locked - that follows the section: change the section and every copy shows it.
+
+A section sung again straight after, the same way ("Chorus x3"), stays one block with a counter by its name: **×3**, with **−** and **+** to sing it one time fewer or one more. The repeat button at the right of a block's heading (a section's or a linked copy's) sings it twice. Only a time sung elsewhere in the song, or sung differently, is a block of its own. **Separate the repeats** (the block's menu) turns each repeat into a linked copy, to change one of them; one that's left as written goes back into the counter the next time the song is opened. The song's order, the chart, Live and screens still sing every time.
 
 A copy is folded to one line that says what it does - "sung again, as written", "2 semitones up · in A", "1 chord of its own", "1 line left out". **Show** opens it, with its own transposition and **Edit this copy**; **Hide** folds it again. It stays as you left it while you edit.
 

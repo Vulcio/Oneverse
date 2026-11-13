@@ -4139,6 +4139,13 @@ const fr: typeof en = {
     capoLabel: "Capo suggéré",
     noCapo: "Sans capo",
     duplicateLinked: "Dupliquer (liée)",
+    repeat: {
+      add: "Le chanter encore juste après",
+      count: "Chanté {{count}} fois de suite",
+      more: "Une fois de plus",
+      fewer: "Une fois de moins",
+      separate: "Séparer les reprises",
+    },
     takeOutOfOrder: "Retirer de l'ordre du chant",
     putBackInOrder: "Remettre dans l'ordre du chant",
     notInOrder: "Pas dans l'ordre du chant",

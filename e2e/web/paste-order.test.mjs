@@ -1,7 +1,8 @@
 // Pasting a whole chart into the Editor (issue #31): a "{chorus}" line - sing
 // the chorus again - adds the repeat to the song's order, as a linked copy,
 // as the Song info box's import does; a key change before a section goes
-// with its pass; and the paste is undone in one step.
+// with its pass; and the paste is undone in one step. Sung again straight
+// after it, the chorus is one block with a counter (×2).
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -63,8 +64,10 @@ await step("undone in one step", async () => {
   await editor().locator("p[data-sv-line]").last().click();
   await paste("{start_of_bridge}\n[Em]Through many dangers\n{end_of_bridge}\n\n{start_of_chorus}\n[C]Again\n{end_of_chorus}\n\n{chorus}");
   await editor().locator('[data-section-type="bridge"]').waitFor();
+  // The new chorus sung again straight after: one block, ×2, not a copy (the counter by its name).
   const linked = await editor().getByTestId("linked-copy").count();
-  if (linked !== 2) throw new Error(`${linked} linked copies`);
+  if (linked !== 1) throw new Error(`${linked} linked copies`);
+  await editor().locator('[data-section-type="chorus"]').last().getByTestId("repeat-times").getByText("×2").waitFor();
   await page.getByTestId("editor-undo").click();
   await editor().locator('[data-section-type="bridge"]').waitFor({ state: "detached" });
   const left = await editor().getByTestId("linked-copy").count();

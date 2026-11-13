@@ -109,6 +109,8 @@ const SectionNode = Node.create({
       // Its first pass in the song's order, and whether it's sung at all (issue #205).
       passId: { default: null, rendered: false },
       sung: { default: true, rendered: false },
+      // Its passes sung again straight after, the same way (×2, ×3): the IDs of the passes after its first.
+      repeats: { default: [], rendered: false },
     };
   },
   parseHTML() {
@@ -140,6 +142,7 @@ const LinkedNode = Node.create({
     return {
       passId: { default: null, parseHTML: (el) => el.getAttribute("data-pass-id"), renderHTML: (attrs) => ({ "data-pass-id": attrs.passId }) },
       sectionId: { default: null, parseHTML: (el) => el.getAttribute("data-linked-to"), renderHTML: (attrs) => ({ "data-linked-to": attrs.sectionId }) },
+      repeats: { default: [], rendered: false },
     };
   },
   parseHTML() {
@@ -440,6 +443,7 @@ export function withFreshIds(node: PMNode): PMNode {
   refresh(json);
   // A copy is a section of its own: no pass of the original's.
   if (json.attrs && "passId" in json.attrs) json.attrs.passId = null;
+  if (json.attrs && "repeats" in json.attrs) json.attrs.repeats = [];
   return node.type.schema.nodeFromJSON(json);
 }
 
@@ -535,7 +539,12 @@ function uniqueIds() {
       if (renew.length === 0 && renewPasses.length === 0) return null;
       const tr = newState.tr;
       for (const { pos, node } of renew) tr.setNodeAttribute(pos, "id", generateId(PREFIXES[node.type.name] as never));
-      for (const pos of renewPasses) tr.setNodeAttribute(pos, "passId", generateId(ID_PREFIXES.flowItem));
+      for (const pos of renewPasses) {
+        tr.setNodeAttribute(pos, "passId", generateId(ID_PREFIXES.flowItem));
+        // Its repeats are the copy's own too.
+        const repeats = (tr.doc.nodeAt(pos)?.attrs.repeats as string[] | undefined) ?? [];
+        if (repeats.length > 0) tr.setNodeAttribute(pos, "repeats", repeats.map(() => generateId(ID_PREFIXES.flowItem)));
+      }
       return tr.setMeta("addToHistory", false);
     },
   });
@@ -1473,6 +1482,30 @@ export function duplicateLinked(view: EditorView, pos: number): string | null {
   return passId;
 }
 
+/** The block at `pos` sung `times` times straight after each other (×2, ×3), its repeats' passes kept as far as they go. */
+export function setRepeatCount(view: EditorView, pos: number, times: number) {
+  const node = view.state.doc.nodeAt(pos);
+  if (!node || (node.type.name !== "section" && node.type.name !== "linked")) return;
+  const repeats = (node.attrs.repeats as string[] | null) ?? [];
+  const wanted = Math.max(0, Math.min(MAX_REPEATS, times) - 1);
+  if (wanted === repeats.length) return;
+  const next = wanted < repeats.length ? repeats.slice(0, wanted) : [...repeats, ...Array.from({ length: wanted - repeats.length }, () => generateId(ID_PREFIXES.flowItem))];
+  view.dispatch(view.state.tr.setNodeAttribute(pos, "repeats", next));
+}
+
+/** How many times in a row a block can be sung. */
+export const MAX_REPEATS = 16;
+
+/** The block at `pos`'s repeats as linked copies of their own, just after it: one of them to change (an exception). */
+export function separateRepeats(view: EditorView, pos: number) {
+  const node = view.state.doc.nodeAt(pos);
+  const repeats = (node?.attrs.repeats as string[] | null) ?? [];
+  if (!node || repeats.length === 0) return;
+  const sectionId = (node.type.name === "linked" ? node.attrs.sectionId : node.attrs.id) as string;
+  const copies = repeats.map((passId) => view.state.schema.nodes.linked!.create({ passId, sectionId }));
+  view.dispatch(view.state.tr.setNodeAttribute(pos, "repeats", []).insert(pos + node.nodeSize, copies).scrollIntoView());
+}
+
 /** A linked copy of the section `sectionId` at `at` (between two blocks): the section sung again there (issue #250). */
 export function insertLinked(view: EditorView, sectionId: string, at: number) {
   const copy = view.state.schema.nodes.linked!.create({ passId: generateId(ID_PREFIXES.flowItem), sectionId });
@@ -1484,7 +1517,7 @@ export function insertLinked(view: EditorView, sectionId: string, at: number) {
 export function replaceLinked(view: EditorView, pos: number, section: PMNode) {
   const node = view.state.doc.nodeAt(pos);
   if (!node || node.type.name !== "linked") return;
-  const withPass = view.state.schema.nodes.section!.create({ ...section.attrs, passId: node.attrs.passId, sung: true }, section.content);
+  const withPass = view.state.schema.nodes.section!.create({ ...section.attrs, passId: node.attrs.passId, sung: true, repeats: node.attrs.repeats ?? [] }, section.content);
   view.dispatch(view.state.tr.replaceWith(pos, pos + node.nodeSize, withPass).scrollIntoView());
 }
 

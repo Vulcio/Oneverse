@@ -25,7 +25,7 @@ import type { Node as PMNode } from "@tiptap/pm/model";
 import { NodeSelection, type EditorState } from "@tiptap/pm/state";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, FileUp, Minus, Plus, Redo2, StickyNote, SeparatorVertical, Trash2, Undo2 } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DisplayPanel } from "#/components/display-panel";
 import { chartOfSections, SongChart } from "@oneverse/screen/components/song-chart";
@@ -35,11 +35,12 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { cn } from "@oneverse/ui/lib/utils";
 import { CAPO_OPTIONS, KEY_OPTIONS, TIME_SIGNATURE_OPTIONS } from "../song-form";
-import { editorToSections, editorToSong, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
+import { editorToSections, editorToSong, followRepeats, sameOrder, sameSections, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { startChordDrag } from "./drag";
 import { ChordBar } from "./chord-bar";
 import { ChordCheckNotice, ChordChecksCard } from "./chord-checks";
 import { useChordChecks } from "#/lib/chord-checks";
+import { useDismissed } from "./dismiss";
 import { BarPopover, BarsMenu, NewBarLine } from "./bar-tools";
 import { SectionInserter } from "./section-inserter";
 import { SongOrder } from "./song-order";
@@ -338,7 +339,11 @@ function EditorBody({
   const orderActions = useMemo<SongOrderActions>(
     () => ({
       pass: (passId) => flow.find((item) => item.id === passId),
-      updatePass: (passId, change) => setFlow(flowRef.current.map((item) => (item.id === passId ? { ...item, ...change } : item))),
+      // A block's repeats are sung as its first pass: they change with it.
+      updatePass: (passId, change) => {
+        const next = flowRef.current.map((item) => (item.id === passId ? { ...item, ...change } : item));
+        setFlow(editor ? followRepeats(editor.state.doc, next) : next);
+      },
       makeUnique: (passId, pos) => {
         const pass = flowRef.current.find((item) => item.id === passId);
         if (!editor || !pass) return;
@@ -375,7 +380,8 @@ function EditorBody({
   const blockOf = (passId: string): { pos: number; node: PMNode } | null => {
     let found: { pos: number; node: PMNode } | null = null;
     editor?.state.doc.forEach((node, pos) => {
-      if (!found && (node.attrs.passId ?? (node.attrs.id ? flowItemId(node.attrs.id as string) : null)) === passId) found = { pos, node };
+      if (found) return;
+      if ((node.attrs.passId ?? (node.attrs.id ? flowItemId(node.attrs.id as string) : null)) === passId || ((node.attrs.repeats as string[] | null) ?? []).includes(passId)) found = { pos, node };
     });
     return found;
   };
@@ -827,8 +833,11 @@ function ChordPopover({ editor, songKey, editTick, checks }: { editor: Editor; s
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, [editor, chord?.pos, chord?.raw]);
+  // Closed by a press outside it or Escape; the chord pressed again opens it (dismiss.ts).
+  const anchor = useCallback(() => (chord ? (editor.view.nodeDOM(chord.pos) as Element | null) : null), [editor, chord?.pos]);
+  const dismissed = useDismissed(chord ? `${chord.id}@${chord.pos}` : null, box, anchor);
 
-  if (!chord) return null;
+  if (!chord || dismissed) return null;
   const view = editor.view;
   const apply = (raw: string) => setChordSymbol(view, chord.pos, raw);
   const inKey = diatonicChords(songKey);

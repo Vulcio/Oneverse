@@ -1,9 +1,9 @@
 import type { Editor } from "@tiptap/react";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp, Minus, Plus, Repeat } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@oneverse/ui/lib/utils";
-import { moveBlock } from "./extensions";
+import { MAX_REPEATS, moveBlock, setRepeatCount } from "./extensions";
 
 /**
  * The tools at the right of a block's heading - a section's or a linked
@@ -63,5 +63,46 @@ export function ToolButton({
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * How many times in a row a block is sung (×2, ×3), with one more and one
+ * fewer: shown once it's sung more than once, by its name. A block sung
+ * once has the "sing it again" tool instead (`RepeatAddTool`).
+ */
+export function RepeatCounter({ editor, at, repeats }: { editor: Editor; at: () => number; repeats: string[] }) {
+  const { t } = useTranslation();
+  const times = repeats.length + 1;
+  if (times < 2) return null;
+  const button = "flex size-6 items-center justify-center rounded-full text-[var(--section-ink)] hover:bg-background/80 disabled:pointer-events-none disabled:opacity-30 pointer-coarse:size-8 [&_svg]:size-3.5";
+  return (
+    <span
+      className="flex h-7 items-center rounded-full border border-[var(--section-line)] bg-[var(--section-tag)] pointer-coarse:h-9"
+      role="group"
+      aria-label={t("structuredEditor.repeat.count", { count: times })}
+      data-testid="repeat-counter"
+    >
+      <button type="button" className={button} onClick={() => setRepeatCount(editor.view, at(), times - 1)} aria-label={t("structuredEditor.repeat.fewer")} title={t("structuredEditor.repeat.fewer")} data-testid="repeat-fewer">
+        <Minus />
+      </button>
+      <span className="min-w-6 text-center text-xs font-semibold text-[var(--section-ink)] tabular-nums" title={t("structuredEditor.repeat.count", { count: times })} data-testid="repeat-times">
+        ×{times}
+      </span>
+      <button type="button" className={button} onClick={() => setRepeatCount(editor.view, at(), times + 1)} disabled={times >= MAX_REPEATS} aria-label={t("structuredEditor.repeat.more")} title={t("structuredEditor.repeat.more")} data-testid="repeat-more">
+        <Plus />
+      </button>
+    </span>
+  );
+}
+
+/** A block's tool to sing it again straight after (×2), while it's sung once. */
+export function RepeatAddTool({ editor, at, repeats }: { editor: Editor; at: () => number; repeats: string[] }) {
+  const { t } = useTranslation();
+  if (repeats.length > 0) return null;
+  return (
+    <ToolButton label={t("structuredEditor.repeat.add")} onClick={() => setRepeatCount(editor.view, at(), 2)} testId="repeat-add">
+      <Repeat />
+    </ToolButton>
   );
 }

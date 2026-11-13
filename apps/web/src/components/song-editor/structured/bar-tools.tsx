@@ -1,10 +1,11 @@
 import { useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, Minus, Plus, Trash2 } from "lucide-react";
-import { useLayoutEffect, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { cn } from "@oneverse/ui/lib/utils";
+import { useDismissed } from "./dismiss";
 import { startChordDrag } from "./drag";
 import { clearBarLines, currentSection, deleteBar, fillBarLines, hasBarLines, insertBarLine, nudgeBar, selectedBar, setBarCount } from "./extensions";
 
@@ -91,7 +92,9 @@ export function BarPopover({ editor }: { editor: Editor }) {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, [editor, bar?.pos, bar?.bars]);
-  if (!bar) return null;
+  const anchor = useCallback(() => (bar ? (editor.view.nodeDOM(bar.pos) as Element | null) : null), [editor, bar?.pos]);
+  const dismissed = useDismissed(bar ? String(bar.pos) : null, box, anchor);
+  if (!bar || dismissed) return null;
   return (
     <div
       ref={box}

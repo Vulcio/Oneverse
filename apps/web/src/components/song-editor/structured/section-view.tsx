@@ -1,11 +1,11 @@
 import { SECTION_TYPES, sectionName } from "@oneverse/core";
 import { NodeViewContent, NodeViewWrapper, useEditorState, type ReactNodeViewProps } from "@tiptap/react";
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Link2, ListMinus, ListPlus, MoreHorizontal, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Link2, ListMinus, ListPlus, MoreHorizontal, Split, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { cn } from "@oneverse/ui/lib/utils";
-import { BlockTools, ToolButton } from "./block-tools";
-import { deleteSection, duplicateLinked, duplicateSection, moveBlock, setSung } from "./extensions";
+import { BlockTools, RepeatAddTool, RepeatCounter, ToolButton } from "./block-tools";
+import { deleteSection, duplicateLinked, duplicateSection, moveBlock, separateRepeats, setSung } from "./extensions";
 import { SectionInserter } from "./section-inserter";
 import { sectionNumberIn } from "./document";
 
@@ -46,6 +46,8 @@ export function SectionView({ node, editor, getPos, updateAttributes }: ReactNod
   const active = useBlockActive(editor, getPos);
   // Not in the song's order (issue #205): at the end, the first of them under a heading.
   const sung = node.attrs.sung !== false;
+  // Sung again straight after, the same way (×2): one block, its counter by its name.
+  const repeats = sung ? ((node.attrs.repeats as string[] | null) ?? []) : [];
   const firstUnsung = !sung && (index === 0 || editor.state.doc.child(index - 1).attrs.sung !== false || editor.state.doc.child(index - 1).type.name !== "section");
 
   return (
@@ -96,6 +98,7 @@ export function SectionView({ node, editor, getPos, updateAttributes }: ReactNod
             </option>
           ))}
         </select>
+        <RepeatCounter editor={editor} at={at} repeats={repeats} />
         {/* Kept in place whether they show or not: showing them moves nothing. */}
         <div className={cn("ml-auto flex items-center", active ? "visible" : "invisible group-hover/section:visible pointer-coarse:visible")} data-section-tools="">
           <BlockTools
@@ -107,6 +110,7 @@ export function SectionView({ node, editor, getPos, updateAttributes }: ReactNod
                 <ToolButton label={showLabel ? t("structuredEditor.hideLabel") : t("structuredEditor.showLabel")} pressed={!showLabel} onClick={() => updateAttributes({ showLabel: !showLabel })} testId="section-label-shown">
                   {showLabel ? <Eye /> : <EyeOff />}
                 </ToolButton>
+                {sung ? <RepeatAddTool editor={editor} at={at} repeats={repeats} /> : null}
                 {sung ? (
                   <ToolButton className="hidden @xl/block:flex" label={t("structuredEditor.duplicateLinked")} onClick={() => duplicateLinked(editor.view, at())} testId="block-duplicate-linked">
                     <Link2 />
@@ -138,6 +142,13 @@ export function SectionView({ node, editor, getPos, updateAttributes }: ReactNod
                   <DropdownMenuItem onClick={() => duplicateLinked(editor.view, at())} data-testid="section-duplicate-linked">
                     <Link2 />
                     {t("structuredEditor.duplicateLinked")}
+                  </DropdownMenuItem>
+                ) : null}
+                {/* Each repeat a linked copy of its own: one of them to change. */}
+                {repeats.length > 0 ? (
+                  <DropdownMenuItem onClick={() => separateRepeats(editor.view, at())} data-testid="repeat-separate">
+                    <Split />
+                    {t("structuredEditor.repeat.separate")}
                   </DropdownMenuItem>
                 ) : null}
                 <DropdownMenuItem onClick={() => duplicateSection(editor.view, at())} data-testid="section-duplicate">

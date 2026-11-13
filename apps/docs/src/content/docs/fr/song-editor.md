@@ -21,7 +21,7 @@ Les trois modes :
 
 - **Tapez un accord** entre crochets à l'endroit où il se joue : `[G]Amazing grace`.
 - **Déplacez un accord** en le faisant glisser sur une autre lettre, ou sélectionnez-le et utilisez les flèches ← →.
-- **Cliquez sur un accord** pour le changer (avec des suggestions de la tonalité du chant et des variantes comme `G7` ou `Gsus4`) ou le supprimer.
+- **Cliquez sur un accord** pour le changer (avec des suggestions de la tonalité du chant et des variantes comme `G7` ou `Gsus4`) ou le supprimer. Ses outils se ferment quand vous cliquez n'importe où en dehors, ou avec Échap ; cliquez à nouveau sur l'accord pour les rouvrir.
 - Sous **Note de basse**, l'accord avec une autre note à la basse, en un clic : ses renversements d'abord (`C/E` **1er renv.**, `C/G` **2e renv.**, et le 3e pour un accord de septième), puis les autres notes de la tonalité, pour une ligne de basse qui marche dessous (`C/B`, `C/A`). Le premier, **fondamental**, enlève la note de basse. Sur un téléphone ou une tablette, elles sont dans la barre d'accords, après les variantes.
 - Le **panneau des accords**, à droite de la grille et toujours visible quand vous faites défiler, liste les **accords de la tonalité** du chant (avec leur degré : I, IV, V…) et ceux **Dans ce chant**. Cliquez sur l'un d'eux pour l'ajouter au curseur, ou faites-le glisser sur un mot. **Autre accord** en ajoute un autre.
 - Sur un téléphone ou une tablette, les accords sont dans une barre en bas de l'écran, au-dessus du clavier. Touchez-en un pour l'ajouter au curseur ; pas besoin de taper `[G]`. Toucher un accord de la grille le sélectionne et range le clavier, pour que rien ne soit caché ; un accord sélectionné, touchez-en un autre dans la barre pour le mettre à sa place. La barre commence alors par les outils de cet accord - le déplacer d'une lettre à gauche ou à droite, ou le supprimer - et ajoute ses variantes (G7, Gsus4…).
@@ -93,6 +93,8 @@ Les changements de tonalité et les notes s'affichent sur la grille à ce passag
 ### Copies liées
 
 L'éditeur montre le chant dans l'ordre où il est chanté. La première apparition d'une section est le bloc que vous modifiez ; partout où elle est rechantée, c'est une **copie liée** - marquée d'un lien, « Liée à Refrain », verrouillée - qui suit la section : modifiez la section et chaque copie le montre.
+
+Une section chantée à nouveau juste après, de la même façon (« Refrain x3 »), reste un seul bloc avec un compteur à côté de son nom : **×3**, avec **−** et **+** pour la chanter une fois de moins ou une fois de plus. Le bouton de reprise à droite du titre d'un bloc (une section ou une copie liée) la fait chanter deux fois. Seule une fois chantée ailleurs dans le chant, ou chantée autrement, est un bloc à elle. **Séparer les reprises** (le menu du bloc) fait de chaque reprise une copie liée, pour en changer une ; celle qui reste telle qu'écrite revient dans le compteur à la prochaine ouverture du chant. L'ordre du chant, la grille, le Live et les écrans chantent toujours chaque fois.
 
 Une copie est repliée sur une ligne qui dit ce qu'elle fait - « chantée à nouveau, telle qu'écrite », « 2 demi-tons plus haut · en A », « 1 accord à elle », « 1 ligne laissée de côté ». **Afficher** l'ouvre, avec sa transposition et **Modifier cette copie** ; **Masquer** la replie. Elle reste comme vous l'avez laissée pendant que vous modifiez le chant.
 

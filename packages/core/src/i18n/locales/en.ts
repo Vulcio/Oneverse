@@ -4136,6 +4136,13 @@ const en = {
     capoLabel: "Suggested capo",
     noCapo: "No capo",
     duplicateLinked: "Duplicate (linked)",
+    repeat: {
+      add: "Sing it again straight after",
+      count: "Sung {{count}} times in a row",
+      more: "One more time",
+      fewer: "One time fewer",
+      separate: "Separate the repeats",
+    },
     takeOutOfOrder: "Take out of the song order",
     putBackInOrder: "Put back in the song order",
     notInOrder: "Not in the song order",

@@ -63,7 +63,7 @@ function lineJSON(line: LineV2, marks: BarLine[] = []): JSONContent {
   return { type: "line", attrs: { id: line.id, kind: line.kind }, ...(content.length > 0 && { content }) };
 }
 
-function sectionJSON(section: SectionV2, extra: { passId?: string | null; sung?: boolean } = {}): JSONContent {
+function sectionJSON(section: SectionV2, extra: { passId?: string | null; sung?: boolean; repeats?: string[] } = {}): JSONContent {
   const marks = barLinesFromRhythm(section);
   return {
     type: "section",
@@ -76,6 +76,7 @@ function sectionJSON(section: SectionV2, extra: { passId?: string | null; sung?:
       groove: section.groove ?? null,
       passId: extra.passId ?? null,
       sung: extra.sung ?? true,
+      repeats: extra.repeats ?? [],
     },
     content: section.lines.length > 0 ? section.lines.map((line) => lineJSON(line, marks[line.id])) : [newLineJSON()],
   };
@@ -99,8 +100,15 @@ export function songToEditorJSON(sections: SectionV2[], flow: SectionInstance[])
   if (passes.length === 0) return { type: "doc", content: sections.length > 0 ? sections.map((section) => sectionJSON(section, { passId: flowItemId(section.id) })) : [newSectionJSON("verse")] };
   const seen = new Set<string>();
   const content: JSONContent[] = [];
+  let head: SectionInstance | null = null;
   for (const item of passes) {
-    if (seen.has(item.sectionId)) content.push({ type: "linked", attrs: { passId: item.id, sectionId: item.sectionId } });
+    // Sung again straight after, the same way: a repeat of the block before (×2), not a block of its own.
+    if (head && repeatsPass(head, item)) {
+      (content.at(-1)!.attrs!.repeats as string[]).push(item.id);
+      continue;
+    }
+    head = item;
+    if (seen.has(item.sectionId)) content.push({ type: "linked", attrs: { passId: item.id, sectionId: item.sectionId, repeats: [] } });
     else {
       seen.add(item.sectionId);
       content.push(sectionJSON(byId.get(item.sectionId)!, { passId: item.id }));
@@ -125,15 +133,72 @@ export function editorToSong(doc: PMNode, previous: SectionInstance[]): { sectio
     if (node.type.name === "section") {
       if (node.attrs.sung === false || !kept.has(node.attrs.id as string)) return;
       const id = (node.attrs.passId as string | null) ?? flowItemId(node.attrs.id as string);
-      flow.push({ ...(before.get(id) ?? {}), id, sectionId: node.attrs.id as string });
+      const head: SectionInstance = { ...(before.get(id) ?? {}), id, sectionId: node.attrs.id as string };
+      flow.push(head, ...repeatPasses(head, node.attrs.repeats as string[] | null, before));
     } else if (node.type.name === "linked") {
       const sectionId = node.attrs.sectionId as string;
       if (!kept.has(sectionId) || !flow.some((item) => item.sectionId === sectionId)) return;
       const id = node.attrs.passId as string;
-      flow.push({ ...(before.get(id) ?? {}), id, sectionId });
+      const head: SectionInstance = { ...(before.get(id) ?? {}), id, sectionId };
+      flow.push(head, ...repeatPasses(head, node.attrs.repeats as string[] | null, before));
     }
   });
   return { sections, flow };
+}
+
+/*
+ * Repeats (a section sung again straight after, "×2"): one block in the
+ * editor, a pass each in the song's order, as every player reads it. The
+ * block's first pass leads; the others are sung as it is (transposed, its
+ * own words and chords, its tempo), without its key change or its note,
+ * which happen once. A pass that's sung differently is a block of its own.
+ */
+
+/** What a pass sings, to compare: all but its place, its name, its key change and its note. */
+function sungAs(item: SectionInstance): string {
+  return JSON.stringify([
+    item.transpose || null,
+    item.tempo ?? null,
+    item.timeSignature ?? null,
+    item.chords?.length ? item.chords : null,
+    item.hiddenLines?.length ? item.hiddenLines : null,
+    item.lyrics?.length ? item.lyrics : null,
+  ]);
+}
+
+/** Whether `next`, straight after `head`, is a repeat of it: the same section, sung the same, nothing of its own to say. */
+export function repeatsPass(head: SectionInstance, next: SectionInstance): boolean {
+  return (
+    next.sectionId === head.sectionId &&
+    !next.keyChange &&
+    !next.note?.trim() &&
+    (next.label == null || next.label === head.label) &&
+    sungAs(next) === sungAs(head)
+  );
+}
+
+/** The passes of a block's repeats (`ids`), sung as its first pass `head`; each keeps its name if it had one. */
+export function repeatPasses(head: SectionInstance, ids: string[] | null | undefined, before: Map<string, SectionInstance>): SectionInstance[] {
+  if (!ids?.length) return [];
+  const sung: Partial<SectionInstance> = { ...head };
+  for (const own of ["id", "sectionId", "label", "keyChange", "note"] as const) delete sung[own];
+  return ids.map((id) => {
+    const label = before.get(id)?.label;
+    return { ...sung, id, sectionId: head.sectionId, ...(label != null && { label }) };
+  });
+}
+
+/** The order with each block's repeats sung as its first pass again (after that pass changed by itself: transposed, say). */
+export function followRepeats(doc: PMNode, flow: SectionInstance[]): SectionInstance[] {
+  const byId = new Map(flow.map((item) => [item.id, item]));
+  const follow = new Map<string, SectionInstance>();
+  doc.forEach((node) => {
+    const ids = node.attrs.repeats as string[] | null | undefined;
+    const passId = (node.attrs.passId as string | null) ?? (node.type.name === "section" ? flowItemId(node.attrs.id as string) : null);
+    const head = passId ? byId.get(passId) : undefined;
+    if (head && ids?.length) for (const pass of repeatPasses(head, ids, byId)) follow.set(pass.id, pass);
+  });
+  return follow.size === 0 ? flow : flow.map((item) => follow.get(item.id) ?? item);
 }
 
 /** The same passes in the same order (what the editor's blocks are), whatever else they say. */
