@@ -4119,6 +4119,8 @@ const en = {
     replaceTitle: "Replace the chart",
     replaceDescription: "Upload a file, or paste the words and chords. What stays the same keeps its place: linked copies, versions and recordings' sections follow it.",
     replaceConfirm: "Replace the chart",
+    replaceFromSongFiles: "Or read it from one of this song's files:",
+    replaceSongFileFailed: "That file couldn't be fetched. Try again when you're online.",
     barHint: "Tap a chord to add it at the cursor",
     barReplace: "Tap a chord to put it in place of {{chord}}",
     addHere: "Add a section here",

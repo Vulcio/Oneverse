@@ -12,6 +12,7 @@ import { SCANNED_CHART, scannedChartPdf, scannedChartPng } from "../lib/chart-sc
 let page;
 const step = stepper(() => page);
 const me = await user("Pdf importer");
+let savedId;
 
 /** A chord chart as a typeset PDF: each chord set over the start of its syllable, in Helvetica. */
 async function chartPdf(fontName = StandardFonts.Helvetica) {
@@ -71,6 +72,7 @@ await step("saved, the song has those chords where they were printed, and keeps 
   await page.getByRole("button", { name: "Save song" }).click();
   await page.waitForURL(/\/library\/(?!new)[a-z0-9]+/);
   const id = page.url().split("/library/")[1].split("?")[0];
+  savedId = id;
   const song = await api(me, "GET", `/song-versions/${id}`);
   const [verse, chorus] = song.documentJson.sections;
   const first = verse.lines[0];
@@ -80,6 +82,21 @@ await step("saved, the song has those chords where they were printed, and keeps 
   }
   const files = await api(me, "GET", `/song-versions/${id}/attachments`);
   if (files.length !== 1 || files[0].type !== "PDF") throw new Error(JSON.stringify(files));
+});
+
+await step("a PDF already under the song's Files is read again from the Editor, without being uploaded again", async () => {
+  await page.goto(`${WEB}/library/${savedId}`);
+  await page.getByRole("tab", { name: "Editor" }).click();
+  await page.getByTestId("editor-replace").click();
+  const dialog = page.getByTestId("replace-chart");
+  await dialog.getByTestId("replace-chart-song-files").getByRole("button", { name: "amazing-grace.pdf" }).click();
+  await dialog.locator('[data-testid="pdf-state"][data-state="read"]').waitFor();
+  const text = await dialog.locator("#song-content").inputValue();
+  if (!text.includes("Ama[G]zing grace [D]how sweet the [G/B]sound")) throw new Error(`got:\n${text}`);
+  await page.getByTestId("replace-chart-confirm").click();
+  await page.getByTestId("structured-editor").getByText(/wretch like me/).waitFor();
+  const files = await api(me, "GET", `/song-versions/${savedId}/attachments`);
+  if (files.length !== 1) throw new Error(JSON.stringify(files));
 });
 
 await step("in other fonts too (Times, Courier): the chords land on the same syllables", async () => {

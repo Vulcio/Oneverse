@@ -121,6 +121,8 @@ A part with no words - an intro, an instrumental - can be written in bars: `| G 
 
 The toolbar's **Replace from a file or paste…** reads a new chart in for the whole song: upload a file (ChordPro, text, `.lrc` or `.pdf`; see [Files from elsewhere](/library/#files-from-elsewhere)), paste the words and chords, or take a chart from a song provider with **Find chords** where one is connected (see [Song providers](/song-providers/)), then **Replace the chart**. What stays the same keeps its place - linked copies, [versions](/versions/) and recordings' sections follow it - and **Discard changes** puts the old chart back until you save. (A new song gets its chart on **Song info** instead.)
 
+A PDF or a picture of the chart already under the song's **Files** is listed there too: pick it to read the chart from it, scans and photos included, without uploading it again.
+
 ## Saving
 
 **Save song** saves the chart and the song's details together. If someone else saved the song after you opened it, Songverse tells you instead of overwriting their changes.

@@ -974,6 +974,8 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
         open={replacing}
         onOpenChange={setReplacing}
         song={{ title: form.title, artist: form.artists[0], language: form.language || undefined }}
+        songVersionId={edit?.version.id}
+        attachments={attachments}
         onReplace={(content, format, file) => {
           updateForm((current) => withContent(current, content, format));
           if (file) setSourceFile(file);

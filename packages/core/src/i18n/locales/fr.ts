@@ -4122,6 +4122,8 @@ const fr: typeof en = {
     replaceTitle: "Remplacer la grille",
     replaceDescription: "Envoyez un fichier, ou collez les paroles et les accords. Ce qui ne change pas garde sa place : les copies liées, les versions et les sections des enregistrements le suivent.",
     replaceConfirm: "Remplacer la grille",
+    replaceFromSongFiles: "Ou lisez-la depuis l'un des fichiers de ce chant :",
+    replaceSongFileFailed: "Impossible de récupérer ce fichier. Réessayez une fois en ligne.",
     barHint: "Touchez un accord pour l'ajouter au curseur",
     barReplace: "Touchez un accord pour le mettre à la place de {{chord}}",
     addHere: "Ajouter une section ici",

@@ -121,6 +121,8 @@ Une partie sans paroles - une intro, un instrumental - peut s'écrire en mesures
 
 **Remplacer depuis un fichier ou un collage…**, dans la barre d'outils, lit une nouvelle grille pour tout le chant : envoyez un fichier (ChordPro, texte, `.lrc` ou `.pdf` ; voir [Fichiers venus d'ailleurs](/fr/library/#fichiers-venus-dailleurs)), collez les paroles et les accords, ou prenez la grille d'un fournisseur de chants avec **Trouver les accords** là où il y en a un de connecté (voir [Fournisseurs de chants](/fr/song-providers/)), puis **Remplacer la grille**. Ce qui ne change pas garde sa place - les copies liées, les [versions](/fr/versions/) et les sections des enregistrements le suivent - et **Annuler les modifications** remet l'ancienne grille tant que vous n'avez pas enregistré. (Un nouveau chant reçoit sa grille dans l'onglet **Infos**.)
 
+Un PDF ou une photo de la grille déjà dans les **Fichiers** du chant y est proposé aussi : choisissez-le pour en lire la grille, scans et photos compris, sans l'envoyer à nouveau.
+
 ## Enregistrer
 
 **Enregistrer le chant** enregistre la grille et les détails du chant ensemble. Si quelqu'un d'autre a enregistré le chant après que vous l'avez ouvert, Songverse vous le dit au lieu d'écraser ses modifications.
