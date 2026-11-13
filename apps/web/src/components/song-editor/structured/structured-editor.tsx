@@ -515,6 +515,7 @@ function EditPreview({ chart, withPanel = false }: { chart: ReturnType<typeof ch
           font={display.font}
           spacing={display.spacing}
           hideChords={display.hideChords}
+          foldRepeats={display.chartRepeats === "once"}
           colors={display.chordColors}
         />
       </div>

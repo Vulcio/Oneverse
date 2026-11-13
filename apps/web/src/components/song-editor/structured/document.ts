@@ -166,6 +166,9 @@ function sungAs(item: SectionInstance): string {
   ]);
 }
 
+/** How many times in a row a block can be sung. */
+export const MAX_REPEATS = 16;
+
 /** Whether `next`, straight after `head`, is a repeat of it: the same section, sung the same, nothing of its own to say. */
 export function repeatsPass(head: SectionInstance, next: SectionInstance): boolean {
   return (

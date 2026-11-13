@@ -45,6 +45,8 @@ export interface EffectiveDisplaySettings {
   /** Where the diagrams sit (issue #212): hidden, at the top, docked at the bottom, beside each section. */
   diagramsPosition: DiagramPositionValue;
   hideChords: boolean;
+  /** A section sung again straight after, the same way (issue #457): once, ×4 by its name, or written out every time. */
+  chartRepeats: WordsRepeatsValue;
   /** The bars row at the top (issue #238): the chords in bars and beats, following the metronome or the recording; on unless turned off. */
   bars: boolean;
   /** The chord grid's bars a row (issue #408): as many as fit their beats unless set. */
@@ -139,6 +141,7 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     chordDiagrams: own.chordDiagrams ?? account?.chordDiagrams ?? "OFF",
     diagramsPosition: own.diagramsPosition ?? "top",
     hideChords: own.hideChords ?? false,
+    chartRepeats: own.chartRepeats ?? "once",
     bars: own.bars ?? true,
     gridBarsPerRow: own.gridBarsPerRow ?? "auto",
     structureBar: own.structureBar ?? true,

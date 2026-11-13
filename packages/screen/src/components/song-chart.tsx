@@ -11,6 +11,47 @@ export function passLabel(pass: RenderedPass, t: (key: string) => string): strin
   return passName(pass, pass.section, pass.section.number, (type) => t(`chart.sections.${type}`));
 }
 
+/**
+ * The passes, each sung again straight after the same way folded into the
+ * one before (×4): the same section, words, chords and key, with nothing of
+ * its own to say (a name, a key change, a note). `same` adds what else must
+ * match (the notes on it).
+ */
+export function foldRepeatedPasses(passes: RenderedPass[], same: (a: RenderedPass, b: RenderedPass) => boolean = () => true): { pass: RenderedPass; folded: RenderedPass[] }[] {
+  const groups: { pass: RenderedPass; folded: RenderedPass[] }[] = [];
+  for (const pass of passes) {
+    const last = groups.at(-1);
+    if (last && repeatsRendered(last.pass, pass) && same(last.pass, pass)) last.folded.push(pass);
+    else groups.push({ pass, folded: [] });
+  }
+  return groups;
+}
+
+function repeatsRendered(a: RenderedPass, b: RenderedPass): boolean {
+  return (
+    a.section.id === b.section.id &&
+    (b.label == null || b.label === a.label) &&
+    !b.keyChange &&
+    !b.note &&
+    a.transpose === b.transpose &&
+    a.changed === b.changed &&
+    a.differs === b.differs &&
+    a.partial === b.partial &&
+    a.tempo === b.tempo &&
+    a.key === b.key &&
+    JSON.stringify(a.timeSignature ?? null) === JSON.stringify(b.timeSignature ?? null) &&
+    a.problems.length === 0 &&
+    b.problems.length === 0 &&
+    JSON.stringify(a.lines) === JSON.stringify(b.lines)
+  );
+}
+
+/** Where a pass is on a chart: its own block, or the one it's folded into (×4). */
+export function passSelector(passId: string): string {
+  const id = CSS.escape(passId);
+  return `[data-pass="${id}"], [data-folded~="${id}"]`;
+}
+
 /** A chart of sections as written (the song editor's preview, a review): no arrangement, no player's view. */
 export function chartOfSections(sections: SectionV2[], flow: SectionInstance[] = [], key: string | null = null): RenderedChart {
   return renderChart({ $schema: "song-document/v2", revision: 0, defaults: { key }, sections, flow }, null);
@@ -42,8 +83,11 @@ export function SongChart({
   rows,
   passAside,
   notes,
+  foldRepeats = true,
 }: {
   chart: RenderedChart;
+  /** A pass sung again straight after the same way shown once, ×4 by its name; off, written out every time. */
+  foldRepeats?: boolean;
   emptyText?: string;
   /** The chord tapped: its ID (the same on every pass of its section), the element, and the chord as this pass shows it. */
   onChordClick?: (chordId: string, element: HTMLElement, chord: RenderedChord) => void;
@@ -105,7 +149,7 @@ export function SongChart({
       data-testid="song-chart"
       {...gestures}
     >
-      {chart.passes.map((pass) => {
+      {(foldRepeats ? foldRepeatedPasses(chart.passes, (a, b) => !notes?.passKey || notes.passKey(a) === notes.passKey(b)) : chart.passes.map((pass) => ({ pass, folded: [] as RenderedPass[] }))).map(({ pass, folded }) => {
         const heading = pass.section.showLabel === false ? null : labelFor(pass);
         const aside = passAside?.(pass) ?? null;
         const marks = notes?.marks?.(pass);
@@ -115,15 +159,22 @@ export function SongChart({
             data-section={pass.section.type}
             data-section-id={pass.section.id}
             data-pass={pass.id}
+            data-folded={folded.length > 0 ? folded.map((one) => one.id).join(" ") : undefined}
             data-differs={pass.differs ? "" : undefined}
             className={cn(pass.differs && "-ml-3 border-l-2 border-amber-500/70 pl-2.5")}
           >
-            {heading || pass.keyChange || pass.differs || pass.changed || pass.transpose || aside ? (
+            {heading || folded.length > 0 || pass.keyChange || pass.differs || pass.changed || pass.transpose || aside ? (
               <div className="mb-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1" data-pass-heading="">
               <p className="flex flex-wrap items-baseline gap-x-2 font-sans text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {heading ? (
                   <span className={cn(marks?.section && "-mx-1 rounded bg-[color-mix(in_oklab,var(--note-mark,#f59e0b)_35%,transparent)] px-1 text-foreground")} data-note-mark={marks?.section ? "section" : undefined}>
                     {heading}
+                  </span>
+                ) : null}
+                {/* Sung again straight after, the same way: once here, how many times in a row. */}
+                {folded.length > 0 ? (
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-foreground tabular-nums normal-case" title={t("chart.timesInARow", { count: folded.length + 1 })} data-pass-times={folded.length + 1}>
+                    ×{folded.length + 1}
                   </span>
                 ) : null}
                 {/* Its own chords, lines or transposition (issue #205). */}
@@ -439,6 +490,8 @@ export interface PassMarks {
 
 /** Notes on a chart (issue #256), placed by the page: what's drawn where, and how one is added. */
 export interface ChartNotesLayer {
+  /** What notes are on a pass, as a string: passes sung again straight after fold into one only when theirs are the same. */
+  passKey?: (pass: RenderedPass) => string;
   /** Under a pass's heading: the notes on its section. */
   section?: (pass: RenderedPass) => ReactNode;
   /** After a pass: notes between it and the next. */

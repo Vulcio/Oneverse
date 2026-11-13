@@ -2,6 +2,7 @@ import { barAt, barBeatPlaces, chartBars, lineAtPosition, type RenderedChart, ty
 import { useEffect, useMemo, type RefObject } from "react";
 import { useBarsClock } from "#/lib/bars-clock";
 import { keepInView } from "#/lib/follow-view";
+import { passSelector } from "@oneverse/screen/components/song-chart";
 
 /** Lit a beat before it's sung, so it's read in time. */
 const AHEAD = 1;
@@ -33,7 +34,7 @@ export function useSungLine(container: RefObject<HTMLElement | null>, songId: st
         if (lit) delete lit.dataset.sung;
         lit = null;
         const passId = passIndex === null ? undefined : chart.passes[passIndex]?.id;
-        const pass = passId ? root.querySelector<HTMLElement>(`[data-pass="${CSS.escape(passId)}"]`) : null;
+        const pass = passId ? root.querySelector<HTMLElement>(passSelector(passId)) : null;
         if (pass && line) lit = pass.querySelector<HTMLElement>(`[data-line-id="${CSS.escape(line.lineId)}"]`);
         if (lit) lit.dataset.sung = "";
         root.dataset.sung = key;

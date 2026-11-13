@@ -3,7 +3,8 @@ import { ArrowDown, ArrowUp, Minus, Plus, Repeat } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@oneverse/ui/lib/utils";
-import { MAX_REPEATS, moveBlock, setRepeatCount } from "./extensions";
+import { MAX_REPEATS } from "./document";
+import { moveBlock, setRepeatCount } from "./extensions";
 
 /**
  * The tools at the right of a block's heading - a section's or a linked

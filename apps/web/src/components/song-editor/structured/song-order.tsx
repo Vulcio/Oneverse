@@ -1,11 +1,12 @@
 import { generateId, ID_PREFIXES, passChanged, passEdited, transposeKey, type SectionInstance, type SectionV2, sectionName, sectionNumbers } from "@oneverse/core";
-import { ArrowLeft, ArrowRight, Copy, GripVertical, KeyRound, Link2, ListMinus, ListRestart, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy, GripVertical, KeyRound, Link2, ListMinus, ListRestart, MessageSquare, Minus, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { cn } from "@oneverse/ui/lib/utils";
+import { MAX_REPEATS, repeatPasses, repeatsPass } from "./document";
 
 const KEY_STEPS = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6];
 /** How long a finger rests on a pass before it can be dragged (a quicker swipe scrolls). */
@@ -59,20 +60,43 @@ export function SongOrder({
     if (item.keyChange) current = item.keyChange.key;
   }
 
-  const index = passes.findIndex((item) => item.id === selected);
-  const pass = index >= 0 ? passes[index]! : null;
+  // A pass sung again straight after, the same way: one chip, "Intro ×4", as the editor's blocks are.
+  const groups: { start: number; items: SectionInstance[] }[] = [];
+  passes.forEach((item, i) => {
+    const last = groups.at(-1);
+    if (last && repeatsPass(last.items[0]!, item)) last.items.push(item);
+    else groups.push({ start: i, items: [item] });
+  });
+  const groupIndex = groups.findIndex((one) => one.items.some((item) => item.id === selected));
+  const group = groupIndex >= 0 ? groups[groupIndex]! : null;
+  // The chosen chip's first pass: what its name, key change and note are on.
+  const pass = group ? group.items[0]! : null;
+  const index = group ? group.start : -1;
+  const groupEnd = group ? group.start + group.items.length : -1;
 
   function add(sectionId: string) {
     const item = { id: generateId(ID_PREFIXES.flowItem), sectionId };
     onChange([...passes, item]);
     select(item.id);
   }
+  /** A chip (all its times) moved to where another is. */
   function move(from: number, to: number) {
-    if (to < 0 || to >= passes.length || from === to) return;
-    const next = [...passes];
+    if (to < 0 || to >= groups.length || from === to) return;
+    const next = [...groups];
     const [item] = next.splice(from, 1);
     next.splice(to, 0, item!);
-    onChange(next);
+    onChange(next.flatMap((one) => one.items));
+  }
+  /** The chosen chip sung one time more (straight after, the same way) or fewer. */
+  function setTimes(times: number) {
+    if (!group || !pass || times < 1 || times > MAX_REPEATS) return;
+    if (times < group.items.length) {
+      const dropped = new Set(group.items.slice(times).map((item) => item.id));
+      onChange(passes.filter((item) => !dropped.has(item.id)));
+    } else if (times > group.items.length) {
+      const more = repeatPasses(pass, Array.from({ length: times - group.items.length }, () => generateId(ID_PREFIXES.flowItem)), new Map());
+      onChange([...passes.slice(0, groupEnd), ...more, ...passes.slice(groupEnd)]);
+    }
   }
   function edit(change: Partial<SectionInstance>) {
     if (!pass) return;
@@ -86,21 +110,22 @@ export function SongOrder({
       <div className="flex flex-wrap items-center gap-1.5">
         <h3 className="mr-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("songOrder.title")}</h3>
         <ol className="contents" aria-label={t("songOrder.title")} ref={drag.list}>
-          {passes.map((item, i) => {
+          {groups.map(({ start, items }, i) => {
+            const item = items[0]!;
             const section = byId.get(item.sectionId)!;
             // A section sung again: a linked copy of it (issue #205).
-            const linked = passes.findIndex((one) => one.sectionId === item.sectionId) < i;
+            const linked = passes.findIndex((one) => one.sectionId === item.sectionId) < start;
             return (
               <li key={item.id} data-pass-index={i}>
                 <button
                   type="button"
-                  aria-pressed={item.id === selected}
+                  aria-pressed={i === groupIndex}
                   data-pass-section={section.type}
                   data-section-color={section.type}
                   onPointerDown={(event) => drag.start(event, i)}
                   onClick={() => {
                     if (drag.justDragged()) return;
-                    select(item.id === selected ? null : item.id);
+                    select(i === groupIndex ? null : item.id);
                   }}
                   className={cn(
                     "flex h-8 cursor-grab touch-manipulation items-center gap-1 rounded-full border border-[var(--section-line)] bg-[var(--section-tag)] pr-2.5 pl-1.5 text-xs font-medium whitespace-nowrap text-[var(--section-ink)] select-none pointer-coarse:h-11 pointer-coarse:pr-3.5",
@@ -113,6 +138,11 @@ export function SongOrder({
                   <span className="tabular-nums opacity-70">{i + 1}</span>
                   {linked ? <Link2 className="size-3" aria-label={t("linkedCopy.linked")} /> : null}
                   <span>{item.label || nameOf(section)}</span>
+                  {items.length > 1 ? (
+                    <span className="font-semibold tabular-nums" data-testid="pass-times">
+                      ×{items.length}
+                    </span>
+                  ) : null}
                   {item.keyChange ? <span className="rounded bg-background/60 px-1 font-mono text-[10px]">→{item.keyChange.key}</span> : null}
                   {item.note ? <MessageSquare className="size-3" aria-label={t("songOrder.hasNote")} /> : null}
                   {/* Moved up or down by itself (issue #252). */}
@@ -157,7 +187,7 @@ export function SongOrder({
       {/* The chosen pass's actions: one line that scrolls sideways if it must, the same height chosen or not. */}
       <div
         role="toolbar"
-        aria-label={pass ? t("songOrder.pass", { n: index + 1, section: nameOf(byId.get(pass.sectionId)!) }) : t("songOrder.title")}
+        aria-label={pass ? t("songOrder.pass", { n: groupIndex + 1, section: nameOf(byId.get(pass.sectionId)!) }) : t("songOrder.title")}
         className="@container/bar flex h-11 items-center gap-0.5 overflow-x-auto rounded-lg border bg-muted/40 px-1 pointer-coarse:h-14"
         data-testid="song-order-pass"
         data-pass={pass?.id}
@@ -166,15 +196,25 @@ export function SongOrder({
           <>
             {/* A fixed width: its number changing as the pass moves never moves the buttons beside it. */}
             <span className="w-36 shrink-0 truncate px-2 text-xs font-semibold whitespace-nowrap text-[var(--section-ink)] tabular-nums" data-section-color={byId.get(pass.sectionId)!.type}>
-              {t("songOrder.pass", { n: index + 1, section: pass.label || nameOf(byId.get(pass.sectionId)!) })}
+              {t("songOrder.pass", { n: groupIndex + 1, section: pass.label || nameOf(byId.get(pass.sectionId)!) })}
             </span>
-            <BarButton label={t("songOrder.earlier")} disabled={index === 0} onClick={() => move(index, index - 1)} icon={<ArrowLeft />} />
-            <BarButton label={t("songOrder.later")} disabled={index === passes.length - 1} onClick={() => move(index, index + 1)} icon={<ArrowRight />} />
+            {/* How many times in a row (×2, ×3): one time fewer or more. */}
+            <span className="mr-1 flex shrink-0 items-center rounded-full border bg-background" role="group" aria-label={t("structuredEditor.repeat.count", { count: group!.items.length })} data-testid="pass-times-tools">
+              <button type="button" className="flex size-7 items-center justify-center rounded-full hover:bg-muted disabled:opacity-30 pointer-coarse:size-10 [&_svg]:size-3.5" disabled={group!.items.length < 2} onClick={() => setTimes(group!.items.length - 1)} aria-label={t("structuredEditor.repeat.fewer")} title={t("structuredEditor.repeat.fewer")} data-testid="pass-fewer">
+                <Minus />
+              </button>
+              <span className="min-w-6 text-center text-xs font-semibold tabular-nums">×{group!.items.length}</span>
+              <button type="button" className="flex size-7 items-center justify-center rounded-full hover:bg-muted disabled:opacity-30 pointer-coarse:size-10 [&_svg]:size-3.5" disabled={group!.items.length >= MAX_REPEATS} onClick={() => setTimes(group!.items.length + 1)} aria-label={t("structuredEditor.repeat.more")} title={t("structuredEditor.repeat.more")} data-testid="pass-more">
+                <Plus />
+              </button>
+            </span>
+            <BarButton label={t("songOrder.earlier")} disabled={groupIndex === 0} onClick={() => move(groupIndex, groupIndex - 1)} icon={<ArrowLeft />} />
+            <BarButton label={t("songOrder.later")} disabled={groupIndex === groups.length - 1} onClick={() => move(groupIndex, groupIndex + 1)} icon={<ArrowRight />} />
             <BarButton
               label={t("songOrder.again")}
               onClick={() => {
                 const copy = { id: generateId(ID_PREFIXES.flowItem), sectionId: pass.sectionId };
-                onChange([...passes.slice(0, index + 1), copy, ...passes.slice(index + 1)]);
+                onChange([...passes.slice(0, groupEnd), copy, ...passes.slice(groupEnd)]);
                 select(copy.id);
               }}
               icon={<Link2 />}
@@ -224,15 +264,16 @@ export function SongOrder({
               />
             </BarPopover>
             <span className="ml-auto" />
-            {/* The section's only pass: removing it takes the section out of the order. */}
+            {/* The section's only chip: removing it takes the section out of the order. All its times go. */}
             <BarButton
-              label={passes.filter((item) => item.sectionId === pass.sectionId).length > 1 ? t("songOrder.remove") : t("structuredEditor.takeOutOfOrder")}
+              label={passes.filter((item) => item.sectionId === pass.sectionId).length > group!.items.length ? t("songOrder.remove") : t("structuredEditor.takeOutOfOrder")}
               destructive
               onClick={() => {
-                onChange(passes.filter((item) => item.id !== pass.id));
+                const gone = new Set(group!.items.map((item) => item.id));
+                onChange(passes.filter((item) => !gone.has(item.id)));
                 select(null);
               }}
-              icon={passes.filter((item) => item.sectionId === pass.sectionId).length > 1 ? <Trash2 /> : <ListMinus />}
+              icon={passes.filter((item) => item.sectionId === pass.sectionId).length > group!.items.length ? <Trash2 /> : <ListMinus />}
             />
           </>
         ) : (

@@ -2,6 +2,7 @@ import { passName, type RenderedChart, type StructureGroup, type StructureStep }
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@oneverse/ui/lib/utils";
+import { passSelector } from "@oneverse/screen/components/song-chart";
 
 /**
  * The pass being sung: the last one whose top has scrolled past the upper
@@ -196,7 +197,7 @@ export function usePagePass(root: RefObject<HTMLElement | null>, steps: Structur
   const pick = (passId: string) => {
     picked.current = { passId, until: Date.now() + 1000 };
     setCurrent(passId);
-    const pass = root.current?.querySelector<HTMLElement>(`[data-pass="${CSS.escape(passId)}"]`);
+    const pass = root.current?.querySelector<HTMLElement>(passSelector(passId));
     if (pass) window.scrollTo({ top: pass.getBoundingClientRect().top + window.scrollY - top - 12, behavior: "smooth" });
   };
   return [current, pick];

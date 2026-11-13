@@ -84,6 +84,7 @@ L'**Ordre du chant**, au-dessus de la grille, est l'ordre dans lequel on le chan
 ![L'ordre du chant](../../../assets/screenshots/fr/song-order.jpg)
 
 - **+ Chanter…** ajoute un passage : le refrain une nouvelle fois, par exemple.
+- Un passage chanté à nouveau juste après, de la même façon, est une seule pastille avec le nombre de fois : **Intro ×4**. Choisissez-la pour **−** et **+** (une fois de moins ou de plus) ; la déplacer ou la retirer déplace ou retire toutes les fois.
 - **Choisissez un passage** - ou cliquez dans sa section sur la grille - et ses actions s'affichent dans la barre sous l'ordre : **Plus tôt**, **Plus tard**, **Rechanter juste après**, **Dupliquer (copie indépendante)** (une section à part, après lui), **Renommer** (« Dernier refrain »), **Changement de tonalité** et **Note pour les musiciens**. Le dernier bouton est **Retirer ce passage** ; sur le seul passage d'une section, c'est **Retirer de l'ordre du chant**. La barre garde sa place et sa hauteur, qu'un passage soit choisi ou non : vous pouvez appuyer sur **Plus tôt** encore et encore sans regarder. Choisir un passage fait défiler jusqu'à sa section.
 - **Faites glisser les passages** pour les réordonner. Sur un écran tactile, appuyez d'abord longuement sur un passage ; un balayage rapide fait défiler la page.
 - **Suivre les sections** revient à chanter chaque section une fois, dans l'ordre.

@@ -262,7 +262,9 @@ await step("a song's order just for this set: repeat the chorus there only", asy
   await page.goto(`${WEB}/sets/${set.id}/songs/${itemId}`);
   await page.waitForLoadState("networkidle");
   await page.getByText("Played as Just for this set").waitFor();
-  if ((await page.locator("[data-pass]").count()) !== 3) throw new Error(`expected 3 passes, got ${await page.locator("[data-pass]").count()}`);
+  // The chorus sung twice in a row: shown once, ×2 (issue #457).
+  const times = await page.locator("[data-pass]").evaluateAll((els) => els.map((el) => 1 + (el.dataset.folded?.split(" ").length ?? 0)));
+  if (times.join() !== "1,2") throw new Error(`expected verse, chorus ×2, got ${times}`);
 
   // The song's own list doesn't show it.
   await page.goto(`${WEB}/library/${song.id}?tab=arrangements`);

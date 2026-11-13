@@ -662,6 +662,8 @@ export interface DisplaySettings {
   /** Where the diagrams sit (issue #212). */
   diagramsPosition?: DiagramPositionValue;
   hideChords?: boolean;
+  /** A section sung again straight after, the same way (issue #457): once (×4) or written out. */
+  chartRepeats?: WordsRepeatsValue;
   /** The bars row at the top (issue #238): the chords in bars and beats, following the music. */
   bars?: boolean;
   /** The chord grid's bars a row (issue #408). */

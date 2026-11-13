@@ -38,6 +38,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { useBarsClock } from "#/lib/bars-clock";
 import { songLengthText, useAutoscroll } from "#/lib/autoscroll";
 import { AUTOSCROLL_SPEEDS, AutoscrollIcon } from "#/components/autoscroll-control";
+import { passSelector } from "@oneverse/screen/components/song-chart";
 
 const SPEEDS = AUTOSCROLL_SPEEDS;
 
@@ -388,7 +389,7 @@ export function LiveView({
   function goToPass(passId: string) {
     pickPass(passId);
     const element = scroller.current;
-    const pass = (sections.current[at] ?? element)?.querySelector(`[data-pass="${CSS.escape(passId)}"]`);
+    const pass = (sections.current[at] ?? element)?.querySelector(passSelector(passId));
     if (!element || !pass) return;
     element.scrollTo({ top: pass.getBoundingClientRect().top - element.getBoundingClientRect().top + element.scrollTop - 12, behavior: "smooth" });
   }

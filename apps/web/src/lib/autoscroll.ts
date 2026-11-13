@@ -1,5 +1,6 @@
 import { barsLength, chartSeconds, formatDuration, positionAtSeconds, scrollStops, secondsAtPosition, type ChartBar, type RenderedChart, type ScrollStop, type SongDocumentV2 } from "@oneverse/core";
 import { useEffect, useRef } from "react";
+import { passSelector } from "@oneverse/screen/components/song-chart";
 
 /**
  * Autoscroll (issue #414), in Live and in Practice: the page moves through a
@@ -162,7 +163,7 @@ function measureAnchors(scroller: HTMLElement, songs: readonly AutoscrollSong[],
     const seen = new Set<string>();
     let found = 0;
     for (const stop of stopsOf(song.bars)) {
-      const pass = element.querySelector<HTMLElement>(`[data-pass="${CSS.escape(stop.passId)}"]`);
+      const pass = element.querySelector<HTMLElement>(passSelector(stop.passId));
       const firstOfPass = !seen.has(stop.passId);
       seen.add(stop.passId);
       const lineElement = stop.lineId && pass ? pass.querySelector<HTMLElement>(`[data-line-id="${CSS.escape(stop.lineId)}"]`) : null;

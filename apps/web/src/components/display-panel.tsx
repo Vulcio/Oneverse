@@ -197,7 +197,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, bars: null, gridBarsPerRow: null, structureBar: null, wordsSize: null, wordsLayout: null, wordsLabels: null, wordsRepeats: null, wordsInstrumental: null, wordsNext: null, wordsSung: null, wordsFill: null, wordsChords: null, metronomeDisplay: null, metronomeBrightness: null, metronomeLightUp: null, drumsWords: null, drumsNext: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chartRepeats: null, bars: null, gridBarsPerRow: null, structureBar: null, wordsSize: null, wordsLayout: null, wordsLabels: null, wordsRepeats: null, wordsInstrumental: null, wordsNext: null, wordsSung: null, wordsFill: null, wordsChords: null, metronomeDisplay: null, metronomeBrightness: null, metronomeLightUp: null, drumsWords: null, drumsNext: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -310,6 +310,18 @@ export function DisplayPanel({
                 />
               </Row>
               <SecondRowControls settings={settings} onChange={change} />
+              {/* A section sung again straight after (issue #457): once with ×4, or every time. */}
+              <Row label={t("display.chartRepeats")}>
+                <Choices
+                  value={settings.chartRepeats}
+                  onChange={(chartRepeats) => change({ chartRepeats })}
+                  name="chartRepeats"
+                  options={[
+                    { value: "once", label: t("display.chartRepeatsOnceHint"), content: t("display.chartRepeatsOnce") },
+                    { value: "written", label: t("display.chartRepeatsWrittenHint"), content: t("display.chartRepeatsWritten") },
+                  ]}
+                />
+              </Row>
               <Row label={t("display.bars")}>
                 <Choices
                   value={settings.bars ? "shown" : "hidden"}

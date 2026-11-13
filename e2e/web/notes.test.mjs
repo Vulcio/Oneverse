@@ -60,6 +60,10 @@ await step("…a word, just for me", async () => {
 });
 
 await step("…the second chorus only (this time, not every time)", async () => {
+  // Sung twice in a row, the chorus shows once (×2) unless repeats are written out (issue #457).
+  await chart().locator("[data-pass-times='2']").waitFor();
+  await displaySetting(page, "chords", "display-chartRepeats-written");
+  await chart().locator("[data-pass-times]").waitFor({ state: "detached" });
   const second = chart().locator('[data-section="chorus"]').nth(1);
   await second.locator("[data-pass-heading]").click({ button: "right" });
   await page.getByRole("radio", { name: "This time only" }).waitFor();

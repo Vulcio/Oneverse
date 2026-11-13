@@ -84,6 +84,7 @@ The **Song order** above the chart is the order the song is sung in, each time t
 ![The song order](../../assets/screenshots/en/song-order.jpg)
 
 - **+ Sing…** adds a pass: the chorus again, say.
+- A pass sung again straight after, the same way, is one chip with how many times: **Intro ×4**. Choose it for **−** and **+** (one time fewer or more); moving or removing it moves or removes every time.
 - **Choose a pass** - or click into its section in the chart - and its actions show in the bar under the order: **Earlier**, **Later**, **Sing again right after**, **Duplicate (unique copy)** (a section of its own after it), **Rename** ("Final chorus"), **Key change** and **Note for the band**. The last button is **Remove this pass**; on a section's only pass, it's **Take out of the song order**. The bar keeps its place and height whether a pass is chosen or not, so you can press **Earlier** again and again without looking. Choosing a pass brings its section into view.
 - **Drag passes** to reorder them. On a touch screen, press and hold a pass first; a quick swipe scrolls the page.
 - **Follow the sections** goes back to singing each section once, in order.

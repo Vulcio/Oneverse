@@ -68,7 +68,8 @@ try {
     if (await copy().locator("[data-copy-line]").count()) throw new Error("not folded");
     // Locked: no text to type into.
     if (await copy().locator("input").count()) throw new Error("editable while locked");
-    await order().getByRole("listitem").nth(2).getByLabel("Linked copy").waitFor();
+    // In the song order, sung again straight after as written: one chip, ×2 (issue #457).
+    await order().getByRole("listitem").nth(1).getByTestId("pass-times").getByText("×2").waitFor();
   });
 
   await step("transposed by itself, a tone up: a badge, not marked as changed", async () => {

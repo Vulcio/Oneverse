@@ -4,6 +4,8 @@
 // with a counter (×3) and one more / one fewer; only a pass sung elsewhere
 // or differently is a block of its own. "Separate the repeats" makes each a
 // linked copy to change; the song's order keeps one pass per time sung.
+// The Song order strip shows them as one chip ("Chorus ×3") with one time
+// fewer / more, and the chart shows such a pass once, "×3" by its name.
 import { chromium } from "playwright";
 import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 
@@ -82,6 +84,31 @@ try {
 
   await step("the chorus sung three times in a row is one block, ×3; sung again after the bridge, a copy", async () => {
     await expectBlocks(["verse", "chorus×3", "bridge", "copy"]);
+  });
+
+  await step("the song order: one chip, Chorus ×3, with one time fewer or more", async () => {
+    const chips = page.getByTestId("song-order").getByRole("listitem");
+    if ((await chips.count()) !== 4) throw new Error(`${await chips.count()} chips`);
+    await chips.nth(1).getByTestId("pass-times").getByText("×3").waitFor();
+    // Chosen already when the cursor is in the chorus: the strip and the editor follow each other.
+    if ((await chips.nth(1).getByRole("button").getAttribute("aria-pressed")) !== "true") await chips.nth(1).getByRole("button").click();
+    const bar = page.getByTestId("song-order-pass");
+    await bar.getByTestId("pass-more").click();
+    await chips.nth(1).getByTestId("pass-times").getByText("×4").waitFor();
+    await expectBlocks(["verse", "chorus×4", "bridge", "copy"]);
+    await bar.getByTestId("pass-fewer").click();
+    await chips.nth(1).getByTestId("pass-times").getByText("×3").waitFor();
+    await expectBlocks(["verse", "chorus×3", "bridge", "copy"]);
+  });
+
+  await step("the chart: the chorus once, ×3 by its name; the one after the bridge on its own", async () => {
+    await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Practice" }).click();
+    const passes = page.getByTestId("song-chart").locator("[data-pass]");
+    await passes.nth(1).locator("[data-pass-times='3']").waitFor();
+    if ((await passes.count()) !== 4) throw new Error(`${await passes.count()} passes on the chart`);
+    if ((await passes.nth(1).getAttribute("data-folded")) !== `f2${stamp} f3${stamp}`) throw new Error(await passes.nth(1).getAttribute("data-folded"));
+    await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Edit" }).click();
+    await page.getByTestId("structured-editor").waitFor();
   });
 
   await step("one fewer: ×2, and the song's order loses that pass", async () => {

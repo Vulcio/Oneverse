@@ -20,7 +20,7 @@ import { Decoration, DecorationSet, type EditorView, type NodeView } from "@tipt
 import { joinBackward, joinForward } from "@tiptap/pm/commands";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { cn } from "@oneverse/ui/lib/utils";
-import { lineFromNode, linePosition, sectionBeatPlaces, sectionFromNode, sectionsToEditorJSON, songToEditorJSON } from "./document";
+import { lineFromNode, MAX_REPEATS, linePosition, sectionBeatPlaces, sectionFromNode, sectionsToEditorJSON, songToEditorJSON } from "./document";
 import { SectionView } from "./section-view";
 import { LinkedView } from "./linked-view";
 
@@ -1492,9 +1492,6 @@ export function setRepeatCount(view: EditorView, pos: number, times: number) {
   const next = wanted < repeats.length ? repeats.slice(0, wanted) : [...repeats, ...Array.from({ length: wanted - repeats.length }, () => generateId(ID_PREFIXES.flowItem))];
   view.dispatch(view.state.tr.setNodeAttribute(pos, "repeats", next));
 }
-
-/** How many times in a row a block can be sung. */
-export const MAX_REPEATS = 16;
 
 /** The block at `pos`'s repeats as linked copies of their own, just after it: one of them to change (an exception). */
 export function separateRepeats(view: EditorView, pos: number) {

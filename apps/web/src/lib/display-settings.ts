@@ -236,6 +236,7 @@ export function chartDisplayProps(settings: EffectiveDisplaySettings) {
     font: settings.font,
     spacing: settings.spacing,
     hideChords: settings.hideChords,
+    foldRepeats: settings.chartRepeats === "once",
     chordScale: settings.chordSize / settings.textSize,
     rows: settings.chordRows,
     notation: settings.chordNotation,

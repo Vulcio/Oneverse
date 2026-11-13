@@ -1,7 +1,7 @@
 import { chordBassOptions, diatonicChords, type ChordCheck } from "@oneverse/core";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
@@ -29,6 +29,31 @@ function useKeyboardInset(): number {
   return inset;
 }
 
+/** Where the page's main column is across the screen (px from the left and right), so a bar fixed at the bottom covers it and not the sidebars beside it. */
+function useMainColumn(element: RefObject<HTMLElement | null>): { left: number; right: number } {
+  const [place, setPlace] = useState({ left: 0, right: 0 });
+  useEffect(() => {
+    const main = element.current?.closest("main");
+    if (!main) return;
+    const update = () => {
+      const box = main.getBoundingClientRect();
+      setPlace((was) => {
+        const next = { left: Math.max(0, Math.round(box.left)), right: Math.max(0, Math.round(document.documentElement.clientWidth - box.right)) };
+        return was.left === next.left && was.right === next.right ? was : next;
+      });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(main);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [element]);
+  return place;
+}
+
 /** Adds `raw` at the cursor, or puts it in place of the chord selected. */
 export function applyChord(editor: Editor, raw: string) {
   const selected = selectedChord(editor.state);
@@ -53,6 +78,8 @@ const keepFocus = (event: SyntheticEvent) => event.preventDefault();
 export function ChordBar({ editor, songKey, used, checks = [] }: { editor: Editor; songKey: string; used: string[]; checks?: ChordCheck[] }) {
   const { t } = useTranslation();
   const inset = useKeyboardInset();
+  const barRef = useRef<HTMLDivElement>(null);
+  const column = useMainColumn(barRef);
   const [other, setOther] = useState("");
   const [otherOpen, setOtherOpen] = useState(false);
   const selected = useEditorState({ editor, selector: ({ editor: current }) => (current ? ((selectedChord(current.state)?.node.attrs.raw as string | undefined) ?? null) : null) });
@@ -104,10 +131,11 @@ export function ChordBar({ editor, songKey, used, checks = [] }: { editor: Edito
     <div
       role="toolbar"
       aria-label={t("structuredEditor.chords")}
+      ref={barRef}
       data-testid="chord-bar"
-      // Over the save bar on a phone (its height in --save-bar-h), over the keyboard when it's open.
-      className="fixed inset-x-0 z-30 border-t bg-background/95 px-2 pt-1.5 pb-2 font-sans backdrop-blur supports-[backdrop-filter]:bg-background/85 lg:pointer-fine:hidden"
-      style={{ bottom: inset > 0 ? inset : "var(--save-bar-h, 0px)" }}
+      // Over the save bar on a phone (its height in --save-bar-h), over the keyboard when it's open; across the page's column, not the sidebars.
+      className="fixed z-30 border-t bg-background/95 px-2 pt-1.5 pb-2 font-sans backdrop-blur supports-[backdrop-filter]:bg-background/85 lg:pointer-fine:hidden"
+      style={{ bottom: inset > 0 ? inset : "var(--save-bar-h, 0px)", left: column.left, right: column.right }}
     >
       {outOfPlace && !bar ? (
         <div className="mb-1.5 max-h-40 overflow-y-auto">

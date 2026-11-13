@@ -74,6 +74,8 @@ export const DisplaySettingsSchema = z.strictObject({
   diagramsPosition: z.enum(DIAGRAM_POSITIONS).nullable().optional(),
   /** Lyrics only: the chords hidden, for a singer. */
   hideChords: z.boolean().nullable().optional(),
+  /** A section sung again straight after: once (×4) or written out (issue #457). */
+  chartRepeats: z.enum(WORDS_REPEATS).nullable().optional(),
   /** The bars row at the top (issue #238). */
   bars: z.boolean().nullable().optional(),
   /** The chord grid's bars a row (issue #408). */

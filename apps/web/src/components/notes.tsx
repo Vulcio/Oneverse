@@ -250,6 +250,8 @@ export function useChartNotes({
     const floating: { note: Note; passId: string }[] = [];
     const markedLines = new Set<string>();
     const sections = new Set<string>();
+    // The notes on each pass, so passes sung again straight after fold into one (×4) only when theirs are the same.
+    const onPass = new Map<string, string[]>();
     const push = (map: Map<string, Note[]>, key: string, note: Note) => map.set(key, [...(map.get(key) ?? []), note]);
     const floats = (kind: NoteAnchor["kind"]) => style.placement !== "below" && (kind === "chord" || kind === "word" || kind === "line" || kind === "section");
     for (const note of visible) {
@@ -257,6 +259,7 @@ export function useChartNotes({
       if (passes.length === 0) top.push(note);
       for (const passId of passes) {
         const anchor = note.anchor;
+        onPass.set(passId, [...(onPass.get(passId) ?? []), note.id]);
         if (floats(anchor.kind)) floating.push({ note, passId });
         if (anchor.kind === "section") {
           push(section, passId, note);
@@ -277,7 +280,7 @@ export function useChartNotes({
         }
       }
     }
-    return { top, section, after, lines, chords, words, markedLines, sections, floating };
+    return { top, section, after, lines, chords, words, markedLines, sections, floating, onPass };
   }, [state.notes, state.me, show, chart, style.placement]);
 
   const chipLabel = (note: Note) => (note.anchor.kind === "chord" || note.anchor.kind === "word" ? labelOf(note.anchor).replace(/^\S+\s/, "") : undefined);
@@ -297,6 +300,7 @@ export function useChartNotes({
     [placed, style, isNew],
   );
   const layer: ChartNotesLayer = {
+    passKey: (pass) => (placed.onPass.get(pass.id) ?? []).join(" "),
     section: (pass) => <Chips notes={notFloating(placed.section.get(pass.id) ?? [])} onOpen={setThreadId} isNew={isNew} style={style} />,
     afterPass: (pass) => <Chips notes={placed.after.get(pass.id) ?? []} onOpen={setThreadId} isNew={isNew} style={style} />,
     line: (pass, lineId) => <Chips notes={notFloating(placed.lines.get(`${pass.id}|${lineId}`) ?? [])} labelOf={chipLabel} onOpen={setThreadId} isNew={isNew} style={style} />,
