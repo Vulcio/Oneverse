@@ -93,8 +93,7 @@ export function ReplaceChartDialog({
           onContentChange={setContent}
           onFormatChange={setFormat}
           sourceFile={file}
-          // A file of the song's own is under Files already.
-          onSourceFile={(next) => setFile(next && next.file === incoming ? null : next)}
+          onSourceFile={setFile}
           find={song}
           incoming={incoming}
         />
@@ -106,7 +105,8 @@ export function ReplaceChartDialog({
             type="button"
             disabled={!content.trim()}
             onClick={() => {
-              onReplace(content, format, file);
+              // A file of the song's own is under Files already: not uploaded again.
+              onReplace(content, format, file && file.file === incoming ? null : file);
               close(false);
             }}
             data-testid="replace-chart-confirm"
