@@ -20,20 +20,35 @@ export interface PdfTextItem {
   width: number;
   /** The font size (the text's height). */
   height: number;
+  /**
+   * Where each character starts and ends, when the reader knows (OCR does,
+   * issue #124): then a chord is placed on exactly the letter under it,
+   * not on an estimate from the piece's width.
+   */
+  chars?: { x0: number; x1: number }[];
+  /** Which part of the page it's in (a header, a column…), counted down the page: set by `readPdfChart`. */
+  part?: number;
 }
 
-interface PlacedChar {
+export interface PlacedChar {
   char: string;
   x0: number;
   x1: number;
+  /** Its box is the letter's ink, as OCR saw it, not an estimate. */
+  ink?: boolean;
 }
 
-interface PdfLine {
+export interface PdfLine {
   page: number;
+  part: number;
+  /** Where its first piece starts. */
+  x: number;
   y: number;
   height: number;
   chars: PlacedChar[];
   text: string;
+  /** The pieces it's made of. */
+  items: PdfTextItem[];
 }
 
 // Helvetica's widths (thousandths of an em), for where each character of a
@@ -68,6 +83,7 @@ function isMonospaced(items: PdfTextItem[]): boolean {
 /** Each character of a piece of text, with where it starts and ends. */
 function placeChars(item: PdfTextItem, monospaced: boolean): PlacedChar[] {
   const chars = [...item.text];
+  if (item.chars?.length === chars.length) return chars.map((char, i) => ({ char, x0: item.chars![i]!.x0, x1: item.chars![i]!.x1, ink: true }));
   const weight = (char: string) => (monospaced ? 1 : charWidth(char));
   const total = chars.reduce((sum, char) => sum + weight(char), 0) || 1;
   let x = item.x;
@@ -80,14 +96,14 @@ function placeChars(item: PdfTextItem, monospaced: boolean): PlacedChar[] {
 }
 
 /** The page's pieces of text, as lines: pieces on one baseline, left to right, a space where there's a gap. */
-function linesOf(items: PdfTextItem[]): PdfLine[] {
-  const monospaced = isMonospaced(items.filter((item) => item.text.trim() !== ""));
-  const sorted = items.filter((item) => item.text.trim() !== "").sort((a, b) => a.page - b.page || a.y - b.y || a.x - b.x);
+export function linesOf(items: PdfTextItem[]): PdfLine[] {
+  const monospaced = isMonospaced(items.filter((item) => item.text.trim() !== "" && !item.chars));
+  const sorted = items.filter((item) => item.text.trim() !== "").sort((a, b) => a.page - b.page || (a.part ?? 0) - (b.part ?? 0) || a.y - b.y || a.x - b.x);
   const groups: PdfTextItem[][] = [];
   for (const item of sorted) {
     const last = groups[groups.length - 1];
     const head = last?.[0];
-    if (head && head.page === item.page && Math.abs(head.y - item.y) <= Math.max(head.height, item.height) * 0.4) last.push(item);
+    if (head && head.page === item.page && (head.part ?? 0) === (item.part ?? 0) && Math.abs(head.y - item.y) <= Math.max(head.height, item.height) * 0.4) last.push(item);
     else groups.push([item]);
   }
   return groups.map((group) => {
@@ -101,7 +117,7 @@ function linesOf(items: PdfTextItem[]): PdfLine[] {
       }
       chars.push(...placeChars(item, monospaced));
     }
-    return { page: group[0]!.page, y: group[0]!.y, height: Math.max(...group.map((item) => item.height)), chars, text: chars.map((c) => c.char).join("") };
+    return { page: group[0]!.page, part: group[0]!.part ?? 0, x: group[0]!.x, y: group[0]!.y, height: Math.max(...group.map((item) => item.height)), chars, text: chars.map((c) => c.char).join(""), items: group };
   });
 }
 
@@ -128,8 +144,15 @@ function chordsOf(line: PdfLine): { chord: string; x: number }[] {
 function withChords(lyric: PdfLine, chords: { chord: string; x: number }[]): string {
   const text = lyric.text.replace(/\s+$/, "");
   const at = chords.map(({ chord, x }) => {
-    let index = lyric.chars.findIndex((char) => (char.x0 + char.x1) / 2 > x - 0.5);
+    // The first letter mostly to the chord's right; a letter's ink box (OCR's, blurred, overlapping
+    // its neighbours) by most of it.
+    let index = lyric.chars.findIndex((char) => (char.ink ? char.x1 - (char.x1 - char.x0) * 0.25 : (char.x0 + char.x1) / 2) > x - 0.5);
     if (index < 0 || index > text.length) index = text.length;
+    // Chords mostly start words: one printed within a quarter em of a word's start goes there
+    // (letters' widths are estimates, and a scan's edges blur).
+    const starts = lyric.chars.flatMap((char, i) => (char.char !== " " && (i === 0 || lyric.chars[i - 1]!.char === " ") ? [i] : []));
+    const near = starts.find((i) => Math.abs(lyric.chars[i]!.x0 - x) <= lyric.height * 0.25);
+    if (near !== undefined) index = near;
     return { chord, index };
   });
   let out = "";
@@ -150,18 +173,22 @@ function withChords(lyric: PdfLine, chords: { chord: string; x: number }[]): str
  * (a scanned page).
  */
 export function chordProFromPdfText(items: PdfTextItem[]): string {
-  const lines = linesOf(items);
+  return chordProFromLines(linesOf(items));
+}
+
+/** The same, from lines already put together. */
+export function chordProFromLines(lines: PdfLine[]): string {
   const out: string[] = [];
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     const previous = lines[i - 1];
     // A gap of more than about a line and a half, or a new page, is a break between parts.
-    if (previous && (previous.page !== line.page || line.y - previous.y > Math.max(line.height, previous.height) * 1.9) && out[out.length - 1] !== "") out.push("");
+    if (previous && (previous.page !== line.page || previous.part !== line.part || line.y - previous.y > Math.max(line.height, previous.height) * 1.9) && out[out.length - 1] !== "") out.push("");
     const text = line.text.trim();
     if (isChordLine(text)) {
       const next = lines[i + 1];
       const lyricBelow =
-        next && next.page === line.page && next.y - line.y < Math.max(line.height, next.height) * 1.9 && !isChordLine(next.text.trim()) && !LABEL_LINE.test(next.text.trim());
+        next && next.page === line.page && next.part === line.part && next.y - line.y < Math.max(line.height, next.height) * 1.9 && !isChordLine(next.text.trim()) && !LABEL_LINE.test(next.text.trim());
       if (lyricBelow) {
         out.push(withChords(next, chordsOf(line)));
         i++;

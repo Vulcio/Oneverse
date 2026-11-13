@@ -87,6 +87,8 @@ export * from "./calendar/ical.js";
 export * from "./notifications/index.js";
 export * from "./requests/index.js";
 export * from "./pdf-chart/index.js";
+export * from "./pdf-chart/read.js";
+export * from "./pdf-chart/ocr.js";
 export * from "./notes/index.js";
 export { songProviderOpenApi } from "./song-provider/openapi.js";
 export * from "./waveform/index.js";
