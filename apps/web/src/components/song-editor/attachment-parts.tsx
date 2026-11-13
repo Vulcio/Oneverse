@@ -1,4 +1,4 @@
-import { RECORDING_TIME_SIGNATURES, type Multitrack, type Attachment, type AttachmentAudience, type AttachmentType, type StemSeparation, type TeamSummary } from "@oneverse/core";
+import { RECORDING_TIME_SIGNATURES, surenessOf, type AnalyseRecordingRequest, type CheckedDetail, type Multitrack, type Attachment, type AttachmentAudience, type AttachmentType, type StemSeparation, type TeamSummary } from "@oneverse/core";
 import { Mic, Play } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -323,8 +323,10 @@ export function MultitrackBox({
   songKey,
   songTempo,
   separation,
+  asking,
   busy,
   onChange,
+  onAnalyse,
   onRecord,
   children,
 }: {
@@ -334,8 +336,12 @@ export function MultitrackBox({
   songTempo: string;
   /** The separation it came from (issue #175), if it did. */
   separation?: StemSeparation;
+  /** The latest time Sonic was asked to listen again to its recording (issue #452). */
+  asking?: StemSeparation;
   busy: boolean;
   onChange: (files: Attachment[], change: Parameters<typeof apiClient.updateAttachment>[2]) => void;
+  /** Sonic asked to listen again to its recording with what you say of it (issue #452), from one of its stems. */
+  onAnalyse: (stem: Attachment, hints: AnalyseRecordingRequest) => void;
   onRecord: () => void;
   /** Its files: its stems, then the recordings made into it. */
   children?: ReactNode;
@@ -415,7 +421,18 @@ export function MultitrackBox({
         busy={busy}
         onChange={(change) => onChange(changeable, change)}
       />
-      <DetectedNotice files={multitrack.files} canEdit={changeable.length > 0} busy={busy} onConfirm={() => onChange(changeable.filter((file) => file.detected?.length), { confirmDetected: true })} />
+      <DetectedNotice
+        files={multitrack.files}
+        canEdit={changeable.length > 0}
+        busy={busy}
+        asking={asking}
+        onConfirm={() => onChange(changeable.filter((file) => file.detected?.length), { confirmDetected: true })}
+        onSetKey={(key) => onChange(changeable, { recordingKey: key })}
+        onAnalyse={(hints) => {
+          const stem = changeable.find((file) => file.origin === "SEPARATED");
+          if (stem) onAnalyse(stem, hints);
+        }}
+      />
       {children}
     </div>
   );
@@ -423,31 +440,122 @@ export function MultitrackBox({
 
 /**
  * What the separation server's analysis found and nobody has confirmed yet
- * (issue #175): said, with "Looks right"; changing one confirms it.
+ * (issue #175), to check (issue #452): each detail with how sure it was and
+ * what else it might be. A key is set at once; another tempo, time
+ * signature or bar 1 asks Sonic to listen again with it, which finds the
+ * beats and sections around it. "Looks right" confirms them all; changing
+ * one by hand confirms it.
  */
-export function DetectedNotice({ files, canEdit, busy, onConfirm }: { files: Attachment[]; canEdit: boolean; busy: boolean; onConfirm: () => void }) {
+export function DetectedNotice({
+  files,
+  canEdit,
+  busy,
+  asking,
+  onConfirm,
+  onSetKey,
+  onAnalyse,
+}: {
+  files: Attachment[];
+  canEdit: boolean;
+  busy: boolean;
+  /** The latest time Sonic was asked again for these stems (issue #452), if it was. */
+  asking?: StemSeparation;
+  onConfirm: () => void;
+  onSetKey: (key: string) => void;
+  onAnalyse: (hints: AnalyseRecordingRequest) => void;
+}) {
   const { t } = useTranslation();
-  const holder = files.find((file) => file.detected?.length);
-  if (!holder) return null;
+  const holder = files.find((file) => file.detected?.length || file.recordingAnalysis?.alternatives) ?? files.find((file) => file.recordingAnalysis);
+  const pending = asking && (asking.status === "QUEUED" || asking.status === "SUBMITTED");
+  const failed = asking?.status === "FAILED" ? asking : null;
+  if (!holder || (!holder.detected?.length && !pending && !unsureDetails(holder).length)) return null;
   const detected = holder.detected ?? [];
-  const details = [
-    detected.includes("key") ? holder.recordingKey : null,
-    detected.includes("tempo") && holder.recordingTempo ? `${holder.recordingTempo} BPM` : null,
-    detected.includes("timeSignature") ? holder.recordingTimeSignature : null,
-    detected.includes("firstBeat") && holder.recordingFirstBeat != null ? t("stems.firstBeatAt", { seconds: holder.recordingFirstBeat }) : null,
-    detected.includes("beats") && holder.recordingDownbeats?.length ? t("stems.detectedBars", { count: holder.recordingDownbeats.length }) : null,
-    detected.includes("sections") ? t("stems.detectedSections") : null,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const check = holder.recordingAnalysis ?? null;
+  const seconds = (value: number) => t("stems.checkSeconds", { seconds: value });
+  const rows: { detail: CheckedDetail | "beats" | "sections" | "chords"; value: string | null; sureness: number | undefined; options: { label: string; pick: () => void }[] }[] = [];
+  const offered = <T extends string | number>(detail: CheckedDetail, current: T | null, label: (value: T) => string, pick: (value: T) => void) => {
+    const options = ((check?.alternatives?.[detail] ?? []) as unknown as { value: T }[]).filter((one) => one.value !== current).map((one) => ({ label: label(one.value), pick: () => pick(one.value) }));
+    const shown = detected.includes(detail) || (current === null && options.length > 0);
+    if (shown) rows.push({ detail, value: detected.includes(detail) && current !== null ? label(current) : null, sureness: check?.confidence?.[detail === "firstBeat" ? "beats" : detail], options: canEdit ? options : [] });
+  };
+  offered("key", holder.recordingKey, (value) => value, onSetKey);
+  offered("tempo", holder.recordingTempo, (value) => `${value} BPM`, (value) => onAnalyse({ tempo: value }));
+  offered("timeSignature", holder.recordingTimeSignature, (value) => value, (value) => onAnalyse({ timeSignature: value }));
+  offered("firstBeat", holder.recordingFirstBeat, seconds, (value) => onAnalyse({ firstBeat: value }));
+  if (detected.includes("beats") && holder.recordingDownbeats?.length) rows.push({ detail: "beats", value: t("stems.detectedBars", { count: holder.recordingDownbeats.length }), sureness: check?.confidence?.beats, options: [] });
+  if (detected.includes("sections")) rows.push({ detail: "sections", value: t("stems.checkChordsFound"), sureness: undefined, options: [] });
+  if (detected.includes("chords")) rows.push({ detail: "chords", value: t("stems.checkChordsFound"), sureness: undefined, options: [] });
+  const hints = asking?.hints
+    ? [asking.hints.timeSignature, asking.hints.tempo !== undefined ? `${asking.hints.tempo} BPM` : null, asking.hints.firstBeat !== undefined ? seconds(asking.hints.firstBeat) : null].filter(Boolean).join(", ")
+    : "";
+  const label = { key: "checkKey", tempo: "checkTempo", timeSignature: "checkTimeSignature", firstBeat: "checkFirstBeat", beats: "checkBeats", sections: "checkSections", chords: "checkChords" } as const;
   return (
-    <p className="flex flex-wrap items-center gap-2 rounded-md bg-muted px-2 py-1.5 text-xs" data-testid="detected">
-      <span className="min-w-0 flex-1">{t("stems.detected", { details })}</span>
-      {canEdit ? (
-        <Button type="button" variant="outline" size="sm" disabled={busy} onClick={onConfirm} data-testid="confirm-detected">
-          {t("stems.confirmDetected")}
-        </Button>
+    <div className="flex flex-col gap-2 rounded-md bg-muted px-3 py-2 text-xs" data-testid="detected">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="min-w-0 flex-1 text-sm font-medium">{t("stems.checkTitle")}</span>
+        {canEdit && detected.length > 0 ? (
+          <Button type="button" variant="outline" size="sm" disabled={busy || pending} onClick={onConfirm} data-testid="confirm-detected">
+            {t("stems.confirmDetected")}
+          </Button>
+        ) : null}
+      </div>
+      {pending ? (
+        <p className="text-muted-foreground" role="status" data-testid="check-asking">
+          {t("stems.checkAsking", { hints })}
+        </p>
+      ) : failed ? (
+        <p className="text-destructive" data-testid="check-failed">
+          {t("stems.checkFailed", { error: failed.error ?? "" })}
+        </p>
       ) : null}
-    </p>
+      {rows.length > 0 ? (
+        <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1.5">
+          {rows.map((row) => {
+            const sureness = surenessOf(row.sureness);
+            return (
+              <div key={row.detail} className="contents" data-testid={`check-${row.detail}`}>
+                <dt className="text-muted-foreground">{t(`stems.${label[row.detail]}`)}</dt>
+                <dd className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {row.value !== null ? <span className="font-medium">{row.value}</span> : <span className="text-muted-foreground">{t("stems.checkUnsure")}</span>}
+                  {row.value !== null && sureness ? (
+                    <span className={sureness === "guess" ? "text-amber-700 dark:text-amber-400" : "text-muted-foreground"} data-testid="check-sureness" data-sureness={sureness}>
+                      · {t(`stems.checkSure_${sureness}`)}
+                    </span>
+                  ) : null}
+                  {row.options.length > 0 ? (
+                    <span className="flex flex-wrap items-center gap-1">
+                      <span className="text-muted-foreground">{row.value !== null ? t("stems.checkOr") : null}</span>
+                      {row.options.map((option) => (
+                        <Button
+                          key={option.label}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          disabled={busy || pending}
+                          aria-label={t("stems.checkUse", { value: option.label })}
+                          onClick={option.pick}
+                          data-testid="check-alternative"
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      ) : null}
+      {canEdit && rows.some((row) => row.options.length > 0) ? <p className="text-muted-foreground">{t("stems.checkHint")}</p> : null}
+    </div>
   );
+}
+
+/** The details the analysis was too unsure of to use, but offered something for (issue #452). */
+function unsureDetails(file: Attachment): CheckedDetail[] {
+  const alternatives = file.recordingAnalysis?.alternatives ?? {};
+  const value = { key: file.recordingKey, tempo: file.recordingTempo, timeSignature: file.recordingTimeSignature, firstBeat: file.recordingFirstBeat };
+  return (Object.keys(value) as CheckedDetail[]).filter((detail) => value[detail] === null && alternatives[detail]?.length);
 }

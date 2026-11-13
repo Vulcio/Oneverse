@@ -11,11 +11,11 @@ import { PrismaService } from "../prisma/prisma.service.js";
 import { encodeStem, FfmpegMissingError } from "../recordings/ffmpeg.js";
 import { StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService } from "../storage/storage.service.js";
-import { lyricsForAnalysis, readRecordingChords, readSongDocument, type CuePoint } from "@oneverse/core";
+import { lyricsForAnalysis, readRecordingAnalysis, readRecordingChords, readSongDocument, type CuePoint, type DetectedDetail } from "@oneverse/core";
 import en from "@oneverse/core/i18n/locales/en";
 import fr from "@oneverse/core/i18n/locales/fr";
-import { detailsWithAnalysis } from "./analysis.js";
-import { DemucsError, downloadDemucsFile, getDemucsJob, submitDemucsJob, type DemucsAnalysis, type DemucsFile, type DemucsJob } from "./demucs-client.js";
+import { detailsWithAnalysis, recordingAnalysisOf } from "./analysis.js";
+import { DemucsError, demucsHealth, downloadDemucsFile, getDemucsJob, submitDemucsJob, takesHints, type DemucsAnalysis, type DemucsFile, type DemucsJob } from "./demucs-client.js";
 import { serverOfSeparation, type SeparationServer } from "./sonic-servers.js";
 import { partOfStem, twoStemsOf } from "./stem-parts.js";
 
@@ -101,6 +101,12 @@ export class StemSeparationProcessor extends WorkerHost {
       const hqModel = separation.hqRequested ? settings.hqModel : null;
       // The song's words in the order they're sung (issue #450): the server places its sections on the recording's bars.
       const words = await this.wordsOf(separation.songVersionId);
+      // Analysed again with what someone said of it (issue #452): only a server that takes hints, or it would separate it.
+      const hints = separation.analysisOnly ? readRecordingAnalysis({ hints: separation.hints })?.hints : undefined;
+      if (separation.analysisOnly && !takesHints(await demucsHealth(settings))) {
+        await this.fail(separation.id, "This Sonic server can't analyse a recording again: it needs version 1.11 or later");
+        return { skipped: "server too old" };
+      }
       // Its lossless original when one was kept (issue #182): separated from the best copy there is.
       const submitted = await submitDemucsJob(settings, await this.storage.get(source.originalStorageKey ?? source.storageKey, source.storedInOrganizationId), source.originalStorageKey ? source.filename.replace(/\.[a-z0-9]{1,5}$/i, ".flac") : source.filename, source.originalStorageKey ? (source.originalMimeType ?? "audio/flac") : source.mimeType, {
         model: fastModel,
@@ -109,6 +115,8 @@ export class StemSeparationProcessor extends WorkerHost {
         callbackUrl: job.data.callbackUrl ?? undefined,
         callbackSecret: settings.callbackSecret ?? undefined,
         lyrics: words?.text,
+        analysisOnly: separation.analysisOnly,
+        hints: hints && { time_signature: hints.timeSignature, bpm: hints.tempo, first_beat: hints.firstBeat },
       });
       // A server started afresh can number its jobs again: an older separation on it holding the same ID lost its job with it.
       await this.prisma.client.$transaction([
@@ -166,7 +174,9 @@ export class StemSeparationProcessor extends WorkerHost {
       throw error;
     }
     if (separation.status === "SUBMITTED") {
-      if (job.fast?.status === "completed" && job.fast.files?.length) {
+      if (separation.analysisOnly && job.fast?.status === "completed") {
+        return this.applyAnalysis(separation.id, job.analysis);
+      } else if (job.fast?.status === "completed" && job.fast.files?.length) {
         await this.importFast(separation.id, settings, job.fast.files, job.analysis);
       } else if (job.status === "failed" || job.fast?.status === "failed") {
         return this.fail(separation.id, job.error ? `Demucs: ${job.error}` : "The separation failed at the Demucs API");
@@ -307,6 +317,7 @@ export class StemSeparationProcessor extends WorkerHost {
             recordingChords: details.recordingChords ? (details.recordingChords as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
             cuePoints: details.cuePoints?.length ? (details.cuePoints as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
             detected: details.detected,
+            recordingAnalysis: (recordingAnalysisOf(analysis) as Prisma.InputJsonValue | null) ?? Prisma.DbNull,
             origin: "SEPARATED",
             // Kept as made (issue #145), until unlocked.
             locked: true,
@@ -327,6 +338,91 @@ export class StemSeparationProcessor extends WorkerHost {
     if (earlierStems.length) await this.storage.deleteUnreferencedFiles(earlierStems);
     this.logger.log(`Separated ${base}: ${stems.length} stems (${bytes} bytes)${earlierStems.length ? `, replacing ${earlierStems.length}` : ""}`);
     return { imported: stems.length, replaced: earlierStems.length };
+  }
+
+  /**
+   * An analysis asked again (issue #452), told what someone said of the
+   * recording: written on the stems of its multitrack. What they said is
+   * theirs (not detected); what they had confirmed or set stays; the rest -
+   * still a guess, or never found - is what it finds now. The beats and bars
+   * follow the hints, unless set by hand since.
+   */
+  private async applyAnalysis(separationId: string, analysis: DemucsAnalysis | null | undefined) {
+    const separation = await this.prisma.client.stemSeparation.findUniqueOrThrow({ where: { id: separationId }, include: { songVersion: { select: { documentJson: true } } } });
+    const hints = readRecordingAnalysis({ hints: separation.hints })?.hints ?? {};
+    const stems = await this.prisma.client.attachment.findMany({ where: { songVersionId: separation.songVersionId, multitrackId: separation.multitrackId ?? "-", origin: "SEPARATED" } });
+    let song = null;
+    try {
+      song = readSongDocument(separation.songVersion.documentJson);
+    } catch {
+      // A song without a chart: no sections to place.
+    }
+    const check = recordingAnalysisOf(analysis, hints);
+    const said = Object.keys(hints).length > 0;
+    const updates = stems.map((stem) => {
+      const guessed = (detail: DetectedDetail) => stem.detected.includes(detail);
+      // A guess can be found again, and what they say now; what someone confirmed or set stays.
+      const open = <T>(detail: DetectedDetail, value: T, hinted: boolean) => (hinted || guessed(detail) ? null : value);
+      // The beats and bars follow what they said, unless set by hand (no longer detected) and nothing was said.
+      const beatsOpen = stem.recordingBeats.length === 0 || guessed("beats") || said;
+      const details = detailsWithAnalysis(
+        {
+          recordingKey: open("key", stem.recordingKey, false),
+          // In another time signature, the tempo counts another note: found again.
+          recordingTempo: open("tempo", stem.recordingTempo, hints.tempo !== undefined || hints.timeSignature !== undefined),
+          recordingTimeSignature: open("timeSignature", stem.recordingTimeSignature, hints.timeSignature !== undefined),
+          recordingFirstBeat: open("firstBeat", stem.recordingFirstBeat, hints.firstBeat !== undefined),
+          recordingFreeIntro: stem.recordingFreeIntro,
+          recordingBeats: beatsOpen ? [] : stem.recordingBeats,
+          recordingDownbeats: beatsOpen ? [] : stem.recordingDownbeats,
+          recordingChords: guessed("chords") ? null : readRecordingChords(stem.recordingChords),
+          cuePoints: guessed("sections") ? null : ((stem.cuePoints as CuePoint[] | null) ?? null),
+        },
+        analysis,
+        song,
+        separation.lyricsPasses,
+      );
+      // A guess not found again stays as it was, still a guess.
+      const kept: DetectedDetail[] = [];
+      const keep = (detail: DetectedDetail, empty: boolean, restore: () => void) => {
+        if (guessed(detail) && empty && !details.detected.includes(detail)) {
+          restore();
+          kept.push(detail);
+        }
+      };
+      keep("key", details.recordingKey === null, () => (details.recordingKey = stem.recordingKey));
+      if (!hints.timeSignature) keep("tempo", details.recordingTempo === null, () => (details.recordingTempo = stem.recordingTempo));
+      keep("timeSignature", details.recordingTimeSignature === null, () => (details.recordingTimeSignature = stem.recordingTimeSignature));
+      keep("firstBeat", details.recordingFirstBeat === null, () => (details.recordingFirstBeat = stem.recordingFirstBeat));
+      keep("chords", details.recordingChords === null, () => (details.recordingChords = readRecordingChords(stem.recordingChords)));
+      keep("sections", !details.cuePoints?.length, () => (details.cuePoints = (stem.cuePoints as CuePoint[] | null) ?? null));
+      if (!said) keep("beats", details.recordingBeats.length === 0, () => ((details.recordingBeats = stem.recordingBeats), (details.recordingDownbeats = stem.recordingDownbeats)));
+      // What they said is kept as they said it, and is theirs, not a guess.
+      if (hints.timeSignature) details.recordingTimeSignature = hints.timeSignature;
+      if (hints.tempo !== undefined) details.recordingTempo = hints.tempo;
+      if (hints.firstBeat !== undefined) details.recordingFirstBeat = hints.firstBeat;
+      const theirs = new Set<DetectedDetail>([...(hints.timeSignature ? (["timeSignature"] as const) : []), ...(hints.tempo !== undefined ? (["tempo"] as const) : []), ...(hints.firstBeat !== undefined ? (["firstBeat"] as const) : [])]);
+      const detected = [...new Set([...details.detected, ...kept])].filter((detail) => !theirs.has(detail));
+      return this.prisma.client.attachment.update({
+        where: { id: stem.id },
+        data: {
+          recordingKey: details.recordingKey,
+          recordingTempo: details.recordingTempo,
+          recordingTimeSignature: details.recordingTimeSignature,
+          recordingFirstBeat: details.recordingFirstBeat,
+          recordingFreeIntro: details.recordingFreeIntro,
+          recordingBeats: details.recordingBeats,
+          recordingDownbeats: details.recordingDownbeats,
+          recordingChords: details.recordingChords ? (details.recordingChords as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+          cuePoints: details.cuePoints?.length ? (details.cuePoints as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+          detected,
+          recordingAnalysis: (check as Prisma.InputJsonValue | null) ?? Prisma.DbNull,
+        },
+      });
+    });
+    await this.prisma.client.$transaction([...updates, this.prisma.client.stemSeparation.update({ where: { id: separation.id }, data: { status: "COMPLETED", error: null } })]);
+    this.logger.log(`Analysed again with ${JSON.stringify(hints)}: ${stems.length} stems updated`);
+    return { analysed: stems.length };
   }
 
   /**
@@ -351,7 +447,7 @@ export class StemSeparationProcessor extends WorkerHost {
       delete rest.id;
       await this.prisma.client.$transaction([
         this.prisma.client.attachment.create({
-          data: { ...(rest as Omit<typeof fast, "id">), cuePoints: fast.cuePoints ?? Prisma.DbNull, recordingChords: fast.recordingChords ?? Prisma.DbNull, filename: fast.filename.replace(/\.[a-z0-9]{1,5}$/i, `.${stem.extension}`), mimeType: stem.mimeType, storageKey: hash, sizeBytes },
+          data: { ...(rest as Omit<typeof fast, "id">), cuePoints: fast.cuePoints ?? Prisma.DbNull, recordingChords: fast.recordingChords ?? Prisma.DbNull, recordingAnalysis: fast.recordingAnalysis ?? Prisma.DbNull, filename: fast.filename.replace(/\.[a-z0-9]{1,5}$/i, `.${stem.extension}`), mimeType: stem.mimeType, storageKey: hash, sizeBytes },
         }),
         this.prisma.client.attachment.delete({ where: { id: fast.id } }),
       ]);

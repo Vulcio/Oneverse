@@ -64,6 +64,7 @@ export * from "./playback/index.js";
 export * from "./recording/index.js";
 export * from "./recording/cues.js";
 export * from "./recording/chords.js";
+export * from "./recording/analysis-check.js";
 export * from "./recording/chord-bars.js";
 export * from "./recording/click-grid.js";
 export * from "./recording/lyrics-for-analysis.js";

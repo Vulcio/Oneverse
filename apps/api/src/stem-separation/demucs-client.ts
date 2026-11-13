@@ -61,6 +61,16 @@ export interface DemucsAnalysis {
   chords?: unknown[] | null;
   /** For each of `beats`, the index in `chords` of the chord sounding there. */
   beat_chords?: (number | null)[] | null;
+  /**
+   * What it nearly picked (API 1.11, issue #452), each with a score below the
+   * part's confidence; left out for a part the job's hints gave.
+   */
+  alternatives?: {
+    tempo?: { bpm?: number; score?: number }[];
+    time_signature?: { numerator?: number; denominator?: number; score?: number }[];
+    first_beat?: { start?: number; score?: number }[];
+    key?: { name?: string; score?: number }[];
+  } | null;
   /** Which engine found each part ("librosa@1.7.0", "btc@1673d23f8f9a"). */
   engines?: Partial<Record<"rhythm" | "key" | "sections" | "chords", string>> | null;
 }
@@ -129,6 +139,13 @@ async function call<T>(settings: Configured, path: string, init: RequestInit = {
 
 /** Its health check (no key needed) and what it offers (the key checked): Admin's Test connection. */
 export async function testDemucs(settings: Configured) {
+  const health = await demucsHealth(settings);
+  const models = await call<{ models: string[]; default: string; hq_default: string; devices: string[]; default_device: string }>(settings, "/api/v1/models");
+  return { health, models };
+}
+
+/** Its health check: what it is, its version, what its analysis offers. */
+export async function demucsHealth(settings: Configured): Promise<Record<string, unknown>> {
   const { apiUrl } = configured(settings);
   const response = await send(settings, `${apiUrl}/api/v1/health`, {}, PROVIDER_TIMEOUT_MS);
   let health: Record<string, unknown>;
@@ -137,8 +154,13 @@ export async function testDemucs(settings: Configured) {
   } catch {
     throw new DemucsError("That address doesn't answer as a Sonic server would");
   }
-  const models = await call<{ models: string[]; default: string; hq_default: string; devices: string[]; default_device: string }>(settings, "/api/v1/models");
-  return { health, models };
+  return health;
+}
+
+/** Whether a server's health says it analyses a recording again from hints (API 1.11, issue #452). */
+export function takesHints(health: Record<string, unknown>): boolean {
+  const analysis = health.analysis as { analysis_only?: unknown; hints?: unknown } | undefined;
+  return analysis?.analysis_only === true && analysis.hints === true;
 }
 
 /** A recording sent to it (multipart), its fast pass to run now and, if asked, its HQ pass in the window. */
@@ -147,20 +169,37 @@ export async function submitDemucsJob(
   audio: Buffer,
   filename: string,
   mimeType: string,
-  options: { model: string; twoStems?: string; hq?: { model: string }; callbackUrl?: string; callbackSecret?: string; lyrics?: string },
+  options: {
+    model: string;
+    twoStems?: string;
+    hq?: { model: string };
+    callbackUrl?: string;
+    callbackSecret?: string;
+    lyrics?: string;
+    /** An analysis-only job (API 1.8): the recording analysed as it is, not separated. */
+    analysisOnly?: boolean;
+    /** What someone says of the recording (API 1.11, issue #452): kept as given, the rest found around it. */
+    hints?: { time_signature?: string; bpm?: number; first_beat?: number };
+  },
 ): Promise<DemucsJob> {
   const form = new FormData();
   form.append("file", new Blob([new Uint8Array(audio)], { type: mimeType }), filename);
-  form.append("model", options.model);
-  if (options.twoStems) form.append("two_stems", options.twoStems);
-  form.append("hq_enabled", options.hq ? "true" : "false");
-  if (options.hq) form.append("hq_model", options.hq.model);
+  if (options.analysisOnly) {
+    form.append("separate", "false");
+    form.append("hq_enabled", "false");
+  } else {
+    form.append("model", options.model);
+    if (options.twoStems) form.append("two_stems", options.twoStems);
+    form.append("hq_enabled", options.hq ? "true" : "false");
+    if (options.hq) form.append("hq_model", options.hq.model);
+  }
   if (options.callbackUrl && options.callbackSecret) {
     form.append("callback_url", options.callbackUrl);
     form.append("callback_secret", options.callbackSecret);
   }
   // The song's words (API 1.9, issue #450): a server before 1.9 leaves an unknown field unread.
   if (options.lyrics) form.append("lyrics", options.lyrics);
+  if (options.hints && Object.keys(options.hints).length > 0) form.append("hints", JSON.stringify(options.hints));
   return call<DemucsJob>(settings, "/api/v1/jobs", { method: "POST", body: form }, TRANSFER_TIMEOUT_MS);
 }
 

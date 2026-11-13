@@ -1,6 +1,6 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
-import type { StemSeparationParts } from "@oneverse/core";
+import { readRecordingAnalysis, type AnalyseRecordingRequest, type StemSeparationParts } from "@oneverse/core";
 import type { Queue } from "bullmq";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
@@ -106,6 +106,9 @@ export class StemSeparationService {
         multitrackId: row.multitrackId,
         replacesMultitrackId: row.replacesMultitrackId,
         error: row.error,
+        /** The recording analysed again with what someone said of it (issue #452), its answer written on `multitrackId`'s stems: not a separation. */
+        analysisOnly: row.analysisOnly,
+        hints: readRecordingAnalysis({ hints: row.hints })?.hints ?? null,
         requestedBy: row.requestedBy?.displayName ?? null,
         createdAt: row.createdAt.toISOString(),
       })),
@@ -128,10 +131,10 @@ export class StemSeparationService {
         ? monthlyLimitOf(await this.ownRoles(viewer.id, server.owner), server.monthlyLimit)
         : monthlyLimitOf(await capabilitiesOf(this.prisma.client, viewer.id), server.monthlyLimit);
     if (limit !== null) {
-      const used = await this.prisma.client.stemSeparation.count({ where: { requestedByUserId: viewer.id, sonicServerId: server.id, ownServer: Boolean(server.owner), status: { not: "FAILED" }, createdAt: { gte: new Date(Date.now() - MONTH_MS) } } });
+      const used = await this.prisma.client.stemSeparation.count({ where: { requestedByUserId: viewer.id, sonicServerId: server.id, ownServer: Boolean(server.owner), status: { not: "FAILED" }, analysisOnly: false, createdAt: { gte: new Date(Date.now() - MONTH_MS) } } });
       if (used >= limit) throw new HttpException({ statusCode: 429, message: [`You've reached the limit of ${limit} separations in 30 days: try again later`] }, HttpStatus.TOO_MANY_REQUESTS);
     }
-    const running = await this.prisma.client.stemSeparation.count({ where: { sourceAttachmentId: attachmentId, status: { in: ["QUEUED", "SUBMITTED"] } } });
+    const running = await this.prisma.client.stemSeparation.count({ where: { sourceAttachmentId: attachmentId, analysisOnly: false, status: { in: ["QUEUED", "SUBMITTED"] } } });
     if (running) throw new BadRequestException("This recording is already being split");
     // The instance's, made now while there's a key to keep it with: the Worker signs nothing, it only passes it on.
     if (!server.owner) await callbackSecret();
@@ -157,6 +160,54 @@ export class StemSeparationService {
         // put the guitar and piano back in "other", to be heard twice.
         hqRequested: server.hqEnabled && parts !== "6",
         replacesMultitrackId,
+        sonicServerId: server.id,
+        ownServer: Boolean(server.owner),
+      },
+    });
+    await this.queue.add("submit", { separationId: separation.id, callbackUrl: callbackFor(callbackUrl, server), filename: source.filename } satisfies SubmitSeparationJob, JOB_OPTIONS);
+    return (await this.list(viewer, songVersionId)).separations.find((row) => row.id === separation.id)!;
+  }
+
+  /**
+   * A separation's stems analysed again (issue #452) from the recording they
+   * were separated from, told what someone says of it - `attachmentId`, one
+   * of the stems. What they had confirmed of its bar 1 and time signature
+   * goes too, so it stays. Not counted against any limit: it's not a
+   * separation, and the server analyses the mix alone.
+   */
+  async analyse(viewer: Viewer, songVersionId: string, attachmentId: string, request: AnalyseRecordingRequest, callbackUrl: string | null) {
+    const { attachment: stem, canChange } = await this.attachments.findWithRights(viewer, songVersionId, attachmentId);
+    const made = stem.origin === "SEPARATED" && stem.multitrackId
+      ? await this.prisma.client.stemSeparation.findFirst({ where: { songVersionId, multitrackId: stem.multitrackId, analysisOnly: false }, orderBy: { createdAt: "desc" } })
+      : null;
+    if (!made) throw new BadRequestException("Only a separation's stems can be analysed again");
+    const { server, refusal } = await this.check(viewer, songVersionId);
+    if (refusal === "not-configured" || !server) throw new BadRequestException("Stem separation isn't set up yet: an admin sets it up in Admin > Stem separation");
+    if (refusal) throw new ForbiddenException("Analysing recordings needs a role that allows splitting them into stems: an admin gives it");
+    if (!canChange) throw new ForbiddenException("Only its uploader or the song's editors can change this file");
+    const source = await this.prisma.client.attachment.findUnique({ where: { id: made.sourceAttachmentId }, select: { id: true, filename: true } });
+    if (!source) throw new BadRequestException("The recording these stems were separated from was deleted: it can't be analysed again");
+    const running = await this.prisma.client.stemSeparation.count({ where: { songVersionId, multitrackId: stem.multitrackId, analysisOnly: true, status: { in: ["QUEUED", "SUBMITTED"] } } });
+    if (running) throw new BadRequestException("These stems are already being analysed again");
+    if (!server.owner) await callbackSecret();
+    // What they confirmed stays: bar 1, and the time signature when only the tempo or bar 1 changes.
+    const confirmed = (detail: "firstBeat" | "timeSignature") => !stem.detected.includes(detail);
+    const hints = {
+      timeSignature: request.timeSignature ?? (confirmed("timeSignature") && stem.recordingTimeSignature ? stem.recordingTimeSignature : undefined),
+      tempo: request.tempo ?? (request.timeSignature === undefined && !stem.detected.includes("tempo") && stem.recordingTempo !== null ? stem.recordingTempo : undefined),
+      firstBeat: request.firstBeat ?? (confirmed("firstBeat") && stem.recordingFirstBeat !== null ? stem.recordingFirstBeat : undefined),
+    };
+    const separation = await this.prisma.client.stemSeparation.create({
+      data: {
+        songVersionId,
+        sourceAttachmentId: source.id,
+        sourceFilename: source.filename,
+        requestedByUserId: viewer.id,
+        parts: made.parts,
+        hqRequested: false,
+        multitrackId: stem.multitrackId,
+        analysisOnly: true,
+        hints: readRecordingAnalysis({ hints })?.hints ?? {},
         sonicServerId: server.id,
         ownServer: Boolean(server.owner),
       },

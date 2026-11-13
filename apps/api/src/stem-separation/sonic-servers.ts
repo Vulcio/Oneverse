@@ -154,7 +154,7 @@ export async function removeSonicServer(owner: SonicServerOwner): Promise<void> 
 
 /** Admin's list: every server connected, whose, and where (never a key). */
 export async function listSonicServers() {
-  const rows = await prisma.sonicServer.findMany({ include: { ...WITH_OWNER, _count: { select: { separations: true } } }, orderBy: { createdAt: "asc" } });
+  const rows = await prisma.sonicServer.findMany({ include: { ...WITH_OWNER, _count: { select: { separations: { where: { analysisOnly: false } } } } }, orderBy: { createdAt: "asc" } });
   return rows.map((row) => ({
     id: row.id,
     owner: row.teamId ? { kind: "team" as const, id: row.teamId, name: row.team?.name ?? "" } : { kind: "organization" as const, id: row.organizationId!, name: row.organization?.name ?? "" },

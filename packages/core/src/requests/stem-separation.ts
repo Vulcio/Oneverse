@@ -18,6 +18,26 @@ export const StartStemSeparationSchema = z.strictObject({
 });
 export type StartStemSeparationRequest = z.input<typeof StartStemSeparationSchema>;
 
+/**
+ * POST /song-versions/:id/attachments/:attachmentId/analyse (issue #452):
+ * a separation's stems analysed again from its recording, told what someone
+ * says of it - one or more of its time signature, tempo (in the time
+ * signature's own note) and where bar 1 starts - the rest found around it.
+ */
+export const AnalyseRecordingSchema = z
+  .strictObject({
+    timeSignature: optional(
+      z
+        .string()
+        .trim()
+        .regex(/^(1[0-6]|[1-9])\/(2|4|8|16)$/, { message: "timeSignature must read like 4/4 or 6/8" }),
+    ),
+    tempo: optional(z.number().min(20).max(400)),
+    firstBeat: optional(z.number().min(0).max(600)),
+  })
+  .refine((hints) => hints.timeSignature !== undefined || hints.tempo !== undefined || hints.firstBeat !== undefined, { message: "Give at least one of timeSignature, tempo and firstBeat" });
+export type AnalyseRecordingRequest = z.input<typeof AnalyseRecordingSchema>;
+
 const modelName = z.string().trim().regex(/^[a-z0-9_]{1,40}$/, "model must be a Demucs model's name, like htdemucs");
 
 /**

@@ -2080,6 +2080,10 @@ model Attachment {
   // them (Sonic API 1.7): [{ start, end, root, quality, bass? }], seconds and
   // pitch classes, read with readRecordingChords. Suggestions only; null: none.
   recordingChords        Json?
+  // How sure the separation's analysis was of what it found, and what it
+  // nearly picked (issue #452, Sonic API 1.11): offered to check on the
+  // stems, read with readRecordingAnalysis. Null: nothing said.
+  recordingAnalysis      Json?
   // A lossless upload's original (issue #182), as FLAC, kept beside the Opus
   // copy in storageKey that's played: for downloading, and for separating
   // stems from. Its uploader had a role that keeps them.
@@ -2787,6 +2791,11 @@ model StemSeparation {
   // The section each pass of the song's words sent with it sings (issue #450),
   // in order: the server's answer names a pass by its index here.
   lyricsPasses         String[]             @default([])
+  // Not a separation: the recording analysed again (issue #452) with what
+  // someone said of it (`hints`: its time signature, tempo), its answer
+  // written on the stems of `multitrackId`. Not counted against any limit.
+  analysisOnly         Boolean              @default(false)
+  hints                Json?
   error                String?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt

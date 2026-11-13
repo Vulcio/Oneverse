@@ -45,6 +45,7 @@ import type { SecondChordRow } from "../display/chord-rows.js";
 import type { SectionProgression } from "../chords/progressions.js";
 import type { CuePoint } from "../recording/cues.js";
 import type { RecordingChord } from "../recording/chords.js";
+import type { RecordingAnalysis } from "../recording/analysis-check.js";
 import type { BrandAssetKind, BrandContent } from "../brands/index.js";
 import type { CreateBrandRequest, UpdateBrandRequest } from "../requests/brands.js";
 import type { CreateLocationRequest, UpdateLocationRequest } from "../requests/locations.js";
@@ -62,7 +63,7 @@ import type { AddQuickSelectionSchema, AddSetlistItemSchema, SetlistItemText, Up
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
 import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
-import type { SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
+import type { AnalyseRecordingRequest, SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateOwnRoleRequest, UpdateRoleRequest } from "../requests/roles.js";
 import type { AttachmentTypeValue, AttachmentVisibilityValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
 import type { CreateSongLinkRequest, UpdateSongLinkRequest } from "../requests/song-links.js";
@@ -813,6 +814,9 @@ export interface StemSeparation {
   /** The earlier separation's multitrack it replaces (issue #175), once its stems are in. */
   replacesMultitrackId: string | null;
   error: string | null;
+  /** Not a separation (issue #452): its recording analysed again with what someone said of it (`hints`), the answer written on `multitrackId`'s stems. */
+  analysisOnly?: boolean;
+  hints?: RecordingAnalysis["hints"] | null;
   requestedBy: string | null;
   createdAt: string;
 }
@@ -2048,6 +2052,8 @@ export interface Attachment {
   origin?: AttachmentOrigin;
   /** Its recording details a separation's analysis found, not yet confirmed (issue #175). */
   detected?: DetectedDetail[];
+  /** How sure that analysis was, and what else each detail might be (issue #452): offered to check. */
+  recordingAnalysis?: RecordingAnalysis | null;
   /** The viewer may change its part, key and tempo, or remove it. */
   canChange: boolean;
   /** The viewer may change who sees it. */
@@ -3625,6 +3631,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     listStemSeparations: (songVersionId: string) => request<StemSeparations>(`/song-versions/${songVersionId}/stem-separations`),
     separateStems: (songVersionId: string, attachmentId: string, parts: StemSeparationParts, replace = false) =>
       request<StemSeparation>(`/song-versions/${songVersionId}/attachments/${attachmentId}/separate`, { method: "POST", body: JSON.stringify({ parts, ...(replace && { replace }) }) }),
+    /** A separation's stems analysed again (issue #452), told what you say of the recording. */
+    analyseRecording: (songVersionId: string, attachmentId: string, hints: AnalyseRecordingRequest) =>
+      request<StemSeparation>(`/song-versions/${songVersionId}/attachments/${attachmentId}/analyse`, { method: "POST", body: JSON.stringify(hints) }),
     retryStemSeparation: (separationId: string) => request<void>(`/stem-separations/${separationId}/retry`, { method: "POST" }),
     adminGetStemSeparation: () => request<StemSeparationSummary>("/admin/stem-separation"),
     adminSaveStemSeparation: (data: SaveStemSeparationSettingsRequest) => request<void>("/admin/stem-separation", { method: "PUT", body: JSON.stringify(data) }),

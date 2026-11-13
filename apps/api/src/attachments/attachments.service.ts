@@ -1,7 +1,7 @@
 import { InjectQueue } from "@nestjs/bullmq";
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnsupportedMediaTypeException } from "@nestjs/common";
 import type { Queue } from "bullmq";
-import { parseKey, shiftRecordingBeat, type StemPart, type WaveformWire } from "@oneverse/core";
+import { parseKey, readRecordingAnalysis, shiftRecordingBeat, type StemPart, type WaveformWire } from "@oneverse/core";
 import { Prisma } from "@oneverse/db";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import type { AttachmentVisibilityValue, UpdateAttachmentDto } from "./dto/upload-attachment.dto.js";
@@ -330,6 +330,12 @@ export class AttachmentsService {
     return (await this.findVisible(viewer, songVersionId, attachmentId)).attachment;
   }
 
+  /** One of the song's files the viewer sees (or 404), and whether they may change it. */
+  async findWithRights(viewer: Viewer, songVersionId: string, attachmentId: string) {
+    const { attachment, canEditSong } = await this.findVisible(viewer, songVersionId, attachmentId);
+    return { attachment, canChange: present(attachment, viewer, canEditSong).canChange };
+  }
+
   /** A resized WebP rendition of an image attachment (see ImageService.resize for sizing rules). */
   async resizedImage(viewer: Viewer, songVersionId: string, attachmentId: string, width: number): Promise<ProcessedImage> {
     const attachment = await this.find(viewer, songVersionId, attachmentId);
@@ -468,6 +474,8 @@ function present(row: AttachmentRow, viewer: Viewer, canEditSong: boolean) {
   return {
     ...rest,
     // A lossless upload's original kept beside it (issue #182): downloaded at /original.
+    // How sure a separation's analysis was, and what else it might be (issue #452).
+    recordingAnalysis: readRecordingAnalysis(row.recordingAnalysis),
     original: originalStorageKey ? { mimeType: originalMimeType ?? "audio/flac", sizeBytes: originalSizeBytes } : null,
     // The set its multitrack was recorded for (issue #127), named as sets are: its date a calendar day.
     multitrackSetlist: set ? { id: set.id, name: set.name, eventDate: set.eventDate ? set.eventDate.toISOString().slice(0, 10) : null, fromEvent: !!set.eventDateOf } : null,

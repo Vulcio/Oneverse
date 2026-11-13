@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Headers, HttpCode, HttpStatus, NotFoundException, Param, Post, Put, Req, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiOkResponse, ApiTags } from "@nestjs/swagger";
-import { SaveSonicServerSchema, SaveStemSeparationSettingsSchema, StartStemSeparationSchema } from "@oneverse/core";
+import { AnalyseRecordingSchema, SaveSonicServerSchema, SaveStemSeparationSettingsSchema, StartStemSeparationSchema } from "@oneverse/core";
 import { decryptSecret } from "@oneverse/secret-crypto";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import type { Request } from "express";
@@ -17,6 +17,7 @@ import { StemSeparationService } from "./stem-separation.service.js";
 import { clearStemSeparationSettings, getEffectiveStemSeparationSettings, getStemSeparationSummary, saveStemSeparationSettings } from "./stem-separation-settings.js";
 
 class StartStemSeparationDto extends zodDto(StartStemSeparationSchema) {}
+class AnalyseRecordingDto extends zodDto(AnalyseRecordingSchema) {}
 class SaveStemSeparationSettingsDto extends zodDto(SaveStemSeparationSettingsSchema) {}
 class SaveSonicServerDto extends zodDto(SaveSonicServerSchema) {}
 
@@ -54,6 +55,13 @@ export class StemSeparationController {
   @Post("song-versions/:songVersionId/attachments/:attachmentId/separate")
   start(@Param("songVersionId") songVersionId: string, @Param("attachmentId") attachmentId: string, @Body() dto: StartStemSeparationDto, @SignedIn() user: AuthenticatedUser) {
     return this.separations.start(user, songVersionId, attachmentId, dto.parts, callbackUrl(), dto.replace ?? false);
+  }
+
+  @RateLimit("heavy")
+  @Post("song-versions/:songVersionId/attachments/:attachmentId/analyse")
+  @ApiOkResponse({ description: "A separation's stems analysed again from its recording (issue #452), told what you say of it: the rest found around it." })
+  analyse(@Param("songVersionId") songVersionId: string, @Param("attachmentId") attachmentId: string, @Body() dto: AnalyseRecordingDto, @SignedIn() user: AuthenticatedUser) {
+    return this.separations.analyse(user, songVersionId, attachmentId, dto, callbackUrl());
   }
 
   @RateLimit("heavy")

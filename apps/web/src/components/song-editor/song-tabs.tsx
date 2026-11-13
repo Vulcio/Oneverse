@@ -1,4 +1,4 @@
-import { isAudioFilename, type BeatLevel, multitracksOf, newMultitrackId, stemPartFromFilename, type Attachment, type AttachmentAudience, type AttachmentType, type StemSeparationParts, type StorageUsage, type TeamSummary, type CueSection } from "@oneverse/core";
+import { isAudioFilename, type BeatLevel, multitracksOf, newMultitrackId, stemPartFromFilename, type AnalyseRecordingRequest, type Attachment, type AttachmentAudience, type AttachmentType, type StemSeparationParts, type StorageUsage, type TeamSummary, type CueSection } from "@oneverse/core";
 import { useRouter } from "@tanstack/react-router";
 import { Download, FileAudio, Lock, LockOpen, Mic, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -112,7 +112,9 @@ export function AttachmentsTab({
 
   // Splitting a recording into stems on the Demucs server (issue #63), for who's allowed to.
   const separation = useStemSeparations(songVersionId, kind === "audio");
-  const separations = separation.state?.separations ?? [];
+  // The times Sonic was asked to listen again (issue #452) aren't separations: they're shown on their stems.
+  const allSeparations = separation.state?.separations ?? [];
+  const separations = allSeparations.filter((item) => !item.analysisOnly);
 
   // An audio file's or another file's row; a recording says who made it and when (issue #175).
   const fileRow = (attachment: Attachment, recorded = false) => (
@@ -338,6 +340,17 @@ export function AttachmentsTab({
     }
   }
 
+  /** Sonic asked to listen again to a separation's recording with what was picked (issue #452); the stems change when it answers. */
+  async function analyse(stem: Attachment, hints: AnalyseRecordingRequest) {
+    setError(null);
+    try {
+      await apiClient.analyseRecording(songVersionId, stem.id, hints);
+      separation.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   /** Cleans up a file afterwards (issue #132): the Worker does it; the list is looked at again until it's done. */
   async function cleanUp(file: Attachment, steps: ("voice" | "level" | "noise")[]) {
     setBusyId(file.id);
@@ -488,8 +501,10 @@ export function AttachmentsTab({
                       songKey={songKey}
                       songTempo={songTempo}
                       separation={multitrack.id ? separations.find((item) => item.multitrackId === multitrack.id) : undefined}
+                      asking={multitrack.id ? allSeparations.find((item) => item.analysisOnly && item.multitrackId === multitrack.id) : undefined}
                       busy={busyId !== null}
                       onChange={(changed, change) => void update(changed, change)}
+                      onAnalyse={(stem, hints) => void analyse(stem, hints)}
                       onRecord={() => setRecording({ target: multitrack.id ?? "" })}
                     >
                       {own.length > 0 ? <ul className="flex flex-col divide-y border-t pt-2">{own.map((file) => fileRow(file))}</ul> : null}

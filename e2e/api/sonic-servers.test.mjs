@@ -67,7 +67,7 @@ try {
   r = await call(leader, "GET", `/teams/${team.id}/sonic-server`);
   check("read back, never its key", r.body.allowed && r.body.server.apiUrl === teams.url && r.body.server.hasKey && !JSON.stringify(r.body).includes(teams.key), JSON.stringify(r.body));
   r = await call(leader, "POST", `/teams/${team.id}/sonic-server/test`);
-  check("Test connection: what it is, its version, that it finds bars", r.body.ok && r.body.health.service === "songverse-sonic" && r.body.version === "1.6.0" && r.body.beats === true && r.body.models.models.includes("htdemucs"), JSON.stringify(r.body));
+  check("Test connection: what it is, its version, that it finds bars", r.body.ok && r.body.health.service === "songverse-sonic" && r.body.version === "1.11.0" && r.body.beats === true && r.body.models.models.includes("htdemucs"), JSON.stringify(r.body));
   await call(leader, "PUT", `/teams/${team.id}/sonic-server`, { apiKey: "wrong" });
   r = await call(leader, "POST", `/teams/${team.id}/sonic-server/test`);
   check("a wrong key: the test says so", r.body.ok === false && /refused the key/.test(r.body.error), JSON.stringify(r.body));

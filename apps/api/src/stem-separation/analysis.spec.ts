@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { detailsWithAnalysis, type SourceDetails } from "./analysis.js";
+import { detailsWithAnalysis, recordingAnalysisOf, type SourceDetails } from "./analysis.js";
 
 const none: SourceDetails = { recordingKey: null, recordingTempo: null, recordingTimeSignature: null, recordingFirstBeat: null, recordingFreeIntro: false, recordingBeats: [], recordingDownbeats: [], recordingChords: null, cuePoints: null };
 const song = {
@@ -125,5 +125,51 @@ describe("detailsWithAnalysis", () => {
       { at: 8.3, sectionId: "sec_c" },
       { at: 40.1, sectionId: "sec_v" },
     ]);
+  });
+});
+
+describe("recordingAnalysisOf (issue #452)", () => {
+  it("keeps how sure it was and its alternatives, the likeliest first", () => {
+    expect(
+      recordingAnalysisOf({
+        ...analysis,
+        beats_confidence: 0.66,
+        alternatives: {
+          tempo: [{ bpm: 36.03, score: 0.4 }],
+          time_signature: [
+            { numerator: 3, denominator: 4, score: 0.3 },
+            { numerator: 6, denominator: 8, score: 0.5 },
+          ],
+          first_beat: [{ start: 1.25, score: 0.2 }],
+          key: [{ name: "Em", score: 0.6 }, { name: "nonsense", score: 0.5 }],
+        },
+      }),
+    ).toEqual({
+      confidence: { key: 0.7, tempo: 0.9, timeSignature: 0.8, beats: 0.66 },
+      alternatives: {
+        key: [{ value: "Em", score: 0.6 }],
+        tempo: [{ value: 36, score: 0.4 }],
+        timeSignature: [
+          { value: "6/8", score: 0.5 },
+          { value: "3/4", score: 0.3 },
+        ],
+        firstBeat: [{ value: 1.25, score: 0.2 }],
+      },
+    });
+  });
+
+  it("offers a value too unsure to be used, first", () => {
+    const check = recordingAnalysisOf({ key: { name: "Bb", confidence: 0.3 }, alternatives: { key: [{ name: "Eb", score: 0.2 }] } });
+    expect(check?.alternatives?.key).toEqual([
+      { value: "Bb", score: 0.3 },
+      { value: "Eb", score: 0.2 },
+    ]);
+    expect(detailsWithAnalysis(none, { key: { name: "Bb", confidence: 0.3 } }, null).recordingKey).toBeNull();
+  });
+
+  it("says what it was told, and nothing when nothing was said", () => {
+    expect(recordingAnalysisOf({ time_signature: { numerator: 6, denominator: 8, confidence: 1 } }, { timeSignature: "6/8" })).toEqual({ confidence: { timeSignature: 1 }, hints: { timeSignature: "6/8" } });
+    expect(recordingAnalysisOf({ first_beat: 0.5 })).toBeNull();
+    expect(recordingAnalysisOf(null)).toBeNull();
   });
 });

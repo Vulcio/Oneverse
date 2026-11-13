@@ -1,4 +1,4 @@
-import { cuesFromHints, cuesFromSections, parseKey, readRecordingChords, type CuePoint, type DetectedDetail, type RecordingChord, type SongDocumentV2 } from "@oneverse/core";
+import { cuesFromHints, cuesFromSections, parseKey, readRecordingAnalysis, readRecordingChords, type CuePoint, type DetectedDetail, type RecordingAnalysis, type RecordingChord, type SongDocumentV2 } from "@oneverse/core";
 import type { DemucsAnalysis } from "./demucs-client.js";
 
 /** Below this, what the analysis says is left out (issue #175). */
@@ -105,4 +105,34 @@ export function detailsWithAnalysis(
     }
   }
   return { ...details, detected };
+}
+
+/**
+ * What the analysis said of what it found, for someone to check it (issue
+ * #452): how sure it was, and what else each detail might be - its
+ * alternatives, after a value it was too unsure of to use - with the hints
+ * it was given. Null when it said nothing of the kind.
+ */
+export function recordingAnalysisOf(analysis: DemucsAnalysis | null | undefined, hints?: RecordingAnalysis["hints"]): RecordingAnalysis | null {
+  if (!analysis) return hints ? readRecordingAnalysis({ hints }) : null;
+  const confidence = {
+    key: analysis.key?.confidence,
+    tempo: analysis.tempo?.confidence,
+    timeSignature: analysis.time_signature?.confidence,
+    beats: analysis.beats_confidence ?? undefined,
+  };
+  const given = analysis.alternatives ?? {};
+  const meter = (one: { numerator?: number; denominator?: number } | null | undefined) => (one?.numerator && one.denominator ? `${one.numerator}/${one.denominator}` : null);
+  // A value too unsure to be used (below MIN_CONFIDENCE) is still worth offering, first.
+  const unsure = <T>(value: T | null | undefined, sureness: number | undefined) => (value !== null && value !== undefined && sureness !== undefined && !sure(sureness) ? [{ value, score: sureness }] : []);
+  return readRecordingAnalysis({
+    confidence,
+    alternatives: {
+      key: [...unsure(analysis.key?.name?.trim(), confidence.key), ...(given.key ?? []).map((one) => ({ value: one.name, score: one.score }))].filter((one) => typeof one.value === "string" && parseKey(one.value)),
+      tempo: [...unsure(analysis.tempo?.bpm, confidence.tempo), ...(given.tempo ?? []).map((one) => ({ value: one.bpm, score: one.score }))],
+      timeSignature: [...unsure(meter(analysis.time_signature), confidence.timeSignature), ...(given.time_signature ?? []).map((one) => ({ value: meter(one), score: one.score }))],
+      firstBeat: (given.first_beat ?? []).map((one) => ({ value: one.start, score: one.score })),
+    },
+    hints,
+  });
 }

@@ -48,9 +48,26 @@ const STEMS = {
  */
 function withHints(found, job) {
   const { passStarts, ...rest } = found;
-  if (!passStarts || !job.lyrics) return rest;
+  const out = { ...rest };
+  // As Sonic 1.11 does with a job's hints (issue #452): each kept with confidence 1, no alternatives for it.
+  const hints = job.hints ?? {};
+  if (hints.time_signature || hints.bpm !== undefined || hints.first_beat !== undefined) out.alternatives = { ...out.alternatives };
+  if (hints.time_signature) {
+    const [numerator, denominator] = hints.time_signature.split("/").map(Number);
+    out.time_signature = { numerator, denominator, confidence: 1 };
+    delete out.alternatives.time_signature;
+  }
+  if (hints.bpm !== undefined) {
+    out.tempo = { bpm: hints.bpm, confidence: 1 };
+    delete out.alternatives.tempo;
+  }
+  if (hints.first_beat !== undefined) {
+    out.first_beat = hints.first_beat;
+    delete out.alternatives.first_beat;
+  }
+  if (!passStarts || !job.lyrics) return out;
   const names = [...job.lyrics.matchAll(/^\{c: (.*)\}$/gm)].map((match) => match[1]);
-  return { ...rest, sections: passStarts.slice(0, names.length).map((start, hint) => ({ start, label: "verse", hint, name: names[hint] })) };
+  return { ...out, sections: passStarts.slice(0, names.length).map((start, hint) => ({ start, label: "verse", hint, name: names[hint] })) };
 }
 
 export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMUCS_KEY } = {}) {
@@ -60,6 +77,8 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
   const webhooks = [];
   /** The analysis the server answers with (issue #175): a suite sets it; null for none. */
   const analysis = { next: null };
+  /** What its health says its analysis offers: a suite can turn hints off, as a server before 1.11 would. */
+  const offers = { analysis_only: true, hints: true, alternatives: true };
   let next = 1;
 
   const stage = (job, quality) => {
@@ -72,7 +91,9 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
     source_name: job.filename,
     two_stems: job.twoStems,
     error: null,
-    fast: { status: job.fast, model: job.model, device: "cpu", files: job.fast === "completed" ? stage(job, "fast") : [], r2: null },
+    separate: job.separate,
+    // An analysis-only job (API 1.8) completes with no files.
+    fast: { status: job.fast, model: job.model, device: "cpu", files: job.fast === "completed" && job.separate ? stage(job, "fast") : [], r2: null },
     hq: { enabled: job.hqEnabled, status: job.hq, model: job.hqModel, device: "cpu", files: job.hq === "completed" ? stage(job, "hq") : [], r2: null },
     callback_configured: !!job.callbackUrl,
     // What it found in the recording (issue #175), once the fast pass is done, when a suite gave one.
@@ -92,7 +113,7 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
       res.writeHead(status, { "Content-Type": "application/json" });
       res.end(JSON.stringify(body));
     };
-    if (url.pathname === "/api/v1/health") return json(200, { status: "ok", service: "songverse-sonic", version: "1.6.0", queue_depth: 0, default_model: "htdemucs", hq_default_model: "htdemucs_ft", allowed_devices: ["cpu"] });
+    if (url.pathname === "/api/v1/health") return json(200, { status: "ok", service: "songverse-sonic", version: "1.11.0", queue_depth: 0, default_model: "htdemucs", hq_default_model: "htdemucs_ft", allowed_devices: ["cpu"], analysis: { enabled: true, ...offers } });
     if (req.headers["x-api-key"] !== key) return json(401, { detail: "Invalid API key" });
     if (url.pathname === "/api/v1/models") return json(200, { models: Object.keys(STEMS), default: "htdemucs", hq_default: "htdemucs_ft", devices: ["cpu"], default_device: "cpu" });
     if (url.pathname === "/api/v1/jobs" && req.method === "POST") {
@@ -110,12 +131,15 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
         // The song's words (API 1.9, issue #450).
         // A form sends line breaks as CRLF; Sonic reads them as plain ones.
         lyrics: form.get("lyrics")?.replace(/\r\n?/g, "\n") || null,
+        // Analysis only (API 1.8), with what the user said (API 1.11, issue #452).
+        separate: form.get("separate") !== "false",
+        hints: form.get("hints") ? JSON.parse(form.get("hints")) : null,
         status: "queued",
         fast: "queued",
         hq: form.get("hq_enabled") === "true" ? "scheduled" : null,
       };
       if (!STEMS[job.model]) return json(400, { detail: `Unknown model ${job.model}` });
-      received.push({ id: job.id, bytes: file ? (await file.arrayBuffer()).byteLength : 0, model: job.model, twoStems: job.twoStems, hqEnabled: job.hqEnabled, hqModel: job.hqModel, callbackUrl: job.callbackUrl, lyrics: job.lyrics });
+      received.push({ id: job.id, bytes: file ? (await file.arrayBuffer()).byteLength : 0, model: job.model, twoStems: job.twoStems, hqEnabled: job.hqEnabled, hqModel: job.hqModel, callbackUrl: job.callbackUrl, lyrics: job.lyrics, separate: job.separate, hints: job.hints });
       jobs.set(job.id, job);
       json(202, view(job));
       // The fast pass: done in a moment.
@@ -149,6 +173,7 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
     received,
     webhooks,
     analysis,
+    offers,
     /** The HQ pass done, as the night would. */
     async completeHq(jobId, { fail = false } = {}) {
       const job = jobs.get(jobId);

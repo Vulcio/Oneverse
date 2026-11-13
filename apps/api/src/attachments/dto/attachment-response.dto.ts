@@ -20,6 +20,12 @@ export class AttachmentResponseDto {
   @ApiProperty({ type: [Number], description: "The recording's beats, in seconds (issue #299), as the stem separation's analysis found them; empty for none." }) recordingBeats!: number[];
   @ApiProperty({ type: [Number], description: "The first beat of each of its bars, in seconds: a subset of recordingBeats." }) recordingDownbeats!: number[];
   @ApiProperty({ nullable: true, description: "Its chords (issue #393), as the stem separation's analysis found them: [{ start, end, root, quality, bass? }], seconds and pitch classes (0 = C); suggestions. Null: none." }) recordingChords!: { start: number; end: number; root: number; quality: string; bass?: number }[] | null;
+  @ApiProperty({
+    nullable: true,
+    description:
+      "How sure a stem separation's analysis was of what it found, and what else it might be (issue #452): { confidence: { key, tempo, timeSignature, beats } from 0 to 1, alternatives: { key, tempo, timeSignature, firstBeat }: [{ value, score }] the likeliest first, hints: what someone told it when it was asked again }. Null: nothing said.",
+  })
+  recordingAnalysis!: Record<string, unknown> | null;
   @ApiProperty({ description: "Played freely before its first beat: the click waits for it, with a count-in, rather than clicking from 0:00." }) recordingFreeIntro!: boolean;
   @ApiProperty({ nullable: true, description: "Recorded this many semitones above its multitrack, while the player was transposed." }) pitchOffset!: number | null;
   @ApiProperty({ nullable: true, description: '"4/4", "6/8"…' }) recordingTimeSignature!: string | null;
