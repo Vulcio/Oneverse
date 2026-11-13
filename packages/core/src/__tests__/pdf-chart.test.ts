@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { chordProFromPdfText, type PdfTextItem } from "../pdf-chart/index.js";
+import { readOcrPage, type OcrBox, type OcrLine, type OcrWord } from "../pdf-chart/ocr.js";
+import { readPdfChart } from "../pdf-chart/read.js";
+import { shownText } from "../pdf-chart/unseen.js";
 
 // Helvetica widths for the characters these tests use (thousandths of an em).
 const W: Record<string, number> = { " ": 278, A: 667, a: 556, m: 833, z: 500, i: 222, n: 556, g: 556, r: 333, c: 500, e: 556, h: 556, o: 556, w: 722, s: 500, t: 278, u: 556, d: 556, G: 778, D: 722, C: 722, V: 667, "1": 556, Ô: 778, l: 222, v: 500, y: 500 };
@@ -72,5 +75,200 @@ describe("a chart from a PDF's text (issue #124)", () => {
 
   it("a scanned page has no text: nothing", () => {
     expect(chordProFromPdfText([])).toBe("");
+  });
+});
+
+describe("a whole PDF chart: header, footer, columns and details (issue #124)", () => {
+  // A line of text at `x`, `y` in a 600 × 800 page, each piece one item.
+  const piece = (text: string, x: number, y: number, page = 1, size = SIZE): PdfTextItem => ({ page, text, x, y, width: (width(text) * size) / SIZE, height: size });
+  const pages = [1, 2].map((page) => ({ page, width: 600, height: 800 }));
+  const verse = (x: number, y: number, page = 1) => [
+    piece("Verse 1", x, y, page),
+    piece("G", at("Amazing", 3, x), y + 16, page),
+    piece("Amazing grace", x, y + 32, page),
+    piece("C", x, y + 48, page),
+    piece("That saved", x, y + 64, page),
+  ];
+
+  it("takes the title, the names and the details from the top, and leaves out the footer", () => {
+    const items = [
+      piece("Amazing Grace", 50, 60, 1, 20),
+      piece("Chris Tomlin | John Newton", 50, 80),
+      piece("Key - G | Tempo - 64 | Time - 3/4", 50, 96),
+      ...verse(50, 140),
+      piece("CCLI Song # 4768151 | © 2006 sixsteps Music | For use solely with the SongSelect Terms of Use.", 50, 780),
+    ];
+    const { chart, details, dropped } = readPdfChart(items, pages);
+    expect(chart).toBe(["Verse 1", "Ama[G]zing grace", "[C]That saved"].join("\n"));
+    expect(details).toMatchObject({ title: "Amazing Grace", artists: ["Chris Tomlin", "John Newton"], key: "G", tempo: 64, timeSignature: "3/4", ccli: "4768151", copyright: "© 2006 sixsteps Music" });
+    expect(dropped).toHaveLength(1);
+  });
+
+  it("leaves out what repeats at the top or bottom of every page, numbers aside", () => {
+    const items = [...verse(50, 140), piece("worshipcharts - Page 1 of 2", 50, 20), ...verse(50, 140, 2), piece("worshipcharts - Page 2 of 2", 50, 20, 2)];
+    const { chart, dropped } = readPdfChart(items, pages);
+    expect(chart).not.toContain("worshipcharts");
+    expect(dropped).toEqual(["worshipcharts - Page 1 of 2", "worshipcharts - Page 2 of 2"]);
+  });
+
+  it("takes the first page's title, repeated at the top of every page, as the title", () => {
+    const items = [piece("Amazing Grace", 50, 30, 1, 20), piece("Key: G", 50, 50), ...verse(50, 140), piece("Amazing Grace", 50, 30, 2, 20), ...verse(50, 140, 2)];
+    const { chart, details, dropped } = readPdfChart(items, pages);
+    expect(details).toMatchObject({ title: "Amazing Grace", key: "G" });
+    expect(dropped).toEqual(["Amazing Grace"]);
+    expect(chart).not.toContain("Amazing Grace\n");
+  });
+
+  it("keeps a line in the page's band that is the song", () => {
+    const { chart } = readPdfChart([...verse(50, 30)], pages);
+    expect(chart.split("\n")[0]).toBe("Verse 1");
+  });
+
+  it("reads two columns one after the other, a title across them first", () => {
+    const right = verse(330, 140).map((item) => (item.text === "Verse 1" ? { ...item, text: "Chorus" } : item));
+    const items = [piece("Amazing Grace", 200, 60, 1, 20), ...verse(50, 140), ...right];
+    const { chart, details } = readPdfChart(items, pages);
+    expect(details.title).toBe("Amazing Grace");
+    expect(chart).toBe(["Verse 1", "Ama[G]zing grace", "[C]That saved", "", "Chorus", "Ama[G]zing grace", "[C]That saved"].join("\n"));
+  });
+
+  it("a French chart: bar lines, C1 for a couplet, the key in solfège, a bare time, a track number before the title", () => {
+    const items = [
+      piece("01 - Il est la vie", 200, 60, 1, 20),
+      piece("D Luiten & J Poulet", 400, 90),
+      piece("Mi - 4/4 - 120 bpm", 400, 106),
+      piece("C1", 50, 150),
+      piece("|C#m", 50, 166),
+      piece("|E", at("Les vies sont ", 14, 50) - width("|"), 166),
+      piece("Les vies sont", 50, 182),
+      piece("Refrain", 50, 214),
+      piece("A", 50, 230),
+      piece("Jésus", 50, 246),
+    ];
+    const { chart, details } = readPdfChart(items, pages);
+    expect(details).toMatchObject({ title: "Il est la vie", artists: ["D Luiten", "J Poulet"], key: "E", timeSignature: "4/4", tempo: 120 });
+    expect(chart).toBe(["Verse 1", "[C#m]Les vies sont [E]", "", "Refrain", "[A]Jésus"].join("\n"));
+  });
+
+  it("a header split by bars without spaces, a decimal tempo, names going on to a second line", () => {
+    const items = [
+      piece("The Church", 50, 50, 1, 18),
+      piece("Abbie Gamboa, David Funk, Elyssa Smith,", 50, 64, 1, 9),
+      piece("Kristian Stanfill, Oscar Gamboa", 50, 74, 1, 9),
+      piece("Ab| 65.5 bpm | 3/4", 50, 86, 1, 10),
+      ...verse(50, 140),
+    ];
+    const { chart, details } = readPdfChart(items, pages);
+    expect(details).toMatchObject({ title: "The Church", key: "Ab", tempo: 66, timeSignature: "3/4" });
+    expect(details.artists).toEqual(["Abbie Gamboa", "David Funk", "Elyssa Smith", "Kristian Stanfill", "Oscar Gamboa"]);
+    expect(chart.split("\n")[0]).toBe("Verse 1");
+  });
+
+  it("leaves out the whole of a copyright footer over several lines", () => {
+    const items = [...verse(50, 140), piece("Copyright © 2022 S.D.G. Publishing (BMI) /", 100, 770, 1, 7), piece("Be Essential Songs / Simply Global / Bethel Music Publishing.", 100, 778, 1, 7), piece("All rights reserved.", 100, 786, 1, 7)];
+    const { chart, dropped } = readPdfChart(items, pages);
+    expect(dropped).toHaveLength(3);
+    expect(chart).not.toContain("Essential");
+  });
+
+  it("two chords printed together are two chords", () => {
+    const items = [piece("Ab/C", 50, 140), piece("EbsusEb", at("Not by merit, not by ", 21, 50), 140), piece("Not by merit, not by might", 50, 156)];
+    expect(readPdfChart(items, pages).chart).toBe("[Ab/C]Not by merit, not by [Ebsus]might [Eb]");
+  });
+
+  it("names and details on the left over two columns are read before them", () => {
+    const right = verse(330, 140).map((item) => (item.text === "Verse 1" ? { ...item, text: "Chorus" } : item));
+    const items = [piece("Holy Forever", 50, 50, 1, 18), piece("Chris Tomlin, Jason Ingram, Phil Wickham, Brian Johnson, Jenn Johnson", 50, 64, 1, 9), piece("Db | 72 bpm | 4/4", 50, 76, 1, 10), ...verse(50, 140), ...right];
+    const { chart, details } = readPdfChart(items, pages);
+    expect(details).toMatchObject({ title: "Holy Forever", key: "Db", tempo: 72, timeSignature: "4/4" });
+    expect(details.artists).toHaveLength(5);
+    expect(chart.split("\n")[0]).toBe("Verse 1");
+  });
+
+  it("keeps a first line that isn't a title when nothing says it's a header", () => {
+    const { chart, details } = readPdfChart([piece("Just a line", 50, 100), ...verse(50, 140)], pages);
+    expect(details.title).toBeUndefined();
+    expect(chart.split("\n")[0]).toBe("Just a line");
+  });
+});
+
+describe("a scanned chart read by OCR (issue #124)", () => {
+  // Words with a box per letter, 10 px a letter, on a line at `y`.
+  const word = (text: string, x: number): OcrWord => ({
+    text,
+    x0: x,
+    x1: x + text.length * 10,
+    y0: 0,
+    y1: 0,
+    symbols: [...text].map((char, i) => ({ text: char, x0: x + i * 10, x1: x + i * 10 + 9, y0: 0, y1: 0 })),
+  });
+  const line = (y: number, height: number, ...words: OcrWord[]): OcrLine => ({
+    x0: words[0]!.x0,
+    x1: words[words.length - 1]!.x1,
+    y0: y - height,
+    y1: y,
+    words: words.map((w) => ({ ...w, y0: y - height, y1: y })),
+    baseline: { x0: 0, y0: y - 4, x1: 1000, y1: y - 4 },
+  });
+
+  it("in a fixed-width font, puts each chord on the letter under it", async () => {
+    // Letters 10 px apart, evenly: Courier.
+    const lines = [
+      line(100, 18, word("G", 130), word("D", 210)),
+      line(130, 24, word("Amazing", 100), word("grace", 180)),
+      line(160, 24, word("that", 100), word("saved", 150), word("wretch", 210), word("like", 280)),
+    ];
+    const items = await readOcrPage(1, async () => lines);
+    expect(readPdfChart(items).chart).toBe("Ama[G]zing gra[D]ce\nthat saved wretch like");
+  });
+
+  it("puts back a capital I OCR read as an l", async () => {
+    const items = await readOcrPage(1, async () => [line(130, 24, word("l've", 100), word("been", 150))]);
+    expect(readPdfChart(items).chart).toBe("I've been");
+  });
+
+  it("puts back the chords' signs OCR misreads", async () => {
+    const lines = [line(100, 18, word("F♯m", 100), word("Brn", 160), word("DIF#", 230)), line(130, 24, word("Lord", 100), word("of", 160), word("all", 230))];
+    const items = await readOcrPage(1, async () => lines);
+    expect(readPdfChart(items).chart).toBe("[F#m]Lord [Bm]of [D/F#]all");
+  });
+
+  it("reads again, as chords only, a word of a line of chords that isn't one", async () => {
+    const lines = [line(100, 18, word("C", 100), word("(03", 160), word("Em7", 230)), line(130, 24, word("That", 100), word("saved", 160), word("me", 230))];
+    const asked: (OcrBox | undefined)[] = [];
+    const items = await readOcrPage(1, async (strip) => {
+      asked.push(strip);
+      return strip ? [line(100, 18, word("G", strip.x0 + 5))] : lines;
+    });
+    expect(asked).toHaveLength(2);
+    expect(readPdfChart(items).chart).toBe("[C]That [G]saved [Em7]me");
+  });
+
+  it("leaves a line of words alone", async () => {
+    const lines = [line(130, 24, word("A", 100), word("cold", 120), word("day", 170))];
+    const items = await readOcrPage(1, async () => lines);
+    expect(readPdfChart(items).chart).toBe("A cold day");
+  });
+});
+
+describe("text a PDF holds but doesn't show (issue #124)", () => {
+  const OPS = { save: 10, restore: 11, transform: 12, clip: 13, constructPath: 14, endPath: 15, setFillRGBColor: 16, showText: 17, setTextRenderingMode: 18, setGState: 19 };
+  const glyphs = (text: string) => [[...text].map((unicode) => ({ unicode }))];
+  const content = (str: string, x = 50, y = 700) => ({ str, transform: [12, 0, 0, 12, x, y] });
+
+  it("a letter drawn in white is a space: words joined by white full stops", () => {
+    const operators = {
+      fnArray: [OPS.setFillRGBColor, OPS.showText, OPS.setFillRGBColor, OPS.showText, OPS.setFillRGBColor, OPS.showText],
+      argsArray: [["#2c2e35"], glyphs("A"), ["#ffffff"], glyphs("."), ["#2c2e35"], glyphs("thousand.")],
+    };
+    expect(shownText([content("A.thousand.")], operators, OPS)).toEqual(["A thousand."]);
+  });
+
+  it("text outside the clipped area, or drawn invisibly, is left out", () => {
+    const operators = {
+      fnArray: [OPS.save, OPS.clip, OPS.constructPath, OPS.showText, OPS.restore, OPS.setTextRenderingMode, OPS.showText, OPS.setTextRenderingMode, OPS.showText],
+      argsArray: [null, null, [OPS.endPath, [], [30, 100, 570, 750]], glyphs("Summary"), null, [3], glyphs("Hidden"), [0], glyphs("Verse")],
+    };
+    expect(shownText([content("Summary", 50, 800), content("Hidden"), content("Verse")], operators, OPS)).toEqual(["       ", "      ", "Verse"]);
   });
 });

@@ -32,7 +32,7 @@ export interface SongFileDetails {
 /** The extensions of the chart files a song is made from (besides PDFs): ChordPro's, OnSong's, plain text, LRC. */
 export const CHART_FILE_EXTENSIONS = [".cho", ".chordpro", ".chopro", ".crd", ".pro", ".chord", ".onsong", ".txt", ".text", ".tab", ".lrc"] as const;
 
-const emptyDetails = (): SongFileDetails => ({ artists: [], composers: [], lyricists: [], writers: [] });
+export const emptyDetails = (): SongFileDetails => ({ artists: [], composers: [], lyricists: [], writers: [] });
 
 const DIRECTIVE = /^\s*\{\s*([a-z_]+)\s*:\s*(.*?)\s*\}\s*$/i;
 const META = /^(\S+)\s+(.+)$/;
@@ -154,8 +154,8 @@ const PLAIN: [RegExp, string][] = [
 // "Amazing Grace chords by Chris Tomlin" (the first line a chord site's page is copied with), "… Chords - Hillsong".
 const CHORDS_BY = /^(.+?)\s+(?:chords|tab|tabs|lyrics|ukulele chords|accords|acordes)\s+(?:by|-|–|de|par|von)\s+(.+)$/i;
 
-/** One of a plain file's first lines read as a detail; false when it isn't one. */
-function plainDetail(details: SongFileDetails, line: string): boolean {
+/** One of a plain file's first lines read as a detail ("Key: G", "Capo 2"…); false when it isn't one. */
+export function plainDetail(details: SongFileDetails, line: string): boolean {
   for (const [pattern, name] of PLAIN) {
     const match = pattern.exec(line);
     if (match) return setDetail(details, name === "time" ? "time" : name, match[1]!.replace(/\s+/g, name === "time" ? "" : " "));

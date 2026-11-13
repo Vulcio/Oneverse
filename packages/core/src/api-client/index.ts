@@ -29,6 +29,7 @@ import type {
 import type { ArrangementDocumentV2, ChartPreferences } from "../schemas/arrangement-document-v2.js";
 import type { CatalogEntryData, CatalogEntryFieldKey, CatalogFileProblem } from "../songbook-catalog-format/index.js";
 import type { BulkUploadFileMatch } from "../bulk-upload-matching/index.js";
+import type { PdfChart } from "../pdf-chart/read.js";
 import type { WaveformWire } from "../waveform/index.js";
 import type { MetadataCapability, MetadataMatch, MetadataProviderKey } from "../schemas/metadata.js";
 import type { MusicBrainzWorkMatch } from "../schemas/musicbrainz.js";
@@ -87,6 +88,13 @@ import type { CreateSongVersionRequest, LinkRepeatsRequest, RepeatsBackfillReque
 import type { SongChange, SongSnapshot } from "../song-history/index.js";
 import type { SongProviderSourceInput, SongProviderSourceUpdate } from "../requests/plugins.js";
 import type { SongProviderHook } from "../song-provider/index.js";
+
+/** A chart being read by the server (issue #124): waiting, being read (which page), read, or not readable. */
+export interface ChartReading {
+  state: "waiting" | "reading" | "read" | "failed";
+  progress?: { page: number; pages: number } | null;
+  result?: (PdfChart & { ocr: boolean }) | null;
+}
 
 export interface ApiClientOptions {
   baseUrl: string;
@@ -3139,6 +3147,16 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getArtworkSettings: () => request<ArtworkSettings>("/admin/artwork"),
     saveArtworkSettings: (change: { enabled?: boolean; country?: string }) => request<ArtworkSettings>("/admin/artwork", { method: "PUT", body: JSON.stringify(change) }),
     resetArtworkSettings: () => request<ArtworkSettings>("/admin/artwork", { method: "DELETE" }),
+    /**
+     * A PDF's or a picture's chart read by the server (issue #124), when the
+     * device can't: the file goes to a background job, followed by its id.
+     */
+    readChartFile: (file: Blob, filename = "chart") => {
+      const form = new FormData();
+      form.append("file", file, filename);
+      return request<{ id: string }>("/chart-reading", { method: "POST", body: form });
+    },
+    chartReading: (id: string) => request<ChartReading>(`/chart-reading/${encodeURIComponent(id)}`),
     /** An image of the editor's own for the song (issue #88). */
     uploadArtwork: (songVersionId: string, file: Blob, filename = "artwork") => {
       const form = new FormData();

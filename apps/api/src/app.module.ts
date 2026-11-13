@@ -14,6 +14,7 @@ import { AttachmentsModule } from "./attachments/attachments.module.js";
 import { SongLinksModule } from "./song-links/song-links.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { BulkUploadModule } from "./bulk-upload/bulk-upload.module.js";
+import { ChartReadingModule } from "./chart-reading/chart-reading.module.js";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard.js";
 import { RateLimitGuard } from "./security/rate-limit.guard.js";
 import { SecurityController } from "./security/security.controller.js";
@@ -92,6 +93,7 @@ import { LookupsModule } from "./lookups/lookups.module.js";
     AttachmentsModule,
     SongLinksModule,
     BulkUploadModule,
+    ChartReadingModule,
     AdminModule,
     PublishingModule,
     SuggestionsModule,

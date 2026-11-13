@@ -14,3 +14,6 @@ export function attachmentTypeFor(file: File): AttachmentType {
 }
 
 export const isPdf = (file: File) => file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
+/** A picture a chart can be read from by OCR (issue #124): a photo or a scan. */
+export const isChartImage = (file: File) => /^image\/(?:png|jpe?g|webp|gif|bmp)$/.test(file.type) || /\.(?:png|jpe?g|webp|gif|bmp)$/i.test(file.name);
