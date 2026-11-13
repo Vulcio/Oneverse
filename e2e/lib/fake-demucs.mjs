@@ -108,7 +108,8 @@ export async function startFakeDemucs({ port = FAKE_DEMUCS_PORT, key = FAKE_DEMU
         callbackUrl: form.get("callback_url"),
         secret: form.get("callback_secret"),
         // The song's words (API 1.9, issue #450).
-        lyrics: form.get("lyrics") || null,
+        // A form sends line breaks as CRLF; Sonic reads them as plain ones.
+        lyrics: form.get("lyrics")?.replace(/\r\n?/g, "\n") || null,
         status: "queued",
         fast: "queued",
         hq: form.get("hq_enabled") === "true" ? "scheduled" : null,
