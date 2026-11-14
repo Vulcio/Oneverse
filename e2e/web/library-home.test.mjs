@@ -123,8 +123,11 @@ await step("an old /library?q= address opens Songs, searched", async () => {
 
 await step("unstarred, the favorites shelf goes", async () => {
   await page.goto(`${WEB}/library/${older.id}`);
+  // The star turns at once; the home is read only once the server has the change.
+  const removed = page.waitForResponse((response) => response.url().endsWith(`/song-versions/${older.id}/favorite`) && response.request().method() === "DELETE");
   await page.getByRole("button", { name: "Remove from favorites" }).click();
   await page.getByRole("button", { name: "Add to favorites" }).waitFor();
+  await removed;
   await page.goto(`${WEB}/library`);
   await page.waitForLoadState("networkidle");
   await shelf("recent").waitFor();
