@@ -3,6 +3,7 @@
 // named in comments with no blank line between them, chords written above the
 // words, a chorus called again in words. Its details fill the empty fields and
 // say so; a file that isn't text (a ProPresenter 7 .pro) is refused by name.
+// Bar lines over the words ("|C#m  B  |E/G#  A") are the song's bars (issue #460).
 import { chromium } from "playwright";
 import { WEB, SP, tag, stepper, user, api, signIn, finish } from "../lib/harness.mjs";
 
@@ -66,6 +67,21 @@ await step("saved, the chart is as the file meant it", async () => {
   // Written once, called twice more.
   if (doc.flow.length !== 4 || doc.flow.slice(1).some((item) => item.sectionId !== doc.sections[1].id)) throw new Error(JSON.stringify(doc.flow));
   if (doc.defaults.key !== "D" || doc.defaults.tempo !== 88) throw new Error(JSON.stringify(doc.defaults));
+});
+
+await step("bar lines over the words come in as the song's bars (issue #460)", async () => {
+  await page.goto(`${WEB}/library/new`);
+  await page.waitForLoadState("networkidle");
+  await page.fill("#song-title", `Il est la vie ${tag}`);
+  await page.fill("#song-content", ["Couplet 1", "|C#m        B          |E/G#       A", " Les vies sont restaurées dans le nom"].join("\n"));
+  await page.getByRole("button", { name: "Save song" }).click();
+  await page.waitForURL(/\/library\/(?!new)[a-z0-9]+/);
+  const id = new URL(page.url()).pathname.split("/").pop();
+  const [verse] = (await api(me, "GET", `/song-versions/${id}`)).documentJson.sections;
+  const names = new Map(verse.lines.flatMap((line) => line.chords.map((chord) => [chord.id, chord.raw])));
+  const bars = verse.rhythm?.bars.map((bar) => bar.chords.map((chord) => `${names.get(chord.chordId)}:${chord.beat}`).join(" "));
+  if (JSON.stringify(bars) !== JSON.stringify(["C#m:1 B:3", "E/G#:1 A:3"])) throw new Error(JSON.stringify(verse));
+  if (verse.lines[0].text.includes("|")) throw new Error(verse.lines[0].text);
 });
 
 await step("no page errors", async () => {

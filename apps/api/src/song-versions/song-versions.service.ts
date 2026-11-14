@@ -684,7 +684,8 @@ export class SongVersionsService {
     const content = dto.content?.trim() ? dto.content : null;
     const given = chartFrom(dto, []);
     // A whole file read in (issue #203): a section written out again is sung again, and the key and copyright it gives are kept unless set.
-    const imported = !given && content ? songFromText(content, dto.contentFormat ?? detectImportFormat(content), { mergeRepeats: true }) : undefined;
+    const beatsPerBar = Number(/^(\d{1,2})\//.exec(dto.timeSignature ?? "")?.[1]) || undefined;
+    const imported = !given && content ? songFromText(content, dto.contentFormat ?? detectImportFormat(content), { mergeRepeats: true, beatsPerBar }) : undefined;
     const chart = given ?? imported;
     return this.createVersion(
       owner,

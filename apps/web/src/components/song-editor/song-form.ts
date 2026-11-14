@@ -148,7 +148,11 @@ function chartOf(form: SongForm): SongDocumentV2 {
  */
 export function withContent(form: SongForm, content: string, contentFormat: SupportedImportFormat | null): SongForm {
   try {
-    const doc = songDocumentFromText(chartOf(form), { content, format: effectiveFormat({ content, contentFormat }) });
+    // Bar lines in the text (issue #460) make bars of the song's time.
+    const beats = Number(/^(\d{1,2})\//.exec(form.timeSignature)?.[1]);
+    const chart = chartOf(form);
+    if (beats) chart.defaults = { timeSignature: { numerator: beats, denominator: Number(form.timeSignature.split("/")[1]) || 4 } };
+    const doc = songDocumentFromText(chart, { content, format: effectiveFormat({ content, contentFormat }) });
     return { ...form, content, contentFormat, sections: doc.sections, flow: doc.flow };
   } catch {
     // Text that can't be read yet leaves the chart as it was.
