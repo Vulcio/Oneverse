@@ -73,8 +73,11 @@ await step("bar lines over the words come in as the song's bars (issue #460)", a
   await page.goto(`${WEB}/library/new`);
   await page.waitForLoadState("networkidle");
   await page.fill("#song-title", `Il est la vie ${tag}`);
+  // A new song needs an artist to be saved.
+  await page.click("#song-artists");
+  await page.keyboard.type("Asaph;");
   await page.fill("#song-content", ["Couplet 1", "|C#m        B          |E/G#       A", " Les vies sont restaurées dans le nom"].join("\n"));
-  await page.getByRole("button", { name: "Save song" }).click();
+  await page.getByRole("button", { name: "Save song" }).last().click();
   await page.waitForURL(/\/library\/(?!new)[a-z0-9]+/);
   const id = new URL(page.url()).pathname.split("/").pop();
   const [verse] = (await api(me, "GET", `/song-versions/${id}`)).documentJson.sections;
