@@ -17,13 +17,18 @@ export function isChordLineMark(token: string): boolean {
   return MARKS.test(token);
 }
 
+/** Bar lines set apart from the chords they touch: "|C#m  B |E" → " | C#m  B | E" (issue #460). */
+function apartFromBars(line: string): string {
+  return line.replace(/:?\|+:?/g, " $& ");
+}
+
 /**
  * Whether a line holds only chords (and the marks a line of chords has):
  * "G  D/F#  Em  C", "G - D - Em - C", "(G)   (C)", "G D Em C (x2)". It needs
  * one chord at least, and one that isn't also a word ("Do" alone is a word).
  */
 export function isChordsOnly(trimmedLine: string): boolean {
-  const tokens = trimmedLine
+  const tokens = apartFromBars(trimmedLine)
     .replace(/\(\s*([x×])\s*(\d{1,2})\s*\)/gi, "($1$2)")
     .split(/\s+/)
     .filter(Boolean);

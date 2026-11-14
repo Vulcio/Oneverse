@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { chordProFromPdfText, type PdfTextItem } from "../pdf-chart/index.js";
+import { songFromText } from "../song-document/text.js";
 import { readOcrPage, type OcrBox, type OcrLine, type OcrWord } from "../pdf-chart/ocr.js";
 import { readPdfChart } from "../pdf-chart/read.js";
 import { shownText } from "../pdf-chart/unseen.js";
@@ -124,6 +125,14 @@ describe("a whole PDF chart: header, footer, columns and details (issue #124)", 
     expect(chart.split("\n")[0]).toBe("Verse 1");
   });
 
+  it("bars of chords alone keep the beats they're written with (issue #460)", () => {
+    const items = [piece("Intro", 50, 150), piece("|Ab / Eb / | Db / / / |", 50, 166)];
+    const { chart } = readPdfChart(items, pages);
+    expect(chart).toBe("Intro\n|Ab / Eb / | Db / / / |");
+    const [intro] = songFromText(chart, "CHORDPRO").sections;
+    expect(intro!.rhythm!.bars.map((bar) => bar.chords.map((chord) => chord.beat))).toEqual([[1, 3], [1]]);
+  });
+
   it("reads two columns one after the other, a title across them first", () => {
     const right = verse(330, 140).map((item) => (item.text === "Verse 1" ? { ...item, text: "Chorus" } : item));
     const items = [piece("Amazing Grace", 200, 60, 1, 20), ...verse(50, 140), ...right];
@@ -147,7 +156,8 @@ describe("a whole PDF chart: header, footer, columns and details (issue #124)", 
     ];
     const { chart, details } = readPdfChart(items, pages);
     expect(details).toMatchObject({ title: "Il est la vie", artists: ["D Luiten", "J Poulet"], key: "E", timeSignature: "4/4", tempo: 120 });
-    expect(chart).toBe(["Verse 1", "[C#m]Les vies sont [E]", "", "Refrain", "[A]Jésus"].join("\n"));
+    // Each "|" a bar line (issue #460).
+    expect(chart).toBe(["Verse 1", "[|][C#m]Les vies sont [|][E]", "", "Refrain", "[A]Jésus"].join("\n"));
   });
 
   it("a header split by bars without spaces, a decimal tempo, names going on to a second line", () => {
@@ -242,6 +252,12 @@ describe("a scanned chart read by OCR (issue #124)", () => {
     });
     expect(asked).toHaveLength(2);
     expect(readPdfChart(items).chart).toBe("[C]That [G]saved [Em7]me");
+  });
+
+  it("keeps the bar lines touching chords (issue #460)", async () => {
+    const lines = [line(100, 18, word("|F♯m", 90), word("|Brn", 150)), line(130, 24, word("Lord", 100), word("of", 160), word("all", 230))];
+    const items = await readOcrPage(1, async () => lines);
+    expect(readPdfChart(items).chart).toBe("[|][F#m]Lord [|][Bm]of all");
   });
 
   it("leaves a line of words alone", async () => {

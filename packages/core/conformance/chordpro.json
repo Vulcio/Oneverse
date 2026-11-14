@@ -487,6 +487,297 @@
           ]
         },
         {
+          "name": "bar lines over the words: each starts a bar, its chord on beat 1 (issue #460)",
+          "args": [
+            "Verse 1\n|C#m        B          |E/G#       A\n Je veux te louer      Seigneur de tout\n",
+            "CHORDS_OVER_LYRICS"
+          ],
+          "expected": [
+            {
+              "id": "sec_@1",
+              "type": "verse",
+              "label": "Verse 1",
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_@2",
+                  "kind": "lyric",
+                  "text": " Je veux te louer      Seigneur de tout",
+                  "chords": [
+                    {
+                      "id": "chd_@3",
+                      "at": 1,
+                      "raw": "C#m"
+                    },
+                    {
+                      "id": "chd_@4",
+                      "at": 12,
+                      "raw": "B"
+                    },
+                    {
+                      "id": "chd_@5",
+                      "at": 23,
+                      "raw": "E/G#"
+                    },
+                    {
+                      "id": "chd_@6",
+                      "at": 35,
+                      "raw": "A"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@3",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@4",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 1
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@5",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@6",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 23
+                    }
+                  }
+                ]
+              },
+              "groove": null
+            }
+          ]
+        },
+        {
+          "name": "a bar line in inline ChordPro: [|] (issue #460)",
+          "args": [
+            "{start_of_verse}\n[|][G]Amazing [C]grace [|][D]how sweet\n{end_of_verse}\n",
+            "CHORDPRO"
+          ],
+          "expected": [
+            {
+              "id": "sec_@1",
+              "type": "verse",
+              "label": null,
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_@2",
+                  "kind": "lyric",
+                  "text": "Amazing grace how sweet",
+                  "chords": [
+                    {
+                      "id": "chd_@3",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_@4",
+                      "at": 8,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_@5",
+                      "at": 14,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@3",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@4",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@5",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 14
+                    }
+                  }
+                ]
+              },
+              "groove": null
+            }
+          ]
+        },
+        {
+          "name": "a ChordPro grid: margins, shared beats, %%, end bar (issue #460)",
+          "args": [
+            "{start_of_grid shape=\"1+4x2+4\"}\nIntro || G . . . | C~D . . . | %% | |\n      | Em . D . |. to the verse\n{end_of_grid}\n",
+            "CHORDPRO"
+          ],
+          "expected": [
+            {
+              "id": "sec_@1",
+              "type": "instrumental",
+              "label": null,
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_@2",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_@3",
+                      "at": 0,
+                      "raw": "G"
+                    },
+                    {
+                      "id": "chd_@4",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_@5",
+                      "at": 0,
+                      "raw": "D"
+                    },
+                    {
+                      "id": "chd_@6",
+                      "at": 0,
+                      "raw": "C"
+                    },
+                    {
+                      "id": "chd_@7",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                },
+                {
+                  "id": "line_@8",
+                  "kind": "lyric",
+                  "text": "",
+                  "chords": [
+                    {
+                      "id": "chd_@9",
+                      "at": 0,
+                      "raw": "Em"
+                    },
+                    {
+                      "id": "chd_@10",
+                      "at": 0,
+                      "raw": "D"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@3",
+                        "beat": 1
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@4",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@5",
+                        "beat": 1.5
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [],
+                    "lyricAnchor": null
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@6",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@7",
+                        "beat": 1.5
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@2",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_@9",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_@10",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_@8",
+                      "at": 0
+                    }
+                  }
+                ]
+              },
+              "groove": null
+            }
+          ]
+        },
+        {
           "name": "plain lyrics: a section per paragraph",
           "args": [
             "One\nTwo\n\nThree\n",

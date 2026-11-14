@@ -1,4 +1,5 @@
 import { isChordLine } from "../chords-over-lyrics/parser.js";
+import { readBarNotation } from "../chords-over-lyrics/bar-notation.js";
 import { isChordLineMark, isChordToken } from "../chords/chord-token.js";
 import { LABEL_LINE, sectionHeading } from "../chordpro/section-labels.js";
 
@@ -133,23 +134,28 @@ const apart = (text: string) =>
     .map((token) => (joinedAt(token) > 0 ? `${token.slice(0, joinedAt(token))} ${token.slice(joinedAt(token))}` : token))
     .join(" ");
 
-/** The chords of a chord line, each with where it starts on the page. */
-function chordsOf(line: PdfLine): { chord: string; x: number }[] {
-  const chords: { chord: string; x: number }[] = [];
+/** The chords of a chord line, each with where it starts on the page; a bar line is "|". */
+function chordsOf(line: PdfLine): { chord: string; x: number; bar?: number }[] {
+  const chords: { chord: string; x: number; bar?: number }[] = [];
   let start = -1;
   for (let i = 0; i <= line.chars.length; i++) {
     const char = line.chars[i];
     if (char && char.char.trim() !== "") {
       if (start < 0) start = i;
     } else if (start >= 0) {
-      // A bar line before or after a chord ("|C#m", "E|") marks the bar: the chord is what follows it.
+      // A bar line before or after a chord ("|C#m", "E|") starts a bar (issue #460): "|" here, the chord with it.
       let first = start;
       while (first < i && /[|:]/.test(line.chars[first]!.char)) first++;
-      const chord = line.chars.slice(first, i).map((c) => c.char).join("").replace(/[|:]+$/, "");
+      const word = line.chars.slice(first, i).map((c) => c.char).join("");
+      const chord = word.replace(/[|:]+$/, "");
+      const bar = line.chars.slice(start, first).some((c) => c.char === "|");
+      if (bar) chords.push({ chord: "|", x: line.chars[start]!.x0 });
       // Only chords go over the words: "-", "|", "x2" are how the line was laid out.
       const join = joinedAt(chord);
-      if (join > 0) chords.push({ chord: chord.slice(0, join), x: line.chars[first]!.x0 }, { chord: chord.slice(join), x: line.chars[first + join]!.x0 });
-      else if (chord && !isChordLineMark(chord)) chords.push({ chord, x: line.chars[first]!.x0 });
+      const glued = bar && first < i ? { bar: line.chars[start]!.x0 } : {};
+      if (join > 0) chords.push({ chord: chord.slice(0, join), x: line.chars[first]!.x0, ...glued }, { chord: chord.slice(join), x: line.chars[first + join]!.x0 });
+      else if (chord && !isChordLineMark(chord)) chords.push({ chord, x: line.chars[first]!.x0, ...glued });
+      if (word.length > chord.length && word.slice(chord.length).includes("|")) chords.push({ chord: "|", x: line.chars[first + chord.length]!.x0 });
       start = -1;
     }
   }
@@ -162,18 +168,27 @@ const wordStarts = (lyric: PdfLine) => lyric.chars.flatMap((char, i) => (char.ch
  * A lyric line with its chords: each goes before the first character that
  * sits mostly to its right - the one printed under the chord's start.
  */
-function withChords(lyric: PdfLine, chords: { chord: string; x: number }[]): string {
+function withChords(lyric: PdfLine, chords: { chord: string; x: number; bar?: number }[]): string {
   const text = lyric.text.replace(/\s+$/, "");
   const starts = wordStarts(lyric);
-  const at = chords.map(({ chord, x }) => {
+  const place = (x: number) => {
     let index = lyric.chars.findIndex((char) => (char.x0 + char.x1) / 2 > x - 0.5);
     if (index < 0 || index > text.length) index = text.length;
     // Chords mostly start words: one printed within a quarter em of a word's start goes there
     // (letters' widths are estimates, and a scan's edges blur).
     const distance = (i: number) => Math.abs(lyric.chars[i]!.x0 - x);
     const near = starts.filter((i) => distance(i) <= lyric.height * 0.25).sort((a, b) => distance(a) - distance(b))[0];
-    if (near !== undefined) index = near;
-    return { chord, index };
+    return { index: near ?? index, start: near !== undefined };
+  };
+  const at = chords.map(({ chord, x, bar }, i) => {
+    const { index, start } = place(x);
+    // "|G" printed with the bar line, not the chord, over the word's start: both go there.
+    const before = bar !== undefined && !start ? place(bar) : null;
+    return { chord, index: before?.start ? before.index : index, i };
+  });
+  // The bar line goes with its chord.
+  at.forEach((item, i) => {
+    if (item.chord === "|" && chords[i + 1]?.bar !== undefined) item.index = at[i + 1]!.index;
   });
   let out = "";
   let cursor = 0;
@@ -182,7 +197,7 @@ function withChords(lyric: PdfLine, chords: { chord: string; x: number }[]): str
     cursor = Math.max(cursor, index);
   }
   // Chords past the end of the words: after a space, as they're printed apart.
-  return (out + text.slice(cursor)).replace(/([^\s\]])(\[[^\]]+\])$/, "$1 $2");
+  return (out + text.slice(cursor)).replace(/([^\s\]])((?:\[[^\]]+\])+)$/, "$1 $2");
 }
 
 /**
@@ -224,7 +239,9 @@ export function chordProFromLines(lines: PdfLine[]): string {
         out.push(withChords(lyric, chordsOf(line)));
         i++;
       } else {
-        out.push(chordsOf(line).map(({ chord }) => `[${chord}]`).join(" "));
+        // Bars with their beats ("|Ab / Eb / | Db / / / |"): as written, the beats kept (issue #460).
+        const written = apart(text).replace(/\s+/g, " ");
+        out.push(readBarNotation(written) ? written : chordsOf(line).map(({ chord }) => `[${chord}]`).join(" "));
       }
       continue;
     }

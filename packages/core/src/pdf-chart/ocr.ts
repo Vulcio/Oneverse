@@ -44,6 +44,9 @@ export const CHORD_CHARACTERS = "ABCDEFGHNabdgijmnosu#b()/+-0123456789°ø.|x%";
 
 /** What OCR makes of chords' signs, put back: "F♯m" → "F#m", "Brn" → "Bm". */
 function fixChord(read: string): string {
+  // Bar lines touching a chord ("|C#m", "E|") stay (issue #460).
+  const bars = /^([|:]*)(.*?)([|:]*)$/.exec(read)!;
+  if ((bars[1] || bars[3]) && bars[2]) return bars[1]! + fixChord(bars[2]!) + bars[3]!;
   const token = read.replace(/♯/g, "#").replace(/♭/g, "b");
   if (isChordToken(token)) return token;
   const fixed = token
@@ -141,7 +144,8 @@ export async function readOcrPage(page: number, read: OcrReader): Promise<PdfTex
       // Each word that isn't a chord read again on its own, as chords only.
       const again = await Promise.all(
         words.map(async (word) => {
-          if (isChordToken(word.text) || isChordLineMark(word.text)) return word;
+          const core = word.text.replace(/^[|:]+|[|:]+$/g, "");
+          if (!core || isChordToken(core) || isChordLineMark(word.text)) return word;
           const pad = (line.y1 - line.y0) * 0.3;
           const read = (await readAgain({ x0: Math.max(0, word.x0 - pad), y0: Math.max(0, line.y0 - pad), x1: word.x1 + pad, y1: line.y1 + pad })).flatMap((l) => l.words);
           return { ...word, text: fixChord(read.map((w) => w.text).join("")), symbols: [] };

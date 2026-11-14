@@ -23,17 +23,38 @@ export function reconcileSections(previous: SectionV2[], next: SectionV2[]): Sec
     const old = sectionPairs.get(j);
     if (!old) return section;
     const linePairs = alignWithGaps(old.lines, section.lines, lineSimilarity, () => true);
+    const lines = section.lines.map((line, l) => {
+      const oldLine = linePairs.get(l);
+      return oldLine ? { ...line, id: oldLine.id, chords: reconcileChords(oldLine.chords, line.chords) } : line;
+    });
     return {
       ...section,
       id: old.id,
-      rhythm: section.rhythm ?? null,
+      rhythm: withIds(section.rhythm ?? null, section.lines, lines),
       groove: section.groove ?? old.groove ?? null,
-      lines: section.lines.map((line, l) => {
-        const oldLine = linePairs.get(l);
-        return oldLine ? { ...line, id: oldLine.id, chords: reconcileChords(oldLine.chords, line.chords) } : line;
-      }),
+      lines,
     };
   });
+}
+
+/** A rhythm the text gave (bar lines, issue #460), pointing at the lines and chords by the IDs they took back. */
+function withIds(rhythm: SectionV2["rhythm"] | null, before: LineV2[], after: LineV2[]): SectionV2["rhythm"] | null {
+  if (!rhythm) return null;
+  const ids = new Map<string, string>();
+  before.forEach((line, l) => {
+    ids.set(line.id, after[l]!.id);
+    line.chords.forEach((chord, c) => ids.set(chord.id, after[l]!.chords[c]!.id));
+  });
+  const id = (value: string) => ids.get(value) ?? value;
+  return {
+    ...rhythm,
+    bars: rhythm.bars.map((bar) => ({
+      ...bar,
+      chords: bar.chords.map((chord) => ({ ...chord, chordId: id(chord.chordId) })),
+      ...(bar.lyricAnchor ? { lyricAnchor: { ...bar.lyricAnchor, lineId: id(bar.lyricAnchor.lineId) } } : {}),
+      ...(bar.beatAnchors ? { beatAnchors: bar.beatAnchors.map((anchor) => ({ ...anchor, lineId: id(anchor.lineId) })) } : {}),
+    })),
+  };
 }
 
 function reconcileChords(previous: ChordV2[], next: ChordV2[]): ChordV2[] {

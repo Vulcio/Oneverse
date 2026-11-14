@@ -8,7 +8,7 @@ import { headingWithContent, repeatCall, sectionHeading, type RepeatCall } from 
 import { transposeChord } from "../chords/chord.js";
 import { generateId, ID_PREFIXES } from "../ids/index.js";
 import { parseKey } from "../music-keys/transpose.js";
-import { parsedSectionsToV2 } from "../schemas/parsed-song.js";
+import { importedBars, importedRhythm, parsedSectionsToV2, type ImportedBars } from "../schemas/parsed-song.js";
 import {
   flowItemId,
   parseSongDocumentV2,
@@ -87,7 +87,7 @@ export interface SongChart {
  * The first line's "2. " dropped when it numbers a section headed "Verse 2" (or
  * a verse headed without a number), its chords moved with it.
  */
-function withoutVerseNumber(section: SectionV2, number: string | null): void {
+function withoutVerseNumber(section: SectionV2, number: string | null, bars?: ImportedBars): void {
   const first = section.lines.find((line) => line.kind !== "note");
   const digits = number === null ? (section.type === "verse" ? "\\d+" : null) : number.match(/^\d+/)?.[0];
   if (!first || !digits) return;
@@ -95,6 +95,8 @@ function withoutVerseNumber(section: SectionV2, number: string | null): void {
   if (!prefix) return;
   first.text = first.text.slice(prefix.length);
   first.chords = first.chords.map((chord) => ({ ...chord, at: Math.max(0, chord.at - prefix.length) }));
+  const marks = bars?.marks.get(first.id);
+  if (marks) bars!.marks.set(first.id, marks.map((mark) => ({ ...mark, at: Math.max(0, mark.at - prefix.length) })));
 }
 
 /** Semitones from one key to another, the shorter way (-5 to +6); null if either can't be read. */
@@ -126,9 +128,11 @@ const sameContent = (a: SectionV2, b: SectionV2) =>
  * `mergeRepeats` (importing a file): a section written out again is sung
  * as that section again rather than kept twice - as it was, moved up or
  * down, with a few chords of its own, or only its end (issue #231, see
- * matchRepeat).
+ * matchRepeat). Bar lines written among the chords (issue #460) give a
+ * section its rhythm, in bars of `beatsPerBar` beats (the song's time
+ * signature's top number) unless the text gives a time signature.
  */
-export function songFromText(text: string, format: SupportedImportFormat, options: { mergeRepeats?: boolean } = {}): SongChart {
+export function songFromText(text: string, format: SupportedImportFormat, options: { mergeRepeats?: boolean; beatsPerBar?: number } = {}): SongChart {
   const file = readSongFile(text);
   const details = file.details;
   if (!file.body.trim()) return { sections: [], flow: [], key: details.key ?? null, copyright: details.copyright ?? null, details };
@@ -212,7 +216,9 @@ export function songFromText(text: string, format: SupportedImportFormat, option
     flow.push({ id: flowItemId(section.id), sectionId: section.id });
   };
 
-  const queue = parsedSectionsToV2(parseSongText(marked, format));
+  // Bar lines written among the chords (issue #460): made each section's rhythm once it's tidied.
+  const bars = importedBars();
+  const queue = parsedSectionsToV2(parseSongText(marked, format), bars);
   for (let index = 0; index < queue.length; index++) {
     const section = queue[index]!;
     const only = section.lines.length === 1 ? section.lines[0]!.text : "";
@@ -280,11 +286,11 @@ export function songFromText(text: string, format: SupportedImportFormat, option
       section.label ??= heading.label;
     }
     const named = heading ?? (section.label ? sectionHeading(section.label) : null);
-    if (named) withoutVerseNumber(section, named.number);
+    if (named) withoutVerseNumber(section, named.number, bars);
     else if (section.type === "other" && !section.label && NUMBERED_VERSE.test(section.lines.find((line) => line.kind !== "note")?.text ?? "")) {
       // A hymn's verses numbered "1. ", "2. " with no headings.
       section.type = "verse";
-      withoutVerseNumber(section, null);
+      withoutVerseNumber(section, null, bars);
     }
     if (shift % 12 !== 0) {
       // Written in the key it's sung in: stored in the song's key.
@@ -337,6 +343,9 @@ export function songFromText(text: string, format: SupportedImportFormat, option
   if (options.mergeRepeats && last && last.type === "instrumental" && !last.label && chordsOnly(last) && flow.at(-1)?.sectionId === last.id && sections.length > 1) last.type = "outro";
   // Notes at the very end: nothing follows, so they stay a section.
   if (cue) addSection(cue);
+  // A bar's beats: the text's time signature, else the song's, else 4.
+  const beatsPerBar = Number(/^(\d{1,2})\//.exec(details.timeSignature ?? "")?.[1] ?? options.beatsPerBar ?? 4) || 4;
+  for (const section of sections) section.rhythm ??= importedRhythm(section, bars, beatsPerBar);
   // Imported (issue #344): a "Verse 2" that only says what the name would is left out, so it's named by the rule, in the reader's language.
   const found = { key: songKey ?? details.key ?? null, copyright: copyright ?? details.copyright ?? null, details };
   if (options.mergeRepeats) return { ...withoutPlainLabels({ sections, flow }), ...found };
@@ -359,7 +368,8 @@ export function songDocumentFromText(
   previous: SongDocumentV2 | null,
   change: { content?: string; format: SupportedImportFormat; defaults?: SongDefaultsV2; mergeRepeats?: boolean },
 ): SongDocumentV2 {
-  const parsed = change.content === undefined ? null : songFromText(change.content, change.format, { mergeRepeats: change.mergeRepeats });
+  const beatsPerBar = change.defaults?.timeSignature?.numerator ?? previous?.defaults.timeSignature?.numerator;
+  const parsed = change.content === undefined ? null : songFromText(change.content, change.format, { mergeRepeats: change.mergeRepeats, ...(beatsPerBar && { beatsPerBar }) });
   const sections = parsed ? reconcileSections(previous?.sections ?? [], parsed.sections) : (previous?.sections ?? []);
   let flow: SectionInstance[];
   if (parsed && parsed.flow.length > parsed.sections.length) {

@@ -2,8 +2,8 @@ import type { ParsedSection } from "../schemas/parsed-song.js";
 import { SECTION_TYPES, type SectionType } from "../constants/index.js";
 import { generateId, ID_PREFIXES } from "../ids/index.js";
 import { LABEL_LINE, normalizeSectionType } from "./section-labels.js";
-import { barNotationMarkup, readBarNotation } from "../chords-over-lyrics/bar-notation.js";
-import { isChordLine, overlayChords } from "../chords-over-lyrics/parser.js";
+import { barNotationMarkup, readBarNotation, readGridLine } from "../chords-over-lyrics/bar-notation.js";
+import { barsOverWords, isChordLine, overlayChords } from "../chords-over-lyrics/parser.js";
 import { parseLine } from "./line.js";
 
 // Chords are kept as written (`raw`); `parseChord` in ../chords reads them
@@ -44,6 +44,8 @@ function directiveLabel(value: string | undefined): string | null {
   if (!value?.trim()) return null;
   const attribute = /(?:^|\s)label\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/i.exec(value);
   if (attribute) return (attribute[1] ?? attribute[2] ?? attribute[3] ?? "").trim() || null;
+  // Attributes with no label ("shape=\"4x4\"", a grid's): none.
+  if (/^\w+\s*=/.test(value.trim())) return null;
   return value.trim();
 }
 
@@ -59,6 +61,8 @@ export function parseChordPro(text: string): ParsedSection[] {
   const sections: ParsedSection[] = [];
   let current: ParsedSection | null = null;
   let explicitBlock = false;
+  // Inside "{start_of_grid}": lines of bars, with margins.
+  let inGrid = false;
 
   let currentLines: ParsedSection["lines"] = [];
   const startSection = (type: SectionType, label: string | null) => {
@@ -88,9 +92,11 @@ export function parseChordPro(text: string): ParsedSection[] {
       if (sectionType) {
         startSection(sectionType, directiveLabel(value));
         explicitBlock = true;
+        inGrid = key === "start_of_grid" || key === "sog";
       } else if (END_DIRECTIVES.has(key)) {
         current = null;
         explicitBlock = false;
+        inGrid = false;
       }
       // other directives (title, key, tempo, comment, ...) are ignored here
       continue;
@@ -112,8 +118,11 @@ export function parseChordPro(text: string): ParsedSection[] {
 
     ensureSection();
     // Bars of chords, "| G | C | D | G |" or "| [G] | [C] |" (issue #344).
-    const bars = readBarNotation(line);
-    if (bars) {
+    const bars = inGrid ? readGridLine(line) : readBarNotation(line);
+    const next = lines[i + 1];
+    const nextTrimmed = next?.trim() ?? "";
+    const nextIsLyric = next !== undefined && nextTrimmed !== "" && !nextTrimmed.includes("[") && !nextTrimmed.startsWith("{") && !isChordLine(nextTrimmed) && !LABEL_LINE.test(nextTrimmed);
+    if (bars && (inGrid || !barsOverWords(line, nextIsLyric))) {
       const barLine = parseLine(barNotationMarkup(bars));
       currentLines.push(barLine);
       (current!.bars ??= {})[barLine.id] = bars.bars;
@@ -121,9 +130,6 @@ export function parseChordPro(text: string): ParsedSection[] {
     }
     // Chords written above the words, as on chord sites, in a file saved as ChordPro.
     if (!line.includes("[") && isChordLine(line)) {
-      const next = lines[i + 1];
-      const nextTrimmed = next?.trim() ?? "";
-      const nextIsLyric = next !== undefined && nextTrimmed !== "" && !nextTrimmed.includes("[") && !nextTrimmed.startsWith("{") && !isChordLine(nextTrimmed) && !LABEL_LINE.test(nextTrimmed);
       currentLines.push(parseLine(overlayChords(rawLine, nextIsLyric ? next : "")));
       if (nextIsLyric) i++;
       continue;

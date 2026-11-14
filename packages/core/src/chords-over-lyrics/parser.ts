@@ -15,17 +15,40 @@ export function isChordLine(trimmedLine: string): boolean {
 }
 
 /** Finds each whitespace-delimited token's raw text and column offset in
- * the (untrimmed) original line, left to right. */
-function findTokenPositions(rawLine: string): Array<{ token: string; column: number }> {
-  const positions: Array<{ token: string; column: number }> = [];
+ * the (untrimmed) original line, left to right. A bar line ("|", "||:")
+ * is a token of its own, "[|]" in the markup, even touching a chord
+ * ("|C#m"); one just before a chord stands at the chord's column, so the
+ * bar starts with it (issue #460). */
+function findTokenPositions(rawLine: string): Array<{ token: string; column: number; bar?: number }> {
+  const positions: Array<{ token: string; column: number; end: number; bar?: number }> = [];
   // "(x 2)" is one mark.
-  const re = /\(\s*[x×]\s*\d{1,2}\s*\)|\S+/gi;
+  const re = /\(\s*[x×]\s*\d{1,2}\s*\)|:?\|+:?|[^\s|]+?(?=:?\||\s|$)/gi;
   let match: RegExpExecArray | null;
   while ((match = re.exec(rawLine)) !== null) {
-    // Only chords go over the words: "-", "|", "x2" are how the line was laid out.
-    if (!isChordLineMark(match[0].replace(/\s+/g, ""))) positions.push({ token: match[0], column: match.index });
+    const end = match.index + match[0].length;
+    if (BAR_TOKEN.test(match[0])) {
+      positions.push({ token: "|", column: match.index, end });
+      continue;
+    }
+    // Only chords go over the words: "-", "x2" are how the line was laid out.
+    if (isChordLineMark(match[0].replace(/\s+/g, ""))) continue;
+    const before = positions.at(-1);
+    // A bar line just before a chord stands with it; the chord remembers where the bar line was.
+    const glued = before?.token === "|" && match.index - before.end <= 1 ? before : null;
+    if (glued) before!.column = match.index;
+    positions.push({ token: match[0], column: match.index, end, ...(glued ? { bar: glued.end - 1 } : {}) });
   }
-  return positions;
+  // Two bar lines together ("| |" left by a mark between them) are one.
+  return positions.filter((position, i) => !(position.token === "|" && positions[i + 1]?.token === "|" && positions[i + 1]!.column === position.column));
+}
+
+const BAR_TOKEN = /^:?\|+:?$/;
+// A beat mark between bar lines: the line is a grid of beats, not chords over words.
+const BEAT_MARK = /(?:^|\s)[./-](?=\s|\||$)/;
+
+/** Whether a line of bars of chords ("|C#m  B  |E/G#  A") is written over the words under it (issue #460), not an instrumental's bars. */
+export function barsOverWords(trimmedLine: string, nextIsLyric: boolean): boolean {
+  return nextIsLyric && !trimmedLine.includes("[") && !BEAT_MARK.test(trimmedLine);
 }
 
 /**
@@ -46,6 +69,13 @@ export function overlayChords(chordLine: string, lyricLine: string): string {
     return line;
   }
 
+  // "|G" over "Amazing": the bar line, not the chord, is printed where the word starts, so both go there.
+  const wordStart = (column: number) => /\S/.test(lyricLine[column] ?? "") && (column === 0 || /\s/.test(lyricLine[column - 1]!));
+  positions.forEach((position, i) => {
+    if (position.bar === undefined || wordStart(position.column) || !wordStart(position.bar)) return;
+    position.column = position.bar;
+    positions[i - 1]!.column = position.bar;
+  });
   const lastColumn = positions[positions.length - 1]?.column ?? 0;
   const padded = lyricLine.length <= lastColumn ? lyricLine + " ".repeat(lastColumn - lyricLine.length + 1) : lyricLine;
 
@@ -103,8 +133,11 @@ export function parseChordsOverLyrics(text: string): ParsedSection[] {
     ensureSection();
 
     // Bars of chords, "| G | C | D | G |" (issue #344).
+    const next = rawLines[i];
+    const nextTrimmed = next?.trim() ?? "";
+    const nextIsLyric = next !== undefined && nextTrimmed !== "" && !isChordLine(nextTrimmed) && !LABEL_LINE.test(nextTrimmed);
     const bars = readBarNotation(trimmed);
-    if (bars) {
+    if (bars && !barsOverWords(trimmed, nextIsLyric)) {
       const line = parseLine(barNotationMarkup(bars));
       currentLines.push(line);
       (current!.bars ??= {})[line.id] = bars.bars;
@@ -112,9 +145,6 @@ export function parseChordsOverLyrics(text: string): ParsedSection[] {
     }
 
     if (isChordLine(trimmed)) {
-      const next = rawLines[i];
-      const nextTrimmed = next?.trim() ?? "";
-      const nextIsLyric = next !== undefined && nextTrimmed !== "" && !isChordLine(nextTrimmed) && !LABEL_LINE.test(nextTrimmed);
       if (nextIsLyric) {
         currentLines.push(parseLine(overlayChords(rawLine, next ?? "")));
         i++;

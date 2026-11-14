@@ -1,6 +1,7 @@
 /**
  * Bar notation (issue #344): an instrumental written as bars of chords,
- * "| G | C | D | G |", "||: Em . . . | C . D . :|| x2". Each cell between bar
+ * "| G | C | D | G |", "||: Em . . . | C . D . :|| x2", or a ChordPro grid's
+ * "| C~G . . . | %% |." (issue #460). Each cell between bar
  * lines is a bar: its chords, and beat marks ("." or "/") where they're
  * written (one per beat, the chord's own token counting as its first);
  * "%" or an empty cell carries the bar before on. A trailing "x2" plays the
@@ -45,9 +46,10 @@ export function readBarNotation(trimmedLine: string): BarNotation | null {
     times = Math.min(MAX_REPEATS, Math.max(1, Number(repeat[1])));
     line = line.slice(0, repeat.index).trim();
   }
-  // Repeat signs are bar lines too: "||:", ":||", "|:", ":|".
+  // Repeat signs are bar lines too: "||:", ":||", "|:", ":|"; so are ChordPro grids' end "|." and
+  // first and second endings "|1", ":|2" (issue #460, read as written).
   const cells = line
-    .replace(/:?\|+:?/g, "|")
+    .replace(/:?\|+:?(?:\.(?=\s|$)|\d(?=\s|$))?/g, "|")
     .split("|")
     .map((cell) => cell.trim());
   // The line starts with a bar line, so the first cell is empty; the last is too when it ends with one.
@@ -56,11 +58,15 @@ export function readBarNotation(trimmedLine: string): BarNotation | null {
   if (cells.length === 0) return null;
 
   const once: { chords: string[]; beats: number[] }[] = [];
-  for (const cell of cells) {
-    if (cell === "" || cell === "%") {
-      const before = once.at(-1);
-      // The bar before again: one chord carries on by itself; several are played again.
-      once.push(before && before.chords.length > 1 ? { chords: [...before.chords], beats: [...before.beats] } : { chords: [], beats: [] });
+  for (let c = 0; c < cells.length; c++) {
+    const cell = cells[c]!;
+    // "%%" stands for two bars, the second cell left empty.
+    if (cell === "%%" && cells[c + 1] === "") c++;
+    if (cell === "" || cell === "%" || cell === "%%") {
+      // The bar before again ("%%": the two before): one chord carries on by itself; several are played again.
+      const again = cell === "%%" ? once.slice(-2) : once.slice(-1);
+      if (again.length === 0) again.push({ chords: [], beats: [] });
+      for (const before of again) once.push(before.chords.length > 1 ? { chords: [...before.chords], beats: [...before.beats] } : { chords: [], beats: [] });
       continue;
     }
     const tokens = cell.split(/\s+/).map((token) => token.replace(/^\[(.+)\]$/, "$1"));
@@ -72,9 +78,13 @@ export function readBarNotation(trimmedLine: string): BarNotation | null {
         marked = true;
         continue;
       }
-      if (!isChordToken(token) && !NO_CHORD.has(token.toUpperCase())) return null;
-      chords.push(token);
-      at.push(position);
+      // "C~G": two chords sharing the beat (a ChordPro grid's), each its part of it.
+      const shared = token.split("~");
+      for (const [part, chord] of shared.entries()) {
+        if (!isChordToken(chord) && !NO_CHORD.has(chord.toUpperCase())) return null;
+        chords.push(chord);
+        at.push(position + part / shared.length);
+      }
     }
     if (chords.length === 0 && !marked) return null;
     once.push({ chords, beats: at.map((position, i) => (marked ? position + 1 : spread(chords.length, i))) });
@@ -89,6 +99,19 @@ export function readBarNotation(trimmedLine: string): BarNotation | null {
     }
   }
   return notation;
+}
+
+/**
+ * A line of a ChordPro grid section ("{start_of_grid}"): bar notation,
+ * once its margins are left out - a name before the first bar line
+ * ("Intro || G . . . |") and a comment after the last ("| D . . . | to the bridge").
+ */
+export function readGridLine(trimmedLine: string): BarNotation | null {
+  const line = trimmedLine.trim();
+  const first = line.indexOf("|");
+  if (first < 0) return null;
+  const body = line.slice(first);
+  return readBarNotation(body) ?? readBarNotation(body.slice(0, body.lastIndexOf("|") + 1));
 }
 
 /** The chords as a line of chords alone, in the inline markup the parsers share: "[G][C][D][G]". */
