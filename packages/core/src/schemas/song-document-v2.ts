@@ -70,6 +70,11 @@ export const BarChordSchema = z.object({
   chordId: z.string().min(1),
   /** 1-based; may be fractional (2.5 = the "and" of 2). */
   beat: z.number().positive(),
+  /**
+   * A key chord in the chord grid (issue #462): it stays put when the chords
+   * around it move. Left out, a chord on beat 1 is one and the others aren't.
+   */
+  pinned: z.boolean().optional(),
 });
 
 /** A beat of a bar sung at a character of a line (issue #238): placed by hand where the grid's own guess was wrong. */

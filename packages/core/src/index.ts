@@ -18,6 +18,7 @@ export * from "./song-document/render.js";
 export * from "./song-document/bars.js";
 export * from "./song-document/bar-lines.js";
 export * from "./song-document/rhythm-edit.js";
+export * from "./song-document/rhythm-moves.js";
 export * from "./song-document/structure.js";
 export * from "./song-document/drums.js";
 export * from "./song-document/section-names.js";

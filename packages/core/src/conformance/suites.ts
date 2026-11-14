@@ -17,6 +17,7 @@ import { chartChords, chartSeconds, renderChart, sectionChords } from "../song-d
 import { barAt, barBeatPlaces, barLyrics, barSeconds, beatPlaceRange, chartBars, lineAtPosition, positionAtSeconds, recordingBeatPosition, recordingSecondsAt, scrollStops, secondsAtPosition, type ChartBar } from "../song-document/bars.js";
 import { barLinesFromRhythm, rhythmFromBarLines, suggestedBarLines } from "../song-document/bar-lines.js";
 import { editableRhythm, insertRhythmBar, keepPlacedBeats, moveRhythmChord, placeRhythmBeat, removeRhythmBar, setRhythmBarBeats } from "../song-document/rhythm-edit.js";
+import { copyRhythmPlacement, matchingSections, moveChordInRhythm, nudgeChordInRhythm, pinRhythmChord, setRhythmBarCount } from "../song-document/rhythm-moves.js";
 import { followChords, uniquePass, wordDiff } from "../song-document/pass.js";
 import type { SectionInstance } from "../schemas/song-document-v2.js";
 import { structureOf } from "../song-document/structure.js";
@@ -1383,6 +1384,55 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "past the bar's end: refused", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 0, 5, 4] },
           { name: "into the bar before: the bar that started at its word no longer does", args: [BAR_LINES_SECTION, editableRhythm(BAR_LINES_SECTION as never), "chd_a2", 0, 3, 4] },
           { name: "in a bar of 3 beats, the and of 3", args: [BARS_SONG.sections[1], { beatsPerBar: 3, bars: BARS_SONG.sections[1]!.rhythm!.bars }, "chd_v3", 2, 3.5, 4] },
+        ],
+      },
+      moveChordInRhythm: {
+        about:
+          "A chord dragged to a beat in the chord grid (issue #462). Ripple: it and every chord after it in its section move as much, bars added or taken off at the end, the words' bar lines following their chords. In place: only the chords between the key chords on either side move, spread evenly (whole beats, else halves), the bars staying. Key chords are pinned, or on beat 1 unless unpinned; a chord moved becomes one. Refused with the reason and the chord in the way.",
+        params: ["section", "rhythm", "chordId", "bar", "beat", "mode", "beatsPerBar"],
+        run: moveChordInRhythm,
+        cases: [
+          { name: "in place: A to beat 4, alone", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 0, 4, "inPlace", 4] },
+          { name: "in place: past the key chord Bm, refused", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 2, 2, "inPlace", 4] },
+          { name: "in place: D (a key chord) to beat 2, A spread up to Bm", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v1", 0, 2, "inPlace", 4] },
+          { name: "in place: Bm unpinned, D to beat 2: A, with no key chord after it and not in the way, stays", args: [BARS_SONG.sections[1], pinRhythmChord(BARS_SONG.sections[1]!.rhythm!, "chd_v3", false), "chd_v1", 0, 2, "inPlace", 4] },
+          { name: "ripple: A a beat later, Bm with it, a bar added", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 0, 4, "ripple", 4] },
+          { name: "ripple: onto the chord before, refused", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v2", 0, 1, "ripple", 4] },
+        ],
+      },
+      nudgeChordInRhythm: {
+        about: "A chord moved by the arrows in the chord grid (issue #462): by a beat or a bar's length, ripple or in place as moveChordInRhythm. In place can't leave the section; ripple adds bars.",
+        params: ["section", "rhythm", "chordId", "by", "mode", "beatsPerBar"],
+        run: nudgeChordInRhythm,
+        cases: [
+          { name: "ripple: Bm a bar later, a bar added", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v3", 4, "ripple", 4] },
+          { name: "in place: Bm past the end, refused", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, "chd_v3", 4, "inPlace", 4] },
+        ],
+      },
+      setRhythmBarCount: {
+        about: "A section given a number of bars in the chord grid (issue #462): empty bars added at its end, or the last taken off - only ones without chord changes.",
+        params: ["rhythm", "count"],
+        run: setRhythmBarCount,
+        cases: [
+          { name: "two more bars", args: [BARS_SONG.sections[1]!.rhythm, 5] },
+          { name: "the bar with Bm taken off: refused", args: [BARS_SONG.sections[1]!.rhythm, 2] },
+        ],
+      },
+      matchingSections: {
+        about: "The sections with the same chords in the same order as one (issue #462): with the same words too (a copy, changed with it) or other words (another verse, offered).",
+        params: ["sections", "sectionId"],
+        run: matchingSections,
+        cases: [
+          { name: "a verse, its copy and another verse", args: [[BARS_SONG.sections[1], { ...BARS_SONG.sections[1], id: "sec_copy" }, { ...BARS_SONG.sections[1], id: "sec_verse2", lines: [{ ...BARS_SONG.sections[1]!.lines[0]!, id: "line_w1", text: "Other words to sing here" }] }, BARS_SONG.sections[2]], "sec_verse"] },
+        ],
+      },
+      copyRhythmPlacement: {
+        about: "One section's bars given to another with the same chords (issue #462): its chords where the first's are, bars of the same lengths, its words placed line for line when the lines match. Null when the chords differ.",
+        params: ["from", "rhythm", "to"],
+        run: copyRhythmPlacement,
+        cases: [
+          { name: "to another verse", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, { lines: [{ id: "line_w1", kind: "lyric", text: "Other words to sing here", chords: [{ id: "chd_w1", at: 0, raw: "D" }, { id: "chd_w2", at: 12, raw: "A" }, { id: "chd_w3", at: 20, raw: "Bm" }] }] }] },
+          { name: "other chords: null", args: [BARS_SONG.sections[1], BARS_SONG.sections[1]!.rhythm, BARS_SONG.sections[2]] },
         ],
       },
       setRhythmBarBeats: {

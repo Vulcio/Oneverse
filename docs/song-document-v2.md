@@ -210,6 +210,9 @@ An optional timing layer on a section; the lines stay the structure.
   pickup, a 2/4 bar before the chorus. Left out, it has `beatsPerBar`.
 - A bar with no chord changes carries the previous chord on.
 - `beat` is 1-based and may be fractional (2.5 is the "and" of 2).
+- A chord's `pinned` (optional) makes it a key chord in the chord grid, or
+  not one (issue #462): key chords stay put when the chords around them move.
+  Left out, a chord on beat 1 is one and the others aren't.
 - A bar's `beatAnchors` (optional) are beats placed in the lyrics by hand,
   `{ beat, lineId, at }` with `beat` from 2 (beat 1 is the bar's
   `lyricAnchor`). The others are worked out (`barBeatPlaces()`, below).
@@ -244,6 +247,17 @@ a beat - never past the chord before or after it in the chart -
 `removeRhythmBar()` add an empty bar or remove one, and `placeRhythmBeat()`
 puts a beat on a letter (beat 1 moving the bar's `lyricAnchor`, the others in
 `beatAnchors`). Each is a conformance case.
+
+Since issue #462 the grid moves chords as a video editor moves clips
+(`rhythm-moves.ts`): `moveChordInRhythm()` and `nudgeChordInRhythm()` (the
+arrows: a beat or a bar) either ripple - the chord and every one after it in
+the section move as much, bars added or taken off at the end, the bar lines in
+the words following their chords - or move it in place, the chords between the
+key chords on either side spread evenly (whole beats, else halves) and the bars
+kept. `pinRhythmChord()` pins or unpins a key chord, `setRhythmBarCount()`
+gives a section a number of bars, `matchingSections()` finds the sections with
+the same chords (and words, or other words) and `copyRhythmPlacement()` gives
+one's bars to another.
 
 Each beat has a place in the words (issue #238): `barLyricSpans()` gives each
 bar its part of the lines, and `barBeatPlaces()` places its beats there - the
