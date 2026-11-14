@@ -60,6 +60,9 @@ const kept = (id) =>
 
 await step("online: opening a set keeps it on the device", async () => {
   await signIn(page, me);
+  // The service worker the sign-in's pages registered is active before the
+  // set opens: a page opened while it activates is never claimed (as web/offline does).
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await page.goto(`${WEB}/sets/${set.id}`);
   await page.waitForLoadState("networkidle");
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 30_000 });
