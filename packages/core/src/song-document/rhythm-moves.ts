@@ -110,8 +110,16 @@ function rebuild(props: Omit<Bar, "chords">[], lengths: readonly number[], times
 
 /** The bar's props but its chords, as the rhythm had them. */
 function propsOf(bar: Bar): Omit<Bar, "chords"> {
-  const { chords: _chords, ...rest } = bar;
+  const rest: Partial<Bar> = { ...bar };
+  delete rest.chords;
   return rest;
+}
+
+/** A bar's props without its places in the words. */
+function unplaced(props: Omit<Bar, "chords">): Omit<Bar, "chords"> {
+  const rest = { ...props };
+  delete rest.beatAnchors;
+  return { ...rest, lyricAnchor: null };
 }
 
 /**
@@ -205,15 +213,15 @@ function moveTo(section: Pick<SectionV2, "lines">, rhythm: Rhythm, chordId: stri
     // A bar starting where the chord was is in what moves: its place in the words too.
     const clearFrom = starts[from]! >= old - EPS ? from : from + 1;
     for (let at = clearFrom; at < props.length; at++) {
-      const { lyricAnchor: _lyric, beatAnchors: _beats, ...rest } = props[at]!;
-      props[at] = { ...rest, lyricAnchor: null };
+      props[at] = unplaced(props[at]!);
     }
     const own = props[from]!;
     if (own.beatAnchors) {
       const kept = own.beatAnchors.filter((anchor) => starts[from]! + anchor.beat - 1 < first - EPS);
       if (kept.length > 0) props[from] = { ...own, beatAnchors: kept };
       else {
-        const { beatAnchors: _gone, ...rest } = own;
+        const rest = { ...own };
+        delete rest.beatAnchors;
         props[from] = rest;
       }
     }
