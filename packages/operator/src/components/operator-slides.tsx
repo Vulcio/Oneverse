@@ -206,8 +206,9 @@ function SlideTile({ slide, index, pass, tag, on, black, disabled, onSend }: { s
       data-slide={index}
     >
       {header ? (
-        <span className="flex items-center gap-1 bg-[var(--section-tag)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--section-ink)] uppercase" data-testid="operator-slide-header">
-          <span className="truncate">{name}</span>
+        <span className="flex min-h-5 items-center gap-1 bg-[var(--section-tag)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--section-ink)] uppercase" data-testid="operator-slide-header">
+          {/* Grouped, the section's name heads the group: the band alone says which. */}
+          {display.grouped ? null : <span className="truncate">{name}</span>}
           {display.numbers ? <span className="ml-auto font-normal tabular-nums">{index + 1}</span> : null}
         </span>
       ) : tag || display.numbers ? (
