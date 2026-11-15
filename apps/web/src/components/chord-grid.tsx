@@ -20,6 +20,7 @@ import {
   removeRhythmBar,
   setRhythmBarBeats,
   structureOf,
+  wordStart,
   type BarLyricSpan,
   type BeatPlace,
   type ChartBar,
@@ -156,6 +157,9 @@ export function ChordGrid({
   const press = useRef<ChordPress | null>(null);
   // The chord being dragged (a press that moved), for the preview.
   const [dragged, setDragged] = useState<PickedChord | null>(null);
+  // A chord pointed at or focused, or its syllable (issue #477): its syllable lit.
+  const [pointedChord, setPointedChord] = useState<string | null>(null);
+  const litChord = dragged?.chordId ?? pointedChord ?? picked?.chordId ?? null;
   // The bars without a drag's preview, for the drop targets under the pointer.
   const chartBarsRef = useRef<ChartBar[]>([]);
   const [pickedBar, setPickedBar] = useState<number | null>(null);
@@ -732,7 +736,11 @@ export function ChordGrid({
       done: () => setPicked(null),
       key: keyChords.has(chord.id),
       barBeats: beatsOf(bar),
-      where: t("chordGrid.where", { bar: bar.barInPass + 1, beat: beatName(chord.beat) }),
+      where: (() => {
+        const word = chordWord(chart.passes[bar.passIndex]?.lines.find((line) => line.chords.some((one) => one.id === chord.id)), chord.id);
+        const at = { bar: bar.barInPass + 1, beat: beatName(chord.beat) };
+        return word ? t("chordGrid.whereWord", { ...at, word }) : t("chordGrid.where", at);
+      })(),
     };
   };
   const beatName = (beat: number) => (Number.isInteger(beat) ? String(beat) : t("chordGrid.andOf", { n: Math.floor(beat) }));
@@ -767,6 +775,8 @@ export function ChordGrid({
       onTap={() => tapBar(bar)}
       onSlot={(beat) => place(bar, beat)}
       onLetter={pickedBeat ? (letter) => placeBeat(pickedBeat, letter) : undefined}
+      litChord={editing ? litChord : null}
+      onPointChord={setPointedChord}
       chordEvents={{ down: chordDown, beatDown, move: chordMove, up: chordUp, cancel: chordCancel }}
     />
   );
@@ -1069,6 +1079,8 @@ function GridBar({
   onTap,
   onSlot,
   onLetter,
+  litChord,
+  onPointChord,
   chordEvents,
 }: {
   bar: ChartBar;
@@ -1078,7 +1090,7 @@ function GridBar({
   words: BarLyricSpan[] | null;
   /** Its words in it: not when they're between the rows, pinned, or off. */
   showWords: boolean;
-  lines: readonly { id: string; text: string }[];
+  lines: readonly GridLine[];
   /** Where each of its beats is sung (`barBeatPlaces`). */
   places: readonly (BeatPlace | null)[];
   /** In Edit, its beat picked to place in the words (1-based). */
@@ -1103,6 +1115,9 @@ function GridBar({
   onSlot: (beat: number) => void;
   /** In Edit with a beat picked: a letter tapped to sing it on. */
   onLetter?: (letter: { lineId: string; at: number }) => void;
+  /** In Edit, the chord whose syllable is lit (issue #477), and a chord or its syllable pointed at. */
+  litChord: string | null;
+  onPointChord: (chordId: string | null) => void;
   chordEvents: {
     down: (event: ReactPointerEvent, bar: ChartBar, chord: ChartBarChord) => void;
     beatDown: (event: ReactPointerEvent, bar: ChartBar, beat: number) => void;
@@ -1126,18 +1141,24 @@ function GridBar({
           editing && moving.has(chord.id) && "bg-sky-100 text-sky-950 ring-2 ring-sky-600 dark:bg-sky-950 dark:text-sky-50",
           editing && dragged === chord.id && "scale-110 bg-sky-600 text-white shadow-lg ring-0",
           editing && picked?.chordId === chord.id && !dragged && "ring-2 ring-sky-600 ring-offset-1 ring-offset-background",
+          editing && litChord === chord.id && picked?.chordId !== chord.id && !dragged && "ring-2 ring-sky-600/60",
         )}
         data-grid-chord={chord.label}
         data-chord-id={editing ? chord.id : undefined}
         data-beat-at={chord.beat}
         data-key-chord={key ? "" : undefined}
         data-moving={editing && moving.has(chord.id) ? "" : undefined}
+        data-lit={editing && litChord === chord.id ? "" : undefined}
         role={editing ? "button" : undefined}
         tabIndex={editing ? 0 : undefined}
         aria-label={editing ? t(key ? "chordGrid.keyChordLabel" : "chordGrid.chordLabel", { chord: chord.label }) : undefined}
         aria-pressed={editing ? picked?.chordId === chord.id : undefined}
         onPointerDown={editing ? (event) => chordEvents.down(event, bar, chord) : undefined}
         onKeyDown={editing ? (event) => onChordKey(event, chord) : undefined}
+        onPointerEnter={editing ? () => onPointChord(chord.id) : undefined}
+        onPointerLeave={editing ? () => onPointChord(null) : undefined}
+        onFocus={editing ? () => onPointChord(chord.id) : undefined}
+        onBlur={editing ? () => onPointChord(null) : undefined}
         // Picked or dropped by the pointer's own handlers: not a tap on the beat it's in.
         onClick={editing ? (event) => event.stopPropagation() : undefined}
       >
@@ -1249,7 +1270,7 @@ function GridBar({
           ),
         )}
       </div>
-      {showWords ? <BarWords bar={bar} spans={words} lines={lines} places={places} editing={editing} pickedBeat={pickedBeat} onLetter={onLetter} chordEvents={chordEvents} /> : null}
+      {showWords ? <BarWords bar={bar} spans={words} lines={lines} places={places} editing={editing} pickedBeat={pickedBeat} onLetter={onLetter} litChord={litChord} onPointChord={onPointChord} chordEvents={chordEvents} /> : null}
     </div>
   );
 }
@@ -1334,6 +1355,50 @@ function FloatingChordTools({ tools, label }: { tools: ChordTools; label: string
   );
 }
 
+type GridLine = { id: string; text: string; chords: readonly { id: string; at: number }[] };
+
+type ChordLetter = { syllable: { chordId: string; first: boolean } | null; words: string[] };
+
+/**
+ * Where a line's chords are sung (issue #477), indexed by letter: each
+ * chord's syllable, from its letter (the next one, when it's on a space) to
+ * the next chord or the word's end, `first` on its first letter; and the
+ * chords sung in each letter's word.
+ */
+function chordSyllables(line: GridLine | undefined): (ChordLetter | undefined)[] {
+  const out: (ChordLetter | undefined)[] = [];
+  if (!line) return out;
+  const letter = (at: number) => (out[at] ??= { syllable: null, words: [] });
+  const { text } = line;
+  const starts = line.chords
+    .map((chord) => {
+      let at = Math.max(0, chord.at);
+      while (at < text.length && /\s/.test(text[at]!)) at++;
+      return { id: chord.id, at };
+    })
+    .filter((chord) => chord.at < text.length)
+    .sort((a, b) => a.at - b.at);
+  starts.forEach((chord, index) => {
+    const next = starts[index + 1]?.at ?? text.length;
+    for (let at = chord.at; at < next && /\S/.test(text[at]!); at++) letter(at).syllable = { chordId: chord.id, first: at === chord.at };
+    for (let at = wordStart(text, chord.at); at < text.length && /\S/.test(text[at]!); at++) letter(at).words.push(chord.id);
+  });
+  return out;
+}
+
+/** The word a chord is sung on, as written; null when it's after the words. */
+function chordWord(line: GridLine | undefined, chordId: string): string | null {
+  const chord = line?.chords.find((one) => one.id === chordId);
+  if (!line || !chord) return null;
+  let at = Math.max(0, chord.at);
+  while (at < line.text.length && /\s/.test(line.text[at]!)) at++;
+  if (at >= line.text.length) return null;
+  const start = wordStart(line.text, at);
+  let end = at;
+  while (end < line.text.length && /\S/.test(line.text[end]!)) end++;
+  return line.text.slice(start, end).replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "") || null;
+}
+
 /**
  * A bar's words, cut at the beats sung in them: the words of the beat being
  * played light up. In Edit, every letter is a place to put a beat, and each
@@ -1348,15 +1413,20 @@ function BarWords({
   editing,
   pickedBeat,
   onLetter,
+  litChord,
+  onPointChord,
   chordEvents,
 }: {
   bar: ChartBar;
   spans: BarLyricSpan[] | null;
-  lines: readonly { id: string; text: string }[];
+  lines: readonly GridLine[];
   places: readonly (BeatPlace | null)[];
   editing: boolean;
   pickedBeat: number | null;
   onLetter?: (letter: { lineId: string; at: number }) => void;
+  /** In Edit, the chord picked, dragged or pointed at: its syllable lit. */
+  litChord: string | null;
+  onPointChord: (chordId: string | null) => void;
   chordEvents: { beatDown: (event: ReactPointerEvent, bar: ChartBar, beat: number) => void; move: (event: ReactPointerEvent) => void; up: (event: ReactPointerEvent) => void; cancel: () => void };
 }) {
   const { t } = useTranslation();
@@ -1396,6 +1466,8 @@ function BarWords({
     );
   };
   if (editing && spans && (sung || bar.lineId !== null)) {
+    // Each chord's syllable (issue #477): the chord stays on it wherever it's moved in the bars.
+    const syllables = new Map(pieces.map((piece) => [piece.lineId, chordSyllables(lines.find((line) => line.id === piece.lineId))]));
     const ticked = new Set<number>();
     const ticksAt = (lineId: string, at: number) =>
       places.flatMap((place, beat) => {
@@ -1407,14 +1479,31 @@ function BarWords({
       [...piece.text.slice(piece.from, piece.to)].map((letter, offset) => {
         const at = piece.from + offset;
         if (/\s/.test(letter)) return <span key={`${piece.lineId}-${at}`}> </span>;
+        const letters = syllables.get(piece.lineId);
+        const syllable = letters?.[at]?.syllable ?? null;
+        const lit = !!syllable && syllable.chordId === litChord;
+        const litWord = !!litChord && !!letters?.[at]?.words.includes(litChord);
         return (
           <span key={`${piece.lineId}-${at}`}>
             {ticksAt(piece.lineId, at)}
             <span
-              className={cn("rounded-[2px] data-[drop]:bg-primary/30", onLetter && "cursor-pointer hover:bg-primary/15")}
+              className={cn(
+                "rounded-[2px] data-[drop]:bg-primary/30",
+                // Every chord's syllable underlined; the lit chord's word in its colour, its syllable underlined strong.
+                syllable && "rounded-b-none border-b-2 border-sky-600/45 text-foreground",
+                syllable?.first && at > piece.from && letters?.[at - 1]?.syllable && "ml-0.5",
+                litWord && "text-sky-700 dark:text-sky-300",
+                lit && "border-sky-600 bg-sky-500/20 dark:border-sky-400",
+                onLetter && "cursor-pointer hover:bg-primary/15",
+              )}
               data-letter=""
               data-line={piece.lineId}
               data-at={at}
+              data-chord-word={syllable?.chordId}
+              data-lit={lit ? "" : undefined}
+              data-lit-word={litWord ? "" : undefined}
+              onPointerEnter={syllable ? () => onPointChord(syllable.chordId) : undefined}
+              onPointerLeave={syllable ? () => onPointChord(null) : undefined}
               onClick={
                 onLetter
                   ? (event) => {

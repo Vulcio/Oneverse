@@ -3539,6 +3539,7 @@ const en = {
     letGo: "Let go",
     done: "Done",
     where: "Bar {{bar}}, beat {{beat}}",
+    whereWord: "Bar {{bar}}, beat {{beat}}, on “{{word}}”",
     andOf: "{{n}} and",
     barCount_one: "{{count}} bar",
     barCount_other: "{{count}} bars",

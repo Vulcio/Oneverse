@@ -3542,6 +3542,7 @@ const fr: typeof en = {
     letGo: "Lâcher",
     done: "OK",
     where: "Mesure {{bar}}, temps {{beat}}",
+    whereWord: "Mesure {{bar}}, temps {{beat}}, sur « {{word}} »",
     andOf: "{{n}} et",
     barCount_one: "{{count}} mesure",
     barCount_other: "{{count}} mesures",
