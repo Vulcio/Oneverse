@@ -105,7 +105,7 @@ export function ScreensView({ copy, expected, send }: { copy: SetlistOfflineCopy
       {display.screens === "off" ? null : screens.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("screens.noScreens")}</p>
       ) : display.screens === "grid" ? (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-3">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3">
           {screens.map((screen) => (
             <li key={screen.id}>
               <ScreenTile copy={copy} screen={screen} look={lookOf(screen.id)} looks={looks} send={send} />
@@ -131,7 +131,7 @@ export function ScreensView({ copy, expected, send }: { copy: SetlistOfflineCopy
               </button>
             ))}
           </div>
-          <div className="grid items-start gap-4 @3xl:grid-cols-[minmax(0,1fr)_16rem]">
+          <div className="flex flex-col gap-4">
             <ScreenTile copy={copy} screen={one} look={lookOf(one.id)} looks={looks} send={send} large />
             {one.connected ? <LayersCard send={send} screen={one.id} /> : null}
           </div>
@@ -181,6 +181,17 @@ function ScreenTile({ copy, screen, look, looks, send, large = false }: { copy: 
           </div>
         )}
       </div>
+      {look ? (
+        <p className="truncate text-xs text-muted-foreground" data-testid="operator-screen-details">
+          {[
+            look.template.name ?? t(`screens.templates.${look.template.builtIn}.name`, { defaultValue: look.template.builtIn ?? "" }),
+            look.hiddenLayers.length ? t("screens.operator.screensView.neverShows", { layers: look.hiddenLayers.map((layer) => t(`screens.layers.${layer}`)).join(", ") }) : null,
+            look.effects ? null : t("screens.operator.screensView.effectsOff"),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      ) : null}
       {screen.connected ? <LayerChips send={send} screen={screen.id} /> : null}
     </article>
   );
@@ -230,29 +241,6 @@ function LayerChips({ send, screen }: { send: (command: SyncStageCommand) => voi
         );
       })}
     </div>
-  );
-}
-
-/** The screens connected to the set now (issue #275), and those set to show it that aren't (issue #358). */
-export function ScreensList({ expected }: { expected: ScreenSummary[] | null }) {
-  const { t, i18n } = useTranslation();
-  const screens = useSetScreens(expected);
-  return (
-    <section className="flex flex-col gap-2" data-testid="operator-screens">
-      <h3 className="text-sm font-semibold">{t("screens.operator.connectedScreens")}</h3>
-      {screens.every((screen) => !screen.connected) ? <p className="text-sm text-muted-foreground">{t("screens.noScreens")}</p> : null}
-      <ul className="flex flex-col gap-1">
-        {screens.map((screen) => (
-          <li key={screen.id} className="flex items-center gap-2 text-sm" data-testid="operator-screen" data-state={screen.connected ? "following" : "missing"}>
-            <span className={cn("size-2 rounded-full", screen.connected ? "bg-emerald-500" : "bg-amber-500")} aria-hidden />
-            <span className="min-w-0 flex-1 truncate">{screen.name}</span>
-            {screen.connected ? null : (
-              <span className="text-xs text-muted-foreground">{screen.lastSeenAt ? t("screens.operator.lastSeen", { time: new Date(screen.lastSeenAt).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "short" }) }) : t("screens.operator.notConnected")}</span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 

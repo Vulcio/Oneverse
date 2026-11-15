@@ -290,7 +290,7 @@ If you close the operator view, the screens go back to the leader. If your conne
 
 ### The set and its slides
 
-The console fits the room it has. On a laptop, the screens and the slides fill the middle and a column beside them holds what's on the screens, the timers and the messages; on a wide screen, the **Running order** gets a column of its own on the left. On a tablet held upright, or a phone, what's on the screens comes first, the running order is a row you scroll, and the slides, the **Timers & messages** and the **Screens** are three tabs.
+The console fits the room it has. On a laptop, the slides fill the middle and a column beside them holds what's on the screens, the timers and the messages; on a wide screen, the **Running order** gets a column of its own on the left. On a tablet held upright, or a phone, what's on the screens comes first, the running order is a row you scroll, and the slides and the **Timers & messages** are two tabs.
 
 The **Running order** lists every item of the set, with its number of slides. The one on the screens is marked **On screens**, with its slide. Pick an item to see its slides; its screen button puts its first slide up at once. In Songverse, the sidebar lists the set's songs too, as in Live: the one on the screens is marked **Now**, and the ones the screens have moved past are ticked as played (**Start from the top** clears them).
 
@@ -302,7 +302,7 @@ The slides of the item looked at show as tiles, coloured by their section (verse
 - **Section colour** - on the **Whole tile**, on its **Header only** (a coloured band with the section's name), or **None**.
 - **Group a section's slides** - each section's slides together under its name, rather than one run of tiles.
 - **Slides per row** - **As many as fit**, or 1 to 6; **Slide numbers** on or off; **Tiles** **Light, as the app** or **Dark, as a screen**.
-- **Screens** - how the screens are shown (below); **Back to the defaults** undoes it all.
+- **Screens** - how **Screens & layers** shows the screens (below); **Back to the defaults** undoes it all.
 
 Tick **Notes** to show the song's notes under the slides they're on: **All notes**, or only those of the people holding one of the team's [positions](/organizations/#positions) (*Media's notes*), for the cues meant for you.
 
@@ -310,16 +310,6 @@ Tick **Notes** to show the song's notes under the slides they're on: **All notes
 
 - **On the screens** - the slide the screens show now, its song and section, whether they're black or their words hidden, and the message over them, if there's one.
 - **Next** - the slide the screens go to next: the song's next one, or the next item's first after its last. Press it to put it up (the right arrow does the same). At the end of the set, it says **End of the set**.
-
-### The screens, as they are
-
-**Screens**, above the slides, draws every screen of the set as it looks now: its own template, the slide on it, its timers and messages, black or not, and the layers it shows. A screen set to show the set that isn't connected has its tile too, greyed, with when it was last seen.
-
-- **Grid** - all of them side by side.
-- **One** - a tab for each screen; the one picked shows larger, with its **Layers** beside it.
-- **Hide** - none, for more room for the slides.
-
-Under each screen, its layers - **Masks**, **Overlays**, **Content**, **Media**, **Video input** - clear on that screen alone in a press, until the next slide (the stage monitor without the words for a moment, the lobby without the media); pressed again, the layer comes back. Its layers button opens the screen's full **Layers**, as in **Screens & layers** below.
 
 ### Timers and messages
 
@@ -333,7 +323,17 @@ A song of the set can carry its own timer (**Timer on the screens**, on the [set
 
 ### Screens and layers
 
-**Screens & layers**, at the top right, opens a panel down the right, beside the slides rather than over them, like the **Display** panel. On a phone, it opens at the bottom. The slides, the sidebar and the keyboard keep working while it's open. It lists the **Connected screens** showing the set now, and the **Layers** they draw (see [Layers](/screens/#layers)), top first: **Masks**, **Overlays**, **Content**, **Media** and **Video input**.
+**Screens & layers**, at the top right, opens a panel down the right, beside the slides rather than over them, like the **Display** panel. On a phone, it opens at the bottom. The slides, the sidebar and the keyboard keep working while it's open. It's wide enough for two screens side by side.
+
+**Screens** draws every screen of the set as it looks now: its own template, the slide on it, its timers and messages, black or not, and the layers it shows. Under each, its details: its template, the layers it never shows, and *effects off* on a screen that can't keep up. A screen set to show the set that isn't connected has its tile too, greyed, with when it was last seen.
+
+- **Grid** - all of them side by side.
+- **One** - a tab for each screen; the one picked shows larger, with its **Layers** under it.
+- **Hide** - no pictures, only the layers.
+
+Under each screen, its layers - **Masks**, **Overlays**, **Content**, **Media**, **Video input** - clear on that screen alone in a press, until the next slide (the stage monitor without the words for a moment, the lobby without the media); pressed again, the layer comes back. Its layers button opens that screen's full **Layers**.
+
+Below the screens, the **Layers** they draw (see [Layers](/screens/#layers)), top first: **Masks**, **Overlays**, **Content**, **Media** and **Video input**.
 
 ![Screens & layers: the overlays cleared until the next slide](../../assets/screenshots/en/operator-layers.jpg)
 

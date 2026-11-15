@@ -236,7 +236,7 @@ export class ScreensService {
     await this.assertCanWatch(user, setlistId);
     const screens = await this.prisma.client.screen.findMany({
       where: { setlistId, kind: "SCREEN", ...notEnded() },
-      select: { id: true, mode: true, effects: true, hiddenLayers: true, themeTemplate: true, scriptureThemeTemplate: true, theme: { select: TEMPLATE_PARTS_SELECT }, scriptureTheme: { select: TEMPLATE_PARTS_SELECT } },
+      select: { id: true, mode: true, effects: true, hiddenLayers: true, themeTemplate: true, scriptureThemeTemplate: true, theme: { select: { ...TEMPLATE_PARTS_SELECT, name: true } }, scriptureTheme: { select: TEMPLATE_PARTS_SELECT } },
       orderBy: { createdAt: "asc" },
     });
     const copy = await this.setlists.offlineCopy(user, setlistId, { withNotes: false, passages: "screen" });
@@ -256,7 +256,7 @@ export class ScreensService {
       keep(look.assets);
       keep(scripture?.assets ?? []);
       keep(items.assets);
-      looks.push({ id: screen.id, theme: look.theme, itemThemes: items.themes, hiddenLayers: screen.hiddenLayers.filter((layer): layer is ScreenSwitchableLayer => (SCREEN_SWITCHABLE_LAYERS as readonly string[]).includes(layer)) });
+      looks.push({ id: screen.id, theme: look.theme, template: { name: screen.theme?.name ?? null, builtIn: screen.theme ? null : (screen.themeTemplate ?? "classic") }, effects: screen.effects, itemThemes: items.themes, hiddenLayers: screen.hiddenLayers.filter((layer): layer is ScreenSwitchableLayer => (SCREEN_SWITCHABLE_LAYERS as readonly string[]).includes(layer)) });
     }
     return { screens: looks, assets, credits: await this.credits(copy.songs.flatMap((song) => (song.song ? [song.song.id] : []))) };
   }

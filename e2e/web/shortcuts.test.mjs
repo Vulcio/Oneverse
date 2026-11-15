@@ -1,5 +1,5 @@
 // Home screen shortcuts (issue #404): the web manifest's `shortcuts` - Current
-// set, Library, Metronome, Tuner - each with its icons, and each opening its
+// set, Operator (issue #358), Library, Metronome, Tuner - each with its icons, and each opening its
 // page; Current set opens today's or the next set (or Sets when none is coming
 // up), after signing in too.
 import { chromium } from "playwright";
@@ -18,8 +18,8 @@ const localDate = (offsetDays) => {
 const manifest = await (await fetch(`${WEB}/manifest.webmanifest`)).json();
 const shortcuts = manifest.shortcuts ?? [];
 check(
-  "the manifest offers Current set, Library, Metronome and Tuner",
-  shortcuts.map((shortcut) => `${shortcut.name} ${shortcut.url}`).join(", ") === "Current set /sets/current, Library /library, Metronome /metronome, Tuner /tuner",
+  "the manifest offers Current set, Operator, Library, Metronome and Tuner",
+  shortcuts.map((shortcut) => `${shortcut.name} ${shortcut.url}`).join(", ") === "Current set /sets/current, Operator /sets/current?to=operate, Library /library, Metronome /metronome, Tuner /tuner",
   JSON.stringify(shortcuts.map((shortcut) => shortcut.url)),
 );
 // In French too (the page's language picks it), the same shortcuts with their names in French.
@@ -29,7 +29,7 @@ check(
   french.id === manifest.id &&
     french.start_url === manifest.start_url &&
     JSON.stringify(french.shortcuts.map((shortcut) => [shortcut.url, shortcut.icons])) === JSON.stringify(shortcuts.map((shortcut) => [shortcut.url, shortcut.icons])) &&
-    french.shortcuts.map((shortcut) => shortcut.name).join(", ") === "Liste en cours, Bibliothèque, Métronome, Accordeur",
+    french.shortcuts.map((shortcut) => shortcut.name).join(", ") === "Liste en cours, Opérateur, Bibliothèque, Métronome, Accordeur",
   JSON.stringify(french.shortcuts.map((shortcut) => shortcut.name)),
 );
 for (const shortcut of shortcuts) {

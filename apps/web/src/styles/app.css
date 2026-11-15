@@ -554,7 +554,7 @@ body.sv-dragging {
 /* The Display panel down the right of a large screen (issue #209): the page makes room for it rather than going under it. */
 @media (min-width: 1024px) {
   html[data-side-panel] body {
-    padding-right: 20rem;
+    padding-right: var(--side-panel-width, 20rem);
   }
 }
 

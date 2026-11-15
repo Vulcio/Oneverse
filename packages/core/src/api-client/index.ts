@@ -1071,7 +1071,16 @@ export interface ScreenThemeSummary {
  * songs' credits, by song version.
  */
 export interface SetScreenLooks {
-  screens: { id: string; theme: ScreenTheme; itemThemes: Record<string, ScreenTheme>; hiddenLayers: ScreenSwitchableLayer[] }[];
+  screens: {
+    id: string;
+    theme: ScreenTheme;
+    /** Its template's name: a saved one's, or (name null) a built-in one's id. */
+    template: { name: string | null; builtIn: string | null };
+    /** Its effects shown, or off on a screen that can't keep up. */
+    effects: boolean;
+    itemThemes: Record<string, ScreenTheme>;
+    hiddenLayers: ScreenSwitchableLayer[];
+  }[];
   assets: ScreenThemeAsset[];
   credits: Record<string, { writers: string[]; copyright: string | null; ccli: string | null }>;
 }

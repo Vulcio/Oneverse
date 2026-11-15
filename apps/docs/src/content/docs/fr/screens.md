@@ -290,7 +290,7 @@ Si vous fermez la vue opérateur, les écrans reviennent à qui mène. Si c'est 
 
 ### La liste et ses diapositives
 
-La console s'adapte à la place qu'elle a. Sur un ordinateur portable, les écrans et les diapositives occupent le milieu et une colonne à côté montre ce qui est sur les écrans, les minuteurs et les messages ; sur un grand écran, le **Déroulé** a sa propre colonne à gauche. Sur une tablette tenue droite, ou un téléphone, ce qui est sur les écrans vient d'abord, le déroulé est une rangée qu'on fait défiler, et les diapositives, les **Minuteurs et messages** et les **Écrans** sont trois onglets.
+La console s'adapte à la place qu'elle a. Sur un ordinateur portable, les diapositives occupent le milieu et une colonne à côté montre ce qui est sur les écrans, les minuteurs et les messages ; sur un grand écran, le **Déroulé** a sa propre colonne à gauche. Sur une tablette tenue droite, ou un téléphone, ce qui est sur les écrans vient d'abord, le déroulé est une rangée qu'on fait défiler, et les diapositives et les **Minuteurs et messages** sont deux onglets.
 
 Le **Déroulé** montre chaque élément de la liste, avec son nombre de diapositives. Celui qui est sur les écrans est marqué **À l'écran**, avec sa diapositive. Choisissez un élément pour voir ses diapositives ; son bouton écran affiche aussitôt sa première diapositive. Dans Songverse, la barre latérale montre aussi les chants de la liste, comme dans Live : celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface).
 
@@ -302,7 +302,7 @@ Les diapositives de l'élément choisi s'affichent en vignettes, colorées selon
 - **Couleur des sections** - sur **Toute la vignette**, sur son **En-tête seulement** (une bande colorée avec le nom de la section), ou **Aucune**.
 - **Regrouper les diapositives d'une section** - les diapositives de chaque section ensemble sous son nom, plutôt qu'une seule suite de vignettes.
 - **Diapositives par ligne** - **Autant que possible**, ou de 1 à 6 ; **Numéros des diapositives** ou non ; **Vignettes** **Claires, comme l'app** ou **Sombres, comme un écran**.
-- **Écrans** - comment les écrans s'affichent (plus bas) ; **Revenir aux réglages par défaut** annule tout.
+- **Écrans** - comment **Écrans et calques** montre les écrans (plus bas) ; **Revenir aux réglages par défaut** annule tout.
 
 Cochez **Notes** pour voir les notes du chant sous les diapositives où elles sont : **Toutes les notes**, ou seulement celles des personnes qui tiennent l'un des [postes](/fr/organizations/#postes) de l'équipe (*Notes de : Média*), pour les repères qui vous sont destinés.
 
@@ -310,16 +310,6 @@ Cochez **Notes** pour voir les notes du chant sous les diapositives où elles so
 
 - **Sur les écrans** - la diapositive que les écrans affichent, son chant et sa section, s'ils sont au noir ou leurs paroles masquées, et le message par-dessus, s'il y en a un.
 - **Suivante** - la diapositive où les écrans iront ensuite : la suivante du chant, ou la première de l'élément suivant après la dernière. Appuyez dessus pour l'afficher (la flèche droite fait de même). À la fin de la liste, elle indique **Fin de la liste**.
-
-### Les écrans, tels qu'ils sont
-
-**Écrans**, au-dessus des diapositives, montre chaque écran de la liste tel qu'il est : son propre modèle, la diapositive affichée, ses minuteurs et messages, noir ou non, et les calques qu'il montre. Un écran réglé sur la liste qui n'est pas connecté a aussi sa vignette, grisée, avec la dernière fois qu'on l'a vu.
-
-- **Grille** - tous, côte à côte.
-- **Un seul** - un onglet par écran ; celui choisi s'affiche en plus grand, avec ses **Calques** à côté.
-- **Masquer** - aucun, pour laisser plus de place aux diapositives.
-
-Sous chaque écran, ses calques - **Masques**, **Superpositions**, **Contenu**, **Média**, **Entrée vidéo** - s'effacent sur cet écran seul d'une pression, jusqu'à la diapositive suivante (le retour de scène sans les paroles un instant, le hall sans le média) ; pressé à nouveau, le calque revient. Son bouton de calques ouvre tous les **Calques** de l'écran, comme dans **Écrans et calques** plus bas.
 
 ### Minuteurs et messages
 
@@ -333,7 +323,17 @@ Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans*
 
 ### Écrans et calques
 
-**Écrans et calques**, en haut à droite, ouvre un panneau sur la droite, à côté des diapositives plutôt que par-dessus, comme le panneau **Affichage**. Sur un téléphone, il s'ouvre en bas. Les diapositives, la barre latérale et le clavier restent utilisables pendant qu'il est ouvert. Il montre les **Écrans connectés** qui affichent la liste, et les **Calques** qu'ils dessinent (voir [Calques](/fr/screens/#calques)), du haut vers le bas : **Masques**, **Superpositions**, **Contenu**, **Média** et **Entrée vidéo**.
+**Écrans et calques**, en haut à droite, ouvre un panneau sur la droite, à côté des diapositives plutôt que par-dessus, comme le panneau **Affichage**. Sur un téléphone, il s'ouvre en bas. Les diapositives, la barre latérale et le clavier restent utilisables pendant qu'il est ouvert. Il est assez large pour deux écrans côte à côte.
+
+**Écrans** montre chaque écran de la liste tel qu'il est : son propre modèle, la diapositive affichée, ses minuteurs et messages, noir ou non, et les calques qu'il montre. Sous chacun, ses détails : son modèle, les calques qu'il ne montre jamais, et *effets désactivés* sur un écran qui ne suit pas. Un écran réglé sur la liste qui n'est pas connecté a aussi sa vignette, grisée, avec la dernière fois qu'on l'a vu.
+
+- **Grille** - tous, côte à côte.
+- **Un seul** - un onglet par écran ; celui choisi s'affiche en plus grand, avec ses **Calques** en dessous.
+- **Masquer** - pas d'images, seulement les calques.
+
+Sous chaque écran, ses calques - **Masques**, **Superpositions**, **Contenu**, **Média**, **Entrée vidéo** - s'effacent sur cet écran seul d'une pression, jusqu'à la diapositive suivante (le retour de scène sans les paroles un instant, le hall sans le média) ; pressé à nouveau, le calque revient. Son bouton de calques ouvre tous les **Calques** de cet écran.
+
+Sous les écrans, les **Calques** qu'ils dessinent (voir [Calques](/fr/screens/#calques)), du haut vers le bas : **Masques**, **Superpositions**, **Contenu**, **Média** et **Entrée vidéo**.
 
 ![Écrans et calques : les superpositions vidées jusqu'à la diapositive suivante](../../../assets/screenshots/fr/operator-layers.jpg)
 

@@ -569,6 +569,8 @@ const en = {
         off: "Hide",
         layersOf: "Layers of {{name}}",
         clearOn: "Clear {{layer}} on this screen until the next slide",
+        neverShows: "never shows {{layers}}",
+        effectsOff: "effects off",
       },
       display: {
         button: "Display",

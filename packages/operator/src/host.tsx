@@ -45,8 +45,8 @@ export interface OperatorHost {
   sendStage: (command: SyncStageCommand) => void;
   /** Takes the whole lead (tempo too), where the app can play along; left out, the console doesn't offer it. */
   lead?: () => void;
-  /** The screens & layers panel opened beside the page, on a large screen: the app makes room for it. */
-  usePanelRoom?: (open: boolean) => void;
+  /** The screens & layers panel opened beside the page, on a large screen: the app makes room for it, as wide as `width` (a CSS length; 20rem left out). */
+  usePanelRoom?: (open: boolean, width?: string) => void;
   /** The set's named timers and quick messages, read and changed through the API (issue #358); left out (offline), the built-in ones. */
   presets?: { load: () => Promise<OperatorPresets>; save: (data: OperatorPresetsRequest) => Promise<OperatorPresets> };
   /** The screens set to show this set, connected or not (issue #358): the console says which are missing. */

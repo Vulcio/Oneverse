@@ -153,7 +153,7 @@ try {
     if ((await desk.getByTestId("sidebar-operate-item").count()) !== 3) throw new Error("the sidebar doesn't list the set's songs");
     // The screens connected, in the drawer.
     await desk.getByTestId("operator-drawer-open").click();
-    await desk.getByTestId("operator-drawer").getByTestId("operator-screens").getByText(`Stage ${stamp}`).waitFor({ timeout: 10000 });
+    await desk.getByTestId("operator-drawer").locator('[data-testid="operator-screen-tile"][data-state="following"]').getByText(`Stage ${stamp}`).first().waitFor({ timeout: 10000 });
     // Beside the page, as the Display panel is (issue #278): the page makes room rather than going under it.
     await desk.waitForTimeout(400);
     const panel = await desk.getByTestId("operator-drawer").boundingBox();
@@ -435,19 +435,22 @@ try {
     await lobby.context().close();
     await desk.getByTestId("operator-state-missing").getByText(`Lobby ${stamp}`).waitFor({ timeout: 20000 });
     await desk.getByTestId("operator-state-missing").click();
-    await desk.locator('[data-testid="operator-drawer"] [data-testid="operator-screen"][data-state="missing"]').getByText(`Lobby ${stamp}`).waitFor();
+    await desk.locator('[data-testid="operator-drawer"] [data-testid="operator-screen-tile"][data-state="missing"]').getByText(`Lobby ${stamp}`).first().waitFor();
     await desk.getByTestId("operator-drawer-close").click();
     await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
   });
 
-  await step("the screens as they are (issue #358): a picture of each, a layer cleared on one of them, one screen at a time", async () => {
+  await step("the screens as they are, in Screens & layers (issue #358): a picture of each, a layer cleared on one of them, one screen at a time", async () => {
     page = desk;
-    const view = desk.getByTestId("operator-screens-view");
+    await desk.getByTestId("operator-drawer-open").click();
+    const view = desk.getByTestId("operator-drawer").getByTestId("operator-screens-view");
     const stageTile = view.locator('[data-testid="operator-screen-tile"][data-state="following"]').filter({ hasText: `Stage ${stamp}` });
     // Drawn with its own template, showing the slide on the screens.
     await stageTile.getByTestId("screen-grid").first().waitFor({ timeout: 10000 });
     await stageTile.getByTestId("widget-current-slide").waitFor();
     await view.locator('[data-testid="operator-screen-tile"][data-state="missing"]').filter({ hasText: `Lobby ${stamp}` }).getByTestId("operator-screen-missing").waitFor();
+    // Its details: its template.
+    await stageTile.getByTestId("operator-screen-details").getByText("Stage display").waitFor();
     // Its content cleared there alone, until the next slide; the screen and its picture follow.
     await stageTile.getByTestId("operator-screen-layer-content").click();
     await stageTile.locator('[data-testid="operator-screen-layer-content"][data-state="cleared"]').waitFor({ timeout: 5000 });
@@ -470,6 +473,8 @@ try {
     if (await view.getByTestId("operator-screen-tile").count()) throw new Error("the screens still shown");
     await desk.getByTestId("operator-screens-grid").click();
     await stageTile.waitFor();
+    await desk.getByTestId("operator-drawer-close").click();
+    await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
   });
 
   await step("the console's Display options (issue #358): grouped by section, colour on the header, capitals, a size, rows of 2, dark; kept on the device", async () => {

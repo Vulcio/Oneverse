@@ -128,7 +128,7 @@ try {
     await desk.getByTestId("operator-control").waitFor();
     await desk.getByTestId("operator-drawer-open").click();
     const drawer = desk.getByTestId("operator-drawer");
-    await drawer.getByTestId("operator-screens").getByText(`Foyer ${stamp}`).waitFor({ timeout: 10000 });
+    await drawer.locator('[data-testid="operator-screen-tile"][data-state="following"]').getByText(`Foyer ${stamp}`).first().waitFor({ timeout: 10000 });
     await drawer.getByTestId("operator-layers-for").selectOption({ label: `Foyer ${stamp}` });
     await drawer.getByTestId("operator-layer-overlays-shown").click();
     await drawer.locator('[data-testid="operator-layer-overlays"][data-state="hidden"]').waitFor({ timeout: 5000 });

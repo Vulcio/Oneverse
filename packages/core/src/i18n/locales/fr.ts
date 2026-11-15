@@ -569,6 +569,8 @@ const fr: typeof en = {
         off: "Masquer",
         layersOf: "Calques de {{name}}",
         clearOn: "Effacer {{layer}} sur cet écran jusqu'à la diapositive suivante",
+        neverShows: "ne montre jamais : {{layers}}",
+        effectsOff: "effets désactivés",
       },
       display: {
         button: "Affichage",

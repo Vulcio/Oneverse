@@ -9,7 +9,7 @@ import {
   type TeamPosition,
 } from "@oneverse/core";
 import { Crown, Keyboard, Layers, MonitorUp, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { useMediaQuery } from "@oneverse/ui/hooks/use-media-query";
@@ -22,7 +22,7 @@ import { ContinueOnPulse } from "./continue-on-pulse";
 import { Rundown, useOperatorItems, type OperatorItem } from "./operator-rundown";
 import { MessageCard, OperatorPresetsProvider, ProgramCard, TimersCard } from "./operator-stage";
 import { Kbd } from "@oneverse/ui/components/kbd";
-import { LayersCard, ScreensList, ScreensView } from "./operator-screens";
+import { LayersCard, ScreensView } from "./operator-screens";
 import { DisplayMenu, SlidesTab } from "./operator-slides";
 
 /** The console's width from which the stage's column sits beside the slides, and from which the running order gets its own column (px). */
@@ -86,7 +86,6 @@ export function OperatorConsole({
   const view = copy.songs.find((one) => one.item.id === itemId) ?? null;
   const slidesTab = <SlidesTab copy={copy} view={view} item={items.find((one) => one.itemId === itemId) ?? null} members={members} positions={positions} />;
   const columns = width >= THREE_COLUMNS ? 3 : width >= TWO_COLUMNS ? 2 : 1;
-  const screensView = <ScreensView copy={copy} expected={expected} send={send} />;
 
   return (
     <div ref={root} className="@container flex flex-col gap-4" data-testid="operator" data-columns={columns}>
@@ -115,7 +114,6 @@ export function OperatorConsole({
           <div className="xl:col-span-2">
             <ScreensView copy={copy} expected={expected} send={send} />
           </div>
-          <ScreensList expected={expected} />
           <LayersCard send={send} />
         </div>
       ) : !sync.canOperate ? (
@@ -137,9 +135,6 @@ export function OperatorConsole({
                   <TabsTrigger value="stage" data-testid="operator-tab-stage">
                     {t("screens.operator.tabStage")}
                   </TabsTrigger>
-                  <TabsTrigger value="screens" data-testid="operator-tab-screens">
-                    {t("screens.operator.screensView.title")}
-                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="slides" className="pt-2">
                   {slidesTab}
@@ -149,9 +144,6 @@ export function OperatorConsole({
                     <TimersCard send={send} />
                     <MessageCard send={send} />
                   </div>
-                </TabsContent>
-                <TabsContent value="screens" className="pt-2">
-                  {screensView}
                 </TabsContent>
               </Tabs>
             </>
@@ -163,7 +155,6 @@ export function OperatorConsole({
                 </div>
               ) : null}
               <div className="flex min-w-0 flex-col gap-3">
-                {screensView}
                 {columns === 2 ? <Rundown items={items} itemId={itemId} onLook={onLook} strip /> : null}
                 {slidesTab}
               </div>
@@ -174,7 +165,7 @@ export function OperatorConsole({
               </aside>
             </div>
           )}
-          <ScreensPanel open={drawer} onOpenChange={setDrawer} send={send} expected={expected} />
+          <ScreensPanel copy={copy} open={drawer} onOpenChange={setDrawer} send={send} expected={expected} />
         </OperatorPresetsProvider>
       )}
     </div>
@@ -470,7 +461,10 @@ function useCanPresent() {
 }
 
 /** An app with no panel beside its page. */
-function noPanelRoom(_open: boolean) {}
+function noPanelRoom(_open: boolean, _width?: string) {}
+
+/** The panel's width down the right: room for two screens side by side (issue #358). */
+const PANEL_WIDTH = "32rem";
 
 /** From here the panel is a column down the right, as the Display panel's (issue #209). */
 const WIDE = "(min-width: 1024px)";
@@ -481,14 +475,14 @@ const WIDE = "(min-width: 1024px)";
  * column down the right that the page makes room for on a large screen, at
  * the bottom on a phone.
  */
-function ScreensPanel({ open, onOpenChange, send, expected }: { open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void; expected: ScreenSummary[] | null }) {
+function ScreensPanel({ copy, open, onOpenChange, send, expected }: { copy: SetlistOfflineCopy; open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void; expected: ScreenSummary[] | null }) {
   const { t } = useTranslation();
   const wide = useMediaQuery(WIDE);
   const usePanelRoom = useOperatorHost().usePanelRoom ?? noPanelRoom;
-  usePanelRoom(open && wide);
+  usePanelRoom(open && wide, PANEL_WIDTH);
   return (
     <Drawer modal={false} disablePointerDismissal open={open} onOpenChange={onOpenChange} swipeDirection={wide ? "right" : "down"}>
-      <DrawerContent side={wide ? "right" : "bottom"} data-testid="operator-drawer" aria-label={t("screens.operator.screensAndLayers")}>
+      <DrawerContent side={wide ? "right" : "bottom"} style={{ "--drawer-side-width": PANEL_WIDTH } as CSSProperties} data-testid="operator-drawer" aria-label={t("screens.operator.screensAndLayers")}>
         <div className={cn("flex items-center gap-2 border-b px-3 pb-2", wide && "pt-3")}>
           <DrawerTitle className="flex items-center gap-2">
             <Layers className="size-4 text-muted-foreground" aria-hidden />
@@ -500,8 +494,10 @@ function ScreensPanel({ open, onOpenChange, send, expected }: { open: boolean; o
         </div>
         <div className="flex flex-col gap-6 overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <p className="text-xs text-muted-foreground">{t("screens.operator.drawerDescription")}</p>
-          <ScreensList expected={expected} />
-          <LayersCard send={send} />
+          <ScreensView copy={copy} expected={expected} send={send} />
+          <div className="border-t pt-4">
+            <LayersCard send={send} />
+          </div>
         </div>
       </DrawerContent>
     </Drawer>
