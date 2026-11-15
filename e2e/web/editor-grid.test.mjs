@@ -33,8 +33,10 @@ try {
     await bar(0).locator('[data-grid-chord="C"]').click();
     await bar(0).locator('[data-grid-slot][data-beat="2"]').click();
     if ((await bar(0).locator('[data-grid-chord="C"]').getAttribute("data-beat-at")) !== "2") throw new Error("C not on beat 2");
-    await page.getByRole("button", { name: "Save song" }).first().waitFor({ state: "visible" });
-    if (await page.getByRole("button", { name: "Save song" }).first().isDisabled()) throw new Error("the song isn't changed");
+    // The editor hears the grid's change a render later: wait for its Save to turn on.
+    await page.waitForFunction(() => [...document.querySelectorAll("button")].some((button) => button.textContent?.trim() === "Save song" && !button.disabled), null, { timeout: 5000 }).catch(() => {
+      throw new Error("the song isn't changed");
+    });
     await page.screenshot({ path: `${SP}/editor-grid.png` });
   });
 
