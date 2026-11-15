@@ -1064,6 +1064,18 @@ export interface ScreenThemeSummary {
   assets: ScreenThemeAsset[];
 }
 
+/**
+ * How the screens showing a set look (GET /screens/looks?setlistId=, issue
+ * #358), for the operator's console to draw each as it is: its template, its
+ * items' own, the layers it never shows; the files they refer to, and the
+ * songs' credits, by song version.
+ */
+export interface SetScreenLooks {
+  screens: { id: string; theme: ScreenTheme; itemThemes: Record<string, ScreenTheme>; hiddenLayers: ScreenSwitchableLayer[] }[];
+  assets: ScreenThemeAsset[];
+  credits: Record<string, { writers: string[]; copyright: string | null; ccli: string | null }>;
+}
+
 /** What a screen shows (GET /screens/current, with its own token): itself, and its set to keep - each song as the song view gives it - with the songs' credits. */
 export interface ScreenCurrent {
   screen: ScreenSummary;
@@ -3696,6 +3708,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** Whose a screen paired now can be (issues #222, #322): the teams and organisations one runs, or whose screens one manages by a role. */
     listScreenPairingOwners: () => request<{ teams: { id: string; name: string }[]; organizations: { id: string; name: string }[] }>("/screens/owners"),
     listScreens: (setlistId?: string) => request<ScreenSummary[]>(`/screens${setlistId ? `?setlistId=${encodeURIComponent(setlistId)}` : ""}`),
+    getSetScreenLooks: (setlistId: string) => request<SetScreenLooks>(`/screens/looks?setlistId=${encodeURIComponent(setlistId)}`),
     updateScreen: (screenId: string, data: UpdateScreenRequest) => request<ScreenSummary>(`/screens/${screenId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteScreen: (screenId: string) => request<void>(`/screens/${screenId}`, { method: "DELETE" }),
     pairScreenAgain: (screenId: string) => request<void>(`/screens/${screenId}/pair-again`, { method: "POST" }),

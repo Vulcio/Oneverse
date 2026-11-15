@@ -1,4 +1,4 @@
-import { createDeviceStore } from "#/lib/device-store";
+import { createDeviceStore } from "@oneverse/ui/lib/device-store";
 
 /** A list's columns as chosen on this device (issue #150): in order, each shown or not. */
 export interface ColumnPrefs<Id extends string = string> {

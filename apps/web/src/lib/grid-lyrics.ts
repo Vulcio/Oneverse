@@ -1,4 +1,4 @@
-import { deviceChoice } from "#/lib/device-store";
+import { deviceChoice } from "@oneverse/ui/lib/device-store";
 
 /**
  * Where the chord grid shows the words (issue #376): in each bar (as it

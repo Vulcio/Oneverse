@@ -1,4 +1,4 @@
-import { deviceFlag } from "#/lib/device-store";
+import { deviceFlag } from "@oneverse/ui/lib/device-store";
 
 /**
  * Whether Live stacks a song that segues or transitions into the next one

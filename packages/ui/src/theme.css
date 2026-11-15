@@ -130,3 +130,37 @@
     color: var(--color-popover-foreground);
   }
 }
+
+/*
+ * Each type of section's colour (issue #250), light and quiet: --section-ink
+ * for its name tag's text and marks, --section-tag behind the tag,
+ * --section-tint washing the section, --section-line outlining it. Set by
+ * data-section-color="<type>" on the element; a type without one is neutral.
+ * Every app's: Songverse's charts, the operator's slides (issue #358).
+ */
+[data-section-color] {
+  --section-h: 250;
+  --section-c: 0;
+  --section-ink: oklch(0.45 var(--section-c) var(--section-h));
+  --section-tag: oklch(0.95 calc(var(--section-c) * 0.35) var(--section-h));
+  --section-tint: oklch(0.985 calc(var(--section-c) * 0.12) var(--section-h));
+  --section-line: oklch(0.84 calc(var(--section-c) * 0.6) var(--section-h));
+}
+.dark [data-section-color] {
+  --section-ink: oklch(0.83 calc(var(--section-c) * 0.9) var(--section-h));
+  --section-tag: oklch(0.33 calc(var(--section-c) * 0.5) var(--section-h));
+  --section-tint: oklch(0.24 calc(var(--section-c) * 0.18) var(--section-h));
+  --section-line: oklch(0.45 calc(var(--section-c) * 0.6) var(--section-h));
+}
+[data-section-color="intro"],
+[data-section-color="outro"] { --section-h: 230; --section-c: 0.05; }
+[data-section-color="verse"] { --section-h: 262; --section-c: 0.14; }
+[data-section-color="pre-chorus"] { --section-h: 195; --section-c: 0.1; }
+[data-section-color="chorus"] { --section-h: 62; --section-c: 0.14; }
+[data-section-color="post-chorus"] { --section-h: 40; --section-c: 0.12; }
+[data-section-color="bridge"] { --section-h: 305; --section-c: 0.13; }
+[data-section-color="vamp"] { --section-h: 145; --section-c: 0.11; }
+[data-section-color="breakdown"] { --section-h: 20; --section-c: 0.11; }
+[data-section-color="instrumental"],
+[data-section-color="interlude"] { --section-h: 170; --section-c: 0.07; }
+[data-section-color="tag"] { --section-h: 345; --section-c: 0.12; }

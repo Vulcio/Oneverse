@@ -1,4 +1,4 @@
-import type { OperatorPresets, OperatorPresetsRequest, ScreenSummary, SyncMember, SyncPresenting, SyncSession, SyncStage, SyncStageCommand } from "@oneverse/core";
+import type { OperatorPresets, OperatorPresetsRequest, ScreenSummary, SetScreenLooks, SyncMember, SyncPresenting, SyncSession, SyncStage, SyncStageCommand } from "@oneverse/core";
 import { createContext, useContext, type ReactNode } from "react";
 
 /**
@@ -51,6 +51,8 @@ export interface OperatorHost {
   presets?: { load: () => Promise<OperatorPresets>; save: (data: OperatorPresetsRequest) => Promise<OperatorPresets> };
   /** The screens set to show this set, connected or not (issue #358): the console says which are missing. */
   listScreens?: () => Promise<ScreenSummary[]>;
+  /** How those screens look (issue #358): the console draws each as it is; left out (offline), in the default look. */
+  screenLooks?: () => Promise<SetScreenLooks>;
 }
 
 const OperatorContext = createContext<OperatorHost | null>(null);

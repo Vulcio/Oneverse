@@ -269,7 +269,7 @@ Chaque écran qui utilise le modèle affiche ses widgets, chacun dans ses cases.
 
 ## L'opérateur média
 
-Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live (elle s'ouvre dans un nouvel onglet, pour que Live continue). C'est une page de Live : l'application passe en mode Live. Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non, ainsi que qui a un rôle qui permet de **Gérer les écrans** (voir [Rôles](/fr/admin/#rôles)), sur toutes les listes qu'il peut ouvrir ; elle ne joue ni le métronome ni les pistes.
+Qui pilote les écrans pendant le culte - l'opérateur média - a sa propre vue : **Opérateur**, dans les outils de la barre latérale, l'ouvre pour la liste du jour ou la suivante ; **Vue opérateur**, sur la page de la liste, ou dans le menu Synchro de Live, pour n'importe quelle liste (depuis Live, elle s'ouvre dans un nouvel onglet, pour que Live continue). Installée comme une app, les raccourcis de son icône ont aussi **Opérateur**. C'est une page de Live : l'application passe en mode Live. Quiconque peut modifier la liste peut l'utiliser, qu'il mène la liste ou non, ainsi que qui a un rôle qui permet de **Gérer les écrans** (voir [Rôles](/fr/admin/#rôles)), sur toutes les listes qu'il peut ouvrir ; elle ne joue ni le métronome ni les pistes.
 
 La même console est sur **screen.oneverse.top/operate**, sans Songverse : connectez-vous avec votre compte Oneverse, puis choisissez une liste sous **Gérer les écrans**. Elle pilote les écrans, leur minuteur, leurs messages et leurs calques, mais jamais le métronome ni les pistes.
 
@@ -290,11 +290,19 @@ Si vous fermez la vue opérateur, les écrans reviennent à qui mène. Si c'est 
 
 ### La liste et ses diapositives
 
-La console s'adapte à la place qu'elle a. Sur un ordinateur portable, les diapositives occupent le milieu et une colonne à côté montre ce qui est sur les écrans, les minuteurs et les messages ; sur un grand écran, le **Déroulé** a sa propre colonne à gauche. Sur une tablette tenue droite, ou un téléphone, ce qui est sur les écrans vient d'abord, le déroulé est une rangée qu'on fait défiler, et les diapositives et les **Minuteurs et messages** sont deux onglets.
+La console s'adapte à la place qu'elle a. Sur un ordinateur portable, les écrans et les diapositives occupent le milieu et une colonne à côté montre ce qui est sur les écrans, les minuteurs et les messages ; sur un grand écran, le **Déroulé** a sa propre colonne à gauche. Sur une tablette tenue droite, ou un téléphone, ce qui est sur les écrans vient d'abord, le déroulé est une rangée qu'on fait défiler, et les diapositives, les **Minuteurs et messages** et les **Écrans** sont trois onglets.
 
 Le **Déroulé** montre chaque élément de la liste, avec son nombre de diapositives. Celui qui est sur les écrans est marqué **À l'écran**, avec sa diapositive. Choisissez un élément pour voir ses diapositives ; son bouton écran affiche aussitôt sa première diapositive. Dans Songverse, la barre latérale montre aussi les chants de la liste, comme dans Live : celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface).
 
 Les diapositives de l'élément choisi s'affichent en vignettes, colorées selon leur section (couplet, refrain, pont…). Une vignette envoie sa diapositive à tous les écrans ; les flèches (**Diapositive suivante** et retour) les font défiler, et **Écran noir** et **Arrêter la présentation** marchent comme dans Live. Au-dessus, les sections du chant dans l'ordre où elles sont chantées - *Couplet 1*, *Refrain*, *Couplet 2* - mènent à la première diapositive de la section ; les touches **1** à **9** font de même, pour le chant à l'écran.
+
+**Affichage**, en haut, règle l'apparence des diapositives sur cet appareil - l'ordinateur de la régie et la tablette près de la scène gardent chacun les leurs :
+
+- **Police** - **Celle de l'app**, **Avec empattements**, **Chasse fixe**, ou **Étroite** pour faire tenir plus de mots dans une vignette ; **Taille** de **S** à **XL** ; **Majuscules** pour tous les mots.
+- **Couleur des sections** - sur **Toute la vignette**, sur son **En-tête seulement** (une bande colorée avec le nom de la section), ou **Aucune**.
+- **Regrouper les diapositives d'une section** - les diapositives de chaque section ensemble sous son nom, plutôt qu'une seule suite de vignettes.
+- **Diapositives par ligne** - **Autant que possible**, ou de 1 à 6 ; **Numéros des diapositives** ou non ; **Vignettes** **Claires, comme l'app** ou **Sombres, comme un écran**.
+- **Écrans** - comment les écrans s'affichent (plus bas) ; **Revenir aux réglages par défaut** annule tout.
 
 Cochez **Notes** pour voir les notes du chant sous les diapositives où elles sont : **Toutes les notes**, ou seulement celles des personnes qui tiennent l'un des [postes](/fr/organizations/#postes) de l'équipe (*Notes de : Média*), pour les repères qui vous sont destinés.
 
@@ -302,6 +310,16 @@ Cochez **Notes** pour voir les notes du chant sous les diapositives où elles so
 
 - **Sur les écrans** - la diapositive que les écrans affichent, son chant et sa section, s'ils sont au noir ou leurs paroles masquées, et le message par-dessus, s'il y en a un.
 - **Suivante** - la diapositive où les écrans iront ensuite : la suivante du chant, ou la première de l'élément suivant après la dernière. Appuyez dessus pour l'afficher (la flèche droite fait de même). À la fin de la liste, elle indique **Fin de la liste**.
+
+### Les écrans, tels qu'ils sont
+
+**Écrans**, au-dessus des diapositives, montre chaque écran de la liste tel qu'il est : son propre modèle, la diapositive affichée, ses minuteurs et messages, noir ou non, et les calques qu'il montre. Un écran réglé sur la liste qui n'est pas connecté a aussi sa vignette, grisée, avec la dernière fois qu'on l'a vu.
+
+- **Grille** - tous, côte à côte.
+- **Un seul** - un onglet par écran ; celui choisi s'affiche en plus grand, avec ses **Calques** à côté.
+- **Masquer** - aucun, pour laisser plus de place aux diapositives.
+
+Sous chaque écran, ses calques - **Masques**, **Superpositions**, **Contenu**, **Média**, **Entrée vidéo** - s'effacent sur cet écran seul d'une pression, jusqu'à la diapositive suivante (le retour de scène sans les paroles un instant, le hall sans le média) ; pressé à nouveau, le calque revient. Son bouton de calques ouvre tous les **Calques** de l'écran, comme dans **Écrans et calques** plus bas.
 
 ### Minuteurs et messages
 

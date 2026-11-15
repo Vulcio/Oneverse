@@ -42,6 +42,7 @@ import {
   Music,
   Building2,
   Monitor,
+  MonitorPlay,
   BookText,
   Check,
   ListChecks,
@@ -533,6 +534,13 @@ function MainNav({
             <SidebarMenuButton isActive={pathname === "/screens"} tooltip={t("nav.screens")} render={<Link to="/screens" />} data-testid="nav-screens">
               <Monitor />
               <span>{t("nav.screens")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          {/* The operator's view (issue #358) of today's set, or the next one. */}
+          <SidebarMenuItem>
+            <SidebarMenuButton isActive={pathname.endsWith("/operate")} tooltip={t("nav.operator")} render={<Link to="/sets/current" search={{ to: "operate" }} data-testid="nav-operator" />}>
+              <MonitorPlay />
+              <span>{t("nav.operator")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

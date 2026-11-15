@@ -47,6 +47,7 @@ function OperatePage() {
       ...live.host,
       presets: { load: () => apiClient.getOperatorPresets(setlistId), save: (data) => apiClient.saveOperatorPresets(setlistId, data) },
       listScreens: () => apiClient.listScreens(setlistId),
+      screenLooks: () => apiClient.getSetScreenLooks(setlistId),
     }),
     [live, setlistId],
   );

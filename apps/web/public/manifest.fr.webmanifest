@@ -96,6 +96,29 @@
       ]
     },
     {
+      "name": "Opérateur",
+      "short_name": "Opérateur",
+      "description": "Piloter les écrans de la liste du jour, ou de la suivante",
+      "url": "/sets/current?to=operate",
+      "icons": [
+        {
+          "src": "/shortcuts/current-set.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        },
+        {
+          "src": "/shortcuts/current-set-96.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "/shortcuts/current-set-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Bibliothèque",
       "short_name": "Bibliothèque",
       "description": "Vos chants",

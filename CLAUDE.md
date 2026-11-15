@@ -279,7 +279,7 @@ an export nothing reads or a dependency nothing needs: remove it, or, for a
 file started on its own (a script, a second build's entry), add it to
 `knip.json`. Before writing a helper, look for the one there is: `@SignedIn()`
 for the person signed in, `providerFetch` for an outside provider,
-`createDeviceStore` (`apps/web/src/lib/device-store.ts`) for a choice kept on
+`createDeviceStore` (`packages/ui/src/lib/device-store.ts`, `@oneverse/ui/lib/device-store`) for a choice kept on
 the device, `AppDocument` for an app's root document.
 
 What `@oneverse/core` does - the song format, chords, the chart, the

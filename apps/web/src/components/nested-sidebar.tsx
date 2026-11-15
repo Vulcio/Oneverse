@@ -37,6 +37,7 @@ import {
   CalendarDays,
   Building2,
   Monitor,
+  MonitorPlay,
   BookText,
 } from "lucide-react";
 import { bibleTurnedOn } from "#/lib/bible";
@@ -191,6 +192,13 @@ export function NestedSidebar({
             <Monitor />
           </TooltipTrigger>
           <TooltipContent side="right">{t("nav.screens")}</TooltipContent>
+        </Tooltip>
+        {/* The operator's view (issue #358) of today's set, or the next one. */}
+        <Tooltip>
+          <TooltipTrigger render={<Link to="/sets/current" search={{ to: "operate" }} aria-label={t("nav.operator")} data-testid="rail-operator" className={cn("flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-4", pathname.endsWith("/operate") && "bg-sidebar-accent text-sidebar-accent-foreground")} />}>
+            <MonitorPlay />
+          </TooltipTrigger>
+          <TooltipContent side="right">{t("nav.operator")}</TooltipContent>
         </Tooltip>
         <div className="mt-auto flex flex-col items-center gap-1">
           {/* The documentation, for everyone, above Review and Admin (issue #147). */}

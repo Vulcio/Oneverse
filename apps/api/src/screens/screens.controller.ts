@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, UnauthorizedException, BadRequestException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, StartScreenPairingSchema, UpdateScreenSchema } from "@oneverse/core";
 import type { Response } from "express";
@@ -102,6 +102,13 @@ export class ScreensController {
   @Get()
   list(@Query("setlistId") setlistId: string | undefined, @SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["list"]> {
     return this.screens.list(user, typeof setlistId === "string" && setlistId ? setlistId : undefined);
+  }
+
+  /** How the screens showing a set look (issue #358), for its operator's console. */
+  @Get("looks")
+  looks(@Query("setlistId") setlistId: string | undefined, @SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["looks"]> {
+    if (typeof setlistId !== "string" || !setlistId) throw new BadRequestException(["setlistId should not be empty"]);
+    return this.screens.looks(user, setlistId);
   }
 
   /** Whose a screen paired now can be (issues #222, #322): the teams and organisations they run, or whose screens they manage by a role. */

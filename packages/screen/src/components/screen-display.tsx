@@ -1,14 +1,14 @@
-import { chartBars, screenShowsChart, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, stageTimers, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
+import { screenShowsChart, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { ChevronLeft, Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { renderSVG } from "uqr";
 import { ScreenMenu } from "./screen-menu";
 import { ScreenSetPicker } from "./screen-set-picker";
-import { ScreenStage, type StageSong } from "./screen-stage";
-import type { StageLive } from "./screen-widgets";
+import { ScreenStage } from "./screen-stage";
 import { stopPairingAgain, useScreenDisplay } from "../lib/screen-display";
-import { passageCredit, setItemTitle, setItemView, setlistTitle } from "../lib/set-items";
+import { setlistTitle } from "../lib/set-items";
+import { useStageShowing } from "../lib/stage-showing";
 
 /**
  * A big screen (issues #186, #305): whatever drives it - a TV's browser, a
@@ -100,17 +100,7 @@ function Showing({
 }) {
   const { t, i18n } = useTranslation();
   const set = current.set;
-  const view = presenting && set ? set.songs.find((song) => song.item.id === presenting.itemId) : undefined;
-  // A passage with a template of its own (issue #310) is shown with it; anything else, the screen's. A copy kept
-  // before themes (issue #194) has none: the default look.
-  const look = (view && itemThemes?.[view.item.id]) || theme || composeBuiltInTemplate("classic")!;
-  const song = useMemo<StageSong | null>(() => {
-    if (!view || (!view.song && !view.text && !view.passage)) return null;
-    const { chart, slides: cut } = setItemView(view);
-    // Not the words the presenter's slides say (the song edited since, issue #247): no words rather than another slide's.
-    const slides = presenting?.slideKey && slideKey(cut) !== presenting.slideKey ? cut.map((slide) => ({ ...slide, lines: [] })) : cut;
-    return { key: view.item.id, title: setItemTitle(view, t), slides, credits: view.song ? set?.credits[view.song.id] : undefined, attribution: view.passage ? passageCredit(view.passage) : null, chart, bars: chart && view.song ? chartBars(chart, view.song.document) : null };
-  }, [view, set, t, presenting?.slideKey]);
+  const { look, song, live, presented } = useStageShowing({ set, credits: set?.credits, presenting, stage, offset, screen: current.screen, theme, itemThemes });
   // Where the music is (issue #395), for a template following it: the leader's click, while it plays for the song on screen.
   const metronome = music?.metronome ?? null;
   const position = useMemo(() => {
@@ -118,35 +108,6 @@ function Showing({
     const countIn = metronome.settings.countIn * metronome.settings.numerator;
     return () => metronomePositionAt(metronome, Date.now() + offset) - countIn;
   }, [metronome, music?.itemId, presenting?.itemId, offset]);
-
-  // Each item's slides, counted once per set (issue #289): the Slide count widget's set.
-  const slideCounts = useMemo(() => (set?.songs ?? []).map((one) => setItemView(one).slides.length), [set]);
-
-  // What the template's widgets read (issue #268): the song's details, the next song, when this item came on.
-  const [itemStartedAt, setItemStartedAt] = useState<number | null>(null);
-  useEffect(() => setItemStartedAt(presenting?.itemId ? Date.now() : null), [presenting?.itemId]);
-  const live = useMemo<StageLive>(() => {
-    const songs = set?.songs ?? [];
-    const at = view ? songs.indexOf(view) : -1;
-    const next = at >= 0 ? songs.slice(at + 1).find((one) => one.song) : undefined;
-    return {
-      details: view?.song && song ? { title: view.song.title, key: song.chart?.key ?? view.song.key, tempo: view.song.tempo } : null,
-      nextSong: next?.song ? { title: next.song.title, slides: setItemView(next).slides } : null,
-      // The set's items (issue #272): the one on screen and the one after, whatever they are.
-      item: view && at >= 0 ? { title: setItemTitle(view, t), position: at + 1, count: songs.length } : null,
-      nextItem: at >= 0 && songs[at + 1] ? { title: setItemTitle(songs[at + 1]!, t) } : null,
-      itemStartedAt,
-      // The media operator's (issue #269).
-      operator: stage?.timer ?? null,
-      timers: stageTimers(stage),
-      // The operator's layers, for this screen, less those it never shows (issues #280, #287).
-      layers: screenLayers(stage?.layers, presenting, { id: current.screen.id, hidden: current.screen.hiddenLayers }),
-      title: set ? { title: setlistTitle(set.set, t, i18n.language), subtitle: set.set.teamName ?? null } : null,
-      setSlides: at >= 0 ? { counts: slideCounts, item: at } : null,
-      message: stage?.message?.text ?? null,
-      offset,
-    };
-  }, [set, view, song, itemStartedAt, stage, presenting, current.screen.id, current.screen.hiddenLayers, offset, slideCounts, t, i18n.language]);
 
   // Following its owner's schedule (issue #274): no set today, the sets to pick from; OK while nothing's presented opens them too.
   const daySet = current.screen.setMode === "DAY";
@@ -211,7 +172,7 @@ function Showing({
 
   const idle = !set ? (
     <Idle title={current.screen.name} subtitle={t("screens.displayNoSet")} />
-  ) : !presenting || !view ? (
+  ) : !presented ? (
     <Idle title={setlistTitle(set.set, t, i18n.language)} subtitle={daySet ? t("screens.picker.okHint") : current.screen.name} />
   ) : null;
 
@@ -224,7 +185,7 @@ function Showing({
       data-item={presenting?.itemId ?? ""}
       data-slide={presenting?.slide ?? ""}
       data-theme={current.screen.themeId ?? current.screen.themeTemplate ?? ""}
-      data-item-theme={String(!!(view && itemThemes?.[view.item.id]))}
+      data-item-theme={String(!!(presenting && itemThemes?.[presenting.itemId] && presented))}
       onDoubleClick={() => !showPicker && setMenu(true)}
       onContextMenu={(event) => {
         event.preventDefault();

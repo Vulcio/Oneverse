@@ -269,7 +269,7 @@ Every screen using the template shows its widgets, each in its cells. Widgets th
 
 ## The media operator
 
-Whoever runs the screens during a service - the media operator - has a view of their own: **Operator view**, on the set's page, or in Live's Sync menu (it opens in a new tab, so Live carries on). It's a Live page: the app switches to Live mode. Anyone who can edit the set can use it, leading the set or not, and so can anyone whose role lets them **Run the screens** (see [Roles](/admin/#roles)), on every set they can open; it doesn't play the metronome or the stems.
+Whoever runs the screens during a service - the media operator - has a view of their own: **Operator**, in the sidebar's tools, opens it for today's set or the next one; **Operator view**, on the set's page, or in Live's Sync menu, for any set (from Live it opens in a new tab, so Live carries on). Installed as an app, its icon's shortcuts have **Operator** too. It's a Live page: the app switches to Live mode. Anyone who can edit the set can use it, leading the set or not, and so can anyone whose role lets them **Run the screens** (see [Roles](/admin/#roles)), on every set they can open; it doesn't play the metronome or the stems.
 
 The same console is at **screen.oneverse.top/operate**, without Songverse: sign in with your Oneverse account, then pick a set under **Run the screens**. It runs the screens, their timer, messages and layers, but never the metronome or the stems.
 
@@ -290,11 +290,19 @@ If you close the operator view, the screens go back to the leader. If your conne
 
 ### The set and its slides
 
-The console fits the room it has. On a laptop, the slides fill the middle and a column beside them holds what's on the screens, the timers and the messages; on a wide screen, the **Running order** gets a column of its own on the left. On a tablet held upright, or a phone, what's on the screens comes first, the running order is a row you scroll, and the slides and the **Timers & messages** are two tabs.
+The console fits the room it has. On a laptop, the screens and the slides fill the middle and a column beside them holds what's on the screens, the timers and the messages; on a wide screen, the **Running order** gets a column of its own on the left. On a tablet held upright, or a phone, what's on the screens comes first, the running order is a row you scroll, and the slides, the **Timers & messages** and the **Screens** are three tabs.
 
 The **Running order** lists every item of the set, with its number of slides. The one on the screens is marked **On screens**, with its slide. Pick an item to see its slides; its screen button puts its first slide up at once. In Songverse, the sidebar lists the set's songs too, as in Live: the one on the screens is marked **Now**, and the ones the screens have moved past are ticked as played (**Start from the top** clears them).
 
 The slides of the item looked at show as tiles, coloured by their section (verse, chorus, bridge…). A tile sends its slide to every screen; the arrows (**Next slide** and back) step through them, and **Black screen** and **Stop presenting** work as in Live. Above them, a song's sections in the order they're sung - *Verse 1*, *Chorus*, *Verse 2* - jump to the section's first slide; the keys **1** to **9** do the same, for the song on the screens.
+
+**Display**, at the top, sets how the slides look on this device - a laptop at the desk and a tablet by the stage each keep theirs:
+
+- **Lettering** - the app's, **Serif**, **Monospace**, or **Narrow** to fit more words on a tile; **Size** from **S** to **XL**; **Capitals** for every word.
+- **Section colour** - on the **Whole tile**, on its **Header only** (a coloured band with the section's name), or **None**.
+- **Group a section's slides** - each section's slides together under its name, rather than one run of tiles.
+- **Slides per row** - **As many as fit**, or 1 to 6; **Slide numbers** on or off; **Tiles** **Light, as the app** or **Dark, as a screen**.
+- **Screens** - how the screens are shown (below); **Back to the defaults** undoes it all.
 
 Tick **Notes** to show the song's notes under the slides they're on: **All notes**, or only those of the people holding one of the team's [positions](/organizations/#positions) (*Media's notes*), for the cues meant for you.
 
@@ -302,6 +310,16 @@ Tick **Notes** to show the song's notes under the slides they're on: **All notes
 
 - **On the screens** - the slide the screens show now, its song and section, whether they're black or their words hidden, and the message over them, if there's one.
 - **Next** - the slide the screens go to next: the song's next one, or the next item's first after its last. Press it to put it up (the right arrow does the same). At the end of the set, it says **End of the set**.
+
+### The screens, as they are
+
+**Screens**, above the slides, draws every screen of the set as it looks now: its own template, the slide on it, its timers and messages, black or not, and the layers it shows. A screen set to show the set that isn't connected has its tile too, greyed, with when it was last seen.
+
+- **Grid** - all of them side by side.
+- **One** - a tab for each screen; the one picked shows larger, with its **Layers** beside it.
+- **Hide** - none, for more room for the slides.
+
+Under each screen, its layers - **Masks**, **Overlays**, **Content**, **Media**, **Video input** - clear on that screen alone in a press, until the next slide (the stage monitor without the words for a moment, the lobby without the media); pressed again, the layer comes back. Its layers button opens the screen's full **Layers**, as in **Screens & layers** below.
 
 ### Timers and messages
 

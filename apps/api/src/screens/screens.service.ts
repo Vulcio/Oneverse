@@ -1,10 +1,10 @@
 import { BadRequestException, ForbiddenException, GoneException, Injectable, NotFoundException } from "@nestjs/common";
-import { localDate, localTime, orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, screenPairingEnds, type ScreenPairingLength, type ScreenTheme, type SetItemPassage, readScreenReport, screenTier, type ScreenMode, type ScreenReport, type ScreenTier, type ScreenOwnerRequest } from "@oneverse/core";
+import { localDate, localTime, orderScreenSets, pickDaySet, SCREEN_CODE_ALPHABET, SCREEN_CODE_LENGTH, SCREEN_SWITCHABLE_LAYERS, composeBuiltInTemplate, normalizeScreenCode, screenPairingEnds, type ScreenPairingLength, type ScreenTheme, type SetItemPassage, readScreenReport, screenTier, type ScreenMode, type ScreenReport, type ScreenTier, type ScreenOwnerRequest, type ScreenSwitchableLayer, type SetScreenLooks } from "@oneverse/core";
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { capabilitiesOf, screenManagerScope } from "../roles/capabilities.js";
+import { capabilitiesIn, capabilitiesOf, screenManagerScope } from "../roles/capabilities.js";
 import { SetlistAccessService } from "../setlists/setlist-access.service.js";
 import { SetlistsService } from "../setlists/setlists.service.js";
 
@@ -226,6 +226,41 @@ export class ScreensService {
     return { screen: present(screen), theme: look.theme, assets, itemThemes: items.themes, set };
   }
 
+  /**
+   * How each screen showing a set looks (issue #358), for the operator's
+   * console to draw them as they are: each one's template - its effects on or
+   * off - and its items' own, the files they refer to, and the songs'
+   * credits. For who leads the set, or runs its screens by a role.
+   */
+  async looks(user: AuthenticatedUser, setlistId: string): Promise<SetScreenLooks> {
+    await this.assertCanWatch(user, setlistId);
+    const screens = await this.prisma.client.screen.findMany({
+      where: { setlistId, kind: "SCREEN", ...notEnded() },
+      select: { id: true, mode: true, effects: true, hiddenLayers: true, themeTemplate: true, scriptureThemeTemplate: true, theme: { select: TEMPLATE_PARTS_SELECT }, scriptureTheme: { select: TEMPLATE_PARTS_SELECT } },
+      orderBy: { createdAt: "asc" },
+    });
+    const copy = await this.setlists.offlineCopy(user, setlistId, { withNotes: false, passages: "screen" });
+    const assets: SetScreenLooks["assets"] = [];
+    const keep = (more: SetScreenLooks["assets"]) => {
+      for (const asset of more) if (!assets.some((one) => one.id === asset.id)) assets.push(asset);
+    };
+    const looks: SetScreenLooks["screens"] = [];
+    for (const screen of screens) {
+      const look = screenLook(screen);
+      const scripture = screen.scriptureTheme
+        ? templateLook(screen.scriptureTheme, { effects: screen.effects })
+        : screen.scriptureThemeTemplate
+          ? { theme: composeBuiltInTemplate(screen.scriptureThemeTemplate, { effects: screen.effects }) ?? null, assets: [] }
+          : null;
+      const items = await this.itemLooks(copy.songs, { effects: screen.effects, scripture: scripture?.theme ?? null });
+      keep(look.assets);
+      keep(scripture?.assets ?? []);
+      keep(items.assets);
+      looks.push({ id: screen.id, theme: look.theme, itemThemes: items.themes, hiddenLayers: screen.hiddenLayers.filter((layer): layer is ScreenSwitchableLayer => (SCREEN_SWITCHABLE_LAYERS as readonly string[]).includes(layer)) });
+    }
+    return { screens: looks, assets, credits: await this.credits(copy.songs.flatMap((song) => (song.song ? [song.song.id] : []))) };
+  }
+
   /** The looks of a set's items that have a template of their own (issue #310), and the files they refer to. */
   private async itemLooks(views: { item: { id: string }; passage: SetItemPassage | null }[], options: { effects: boolean; scripture: ScreenTheme | null }) {
     const themes: Record<string, ScreenTheme> = {};
@@ -436,7 +471,7 @@ export class ScreensService {
   async list(user: AuthenticatedUser, setlistId?: string) {
     const scope = await this.scopeOf(user);
     if (setlistId) {
-      await this.assertCanPresent(user, setlistId);
+      await this.assertCanWatch(user, setlistId);
       const screens = await this.prisma.client.screen.findMany({ where: { setlistId, ...notEnded() }, select: SCREEN_SELECT, orderBy: { createdAt: "asc" } });
       return withOnline(screens.map((screen) => present(screen, true)));
     }
@@ -567,6 +602,13 @@ export class ScreensService {
   private async canPresent(user: AuthenticatedUser, setlistId: string): Promise<boolean> {
     const set = await this.prisma.client.setlist.findUnique({ where: { id: setlistId }, select: { id: true, ownerUserId: true, ownerTeamId: true } });
     return !!set && (await this.access.access(user, set)).canEdit;
+  }
+
+  /** Who sees a set's screens (issue #358): who leads it, or runs its screens by a role. */
+  private async assertCanWatch(user: AuthenticatedUser, setlistId: string) {
+    const { set, access } = await this.access.findViewable(user, setlistId);
+    if (access.canEdit || (await capabilitiesIn(this.prisma.client, user.id, set.ownerTeamId)).canOperateScreens) return;
+    throw new ForbiddenException("Only someone who can edit the set, or runs its screens, sees them");
   }
 
   /** Who leads the set - can edit it - shows it on screens (they lead its sync session too). */

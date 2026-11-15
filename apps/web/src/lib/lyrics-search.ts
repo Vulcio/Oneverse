@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createDeviceStore } from "#/lib/device-store";
+import { createDeviceStore } from "@oneverse/ui/lib/device-store";
 
 /**
  * Whether searches look in the songs' words too (issue #221): off unless

@@ -1,7 +1,7 @@
 import { checkChartChords, type ChartChordChecks, type ChordCheck, type SectionV2 } from "@oneverse/core";
 import type { TFunction } from "i18next";
 import { useMemo } from "react";
-import { createDeviceStore } from "#/lib/device-store";
+import { createDeviceStore } from "@oneverse/ui/lib/device-store";
 
 /**
  * Chords that seem out of place (issue #356), in the song editor: worked

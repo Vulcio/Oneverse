@@ -2,7 +2,9 @@
 // edit the set - leading or not - and refused to anyone else; a set item's own timer, started when Live comes to it;
 // the operator's page: a countdown started, a minute more, a message sent and cleared, all on a stage display;
 // the console refined (issue #358): named timers, the team's saved timers and quick messages, what's up and
-// what's next, the running order and section jumps, where things stand, and its layout at a tablet's and a wide width.
+// what's next, the running order and section jumps, where things stand, and its layout at a tablet's and a wide width;
+// the screens drawn as they are, in a grid or one at a time, a layer cleared on one of them; the console's Display
+// options on the device; the sidebar's Operator opening the next set's console.
 import { chromium } from "playwright";
 import { SCREEN, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
@@ -130,6 +132,11 @@ try {
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
     await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Stage ${stamp}`, mode: "LYRICS", setlistId: set.id, themeTemplate: "stage-display" });
     await tv.getByTestId("screen-grid").first().waitFor({ timeout: 15000 });
+    // How the set's screens look (issue #358): for who runs them, not for a member.
+    r = await call(operator, "GET", `/screens/looks?setlistId=${set.id}`);
+    if (r.status !== 200 || r.body.screens.length !== 1 || !r.body.screens[0].theme || !Array.isArray(r.body.assets) || !r.body.credits[songs[0].id]) throw new Error(`looks: ${r.status} ${JSON.stringify(r.body).slice(0, 300)}`);
+    r = await call(member, "GET", `/screens/looks?setlistId=${set.id}`);
+    if (r.status !== 403) throw new Error(`a member reads the screens' looks: ${r.status}`);
     page = desk;
     await signIn(desk, operator);
     await desk.goto(`${WEB}/sets/${set.id}`);
@@ -431,6 +438,89 @@ try {
     await desk.locator('[data-testid="operator-drawer"] [data-testid="operator-screen"][data-state="missing"]').getByText(`Lobby ${stamp}`).waitFor();
     await desk.getByTestId("operator-drawer-close").click();
     await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
+  });
+
+  await step("the screens as they are (issue #358): a picture of each, a layer cleared on one of them, one screen at a time", async () => {
+    page = desk;
+    const view = desk.getByTestId("operator-screens-view");
+    const stageTile = view.locator('[data-testid="operator-screen-tile"][data-state="following"]').filter({ hasText: `Stage ${stamp}` });
+    // Drawn with its own template, showing the slide on the screens.
+    await stageTile.getByTestId("screen-grid").first().waitFor({ timeout: 10000 });
+    await stageTile.getByTestId("widget-current-slide").waitFor();
+    await view.locator('[data-testid="operator-screen-tile"][data-state="missing"]').filter({ hasText: `Lobby ${stamp}` }).getByTestId("operator-screen-missing").waitFor();
+    // Its content cleared there alone, until the next slide; the screen and its picture follow.
+    await stageTile.getByTestId("operator-screen-layer-content").click();
+    await stageTile.locator('[data-testid="operator-screen-layer-content"][data-state="cleared"]').waitFor({ timeout: 5000 });
+    await stageTile.locator("[data-own-layers]").or(view.locator('[data-testid="operator-screen-tile"][data-own-layers]')).first().waitFor();
+    page = tv;
+    await tv.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
+    page = desk;
+    await stageTile.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
+    await stageTile.getByTestId("operator-screen-layer-content").click();
+    await stageTile.locator('[data-testid="operator-screen-layer-content"][data-state="shown"]').waitFor({ timeout: 5000 });
+    page = tv;
+    await tv.getByTestId("widget-current-slide").waitFor({ timeout: 5000 });
+    // One at a time: a tab for each, the one picked larger with its layers beside it.
+    page = desk;
+    await desk.getByTestId("operator-screens-tabs").click();
+    if ((await view.getByTestId("operator-screen-tab").count()) !== 2) throw new Error("not a tab for each screen");
+    await view.locator('[data-testid="operator-layers"][data-screen]').waitFor();
+    await desk.getByTestId("operator-screens-off").click();
+    await view.locator('[data-view="off"]').or(desk.locator('[data-testid="operator-screens-view"][data-view="off"]')).first().waitFor();
+    if (await view.getByTestId("operator-screen-tile").count()) throw new Error("the screens still shown");
+    await desk.getByTestId("operator-screens-grid").click();
+    await stageTile.waitFor();
+  });
+
+  await step("the console's Display options (issue #358): grouped by section, colour on the header, capitals, a size, rows of 2, dark; kept on the device", async () => {
+    page = desk;
+    await desk.getByTestId("operator-rundown-item").filter({ hasText: `Closing ${stamp}` }).first().click();
+    await desk.getByTestId("operator-slide").filter({ hasText: "Chorus line here" }).waitFor();
+    await desk.getByTestId("operator-display").click();
+    const menu = desk.getByTestId("operator-display-menu");
+    await menu.getByTestId("operator-display-grouped").check();
+    await menu.getByTestId("operator-display-sectionColor").selectOption("header");
+    await menu.getByTestId("operator-display-uppercase").check();
+    await menu.getByTestId("operator-display-size-xl").click();
+    await menu.getByTestId("operator-display-columns").selectOption("2");
+    await menu.getByTestId("operator-display-tiles").selectOption("dark");
+    await desk.keyboard.press("Escape");
+    await menu.waitFor({ state: "detached" });
+    const slides = desk.getByTestId("operator-slides");
+    const check = async () => {
+      if ((await slides.getByTestId("operator-slide-group").count()) !== 3) throw new Error("not grouped by section");
+      if ((await slides.getByTestId("operator-slide-header").count()) !== 3) throw new Error("no coloured headers");
+      const tile = slides.getByTestId("operator-slide").filter({ hasText: "Chorus line here" });
+      const looks = await tile.evaluate((element) => {
+        const words = element.lastElementChild;
+        const style = getComputedStyle(words);
+        return { transform: style.textTransform, size: parseFloat(style.fontSize), background: getComputedStyle(element).backgroundColor };
+      });
+      if (looks.transform !== "uppercase" || looks.size < 17 || !/rgb\(10, 10, 10\)|oklch\(0\.14/.test(looks.background)) throw new Error(JSON.stringify(looks));
+      const columns = await slides.locator("ul").first().evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+      if (columns !== 2) throw new Error(`${columns} slides to a row`);
+    };
+    await check();
+    // Kept on this device.
+    await desk.reload();
+    await desk.getByTestId("operator-slide").filter({ hasText: "Chorus line here" }).waitFor({ timeout: 15000 });
+    await check();
+    await desk.getByTestId("operator-display").click();
+    await desk.getByTestId("operator-display-reset").click();
+    await desk.keyboard.press("Escape");
+    if (await slides.getByTestId("operator-slide-group").count()) throw new Error("still grouped after the reset");
+  });
+
+  await step("the sidebar's Operator: the next set's console", async () => {
+    page = desk;
+    const soon = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+    const upcoming = await api(leader, "POST", "/setlists", { name: `Upcoming ${stamp}`, eventDate: soon, teamId: team.id });
+    await desk.goto(`${WEB}/sets`);
+    await desk.locator('[data-testid="nav-operator"]:visible, [data-testid="rail-operator"]:visible').first().click();
+    await desk.waitForURL(`${WEB}/sets/${upcoming.id}/operate`, { timeout: 15000 });
+    await desk.getByTestId("operator").waitFor();
+    await desk.goto(`${WEB}/sets/${set.id}/operate`);
+    await desk.getByTestId("operator-control").waitFor({ timeout: 15000 });
   });
 
   await step("the console's width (issue #358): the running order in a column of its own when wide; on a tablet, what's up on top and tabs", async () => {

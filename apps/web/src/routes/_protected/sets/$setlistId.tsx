@@ -1,7 +1,7 @@
 import { ApiError, keptSetDetail, onlineOrKept, type SetlistDetail, type SetlistItem, type TeamSummary } from "@oneverse/core";
 import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { Mic, RotateCcw, Timer } from "lucide-react";
+import { Mic, MonitorPlay, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@oneverse/ui/components/badge";
@@ -148,10 +148,10 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
               {resuming ? t("live.resume") : t("live.start")}
             </Button>
           ) : null}
-          {/* The media operator's view (issue #269): the screens' timer and messages. */}
+          {/* The operator's view (issues #269, #358): the screens, their slides, timers and messages. */}
           {set.canEdit ? (
             <Button variant="outline" render={<Link to="/sets/$setlistId/operate" params={{ setlistId: set.id }} />} data-testid="set-operate">
-              <Timer />
+              <MonitorPlay />
               {t("screens.operator.open")}
             </Button>
           ) : null}

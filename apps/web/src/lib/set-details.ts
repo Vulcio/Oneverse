@@ -1,5 +1,5 @@
 import { formatDuration, SET_LIST_DETAILS, type SetListDetailValue, type SetlistItem } from "@oneverse/core";
-import { createDeviceStore } from "#/lib/device-store";
+import { createDeviceStore } from "@oneverse/ui/lib/device-store";
 
 /**
  * What a set's songs show on their right in Live's sidebar (issue #199):

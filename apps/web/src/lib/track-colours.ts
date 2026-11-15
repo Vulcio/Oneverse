@@ -1,5 +1,5 @@
 import type { StemPart } from "@oneverse/core";
-import { deviceChoice } from "#/lib/device-store";
+import { deviceChoice } from "@oneverse/ui/lib/device-store";
 import type { WaveStyle } from "#/lib/wave-shape";
 
 /**

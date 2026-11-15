@@ -25,6 +25,7 @@ export function songverseOperatorHost(setId: string): OperatorHost {
       usePanelRoom: useSidePanelRoom,
       presets: { load: () => apiClient.getOperatorPresets(setId), save: (data) => apiClient.saveOperatorPresets(setId, data) },
       listScreens: () => apiClient.listScreens(setId),
+      screenLooks: () => apiClient.getSetScreenLooks(setId),
     };
     hosts.set(setId, host);
   }
