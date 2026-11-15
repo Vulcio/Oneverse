@@ -110,6 +110,7 @@
 "web/display-panel": 12,
 "web/drum-grooves": 20,
 "web/editor-bars": 13,
+"web/editor-grid": 8,
 "web/editor-chart-font": 6,
 "web/editor-chord-bar": 12,
 "web/editor-repeats": 8,

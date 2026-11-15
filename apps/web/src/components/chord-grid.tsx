@@ -113,6 +113,7 @@ export function ChordGrid({
   emptyText,
   className,
   onSave,
+  onChange,
 }: {
   songId: string;
   chart: RenderedChart;
@@ -125,10 +126,15 @@ export function ChordGrid({
   className?: string;
   /** Saves the song's sections with the bars edited here; left out, the grid can't be edited. */
   onSave?: (sections: Sections) => Promise<void>;
+  /**
+   * Edit bars always on, every change handed over as it's made (the song editor's Bars, issue #465): no Cancel or
+   * Save of its own, the editor saves the song.
+   */
+  onChange?: (sections: Sections) => void;
 }) {
   const { t } = useTranslation();
   // Edit bars: each section's rhythm as changed and not saved yet.
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(!!onChange);
   const [draft, setDraft] = useState<Record<string, Rhythm>>({});
   const [picked, setPicked] = useState<PickedChord | null>(null);
   // Issue #462: how the chords around one move, where a dragged chord would go, the sections offered the same bars, the ones linked in this edit.
@@ -214,7 +220,14 @@ export function ChordGrid({
   const player = useGridPlayer(songId, bars, chart);
   const grid = useRef<HTMLDivElement>(null);
   const changed = Object.keys(draft).length > 0;
-  const canEdit = !!onSave && !!document;
+  const canEdit = (!!onSave || !!onChange) && !!document;
+  // In the song editor, each change goes to it as it's made.
+  const reported = useRef(draft);
+  useEffect(() => {
+    if (!onChange || !document || draft === reported.current) return;
+    reported.current = draft;
+    onChange(document.sections.map((section) => (draft[section.id] ? { ...section, rhythm: draft[section.id] } : section)) as Sections);
+  }, [draft]);
   const lyricsChoice = useGridLyrics();
   const lyrics: GridLyrics = editing ? "bars" : lyricsChoice;
   // The grid's width, for the bars a row that fit (issue #408): in its own pixels, before the chart's zoom.
@@ -778,6 +791,8 @@ export function ChordGrid({
   useEffect(() => {
     // Calls go to this render's grid, whenever they're made.
     const live = (): GridControls => ({ ...latest.current, loop: () => latest.current.loop(), edit: () => latest.current.edit() });
+    // The song editor's grid isn't the Display panel's to start or loop.
+    if (onChange) return;
     registered.current = registerGrid(live());
     return () => {
       registered.current?.remove();
@@ -810,7 +825,7 @@ export function ChordGrid({
   const tools = editing && pickedBar !== null && bars[pickedBar] && editable(bars[pickedBar]) ? { bar: bars[pickedBar], ...barTools(bars[pickedBar]) } : null;
   return (
     <div ref={area} className={cn("flex flex-col gap-3", className)} data-testid="chord-grid-area">
-      {editing ? (
+      {editing && !onChange ? (
         // Editing: Cancel and Save kept in reach as the bars scroll by.
         <div className="sticky top-(--grid-sticky-top,0px) z-20 -mx-1 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-card px-2 py-1.5" data-testid="chord-grid-toolbar">
           <Pencil className="size-4 text-primary" aria-hidden />

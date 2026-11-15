@@ -922,6 +922,7 @@ export function SongEditor(props: (CreateProps | EditProps) & { tags: Tag[]; tab
                 onReplaceChart={() => setReplacing(true)}
                 onFactChange={(field, value) => setField(field, value)}
                 readOnly={!canChangeChart}
+                songId={edit?.version.id}
                 shared={
                   edit && canEdit && !suggesting
                     ? {

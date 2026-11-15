@@ -4277,7 +4277,7 @@ const fr: typeof en = {
     notInOrder: "Pas dans l'ordre du chant",
     label: "Grille du chant",
     mode: "Mode de l'éditeur",
-    modes: { visual: "Visuel", text: "Texte", preview: "Aperçu" },
+    modes: { visual: "Visuel", text: "Texte", bars: "Mesures", preview: "Aperçu" },
     undo: "Annuler",
     redo: "Rétablir",
     noteLine: "Faire de la ligne une note pour les musiciens (ou à nouveau des paroles)",

@@ -7,12 +7,13 @@ Ouvrez un chant et choisissez l'onglet **Éditeur**.
 
 ![L'éditeur de chants](../../../assets/screenshots/fr/song-editor.jpg)
 
-La barre d'outils de l'éditeur reste en haut de l'écran quand vous faites défiler. Elle a les trois modes de l'éditeur à gauche, puis **Annuler**, **Rétablir** et la ligne de note, puis la **Tonalité** du chant, **Transposer**, **Tempo**, **Mesure** et **Capo**. Ses boutons ne bougent jamais quand vous vous en servez : appuyez sur **Transposer** + encore et encore, ou sur **Annuler**, sans regarder. Un outil qui ne sert pas dans un mode y est grisé plutôt que retiré.
+La barre d'outils de l'éditeur reste en haut de l'écran quand vous faites défiler. Elle a les quatre modes de l'éditeur à gauche, puis **Annuler**, **Rétablir** et la ligne de note, puis la **Tonalité** du chant, **Transposer**, **Tempo**, **Mesure** et **Capo**. Ses boutons ne bougent jamais quand vous vous en servez : appuyez sur **Transposer** + encore et encore, ou sur **Annuler**, sans regarder. Un outil qui ne sert pas dans un mode y est grisé plutôt que retiré.
 
-Les trois modes :
+Les quatre modes :
 
 - **Visuel** - la grille avec les accords au-dessus des mots. C'est là que vous passerez le plus de temps.
 - **Texte** - la même grille en texte ChordPro, pour des modifications rapides en bloc. Les accords et les lignes que vous ne changez pas restent tels quels.
+- **Mesures** - les mesures du chant en grille, les accords sur leurs temps et les paroles dessous : faites glisser un accord sur un autre temps, comme dans [Placer les accords sur les temps](/fr/metronome/#placer-les-accords-sur-les-temps) (les mêmes outils, sans Enregistrer à eux : **Enregistrer le chant** les enregistre avec le reste). Les barres de mesure de la grille suivent.
 - **Aperçu** - la grille telle que les musiciens la verront. Sur un écran large, elle s'affiche aussi à côté de **Visuel** et **Texte**, mise à jour au fil de la saisie.
 
 **Visuel** utilise la même police que l'aperçu : **Police** dans son panneau **Affichage**, **Chasse fixe** ou **Proportionnelle**. Dans les deux cas, chaque accord reste au-dessus de sa lettre. Là où deux accords sont plus proches que la largeur du premier, un peu d'espace est laissé entre leurs mots.

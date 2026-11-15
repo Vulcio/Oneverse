@@ -7,12 +7,13 @@ Open a song and choose the **Editor** tab.
 
 ![The song editor](../../assets/screenshots/en/song-editor.jpg)
 
-The editor's toolbar stays at the top of the screen as you scroll. It has the editor's three modes on the left, then **Undo**, **Redo** and the note line, then the song's **Key**, **Transpose**, **Tempo**, **Time** and **Capo**. Its buttons never move as you use them: press **Transpose** + again and again, or **Undo**, without looking. A tool that doesn't apply in a mode is greyed out there rather than taken away.
+The editor's toolbar stays at the top of the screen as you scroll. It has the editor's four modes on the left, then **Undo**, **Redo** and the note line, then the song's **Key**, **Transpose**, **Tempo**, **Time** and **Capo**. Its buttons never move as you use them: press **Transpose** + again and again, or **Undo**, without looking. A tool that doesn't apply in a mode is greyed out there rather than taken away.
 
-The three modes:
+The four modes:
 
 - **Visual** - the chart with chords sitting over the words. This is where you'll spend most of your time.
 - **Text** - the same chart as ChordPro text, for quick bulk edits. Chords and lines you don't change stay as they were.
+- **Bars** - the song's bars as a grid, the chords on their beats and the words under them: drag a chord onto another beat, as in [Placing chords on beats](/metronome/#placing-chords-on-beats) (the same tools, without a Save of their own: **Save song** saves them with the rest). The chart's bar lines follow.
 - **Preview** - the chart as players will see it. On a wide screen it's also shown beside **Visual** and **Text**, updated as you type.
 
 **Visual** uses the same lettering as the preview: **Font** in its **Display** panel, **Monospace** or **Proportional**. Either way each chord stays over its own letter. Where two chords are closer together than the first one is wide, a little room is left between their words.
