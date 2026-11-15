@@ -291,6 +291,12 @@ try {
   await step("the keyboard (issue #277): the arrows into the next song and back, black, layers, stop, Enter", async () => {
     page = desk;
     const at = (item) => tv.locator(`[data-testid="screen-showing"][data-item="${item}"]`);
+    // From the first song's slide, on the screens and marked here: the step before may have left another one up
+    // (the leader's Live presented the next song), and an arrow pressed then moves on from there.
+    await desk.getByTestId("operator-rundown-item").filter({ hasText: `Opening ${stamp}` }).first().click();
+    await desk.getByTestId("operator-slide").first().click();
+    await at(items[0].id).waitFor({ timeout: 10000 });
+    await desk.locator('[data-testid="operator-rundown-item"][data-live]').getByText(`Opening ${stamp}`).waitFor({ timeout: 5000 });
     // A button focused: the arrows are still the slides'.
     await desk.getByTestId("operator-slide").first().focus();
     await desk.keyboard.press("ArrowRight");
