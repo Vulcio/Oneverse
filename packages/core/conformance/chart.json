@@ -3945,7 +3945,7 @@
               "passId": "fi_verse",
               "sectionId": "sec_verse",
               "barInPass": 0,
-              "barsInPass": 5,
+              "barsInPass": 4,
               "beats": 4,
               "start": 0,
               "tempo": 72,
@@ -3956,6 +3956,13 @@
                   "label": "G",
                   "sounding": "G",
                   "family": "major"
+                },
+                {
+                  "id": "chd_v2",
+                  "beat": 3,
+                  "label": "G7",
+                  "sounding": "G7",
+                  "family": "dominant"
                 }
               ],
               "carried": null,
@@ -3970,34 +3977,9 @@
               "passId": "fi_verse",
               "sectionId": "sec_verse",
               "barInPass": 1,
-              "barsInPass": 5,
+              "barsInPass": 4,
               "beats": 4,
               "start": 4,
-              "tempo": 72,
-              "chords": [
-                {
-                  "id": "chd_v2",
-                  "beat": 1,
-                  "label": "G7",
-                  "sounding": "G7",
-                  "family": "dominant"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_v1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 2,
-              "passIndex": 0,
-              "passId": "fi_verse",
-              "sectionId": "sec_verse",
-              "barInPass": 2,
-              "barsInPass": 5,
-              "beats": 4,
-              "start": 8,
               "tempo": 72,
               "chords": [
                 {
@@ -4015,14 +3997,14 @@
               "beatAnchors": []
             },
             {
-              "index": 3,
+              "index": 2,
               "passIndex": 0,
               "passId": "fi_verse",
               "sectionId": "sec_verse",
-              "barInPass": 3,
-              "barsInPass": 5,
+              "barInPass": 2,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 12,
+              "start": 8,
               "tempo": 72,
               "chords": [
                 {
@@ -4040,14 +4022,14 @@
               "beatAnchors": []
             },
             {
-              "index": 4,
+              "index": 3,
               "passIndex": 0,
               "passId": "fi_verse",
               "sectionId": "sec_verse",
-              "barInPass": 4,
-              "barsInPass": 5,
+              "barInPass": 3,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 16,
+              "start": 12,
               "tempo": 72,
               "chords": [
                 {
@@ -4065,14 +4047,14 @@
               "beatAnchors": []
             },
             {
-              "index": 5,
+              "index": 4,
               "passIndex": 1,
               "passId": "fi_chorus",
               "sectionId": "sec_chorus",
               "barInPass": 0,
-              "barsInPass": 3,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 20,
+              "start": 16,
               "tempo": 72,
               "chords": [
                 {
@@ -4081,28 +4063,10 @@
                   "label": "C",
                   "sounding": "C",
                   "family": "major"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_c1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 6,
-              "passIndex": 1,
-              "passId": "fi_chorus",
-              "sectionId": "sec_chorus",
-              "barInPass": 1,
-              "barsInPass": 3,
-              "beats": 4,
-              "start": 24,
-              "tempo": 72,
-              "chords": [
+                },
                 {
                   "id": "chd_c2",
-                  "beat": 1,
+                  "beat": 3,
                   "label": "Dsus4",
                   "sounding": "Dsus4",
                   "family": "suspended"
@@ -4115,14 +4079,14 @@
               "beatAnchors": []
             },
             {
-              "index": 7,
+              "index": 5,
               "passIndex": 1,
               "passId": "fi_chorus",
               "sectionId": "sec_chorus",
-              "barInPass": 2,
-              "barsInPass": 3,
+              "barInPass": 1,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 28,
+              "start": 20,
               "tempo": 72,
               "chords": [
                 {
@@ -4140,14 +4104,14 @@
               "beatAnchors": []
             },
             {
-              "index": 8,
+              "index": 6,
               "passIndex": 2,
               "passId": "fi_chorus2",
               "sectionId": "sec_chorus",
               "barInPass": 0,
-              "barsInPass": 3,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 32,
+              "start": 24,
               "tempo": 72,
               "chords": [
                 {
@@ -4156,28 +4120,10 @@
                   "label": "D",
                   "sounding": "D",
                   "family": "major"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_c1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 9,
-              "passIndex": 2,
-              "passId": "fi_chorus2",
-              "sectionId": "sec_chorus",
-              "barInPass": 1,
-              "barsInPass": 3,
-              "beats": 4,
-              "start": 36,
-              "tempo": 72,
-              "chords": [
+                },
                 {
                   "id": "chd_c2",
-                  "beat": 1,
+                  "beat": 3,
                   "label": "Esus4",
                   "sounding": "Esus4",
                   "family": "suspended"
@@ -4190,14 +4136,14 @@
               "beatAnchors": []
             },
             {
-              "index": 10,
+              "index": 7,
               "passIndex": 2,
               "passId": "fi_chorus2",
               "sectionId": "sec_chorus",
-              "barInPass": 2,
-              "barsInPass": 3,
+              "barInPass": 1,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 40,
+              "start": 28,
               "tempo": 72,
               "chords": [
                 {
@@ -4348,7 +4294,7 @@
               "passId": "fi_verse",
               "sectionId": "sec_verse",
               "barInPass": 0,
-              "barsInPass": 5,
+              "barsInPass": 4,
               "beats": 4,
               "start": 0,
               "tempo": 72,
@@ -4359,6 +4305,13 @@
                   "label": "1",
                   "sounding": "A",
                   "family": "major"
+                },
+                {
+                  "id": "chd_v2",
+                  "beat": 3,
+                  "label": "17",
+                  "sounding": "A7",
+                  "family": "dominant"
                 }
               ],
               "carried": null,
@@ -4373,34 +4326,9 @@
               "passId": "fi_verse",
               "sectionId": "sec_verse",
               "barInPass": 1,
-              "barsInPass": 5,
+              "barsInPass": 4,
               "beats": 4,
               "start": 4,
-              "tempo": 72,
-              "chords": [
-                {
-                  "id": "chd_v2",
-                  "beat": 1,
-                  "label": "17",
-                  "sounding": "A7",
-                  "family": "dominant"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_v1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 2,
-              "passIndex": 0,
-              "passId": "fi_verse",
-              "sectionId": "sec_verse",
-              "barInPass": 2,
-              "barsInPass": 5,
-              "beats": 4,
-              "start": 8,
               "tempo": 72,
               "chords": [
                 {
@@ -4418,14 +4346,14 @@
               "beatAnchors": []
             },
             {
-              "index": 3,
+              "index": 2,
               "passIndex": 0,
               "passId": "fi_verse",
               "sectionId": "sec_verse",
-              "barInPass": 3,
-              "barsInPass": 5,
+              "barInPass": 2,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 12,
+              "start": 8,
               "tempo": 72,
               "chords": [
                 {
@@ -4443,14 +4371,14 @@
               "beatAnchors": []
             },
             {
-              "index": 4,
+              "index": 3,
               "passIndex": 0,
               "passId": "fi_verse",
               "sectionId": "sec_verse",
-              "barInPass": 4,
-              "barsInPass": 5,
+              "barInPass": 3,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 16,
+              "start": 12,
               "tempo": 72,
               "chords": [
                 {
@@ -4468,14 +4396,14 @@
               "beatAnchors": []
             },
             {
-              "index": 5,
+              "index": 4,
               "passIndex": 1,
               "passId": "fi_chorus",
               "sectionId": "sec_chorus",
               "barInPass": 0,
-              "barsInPass": 3,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 20,
+              "start": 16,
               "tempo": 72,
               "chords": [
                 {
@@ -4484,28 +4412,10 @@
                   "label": "4",
                   "sounding": "D",
                   "family": "major"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_c1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 6,
-              "passIndex": 1,
-              "passId": "fi_chorus",
-              "sectionId": "sec_chorus",
-              "barInPass": 1,
-              "barsInPass": 3,
-              "beats": 4,
-              "start": 24,
-              "tempo": 72,
-              "chords": [
+                },
                 {
                   "id": "chd_c2",
-                  "beat": 1,
+                  "beat": 3,
                   "label": "5sus4",
                   "sounding": "Esus4",
                   "family": "suspended"
@@ -4518,14 +4428,14 @@
               "beatAnchors": []
             },
             {
-              "index": 7,
+              "index": 5,
               "passIndex": 1,
               "passId": "fi_chorus",
               "sectionId": "sec_chorus",
-              "barInPass": 2,
-              "barsInPass": 3,
+              "barInPass": 1,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 28,
+              "start": 20,
               "tempo": 72,
               "chords": [
                 {
@@ -4543,14 +4453,14 @@
               "beatAnchors": []
             },
             {
-              "index": 8,
+              "index": 6,
               "passIndex": 2,
               "passId": "fi_chorus2",
               "sectionId": "sec_chorus",
               "barInPass": 0,
-              "barsInPass": 3,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 32,
+              "start": 24,
               "tempo": 72,
               "chords": [
                 {
@@ -4559,28 +4469,10 @@
                   "label": "4",
                   "sounding": "E",
                   "family": "major"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_c1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 9,
-              "passIndex": 2,
-              "passId": "fi_chorus2",
-              "sectionId": "sec_chorus",
-              "barInPass": 1,
-              "barsInPass": 3,
-              "beats": 4,
-              "start": 36,
-              "tempo": 72,
-              "chords": [
+                },
                 {
                   "id": "chd_c2",
-                  "beat": 1,
+                  "beat": 3,
                   "label": "5sus4",
                   "sounding": "F#sus4",
                   "family": "suspended"
@@ -4593,14 +4485,14 @@
               "beatAnchors": []
             },
             {
-              "index": 10,
+              "index": 7,
               "passIndex": 2,
               "passId": "fi_chorus2",
               "sectionId": "sec_chorus",
-              "barInPass": 2,
-              "barsInPass": 3,
+              "barInPass": 1,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 40,
+              "start": 28,
               "tempo": 72,
               "chords": [
                 {
@@ -4787,7 +4679,7 @@
               "passId": "fi_verse",
               "sectionId": "sec_verse",
               "barInPass": 0,
-              "barsInPass": 5,
+              "barsInPass": 4,
               "beats": 4,
               "start": 0,
               "tempo": 72,
@@ -4798,6 +4690,13 @@
                   "label": "G",
                   "sounding": "G",
                   "family": "major"
+                },
+                {
+                  "id": "chd_v2",
+                  "beat": 3,
+                  "label": "G7",
+                  "sounding": "G7",
+                  "family": "dominant"
                 }
               ],
               "carried": null,
@@ -4812,34 +4711,9 @@
               "passId": "fi_verse",
               "sectionId": "sec_verse",
               "barInPass": 1,
-              "barsInPass": 5,
+              "barsInPass": 4,
               "beats": 4,
               "start": 4,
-              "tempo": 72,
-              "chords": [
-                {
-                  "id": "chd_v2",
-                  "beat": 1,
-                  "label": "G7",
-                  "sounding": "G7",
-                  "family": "dominant"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_v1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 2,
-              "passIndex": 0,
-              "passId": "fi_verse",
-              "sectionId": "sec_verse",
-              "barInPass": 2,
-              "barsInPass": 5,
-              "beats": 4,
-              "start": 8,
               "tempo": 72,
               "chords": [
                 {
@@ -4857,14 +4731,14 @@
               "beatAnchors": []
             },
             {
-              "index": 3,
+              "index": 2,
               "passIndex": 0,
               "passId": "fi_verse",
               "sectionId": "sec_verse",
-              "barInPass": 3,
-              "barsInPass": 5,
+              "barInPass": 2,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 12,
+              "start": 8,
               "tempo": 72,
               "chords": [
                 {
@@ -4882,14 +4756,14 @@
               "beatAnchors": []
             },
             {
-              "index": 4,
+              "index": 3,
               "passIndex": 0,
               "passId": "fi_verse",
               "sectionId": "sec_verse",
-              "barInPass": 4,
-              "barsInPass": 5,
+              "barInPass": 3,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 16,
+              "start": 12,
               "tempo": 72,
               "chords": [
                 {
@@ -4907,14 +4781,14 @@
               "beatAnchors": []
             },
             {
-              "index": 5,
+              "index": 4,
               "passIndex": 1,
               "passId": "fi_chorus",
               "sectionId": "sec_chorus",
               "barInPass": 0,
               "barsInPass": 2,
               "beats": 4,
-              "start": 20,
+              "start": 16,
               "tempo": 72,
               "chords": [
                 {
@@ -4932,14 +4806,14 @@
               "beatAnchors": []
             },
             {
-              "index": 6,
+              "index": 5,
               "passIndex": 1,
               "passId": "fi_chorus",
               "sectionId": "sec_chorus",
               "barInPass": 1,
               "barsInPass": 2,
               "beats": 4,
-              "start": 24,
+              "start": 20,
               "tempo": 72,
               "chords": [
                 {
@@ -4957,14 +4831,14 @@
               "beatAnchors": []
             },
             {
-              "index": 7,
+              "index": 6,
               "passIndex": 2,
               "passId": "fi_verse_end",
               "sectionId": "sec_verse",
               "barInPass": 0,
               "barsInPass": 2,
               "beats": 4,
-              "start": 28,
+              "start": 24,
               "tempo": 72,
               "chords": [
                 {
@@ -4982,14 +4856,14 @@
               "beatAnchors": []
             },
             {
-              "index": 8,
+              "index": 7,
               "passIndex": 2,
               "passId": "fi_verse_end",
               "sectionId": "sec_verse",
               "barInPass": 1,
               "barsInPass": 2,
               "beats": 4,
-              "start": 32,
+              "start": 28,
               "tempo": 72,
               "chords": [
                 {
@@ -5007,14 +4881,14 @@
               "beatAnchors": []
             },
             {
-              "index": 9,
+              "index": 8,
               "passIndex": 3,
               "passId": "fi_chorus_up",
               "sectionId": "sec_chorus",
               "barInPass": 0,
-              "barsInPass": 3,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 36,
+              "start": 32,
               "tempo": 72,
               "chords": [
                 {
@@ -5023,28 +4897,10 @@
                   "label": "D",
                   "sounding": "D",
                   "family": "major"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_c1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 10,
-              "passIndex": 3,
-              "passId": "fi_chorus_up",
-              "sectionId": "sec_chorus",
-              "barInPass": 1,
-              "barsInPass": 3,
-              "beats": 4,
-              "start": 40,
-              "tempo": 72,
-              "chords": [
+                },
                 {
                   "id": "chd_c2",
-                  "beat": 1,
+                  "beat": 3,
                   "label": "Esus4",
                   "sounding": "Esus4",
                   "family": "suspended"
@@ -5057,14 +4913,14 @@
               "beatAnchors": []
             },
             {
-              "index": 11,
+              "index": 9,
               "passIndex": 3,
               "passId": "fi_chorus_up",
               "sectionId": "sec_chorus",
-              "barInPass": 2,
-              "barsInPass": 3,
+              "barInPass": 1,
+              "barsInPass": 2,
               "beats": 4,
-              "start": 44,
+              "start": 36,
               "tempo": 72,
               "chords": [
                 {
@@ -5082,14 +4938,14 @@
               "beatAnchors": []
             },
             {
-              "index": 12,
+              "index": 10,
               "passIndex": 4,
               "passId": "fi_missing",
               "sectionId": "sec_verse",
               "barInPass": 0,
-              "barsInPass": 5,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 48,
+              "start": 40,
               "tempo": 72,
               "chords": [
                 {
@@ -5098,28 +4954,10 @@
                   "label": "G",
                   "sounding": "G",
                   "family": "major"
-                }
-              ],
-              "carried": null,
-              "lineId": "line_v1",
-              "lyricAt": null,
-              "fromRhythm": false,
-              "beatAnchors": []
-            },
-            {
-              "index": 13,
-              "passIndex": 4,
-              "passId": "fi_missing",
-              "sectionId": "sec_verse",
-              "barInPass": 1,
-              "barsInPass": 5,
-              "beats": 4,
-              "start": 52,
-              "tempo": 72,
-              "chords": [
+                },
                 {
                   "id": "chd_v2",
-                  "beat": 1,
+                  "beat": 3,
                   "label": "G7",
                   "sounding": "G7",
                   "family": "dominant"
@@ -5132,14 +4970,14 @@
               "beatAnchors": []
             },
             {
-              "index": 14,
+              "index": 11,
               "passIndex": 4,
               "passId": "fi_missing",
               "sectionId": "sec_verse",
-              "barInPass": 2,
-              "barsInPass": 5,
+              "barInPass": 1,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 56,
+              "start": 44,
               "tempo": 72,
               "chords": [
                 {
@@ -5157,14 +4995,14 @@
               "beatAnchors": []
             },
             {
-              "index": 15,
+              "index": 12,
               "passIndex": 4,
               "passId": "fi_missing",
               "sectionId": "sec_verse",
-              "barInPass": 3,
-              "barsInPass": 5,
+              "barInPass": 2,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 60,
+              "start": 48,
               "tempo": 72,
               "chords": [
                 {
@@ -5182,14 +5020,14 @@
               "beatAnchors": []
             },
             {
-              "index": 16,
+              "index": 13,
               "passIndex": 4,
               "passId": "fi_missing",
               "sectionId": "sec_verse",
-              "barInPass": 4,
-              "barsInPass": 5,
+              "barInPass": 3,
+              "barsInPass": 4,
               "beats": 4,
-              "start": 64,
+              "start": 52,
               "tempo": 72,
               "chords": [
                 {
@@ -7102,16 +6940,13 @@
             }
           ],
           "expected": [
-            "Amazing grace how",
-            "sweet the",
+            "Amazing grace how sweet the",
             "sound",
             "That saved a wretch",
             "like me",
-            "I once was lost",
-            "but now",
+            "I once was lost but now",
             "am found",
-            "I once was lost",
-            "but now",
+            "I once was lost but now",
             "am found"
           ]
         },
@@ -7447,11 +7282,9 @@
             "how sweet the sound That saved a",
             "wretch",
             "like me",
-            "I once was lost",
-            "but now",
+            "I once was lost but now",
             "am found",
-            "I once was lost",
-            "but now",
+            "I once was lost but now",
             "am found"
           ]
         }
@@ -7598,14 +7431,6 @@
               },
               {
                 "lineId": "line_v1",
-                "at": 14,
-                "placed": false
-              },
-              null
-            ],
-            [
-              {
-                "lineId": "line_v1",
                 "at": 18,
                 "placed": false
               },
@@ -7613,9 +7438,7 @@
                 "lineId": "line_v1",
                 "at": 24,
                 "placed": false
-              },
-              null,
-              null
+              }
             ],
             [
               {
@@ -7671,21 +7494,9 @@
               },
               {
                 "lineId": "line_c1",
-                "at": 2,
-                "placed": false
-              },
-              {
-                "lineId": "line_c1",
                 "at": 7,
                 "placed": false
               },
-              {
-                "lineId": "line_c1",
-                "at": 11,
-                "placed": false
-              }
-            ],
-            [
               {
                 "lineId": "line_c1",
                 "at": 16,
@@ -7695,9 +7506,7 @@
                 "lineId": "line_c1",
                 "at": 20,
                 "placed": false
-              },
-              null,
-              null
+              }
             ],
             [
               {
@@ -7721,21 +7530,9 @@
               },
               {
                 "lineId": "line_c1",
-                "at": 2,
-                "placed": false
-              },
-              {
-                "lineId": "line_c1",
                 "at": 7,
                 "placed": false
               },
-              {
-                "lineId": "line_c1",
-                "at": 11,
-                "placed": false
-              }
-            ],
-            [
               {
                 "lineId": "line_c1",
                 "at": 16,
@@ -7745,9 +7542,7 @@
                 "lineId": "line_c1",
                 "at": 20,
                 "placed": false
-              },
-              null,
-              null
+              }
             ],
             [
               {
@@ -10994,7 +10789,7 @@
           "expected": {
             "passIndex": 0,
             "lineId": "line_v3",
-            "at": 6.5
+            "at": 25.5
           }
         },
         {
@@ -12320,18 +12115,8 @@
                 "bars": 1
               },
               {
-                "at": 8,
-                "chordsBefore": 1,
-                "bars": 1
-              },
-              {
                 "at": 18,
                 "chordsBefore": 2,
-                "bars": 1
-              },
-              {
-                "at": 28,
-                "chordsBefore": 3,
                 "bars": 1
               }
             ],
@@ -13015,6 +12800,10 @@
                   {
                     "chordId": "chd_a1",
                     "beat": 1
+                  },
+                  {
+                    "chordId": "chd_a2",
+                    "beat": 3
                   }
                 ],
                 "lyricAnchor": {
@@ -13025,37 +12814,17 @@
               {
                 "chords": [
                   {
-                    "chordId": "chd_a2",
-                    "beat": 1
-                  }
-                ],
-                "lyricAnchor": {
-                  "lineId": "line_a",
-                  "at": 8
-                }
-              },
-              {
-                "chords": [
-                  {
                     "chordId": "chd_a3",
                     "beat": 1
+                  },
+                  {
+                    "chordId": "chd_a4",
+                    "beat": 3
                   }
                 ],
                 "lyricAnchor": {
                   "lineId": "line_a",
                   "at": 18
-                }
-              },
-              {
-                "chords": [
-                  {
-                    "chordId": "chd_a4",
-                    "beat": 1
-                  }
-                ],
-                "lyricAnchor": {
-                  "lineId": "line_a",
-                  "at": 28
                 }
               },
               {
@@ -13877,6 +13646,10 @@
                     {
                       "chordId": "chd_a1",
                       "beat": 1
+                    },
+                    {
+                      "chordId": "chd_a2",
+                      "beat": 3
                     }
                   ],
                   "lyricAnchor": {
@@ -13887,37 +13660,17 @@
                 {
                   "chords": [
                     {
-                      "chordId": "chd_a2",
-                      "beat": 1
-                    }
-                  ],
-                  "lyricAnchor": {
-                    "lineId": "line_a",
-                    "at": 8
-                  }
-                },
-                {
-                  "chords": [
-                    {
                       "chordId": "chd_a3",
                       "beat": 1
+                    },
+                    {
+                      "chordId": "chd_a4",
+                      "beat": 3
                     }
                   ],
                   "lyricAnchor": {
                     "lineId": "line_a",
                     "at": 18
-                  }
-                },
-                {
-                  "chords": [
-                    {
-                      "chordId": "chd_a4",
-                      "beat": 1
-                    }
-                  ],
-                  "lyricAnchor": {
-                    "lineId": "line_a",
-                    "at": 28
                   }
                 },
                 {
@@ -13977,31 +13730,19 @@
                 }
               },
               {
-                "chords": [],
-                "lyricAnchor": null
-              },
-              {
                 "chords": [
                   {
                     "chordId": "chd_a3",
                     "beat": 1
+                  },
+                  {
+                    "chordId": "chd_a4",
+                    "beat": 3
                   }
                 ],
                 "lyricAnchor": {
                   "lineId": "line_a",
                   "at": 18
-                }
-              },
-              {
-                "chords": [
-                  {
-                    "chordId": "chd_a4",
-                    "beat": 1
-                  }
-                ],
-                "lyricAnchor": {
-                  "lineId": "line_a",
-                  "at": 28
                 }
               },
               {
@@ -15259,10 +15000,12 @@
       ]
     },
     "setRhythmBarCount": {
-      "about": "A section given a number of bars in the chord grid (issue #462): empty bars added at its end, or the last taken off - only ones without chord changes.",
+      "about": "A section given a number of bars in the chord grid (issue #462): empty bars added at its end, or the last taken off; with chords in them and the section given (issue #475), its chords shared out again over the bars left, in proportion, on whole beats else halves, the words following.",
       "params": [
         "rhythm",
-        "count"
+        "count",
+        "section",
+        "beatsPerBar"
       ],
       "cases": [
         {
@@ -15344,7 +15087,7 @@
           }
         },
         {
-          "name": "the bar with Bm taken off: refused",
+          "name": "the bar with Bm taken off, without the section: refused",
           "args": [
             {
               "beatsPerBar": null,
@@ -15381,6 +15124,138 @@
             2
           ],
           "expected": null
+        },
+        {
+          "name": "the bar with Bm taken off: the chords shared out over two bars",
+          "args": [
+            {
+              "beatsPerBar": null,
+              "bars": [
+                {
+                  "chords": [
+                    {
+                      "chordId": "chd_v1",
+                      "beat": 1
+                    },
+                    {
+                      "chordId": "chd_v2",
+                      "beat": 3
+                    }
+                  ],
+                  "lyricAnchor": {
+                    "lineId": "line_v1",
+                    "at": 0
+                  }
+                },
+                {
+                  "chords": []
+                },
+                {
+                  "chords": [
+                    {
+                      "chordId": "chd_v3",
+                      "beat": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            2,
+            {
+              "id": "sec_verse",
+              "type": "verse",
+              "label": null,
+              "showLabel": true,
+              "lines": [
+                {
+                  "id": "line_v1",
+                  "kind": "lyric",
+                  "text": "Every song is like gold",
+                  "chords": [
+                    {
+                      "id": "chd_v1",
+                      "at": 0,
+                      "raw": "D"
+                    },
+                    {
+                      "id": "chd_v2",
+                      "at": 14,
+                      "raw": "A"
+                    },
+                    {
+                      "id": "chd_v3",
+                      "at": 19,
+                      "raw": "Bm"
+                    }
+                  ]
+                }
+              ],
+              "rhythm": {
+                "beatsPerBar": null,
+                "bars": [
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_v1",
+                        "beat": 1
+                      },
+                      {
+                        "chordId": "chd_v2",
+                        "beat": 3
+                      }
+                    ],
+                    "lyricAnchor": {
+                      "lineId": "line_v1",
+                      "at": 0
+                    }
+                  },
+                  {
+                    "chords": []
+                  },
+                  {
+                    "chords": [
+                      {
+                        "chordId": "chd_v3",
+                        "beat": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            4
+          ],
+          "expected": {
+            "beatsPerBar": null,
+            "bars": [
+              {
+                "lyricAnchor": {
+                  "lineId": "line_v1",
+                  "at": 0
+                },
+                "chords": [
+                  {
+                    "chordId": "chd_v1",
+                    "beat": 1
+                  },
+                  {
+                    "chordId": "chd_v2",
+                    "beat": 2
+                  }
+                ]
+              },
+              {
+                "lyricAnchor": null,
+                "chords": [
+                  {
+                    "chordId": "chd_v3",
+                    "beat": 2,
+                    "pinned": true
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -19619,7 +19494,7 @@
             },
             null
           ],
-          "expected": 36.666666666666664
+          "expected": 26.666666666666664
         },
         {
           "name": "none given, a section's own rhythm and a 3/4 pass",
@@ -19906,9 +19781,6 @@
             3.3333333333333335,
             3.3333333333333335,
             3.3333333333333335,
-            3.3333333333333335,
-            3.3333333333333335,
-            3.3333333333333335,
             3.3333333333333335
           ]
         },
@@ -20035,17 +19907,14 @@
             200
           ],
           "expected": [
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183,
-            18.181818181818183
+            25.000000000000004,
+            25.000000000000004,
+            25.000000000000004,
+            25.000000000000004,
+            25.000000000000004,
+            25.000000000000004,
+            25.000000000000004,
+            25.000000000000004
           ]
         },
         {
@@ -20464,7 +20333,7 @@
             37.5
           ],
           "expected": {
-            "position": 8.25,
+            "position": 5.999999999999999,
             "back": 37.5
           }
         },
@@ -20592,7 +20461,7 @@
             1000
           ],
           "expected": {
-            "position": 44,
+            "position": 32,
             "back": 200.00000000000003
           }
         },
@@ -20881,28 +20750,28 @@
               "passId": "fi_verse",
               "lineId": "line_v1",
               "start": 0,
-              "beats": 12
+              "beats": 8
             },
             {
               "passIndex": 0,
               "passId": "fi_verse",
               "lineId": "line_v3",
-              "start": 12,
+              "start": 8,
               "beats": 8
             },
             {
               "passIndex": 1,
               "passId": "fi_chorus",
               "lineId": "line_c1",
-              "start": 20,
-              "beats": 12
+              "start": 16,
+              "beats": 8
             },
             {
               "passIndex": 2,
               "passId": "fi_chorus2",
               "lineId": "line_c1",
-              "start": 32,
-              "beats": 12
+              "start": 24,
+              "beats": 8
             }
           ]
         },

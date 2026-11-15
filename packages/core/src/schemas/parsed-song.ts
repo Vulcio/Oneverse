@@ -1,5 +1,5 @@
 import type { NotatedBar } from "../chords-over-lyrics/bar-notation.js";
-import { rhythmFromBarLines, suggestedBarLines, type BarLine, type SectionBarLines } from "../song-document/bar-lines.js";
+import { rhythmFromBarLines, barLineBeforeEachChord, type BarLine, type SectionBarLines } from "../song-document/bar-lines.js";
 import type { SectionType } from "../constants/index.js";
 import type { Line, Segment } from "./shared.js";
 import type { LineV2, Rhythm, SectionV2, SongDocumentV2 } from "./song-document-v2.js";
@@ -127,7 +127,7 @@ export function parsedSectionsToV2(sections: ParsedSection[], bars: ImportedBars
  */
 export function importedRhythm(section: SectionV2, bars: ImportedBars, beatsPerBar = 4): Rhythm | null {
   if (!section.lines.some((line) => bars.marks.has(line.id))) return null;
-  const suggested = suggestedBarLines(section);
+  const suggested = barLineBeforeEachChord(section);
   const marks: SectionBarLines = {};
   for (const line of section.lines) {
     if (line.kind === "note") continue;

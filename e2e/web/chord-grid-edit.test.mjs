@@ -40,20 +40,20 @@ try {
     await page.goto(`${WEB}/library/${song.id}`);
     await page.getByTestId("chart-view-grid").click();
     await grid().waitFor();
-    // As filled in from the chart: the verse's 4 + 3 chords and a line without (2 bars), the chorus's 2.
-    if ((await grid().locator("[data-grid-bar]").count()) !== 11) throw new Error(`${await grid().locator("[data-grid-bar]").count()} bars`);
+    // As filled in from the chart (issue #475): two bars a sung line, its chords shared - G C | G D | G Em | D | - | - || C | G.
+    if ((await grid().locator("[data-grid-bar]").count()) !== 8) throw new Error(`${await grid().locator("[data-grid-bar]").count()} bars`);
+    if ((await chordsOf(0)) !== "G C" || (await chordsOf(3)) !== "D") throw new Error(`${await chordsOf(0)} / ${await chordsOf(3)}`);
     await fromDisplay("chord-grid-edit-start");
     await page.getByTestId("chord-grid-edit").waitFor();
     // Two places a beat: on it and its "and".
     if ((await bar(0).locator("[data-grid-slot]").count()) !== 8) throw new Error("not two places a beat");
   });
 
-  await step("a chord tapped, then a beat: C on beat 3 of bar 1, with G", async () => {
-    await bar(1).locator('[data-grid-chord="C"]').click();
-    await slot(0, 3).click();
+  await step("a chord tapped, then a beat: C on beat 2 of bar 1, with G", async () => {
+    await bar(0).locator('[data-grid-chord="C"]').click();
+    await slot(0, 2).click();
     if ((await chordsOf(0)) !== "G C") throw new Error(`bar 1: ${await chordsOf(0)}`);
-    if ((await chordsOf(1)) !== "") throw new Error(`bar 2: ${await chordsOf(1)}`);
-    if ((await bar(0).locator('[data-grid-chord="C"]').getAttribute("data-beat-at")) !== "3") throw new Error("C not on beat 3");
+    if ((await bar(0).locator('[data-grid-chord="C"]').getAttribute("data-beat-at")) !== "2") throw new Error("C not on beat 2");
   });
 
   await step("a chord dragged onto the and of 2: D in bar 4", async () => {
@@ -67,29 +67,28 @@ try {
   });
 
   await step("a chord can't pass the one before it: refused, said why", async () => {
-    // The third chord (G, bar 3) before C, now on beat 3 of bar 1.
+    // The G of bar 3 before C, now on beat 2 of bar 1.
     await bar(2).locator('[data-grid-chord="G"]').click();
-    await slot(0, 2).click();
+    await slot(0, 1.5).click();
     await page.getByTestId("chord-grid-problem").waitFor();
-    if ((await chordsOf(2)) !== "G") throw new Error(`bar 3: ${await chordsOf(2)}`);
+    if ((await chordsOf(2)) !== "G Em") throw new Error(`bar 3: ${await chordsOf(2)}`);
   });
 
-  await step("a bar's tools: the empty bar 8 made 2 beats, a bar added after it and removed", async () => {
-    await bar(7).locator("[data-grid-words]").click();
+  await step("a bar's tools: the empty bar 6 made 2 beats, a bar added after it and removed", async () => {
+    await bar(5).locator("[data-grid-words]").click();
     const tools = page.getByTestId("chord-grid-bar-tools");
     await tools.waitFor();
     await tools.getByTestId("chord-grid-shorter").click();
     await tools.getByTestId("chord-grid-shorter").click();
-    if ((await bar(7).locator("[data-grid-beat]").count()) !== 2) throw new Error(`${await bar(7).locator("[data-grid-beat]").count()} beats`);
+    if ((await bar(5).locator("[data-grid-beat]").count()) !== 2) throw new Error(`${await bar(5).locator("[data-grid-beat]").count()} beats`);
     await tools.getByTestId("chord-grid-add-after").click();
-    if ((await grid().locator("[data-grid-bar]").count()) !== 12) throw new Error("no bar added");
+    if ((await grid().locator("[data-grid-bar]").count()) !== 9) throw new Error("no bar added");
     // The new bar is picked: removed again.
     await tools.getByTestId("chord-grid-remove").click();
-    if ((await grid().locator("[data-grid-bar]").count()) !== 11) throw new Error("not removed");
+    if ((await grid().locator("[data-grid-bar]").count()) !== 8) throw new Error("not removed");
     // A bar with chords can't be removed until they're moved.
     await bar(0).locator("[data-grid-words]").click();
     if (!(await tools.getByTestId("chord-grid-remove").isDisabled())) throw new Error("a bar with chords can be removed");
-    await page.screenshot({ path: `${SP}/chord-grid-edit.png` });
   });
 
   await step("saved as the verse's rhythm, and the grid reads it after a reload", async () => {
@@ -99,14 +98,14 @@ try {
     const rhythm = saved.documentJson.sections[0].rhythm;
     const chordIds = new Map(saved.documentJson.sections[0].lines.flatMap((line) => line.chords.map((chord) => [chord.id, chord.raw])));
     const first = rhythm.bars[0].chords.map((chord) => `${chordIds.get(chord.chordId)}@${chord.beat}`).join(" ");
-    if (first !== "G@1 C@3") throw new Error(`bar 1: ${first}`);
+    if (first !== "G@1 C@2") throw new Error(`bar 1: ${first}`);
     if (rhythm.bars[3].chords.map((chord) => `${chordIds.get(chord.chordId)}@${chord.beat}`).join(" ") !== "D@2.5") throw new Error(JSON.stringify(rhythm.bars[3]));
-    if (rhythm.bars[7].beats !== 2) throw new Error(JSON.stringify(rhythm.bars[7]));
-    if (rhythm.bars.length !== 9) throw new Error(`${rhythm.bars.length} bars`);
+    if (rhythm.bars[5].beats !== 2) throw new Error(JSON.stringify(rhythm.bars[5]));
+    if (rhythm.bars.length !== 6) throw new Error(`${rhythm.bars.length} bars`);
     await page.reload();
     await grid().waitFor();
     if ((await chordsOf(0)) !== "G C") throw new Error(`bar 1 after reload: ${await chordsOf(0)}`);
-    if ((await bar(7).locator("[data-grid-beat]").count()) !== 2) throw new Error("bar 8 not 2 beats after reload");
+    if ((await bar(5).locator("[data-grid-beat]").count()) !== 2) throw new Error("bar 6 not 2 beats after reload");
     // A chord on an "and" (issue #376): its beat's block in two halves, the chord in the second.
     if ((await bar(3).locator('[data-grid-beat="1"] [data-grid-half="and"] [data-grid-chord="D"]').count()) !== 1) throw new Error("D not in the and's half of beat 2");
     // The words still under their bars.

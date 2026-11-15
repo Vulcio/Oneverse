@@ -1,5 +1,5 @@
 import type { Rhythm, SectionV2 } from "../schemas/song-document-v2.js";
-import { wordStart } from "./bars.js";
+import { lineBars, wordStart } from "./bars.js";
 
 /**
  * Editing a section's bars in the chord grid (issue #238): its chords placed
@@ -18,27 +18,28 @@ const MAX_BEATS = 32;
 
 /**
  * A section's rhythm, to edit: its own, else the bars `chartBars()` fills in
- * from the chart written as one - each chord a bar on its first beat, a sung
- * line at least two, a line of chords alone a bar a chord, two empty bars
- * without lines - each line's first bar placed at its start and the others
- * where their chord's word starts, so the grid shows the same bars and words
- * before and after.
+ * from the chart written as one (`lineBars`: a sung line two bars, its
+ * chords shared between them; a line of chords alone a bar a chord; two
+ * empty bars without lines) - each line's first bar placed at its start and
+ * the others where their first chord's word starts, so the grid shows the
+ * same bars and words before and after.
  */
-export function editableRhythm(section: Pick<SectionV2, "lines" | "rhythm">): Rhythm {
+export function editableRhythm(section: Pick<SectionV2, "lines" | "rhythm">, timeBeats = 4): Rhythm {
   if (section.rhythm && section.rhythm.bars.length > 0) return section.rhythm;
   const bars: RhythmBar[] = [];
+  const beats = section.rhythm?.beatsPerBar ?? Math.max(1, Math.round(timeBeats));
   for (const line of section.lines) {
     if (line.kind === "note") continue;
     const sung = line.text.trim().length > 0;
-    const count = Math.max(line.chords.length, sung ? 2 : 1);
     let anchoredAt = 0;
-    for (let index = 0; index < count && bars.length < MAX_BARS; index++) {
-      const chord = line.chords[index];
+    lineBars(line.chords.length, sung, beats).forEach((planned, index) => {
+      if (bars.length >= MAX_BARS) return;
+      const chord = planned[0] && planned[0].beat === 1 ? line.chords[planned[0].chord] : undefined;
       const at = chord && sung ? wordStart(line.text, chord.at) : null;
       const anchor = index === 0 ? { lineId: line.id, at: 0 } : at !== null && at > anchoredAt ? { lineId: line.id, at } : null;
       if (anchor) anchoredAt = anchor.at;
-      bars.push({ chords: chord ? [{ chordId: chord.id, beat: 1 }] : [], lyricAnchor: anchor });
-    }
+      bars.push({ chords: planned.map((one) => ({ chordId: line.chords[one.chord]!.id, beat: one.beat })), lyricAnchor: anchor });
+    });
   }
   if (bars.length === 0) bars.push({ chords: [], lyricAnchor: null }, { chords: [], lyricAnchor: null });
   return { beatsPerBar: section.rhythm?.beatsPerBar ?? null, bars };

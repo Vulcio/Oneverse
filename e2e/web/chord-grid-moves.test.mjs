@@ -63,27 +63,28 @@ try {
     if (await page.getByTestId("display-panel").isVisible()) await page.getByTestId("display-close").click();
     await page.getByTestId("chord-grid-edit").waitFor();
     if ((await page.getByTestId("chord-grid-mode-inPlace").getAttribute("aria-pressed")) !== "true") throw new Error("In place isn't the default");
-    await expectBars(0, ["C@1*", "F@1*", "C@1*", "Am@1*", "G@1*"]);
-    if ((await pass(0).getByTestId("chord-grid-bars-count").innerText()) !== "5 bars") throw new Error(await pass(0).getByTestId("chord-grid-bars-count").innerText());
+    // Two bars a sung line (issue #475): the first line's three chords shared, F on beat 3.
+    await expectBars(0, ["C@1* F@3", "C@1*", "Am@1*", "G@1*"]);
+    if ((await pass(0).getByTestId("chord-grid-bars-count").innerText()) !== "4 bars") throw new Error(await pass(0).getByTestId("chord-grid-bars-count").innerText());
   });
 
   await step("a chord picked: its floating toolbar unpins it", async () => {
-    await bar(0, 2).locator('[data-grid-chord="C"]').click();
+    await bar(0, 1).locator('[data-grid-chord="C"]').click();
     const tools = page.getByTestId("chord-tools");
     await tools.waitFor();
     await tools.getByTestId("chord-tools-pin").click();
-    await expectBars(0, ["C@1*", "F@1*", "C@1", "Am@1*", "G@1*"]);
+    await expectBars(0, ["C@1* F@3", "C@1", "Am@1*", "G@1*"]);
     await tools.getByTestId("chord-tools-done").click();
     await tools.waitFor({ state: "detached" });
   });
 
-  await step("F dragged to beat 3 of bar 1: a preview while dragging, the C after it spread evenly up to Am", async () => {
-    const drop = await drag(bar(0, 1).locator('[data-grid-chord="F"]'), slot(0, 0, 3));
+  await step("F dragged to beat 2 of bar 1: a preview while dragging, the C after it spread evenly up to Am", async () => {
+    const drop = await drag(bar(0, 0).locator('[data-grid-chord="F"]'), slot(0, 0, 2));
     await page.locator('[data-testid="chord-grid-status"]').filter({ hasText: "In place: 1 chord moves to make room." }).waitFor();
     if ((await grid().locator("[data-grid-chord][data-moving]").count()) < 1) throw new Error("the C moving isn't shown");
     await page.screenshot({ path: `${SP}/chord-grid-moves-drag.png` });
     await drop();
-    await expectBars(0, ["C@1* F@3*", "C@4", "", "Am@1*", "G@1*"]);
+    await expectBars(0, ["C@1* F@2*", "C@2", "Am@1*", "G@1*"]);
   });
 
   await step("Verse 2, with the same chords, is offered the same bars, dashed; applied and linked", async () => {
@@ -94,30 +95,29 @@ try {
     await page.screenshot({ path: `${SP}/chord-grid-moves-offer.png` });
     await offer.getByTestId("chord-grid-offer-apply").click();
     await offer.waitFor({ state: "detached" });
-    await expectBars(2, ["C@1* F@3*", "C@4", "", "Am@1*", "G@1*"]);
+    await expectBars(2, ["C@1* F@2*", "C@2", "Am@1*", "G@1*"]);
     await pass(0).getByTestId("chord-grid-linked").waitFor();
   });
 
   await step("Ripple and the arrow keys: Am a beat later, G with it, a bar added; Verse 2 too, linked", async () => {
     await page.getByTestId("chord-grid-mode-ripple").click();
-    await bar(0, 3).locator('[data-grid-chord="Am"]').focus();
+    await bar(0, 2).locator('[data-grid-chord="Am"]').focus();
     await page.keyboard.press("ArrowRight");
-    await expectBars(0, ["C@1* F@3*", "C@4", "", "Am@2*", "G@2*", ""]);
-    await expectBars(2, ["C@1* F@3*", "C@4", "", "Am@2*", "G@2*", ""]);
-    // The focus stays on the chord it moved: once more, with Shift, a whole bar.
-    await page.keyboard.press("Shift+ArrowLeft");
-    await expectBars(0, ["C@1* F@3*", "C@4", "Am@2*", "G@2*", ""]);
+    await expectBars(0, ["C@1* F@2*", "C@2", "Am@2*", "G@2*", ""]);
+    await expectBars(2, ["C@1* F@2*", "C@2", "Am@2*", "G@2*", ""]);
   });
 
-  await step("a section's number of bars: the chorus given one more, the verses one fewer", async () => {
+  await step("a section's number of bars: the chorus given one more, the verses fewer, their chords shared out again", async () => {
     await pass(1).getByTestId("chord-grid-more-bars").click();
     if ((await pass(1).getByTestId("chord-grid-bars-count").innerText()) !== "3 bars") throw new Error(await pass(1).getByTestId("chord-grid-bars-count").innerText());
-    // Verse 1's empty last bar taken off (Verse 2's too, linked); then a bar with chords can't be: refused, said why.
+    // Verse 1's empty last bar taken off (Verse 2's too, linked).
     await pass(0).getByTestId("chord-grid-fewer-bars").click();
-    await expectBars(0, ["C@1* F@3*", "C@4", "Am@2*", "G@2*"]);
-    await expectBars(2, ["C@1* F@3*", "C@4", "Am@2*", "G@2*"]);
+    await expectBars(0, ["C@1* F@2*", "C@2", "Am@2*", "G@2*"]);
+    // Then one with chords: 16 beats into 12, each chord where it falls (issue #475), words with them.
     await pass(0).getByTestId("chord-grid-fewer-bars").click();
-    await page.getByTestId("chord-grid-problem").waitFor();
+    await expectBars(0, ["C@1* F@2*", "C@1 Am@4*", "G@3*"]);
+    await expectBars(2, ["C@1* F@2*", "C@1 Am@4*", "G@3*"]);
+    if (await page.getByTestId("chord-grid-problem").count()) throw new Error(await page.getByTestId("chord-grid-problem").innerText());
     await page.screenshot({ path: `${SP}/chord-grid-moves.png` });
   });
 
@@ -130,7 +130,7 @@ try {
       return section.rhythm.bars.map((one) => one.chords.map((chord) => `${raw.get(chord.chordId)}@${chord.beat}${chord.pinned ? "!" : chord.pinned === false ? "~" : ""}`).join(" "));
     };
     const [verse1, chorus, verse2] = saved.documentJson.sections;
-    const expected = ["C@1 F@3!", "C@4", "Am@2!", "G@2!"];
+    const expected = ["C@1 F@2!", "C@1~ Am@4!", "G@3!"];
     if (JSON.stringify(bars(verse1)) !== JSON.stringify(expected)) throw new Error(`verse 1: ${JSON.stringify(bars(verse1))}`);
     if (JSON.stringify(bars(verse2)) !== JSON.stringify(expected)) throw new Error(`verse 2: ${JSON.stringify(bars(verse2))}`);
     if (chorus.rhythm.bars.length !== 3) throw new Error(`chorus: ${chorus.rhythm.bars.length} bars`);

@@ -1,4 +1,5 @@
 import type { Rhythm, SectionV2 } from "../schemas/song-document-v2.js";
+import { lineBars } from "./bars.js";
 
 /**
  * Bar lines in the lyrics (issue #238): where each bar of a section starts,
@@ -144,17 +145,37 @@ export function barLinesFromRhythm(section: Pick<SectionV2, "lines" | "rhythm">)
 
 /**
  * Bar lines where the chart's own bars would be (what `chartBars()` fills
- * in): one before each chord, a sung line taking at least two bars, a line
- * of chords alone a bar each - a start to move them from.
+ * in, `lineBars`): a sung line two bars, its chords shared between them, a
+ * line of chords alone a bar each - one before each bar's first chord, a
+ * bar without a chord held from the one before - a start to move them from.
  */
-export function suggestedBarLines(section: Pick<SectionV2, "lines">): SectionBarLines {
+export function suggestedBarLines(section: Pick<SectionV2, "lines">, beats = 4): SectionBarLines {
+  const result: SectionBarLines = {};
+  for (const line of section.lines) {
+    if (line.kind === "note") continue;
+    const marks: BarLine[] = [];
+    for (const bar of lineBars(line.chords.length, line.text.trim().length > 0, beats)) {
+      const first = bar[0];
+      const last = marks.at(-1);
+      if (!first && last) last.bars++;
+      else marks.push({ at: first ? Math.min(line.chords[first.chord]!.at, line.text.length) : 0, chordsBefore: first?.chord ?? 0, bars: 1 });
+    }
+    result[line.id] = marks;
+  }
+  return result;
+}
+
+/**
+ * A bar line before each chord, a sung line with one chord holding it a second bar: an imported line without bar
+ * lines of its own in a section that has some (issue #460), where a lead sheet's chords are a bar each.
+ */
+export function barLineBeforeEachChord(section: Pick<SectionV2, "lines">): SectionBarLines {
   const result: SectionBarLines = {};
   for (const line of section.lines) {
     if (line.kind === "note") continue;
     const sung = line.text.trim().length > 0;
     const marks: BarLine[] = line.chords.map((chord, index) => ({ at: Math.min(chord.at, line.text.length), chordsBefore: index, bars: 1 }));
     if (marks.length === 0) marks.push({ at: 0, chordsBefore: 0, bars: sung ? 2 : 1 });
-    // A sung line with one chord holds it for a second bar.
     else if (sung && marks.length === 1) marks[0]!.bars = 2;
     result[line.id] = marks;
   }
