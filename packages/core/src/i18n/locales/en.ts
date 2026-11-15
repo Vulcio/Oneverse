@@ -4209,7 +4209,7 @@ const en = {
     notInOrder: "Not in the song order",
     label: "Song chart",
     mode: "Editor mode",
-    modes: { visual: "Visual", text: "Text", preview: "Preview" },
+    modes: { visual: "Visual", text: "Text", bars: "Bars", preview: "Preview" },
     undo: "Undo",
     redo: "Redo",
     noteLine: "Make the line a note for the band (or lyrics again)",

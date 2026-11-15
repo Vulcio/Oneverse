@@ -27,6 +27,7 @@ import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/r
 import { ChevronLeft, ChevronRight, FileUp, Minus, Plus, Redo2, StickyNote, SeparatorVertical, Trash2, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { ChordGrid } from "#/components/chord-grid";
 import { DisplayPanel } from "#/components/display-panel";
 import { chartOfSections, SongChart } from "@oneverse/screen/components/song-chart";
 import { useDisplaySettings } from "#/lib/display-settings";
@@ -69,8 +70,8 @@ import {
   type ChordViewEvents,
 } from "./extensions";
 
-export type EditorMode = "visual" | "text" | "preview";
-const MODES: EditorMode[] = ["visual", "text", "preview"];
+export type EditorMode = "visual" | "text" | "bars" | "preview";
+const MODES: EditorMode[] = ["visual", "text", "bars", "preview"];
 
 /** What the toolbar edits beside the key (issue #248), as Song info's form holds them. */
 export interface SongFacts {
@@ -91,6 +92,8 @@ type EditorProps = {
   /** Opens "Replace from a file or paste…" (issue #254). */
   onReplaceChart?: () => void;
   readOnly: boolean;
+  /** The song, for the Bars grid's playing (its stems, the click); a new song has none yet. */
+  songId?: string;
 };
 
 /** Typing in the song together (issue #27): what the editor needs to join the others, where Admin turned it on. */
@@ -159,6 +162,7 @@ function EditorBody({
   onFactChange,
   onReplaceChart,
   readOnly,
+  songId,
   room,
   me,
 }: EditorProps & { room: SharedSong | null; me?: { name: string; color: string } }) {
@@ -464,8 +468,11 @@ function EditorBody({
         {mode === "visual" && editor ? <Palette editor={editor} songKey={songKey} sections={sections} /> : null}
         {mode === "visual" && editor ? <ChordBar editor={editor} songKey={songKey} used={chordsUsed(sections)} checks={chordChecks.chords} /> : null}
         {mode === "text" ? <TextMode sections={sections} onChange={(next) => onChangeRef.current(next)} locked={othersHere > 0} /> : null}
+        {mode === "bars" ? (
+          <BarsMode songId={songId} sections={sections} flow={flow} songKey={songKey} timeSignature={facts.timeSignature} onChange={readOnly || othersHere > 0 ? undefined : (next) => onChangeRef.current(next)} />
+        ) : null}
         {mode === "preview" ? <EditPreview chart={chartOfSections(sections, flow, songKey || null)} withPanel /> : null}
-        {mode !== "preview" ? (
+        {mode !== "preview" && mode !== "bars" ? (
           <aside className="hidden min-w-0 flex-col gap-2 border-l pl-6 @7xl:flex" aria-label={t("structuredEditor.modes.preview")} data-testid="editor-side-preview">
             <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("structuredEditor.modes.preview")}</p>
             <EditPreview chart={chartOfSections(sections, flow, songKey || null)} withPanel />
@@ -495,6 +502,48 @@ function endOfOrder(editor: Editor): number {
     }
   });
   return at;
+}
+
+/**
+ * The song's bars (issue #465): the chord grid's Edit bars in the editor, chords dragged onto beats as in Practice,
+ * each change made to the sections at once (the editor's Save saves them, Undo of the chart doesn't reach them).
+ * The bar lines in the chart follow, as the bars' first words.
+ */
+function BarsMode({
+  songId,
+  sections,
+  flow,
+  songKey,
+  timeSignature,
+  onChange,
+}: {
+  songId?: string;
+  sections: SectionV2[];
+  flow: SectionInstance[];
+  songKey: string;
+  timeSignature: string;
+  onChange?: (sections: SectionV2[]) => void;
+}) {
+  const { t } = useTranslation();
+  const display = useDisplaySettings("EDIT");
+  const chart = useMemo(() => {
+    const [numerator, denominator] = timeSignature.split("/").map(Number);
+    return { ...chartOfSections(sections, flow, songKey || null), ...(numerator && denominator ? { timeSignature: { numerator, denominator } } : {}) };
+  }, [sections, flow, songKey, timeSignature]);
+  const document = useMemo(() => ({ sections }), [sections]);
+  return (
+    <div className="min-w-0" style={{ ["--grid-sticky-top" as string]: "calc(3.5rem + var(--song-header-h, 0px) + 3rem)" }} data-testid="editor-bars">
+      <ChordGrid
+        songId={songId ?? "new-song"}
+        chart={chart}
+        document={document}
+        chordColors={display.chordColors}
+        barsPerRow={display.gridBarsPerRow}
+        emptyText={t("songEditor.previewEmpty")}
+        onChange={onChange ? (next) => onChange(next as SectionV2[]) : undefined}
+      />
+    </div>
+  );
 }
 
 /**
