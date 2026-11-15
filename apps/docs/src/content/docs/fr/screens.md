@@ -290,7 +290,7 @@ Si vous fermez la vue opérateur, les écrans reviennent à qui mène. Si c'est 
 
 ### La liste et ses diapositives
 
-La console s'adapte à la place qu'elle a. Sur un ordinateur portable, les diapositives occupent le milieu et une colonne à côté montre ce qui est sur les écrans, les minuteurs et les messages ; sur un grand écran, le **Déroulé** a sa propre colonne à gauche. Sur une tablette tenue droite, ou un téléphone, ce qui est sur les écrans vient d'abord, le déroulé est une rangée qu'on fait défiler, et les diapositives et les **Minuteurs et messages** sont deux onglets.
+Les diapositives d'abord. Sur un ordinateur portable, le **Déroulé** est une colonne à gauche et les diapositives occupent le reste ; sur une tablette tenue droite, ou un téléphone, le déroulé est une rangée qu'on fait défiler au-dessus d'elles. **Minuteurs et messages** est un onglet à côté de **Diapositives**. Ce qui est sur les écrans, et les écrans eux-mêmes, sont dans **Écrans et calques** (plus bas).
 
 Le **Déroulé** montre chaque élément de la liste, avec son nombre de diapositives. Celui qui est sur les écrans est marqué **À l'écran**, avec sa diapositive. Choisissez un élément pour voir ses diapositives ; son bouton écran affiche aussitôt sa première diapositive. Dans Songverse, la barre latérale montre aussi les chants de la liste, comme dans Live : celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface).
 
@@ -302,11 +302,14 @@ Les diapositives de l'élément choisi s'affichent en vignettes, colorées selon
 - **Couleur des sections** - sur **Toute la vignette**, sur son **En-tête seulement** (une bande colorée avec le nom de la section), ou **Aucune**.
 - **Regrouper les diapositives d'une section** - les diapositives de chaque section ensemble sous son nom, plutôt qu'une seule suite de vignettes.
 - **Diapositives par ligne** - **Autant que possible**, ou de 1 à 6 ; **Numéros des diapositives** ou non ; **Vignettes** **Claires, comme l'app** ou **Sombres, comme un écran**.
-- **Écrans** - comment **Écrans et calques** montre les écrans (plus bas) ; **Revenir aux réglages par défaut** annule tout.
+
+**Revenir aux réglages par défaut** annule tout.
 
 Cochez **Notes** pour voir les notes du chant sous les diapositives où elles sont : **Toutes les notes**, ou seulement celles des personnes qui tiennent l'un des [postes](/fr/organizations/#postes) de l'équipe (*Notes de : Média*), pour les repères qui vous sont destinés.
 
 ### Ce qui est à l'écran, et la suite
+
+En haut d'**Écrans et calques** :
 
 - **Sur les écrans** - la diapositive que les écrans affichent, son chant et sa section, s'ils sont au noir ou leurs paroles masquées, et le message par-dessus, s'il y en a un.
 - **Suivante** - la diapositive où les écrans iront ensuite : la suivante du chant, ou la première de l'élément suivant après la dernière. Appuyez dessus pour l'afficher (la flèche droite fait de même). À la fin de la liste, elle indique **Fin de la liste**.
@@ -323,25 +326,21 @@ Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans*
 
 ### Écrans et calques
 
-**Écrans et calques**, en haut à droite, ouvre un panneau sur la droite, à côté des diapositives plutôt que par-dessus, comme le panneau **Affichage**. Sur un téléphone, il s'ouvre en bas. Les diapositives, la barre latérale et le clavier restent utilisables pendant qu'il est ouvert. Il est assez large pour deux écrans côte à côte.
+**Écrans et calques**, en haut à droite, ouvre un panneau sur la droite, à côté des diapositives plutôt que par-dessus, comme le panneau **Affichage**. Faites glisser son bord gauche pour l'élargir ou le rétrécir (les flèches du clavier aussi, et un double clic le remet comme avant) ; cet appareil garde la largeur. Sur un téléphone, il s'ouvre en bas. Les diapositives, la barre latérale et le clavier restent utilisables pendant qu'il est ouvert.
 
-**Écrans** montre chaque écran de la liste tel qu'il est : son propre modèle, la diapositive affichée, ses minuteurs et messages, noir ou non, et les calques qu'il montre. Sous chacun, ses détails : son modèle, les calques qu'il ne montre jamais, et *effets désactivés* sur un écran qui ne suit pas. Un écran réglé sur la liste qui n'est pas connecté a aussi sa vignette, grisée, avec la dernière fois qu'on l'a vu.
+De haut en bas : ce qui est à l'écran et la suite (plus haut), les calques de tous les écrans, puis chaque écran.
 
-- **Grille** - tous, côte à côte.
-- **Un seul** - un onglet par écran ; celui choisi s'affiche en plus grand, avec ses **Calques** en dessous.
-- **Masquer** - pas d'images, seulement les calques.
+**Tous les écrans** est une rangée des calques que dessinent les écrans (voir [Calques](/fr/screens/#calques)), du haut vers le bas, chacun une icône : **Masques**, **Superpositions**, **Contenu**, **Média** et **Entrée vidéo**. Survolez-en une pour son nom. Un calque enfoncé est affiché ; appuyez pour le masquer, et à nouveau pour l'afficher. Sans **Contenu**, les écrans n'affichent que le fond (pour une vidéo ou un moment calme) pendant que les diapositives continuent d'avancer ; sans **Média**, les paroles s'affichent sur la couleur de base. Ensuite :
 
-Sous chaque écran, ses calques - **Masques**, **Superpositions**, **Contenu**, **Média**, **Entrée vidéo** - s'effacent sur cet écran seul d'une pression, jusqu'à la diapositive suivante (le retour de scène sans les paroles un instant, le hall sans le média) ; pressé à nouveau, le calque revient. Son bouton de calques ouvre tous les **Calques** de cet écran.
+- L'icône de la carte de titre met le nom de la liste et de l'équipe par-dessus ce qu'affichent les écrans, avant le culte ou entre deux parties.
+- **Vider** retire les paroles jusqu'à la diapositive ou au chant suivant, comme dans d'autres logiciels de présentation. Sa flèche vide plutôt **Les paroles**, **Fond et médias**, **Superpositions** ou **Tout**. Un calque vidé est marqué en ambre, et revient tout seul à la diapositive suivante, ou aussitôt avec **Remettre**, qui prend la place de Vider en attendant.
+- L'icône de remise à zéro, là seulement quand quelque chose diffère, réaffiche tous les calques, sur tous les écrans, sans la carte de titre.
 
-Sous les écrans, les **Calques** qu'ils dessinent (voir [Calques](/fr/screens/#calques)), du haut vers le bas : **Masques**, **Superpositions**, **Contenu**, **Média** et **Entrée vidéo**.
+**Écrans** montre chaque écran de la liste tel qu'il est : son propre modèle, la diapositive affichée, ses minuteurs et messages, noir ou non, et les calques qu'il montre. À côté de son nom, ses détails : son modèle, les calques qu'il ne montre jamais, et *effets désactivés* sur un écran qui ne suit pas. Un écran réglé sur la liste qui n'est pas connecté y est aussi, grisé, avec la dernière fois qu'on l'a vu. Les icônes à côté d'**Écrans** les montrent tous en **Grille**, ou **Un seul** à la fois avec un onglet par écran, et masquent ou affichent les aperçus : masqués, chaque écran est une ligne avec son nom et ses calques, pour un petit écran d'ordinateur.
+
+Sous chaque écran, la même rangée de calques, pour cet écran seul : le retour de scène sans les paroles un instant, le hall sans le média. Un changement pour un écran lui est propre ; un changement pour tous les écrans l'atteint aussi. Son icône de remise à zéro le remet comme tous les écrans.
 
 ![Écrans et calques : les superpositions vidées jusqu'à la diapositive suivante](../../../assets/screenshots/fr/operator-layers.jpg)
-
-- **Calques de** - **Tous les écrans**, ou l'un des écrans connectés. Un changement pour un écran lui est propre (« ses propres calques » à côté de son nom) ; un changement pour tous les écrans l'atteint aussi. **Comme tous les écrans** le remet comme les autres.
-- La case d'un calque l'affiche ou le masque. Sans **Contenu**, les écrans n'affichent que le fond (pour une vidéo ou un moment calme) pendant que les diapositives continuent d'avancer ; sans **Média**, les paroles s'affichent sur la couleur de base.
-- **Vider** masque un calque jusqu'à la diapositive ou au chant suivant, comme dans d'autres logiciels de présentation ; il revient tout seul, ou avec **Remettre**.
-- **Carte de titre par-dessus** - le nom de la liste et de l'équipe, par-dessus ce qu'affichent les écrans, avant le culte ou entre deux parties.
-- **Remettre à la normale** réaffiche tous les calques, sur tous les écrans, sans la carte de titre.
 
 Un calque qu'un écran écarte dans ses propres réglages reste masqué sur lui, quoi que dise le panneau.
 

@@ -13,7 +13,6 @@ import {
   changeOperatorDisplay,
   OPERATOR_COLUMNS,
   OPERATOR_FONTS,
-  OPERATOR_SCREEN_VIEWS,
   OPERATOR_SECTION_COLORS,
   OPERATOR_SIZES,
   OPERATOR_TILES,
@@ -274,9 +273,9 @@ export function DisplayMenu() {
   );
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="outline" data-testid="operator-display" />}>
+      <PopoverTrigger render={<Button variant="outline" title={t("screens.operator.display.button")} data-testid="operator-display" />}>
         <SlidersHorizontal />
-        {t("screens.operator.display.button")}
+        <span className="@max-3xl:sr-only">{t("screens.operator.display.button")}</span>
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-80 flex-col gap-3" data-testid="operator-display-menu">
         <p className="text-xs text-muted-foreground">{t("screens.operator.display.hint")}</p>
@@ -299,10 +298,6 @@ export function DisplayMenu() {
           {choice("columns", OPERATOR_COLUMNS, t("screens.operator.display.columns"))}
           {check("numbers", t("screens.operator.display.numbers"))}
           {choice("tiles", OPERATOR_TILES, t("screens.operator.display.tiles"))}
-        </fieldset>
-        <fieldset className="flex flex-col gap-2 border-t pt-3">
-          <legend className="sr-only">{t("screens.operator.screensView.title")}</legend>
-          {choice("screens", OPERATOR_SCREEN_VIEWS, t("screens.operator.display.screens"))}
         </fieldset>
         <Button variant="ghost" size="sm" className="self-start" onClick={resetOperatorDisplay} data-testid="operator-display-reset">
           <RotateCcw />

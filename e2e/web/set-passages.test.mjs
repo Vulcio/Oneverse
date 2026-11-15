@@ -115,8 +115,9 @@ try {
     await desk.goto(`${WEB}/sets/${set.id}/operate?item=${passageId}`);
     await desk.getByTestId("operator-slides").getByTestId("operator-slide").nth(1).getByText("green pastures.").waitFor({ timeout: 10000 });
     await desk.getByText(`2. Psalms 23:1-2 (${abbreviation})`).first().waitFor();
-    // What's up, beside the slides (issue #358).
+    // What's up (issue #358), above the slides and in Screens & layers.
     await desk.getByTestId("operator-state-presenting").getByText(`Psalms 23:1-2 (${abbreviation}) · 2 of 2`).waitFor({ timeout: 10000 });
+    await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-on-screens").getByText("He maketh me to lie down in green", { exact: false }).waitFor();
   });
 

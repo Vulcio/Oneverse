@@ -57,7 +57,7 @@ try {
 
   await step("hiding the media there reaches the set's screens", async () => {
     desk.drain();
-    await console.getByTestId("operator-route-only").getByTestId("operator-layer-media-shown").click();
+    await console.getByTestId("operator-route-only").getByTestId("operator-layer-media").click();
     const hidden = await desk.next((m) => m.type === "session" && !!m.stage?.layers?.hidden?.includes("media"), 5000);
     if (!hidden) throw new Error("the screens weren't told");
     await console.locator('[data-testid="operator-layer-media"][data-state="hidden"]').waitFor();

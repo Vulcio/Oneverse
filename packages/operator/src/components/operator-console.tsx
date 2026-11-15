@@ -20,14 +20,14 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { useLive, useOperatorHost } from "../host";
 import { ContinueOnPulse } from "./continue-on-pulse";
 import { Rundown, useOperatorItems, type OperatorItem } from "./operator-rundown";
-import { MessageCard, OperatorPresetsProvider, ProgramCard, TimersCard } from "./operator-stage";
+import { MessageCard, OperatorPresetsProvider, TimersCard } from "./operator-stage";
 import { Kbd } from "@oneverse/ui/components/kbd";
-import { LayersCard, ScreensView } from "./operator-screens";
+import { ScreensView } from "./operator-screens";
+import { changeOperatorDisplay, useOperatorDisplay } from "../lib/display-options";
 import { DisplayMenu, SlidesTab } from "./operator-slides";
 
-/** The console's width from which the stage's column sits beside the slides, and from which the running order gets its own column (px). */
+/** The console's width from which the running order gets its own column beside the slides (px). */
 const TWO_COLUMNS = 860;
-const THREE_COLUMNS = 1180;
 
 /** An element's width, as it changes (the console's own: beside a sidebar or a panel, not the window's). */
 function useWidth(ref: RefObject<HTMLElement | null>): number {
@@ -85,7 +85,7 @@ export function OperatorConsole({
   const width = useWidth(root);
   const view = copy.songs.find((one) => one.item.id === itemId) ?? null;
   const slidesTab = <SlidesTab copy={copy} view={view} item={items.find((one) => one.itemId === itemId) ?? null} members={members} positions={positions} />;
-  const columns = width >= THREE_COLUMNS ? 3 : width >= TWO_COLUMNS ? 2 : 1;
+  const columns = width >= TWO_COLUMNS ? 2 : 1;
 
   return (
     <div ref={root} className="@container flex flex-col gap-4" data-testid="operator" data-columns={columns}>
@@ -97,9 +97,10 @@ export function OperatorConsole({
         </div>
         <ShortcutsHelp />
         <DisplayMenu />
-        <Button variant={drawer ? "secondary" : "outline"} aria-pressed={drawer} onClick={() => setDrawer(!drawer)} data-testid="operator-drawer-open">
+        <Button variant={drawer ? "secondary" : "outline"} aria-pressed={drawer} onClick={() => setDrawer(!drawer)} title={t("screens.operator.screensAndLayers")} data-testid="operator-drawer-open">
           <Layers />
-          {t("screens.operator.screensAndLayers")}
+          {/* Narrow, beside the panel: the icon alone, so the header stays one line. */}
+          <span className="@max-3xl:sr-only">{t("screens.operator.screensAndLayers")}</span>
         </Button>
       </div>
 
@@ -114,7 +115,6 @@ export function OperatorConsole({
           <div className="xl:col-span-2">
             <ScreensView copy={copy} expected={expected} send={send} />
           </div>
-          <LayersCard send={send} />
         </div>
       ) : !sync.canOperate ? (
         <p className="text-sm text-muted-foreground" data-testid="operator-not-allowed">
@@ -123,10 +123,15 @@ export function OperatorConsole({
       ) : (
         <OperatorPresetsProvider>
           <ControlBar items={items} expected={expected} onScreens={() => setDrawer(true)} />
-          {columns === 1 ? (
-            <>
-              <ProgramCard items={items} itemId={itemId} />
-              <Rundown items={items} itemId={itemId} onLook={onLook} strip />
+          {/* The slides first (issue #358): the rundown down the left when there's room, a strip above them when not, and the timers and messages a tab away. */}
+          <div className={cn("grid items-start gap-5", columns === 2 && "grid-cols-[13rem_minmax(0,1fr)]")} data-testid="operator-columns">
+            {columns === 2 ? (
+              <div className="sticky top-4">
+                <Rundown items={items} itemId={itemId} onLook={onLook} />
+              </div>
+            ) : null}
+            <div className="flex min-w-0 flex-col gap-3">
+              {columns === 1 ? <Rundown items={items} itemId={itemId} onLook={onLook} strip /> : null}
               <Tabs defaultValue="slides" className="min-w-0">
                 <TabsList>
                   <TabsTrigger value="slides" data-testid="operator-tab-slides">
@@ -146,26 +151,9 @@ export function OperatorConsole({
                   </div>
                 </TabsContent>
               </Tabs>
-            </>
-          ) : (
-            <div className={cn("grid items-start gap-5", columns === 3 ? "grid-cols-[13rem_minmax(0,1fr)_22rem]" : "grid-cols-[minmax(0,1fr)_20rem]")} data-testid="operator-columns">
-              {columns === 3 ? (
-                <div className="sticky top-4">
-                  <Rundown items={items} itemId={itemId} onLook={onLook} />
-                </div>
-              ) : null}
-              <div className="flex min-w-0 flex-col gap-3">
-                {columns === 2 ? <Rundown items={items} itemId={itemId} onLook={onLook} strip /> : null}
-                {slidesTab}
-              </div>
-              <aside className="flex min-w-0 flex-col gap-4" aria-label={t("screens.operator.tabStage")}>
-                <ProgramCard items={items} itemId={itemId} side />
-                <TimersCard send={send} />
-                <MessageCard send={send} />
-              </aside>
             </div>
-          )}
-          <ScreensPanel copy={copy} open={drawer} onOpenChange={setDrawer} send={send} expected={expected} />
+          </div>
+          <ScreensPanel copy={copy} items={items} itemId={itemId} open={drawer} onOpenChange={setDrawer} send={send} expected={expected} />
         </OperatorPresetsProvider>
       )}
     </div>
@@ -463,28 +451,34 @@ function useCanPresent() {
 /** An app with no panel beside its page. */
 function noPanelRoom(_open: boolean, _width?: string) {}
 
-/** The panel's width down the right: room for two screens side by side (issue #358). */
-const PANEL_WIDTH = "32rem";
+/** The panel's width down the right, unless it's been dragged wider or narrower (issue #358): room for two screens side by side. */
+const PANEL_WIDTH = 448;
+const PANEL_MIN = 280;
+const panelMax = () => Math.max(PANEL_MIN, Math.round(window.innerWidth * 0.6));
 
 /** From here the panel is a column down the right, as the Display panel's (issue #209). */
 const WIDE = "(min-width: 1024px)";
 
 /**
- * Screens & layers (issues #275, #278): the Display panel's kind of drawer -
- * modeless, so the slides, the sidebar and the keys still work beside it; a
- * column down the right that the page makes room for on a large screen, at
- * the bottom on a phone.
+ * Screens & layers (issues #275, #278, #358): the Display panel's kind of
+ * drawer - modeless, so the slides, the sidebar and the keys still work
+ * beside it; a column down the right that the page makes room for on a large
+ * screen, as wide as its edge is dragged; at the bottom on a phone.
  */
-function ScreensPanel({ copy, open, onOpenChange, send, expected }: { copy: SetlistOfflineCopy; open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void; expected: ScreenSummary[] | null }) {
+function ScreensPanel({ copy, items, itemId, open, onOpenChange, send, expected }: { copy: SetlistOfflineCopy; items: OperatorItem[]; itemId: string | null; open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void; expected: ScreenSummary[] | null }) {
   const { t } = useTranslation();
   const wide = useMediaQuery(WIDE);
+  const stored = useOperatorDisplay().drawerWidth;
+  const [dragging, setDragging] = useState<number | null>(null);
+  const width = `${Math.min(dragging ?? stored ?? PANEL_WIDTH, typeof window === "undefined" ? Infinity : panelMax())}px`;
   const usePanelRoom = useOperatorHost().usePanelRoom ?? noPanelRoom;
-  usePanelRoom(open && wide, PANEL_WIDTH);
+  usePanelRoom(open && wide, width);
   return (
     <Drawer modal={false} disablePointerDismissal open={open} onOpenChange={onOpenChange} swipeDirection={wide ? "right" : "down"}>
-      <DrawerContent side={wide ? "right" : "bottom"} style={{ "--drawer-side-width": PANEL_WIDTH } as CSSProperties} data-testid="operator-drawer" aria-label={t("screens.operator.screensAndLayers")}>
+      <DrawerContent side={wide ? "right" : "bottom"} style={{ "--drawer-side-width": width } as CSSProperties} data-testid="operator-drawer" aria-label={t("screens.operator.screensAndLayers")}>
+        {wide ? <PanelEdge width={dragging ?? stored ?? PANEL_WIDTH} onDrag={setDragging} /> : null}
         <div className={cn("flex items-center gap-2 border-b px-3 pb-2", wide && "pt-3")}>
-          <DrawerTitle className="flex items-center gap-2">
+          <DrawerTitle className="flex items-center gap-2 text-base">
             <Layers className="size-4 text-muted-foreground" aria-hidden />
             {t("screens.operator.screensAndLayers")}
           </DrawerTitle>
@@ -492,14 +486,68 @@ function ScreensPanel({ copy, open, onOpenChange, send, expected }: { copy: Setl
             <X aria-hidden />
           </DrawerClose>
         </div>
-        <div className="flex flex-col gap-6 overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <p className="text-xs text-muted-foreground">{t("screens.operator.drawerDescription")}</p>
-          <ScreensView copy={copy} expected={expected} send={send} />
-          <div className="border-t pt-4">
-            <LayersCard send={send} />
-          </div>
+        <div className="overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <ScreensView copy={copy} items={items} itemId={itemId} expected={expected} send={send} />
         </div>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+/**
+ * The panel's left edge, dragged to make it wider or narrower (issue #358),
+ * or moved with the arrow keys; kept on the device once let go.
+ */
+function PanelEdge({ width, onDrag }: { width: number; onDrag: (width: number | null) => void }) {
+  const { t } = useTranslation();
+  const clamp = (value: number) => Math.round(Math.min(panelMax(), Math.max(PANEL_MIN, value)));
+  const keep = (value: number) => {
+    changeOperatorDisplay({ drawerWidth: clamp(value) });
+    onDrag(null);
+  };
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={t("screens.operator.resizePanel")}
+      aria-valuenow={Math.round(width)}
+      aria-valuemin={PANEL_MIN}
+      tabIndex={0}
+      className="absolute inset-y-0 -left-1 z-10 w-2 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-[3px] after:w-0.5 after:bg-transparent hover:after:bg-primary/40 focus-visible:after:bg-primary"
+      data-testid="operator-drawer-resize"
+      onPointerDown={(event) => {
+        // Not the drawer's swipe to close: this edge only resizes.
+        event.stopPropagation();
+        event.preventDefault();
+        const from = event.clientX;
+        const start = width;
+        let last = start;
+        const move = (e: PointerEvent) => {
+          last = clamp(start + from - e.clientX);
+          onDrag(last);
+        };
+        const up = () => {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+          window.removeEventListener("pointercancel", up);
+          keep(last);
+        };
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+        window.addEventListener("pointercancel", up);
+      }}
+      onKeyDown={(event) => {
+        const step = event.shiftKey ? 64 : 16;
+        if (event.key === "ArrowLeft") keep(width + step);
+        else if (event.key === "ArrowRight") keep(width - step);
+        else return;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onDoubleClick={() => {
+        changeOperatorDisplay({ drawerWidth: null });
+        onDrag(null);
+      }}
+    />
   );
 }

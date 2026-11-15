@@ -1,16 +1,17 @@
 import { readSyncLayers, SCREEN_SWITCHABLE_LAYERS, type ScreenSummary, type ScreenSwitchableLayer, type SetlistOfflineCopy, type SetScreenLooks, type SyncMember, type SyncStageCommand } from "@oneverse/core";
-import { Grid2x2, Layers, MonitorOff, RotateCcw, Square, TvMinimal } from "lucide-react";
+import { ChevronDown, Eraser, Eye, EyeOff, Image, Layers2, LayoutGrid, MonitorOff, Presentation, RotateCcw, SquareDashed, TvMinimal, Type, Undo2, Video, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
-import { NativeSelect } from "@oneverse/ui/components/native-select";
-import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { cn } from "@oneverse/ui/lib/utils";
 import { ScreenStage } from "@oneverse/screen/components/screen-stage";
 import { setlistTitle } from "@oneverse/screen/lib/set-items";
 import { useStageShowing } from "@oneverse/screen/lib/stage-showing";
 import { useLive, useOperatorHost } from "../host";
 import { changeOperatorDisplay, useOperatorDisplay } from "../lib/display-options";
+import { ProgramCard } from "./operator-stage";
+import type { OperatorItem } from "./operator-rundown";
 
 type Look = SetScreenLooks["screens"][number];
 
@@ -58,14 +59,18 @@ function useSetScreens(expected: ScreenSummary[] | null): SetScreen[] {
   ];
 }
 
+/** Each layer's icon (issue #358), top first: the bars name them in a tooltip rather than in words. */
+const LAYER_ICONS: Record<ScreenSwitchableLayer, LucideIcon> = { masks: SquareDashed, overlays: Layers2, content: Type, media: Image, video: Video };
+const LAYERS_TOP_FIRST = [...SCREEN_SWITCHABLE_LAYERS].reverse();
+
 /**
- * The set's screens as they are (issue #358): each one drawn as it draws
- * the set now - its template, the slide on it, its layers - in a grid, or
- * one at a time picked by its tab, larger, with its layers beside it. Each
- * layer can be cleared on one screen from here, or hidden; the console's
- * Display options say which view, or none.
+ * Screens & layers (issues #275, #287, #358), the drawer's body: what's on
+ * the screens and what's next, the layers of every screen in one bar, then
+ * each screen of the set as it draws the set now - its template, the slide,
+ * its layers - in a grid or one at a time, with its own bar. The pictures
+ * can be hidden, for a bar per screen alone.
  */
-export function ScreensView({ copy, expected, send }: { copy: SetlistOfflineCopy; expected: ScreenSummary[] | null; send: (command: SyncStageCommand) => void }) {
+export function ScreensView({ copy, items, itemId, expected, send }: { copy: SetlistOfflineCopy; items?: OperatorItem[]; itemId?: string | null; expected: ScreenSummary[] | null; send: (command: SyncStageCommand) => void }) {
   const { t } = useTranslation();
   const display = useOperatorDisplay();
   const looks = useScreenLooks();
@@ -73,131 +78,112 @@ export function ScreensView({ copy, expected, send }: { copy: SetlistOfflineCopy
   const [picked, setPicked] = useState<string | null>(null);
   const one = screens.find((screen) => screen.id === picked) ?? screens.find((screen) => screen.connected) ?? screens[0] ?? null;
   const lookOf = (id: string) => looks?.screens.find((look) => look.id === id) ?? null;
+  const shown = display.previews ? (display.screens === "tabs" && one ? [one] : screens) : screens;
 
   return (
-    <section className="flex min-w-0 flex-col gap-2" aria-label={t("screens.operator.screensView.title")} data-testid="operator-screens-view" data-view={display.screens}>
-      <div className="flex items-center gap-2">
-        <h2 className="text-sm font-semibold">{t("screens.operator.screensView.title")}</h2>
+    <section className="flex min-w-0 flex-col gap-3" aria-label={t("screens.operator.screensView.title")} data-testid="operator-screens-view" data-view={display.previews ? display.screens : "off"}>
+      {items ? <ProgramCard items={items} itemId={itemId ?? null} compact /> : null}
+      <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-2">
+        <span className="text-xs font-semibold text-muted-foreground">{t("screens.operator.allScreens")}</span>
+        <LayerBar send={send} />
+      </div>
+      <div className="flex items-center gap-1">
+        <h3 className="text-sm font-semibold">{t("screens.operator.screensView.title")}</h3>
         <span className="text-xs text-muted-foreground">{t("screens.operator.screensView.count", { count: screens.filter((screen) => screen.connected).length })}</span>
-        <div className="ml-auto flex items-center rounded-md border p-0.5" role="group" aria-label={t("screens.operator.screensView.view")}>
-          {(
-            [
-              ["grid", Grid2x2],
-              ["tabs", TvMinimal],
-              ["off", Square],
-            ] as const
-          ).map(([view, Icon]) => (
-            <Button
-              key={view}
-              size="sm"
-              variant={display.screens === view ? "secondary" : "ghost"}
-              className="h-7 px-2 text-xs"
-              aria-pressed={display.screens === view}
-              onClick={() => changeOperatorDisplay({ screens: view })}
-              data-testid={`operator-screens-${view}`}
-            >
-              <Icon />
-              {t(`screens.operator.screensView.${view}`)}
-            </Button>
-          ))}
+        <div className="ml-auto flex items-center gap-0.5">
+          {display.previews ? (
+            <>
+              <IconToggle icon={LayoutGrid} label={t("screens.operator.screensView.grid")} on={display.screens === "grid"} onClick={() => changeOperatorDisplay({ screens: "grid" })} testid="operator-screens-grid" />
+              <IconToggle icon={TvMinimal} label={t("screens.operator.screensView.tabs")} on={display.screens === "tabs"} onClick={() => changeOperatorDisplay({ screens: "tabs" })} testid="operator-screens-tabs" />
+            </>
+          ) : null}
+          <IconToggle icon={display.previews ? Eye : EyeOff} label={t(display.previews ? "screens.operator.screensView.hidePreviews" : "screens.operator.screensView.showPreviews")} on={display.previews} onClick={() => changeOperatorDisplay({ previews: !display.previews })} testid="operator-screens-previews" />
         </div>
       </div>
-      {display.screens === "off" ? null : screens.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("screens.noScreens")}</p>
-      ) : display.screens === "grid" ? (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3">
+      {screens.length === 0 ? <p className="text-sm text-muted-foreground">{t("screens.noScreens")}</p> : null}
+      {display.previews && display.screens === "tabs" && screens.length > 1 ? (
+        <div className="flex flex-wrap gap-1" role="tablist" aria-label={t("screens.operator.screensView.title")}>
           {screens.map((screen) => (
-            <li key={screen.id}>
-              <ScreenTile copy={copy} screen={screen} look={lookOf(screen.id)} looks={looks} send={send} />
-            </li>
+            <button
+              key={screen.id}
+              type="button"
+              role="tab"
+              aria-selected={screen.id === one?.id}
+              onClick={() => setPicked(screen.id)}
+              className={cn("flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs", screen.id === one?.id ? "border-primary bg-primary/10 font-medium" : "text-muted-foreground hover:text-foreground")}
+              data-testid="operator-screen-tab"
+              data-state={screen.connected ? "following" : "missing"}
+            >
+              <span className={cn("size-1.5 rounded-full", screen.connected ? "bg-emerald-500" : "bg-amber-500")} aria-hidden />
+              {screen.name}
+            </button>
           ))}
-        </ul>
-      ) : one ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-1 overflow-x-auto border-b" role="tablist" aria-label={t("screens.operator.screensView.title")}>
-            {screens.map((screen) => (
-              <button
-                key={screen.id}
-                type="button"
-                role="tab"
-                aria-selected={screen.id === one.id}
-                onClick={() => setPicked(screen.id)}
-                className={cn("-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-1.5 text-sm", screen.id === one.id ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}
-                data-testid="operator-screen-tab"
-                data-state={screen.connected ? "following" : "missing"}
-              >
-                <span className={cn("size-2 rounded-full", screen.connected ? "bg-emerald-500" : "bg-amber-500")} aria-hidden />
-                {screen.name}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-col gap-4">
-            <ScreenTile copy={copy} screen={one} look={lookOf(one.id)} looks={looks} send={send} large />
-            {one.connected ? <LayersCard send={send} screen={one.id} /> : null}
-          </div>
         </div>
       ) : null}
+      <ul className={cn("grid gap-3", display.previews && display.screens === "grid" ? "grid-cols-[repeat(auto-fill,minmax(12rem,1fr))]" : "grid-cols-1")}>
+        {shown.map((screen) => (
+          <li key={screen.id}>
+            <ScreenTile copy={copy} screen={screen} look={lookOf(screen.id)} looks={looks} send={send} picture={display.previews} />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
-/** One screen: its name and state, a picture of what it draws now, its layers to clear in a press. */
-function ScreenTile({ copy, screen, look, looks, send, large = false }: { copy: SetlistOfflineCopy; screen: SetScreen; look: Look | null; looks: SetScreenLooks | null; send: (command: SyncStageCommand) => void; large?: boolean }) {
+/** An icon button that's on or off, named in its tooltip. */
+function IconToggle({ icon: Icon, label, on, onClick, testid, className, state }: { icon: LucideIcon; label: string; on: boolean; onClick: () => void; testid?: string; className?: string; state?: string }) {
+  return (
+    <Button size="icon" variant={on ? "secondary" : "ghost"} className={cn("size-7", className)} aria-pressed={on} aria-label={label} title={label} onClick={onClick} data-testid={testid} data-state={state}>
+      <Icon />
+    </Button>
+  );
+}
+
+/** One screen: its name and details, a picture of what it draws now (unless hidden), and its own layer bar. */
+function ScreenTile({ copy, screen, look, looks, send, picture }: { copy: SetlistOfflineCopy; screen: SetScreen; look: Look | null; looks: SetScreenLooks | null; send: (command: SyncStageCommand) => void; picture: boolean }) {
   const { t, i18n } = useTranslation();
   const { session, stage, offset } = useLive();
   const presenting = session?.presenting ?? null;
-  const layers = readSyncLayers(stage?.layers);
-  const own = !!layers.screens?.[screen.id];
+  const own = !!readSyncLayers(stage?.layers).screens?.[screen.id];
   const showing = useStageShowing({ set: copy, credits: looks?.credits, presenting, stage, offset: offset ?? 0, screen: { id: screen.id, hiddenLayers: look?.hiddenLayers }, theme: look?.theme, itemThemes: look?.itemThemes });
-  const idle = (
-    <div className="flex size-full items-center justify-center p-[6%] text-center text-[clamp(0.6rem,4cqw,1.4rem)] text-neutral-400">
-      {setlistTitle(copy.set, t, i18n.language)}
-    </div>
-  );
+  const details = look
+    ? [
+        look.template.name ?? t(`screens.templates.${look.template.builtIn}.name`, { defaultValue: look.template.builtIn ?? "" }),
+        look.hiddenLayers.length ? t("screens.operator.screensView.neverShows", { layers: look.hiddenLayers.map((layer) => t(`screens.layers.${layer}`)).join(", ") }) : null,
+        look.effects ? null : t("screens.operator.screensView.effectsOff"),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
+  const lastSeen = screen.lastSeenAt ? t("screens.operator.lastSeen", { time: new Date(screen.lastSeenAt).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "short" }) }) : t("screens.operator.notConnected");
+  const idle = <div className="flex size-full items-center justify-center p-[6%] text-center text-[clamp(0.6rem,4cqw,1.4rem)] text-neutral-400">{setlistTitle(copy.set, t, i18n.language)}</div>;
   return (
-    <article className="flex min-w-0 flex-col gap-1.5" data-testid="operator-screen-tile" data-screen={screen.id} data-state={screen.connected ? "following" : "missing"} data-own-layers={own ? "" : undefined}>
-      <header className="flex items-center gap-2 text-sm">
-        <span className={cn("size-2 shrink-0 rounded-full", screen.connected ? "bg-emerald-500" : "bg-amber-500")} aria-hidden />
-        <span className="min-w-0 flex-1 truncate font-medium">{screen.name}</span>
-        {own ? <span className="shrink-0 rounded bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">{t("screens.operator.ownLayers")}</span> : null}
-        {screen.connected && !large ? (
-          <Popover>
-            <PopoverTrigger render={<Button size="icon" variant="ghost" className="size-7 shrink-0" aria-label={t("screens.operator.screensView.layersOf", { name: screen.name })} data-testid="operator-screen-layers" />}>
-              <Layers />
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-72">
-              <LayersCard send={send} screen={screen.id} />
-            </PopoverContent>
-          </Popover>
-        ) : null}
+    <article className="flex min-w-0 flex-col gap-1" data-testid="operator-screen-tile" data-screen={screen.id} data-state={screen.connected ? "following" : "missing"} data-own-layers={own ? "" : undefined}>
+      <header className="flex min-w-0 items-baseline gap-1.5 text-sm">
+        <span className={cn("size-2 shrink-0 self-center rounded-full", screen.connected ? "bg-emerald-500" : "bg-amber-500")} aria-hidden />
+        <span className="shrink-0 font-medium">{screen.name}</span>
+        <span className="min-w-0 truncate text-xs text-muted-foreground" title={screen.connected ? details : lastSeen} data-testid="operator-screen-details">
+          {screen.connected ? details : lastSeen}
+        </span>
       </header>
-      <div className={cn("relative overflow-hidden rounded-md bg-black ring-1 ring-border [container-type:size]", !screen.connected && "opacity-50")} style={{ aspectRatio: "16/9" }}>
-        {screen.connected ? (
-          <ScreenStage className="absolute inset-0" theme={showing.look} song={showing.presented ? showing.song : null} slide={presenting?.slide ?? 0} black={!!presenting?.black} idle={idle} assets={looks?.assets ?? []} live={showing.live} />
-        ) : (
-          <div className="flex size-full flex-col items-center justify-center gap-1 p-2 text-center text-xs text-neutral-400" data-testid="operator-screen-missing">
-            <MonitorOff className="size-5" aria-hidden />
-            {screen.lastSeenAt ? t("screens.operator.lastSeen", { time: new Date(screen.lastSeenAt).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "short" }) }) : t("screens.operator.notConnected")}
-          </div>
-        )}
-      </div>
-      {look ? (
-        <p className="truncate text-xs text-muted-foreground" data-testid="operator-screen-details">
-          {[
-            look.template.name ?? t(`screens.templates.${look.template.builtIn}.name`, { defaultValue: look.template.builtIn ?? "" }),
-            look.hiddenLayers.length ? t("screens.operator.screensView.neverShows", { layers: look.hiddenLayers.map((layer) => t(`screens.layers.${layer}`)).join(", ") }) : null,
-            look.effects ? null : t("screens.operator.screensView.effectsOff"),
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
+      {picture ? (
+        <div className={cn("relative overflow-hidden rounded-md bg-black ring-1 ring-border [container-type:size]", !screen.connected && "opacity-50")} style={{ aspectRatio: "16/9" }}>
+          {screen.connected ? (
+            <ScreenStage className="absolute inset-0" theme={showing.look} song={showing.presented ? showing.song : null} slide={presenting?.slide ?? 0} black={!!presenting?.black} idle={idle} assets={looks?.assets ?? []} live={showing.live} />
+          ) : (
+            <div className="flex size-full items-center justify-center text-neutral-500" data-testid="operator-screen-missing">
+              <MonitorOff className="size-5" aria-label={lastSeen} />
+            </div>
+          )}
+        </div>
       ) : null}
-      {screen.connected ? <LayerChips send={send} screen={screen.id} /> : null}
+      {screen.connected ? <LayerBar send={send} screen={screen.id} /> : null}
     </article>
   );
 }
 
-/** What a layer is on a screen now: shown, cleared until the next slide, or hidden. */
+/** What a layer is on a screen now (or on every screen): shown, cleared until the next slide, or hidden. */
 function useLayerStates(screen: string | null) {
   const { stage, session } = useLive();
   const layers = readSyncLayers(stage?.layers);
@@ -205,113 +191,88 @@ function useLayerStates(screen: string | null) {
   const presenting = session?.presenting ?? null;
   const cleared = state.cleared && state.cleared.itemId === (presenting?.itemId ?? null) && state.cleared.slide === (presenting?.slide ?? 0) ? state.cleared.layers : [];
   const of = (layer: ScreenSwitchableLayer): "shown" | "cleared" | "hidden" => (state.hidden.includes(layer) ? "hidden" : cleared.includes(layer) ? "cleared" : "shown");
-  return { layers, state, of };
+  return { layers, state, cleared, of };
 }
 
 /**
- * A screen's layers as chips (issue #358): one pressed clears that layer on
- * this screen until the next slide, pressed again brings it back; a hidden
- * one is shown again.
+ * A row of layer toggles (issues #280, #287, #358), for every screen or, with
+ * `screen`, that one's own: each layer's icon shows or hides it; Clear takes
+ * the words off until the next slide - or, from its menu, the media, the
+ * overlays or everything - and, once something's cleared, brings it back;
+ * the title card over everything (every screen's row); and back to normal
+ * when anything differs.
  */
-function LayerChips({ send, screen }: { send: (command: SyncStageCommand) => void; screen: string }) {
+export function LayerBar({ send, screen }: { send: (command: SyncStageCommand) => void; screen?: string }) {
   const { t } = useTranslation();
-  const { of } = useLayerStates(screen);
+  const { layers, state, cleared, of } = useLayerStates(screen ?? null);
+  const prefix = screen ? "operator-screen-layer" : "operator-layer";
+  const command = (change: Omit<NonNullable<SyncStageCommand["layers"]>, "screen">) => send({ layers: { ...change, ...(screen ? { screen } : {}) } });
+  const shownLayers = LAYERS_TOP_FIRST.filter((layer) => of(layer) === "shown");
+  const changed = screen ? !!layers.screens?.[screen] : state.hidden.length > 0 || state.title || cleared.length > 0 || Object.keys(layers.screens ?? {}).length > 0;
+  const clear = (which: ScreenSwitchableLayer[]) => which.length && command({ clear: which });
   return (
-    <div className="flex flex-wrap gap-1" role="group" aria-label={t("screens.operator.layers")}>
-      {[...SCREEN_SWITCHABLE_LAYERS].reverse().map((layer) => {
-        const state = of(layer);
+    <div className="flex flex-wrap items-center gap-0.5" role="group" aria-label={t("screens.operator.layers")} data-testid="operator-layers" data-screen={screen}>
+      {LAYERS_TOP_FIRST.map((layer) => {
+        const now = of(layer);
+        const name = t(`screens.layers.${layer}`);
+        const Icon = LAYER_ICONS[layer];
         return (
-          <button
+          <Button
             key={layer}
-            type="button"
-            onClick={() => send({ layers: { screen, ...(state === "shown" ? { clear: [layer] } : { show: { [layer]: true } }) } })}
-            title={state === "shown" ? t("screens.operator.screensView.clearOn", { layer: t(`screens.layers.${layer}`) }) : t("screens.operator.restoreLayer")}
-            aria-pressed={state !== "shown"}
-            className={cn(
-              "rounded-full border px-2 py-0.5 text-[11px] font-medium",
-              state === "shown" && "hover:bg-accent",
-              state === "cleared" && "border-amber-500/60 bg-amber-500/15 text-amber-700 line-through dark:text-amber-300",
-              state === "hidden" && "border-dashed text-muted-foreground line-through",
-            )}
-            data-testid={`operator-screen-layer-${layer}`}
-            data-state={state}
+            size="icon"
+            variant="ghost"
+            className={cn("relative size-7", now === "shown" && "bg-secondary text-secondary-foreground", now === "cleared" && "bg-amber-500/15 text-amber-700 dark:text-amber-300", now === "hidden" && "text-muted-foreground/60")}
+            aria-pressed={now !== "hidden"}
+            aria-label={t(`screens.operator.bar.${now}`, { layer: name })}
+            title={t(`screens.operator.bar.${now}`, { layer: name })}
+            onClick={() => command({ show: { [layer]: now === "shown" ? false : true } })}
+            data-testid={`${prefix}-${layer}`}
+            data-state={now}
           >
-            {t(`screens.layers.${layer}`)}
-          </button>
+            <Icon />
+            {now === "shown" ? null : <span className="pointer-events-none absolute inset-x-1 top-1/2 h-px -rotate-45 bg-current" aria-hidden />}
+          </Button>
         );
       })}
-    </div>
-  );
-}
-
-/**
- * The screens' layers (issues #275, #280, #287): for every screen or one of
- * those connected, each layer shown or not, or cleared until the next slide;
- * the title card over everything; all back to normal. A screen's own
- * settings may keep some of them off whatever is chosen here. Given a
- * `screen`, that one's alone, with no choice of screen.
- */
-export function LayersCard({ send, screen: fixed }: { send: (command: SyncStageCommand) => void; screen?: string }) {
-  const { t } = useTranslation();
-  const { members } = useLive();
-  const screens = members.filter((member) => member.screen);
-  const [target, setTarget] = useState("");
-  // A screen gone: back to all of them.
-  const screen = fixed ?? (screens.some((one) => one.id === target) ? target : "");
-  const { layers, state, of } = useLayerStates(screen || null);
-  const command = (change: Omit<NonNullable<SyncStageCommand["layers"]>, "screen">) => send({ layers: { ...change, ...(screen ? { screen } : {}) } });
-  return (
-    <section className="flex flex-col gap-3" data-testid="operator-layers" data-screen={screen || undefined}>
-      <div className="flex items-center gap-2">
-        <h3 className="text-sm font-semibold">{t("screens.operator.layers")}</h3>
-        {fixed ? null : (
-          <NativeSelect className="ml-auto h-8 w-auto text-xs" value={screen} onChange={(event) => setTarget(event.target.value)} aria-label={t("screens.operator.layersFor")} data-testid="operator-layers-for">
-            <option value="">{t("screens.operator.allScreens")}</option>
-            {screens.map((one) => (
-              <option key={one.id} value={one.id}>
-                {one.name}
-                {layers.screens?.[one.id] ? ` · ${t("screens.operator.ownLayers")}` : ""}
-              </option>
-            ))}
-          </NativeSelect>
+      {screen ? null : (
+        <IconToggle icon={Presentation} label={t("screens.operator.layerTitle")} on={state.title} onClick={() => command({ title: !state.title })} testid="operator-layer-title" className="ml-1" />
+      )}
+      <div className="ml-auto flex items-center">
+        {cleared.length ? (
+          <Button size="sm" variant="outline" className="h-7 gap-1 border-amber-500/60 px-2 text-xs" onClick={() => command({ show: Object.fromEntries(cleared.map((layer) => [layer, true])) })} title={t("screens.operator.restoreLayer")} data-testid={screen ? "operator-screen-clear" : "operator-clear"} data-state="cleared">
+            <Undo2 />
+            {screen ? <span className="sr-only">{t("screens.operator.restoreLayer")}</span> : t("screens.operator.restoreLayer")}
+          </Button>
+        ) : (
+          <>
+            <Button size="sm" variant="outline" className="h-7 gap-1 rounded-r-none px-2 text-xs" disabled={of("content") !== "shown"} onClick={() => clear(["content"])} title={screen ? `${t("screens.operator.clearLayer")}: ${t("screens.operator.bar.clearHint")}` : t("screens.operator.bar.clearHint")} data-testid={screen ? "operator-screen-clear" : "operator-clear"} data-state="none">
+              <Eraser />
+              {/* A screen's own row stays one line in the grid: the icon alone, named in its tooltip. */}
+              {screen ? <span className="sr-only">{t("screens.operator.clearLayer")}</span> : t("screens.operator.clearLayer")}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button size="icon" variant="outline" className="size-7 rounded-l-none border-l-0" aria-label={t("screens.operator.bar.clearWhat")} data-testid={screen ? "operator-screen-clear-menu" : "operator-clear-menu"} />}>
+                <ChevronDown />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {(["content", "media", "overlays"] as const).map((layer) => (
+                  <DropdownMenuItem key={layer} disabled={of(layer) !== "shown"} onClick={() => clear([layer])} data-testid={`operator-clear-${layer}`}>
+                    {t(`screens.operator.bar.clear_${layer}`)}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem disabled={!shownLayers.length} onClick={() => clear(shownLayers)} data-testid="operator-clear-all">
+                  {t("screens.operator.bar.clearAll")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         )}
+        {changed ? (
+          <Button size="icon" variant="ghost" className="ml-0.5 size-7" onClick={() => command({ reset: true })} aria-label={screen ? t("screens.operator.layersLikeAll") : t("screens.operator.layersReset")} title={screen ? t("screens.operator.layersLikeAll") : t("screens.operator.layersReset")} data-testid={screen ? "operator-screen-layers-reset" : "operator-layers-reset"}>
+            <RotateCcw />
+          </Button>
+        ) : null}
       </div>
-      <ul className="flex flex-col gap-1.5">
-        {[...SCREEN_SWITCHABLE_LAYERS].reverse().map((layer) => {
-          const now = of(layer);
-          const on = now !== "hidden";
-          const isCleared = now === "cleared";
-          return (
-            <li key={layer} className="flex items-center gap-2 text-sm" data-testid={`operator-layer-${layer}`} data-state={now}>
-              <label className="flex min-w-0 flex-1 items-center gap-2">
-                <input type="checkbox" className="size-4 accent-primary" checked={on} onChange={() => command({ show: { [layer]: !on } })} data-testid={`operator-layer-${layer}-shown`} />
-                <span className={cn("truncate", isCleared && "text-muted-foreground line-through")}>{t(`screens.layers.${layer}`)}</span>
-              </label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                disabled={!on}
-                onClick={() => command(isCleared ? { show: { [layer]: true } } : { clear: [layer] })}
-                title={t("screens.operator.clearHint")}
-                data-testid={`operator-layer-${layer}-clear`}
-              >
-                {isCleared ? t("screens.operator.restoreLayer") : t("screens.operator.clearLayer")}
-              </Button>
-            </li>
-          );
-        })}
-        <li className="flex items-center gap-2 border-t pt-2 text-sm">
-          <label className="flex flex-1 items-center gap-2">
-            <input type="checkbox" className="size-4 accent-primary" checked={state.title} onChange={() => command({ title: !state.title })} data-testid="operator-layer-title" />
-            {t("screens.operator.layerTitle")}
-          </label>
-        </li>
-      </ul>
-      <Button variant="outline" size="sm" className="self-start" onClick={() => command({ reset: true })} data-testid="operator-layers-reset">
-        <RotateCcw />
-        {screen ? t("screens.operator.layersLikeAll") : t("screens.operator.layersReset")}
-      </Button>
-    </section>
+    </div>
   );
 }

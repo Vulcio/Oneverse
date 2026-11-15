@@ -82,8 +82,9 @@ try {
     await desk.goto(`${WEB}/sets/${set.id}/operate`);
     await desk.getByTestId("operator-slides").getByTestId("operator-slide").nth(2).getByText("See you next week").waitFor({ timeout: 10000 });
     await desk.getByText("2. Notices").first().waitFor();
-    // What's up, beside the slides (issue #358).
+    // What's up (issue #358), above the slides and in Screens & layers.
     await desk.getByTestId("operator-state-presenting").getByText("Notices · 2 of 3").waitFor({ timeout: 10000 });
+    await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-on-screens").getByText("Coffee after the service").waitFor();
   });
 

@@ -94,7 +94,7 @@ function useOperatorPresets(): LoadedPresets {
  * blacked or with its words hidden, the message over it; the next one, sent
  * by its button or the arrow keys.
  */
-export function ProgramCard({ items, itemId, side = false }: { items: OperatorItem[]; itemId: string | null; side?: boolean }) {
+export function ProgramCard({ items, itemId, compact = false }: { items: OperatorItem[]; itemId: string | null; compact?: boolean }) {
   const { t } = useTranslation();
   const { session, stage, canPresent } = useLive();
   const { present } = useOperatorHost();
@@ -108,7 +108,7 @@ export function ProgramCard({ items, itemId, side = false }: { items: OperatorIt
   const nextLines = next?.item.slides[next.slide]?.lines ?? [];
   const goNext = () => next && present({ itemId: next.item.itemId, slide: next.slide, black: false, slideKey: next.item.key });
   return (
-    <section className={cn("grid gap-3", !side && "@2xl:grid-cols-[3fr_2fr]")} data-testid="operator-program">
+    <section className={cn("grid", compact ? "grid-cols-2 gap-2" : "gap-3 @2xl:grid-cols-[3fr_2fr]")} data-testid="operator-program">
       <div className="flex min-w-0 flex-col gap-1.5">
         <p className="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           <span className={cn("size-2 rounded-full", presenting && !presenting.black ? "bg-red-500" : "bg-muted-foreground/40")} aria-hidden />
@@ -123,7 +123,7 @@ export function ProgramCard({ items, itemId, side = false }: { items: OperatorIt
             <>
               <span className="absolute top-2 left-2 max-w-[70%] truncate rounded bg-white/15 px-1.5 text-[10px] font-semibold tracking-wide uppercase">{section ? `${item.title} · ${section.label}` : item.title}</span>
               <span className="absolute top-2 right-2 text-[10px] text-white/70 tabular-nums">{t("screens.slideOf", { slide: presenting.slide + 1, count: item.slides.length })}</span>
-              <div className={cn("flex flex-col gap-0.5 text-sm leading-snug @lg:text-base", (presenting.black || wordsHidden) && "opacity-25")}>
+              <div className={cn("flex flex-col gap-0.5 leading-snug", compact ? "px-1 pt-3 text-[11px]" : "text-sm @lg:text-base", (presenting.black || wordsHidden) && "opacity-25")}>
                 {slide?.lines.length ? slide.lines.map((line, index) => <p key={index}>{line}</p>) : <p className="text-white/60 italic">{t("screens.noWords")}</p>}
               </div>
               {presenting.black ? <span className="absolute inset-x-0 bottom-2 text-xs font-semibold tracking-widest text-white/80 uppercase">{t("screens.black")}</span> : wordsHidden ? <span className="absolute inset-x-0 bottom-2 text-xs text-white/80">{t("screens.operator.wordsHidden")}</span> : null}
@@ -151,7 +151,7 @@ export function ProgramCard({ items, itemId, side = false }: { items: OperatorIt
           {next ? (
             <>
               <span className="absolute top-1.5 left-2 max-w-[75%] truncate text-[10px] font-semibold text-muted-foreground uppercase">{next.item.itemId !== presenting?.itemId ? next.item.title : ([...next.item.sections].reverse().find((one) => one.slide <= next.slide)?.label ?? "")}</span>
-              <span className="flex flex-col text-xs leading-snug @lg:text-sm">
+              <span className={cn("flex flex-col leading-snug", compact ? "pt-3 text-[11px]" : "text-xs @lg:text-sm")}>
                 {nextLines.length ? nextLines.map((line, index) => <span key={index}>{line}</span>) : <span className="text-muted-foreground italic">{t("screens.noWords")}</span>}
               </span>
               <span className="absolute right-1.5 bottom-1.5 flex items-center gap-0.5 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground opacity-80 group-enabled:group-hover:opacity-100">

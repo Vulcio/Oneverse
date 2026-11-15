@@ -161,11 +161,12 @@ try {
     if (!panel || !bar || bar.x + bar.width > panel.x + 1) throw new Error(`the panel covers the page: ${JSON.stringify({ panel, bar })}`);
     await desk.getByTestId("operator-drawer-close").click();
     await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
-    // Beside the sidebar on a laptop (issue #358): the slides, and the stage's column beside them - no tabs.
+    // Beside the sidebar on a laptop (issue #358): the running order in a column, the slides first, the timers and messages a tab away.
     await desk.locator('[data-testid="operator"][data-columns="2"]').waitFor();
-    await desk.getByTestId("operator-timer").waitFor();
+    await desk.locator('[data-testid="operator-rundown"]:not([data-strip])').waitFor();
     await desk.getByTestId("operator-slides").waitFor();
-    if (await desk.getByTestId("operator-tab-stage").count()) throw new Error("tabs at a laptop's width");
+    await desk.getByTestId("operator-tab-stage").click();
+    await desk.getByTestId("operator-timer").waitFor();
   });
 
   await step("a 5-minute countdown, started: on the stage display, ticking; a minute more", async () => {
@@ -207,6 +208,8 @@ try {
     await desk.getByTestId("operator-message-clear").click();
     page = tv;
     await tv.getByTestId("widget-message").waitFor({ state: "detached", timeout: 5000 });
+    page = desk;
+    await desk.getByTestId("operator-tab-slides").click();
   });
 
   await step("the slides (issue #275): sent without taking the screens (issue #305), then taken, shared; a tile sends its slide", async () => {
@@ -255,17 +258,16 @@ try {
     page = desk;
     await desk.getByTestId("operator-drawer-open").click();
     const drawer = desk.getByTestId("operator-drawer");
-    // A layer's box follows the stage the server sends back.
+    // A layer's toggle follows the stage the server sends back.
     const toggleLayer = async (name, on) => {
-      const box = drawer.getByTestId(`operator-layer-${name}`);
-      await box.click();
-      await drawer.locator(`[data-testid="operator-layer-${name}"]${on ? ":checked" : ":not(:checked)"}`).waitFor({ timeout: 5000 });
+      await drawer.getByTestId(`operator-layer-${name}`).click();
+      await drawer.locator(`[data-testid="operator-layer-${name}"][aria-pressed="${on}"]`).waitFor({ timeout: 5000 });
     };
-    await toggleLayer("content-shown", false);
+    await toggleLayer("content", false);
     page = tv;
     await tv.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
     page = desk;
-    await toggleLayer("content-shown", true);
+    await toggleLayer("content", true);
     await toggleLayer("title", true);
     page = tv;
     await tv.getByTestId("screen-overlay").getByText(`Stage ${stamp}`).waitFor({ timeout: 5000 });
@@ -325,6 +327,8 @@ try {
   await step("what's up and what's next (issue #358): the slide on the screens, the next one sent by its tile", async () => {
     page = desk;
     const at = (item) => tv.locator(`[data-testid="screen-showing"][data-item="${item}"]`);
+    // At the top of Screens & layers.
+    await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-on-screens").getByText("A line here").waitFor({ timeout: 5000 });
     await desk.getByTestId("operator-state-presenting").getByText(`Opening ${stamp}`).waitFor();
     await desk.locator('[data-testid="operator-state-screens"][data-count="1"]').waitFor();
@@ -337,6 +341,8 @@ try {
     await desk.locator('[data-testid="operator-on-screens"][data-state="black"]').waitFor({ timeout: 5000 });
     await desk.keyboard.press("b");
     await desk.locator('[data-testid="operator-on-screens"][data-state="shown"]').waitFor({ timeout: 5000 });
+    await desk.getByTestId("operator-drawer-close").click();
+    await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
   });
 
   await step("the running order and section jumps (issue #358): a song looked at, its sections by a press or a digit", async () => {
@@ -361,7 +367,10 @@ try {
     // The set's last slide: nothing next.
     page = desk;
     await desk.keyboard.press("End");
+    await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-next-slide").getByText("End of the set").waitFor({ timeout: 5000 });
+    await desk.getByTestId("operator-drawer-close").click();
+    await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
     // Back to the first song for what follows.
     await desk.getByTestId("operator-rundown-item").filter({ hasText: `Opening ${stamp}` }).click();
     await desk.getByTestId("operator-slide").first().click();
@@ -370,6 +379,7 @@ try {
 
   await step("named timers (issue #358): one started from the built-in ones, shown by an unnamed countdown once there's no main timer", async () => {
     page = desk;
+    await desk.getByTestId("operator-tab-stage").click();
     await desk.getByTestId("operator-timer-clear").click();
     await desk.getByTestId("operator-timer-readout").getByText("–:––").waitFor({ timeout: 5000 });
     await desk.locator('[data-testid="operator-timer-preset"][data-name="Sermon"]').click();
@@ -412,7 +422,10 @@ try {
     page = tv;
     await tv.getByTestId("widget-message").getByText(`Pray for ${stamp}`).waitFor({ timeout: 5000 });
     page = desk;
+    await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-on-screens-message").getByText(`Pray for ${stamp}`).waitFor();
+    await desk.getByTestId("operator-drawer-close").click();
+    await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
     await desk.getByTestId("operator-message-clear").click();
     await desk.locator(`[data-testid="operator-timer-preset"][data-name="Offering ${stamp}"]`).click();
     await desk.locator(`[data-testid="operator-named-timer"][data-name="Offering ${stamp}"]`).getByTestId("operator-named-timer-readout").getByText(/^(2:00|1:5\d)$/).waitFor({ timeout: 5000 });
@@ -422,6 +435,7 @@ try {
     await dialog.waitFor({ state: "detached", timeout: 5000 });
     await desk.getByTestId("operator-quick-wrapUp").waitFor();
     await desk.locator(`[data-testid="operator-named-timer"][data-name="Offering ${stamp}"]`).getByTestId("operator-named-timer-remove").click();
+    await desk.getByTestId("operator-tab-slides").click();
   });
 
   await step("a screen of the set that isn't connected (issue #358): named as missing", async () => {
@@ -452,14 +466,15 @@ try {
     // Its details: its template.
     await stageTile.getByTestId("operator-screen-details").getByText("Stage display").waitFor();
     // Its content cleared there alone, until the next slide; the screen and its picture follow.
-    await stageTile.getByTestId("operator-screen-layer-content").click();
+    await stageTile.getByTestId("operator-screen-clear").click();
     await stageTile.locator('[data-testid="operator-screen-layer-content"][data-state="cleared"]').waitFor({ timeout: 5000 });
     await stageTile.locator("[data-own-layers]").or(view.locator('[data-testid="operator-screen-tile"][data-own-layers]')).first().waitFor();
     page = tv;
     await tv.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
     page = desk;
     await stageTile.getByTestId("widget-current-slide").waitFor({ state: "detached", timeout: 5000 });
-    await stageTile.getByTestId("operator-screen-layer-content").click();
+    // Bring back, in Clear's place meanwhile.
+    await stageTile.locator('[data-testid="operator-screen-clear"][data-state="cleared"]').click();
     await stageTile.locator('[data-testid="operator-screen-layer-content"][data-state="shown"]').waitFor({ timeout: 5000 });
     page = tv;
     await tv.getByTestId("widget-current-slide").waitFor({ timeout: 5000 });
@@ -468,11 +483,27 @@ try {
     await desk.getByTestId("operator-screens-tabs").click();
     if ((await view.getByTestId("operator-screen-tab").count()) !== 2) throw new Error("not a tab for each screen");
     await view.locator('[data-testid="operator-layers"][data-screen]').waitFor();
-    await desk.getByTestId("operator-screens-off").click();
-    await view.locator('[data-view="off"]').or(desk.locator('[data-testid="operator-screens-view"][data-view="off"]')).first().waitFor();
-    if (await view.getByTestId("operator-screen-tile").count()) throw new Error("the screens still shown");
+    // The pictures hidden: each screen a row with its layers, no picture.
+    await desk.getByTestId("operator-screens-previews").click();
+    await desk.locator('[data-testid="operator-screens-view"][data-view="off"]').waitFor();
+    await stageTile.getByTestId("screen-grid").waitFor({ state: "detached" });
+    await stageTile.locator('[data-testid="operator-layers"][data-screen]').waitFor();
+    await desk.getByTestId("operator-screens-previews").click();
     await desk.getByTestId("operator-screens-grid").click();
-    await stageTile.waitFor();
+    await stageTile.getByTestId("screen-grid").first().waitFor();
+    // What's on the screens and what's next sits at the top of the drawer.
+    await view.getByTestId("operator-program").waitFor();
+    // Its edge dragged: wider, and kept for next time.
+    const before = (await desk.getByTestId("operator-drawer").boundingBox()).width;
+    const edge = await desk.getByTestId("operator-drawer-resize").boundingBox();
+    await desk.mouse.move(edge.x + edge.width / 2, edge.y + 200);
+    await desk.mouse.down();
+    await desk.mouse.move(edge.x - 100, edge.y + 200, { steps: 5 });
+    await desk.mouse.up();
+    await desk.waitForFunction((width) => (document.querySelector('[data-testid="operator-drawer"]')?.getBoundingClientRect().width ?? 0) > width + 80, before);
+    const stored = await desk.evaluate(() => JSON.parse(localStorage.getItem("oneverse.operator.display") ?? "{}").drawerWidth);
+    if (!(stored > before + 80)) throw new Error(`the width wasn't kept: ${stored}`);
+    await desk.getByTestId("operator-drawer-resize").dblclick();
     await desk.getByTestId("operator-drawer-close").click();
     await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
   });
@@ -528,19 +559,15 @@ try {
     await desk.getByTestId("operator-control").waitFor({ timeout: 15000 });
   });
 
-  await step("the console's width (issue #358): the running order in a column of its own when wide; on a tablet, what's up on top and tabs", async () => {
+  await step("the console's width (issue #358): the running order in a column of its own when wide; on a tablet, a strip above the slides", async () => {
     page = desk;
-    await desk.setViewportSize({ width: 1720, height: 1000 });
-    await desk.locator('[data-testid="operator"][data-columns="3"]').waitFor({ timeout: 5000 });
-    await desk.locator('[data-testid="operator-rundown"]:not([data-strip])').waitFor();
-    await desk.setViewportSize({ width: 1280, height: 900 });
     const tablet = await (await browser.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true })).newPage();
     tablet.on("pageerror", (error) => errors.push(error.message));
     page = tablet;
     await signIn(tablet, operator);
     await tablet.goto(`${SCREEN}/operate/${set.id}`);
     await tablet.locator('[data-testid="operator"][data-columns="1"]').waitFor({ timeout: 15000 });
-    await tablet.getByTestId("operator-on-screens").getByText("A line here").waitFor({ timeout: 10000 });
+    await tablet.getByTestId("operator-slides").waitFor({ timeout: 10000 });
     await tablet.locator('[data-testid="operator-rundown"][data-strip]').waitFor();
     await tablet.getByTestId("operator-tab-stage").click();
     await tablet.getByTestId("operator-timer").waitFor();

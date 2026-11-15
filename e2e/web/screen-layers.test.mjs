@@ -129,28 +129,25 @@ try {
     await desk.getByTestId("operator-drawer-open").click();
     const drawer = desk.getByTestId("operator-drawer");
     await drawer.locator('[data-testid="operator-screen-tile"][data-state="following"]').getByText(`Foyer ${stamp}`).first().waitFor({ timeout: 10000 });
-    await drawer.getByTestId("operator-layers-for").selectOption({ label: `Foyer ${stamp}` });
-    await drawer.getByTestId("operator-layer-overlays-shown").click();
-    await drawer.locator('[data-testid="operator-layer-overlays"][data-state="hidden"]').waitFor({ timeout: 5000 });
+    const foyerTile = drawer.locator('[data-testid="operator-screen-tile"][data-state="following"]').filter({ hasText: `Foyer ${stamp}` });
+    await foyerTile.getByTestId("operator-screen-layer-overlays").click();
+    await foyerTile.locator('[data-testid="operator-screen-layer-overlays"][data-state="hidden"]').waitFor({ timeout: 5000 });
     await waitLayers(foyer, { overlays: false });
     if (!(await layersOf(hall)).includes("overlays")) throw new Error("the other screen lost its overlays");
     // Every screen's choices still reach the one with its own.
-    await drawer.getByTestId("operator-layers-for").selectOption({ value: "" });
-    await drawer.getByTestId("operator-layer-masks-shown").click();
+    await drawer.getByTestId("operator-layer-masks").click();
     await waitLayers(foyer, { masks: false, overlays: false });
     await waitLayers(hall, { masks: false, overlays: true });
-    await drawer.getByTestId("operator-layer-masks-shown").click();
+    await drawer.getByTestId("operator-layer-masks").click();
     await waitLayers(hall, { masks: true });
-    await drawer.getByTestId("operator-layers-for").selectOption({ label: `Foyer ${stamp} · its own layers` });
-    await drawer.getByTestId("operator-layers-reset").click();
+    await foyerTile.getByTestId("operator-screen-layers-reset").click();
     await waitLayers(foyer, { overlays: true, masks: true });
   });
 
   await step("Clear: the content gone until the next slide, then back by itself; Shift+W the same", async () => {
     page = desk;
     const drawer = desk.getByTestId("operator-drawer");
-    await drawer.getByTestId("operator-layers-for").selectOption({ value: "" });
-    await drawer.getByTestId("operator-layer-content-clear").click();
+    await drawer.getByTestId("operator-clear").click();
     await drawer.locator('[data-testid="operator-layer-content"][data-state="cleared"]').waitFor({ timeout: 5000 });
     await waitLayers(hall, { content: false, overlays: true });
     await waitLayers(foyer, { content: false });
@@ -158,6 +155,12 @@ try {
     await waitLayers(hall, { content: true });
     await waitLayers(foyer, { content: true });
     await drawer.locator('[data-testid="operator-layer-content"][data-state="shown"]').waitFor({ timeout: 5000 });
+    // Clear's menu: the overlays alone, then back with Restore.
+    await drawer.getByTestId("operator-clear-menu").click();
+    await desk.getByTestId("operator-clear-overlays").click();
+    await waitLayers(hall, { overlays: false, content: true });
+    await drawer.locator('[data-testid="operator-clear"][data-state="cleared"]').click();
+    await waitLayers(hall, { overlays: true });
     // The keys, with nothing focused.
     await desk.getByRole("heading", { name: "Operator" }).click();
     await desk.keyboard.press("Shift+W");
