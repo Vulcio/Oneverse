@@ -79,7 +79,6 @@ try {
 
   await step("a role that runs the screens presents without taking them: its slides can be sent", async () => {
     page = desk;
-    await desk.getByTestId("operator-tab-slides").click();
     const tiles = desk.getByTestId("operator-slide");
     await tiles.first().waitFor();
     await desk.locator('[data-testid="operator-slide"][aria-current="true"]').waitFor();

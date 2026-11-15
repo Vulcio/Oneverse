@@ -4,7 +4,7 @@
   "about": "The metronome and sync play's timeline (issue #13): only \"beat N at server time T\" crosses the network, and each device plays it on its own clock. Positions are in beats from the start, count-in included; times in ms.",
   "functions": {
     "applyStageCommand": {
-      "about": "The media operator's timer and message for a set's screens (issue #269): a new timer stopped at its start, reset, started or paused, a minute more or less, then the message. Null: a command that can't be read, refused.",
+      "about": "The media operator's timers and message for a set's screens (issues #269, #358): a new timer stopped at its start, reset, started or paused, a minute more or less, then the message. A command is for the timer `timerId` names, else the main one; `timers` lists them all, the main one first, `timer` is the main one alone. Null: a command that can't be read, refused.",
       "params": [
         "stage",
         "command",
@@ -33,6 +33,16 @@
               "startedAt": 10000,
               "elapsed": 0
             },
+            "timers": [
+              {
+                "id": "main",
+                "name": "",
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": 10000,
+                "elapsed": 0
+              }
+            ],
             "message": null,
             "layers": {
               "hidden": [],
@@ -67,6 +77,16 @@
               "startedAt": null,
               "elapsed": 60000
             },
+            "timers": [
+              {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": null,
+                "elapsed": 60000,
+                "id": "main",
+                "name": ""
+              }
+            ],
             "message": null,
             "layers": {
               "hidden": [],
@@ -101,6 +121,16 @@
               "startedAt": 100000,
               "elapsed": 60000
             },
+            "timers": [
+              {
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": 100000,
+                "elapsed": 60000,
+                "id": "main",
+                "name": ""
+              }
+            ],
             "message": null,
             "layers": {
               "hidden": [],
@@ -135,6 +165,16 @@
               "startedAt": null,
               "elapsed": 60000
             },
+            "timers": [
+              {
+                "kind": "countdown",
+                "duration": 360,
+                "startedAt": null,
+                "elapsed": 60000,
+                "id": "main",
+                "name": ""
+              }
+            ],
             "message": null,
             "layers": {
               "hidden": [],
@@ -169,6 +209,16 @@
               "startedAt": 50000,
               "elapsed": 0
             },
+            "timers": [
+              {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 50000,
+                "elapsed": 0,
+                "id": "main",
+                "name": ""
+              }
+            ],
             "message": null,
             "layers": {
               "hidden": [],
@@ -196,6 +246,7 @@
           "expected": {
             "rev": 2,
             "timer": null,
+            "timers": [],
             "message": null,
             "layers": {
               "hidden": [],
@@ -230,6 +281,16 @@
               "startedAt": 5,
               "elapsed": 0
             },
+            "timers": [
+              {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 5,
+                "elapsed": 0,
+                "id": "main",
+                "name": ""
+              }
+            ],
             "message": {
               "text": "Next: announcements",
               "at": 9000
@@ -286,6 +347,7 @@
           "expected": {
             "rev": 5,
             "timer": null,
+            "timers": [],
             "message": null,
             "layers": {
               "hidden": [
@@ -320,6 +382,7 @@
           "expected": {
             "rev": 6,
             "timer": null,
+            "timers": [],
             "message": null,
             "layers": {
               "hidden": [],
@@ -343,6 +406,369 @@
                 "show": {
                   "logo": false
                 }
+              }
+            },
+            0
+          ],
+          "expected": null
+        },
+        {
+          "name": "a named timer started beside the main one (issue #358)",
+          "args": [
+            {
+              "rev": 1,
+              "timer": {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 5,
+                "elapsed": 0
+              },
+              "message": null
+            },
+            {
+              "timerId": "t-sermon",
+              "timer": {
+                "kind": "countdown",
+                "duration": 1800,
+                "name": " Sermon "
+              },
+              "run": true
+            },
+            9000
+          ],
+          "expected": {
+            "rev": 2,
+            "timer": {
+              "kind": "count-up",
+              "duration": 0,
+              "startedAt": 5,
+              "elapsed": 0
+            },
+            "timers": [
+              {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 5,
+                "elapsed": 0,
+                "id": "main",
+                "name": ""
+              },
+              {
+                "id": "t-sermon",
+                "name": "Sermon",
+                "kind": "countdown",
+                "duration": 1800,
+                "startedAt": 9000,
+                "elapsed": 0
+              }
+            ],
+            "message": null,
+            "layers": {
+              "hidden": [],
+              "title": false,
+              "cleared": null
+            }
+          }
+        },
+        {
+          "name": "a named timer paused, the main one running on",
+          "args": [
+            {
+              "rev": 2,
+              "timer": {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 5,
+                "elapsed": 0
+              },
+              "timers": [
+                {
+                  "id": "main",
+                  "name": "",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": 5,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-sermon",
+                  "name": "Sermon",
+                  "kind": "countdown",
+                  "duration": 1800,
+                  "startedAt": 9000,
+                  "elapsed": 0
+                }
+              ],
+              "message": null
+            },
+            {
+              "timerId": "t-sermon",
+              "run": false
+            },
+            69000
+          ],
+          "expected": {
+            "rev": 3,
+            "timer": {
+              "kind": "count-up",
+              "duration": 0,
+              "startedAt": 5,
+              "elapsed": 0
+            },
+            "timers": [
+              {
+                "id": "main",
+                "name": "",
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 5,
+                "elapsed": 0
+              },
+              {
+                "id": "t-sermon",
+                "name": "Sermon",
+                "kind": "countdown",
+                "duration": 1800,
+                "startedAt": null,
+                "elapsed": 60000
+              }
+            ],
+            "message": null,
+            "layers": {
+              "hidden": [],
+              "title": false,
+              "cleared": null
+            }
+          }
+        },
+        {
+          "name": "the main timer taken away, the named one kept",
+          "args": [
+            {
+              "rev": 3,
+              "timer": {
+                "kind": "count-up",
+                "duration": 0,
+                "startedAt": 5,
+                "elapsed": 0
+              },
+              "timers": [
+                {
+                  "id": "main",
+                  "name": "",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": 5,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-sermon",
+                  "name": "Sermon",
+                  "kind": "countdown",
+                  "duration": 1800,
+                  "startedAt": null,
+                  "elapsed": 60000
+                }
+              ],
+              "message": null
+            },
+            {
+              "timer": null
+            },
+            70000
+          ],
+          "expected": {
+            "rev": 4,
+            "timer": null,
+            "timers": [
+              {
+                "id": "t-sermon",
+                "name": "Sermon",
+                "kind": "countdown",
+                "duration": 1800,
+                "startedAt": null,
+                "elapsed": 60000
+              }
+            ],
+            "message": null,
+            "layers": {
+              "hidden": [],
+              "title": false,
+              "cleared": null
+            }
+          }
+        },
+        {
+          "name": "a new main timer goes first",
+          "args": [
+            {
+              "rev": 4,
+              "timer": null,
+              "timers": [
+                {
+                  "id": "t-sermon",
+                  "name": "Sermon",
+                  "kind": "countdown",
+                  "duration": 1800,
+                  "startedAt": null,
+                  "elapsed": 0
+                }
+              ],
+              "message": null
+            },
+            {
+              "timer": {
+                "kind": "countdown",
+                "duration": 300
+              }
+            },
+            1000
+          ],
+          "expected": {
+            "rev": 5,
+            "timer": {
+              "kind": "countdown",
+              "duration": 300,
+              "startedAt": null,
+              "elapsed": 0
+            },
+            "timers": [
+              {
+                "id": "main",
+                "name": "",
+                "kind": "countdown",
+                "duration": 300,
+                "startedAt": null,
+                "elapsed": 0
+              },
+              {
+                "id": "t-sermon",
+                "name": "Sermon",
+                "kind": "countdown",
+                "duration": 1800,
+                "startedAt": null,
+                "elapsed": 0
+              }
+            ],
+            "message": null,
+            "layers": {
+              "hidden": [],
+              "title": false,
+              "cleared": null
+            }
+          }
+        },
+        {
+          "name": "a timer id that can't be read: refused",
+          "args": [
+            null,
+            {
+              "timerId": "a b",
+              "timer": {
+                "kind": "countdown",
+                "duration": 60
+              }
+            },
+            0
+          ],
+          "expected": null
+        },
+        {
+          "name": "a name too long: refused",
+          "args": [
+            null,
+            {
+              "timerId": "t-1",
+              "timer": {
+                "kind": "countdown",
+                "duration": 60,
+                "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              }
+            },
+            0
+          ],
+          "expected": null
+        },
+        {
+          "name": "one timer too many: refused",
+          "args": [
+            {
+              "rev": 1,
+              "timer": null,
+              "timers": [
+                {
+                  "id": "t-0",
+                  "name": "T0",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-1",
+                  "name": "T1",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-2",
+                  "name": "T2",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-3",
+                  "name": "T3",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-4",
+                  "name": "T4",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-5",
+                  "name": "T5",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-6",
+                  "name": "T6",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                },
+                {
+                  "id": "t-7",
+                  "name": "T7",
+                  "kind": "count-up",
+                  "duration": 0,
+                  "startedAt": null,
+                  "elapsed": 0
+                }
+              ],
+              "message": null
+            },
+            {
+              "timerId": "t-9",
+              "timer": {
+                "kind": "count-up",
+                "duration": 0,
+                "name": "T9"
               }
             },
             0

@@ -147,6 +147,27 @@ export const ReorderSetlistItemsSchema = z.strictObject({
 });
 
 
+/** A timer kept at hand in the operator's console (issue #358): "Sermon", a 30-minute countdown; "Service", a count up. */
+export const OperatorTimerPresetSchema = z.strictObject({
+  name: requiredText(40).describe("Its name, as the screens' widgets pick it"),
+  kind: z.enum(["countdown", "count-up"]),
+  duration: z.number().int().min(0).max(86_400).describe("A countdown's length, in seconds; 0 for a count up"),
+});
+export type OperatorTimerPreset = z.output<typeof OperatorTimerPresetSchema>;
+
+/** What the operator's console keeps at hand for a team's sets, or a person's own (issue #358). Each left out keeps what's saved. */
+export const OperatorPresetsSchema = z.strictObject({
+  timers: z.array(OperatorTimerPresetSchema).max(12).nullable().optional().describe("Named timers, one press to start; null: the built-in ones"),
+  messages: z.array(requiredText(200)).max(20).nullable().optional().describe("Quick messages to the stage; null: the built-in ones"),
+});
+export type OperatorPresetsRequest = z.input<typeof OperatorPresetsSchema>;
+
+/** Stored operator presets as they're read (issue #358): null for each that's the built-in list, or can't be read. */
+export function readOperatorPresets(value: unknown): { timers: OperatorTimerPreset[] | null; messages: string[] | null } {
+  const stored = OperatorPresetsSchema.safeParse(value ?? {});
+  return { timers: stored.success ? (stored.data.timers ?? null) : null, messages: stored.success ? (stored.data.messages ?? null) : null };
+}
+
 /** The Quick selection's songs into a set (issue #334). */
 export const AddQuickSelectionSchema = z.strictObject({
   keep: optional(z.boolean()).describe("Keep the songs added in the selection; by default they leave it"),

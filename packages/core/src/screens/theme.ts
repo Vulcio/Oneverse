@@ -296,6 +296,8 @@ function screenWidgetSchema(strict: boolean) {
       date: z.boolean().default(false),
       /** Countdown and count up: where the time comes from. */
       source: z.enum(SCREEN_TIMER_SOURCES).default("operator"),
+      /** Countdown and count up from the operator (issue #358): the name of the timer it shows ("Sermon"); empty, the main one. */
+      timer: z.string().trim().max(40).default(""),
       /** Countdown from "duration": its length, in seconds. */
       duration: z.number().int().min(1).max(86_400).default(300),
       /** Countdown "until": a time of day, HH:MM. */

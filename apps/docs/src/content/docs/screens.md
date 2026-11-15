@@ -243,7 +243,7 @@ A template can place widgets on a grid: a stage display shows the singers the sl
 - **Current section** and **Next section** - the whole section, every line: the one being sung, with the slide on screen picked out, and the one after it.
 - **Song structure** - the song's sections in the order they're sung (V1 C V2 C B C), the one now picked out, and a **Progress bar** through the song.
 - **Clock** - in **24 hours** or **12 hours (AM/PM)**, with **Seconds** and **The date** if you like. **Analog clock** - a clock face, with a **Second hand** if you like.
-- **Countdown** - the time left. **Time from**: **The media operator**, **A set length, from when the item comes on**, or **Until a time of day** (when the service starts). **Past zero** it can **Count on, in red** or **Stay at 0:00**, and it turns amber near the end. **Colours by time left** sets your own instead: **Add a break point**, give it a time (m:ss) and the colour of its **Text** and **Panel** from then on - amber under 5:00 and white on red under 1:00, say.
+- **Countdown** - the time left. **Time from**: **The media operator**, **A set length, from when the item comes on**, or **Until a time of day** (when the service starts). With **The media operator**, **Which timer, by its name** picks one of the operator's [named timers](/screens/#timers-and-messages) (*Sermon*); left empty, the main one. **Past zero** it can **Count on, in red** or **Stay at 0:00**, and it turns amber near the end. **Colours by time left** sets your own instead: **Add a break point**, give it a time (m:ss) and the colour of its **Text** and **Panel** from then on - amber under 5:00 and white on red under 1:00, say.
 - **Count up** - the time since **The song on screen, since it came on**, or since the media operator started it. **Colours by time gone by** works as a countdown's does, once that much time has gone by.
 - **Message** - a short message from the media operator, shown until it's cleared.
 - **Song** and **Next song** - the song's title, with its key and tempo, and what comes next in the set.
@@ -284,25 +284,34 @@ You can send slides as soon as the operator view opens, beside the leader's Live
 - **Share with Live** and **Run them alone** switch between the two; **Give them back** returns the screens to the leader.
 - **Take full control** leads the set as well: the metronome, the stems and the song everyone follows, as in Live.
 
+Under it, a line says where things stand at a glance: what's on the screens (the song and its slide, or **Black**), how many screens follow the set, each screen set to show it that isn't connected (*Lobby isn't connected*, in amber), and **Sending…** while a change you made is still on its way. A screen's chip opens **Screens & layers**.
+
 If you close the operator view, the screens go back to the leader. If your connection drops instead (the Wi-Fi at the desk, a reload), they wait a minute for you, still yours alone if you had taken them alone, and the operator view takes them back when it reconnects; the bar and Live say you lost your connection meanwhile. Not back within the minute, they go back to the leader.
 
 ### The set and its slides
 
-The sidebar lists the set's songs, as in Live. The one on the screens is marked **Now**, and the ones the screens have moved past are ticked as played (**Start from the top** clears them). Pick a song there to see its slides.
+The console fits the room it has. On a laptop, the slides fill the middle and a column beside them holds what's on the screens, the timers and the messages; on a wide screen, the **Running order** gets a column of its own on the left. On a tablet held upright, or a phone, what's on the screens comes first, the running order is a row you scroll, and the slides and the **Timers & messages** are two tabs.
 
-The **Slides** tab shows every slide of that song as a tile, coloured by its section (verse, chorus, bridge…). A tile sends its slide to every screen; the arrows (**Next slide** and back) step through them, and **Black screen** and **Stop presenting** work as in Live.
+The **Running order** lists every item of the set, with its number of slides. The one on the screens is marked **On screens**, with its slide. Pick an item to see its slides; its screen button puts its first slide up at once. In Songverse, the sidebar lists the set's songs too, as in Live: the one on the screens is marked **Now**, and the ones the screens have moved past are ticked as played (**Start from the top** clears them).
+
+The slides of the item looked at show as tiles, coloured by their section (verse, chorus, bridge…). A tile sends its slide to every screen; the arrows (**Next slide** and back) step through them, and **Black screen** and **Stop presenting** work as in Live. Above them, a song's sections in the order they're sung - *Verse 1*, *Chorus*, *Verse 2* - jump to the section's first slide; the keys **1** to **9** do the same, for the song on the screens.
 
 Tick **Notes** to show the song's notes under the slides they're on: **All notes**, or only those of the people holding one of the team's [positions](/organizations/#positions) (*Media's notes*), for the cues meant for you.
 
-### Timer and messages
+### What's on the screens, and what's next
 
-The **Timer & messages** tab:
+- **On the screens** - the slide the screens show now, its song and section, whether they're black or their words hidden, and the message over them, if there's one.
+- **Next** - the slide the screens go to next: the song's next one, or the next item's first after its last. Press it to put it up (the right arrow does the same). At the end of the set, it says **End of the set**.
 
-- **On the screens** - the song and slide the screens show now, and whether they're black.
-- **Timer** - what the **Countdown** and **Count up** widgets show when their time comes from **The media operator**: pick a length (1, 3, 5, 10, 15 or 30 minutes, or type one and **Set**), or **Count up**; then **Start** and **Pause**, **Reset**, a minute less or more (**-** and **+**), or **Clear**. Past zero, a countdown turns red.
+### Timers and messages
+
+- **Timer** - the main timer: what the **Countdown** and **Count up** widgets show when their time comes from **The media operator** and they name no timer. Pick a length (1, 3, 5, 10, 15 or 30 minutes, or type one and **Set**), or **Count up**; then **Start** and **Pause**, **Reset**, a minute less or more (**-** and **+**), or **Clear**. Past zero, a countdown turns red.
+- **Named timers** - several timers at once, each with its name: the service's count up, the sermon's countdown, the announcements'. Press one of the team's timers to start it (pressed again, it starts over); each then has its own **Start** and **Pause**, **Reset**, a minute more, and a cross to take it away. A widget shows one by its name: **Which timer, by its name**, in the widget's settings (see [Widgets](/screens/#widgets)). A widget that names none shows the main timer, or the first named one while there's no main timer.
 - **Message to the stage** - type one and **Send**, or press a quick one (**Wrap up**, **One minute**, **Next song**…). It shows in the **Message** widget of the set's screens until you **Clear** it.
 
-A song of the set can carry its own timer (**Timer on the screens**, on the [set's page](/sets/#songs-in-a-set)): a five-minute countdown for a talk, a count up for a song. When the leader's Live comes to that song, the timer starts on the screens by itself.
+The named timers (**Service**, **Sermon**, **Announcements** to start with) and the quick messages are the team's: **Edit**, beside them, changes them for every set of the team - or for all your own sets, on a set of yours. Add a timer with its name, a **Countdown** and its minutes or a **Count up**, add or remove messages, then **Save**. **Back to the built-in ones** returns both lists to those Oneverse comes with. Anyone who can edit the set, or runs its screens, can change them.
+
+A song of the set can carry its own timer (**Timer on the screens**, on the [set's page](/sets/#songs-in-a-set)): a five-minute countdown for a talk, a count up for a song. When the leader's Live comes to that song, it starts on the screens by itself, as the main timer.
 
 ### Screens and layers
 
@@ -330,6 +339,7 @@ The keyboard runs the screens too. The keyboard button beside **Screens & layers
 | ← ↑ Page Up | Previous slide, back into the previous song |
 | Enter | Put up the song you're looking at |
 | Home, End | First or last slide of the song |
+| 1 to 9 | That section of the song on the screens (1 = the first) |
 | B or . | Black screen, or back |
 | S | Stop presenting |
 | W | Content on or off (the words) |

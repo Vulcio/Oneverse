@@ -1,9 +1,7 @@
 import {
-  formatTimer,
-  readSyncTimer,
   readSyncLayers,
   SCREEN_SWITCHABLE_LAYERS,
-  SYNC_STAGE_MESSAGE_MAX,
+  type ScreenSummary,
   type ScreenSwitchableLayer,
   type SetlistOfflineCopy,
   type SetlistSongView,
@@ -12,30 +10,43 @@ import {
   type SyncStageCommand,
   type TeamMember,
   type TeamPosition,
-  slideKey,
   passName,
+  slideKey,
 } from "@oneverse/core";
-import { ChevronLeft, ChevronRight, Crown, Keyboard, Layers, Minus, MonitorOff, MonitorUp, Pause, Play, Plus, RotateCcw, Send, Square, Timer, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, Crown, Keyboard, Layers, MonitorOff, MonitorUp, RotateCcw, Square, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
-import { Input } from "@oneverse/ui/components/input";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { useMediaQuery } from "@oneverse/ui/hooks/use-media-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@oneverse/ui/components/popover";
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@oneverse/ui/components/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@oneverse/ui/components/tabs";
 import { cn } from "@oneverse/ui/lib/utils";
-import { setItemTitle, setItemView } from "@oneverse/screen/lib/set-items";
+import { setItemView } from "@oneverse/screen/lib/set-items";
 import { useLive, useOperatorHost } from "../host";
 import { ContinueOnPulse } from "./continue-on-pulse";
+import { Rundown, useOperatorItems, type OperatorItem } from "./operator-rundown";
+import { MessageCard, OperatorPresetsProvider, ProgramCard, TimersCard } from "./operator-stage";
 import { Kbd } from "@oneverse/ui/components/kbd";
 
-/** A countdown's lengths, one press away (minutes). */
-const PRESETS = [1, 3, 5, 10, 15, 30];
-/** Quick messages' keys in the locale files (`screens.operator.quick.<key>`). */
-const QUICK = ["wrapUp", "oneMinute", "nextSong", "louder", "slowDown", "repeat"] as const;
+/** The console's width from which the stage's column sits beside the slides, and from which the running order gets its own column (px). */
+const TWO_COLUMNS = 860;
+const THREE_COLUMNS = 1180;
+
+/** An element's width, as it changes (the console's own: beside a sidebar or a panel, not the window's). */
+function useWidth(ref: RefObject<HTMLElement | null>): number {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    setWidth(element.clientWidth);
+    const observer = new ResizeObserver(([entry]) => entry && setWidth(entry.contentRect.width));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
+  return width;
+}
 
 /**
  * The operator's console for a set (issues #269, #275, #277, #305), in any
@@ -72,10 +83,17 @@ export function OperatorConsole({
   const sync = useLive();
   const { sendStage: send } = useOperatorHost();
   const [drawer, setDrawer] = useState(false);
-  useOperatorKeys({ copy, itemId, onLook, onLayers: send, enabled: sync.ready && sync.canOperate });
+  const items = useOperatorItems(copy);
+  const expected = useExpectedScreens();
+  useOperatorKeys({ items, itemId, onLook, onLayers: send, enabled: sync.ready && sync.canOperate });
+  const root = useRef<HTMLDivElement>(null);
+  const width = useWidth(root);
+  const view = copy.songs.find((one) => one.item.id === itemId) ?? null;
+  const slidesTab = <SlidesTab copy={copy} view={view} item={items.find((one) => one.itemId === itemId) ?? null} members={members} positions={positions} />;
+  const columns = width >= THREE_COLUMNS ? 3 : width >= TWO_COLUMNS ? 2 : 1;
 
   return (
-    <div className="flex flex-col gap-4" data-testid="operator">
+    <div ref={root} className="@container flex flex-col gap-4" data-testid="operator" data-columns={columns}>
       <div className="flex flex-wrap items-center gap-3">
         {back}
         <div className="min-w-0 flex-1">
@@ -97,7 +115,7 @@ export function OperatorConsole({
       ) : !sync.canOperate && sync.canRoute ? (
         <div className="grid gap-6 xl:grid-cols-2" data-testid="operator-route-only">
           <p className="text-sm text-muted-foreground xl:col-span-2">{t("screens.operator.routeOnly")}</p>
-          <ScreensList />
+          <ScreensList expected={expected} />
           <LayersCard send={send} />
         </div>
       ) : !sync.canOperate ? (
@@ -105,40 +123,89 @@ export function OperatorConsole({
           {t("screens.operator.notAllowed")}
         </p>
       ) : (
-        <>
-          <ControlBar />
-          <Tabs defaultValue="slides" className="min-w-0">
-            <TabsList>
-              <TabsTrigger value="slides" data-testid="operator-tab-slides">
-                {t("screens.operator.tabSlides")}
-              </TabsTrigger>
-              <TabsTrigger value="stage" data-testid="operator-tab-stage">
-                {t("screens.operator.tabStage")}
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="slides" className="pt-2">
-              <SlidesTab copy={copy} view={copy.songs.find((one) => one.item.id === itemId) ?? null} members={members} positions={positions} />
-            </TabsContent>
-            <TabsContent value="stage" className="pt-2">
-              <div className="grid gap-6 xl:grid-cols-2">
-                <OnScreens copy={copy} />
-                <TimerCard send={send} />
-                <MessageCard send={send} />
+        <OperatorPresetsProvider>
+          <ControlBar items={items} expected={expected} onScreens={() => setDrawer(true)} />
+          {columns === 1 ? (
+            <>
+              <ProgramCard items={items} itemId={itemId} />
+              <Rundown items={items} itemId={itemId} onLook={onLook} strip />
+              <Tabs defaultValue="slides" className="min-w-0">
+                <TabsList>
+                  <TabsTrigger value="slides" data-testid="operator-tab-slides">
+                    {t("screens.operator.tabSlides")}
+                  </TabsTrigger>
+                  <TabsTrigger value="stage" data-testid="operator-tab-stage">
+                    {t("screens.operator.tabStage")}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="slides" className="pt-2">
+                  {slidesTab}
+                </TabsContent>
+                <TabsContent value="stage" className="pt-2">
+                  <div className="grid gap-6 @2xl:grid-cols-2">
+                    <TimersCard send={send} />
+                    <MessageCard send={send} />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </>
+          ) : (
+            <div className={cn("grid items-start gap-5", columns === 3 ? "grid-cols-[13rem_minmax(0,1fr)_22rem]" : "grid-cols-[minmax(0,1fr)_20rem]")} data-testid="operator-columns">
+              {columns === 3 ? (
+                <div className="sticky top-4">
+                  <Rundown items={items} itemId={itemId} onLook={onLook} />
+                </div>
+              ) : null}
+              <div className="flex min-w-0 flex-col gap-3">
+                {columns === 2 ? <Rundown items={items} itemId={itemId} onLook={onLook} strip /> : null}
+                {slidesTab}
               </div>
-            </TabsContent>
-          </Tabs>
-          <ScreensPanel open={drawer} onOpenChange={setDrawer} send={send} />
-        </>
+              <aside className="flex min-w-0 flex-col gap-4" aria-label={t("screens.operator.tabStage")}>
+                <ProgramCard items={items} itemId={itemId} side />
+                <TimersCard send={send} />
+                <MessageCard send={send} />
+              </aside>
+            </div>
+          )}
+          <ScreensPanel open={drawer} onOpenChange={setDrawer} send={send} expected={expected} />
+        </OperatorPresetsProvider>
       )}
     </div>
   );
 }
 
 /**
+ * The screens set to show this set (issue #358), connected or not, from the
+ * API through the host: those not connected are named as missing. Read again
+ * when the set's screens come and go. Null where the host can't tell.
+ */
+function useExpectedScreens(): ScreenSummary[] | null {
+  const { listScreens } = useOperatorHost();
+  const { members } = useLive();
+  const connected = members
+    .filter((member) => member.screen)
+    .map((member) => member.id)
+    .sort()
+    .join(",");
+  const [screens, setScreens] = useState<ScreenSummary[] | null>(null);
+  useEffect(() => {
+    if (!listScreens) return;
+    let live = true;
+    listScreens()
+      .then((list) => live && setScreens(list.filter((one) => one.kind !== "PULSE")))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [listScreens, connected]);
+  return screens;
+}
+
+/**
  * Who runs the screens (issue #275): the leader, or this operator - shared
  * with the leader's Live or alone - and the whole lead, one press away.
  */
-function ControlBar() {
+function ControlBar({ items, expected, onScreens }: { items: OperatorItem[]; expected: ScreenSummary[] | null; onScreens: () => void }) {
   const { t } = useTranslation();
   const sync = useLive();
   const { takeScreens, lead } = useOperatorHost();
@@ -146,56 +213,89 @@ function ControlBar() {
   const screens = session?.screens ?? null;
   const mine = sync.screensMine;
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2" data-testid="operator-control" data-control={mine ? (screens?.exclusive ? "exclusive" : "shared") : "none"}>
-      <p className="min-w-0 flex-1 text-sm">
-        {mine
-          ? t(screens?.exclusive ? "screens.operator.youRunAlone" : "screens.operator.youRunShared")
-          : screens
-            ? t(screens.online === false ? "screens.operator.otherRunsOffline" : "screens.operator.otherRuns", { name: screens.name })
-            : session
-              ? t("screens.operator.leaderRuns", { name: session.leader.name })
-              : t("screens.operator.nobodyRuns")}
-        {sync.leading ? <span className="ml-2 text-xs text-muted-foreground">· {t("screens.operator.youLead")}</span> : null}
-      </p>
-      {mine ? (
-        <>
-          <Button size="sm" variant="outline" onClick={() => takeScreens(screens?.exclusive ? "shared" : "exclusive")} data-testid="operator-control-switch">
-            {screens?.exclusive ? t("screens.operator.share") : t("screens.operator.runAlone")}
+    <div className="flex flex-col gap-2 rounded-lg border bg-card px-3 py-2" data-testid="operator-control" data-control={mine ? (screens?.exclusive ? "exclusive" : "shared") : "none"}>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="min-w-0 flex-1 text-sm">
+          {mine
+            ? t(screens?.exclusive ? "screens.operator.youRunAlone" : "screens.operator.youRunShared")
+            : screens
+              ? t(screens.online === false ? "screens.operator.otherRunsOffline" : "screens.operator.otherRuns", { name: screens.name })
+              : session
+                ? t("screens.operator.leaderRuns", { name: session.leader.name })
+                : t("screens.operator.nobodyRuns")}
+          {sync.leading ? <span className="ml-2 text-xs text-muted-foreground">· {t("screens.operator.youLead")}</span> : null}
+        </p>
+        {mine ? (
+          <>
+            <Button size="sm" variant="outline" onClick={() => takeScreens(screens?.exclusive ? "shared" : "exclusive")} data-testid="operator-control-switch">
+              {screens?.exclusive ? t("screens.operator.share") : t("screens.operator.runAlone")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => takeScreens(null)} data-testid="operator-control-release">
+              {t("screens.operator.giveBack")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button size="sm" onClick={() => takeScreens("shared")} data-testid="operator-take-shared">
+              <MonitorUp />
+              {t("screens.operator.takeShared")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => takeScreens("exclusive")} data-testid="operator-take-exclusive">
+              {t("screens.operator.takeAlone")}
+            </Button>
+          </>
+        )}
+        {!sync.leading && sync.canLead && lead ? (
+          <Button size="sm" variant="ghost" onClick={lead} title={t("screens.operator.fullControlHint")} data-testid="operator-take-lead">
+            <Crown />
+            {t("screens.operator.fullControl")}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => takeScreens(null)} data-testid="operator-control-release">
-            {t("screens.operator.giveBack")}
-          </Button>
-        </>
-      ) : (
-        <>
-          <Button size="sm" onClick={() => takeScreens("shared")} data-testid="operator-take-shared">
-            <MonitorUp />
-            {t("screens.operator.takeShared")}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => takeScreens("exclusive")} data-testid="operator-take-exclusive">
-            {t("screens.operator.takeAlone")}
-          </Button>
-        </>
-      )}
-      {!sync.leading && sync.canLead && lead ? (
-        <Button size="sm" variant="ghost" onClick={lead} title={t("screens.operator.fullControlHint")} data-testid="operator-take-lead">
-          <Crown />
-          {t("screens.operator.fullControl")}
-        </Button>
-      ) : null}
+        ) : null}
+      </div>
+      <StateLine items={items} expected={expected} onScreens={onScreens} />
     </div>
   );
 }
 
-/** Each item's slides (issue #277): what the arrows step through, from one song into the next, and what they say (issue #247). */
-function useSetSlides(copy: SetlistOfflineCopy) {
-  return useMemo(
-    () =>
-      copy.songs.map((view) => {
-        const { slides } = setItemView(view);
-        return { itemId: view.item.id, count: slides.length, key: slideKey(slides) };
-      }),
-    [copy],
+/**
+ * Where things stand, at a glance (issue #358): what's on the screens, who
+ * put it there, which screens follow and which are missing, whether this
+ * device's last change is still on its way. A screen chip opens the panel.
+ */
+function StateLine({ items, expected, onScreens }: { items: OperatorItem[]; expected: ScreenSummary[] | null; onScreens: () => void }) {
+  const { t } = useTranslation();
+  const sync = useLive();
+  const presenting = sync.session?.presenting ?? null;
+  const item = presenting ? items.find((one) => one.itemId === presenting.itemId) : undefined;
+  const connected = sync.members.filter((member) => member.screen);
+  const missing = (expected ?? []).filter((screen) => !connected.some((member) => member.id === screen.id));
+  const chip = "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs";
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 border-t pt-2" data-testid="operator-state">
+      <span className={cn(chip, presenting && !presenting.black ? "border-red-500/40 bg-red-500/10" : "text-muted-foreground")} data-testid="operator-state-presenting">
+        <span className={cn("size-2 rounded-full", presenting && !presenting.black ? "bg-red-500" : "bg-muted-foreground/40")} aria-hidden />
+        {!presenting || !item
+          ? t("screens.operator.state.nothing")
+          : presenting.black
+            ? t("screens.operator.state.black", { title: item.title })
+            : t("screens.operator.state.up", { title: item.title, slide: presenting.slide + 1, count: item.slides.length })}
+      </span>
+      <button type="button" onClick={onScreens} className={cn(chip, connected.length ? "" : "text-muted-foreground", "hover:bg-muted")} data-testid="operator-state-screens" data-count={connected.length}>
+        <span className={cn("size-2 rounded-full", connected.length ? "bg-emerald-500" : "bg-muted-foreground/40")} aria-hidden />
+        {connected.length ? t("screens.operator.state.following", { count: connected.length }) : t("screens.operator.state.noScreens")}
+      </button>
+      {missing.map((screen) => (
+        <button type="button" key={screen.id} onClick={onScreens} className={cn(chip, "border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20")} data-testid="operator-state-missing">
+          <span className="size-2 rounded-full bg-amber-500" aria-hidden />
+          {t("screens.operator.state.missing", { name: screen.name })}
+        </button>
+      ))}
+      {sync.sending ? (
+        <span className={cn(chip, "text-muted-foreground")} data-testid="operator-state-sending">
+          {t("screens.operator.state.sending")}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -205,6 +305,7 @@ const OPERATOR_KEYS = [
   { id: "previous", keys: ["←", "↑", "Page Up"] },
   { id: "present", keys: ["Enter"] },
   { id: "firstLast", keys: ["Home", "End"] },
+  { id: "section", keys: ["1", "…", "9"] },
   { id: "black", keys: ["B", "."] },
   { id: "stop", keys: ["S"] },
   { id: "words", keys: ["W"] },
@@ -224,14 +325,15 @@ const LAYER_KEYS: Record<string, ScreenSwitchableLayer> = { w: "content", g: "me
  * The keyboard, on the whole page (issue #277): the arrows move the slides on
  * the screens - past a song's last into the next song, before its first into
  * the previous one's last - Enter puts up the song looked at, and letters
- * black the screens, stop presenting and switch the layers. Not while typing;
+ * black the screens, stop presenting and switch the layers; a digit goes to
+ * that section of the song (issue #358). Not while typing;
  * ahead of the tabs' own arrow keys.
  */
-function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: SetlistOfflineCopy; itemId: string | null; onLook: (itemId: string) => void; onLayers: (command: SyncStageCommand) => void; enabled: boolean }) {
+function useOperatorKeys({ items, itemId, onLook, onLayers, enabled }: { items: OperatorItem[]; itemId: string | null; onLook: (itemId: string) => void; onLayers: (command: SyncStageCommand) => void; enabled: boolean }) {
   const sync = useLive();
   const { present: presentScreens } = useOperatorHost();
   const canPresent = useCanPresent();
-  const slides = useSetSlides(copy);
+  const slides = useMemo(() => items.map((item) => ({ itemId: item.itemId, count: item.slides.length, key: item.key, sections: item.sections })), [items]);
   // What these keys last sent, until the server's answer comes back: a key pressed again before it toggles from
   // there, not from a state the screens have already left (B twice quickly: black, then back).
   const sent = useRef<{ presenting?: SyncPresenting | null; layers?: { hidden: ScreenSwitchableLayer[]; title: boolean } }>({});
@@ -302,6 +404,12 @@ function useOperatorKeys({ copy, itemId, onLook, onLayers, enabled }: { copy: Se
         onLayers({ layers: { reset: true } });
       },
     };
+    // A digit: that section of the song on the screens, else of the one looked at (issue #358).
+    if (/^[1-9]$/.test(key)) {
+      const song = slides.find((one) => one.itemId === (presenting?.itemId ?? itemId));
+      const section = song?.sections[Number(key) - 1];
+      if (song && section) action[key] = () => present(song.itemId, section.slide);
+    }
     const layer = LAYER_KEYS[key];
     if (layer) action[key] = event.shiftKey ? () => onLayers({ layers: { clear: [layer] } }) : () => toggle(layer);
     const run = action[key];
@@ -362,7 +470,7 @@ function noPanelRoom(_open: boolean) {}
  * screens picked out: a tile sends its slide. Its notes beside them, if
  * asked: all, or those written by people holding one of the team's positions.
  */
-function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCopy; view: SetlistSongView | null; members: TeamMember[]; positions: TeamPosition[] }) {
+function SlidesTab({ copy, view, item, members, positions }: { copy: SetlistOfflineCopy; view: SetlistSongView | null; item: OperatorItem | null; members: TeamMember[]; positions: TeamPosition[] }) {
   const { t } = useTranslation();
   const { session } = useLive();
   const { present: presentScreens } = useOperatorHost();
@@ -371,12 +479,13 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
   const [notesShown, setNotesShown] = useState(false);
   const [position, setPosition] = useState("");
   // A song's chart and lyrics, a text's paragraphs (issue #305), or a passage's verses (issue #301).
-  const { chart, slides } = useMemo(() => (view ? setItemView(view) : { chart: null, slides: [] }), [view]);
+  const { chart, slides } = useMemo(() => (item ? item : view ? setItemView(view) : { chart: null, slides: [] }), [item, view]);
   if (!view || (!view.song && !view.text && !view.passage)) return <p className="text-sm text-muted-foreground">{t("screens.operator.noSong")}</p>;
   if (view.passage && slides.length === 0) return <p className="text-sm text-muted-foreground" data-testid="operator-passage-hidden">{t(view.passage.projection ? "sets.passage.missing" : "sets.passage.notProjected")}</p>;
   const itemId = view.item.id;
   const here = presenting?.itemId === itemId ? presenting.slide : null;
-  const send = (slide: number) => presentScreens({ itemId, slide, black: false, slideKey: slideKey(slides) });
+  const send = (slide: number) => presentScreens({ itemId, slide, black: false, slideKey: item?.key ?? slideKey(slides) });
+  const sections = item?.sections ?? [];
   // The notes (issue #275): those on the song, filtered by their writers' team position.
   const holders = new Set(position ? members.filter((member) => member.positionIds?.includes(position)).map((member) => member.userId) : []);
   const notes = notesShown && view.song ? (copy.notes[view.song.id]?.notes ?? []).filter((note) => !note.resolved && (!position || holders.has(note.author.id))) : [];
@@ -388,7 +497,7 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
   const songNotes = notes.filter((note) => note.anchor.kind === "song");
 
   return (
-    <div className="flex flex-col gap-3" data-testid="operator-slides">
+    <div className="@container flex flex-col gap-3" data-testid="operator-slides">
       <div className="flex flex-wrap items-center gap-2">
         <Button size="icon" variant="outline" disabled={!canPresent || here === null || here <= 0} onClick={() => here !== null && send(here - 1)} aria-label={t("screens.previousSlide")}>
           <ChevronLeft />
@@ -433,8 +542,30 @@ function SlidesTab({ copy, view, members, positions }: { copy: SetlistOfflineCop
           {t(session.screens.online === false ? "screens.operator.lockedByOffline" : "screens.operator.lockedBy", { name: session.screens.name })}
         </p>
       ) : null}
+      {sections.length > 1 ? (
+        <nav className="flex flex-wrap gap-1.5" aria-label={t("screens.operator.sections")} data-testid="operator-sections">
+          {sections.map((section, index) => {
+            const on = here !== null && here >= section.slide && (sections[index + 1] === undefined || here < sections[index + 1]!.slide);
+            return (
+              <button
+                key={section.slide}
+                type="button"
+                disabled={!canPresent}
+                onClick={() => send(section.slide)}
+                data-section-color={section.type}
+                className={cn("flex items-center gap-1.5 rounded-md border bg-[var(--section-tint)] px-2 py-1 text-xs font-medium enabled:hover:border-[var(--section-line)] disabled:cursor-not-allowed", on ? "border-primary ring-2 ring-primary/30" : "border-[var(--section-line)]/40")}
+                aria-current={on ? "true" : undefined}
+                data-testid="operator-section"
+              >
+                {index < 9 ? <Kbd className="h-4 min-w-4 px-1 text-[10px]">{index + 1}</Kbd> : null}
+                {section.label}
+              </button>
+            );
+          })}
+        </nav>
+      ) : null}
       {songNotes.length > 0 ? <NotesList notes={songNotes} /> : null}
-      <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 @xl:grid-cols-3 @4xl:grid-cols-4">
         {slides.map((slide, index) => {
           const pass = chart?.passes[slide.passIndex];
           const first = index === 0 || slides[index - 1]!.passIndex !== slide.passIndex;
@@ -496,7 +627,7 @@ const WIDE = "(min-width: 1024px)";
  * column down the right that the page makes room for on a large screen, at
  * the bottom on a phone.
  */
-function ScreensPanel({ open, onOpenChange, send }: { open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void }) {
+function ScreensPanel({ open, onOpenChange, send, expected }: { open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void; expected: ScreenSummary[] | null }) {
   const { t } = useTranslation();
   const wide = useMediaQuery(WIDE);
   const usePanelRoom = useOperatorHost().usePanelRoom ?? noPanelRoom;
@@ -515,7 +646,7 @@ function ScreensPanel({ open, onOpenChange, send }: { open: boolean; onOpenChang
         </div>
         <div className="flex flex-col gap-6 overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <p className="text-xs text-muted-foreground">{t("screens.operator.drawerDescription")}</p>
-          <ScreensList />
+          <ScreensList expected={expected} />
           <LayersCard send={send} />
         </div>
       </DrawerContent>
@@ -523,20 +654,28 @@ function ScreensPanel({ open, onOpenChange, send }: { open: boolean; onOpenChang
   );
 }
 
-/** The screens connected to the set now (issue #275). */
-function ScreensList() {
-  const { t } = useTranslation();
+/** The screens connected to the set now (issue #275), and those set to show it that aren't (issue #358). */
+function ScreensList({ expected }: { expected: ScreenSummary[] | null }) {
+  const { t, i18n } = useTranslation();
   const { members } = useLive();
   const screens = members.filter((member) => member.screen);
+  const missing = (expected ?? []).filter((screen) => !screens.some((member) => member.id === screen.id));
   return (
     <section className="flex flex-col gap-2" data-testid="operator-screens">
       <h3 className="text-sm font-semibold">{t("screens.operator.connectedScreens")}</h3>
       {screens.length === 0 ? <p className="text-sm text-muted-foreground">{t("screens.noScreens")}</p> : null}
       <ul className="flex flex-col gap-1">
         {screens.map((screen) => (
-          <li key={screen.id} className="flex items-center gap-2 text-sm">
+          <li key={screen.id} className="flex items-center gap-2 text-sm" data-testid="operator-screen" data-state="following">
             <span className="size-2 rounded-full bg-emerald-500" aria-hidden />
             {screen.name}
+          </li>
+        ))}
+        {missing.map((screen) => (
+          <li key={screen.id} className="flex items-center gap-2 text-sm" data-testid="operator-screen" data-state="missing">
+            <span className="size-2 rounded-full bg-amber-500" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">{screen.name}</span>
+            <span className="text-xs text-muted-foreground">{screen.lastSeenAt ? t("screens.operator.lastSeen", { time: new Date(screen.lastSeenAt).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "short" }) }) : t("screens.operator.notConnected")}</span>
           </li>
         ))}
       </ul>
@@ -612,164 +751,5 @@ function LayersCard({ send }: { send: (command: SyncStageCommand) => void }) {
         {screen ? t("screens.operator.layersLikeAll") : t("screens.operator.layersReset")}
       </Button>
     </section>
-  );
-}
-
-/** What the screens show now: the song and its slide, or nothing presented. */
-function OnScreens({ copy }: { copy: SetlistOfflineCopy }) {
-  const { t } = useTranslation();
-  const { session } = useLive();
-  const presenting = session?.presenting ?? null;
-  const view = presenting ? copy.songs.find((one) => one.item.id === presenting.itemId) : undefined;
-  const slides = useMemo(() => (view ? setItemView(view).slides : []), [view]);
-  const slide = presenting ? slides[presenting.slide] : undefined;
-  return (
-    <Card className="lg:col-span-2" data-testid="operator-on-screens">
-      <CardHeader>
-        <CardTitle className="text-base">{t("screens.operator.onScreens")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {!presenting || !view || (!view.song && !view.text && !view.passage) ? (
-          <p className="text-sm text-muted-foreground">{t("screens.operator.notPresenting")}</p>
-        ) : (
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium">
-              {setItemTitle(view, t)} · {t("screens.slideOf", { slide: presenting.slide + 1, count: slides.length })}
-              {presenting.black ? ` · ${t("screens.black")}` : ""}
-            </p>
-            <p className={cn("text-lg", presenting.black && "opacity-40")}>{slide?.lines.join(" / ") || t("screens.noWords")}</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-/** The stage's timer: what it shows now, and its controls. */
-function TimerCard({ send }: { send: (command: SyncStageCommand) => void }) {
-  const { t } = useTranslation();
-  const { stage, offset } = useLive();
-  const timer = stage?.timer ?? null;
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const tick = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(tick);
-  }, []);
-  const [minutes, setMinutes] = useState("");
-  const reading = timer ? readSyncTimer(timer, now + (offset ?? 0)) : null;
-
-  function custom(event: FormEvent) {
-    event.preventDefault();
-    const value = Math.round(Number(minutes) * 60);
-    if (value > 0 && value <= 86_400) {
-      send({ timer: { kind: "countdown", duration: value } });
-      setMinutes("");
-    }
-  }
-
-  return (
-    <Card data-testid="operator-timer">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Timer className="size-5" />
-          {t("screens.operator.timer")}
-        </CardTitle>
-        <CardDescription>{t("screens.operator.timerDescription")}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <p
-          className={cn("text-center font-mono text-6xl font-semibold tabular-nums", !timer && "text-muted-foreground", reading?.overtime && "text-red-500", reading?.warn && "text-amber-500")}
-          data-testid="operator-timer-readout"
-          data-running={reading?.running ? "" : undefined}
-        >
-          {reading ? formatTimer(reading.seconds, reading.overtime) : "–:––"}
-        </p>
-        <p className="text-center text-xs text-muted-foreground">
-          {!timer ? t("screens.operator.noTimer") : timer.kind === "countdown" ? t("screens.operator.countdownOf", { time: formatTimer(timer.duration) }) : t("screens.operator.countUp")}
-        </p>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button disabled={!timer} onClick={() => send({ run: !timer?.startedAt })} data-testid="operator-timer-run">
-            {timer?.startedAt ? <Pause /> : <Play />}
-            {timer?.startedAt ? t("screens.operator.pause") : t("screens.operator.start")}
-          </Button>
-          <Button variant="outline" disabled={!timer} onClick={() => send({ reset: true })} data-testid="operator-timer-reset">
-            <RotateCcw />
-            {t("screens.operator.reset")}
-          </Button>
-          <Button variant="outline" size="icon" disabled={!timer} onClick={() => send({ add: -60 })} aria-label={t("screens.operator.minuteLess")}>
-            <Minus />
-          </Button>
-          <Button variant="outline" size="icon" disabled={!timer} onClick={() => send({ add: 60 })} aria-label={t("screens.operator.minuteMore")} data-testid="operator-timer-more">
-            <Plus />
-          </Button>
-          <Button variant="ghost" disabled={!timer} onClick={() => send({ timer: null })} data-testid="operator-timer-clear">
-            <X />
-            {t("screens.operator.clearTimer")}
-          </Button>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-          {PRESETS.map((one) => (
-            <Button key={one} size="sm" variant="outline" onClick={() => send({ timer: { kind: "countdown", duration: one * 60 } })} data-testid={`operator-preset-${one}`}>
-              {formatTimer(one * 60)}
-            </Button>
-          ))}
-          <Button size="sm" variant="outline" onClick={() => send({ timer: { kind: "count-up", duration: 0 }, run: true })} data-testid="operator-count-up">
-            {t("screens.operator.countUp")}
-          </Button>
-          <form className="flex items-center gap-1" onSubmit={custom}>
-            <Input type="number" min={1} max={1440} step="any" value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder={t("screens.operator.minutes")} className="h-8 w-24" data-testid="operator-custom-minutes" />
-            <Button size="sm" type="submit" variant="secondary" disabled={!minutes} data-testid="operator-custom-set">
-              {t("screens.operator.set")}
-            </Button>
-          </form>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/** A message to the stage: typed, or one of the quick ones; on the screens until it's cleared. */
-function MessageCard({ send }: { send: (command: SyncStageCommand) => void }) {
-  const { t } = useTranslation();
-  const { stage } = useLive();
-  const [text, setText] = useState("");
-  const shown = stage?.message?.text ?? null;
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!text.trim()) return;
-    send({ message: text });
-    setText("");
-  };
-  return (
-    <Card data-testid="operator-message">
-      <CardHeader>
-        <CardTitle className="text-base">{t("screens.operator.message")}</CardTitle>
-        <CardDescription>{t("screens.operator.messageDescription")}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className={cn("flex min-h-12 items-center gap-2 rounded-md border px-3 py-2", shown ? "border-red-500/50 bg-red-500/10" : "text-muted-foreground")} data-testid="operator-message-shown">
-          <p className="min-w-0 flex-1 text-sm">{shown ?? t("screens.operator.noMessage")}</p>
-          {shown ? (
-            <Button size="sm" variant="outline" onClick={() => send({ message: null })} data-testid="operator-message-clear">
-              {t("screens.operator.clearMessage")}
-            </Button>
-          ) : null}
-        </div>
-        <form className="flex gap-2" onSubmit={submit}>
-          <Input value={text} maxLength={SYNC_STAGE_MESSAGE_MAX} onChange={(e) => setText(e.target.value)} placeholder={t("screens.operator.messagePlaceholder")} aria-label={t("screens.operator.message")} data-testid="operator-message-input" />
-          <Button type="submit" disabled={!text.trim()} data-testid="operator-message-send">
-            <Send />
-            {t("screens.operator.send")}
-          </Button>
-        </form>
-        <div className="flex flex-wrap gap-2">
-          {QUICK.map((key) => (
-            <Button key={key} size="sm" variant="outline" onClick={() => send({ message: t(`screens.operator.quick.${key}`) })} data-testid={`operator-quick-${key}`}>
-              {t(`screens.operator.quick.${key}`)}
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   );
 }

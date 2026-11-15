@@ -60,7 +60,7 @@ import type { SaveBackupConfigRequest } from "../requests/backups.js";
 import type { CreateGroupRequest, CreateOrganizationRequest, DeclineOrganizationRequestRequest, OrganizationKind, OrganizationSize, RequestOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, SaveOwnStorageRequest, OwnStorageLimitsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
-import type { AddQuickSelectionSchema, AddSetlistItemSchema, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
+import type { AddQuickSelectionSchema, AddSetlistItemSchema, OperatorPresetsRequest, OperatorTimerPreset, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
 import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
@@ -917,6 +917,19 @@ export interface AdminCustomInstrument extends CustomInstrument {
 }
 
 /** A screen showing a set (issue #186). */
+/**
+ * What the operator's console keeps at hand for a set (issue #358): its
+ * owner's named timers and quick messages - a team's for a team's set, the
+ * person's for their own - null for each still the built-in list.
+ */
+export interface OperatorPresets {
+  timers: OperatorTimerPreset[] | null;
+  messages: string[] | null;
+  owner: { kind: "team" | "user"; name: string };
+  /** This person may change them: they can edit the set, or run its screens. */
+  canEdit: boolean;
+}
+
 export interface ScreenSummary {
   id: string;
   /** Whose it is (issue #222): a person's, a team's or an organisation's. */
@@ -3368,6 +3381,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<SetlistDetail>(`/setlists/${setlistId}/items/${itemId}`, { method: "DELETE" }),
     getSetlistSong: (setlistId: string, itemId: string) => request<SetlistSongView>(`/setlists/${setlistId}/items/${itemId}/song`),
     /** A set to keep on the device; `forScreens`, as the screens may show it (the operator's console, issue #301). */
+    /** The operator's named timers and quick messages for a set (issue #358): its owner's. */
+    getOperatorPresets: (setlistId: string) => request<OperatorPresets>(`/setlists/${setlistId}/operator-presets`),
+    saveOperatorPresets: (setlistId: string, data: OperatorPresetsRequest) => request<OperatorPresets>(`/setlists/${setlistId}/operator-presets`, { method: "PUT", body: JSON.stringify(data) }),
     getSetlistOffline: (setlistId: string, { forScreens = false } = {}) => request<SetlistOfflineCopy>(`/setlists/${setlistId}/offline${forScreens ? "?for=screens" : ""}`),
     syncOffline: (body: {
       days?: number;

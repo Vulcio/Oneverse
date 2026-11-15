@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { apiToken } from "@oneverse/app/api-client";
 import { getApiUrl } from "@oneverse/app/public-env";
 import { OperatorConsole } from "@oneverse/operator/components/operator-console";
-import { OperatorProvider } from "@oneverse/operator/host";
+import { OperatorProvider, type OperatorHost } from "@oneverse/operator/host";
 import { createLiveClient } from "@oneverse/operator/lib/live-client";
 import { setlistTitle } from "@oneverse/screen/lib/set-items";
 import { Button } from "@oneverse/ui/components/button";
@@ -41,12 +41,21 @@ function OperatePage() {
     live.open(setlistId);
     return () => live.close();
   }, [live, setlistId]);
+  // The set's named timers and quick messages, and the screens set to show it (issue #358), through the API.
+  const host = useMemo<OperatorHost>(
+    () => ({
+      ...live.host,
+      presets: { load: () => apiClient.getOperatorPresets(setlistId), save: (data) => apiClient.saveOperatorPresets(setlistId, data) },
+      listScreens: () => apiClient.listScreens(setlistId),
+    }),
+    [live, setlistId],
+  );
   const { session } = live.host.useLive();
   // The item looked at: the one picked, else the one on the screens.
   const itemId = (picked && copy.songs.some((one) => one.item.id === picked) ? picked : null) ?? session?.presenting?.itemId ?? session?.itemId ?? copy.songs[0]?.item.id ?? null;
   const look = (item: string) => void navigate({ to: "/operate/$setlistId", params: { setlistId }, search: { item }, replace: true });
   return (
-    <OperatorProvider host={live.host}>
+    <OperatorProvider host={host}>
       <OperatorConsole
         copy={copy}
         members={members as TeamMember[]}

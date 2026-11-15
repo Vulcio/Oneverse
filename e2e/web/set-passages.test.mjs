@@ -115,14 +115,14 @@ try {
     await desk.goto(`${WEB}/sets/${set.id}/operate?item=${passageId}`);
     await desk.getByTestId("operator-slides").getByTestId("operator-slide").nth(1).getByText("green pastures.").waitFor({ timeout: 10000 });
     await desk.getByText(`2. Psalms 23:1-2 (${abbreviation})`).first().waitFor();
-    await desk.getByTestId("operator-tab-stage").click();
-    await desk.getByTestId("operator-on-screens").getByText(`Psalms 23:1-2 (${abbreviation}) · Slide 2 of 2`).waitFor({ timeout: 10000 });
+    // What's up, beside the slides (issue #358).
+    await desk.getByTestId("operator-state-presenting").getByText(`Psalms 23:1-2 (${abbreviation}) · 2 of 2`).waitFor({ timeout: 10000 });
+    await desk.getByTestId("operator-on-screens").getByText("He maketh me to lie down in green", { exact: false }).waitFor();
   });
 
   await step("its Bible no longer allowed on screens: the operator's page says so", async () => {
     await api(admin, "PATCH", `/admin/scriptures/bibles/${bible.id}`, { canProject: false });
     await desk.goto(`${WEB}/sets/${set.id}/operate?item=${passageId}`);
-    await desk.getByTestId("operator-tab-slides").click();
     await desk.getByTestId("operator-passage-hidden").getByText("This version may not be shown on screens").waitFor({ timeout: 10000 });
   });
 

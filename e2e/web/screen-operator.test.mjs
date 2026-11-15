@@ -1,6 +1,8 @@
 // The media operator (issue #269): a set's timer and message for its screens, run over /sync by anyone who can
 // edit the set - leading or not - and refused to anyone else; a set item's own timer, started when Live comes to it;
-// the operator's page: a countdown started, a minute more, a message sent and cleared, all on a stage display.
+// the operator's page: a countdown started, a minute more, a message sent and cleared, all on a stage display;
+// the console refined (issue #358): named timers, the team's saved timers and quick messages, what's up and
+// what's next, the running order and section jumps, where things stand, and its layout at a tablet's and a wide width.
 import { chromium } from "playwright";
 import { SCREEN, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
 import { syncDevice } from "../lib/sync-device.mjs";
@@ -25,6 +27,16 @@ for (const title of ["Opening", "Sermon song"]) {
   songs.push(song);
   await api(leader, "POST", `/setlists/${set.id}/items`, { songVersionId: song.id });
 }
+// A song in sections (issue #358): what the section jumps go to.
+const closing = await api(leader, "POST", "/song-versions", {
+  title: `Closing ${stamp}`,
+  language: "en",
+  artists: ["Someone"],
+  teamId: team.id,
+  content: "{start_of_verse}\nFirst verse line\n{end_of_verse}\n\n{start_of_chorus}\nChorus line here\n{end_of_chorus}\n\n{start_of_verse}\nSecond verse line\n{end_of_verse}\n",
+  contentFormat: "CHORDPRO",
+});
+await api(leader, "POST", `/setlists/${set.id}/items`, { songVersionId: closing.id });
 const items = (await api(leader, "GET", `/setlists/${set.id}`)).items;
 // Notes on the first song (issue #275): one by someone holding the team's "Media" position, one by someone who doesn't.
 const media = await api(leader, "POST", `/teams/${team.id}/positions`, { name: `Media ${stamp}` });
@@ -37,6 +49,25 @@ let r = await call(leader, "PATCH", `/setlists/${set.id}/items/${items[1].id}`, 
 check("a set item gets a timer of its own", r.status === 200 && r.body.items[1].timer?.duration === 120, JSON.stringify(r.body.items?.[1]));
 r = await call(leader, "PATCH", `/setlists/${set.id}/items/${items[1].id}`, { timer: { kind: "countdown", duration: -5 } });
 check("…a length out of range is refused", r.status === 400, JSON.stringify(r.body));
+
+// --- the operator's presets (issue #358): the team's, for every set of it
+const otherSet = await api(leader, "POST", "/setlists", { name: `Stage other ${stamp}`, teamId: team.id });
+r = await call(member, "GET", `/setlists/${set.id}/operator-presets`);
+check("a team member reads the set's operator presets: the built-in ones, not theirs to change", r.status === 200 && r.body.timers === null && r.body.messages === null && r.body.canEdit === false && r.body.owner.kind === "team", JSON.stringify(r.body));
+r = await call(member, "PUT", `/setlists/${set.id}/operator-presets`, { messages: ["Hijacked"] });
+check("…and can't change them", r.status === 403, JSON.stringify(r.body));
+r = await call(leader, "PUT", `/setlists/${set.id}/operator-presets`, { timers: [{ name: "Sermon", kind: "countdown", duration: 1500 }], messages: ["Pray"] });
+check("the team's admin saves timers and messages", r.status === 200 && r.body.timers?.[0]?.duration === 1500 && r.body.messages?.[0] === "Pray" && r.body.canEdit, JSON.stringify(r.body));
+r = await call(operator, "GET", `/setlists/${otherSet.id}/operator-presets`);
+check("…the same for every set of the team", r.status === 200 && r.body.timers?.[0]?.name === "Sermon" && r.body.messages?.[0] === "Pray", JSON.stringify(r.body));
+r = await call(leader, "PUT", `/setlists/${set.id}/operator-presets`, { timers: [{ name: "", kind: "countdown", duration: 60 }] });
+check("…a timer without a name is refused", r.status === 400, JSON.stringify(r.body));
+r = await call(leader, "PUT", `/setlists/${set.id}/operator-presets`, { messages: null });
+check("…the messages back to the built-in ones, the timers kept", r.status === 200 && r.body.messages === null && r.body.timers?.length === 1, JSON.stringify(r.body));
+await call(leader, "PUT", `/setlists/${set.id}/operator-presets`, { timers: null });
+const ownSet = await api(member, "POST", "/setlists", { name: `Own ${stamp}` });
+r = await call(member, "PUT", `/setlists/${ownSet.id}/operator-presets`, { messages: ["Mine"] });
+check("a personal set's presets are its owner's", r.status === 200 && r.body.owner.kind === "user" && r.body.messages?.[0] === "Mine", JSON.stringify(r.body));
 
 // --- the stage over /sync
 const joined = async (who) => {
@@ -59,6 +90,20 @@ check("an operator who isn't leading starts a countdown: everyone in the set hea
 operating.send({ type: "stage", message: "x".repeat(201) });
 r = await operating.next((m) => m.type === "error");
 check("a message too long is refused", r?.code === "bad-request", JSON.stringify(r));
+watching.drain();
+// Named timers (issue #358): one started beside the main one, which is still what an older client reads.
+operating.send({ type: "stage", timerId: "t-sermon", timer: { kind: "countdown", duration: 1800, name: "Sermon" }, run: true });
+r = await watching.next((m) => m.type === "session" && m.stage?.timers?.length === 2);
+check("a named timer runs beside the main one", r?.stage.timers[0].id === "main" && r.stage.timers[1].name === "Sermon" && r.stage.timers[1].startedAt > 0 && r.stage.timer?.duration === 300, JSON.stringify(r?.stage));
+operating.send({ type: "stage", timerId: "t-sermon", run: false });
+r = await watching.next((m) => m.type === "session" && m.stage?.timers?.[1]?.startedAt === null);
+check("…paused on its own, the main one still running", r?.stage.timers[0].startedAt > 0, JSON.stringify(r?.stage));
+operating.send({ type: "stage", timerId: "t-sermon", timer: null });
+r = await watching.next((m) => m.type === "session" && m.stage?.timers?.length === 1);
+check("…taken away", r?.stage.timers[0].id === "main", JSON.stringify(r?.stage));
+operating.send({ type: "stage", timerId: "not ok", timer: { kind: "countdown", duration: 60 } });
+r = await operating.next((m) => m.type === "error");
+check("…a timer id that can't be read is refused", r?.code === "bad-request", JSON.stringify(r));
 watching.drain();
 // Leading, Live comes to the item with a timer: it starts on the stage.
 const leading = await joined(leader);
@@ -98,7 +143,7 @@ try {
     await desk.getByTestId("operator-control").waitFor();
     // Live mode (issue #277), the set's songs in the sidebar.
     if ((await desk.evaluate(() => localStorage.getItem("songverse.mode"))) !== "live") throw new Error("not in Live mode");
-    if ((await desk.getByTestId("sidebar-operate-item").count()) !== 2) throw new Error("the sidebar doesn't list the set's songs");
+    if ((await desk.getByTestId("sidebar-operate-item").count()) !== 3) throw new Error("the sidebar doesn't list the set's songs");
     // The screens connected, in the drawer.
     await desk.getByTestId("operator-drawer-open").click();
     await desk.getByTestId("operator-drawer").getByTestId("operator-screens").getByText(`Stage ${stamp}`).waitFor({ timeout: 10000 });
@@ -109,8 +154,11 @@ try {
     if (!panel || !bar || bar.x + bar.width > panel.x + 1) throw new Error(`the panel covers the page: ${JSON.stringify({ panel, bar })}`);
     await desk.getByTestId("operator-drawer-close").click();
     await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
-    await desk.getByTestId("operator-tab-stage").click();
+    // Beside the sidebar on a laptop (issue #358): the slides, and the stage's column beside them - no tabs.
+    await desk.locator('[data-testid="operator"][data-columns="2"]').waitFor();
     await desk.getByTestId("operator-timer").waitFor();
+    await desk.getByTestId("operator-slides").waitFor();
+    if (await desk.getByTestId("operator-tab-stage").count()) throw new Error("tabs at a laptop's width");
   });
 
   await step("a 5-minute countdown, started: on the stage display, ticking; a minute more", async () => {
@@ -156,7 +204,6 @@ try {
 
   await step("the slides (issue #275): sent without taking the screens (issue #305), then taken, shared; a tile sends its slide", async () => {
     page = desk;
-    await desk.getByTestId("operator-tab-slides").click();
     const tiles = desk.getByTestId("operator-slide");
     await tiles.first().waitFor();
     // Split control (issue #305): whoever can edit the set presents beside the leader, no need to take the screens first.
@@ -235,13 +282,12 @@ try {
   await step("the keyboard (issue #277): the arrows into the next song and back, black, layers, stop, Enter", async () => {
     page = desk;
     const at = (item) => tv.locator(`[data-testid="screen-showing"][data-item="${item}"]`);
-    // A tab focused: the arrows are still the slides'.
-    await desk.getByTestId("operator-tab-slides").click();
+    // A button focused: the arrows are still the slides'.
+    await desk.getByTestId("operator-slide").first().focus();
     await desk.keyboard.press("ArrowRight");
     await at(items[1].id).waitFor({ timeout: 10000 });
     await desk.locator('[data-testid="sidebar-operate-item"]:has([data-testid="sidebar-now"])').getByText(`Sermon song ${stamp}`).waitFor();
     await desk.getByTestId("sidebar-operate-item").filter({ hasText: `Opening ${stamp}` }).getByTestId("sidebar-played").waitFor();
-    if (!(await desk.getByTestId("operator-slides").isVisible())) throw new Error("the arrows switched the tab");
     await desk.keyboard.press("ArrowLeft");
     await at(items[0].id).waitFor({ timeout: 10000 });
     await desk.keyboard.press("b");
@@ -267,6 +313,145 @@ try {
     await desk.getByTestId("operator-keys-list").getByText("Black screen, or back").waitFor();
     await desk.keyboard.press("Escape");
     await desk.getByTestId("operator-keys-list").waitFor({ state: "detached" });
+  });
+
+  await step("what's up and what's next (issue #358): the slide on the screens, the next one sent by its tile", async () => {
+    page = desk;
+    const at = (item) => tv.locator(`[data-testid="screen-showing"][data-item="${item}"]`);
+    await desk.getByTestId("operator-on-screens").getByText("A line here").waitFor({ timeout: 5000 });
+    await desk.getByTestId("operator-state-presenting").getByText(`Opening ${stamp}`).waitFor();
+    await desk.locator('[data-testid="operator-state-screens"][data-count="1"]').waitFor();
+    await desk.getByTestId("operator-next-slide").getByText(`Sermon song ${stamp}`).waitFor();
+    await desk.getByTestId("operator-next-slide").click();
+    await at(items[1].id).waitFor({ timeout: 5000 });
+    await desk.locator('[data-testid="operator-rundown-item"][data-live]').getByText(`Sermon song ${stamp}`).waitFor({ timeout: 5000 });
+    await desk.getByRole("heading", { name: "Operator" }).click();
+    await desk.keyboard.press("b");
+    await desk.locator('[data-testid="operator-on-screens"][data-state="black"]').waitFor({ timeout: 5000 });
+    await desk.keyboard.press("b");
+    await desk.locator('[data-testid="operator-on-screens"][data-state="shown"]').waitFor({ timeout: 5000 });
+  });
+
+  await step("the running order and section jumps (issue #358): a song looked at, its sections by a press or a digit", async () => {
+    page = desk;
+    await desk.getByTestId("operator-rundown-item").filter({ hasText: `Closing ${stamp}` }).click();
+    const sections = desk.getByTestId("operator-section");
+    await sections.nth(2).waitFor();
+    if ((await sections.count()) !== 3) throw new Error(`${await sections.count()} sections`);
+    await sections.nth(1).click();
+    page = tv;
+    await tv.getByTestId("widget-current-slide").getByText("Chorus line here").waitFor({ timeout: 5000 });
+    page = desk;
+    await desk.locator('[data-testid="operator-section"][aria-current="true"]').getByText("Chorus").waitFor();
+    await desk.getByRole("heading", { name: "Operator" }).click();
+    await desk.keyboard.press("3");
+    page = tv;
+    await tv.getByTestId("widget-current-slide").getByText("Second verse line").waitFor({ timeout: 5000 });
+    page = desk;
+    await desk.keyboard.press("1");
+    page = tv;
+    await tv.getByTestId("widget-current-slide").getByText("First verse line").waitFor({ timeout: 5000 });
+    // The set's last slide: nothing next.
+    page = desk;
+    await desk.keyboard.press("End");
+    await desk.getByTestId("operator-next-slide").getByText("End of the set").waitFor({ timeout: 5000 });
+    // Back to the first song for what follows.
+    await desk.getByTestId("operator-rundown-item").filter({ hasText: `Opening ${stamp}` }).click();
+    await desk.getByTestId("operator-slide").first().click();
+    await tv.locator(`[data-testid="screen-showing"][data-item="${items[0].id}"]`).waitFor({ timeout: 5000 });
+  });
+
+  await step("named timers (issue #358): one started from the built-in ones, shown by an unnamed countdown once there's no main timer", async () => {
+    page = desk;
+    await desk.getByTestId("operator-timer-clear").click();
+    await desk.getByTestId("operator-timer-readout").getByText("–:––").waitFor({ timeout: 5000 });
+    await desk.locator('[data-testid="operator-timer-preset"][data-name="Sermon"]').click();
+    const row = desk.locator('[data-testid="operator-named-timer"][data-name="Sermon"]');
+    await desk.locator('[data-testid="operator-named-timer"][data-name="Sermon"][data-running]').waitFor({ timeout: 5000 });
+    page = tv;
+    await tv.waitForFunction(() => /^(30:00|29:5\d)$/.test(document.querySelector('[data-testid="widget-countdown"]')?.textContent?.trim() ?? ""), null, { timeout: 5000 });
+    page = desk;
+    // Pressed again: the same timer started over, not a second one.
+    await desk.locator('[data-testid="operator-timer-preset"][data-name="Sermon"]').click();
+    await desk.waitForTimeout(500);
+    if ((await desk.getByTestId("operator-named-timer").count()) !== 1) throw new Error("a second Sermon timer");
+    await row.getByTestId("operator-named-timer-run").click();
+    await desk.locator('[data-testid="operator-named-timer"][data-name="Sermon"]:not([data-running])').waitFor({ timeout: 5000 });
+    await row.getByTestId("operator-named-timer-remove").click();
+    await row.waitFor({ state: "detached", timeout: 5000 });
+    page = tv;
+    await tv.getByTestId("widget-countdown").getByText("–:––").waitFor({ timeout: 5000 });
+  });
+
+  await step("the team's own timers and quick messages (issue #358): edited from the console, used at once", async () => {
+    page = desk;
+    await desk.getByTestId("operator-presets-edit").click();
+    const dialog = desk.getByTestId("operator-presets");
+    await dialog.getByTestId("operator-presets-timer").first().waitFor();
+    await dialog.getByTestId("operator-presets-add-timer").click();
+    const added = dialog.getByTestId("operator-presets-timer").last();
+    await added.getByTestId("operator-presets-timer-name").fill(`Offering ${stamp}`);
+    await added.getByTestId("operator-presets-timer-minutes").fill("2");
+    const messages = dialog.getByTestId("operator-presets-message");
+    while ((await messages.count()) > 0) await messages.first().getByRole("button").click();
+    await dialog.getByTestId("operator-presets-add-message").click();
+    await messages.first().getByTestId("operator-presets-message-text").fill(`Pray for ${stamp}`);
+    await dialog.getByTestId("operator-presets-save").click();
+    await dialog.waitFor({ state: "detached", timeout: 5000 });
+    const saved = await api(leader, "GET", `/setlists/${set.id}/operator-presets`);
+    if (saved.timers?.at(-1)?.name !== `Offering ${stamp}` || saved.timers.at(-1).duration !== 120 || saved.messages?.join() !== `Pray for ${stamp}`) throw new Error(JSON.stringify(saved));
+    // The message card has them too, without a reload.
+    await desk.locator("[data-quick]").getByText(`Pray for ${stamp}`).click();
+    page = tv;
+    await tv.getByTestId("widget-message").getByText(`Pray for ${stamp}`).waitFor({ timeout: 5000 });
+    page = desk;
+    await desk.getByTestId("operator-on-screens-message").getByText(`Pray for ${stamp}`).waitFor();
+    await desk.getByTestId("operator-message-clear").click();
+    await desk.locator(`[data-testid="operator-timer-preset"][data-name="Offering ${stamp}"]`).click();
+    await desk.locator(`[data-testid="operator-named-timer"][data-name="Offering ${stamp}"]`).getByTestId("operator-named-timer-readout").getByText(/^(2:00|1:5\d)$/).waitFor({ timeout: 5000 });
+    // Back to the built-in ones.
+    await desk.getByTestId("operator-presets-edit").click();
+    await dialog.getByTestId("operator-presets-built-in").click();
+    await dialog.waitFor({ state: "detached", timeout: 5000 });
+    await desk.getByTestId("operator-quick-wrapUp").waitFor();
+    await desk.locator(`[data-testid="operator-named-timer"][data-name="Offering ${stamp}"]`).getByTestId("operator-named-timer-remove").click();
+  });
+
+  await step("a screen of the set that isn't connected (issue #358): named as missing", async () => {
+    const lobby = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+    await lobby.goto(`${SCREEN}/`);
+    const code = (await lobby.getByTestId("screen-code").innerText()).replace("-", "");
+    await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Lobby ${stamp}`, mode: "LYRICS", setlistId: set.id });
+    await lobby.getByTestId("screen-grid").first().waitFor({ timeout: 15000 });
+    page = desk;
+    await desk.locator('[data-testid="operator-state-screens"][data-count="2"]').waitFor({ timeout: 10000 });
+    await lobby.context().close();
+    await desk.getByTestId("operator-state-missing").getByText(`Lobby ${stamp}`).waitFor({ timeout: 20000 });
+    await desk.getByTestId("operator-state-missing").click();
+    await desk.locator('[data-testid="operator-drawer"] [data-testid="operator-screen"][data-state="missing"]').getByText(`Lobby ${stamp}`).waitFor();
+    await desk.getByTestId("operator-drawer-close").click();
+    await desk.getByTestId("operator-drawer").waitFor({ state: "detached" });
+  });
+
+  await step("the console's width (issue #358): the running order in a column of its own when wide; on a tablet, what's up on top and tabs", async () => {
+    page = desk;
+    await desk.setViewportSize({ width: 1720, height: 1000 });
+    await desk.locator('[data-testid="operator"][data-columns="3"]').waitFor({ timeout: 5000 });
+    await desk.locator('[data-testid="operator-rundown"]:not([data-strip])').waitFor();
+    await desk.setViewportSize({ width: 1280, height: 900 });
+    const tablet = await (await browser.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true })).newPage();
+    tablet.on("pageerror", (error) => errors.push(error.message));
+    page = tablet;
+    await signIn(tablet, operator);
+    await tablet.goto(`${SCREEN}/operate/${set.id}`);
+    await tablet.locator('[data-testid="operator"][data-columns="1"]').waitFor({ timeout: 15000 });
+    await tablet.getByTestId("operator-on-screens").getByText("A line here").waitFor({ timeout: 10000 });
+    await tablet.locator('[data-testid="operator-rundown"][data-strip]').waitFor();
+    await tablet.getByTestId("operator-tab-stage").click();
+    await tablet.getByTestId("operator-timer").waitFor();
+    const scroll = await tablet.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (scroll > 0) throw new Error(`the tablet's page scrolls sideways by ${scroll}px`);
+    await tablet.context().close();
   });
 
   await step("notes on the slides: all of them, or only those of a team position", async () => {

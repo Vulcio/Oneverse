@@ -243,7 +243,7 @@ Un modèle peut placer des widgets sur une grille : un affichage de scène montr
 - **Partie en cours** et **Partie suivante** - toute la partie, chaque ligne : celle qu'on chante, la diapositive à l'écran mise en avant, et celle d'après.
 - **Structure du chant** - les parties du chant dans l'ordre où on les chante (C1 R C2 R P R), celle en cours mise en avant, et une **Barre de progression** dans le chant.
 - **Horloge** - sur **24 heures** ou **12 heures (AM/PM)**, avec **Les secondes** et **La date** au besoin. **Horloge à aiguilles** - un cadran, avec une **Trotteuse** au besoin.
-- **Compte à rebours** - le temps restant. **Temps donné par** : **L'opérateur média**, **Une durée fixe, depuis l'arrivée de l'élément**, ou **Jusqu'à une heure donnée** (le début du culte). **Après zéro**, il peut **Continuer, en rouge** ou **Rester à 0:00**, et passe à l'orange vers la fin. **Couleurs selon le temps restant** règle les vôtres : **Ajouter un palier**, donnez-lui une durée (m:ss) et la couleur de son **Texte** et de son **Fond** à partir de là - orange sous 5:00 et blanc sur rouge sous 1:00, par exemple.
+- **Compte à rebours** - le temps restant. **Temps donné par** : **L'opérateur média**, **Une durée fixe, depuis l'arrivée de l'élément**, ou **Jusqu'à une heure donnée** (le début du culte). Avec **L'opérateur média**, **Quel minuteur, par son nom** choisit l'un des [minuteurs nommés](/fr/screens/#minuteurs-et-messages) de l'opérateur (*Prédication*) ; vide, le principal. **Après zéro**, il peut **Continuer, en rouge** ou **Rester à 0:00**, et passe à l'orange vers la fin. **Couleurs selon le temps restant** règle les vôtres : **Ajouter un palier**, donnez-lui une durée (m:ss) et la couleur de son **Texte** et de son **Fond** à partir de là - orange sous 5:00 et blanc sur rouge sous 1:00, par exemple.
 - **Chronomètre** - le temps écoulé depuis **Le chant à l'écran, depuis son arrivée**, ou depuis que l'opérateur média l'a lancé. **Couleurs selon le temps écoulé** fonctionne comme pour un compte à rebours, une fois ce temps passé.
 - **Message** - un court message de l'opérateur média, affiché jusqu'à ce qu'il l'efface.
 - **Chant** et **Chant suivant** - le titre du chant, avec sa tonalité et son tempo, et ce qui vient ensuite dans la liste.
@@ -284,25 +284,34 @@ Vous pouvez envoyer des diapositives dès que la vue opérateur s'ouvre, à côt
 - **Partager avec Live** et **Les piloter seul** passent de l'un à l'autre ; **Les rendre** redonne les écrans à qui mène.
 - **Prendre le contrôle complet** vous fait aussi mener la liste : le métronome, les pistes et le chant que tout le monde suit, comme dans Live.
 
+En dessous, une ligne dit où en sont les choses d'un coup d'œil : ce qui est sur les écrans (le chant et sa diapositive, ou **Noir**), combien d'écrans suivent la liste, chaque écran réglé sur elle qui n'est pas connecté (*Hall n'est pas connecté*, en orange), et **Envoi…** tant qu'un changement que vous avez fait est en route. La pastille d'un écran ouvre **Écrans et calques**.
+
 Si vous fermez la vue opérateur, les écrans reviennent à qui mène. Si c'est votre connexion qui tombe (le Wi-Fi de la régie, un rechargement), ils vous attendent une minute, toujours à vous seul si vous les aviez pris seul, et la vue opérateur les reprend en se reconnectant ; entre-temps, la barre et Live indiquent que vous avez perdu la connexion. Sans retour dans la minute, ils reviennent à qui mène.
 
 ### La liste et ses diapositives
 
-La barre latérale montre les chants de la liste, comme dans Live. Celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface). Choisissez-y un chant pour voir ses diapositives.
+La console s'adapte à la place qu'elle a. Sur un ordinateur portable, les diapositives occupent le milieu et une colonne à côté montre ce qui est sur les écrans, les minuteurs et les messages ; sur un grand écran, le **Déroulé** a sa propre colonne à gauche. Sur une tablette tenue droite, ou un téléphone, ce qui est sur les écrans vient d'abord, le déroulé est une rangée qu'on fait défiler, et les diapositives et les **Minuteurs et messages** sont deux onglets.
 
-L'onglet **Diapositives** montre chaque diapositive de ce chant en vignette, colorée selon sa section (couplet, refrain, pont…). Une vignette envoie sa diapositive à tous les écrans ; les flèches (**Diapositive suivante** et retour) les font défiler, et **Écran noir** et **Arrêter la présentation** marchent comme dans Live.
+Le **Déroulé** montre chaque élément de la liste, avec son nombre de diapositives. Celui qui est sur les écrans est marqué **À l'écran**, avec sa diapositive. Choisissez un élément pour voir ses diapositives ; son bouton écran affiche aussitôt sa première diapositive. Dans Songverse, la barre latérale montre aussi les chants de la liste, comme dans Live : celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface).
+
+Les diapositives de l'élément choisi s'affichent en vignettes, colorées selon leur section (couplet, refrain, pont…). Une vignette envoie sa diapositive à tous les écrans ; les flèches (**Diapositive suivante** et retour) les font défiler, et **Écran noir** et **Arrêter la présentation** marchent comme dans Live. Au-dessus, les sections du chant dans l'ordre où elles sont chantées - *Couplet 1*, *Refrain*, *Couplet 2* - mènent à la première diapositive de la section ; les touches **1** à **9** font de même, pour le chant à l'écran.
 
 Cochez **Notes** pour voir les notes du chant sous les diapositives où elles sont : **Toutes les notes**, ou seulement celles des personnes qui tiennent l'un des [postes](/fr/organizations/#postes) de l'équipe (*Notes de : Média*), pour les repères qui vous sont destinés.
 
-### Minuteur et messages
+### Ce qui est à l'écran, et la suite
 
-L'onglet **Minuteur et messages** :
+- **Sur les écrans** - la diapositive que les écrans affichent, son chant et sa section, s'ils sont au noir ou leurs paroles masquées, et le message par-dessus, s'il y en a un.
+- **Suivante** - la diapositive où les écrans iront ensuite : la suivante du chant, ou la première de l'élément suivant après la dernière. Appuyez dessus pour l'afficher (la flèche droite fait de même). À la fin de la liste, elle indique **Fin de la liste**.
 
-- **Sur les écrans** - le chant et la diapositive que les écrans affichent, et s'ils sont au noir.
-- **Minuteur** - ce qu'affichent les widgets **Compte à rebours** et **Chronomètre** quand leur temps est donné par **L'opérateur média** : choisissez une durée (1, 3, 5, 10, 15 ou 30 minutes, ou tapez-en une et **Régler**), ou **Chronomètre** ; puis **Démarrer** et **Pause**, **Remettre à zéro**, une minute de moins ou de plus (**-** et **+**), ou **Effacer**. Après zéro, un compte à rebours passe au rouge.
+### Minuteurs et messages
+
+- **Minuteur** - le minuteur principal : ce qu'affichent les widgets **Compte à rebours** et **Chronomètre** quand leur temps est donné par **L'opérateur média** et qu'ils ne nomment aucun minuteur. Choisissez une durée (1, 3, 5, 10, 15 ou 30 minutes, ou tapez-en une et **Régler**), ou **Chronomètre** ; puis **Démarrer** et **Pause**, **Remettre à zéro**, une minute de moins ou de plus (**-** et **+**), ou **Effacer**. Après zéro, un compte à rebours passe au rouge.
+- **Minuteurs nommés** - plusieurs minuteurs à la fois, chacun avec son nom : le chronomètre du culte, le compte à rebours de la prédication, celui des annonces. Appuyez sur l'un des minuteurs de l'équipe pour le lancer (appuyé à nouveau, il repart de zéro) ; chacun a ensuite ses propres **Démarrer** et **Pause**, **Remettre à zéro**, une minute de plus, et une croix pour le retirer. Un widget en affiche un par son nom : **Quel minuteur, par son nom**, dans les réglages du widget (voir [Widgets](/fr/screens/#widgets)). Un widget qui n'en nomme aucun affiche le minuteur principal, ou le premier minuteur nommé tant qu'il n'y a pas de minuteur principal.
 - **Message à la scène** - tapez-en un et **Envoyer**, ou choisissez-en un tout prêt (**On conclut**, **Une minute**, **Chant suivant**…). Il s'affiche dans le widget **Message** des écrans de la liste jusqu'à ce que vous l'effaciez (**Effacer**).
 
-Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans**, sur la [page de la liste](/fr/sets/#les-chants-dune-liste)) : un compte à rebours de cinq minutes pour une prise de parole, un chronomètre pour un chant. Quand le Live de qui mène arrive à ce chant, le minuteur démarre tout seul sur les écrans.
+Les minuteurs nommés (**Culte**, **Prédication**, **Annonces** pour commencer) et les messages tout prêts sont ceux de l'équipe : **Modifier**, à côté, les change pour toutes les listes de l'équipe - ou pour toutes vos propres listes, sur une liste à vous. Ajoutez un minuteur avec son nom, un **Compte à rebours** et ses minutes ou un **Chronomètre**, ajoutez ou retirez des messages, puis **Enregistrer**. **Revenir à ceux d'origine** remet les deux listes à celles fournies avec Oneverse. Quiconque peut modifier la liste, ou pilote ses écrans, peut les changer.
+
+Un chant de la liste peut avoir son propre minuteur (**Minuteur sur les écrans**, sur la [page de la liste](/fr/sets/#les-chants-dune-liste)) : un compte à rebours de cinq minutes pour une prise de parole, un chronomètre pour un chant. Quand le Live de qui mène arrive à ce chant, il démarre tout seul sur les écrans, comme minuteur principal.
 
 ### Écrans et calques
 
@@ -330,6 +339,7 @@ Le clavier pilote aussi les écrans. Le bouton clavier à côté de **Écrans et
 | ← ↑ Page précédente | Diapositive précédente, jusque dans le chant précédent |
 | Entrée | Afficher le chant que vous regardez |
 | Début, Fin | Première ou dernière diapositive du chant |
+| 1 à 9 | Cette section du chant à l'écran (1 = la première) |
 | B ou . | Écran noir, ou retour |
 | S | Arrêter la présentation |
 | W | Contenu affiché ou non (les paroles) |

@@ -1,4 +1,4 @@
-import type { SyncTimer } from "../screens/timers.js";
+import type { SyncNamedTimer, SyncTimer } from "../screens/timers.js";
 import { SCREEN_SWITCHABLE_LAYERS, type ScreenSwitchableLayer } from "../screens/theme.js";
 import { beatsPerMinute, type MetronomeSettings } from "../metronome/index.js";
 import type { PlaybackSource } from "../playback/index.js";
@@ -145,7 +145,14 @@ export interface SyncSession {
  */
 export interface SyncStage {
   rev: number;
+  /** The main timer (`SYNC_MAIN_TIMER`), as an older client reads it; null when there's none. */
   timer: SyncTimer | null;
+  /**
+   * Every timer (issue #358): the main one first when there is one, then the
+   * named ones ("Sermon", "Service"), each a widget may pick by its name.
+   * Left out by an older server: only `timer`.
+   */
+  timers?: SyncNamedTimer[];
   /** `at`: when it was sent (server time, ms). */
   message: { text: string; at: number } | null;
   /** What the screens draw (issue #275); left out: everything, no overlay. */
@@ -285,11 +292,31 @@ export function applyLayersCommand(layers: unknown, command: SyncLayersCommand, 
 
 /** The longest message to the stage. */
 export const SYNC_STAGE_MESSAGE_MAX = 200;
+/** The main timer's id (issue #358): the one a command without `timerId` is for, a set item's own timer, an unnamed widget's. */
+export const SYNC_MAIN_TIMER = "main";
+/** The most timers a set's stage runs at once (issue #358), the main one included. */
+export const SYNC_STAGE_TIMERS_MAX = 8;
+/** The longest timer name. */
+export const SYNC_TIMER_NAME_MAX = 40;
+/** A timer's id: letters, digits, - and _. */
+const TIMER_ID = /^[A-Za-z0-9_-]{1,40}$/;
+
+/** A stage's timers (issue #358), from an older server's single `timer` too. */
+export function stageTimers(stage: Pick<SyncStage, "timer" | "timers"> | null | undefined): SyncNamedTimer[] {
+  if (!stage) return [];
+  if (Array.isArray(stage.timers)) return stage.timers;
+  return stage.timer ? [{ ...stage.timer, id: SYNC_MAIN_TIMER, name: "" }] : [];
+}
 
 /** What the operator changes, all optional; see applyStageCommand. */
 export interface SyncStageCommand {
-  /** A new timer, stopped at its start; null takes it away. */
-  timer?: { kind: SyncTimer["kind"]; duration: number } | null;
+  /**
+   * The timer the timer's commands below are for (issue #358): one of
+   * `timers`, or a new one's; left out, the main one (`SYNC_MAIN_TIMER`).
+   */
+  timerId?: string;
+  /** A new timer, stopped at its start, in place of the one it's for; `name`: a named one's ("Sermon"). Null takes it away. */
+  timer?: { kind: SyncTimer["kind"]; duration: number; name?: string } | null;
   /** Back to its start, running or not as it was. */
   reset?: boolean;
   /** Starts (true) or pauses (false) it. */
@@ -315,26 +342,37 @@ export function stageOnlyLayers(command: SyncStageCommand): boolean {
  * message too long), so the server refuses it.
  */
 export function applyStageCommand(stage: SyncStage | null, command: SyncStageCommand, now: number, presenting?: Pick<SyncPresenting, "itemId" | "slide"> | null): SyncStage | null {
-  let timer = stage?.timer ?? null;
+  let timers = stageTimers(stage);
   let message = stage?.message ?? null;
+  const id = command.timerId ?? SYNC_MAIN_TIMER;
+  if (typeof id !== "string" || !TIMER_ID.test(id)) return null;
+  const change = (update: (timer: SyncNamedTimer) => SyncNamedTimer) => {
+    timers = timers.map((timer) => (timer.id === id ? update(timer) : timer));
+  };
   if (command.timer !== undefined) {
-    if (command.timer === null) timer = null;
+    if (command.timer === null) timers = timers.filter((timer) => timer.id !== id);
     else {
-      const { kind, duration } = command.timer;
+      const { kind, duration, name } = command.timer;
       if ((kind !== "countdown" && kind !== "count-up") || !Number.isInteger(duration) || duration < 0 || duration > 86_400) return null;
-      timer = { kind, duration, startedAt: null, elapsed: 0 };
+      if (name !== undefined && (typeof name !== "string" || name.length > SYNC_TIMER_NAME_MAX)) return null;
+      const before = timers.find((timer) => timer.id === id);
+      const timer: SyncNamedTimer = { id, name: name?.trim() ?? before?.name ?? "", kind, duration, startedAt: null, elapsed: 0 };
+      if (before) change(() => timer);
+      else if (timers.length >= SYNC_STAGE_TIMERS_MAX) return null;
+      // The main one first, the named ones in the order they came.
+      else timers = id === SYNC_MAIN_TIMER ? [timer, ...timers] : [...timers, timer];
     }
   }
-  if (command.reset && timer) timer = { ...timer, elapsed: 0, startedAt: timer.startedAt === null ? null : now };
-  if (command.run !== undefined && timer) {
-    if (command.run && timer.startedAt === null) timer = { ...timer, startedAt: now };
-    if (!command.run && timer.startedAt !== null) timer = { ...timer, elapsed: timer.elapsed + Math.max(0, now - timer.startedAt), startedAt: null };
+  if (command.reset) change((timer) => ({ ...timer, elapsed: 0, startedAt: timer.startedAt === null ? null : now }));
+  if (command.run !== undefined) {
+    if (command.run) change((timer) => (timer.startedAt === null ? { ...timer, startedAt: now } : timer));
+    else change((timer) => (timer.startedAt !== null ? { ...timer, elapsed: timer.elapsed + Math.max(0, now - timer.startedAt), startedAt: null } : timer));
   }
   if (command.add !== undefined) {
     if (!Number.isInteger(command.add) || Math.abs(command.add) > 3600) return null;
     // A countdown's length; a count up's time so far.
-    if (timer?.kind === "countdown") timer = { ...timer, duration: Math.max(0, Math.min(86_400, timer.duration + command.add)) };
-    else if (timer) timer = { ...timer, elapsed: Math.max(0, timer.elapsed + command.add * 1000) };
+    const add = command.add;
+    change((timer) => (timer.kind === "countdown" ? { ...timer, duration: Math.max(0, Math.min(86_400, timer.duration + add)) } : { ...timer, elapsed: Math.max(0, timer.elapsed + add * 1000) }));
   }
   if (command.message !== undefined) {
     if (command.message !== null && (typeof command.message !== "string" || command.message.length > SYNC_STAGE_MESSAGE_MAX)) return null;
@@ -347,7 +385,9 @@ export function applyStageCommand(stage: SyncStage | null, command: SyncStageCom
     if (!next) return null;
     layers = next;
   }
-  return { rev: (stage?.rev ?? 0) + 1, timer, message, layers };
+  const main = timers.find((timer) => timer.id === SYNC_MAIN_TIMER);
+  const timer: SyncTimer | null = main ? { kind: main.kind, duration: main.duration, startedAt: main.startedAt, elapsed: main.elapsed } : null;
+  return { rev: (stage?.rev ?? 0) + 1, timer, timers, message, layers };
 }
 
 export interface SyncMember {

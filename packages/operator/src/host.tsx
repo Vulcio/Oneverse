@@ -1,4 +1,4 @@
-import type { SyncMember, SyncPresenting, SyncSession, SyncStage, SyncStageCommand } from "@oneverse/core";
+import type { OperatorPresets, OperatorPresetsRequest, ScreenSummary, SyncMember, SyncPresenting, SyncSession, SyncStage, SyncStageCommand } from "@oneverse/core";
 import { createContext, useContext, type ReactNode } from "react";
 
 /**
@@ -47,6 +47,10 @@ export interface OperatorHost {
   lead?: () => void;
   /** The screens & layers panel opened beside the page, on a large screen: the app makes room for it. */
   usePanelRoom?: (open: boolean) => void;
+  /** The set's named timers and quick messages, read and changed through the API (issue #358); left out (offline), the built-in ones. */
+  presets?: { load: () => Promise<OperatorPresets>; save: (data: OperatorPresetsRequest) => Promise<OperatorPresets> };
+  /** The screens set to show this set, connected or not (issue #358): the console says which are missing. */
+  listScreens?: () => Promise<ScreenSummary[]>;
 }
 
 const OperatorContext = createContext<OperatorHost | null>(null);

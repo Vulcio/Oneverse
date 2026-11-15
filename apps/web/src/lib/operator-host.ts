@@ -1,6 +1,7 @@
 import type { OperatorHost, OperatorLive } from "@oneverse/operator/host";
 import { leadSync, presentScreens, sendStage, takeScreens, useSync } from "#/lib/sync-client";
 import { useSidePanelRoom } from "#/lib/side-panel";
+import { apiClient } from "#/lib/api-client";
 
 const hosts = new Map<string, OperatorHost>();
 
@@ -22,6 +23,8 @@ export function songverseOperatorHost(setId: string): OperatorHost {
       sendStage,
       lead: leadSync,
       usePanelRoom: useSidePanelRoom,
+      presets: { load: () => apiClient.getOperatorPresets(setId), save: (data) => apiClient.saveOperatorPresets(setId, data) },
+      listScreens: () => apiClient.listScreens(setId),
     };
     hosts.set(setId, host);
   }

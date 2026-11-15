@@ -1,4 +1,4 @@
-import { chartBars, screenShowsChart, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
+import { chartBars, screenShowsChart, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, screenLayers, slideKey, stageTimers, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { ChevronLeft, Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -138,6 +138,7 @@ function Showing({
       itemStartedAt,
       // The media operator's (issue #269).
       operator: stage?.timer ?? null,
+      timers: stageTimers(stage),
       // The operator's layers, for this screen, less those it never shows (issues #280, #287).
       layers: screenLayers(stage?.layers, presenting, { id: current.screen.id, hidden: current.screen.hiddenLayers }),
       title: set ? { title: setlistTitle(set.set, t, i18n.language), subtitle: set.set.teamName ?? null } : null,

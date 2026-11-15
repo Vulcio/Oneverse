@@ -1736,7 +1736,7 @@ export const CONFORMANCE: ConformanceArea[] = [
     functions: {
       applyStageCommand: {
         about:
-          "The media operator's timer and message for a set's screens (issue #269): a new timer stopped at its start, reset, started or paused, a minute more or less, then the message. Null: a command that can't be read, refused.",
+          "The media operator's timers and message for a set's screens (issues #269, #358): a new timer stopped at its start, reset, started or paused, a minute more or less, then the message. A command is for the timer `timerId` names, else the main one; `timers` lists them all, the main one first, `timer` is the main one alone. Null: a command that can't be read, refused.",
         params: ["stage", "command", "now", "presenting"],
         run: applyStageCommand,
         cases: [
@@ -1752,6 +1752,22 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the media hidden on every screen (issue #280), the rest kept", args: [{ rev: 4, timer: null, message: null }, { layers: { show: { media: false } } }, 1_000] },
           { name: "the content cleared on the slide on screen", args: [{ rev: 5, timer: null, message: null }, { layers: { clear: ["content"] } }, 1_000, { itemId: "i1", slide: 2 }] },
           { name: "a layer that can't be read: refused", args: [null, { layers: { show: { logo: false } } }, 0] },
+          { name: "a named timer started beside the main one (issue #358)", args: [{ rev: 1, timer: { kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, message: null }, { timerId: "t-sermon", timer: { kind: "countdown", duration: 1800, name: " Sermon " }, run: true }, 9_000] },
+          {
+            name: "a named timer paused, the main one running on",
+            args: [{ rev: 2, timer: { kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, timers: [{ id: "main", name: "", kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, { id: "t-sermon", name: "Sermon", kind: "countdown", duration: 1800, startedAt: 9_000, elapsed: 0 }], message: null }, { timerId: "t-sermon", run: false }, 69_000],
+          },
+          {
+            name: "the main timer taken away, the named one kept",
+            args: [{ rev: 3, timer: { kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, timers: [{ id: "main", name: "", kind: "count-up", duration: 0, startedAt: 5, elapsed: 0 }, { id: "t-sermon", name: "Sermon", kind: "countdown", duration: 1800, startedAt: null, elapsed: 60_000 }], message: null }, { timer: null }, 70_000],
+          },
+          { name: "a new main timer goes first", args: [{ rev: 4, timer: null, timers: [{ id: "t-sermon", name: "Sermon", kind: "countdown", duration: 1800, startedAt: null, elapsed: 0 }], message: null }, { timer: { kind: "countdown", duration: 300 } }, 1_000] },
+          { name: "a timer id that can't be read: refused", args: [null, { timerId: "a b", timer: { kind: "countdown", duration: 60 } }, 0] },
+          { name: "a name too long: refused", args: [null, { timerId: "t-1", timer: { kind: "countdown", duration: 60, name: "x".repeat(41) } }, 0] },
+          {
+            name: "one timer too many: refused",
+            args: [{ rev: 1, timer: null, timers: Array.from({ length: 8 }, (_, i) => ({ id: `t-${i}`, name: `T${i}`, kind: "count-up", duration: 0, startedAt: null, elapsed: 0 })), message: null }, { timerId: "t-9", timer: { kind: "count-up", duration: 0, name: "T9" } }, 0],
+          },
         ],
       },
       applyLayersCommand: {
@@ -2467,6 +2483,18 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "the operator's countdown, past zero: counting on", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { now: 400_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "countdown", duration: 300, startedAt: 0, elapsed: 0 } }] },
           { name: "past zero, holding at 0:00", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { overtime: "stop" } }, { now: 400_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "countdown", duration: 300, startedAt: 0, elapsed: 0 } }] },
           { name: "no operator timer: nothing to show", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { now: 1000, itemStartedAt: null, localMidnight: 0, operator: null }] },
+          {
+            name: "a widget naming a timer (issue #358): that one, any case",
+            args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { timer: "sermon" } }, { now: 100_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "count-up", duration: 0, startedAt: 0, elapsed: 0 }, timers: [{ id: "main", name: "", kind: "count-up", duration: 0, startedAt: 0, elapsed: 0 }, { id: "t-1", name: "Sermon", kind: "countdown", duration: 1800, startedAt: 40_000, elapsed: 0 }] }],
+          },
+          {
+            name: "a widget naming a timer that isn't running: nothing to show",
+            args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { timer: "Offering" } }, { now: 100_000, itemStartedAt: null, localMidnight: 0, operator: { kind: "countdown", duration: 300, startedAt: 0, elapsed: 0 }, timers: [{ id: "main", name: "", kind: "countdown", duration: 300, startedAt: 0, elapsed: 0 }] }],
+          },
+          {
+            name: "an unnamed widget with no main timer: the first named one",
+            args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1 }, { now: 100_000, itemStartedAt: null, localMidnight: 0, operator: null, timers: [{ id: "t-1", name: "Sermon", kind: "countdown", duration: 1800, startedAt: 40_000, elapsed: 0 }] }],
+          },
           { name: "a length from when the item came on", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { source: "duration", duration: 120 } }, { now: 90_000, itemStartedAt: 30_000, localMidnight: 0, operator: null }] },
           { name: "until a time of day", args: [{ id: "t", kind: "countdown", x: 0, y: 0, w: 1, h: 1, options: { source: "until", until: "10:30" } }, { now: 1_000_000 + 10 * 3_600_000, itemStartedAt: null, localMidnight: 1_000_000, operator: null }] },
           { name: "a count up since the song came on", args: [{ id: "t", kind: "count-up", x: 0, y: 0, w: 1, h: 1, options: { source: "song" } }, { now: 200_000, itemStartedAt: 75_000, localMidnight: 0, operator: null }] },

@@ -14,6 +14,24 @@ export interface SyncTimer {
   elapsed: number;
 }
 
+/** One of a stage's timers (issue #358): the main one (id "main", no name), or a named one - "Sermon", "Service". */
+export interface SyncNamedTimer extends SyncTimer {
+  id: string;
+  /** What the operator called it; "" for the main one. */
+  name: string;
+}
+
+/**
+ * The timer a widget shows (issue #358): the one named as it says (any case),
+ * else the main one, else the first there is - so an unnamed countdown still
+ * shows a named one the operator started. Null when none fits.
+ */
+export function pickStageTimer(timers: SyncNamedTimer[] | undefined, main: SyncTimer | null, name: string): SyncTimer | null {
+  const wanted = name.trim().toLocaleLowerCase();
+  if (wanted) return timers?.find((timer) => timer.name.trim().toLocaleLowerCase() === wanted) ?? null;
+  return main ?? timers?.[0] ?? null;
+}
+
 /** What a timer widget shows: its seconds (never negative), whether it's past zero, near it, running. */
 export interface TimerReading {
   seconds: number;
@@ -27,8 +45,10 @@ export interface TimerContext {
   now: number;
   /** When the set item on screen came on (a duration countdown, a song's count up); null when none. */
   itemStartedAt: number | null;
-  /** The operator's timer (issue #269); null when there's none. */
+  /** The operator's main timer (issue #269); null when there's none. */
   operator: SyncTimer | null;
+  /** All the operator's timers (issue #358), named ones included; left out: only `operator`. */
+  timers?: SyncNamedTimer[];
   /** The start of the device's day, for a countdown until a time of day. */
   localMidnight: number;
 }
@@ -44,13 +64,13 @@ export function timerElapsed(timer: SyncTimer, now: number): number {
  * no operator timer, no item on screen.
  */
 export function readScreenTimer(widget: { kind: ScreenWidget["kind"]; options: ScreenWidget["options"] }, context: TimerContext): TimerReading | null {
-  const { source, duration, until, overtime: countOn, warn } = widget.options;
+  const { source, duration, until, overtime: countOn, warn, timer: timerName } = widget.options;
   const down = widget.kind === "countdown";
   let total: number | null = null;
   let elapsed: number;
   let running = true;
   if (source === "operator" || (!down && source !== "song")) {
-    const timer = context.operator;
+    const timer = pickStageTimer(context.timers, context.operator, timerName ?? "");
     if (!timer) return null;
     elapsed = timerElapsed(timer, context.now);
     running = timer.startedAt !== null;

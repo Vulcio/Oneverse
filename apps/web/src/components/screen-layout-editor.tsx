@@ -269,6 +269,11 @@ export function WidgetSettings({ widget, onChange, layered = false }: { widget: 
           </NativeSelect>
         </Field>
       ) : null}
+      {timer && widget.options.source === "operator" ? (
+        <Field label={t("screens.editor.timerName")}>
+          <Input value={widget.options.timer} maxLength={40} placeholder={t("screens.editor.timerNameMain")} onChange={(e) => options({ timer: e.target.value })} data-testid="theme-widget-timer-name" />
+        </Field>
+      ) : null}
       {kind === "countdown" && widget.options.source === "duration" ? (
         <Field label={t("screens.editor.timerMinutes")}>
           <NumberInput value={Math.round(widget.options.duration / 60)} min={1} max={1440} onChange={(minutes) => options({ duration: minutes * 60 })} testId="theme-widget-minutes" />

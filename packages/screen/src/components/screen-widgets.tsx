@@ -1,4 +1,4 @@
-import { formatTimer, placeScreenWidget, screenWidgetShows, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type ScreenLayersShown, type SyncTimer } from "@oneverse/core";
+import { formatTimer, placeScreenWidget, screenWidgetShows, readScreenTimer, SCREEN_FONT_FAMILIES, screenQrPayload, screenSlideCount, timerColors, type ScreenSlide, type ScreenTheme, type ScreenWidget, type ScreenLayersShown, type SyncTimer, type SyncNamedTimer } from "@oneverse/core";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { renderSVG } from "uqr";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,8 @@ export interface StageLive {
   details?: { title: string; key: string | null; tempo: number | null } | null;
   itemStartedAt?: number | null;
   operator?: SyncTimer | null;
+  /** All the operator's timers (issue #358): a widget picks one by its name. */
+  timers?: SyncNamedTimer[];
   message?: string | null;
   /** ms to add to the device's clock for the server's. */
   offset?: number;
@@ -178,6 +180,7 @@ function WidgetBody({ widget, theme, slides, index, live, now, words }: { widget
         now: now + offset,
         itemStartedAt: live.itemStartedAt == null ? null : live.itemStartedAt + offset,
         operator: live.operator ?? null,
+        timers: live.timers,
         localMidnight: midnight.getTime() + offset,
       });
       const text = reading ? formatTimer(reading.seconds, reading.overtime) : "–:––";

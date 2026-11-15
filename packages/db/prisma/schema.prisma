@@ -246,6 +246,8 @@ model User {
   email         String   @unique
   displayName   String
   avatarUrl     String?
+  // What the operator's console keeps at hand for their own sets (issue #358), as Team.operatorPresets.
+  operatorPresets Json?
   // Required by the BetterAuth Prisma adapter. Mapped from BetterAuth's
   // "emailVerified" field; displayName/avatarUrl are mapped from BetterAuth's
   // "name"/"image" via the adapter's field-mapping config (see apps/web auth.ts)
@@ -720,6 +722,10 @@ model Team {
   // are counted, and from how many it's flagged when it goes in a set (null: never).
   repeatWeeks          Int                    @default(6)
   repeatLimit          Int?
+  // What the operator's console keeps at hand for its sets (issue #358):
+  // {timers?: [{name, kind, duration}], messages?: string[]}; null or a list
+  // left out: the built-in ones.
+  operatorPresets      Json?
   // Archives of the team's songs, songbooks and sets (issue #351).
   contentArchives      ContentArchive[]       @relation("ContentArchiveTeam")
   archiveSchedule      ArchiveSchedule?       @relation("ArchiveScheduleTeam")

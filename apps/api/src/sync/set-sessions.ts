@@ -459,7 +459,7 @@ export class SetSessions {
     const setId = connection.setId;
     if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "Join a set first" });
     if (!(await this.stillAllowed(connection))) return;
-    const command: SyncStageCommand = { timer: message.timer, reset: message.reset === true, run: typeof message.run === "boolean" ? message.run : undefined, add: message.add, message: message.message, layers: message.layers };
+    const command: SyncStageCommand = { timerId: message.timerId, timer: message.timer, reset: message.reset === true, run: typeof message.run === "boolean" ? message.run : undefined, add: message.add, message: message.message, layers: message.layers };
     if (!stageOnlyLayers(command) && !connection.canLead && !connection.canOperate) return this.hub.send(connection, { type: "error", code: "forbidden", message: "Only someone who can edit the set, or runs screens, runs its screens" });
     if (command.layers !== undefined && connection.user) {
       const session = await this.read(setId);
