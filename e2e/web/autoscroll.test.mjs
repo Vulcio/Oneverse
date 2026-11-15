@@ -64,7 +64,7 @@ await step("no duration: the length worked out from the tempo, marked as a guess
   await page.goto(`${WEB}/library/${untimed.id}`);
   await page.waitForLoadState("networkidle");
   const length = page.getByTestId("practice-length");
-  if ((await length.innerText()).trim() !== "~4:00") throw new Error(await length.innerText());
+  if ((await length.innerText()).trim() !== "~2:40") throw new Error(await length.innerText());
   if (!(await length.getAttribute("title"))?.includes("tempo")) throw new Error("no hint");
 });
 
@@ -89,7 +89,7 @@ await step("Live: the same icon, no Play", async () => {
   const button = page.getByRole("button", { name: "Start scrolling" });
   await button.waitFor();
   if (!(await button.locator("svg.lucide-chevrons-down").count()) || (await button.locator("svg.lucide-play").count())) throw new Error("not the autoscroll icon");
-  if (!(await page.getByTestId("live-details").innerText()).includes("~4:00")) throw new Error(await page.getByTestId("live-details").innerText());
+  if (!(await page.getByTestId("live-details").innerText()).includes("~2:40")) throw new Error(await page.getByTestId("live-details").innerText());
 });
 
 await browser.close();

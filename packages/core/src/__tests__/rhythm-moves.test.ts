@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { copyRhythmPlacement, isKeyChord, matchingSections, moveChordInRhythm, nudgeChordInRhythm, pinRhythmChord, samePlacement, setRhythmBarCount, type Rhythm } from "../index.js";
+import { copyRhythmPlacement, editableRhythm, isKeyChord, lineBars, matchingSections, moveChordInRhythm, nudgeChordInRhythm, pinRhythmChord, samePlacement, setRhythmBarCount, type Rhythm } from "../index.js";
 
 // A verse in 4/4: C on "When", F on "river", C on "tendeth" (beat 3), Am on "sorrows" - four bars.
 const verse = {
@@ -122,5 +122,40 @@ describe("setRhythmBarCount", () => {
     expect(setRhythmBarCount(setRhythmBarCount(rhythm, 6)!, 4)!.bars.length).toBe(4);
     expect(setRhythmBarCount(rhythm, 3)).toBe(null);
     expect(setRhythmBarCount(rhythm, 0)).toBe(null);
+  });
+  test("with the section: fewer bars share the chords out again, the words following (#475)", () => {
+    // 16 beats into 12: c1 0, c2 4 -> 3, c3 6 -> 4.5 -> 5 (whole beats), c4 8 -> 6, c5 12 -> 9.
+    const three = setRhythmBarCount(rhythm, 3, verse)!;
+    // Key chords stay key chords (pinned where they left beat 1).
+    expect(at(three)).toEqual(["c1@1 c2@4!", "c3@2 c4@3!", "c5@2!"]);
+    // Line 2 starts where its first chord (Am) is now.
+    expect(three.bars[0]!.lyricAnchor).toEqual({ lineId: "l1", at: 0 });
+    expect(three.bars[1]!.lyricAnchor).toEqual({ lineId: "l2", at: 0 });
+    // A line whose first chord ends up late in a bar starts at the next bar with one of its chords: its words before
+    // that are sung at the end of the bar before.
+    const late: Rhythm = { beatsPerBar: null, bars: [{ chords: [{ chordId: "c1", beat: 1 }, { chordId: "c2", beat: 2, pinned: true }] }, { chords: [{ chordId: "c3", beat: 2 }] }, { chords: [{ chordId: "c4", beat: 2, pinned: true }] }, { chords: [{ chordId: "c5", beat: 2, pinned: true }] }] };
+    const squeezed = setRhythmBarCount(late, 3, verse)!;
+    expect(at(squeezed)).toEqual(["c1@1 c2@2!", "c3@1~ c4@4!", "c5@3!"]);
+    expect(squeezed.bars.map((bar) => bar.lyricAnchor)).toEqual([{ lineId: "l1", at: 0 }, { lineId: "l1", at: 18 }, { lineId: "l2", at: 22 }]);
+    // Down to one bar: halves, then refused when even they don't fit.
+    expect(at(setRhythmBarCount(rhythm, 1, verse)!)).toEqual(["c1@1 c2@2! c3@2.5 c4@3! c5@4!"]);
+    const crowded = { lines: [{ id: "x", kind: "lyric" as const, text: "a b c d e f g h i", chords: "abcdefghi".split("").map((id, at) => ({ id, at: at * 2, raw: "C" })) }] };
+    expect(setRhythmBarCount(editableRhythm(crowded), 1, crowded)).toBe(null);
+  });
+});
+
+describe("filled in from the chart (#475)", () => {
+  test("a sung line two bars, its chords shared, two a bar at most", () => {
+    expect(lineBars(1, true)).toEqual([[{ chord: 0, beat: 1 }], []]);
+    expect(lineBars(3, true)).toEqual([[{ chord: 0, beat: 1 }, { chord: 1, beat: 3 }], [{ chord: 2, beat: 1 }]]);
+    expect(lineBars(4, true, 6)).toEqual([[{ chord: 0, beat: 1 }, { chord: 1, beat: 4 }], [{ chord: 2, beat: 1 }, { chord: 3, beat: 4 }]]);
+    expect(lineBars(5, true).map((bar) => bar.length)).toEqual([2, 2, 1]);
+    expect(lineBars(0, true)).toEqual([[], []]);
+    expect(lineBars(3, false).length).toBe(3);
+  });
+  test("the verse: four bars, the first bar of a three-chord line taking two, words from where a bar's first chord is", () => {
+    const filled = editableRhythm(verse);
+    expect(at(filled)).toEqual(["c1@1 c2@3", "c3@1", "c4@1", "c5@1"]);
+    expect(filled.bars.map((bar) => bar.lyricAnchor)).toEqual([{ lineId: "l1", at: 0 }, { lineId: "l1", at: 18 }, { lineId: "l2", at: 0 }, { lineId: "l2", at: 22 }]);
   });
 });

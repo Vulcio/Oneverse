@@ -3526,6 +3526,7 @@ const fr: typeof en = {
     passOrder: "Décaler la suite garde l'ordre des accords : il ne peut pas dépasser le {{chord}} d'avant.",
     passPinned: "Sur place s'arrête aux accords repères : il ne peut pas dépasser le {{chord}}. Libérez-le, ou passez à Décaler la suite.",
     noRoom: "Pas de place là pour les accords entre les accords repères.",
+    tooFewBars: "Trop d'accords pour si peu de mesures : même sur des demi-temps, ils ne tiennent pas.",
     outsideInPlace: "Sur place garde les mesures : passez à Décaler la suite pour l'emmener après la fin de la section.",
     keyChordLabel: "{{chord}}, accord repère",
     chordLabel: "{{chord}}",

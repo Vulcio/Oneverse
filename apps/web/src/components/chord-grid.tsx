@@ -169,7 +169,7 @@ export function ChordGrid({
   const timeBeatsOf = (sectionId: string) => Math.max(1, (chart.passes.find((pass) => pass.section.id === sectionId)?.timeSignature ?? chart.timeSignature)?.numerator ?? 4);
   const rhythmOfSection = (id: string) => {
     const section = sectionById(id);
-    return section ? (draft[id] ?? editableRhythm(section)) : null;
+    return section ? (draft[id] ?? editableRhythm(section, timeBeatsOf(id))) : null;
   };
   const moveOf = (chord: PickedChord, target: { bar: number; beat: number } | { by: number }): RhythmMove | null => {
     const section = sectionById(chord.sectionId);
@@ -208,7 +208,7 @@ export function ChordGrid({
   const keyChords = useMemo(() => {
     const keys = new Set<string>();
     if (!editing || !shown) return keys;
-    for (const section of shown.sections) for (const bar of editableRhythm(section).bars) for (const chord of bar.chords) if (isKeyChord(chord)) keys.add(chord.chordId);
+    for (const section of shown.sections) for (const bar of editableRhythm(section, timeBeatsOf(section.id)).bars) for (const chord of bar.chords) if (isKeyChord(chord)) keys.add(chord.chordId);
     return keys;
   }, [editing, shown]);
   // The chords moving with a dragged one, shown so.
@@ -247,7 +247,7 @@ export function ChordGrid({
   const rhythmOf = (bar: ChartBar) => rhythmOfSection(bar.sectionId);
   const beatsOf = (bar: ChartBar) => Math.max(1, (chart.passes[bar.passIndex]?.timeSignature ?? chart.timeSignature)?.numerator ?? 4);
   // Each section's bars as shown (a drag's preview too), to tell a pass that has them all.
-  const shownBars = useMemo(() => new Map((shown?.sections ?? []).map((section) => [section.id, editableRhythm(section).bars.length])), [shown]);
+  const shownBars = useMemo(() => new Map((shown?.sections ?? []).map((section) => [section.id, editableRhythm(section, timeBeatsOf(section.id)).bars.length])), [shown]);
   /** A pass whose bars are its section's rhythm, one for one: not one that leaves some of its lines out. */
   const editable = (bar: ChartBar) => editing && shownBars.get(bar.sectionId) === bar.barsInPass;
   // A section's name, as its first pass is headed.
@@ -330,8 +330,10 @@ export function ChordGrid({
   };
   const setBarCount = (sectionId: string, count: number) => {
     const rhythm = rhythmOfSection(sectionId);
-    const next = rhythm ? setRhythmBarCount(rhythm, count) : null;
-    if (!next) return setProblem(count < 1 ? t("chordGrid.oneBar") : t("chordGrid.moveChordsFirst"));
+    const section = sectionById(sectionId);
+    // Fewer bars than its chords were in: they're shared out again over the bars left (issue #475).
+    const next = rhythm && section ? setRhythmBarCount(rhythm, count, section, timeBeatsOf(sectionId)) : null;
+    if (!next) return setProblem(count < 1 ? t("chordGrid.oneBar") : t("chordGrid.tooFewBars"));
     setPickedBar(null);
     commit(sectionId, next);
   };

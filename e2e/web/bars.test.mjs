@@ -36,11 +36,11 @@ try {
   await step("Practice: the bars filled in from the chart, a cell a beat, the sections named", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
     await row().waitFor();
-    // Verse: 4 chords, 3 chords, a line without (2 bars); chorus: 2 chords, carried to 2 bars.
+    // Two bars a sung line (issue #475), its chords shared between them: the verse 6, the chorus 2.
     const bars = await strip().locator("[data-bar]").count();
-    if (bars !== 11) throw new Error(`${bars} bars`);
+    if (bars !== 8) throw new Error(`${bars} bars`);
     const cells = await strip().locator("[data-beat]").count();
-    if (cells !== 44) throw new Error(`${cells} cells`);
+    if (cells !== 32) throw new Error(`${cells} cells`);
     const chords = await strip().locator("[data-bar-chord]").allInnerTexts();
     if (chords.join(" ") !== "G C G D G Em D C G") throw new Error(chords.join(" "));
     const sections = await strip().getByTestId("bars-section").allInnerTexts();
@@ -49,7 +49,7 @@ try {
     if (await row().getByTestId("bars-metronome").count()) throw new Error("a metronome in the row");
     if (!(await page.getByTestId("practice-tempo").innerText()).includes("150")) throw new Error("not the song's tempo");
     // Each bar's first beat marked; a chord alone in its beat, centred (issue #390).
-    if ((await strip().locator("[data-beat][data-downbeat]").count()) !== 11) throw new Error("first beats not marked");
+    if ((await strip().locator("[data-beat][data-downbeat]").count()) !== 8) throw new Error("first beats not marked");
     if ((await strip().locator("[data-bar-chord]").first().evaluate((el) => getComputedStyle(el).textAlign)) !== "center") throw new Error("chord not centred");
     await row().screenshot({ path: `${SP}/bars-row.png` });
   });

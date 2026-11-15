@@ -3523,6 +3523,7 @@ const en = {
     passOrder: "Ripple keeps the chords in order: it can't pass the {{chord}} before it.",
     passPinned: "In place stops at key chords: it can't pass the {{chord}}. Unpin it, or switch to Ripple.",
     noRoom: "There's no room there for the chords between the key chords.",
+    tooFewBars: "Too many chords for that few bars: even on half beats they don't fit.",
     outsideInPlace: "In place keeps the bars: switch to Ripple to take it past the end of the section.",
     keyChordLabel: "{{chord}}, key chord",
     chordLabel: "{{chord}}",

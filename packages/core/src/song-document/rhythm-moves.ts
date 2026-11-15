@@ -400,13 +400,76 @@ export function samePlacement(a: Pick<SectionV2, "lines">, aRhythm: Rhythm, b: P
 
 /**
  * A section given `count` bars (issue #462): empty ones added at its end, or
- * the last ones taken off - only bars without chord changes. Null when a bar
- * to take off has some (move them first), or below 1 or past 512.
+ * the last ones taken off. Empty last bars just go; with chords in them and
+ * the `section` given (issue #475), its chords are shared out again over the
+ * bars left, each where it falls once the section is shortened in
+ * proportion - on a whole beat, else a half, in the chart's order - and the
+ * words follow them: a line's first bar is its first chord's, a bar that
+ * started at its chord's word still does where that chord is on beat 1.
+ * Null below 1 or past 512, or when the chords don't fit (or with chords to
+ * take off and no `section`).
  */
-export function setRhythmBarCount(rhythm: Rhythm, count: number): Rhythm | null {
+export function setRhythmBarCount(rhythm: Rhythm, count: number, section?: Pick<SectionV2, "lines">, timeBeats = 4): Rhythm | null {
   if (!Number.isInteger(count) || count < 1 || count > 512) return null;
   if (count === rhythm.bars.length) return rhythm;
   if (count > rhythm.bars.length) return { ...rhythm, bars: [...rhythm.bars, ...Array.from({ length: count - rhythm.bars.length }, (): Bar => ({ chords: [], lyricAnchor: null }))] };
-  if (rhythm.bars.slice(count).some((bar) => bar.chords.length > 0)) return null;
-  return { ...rhythm, bars: rhythm.bars.slice(0, count) };
+  if (!rhythm.bars.slice(count).some((bar) => bar.chords.length > 0)) return { ...rhythm, bars: rhythm.bars.slice(0, count) };
+  if (!section) return null;
+  const { lengths, total } = layout(rhythm, timeBeats);
+  const sizes = lengths.slice(0, count);
+  const room = sizes.reduce((sum, one) => sum + one, 0);
+  const { placed, order } = placedChords(section, rhythm, timeBeats);
+  const scale = room / total;
+  let times: Map<string, { time: number; key: boolean }> | null = null;
+  for (const step of [1, 0.5]) {
+    const next = new Map<string, { time: number; key: boolean }>();
+    let last = -Infinity;
+    for (const id of order) {
+      const one = placed.get(id)!;
+      let time = Math.round((one.time * scale) / step) * step;
+      if (time <= last + EPS) time = last + step;
+      if (time >= room - EPS) break;
+      next.set(id, { time: tidy(time), key: one.key });
+      last = time;
+    }
+    if (next.size === order.length) {
+      times = next;
+      break;
+    }
+  }
+  if (!times) return null;
+  const bars = rebuild(rhythm.bars.slice(0, count).map((bar) => unplaced(propsOf(bar))), sizes, times);
+  // The words placed again from the chords: a bar whose first chord is on beat 1 starts at that chord's word (its
+  // line's start for a line's first chord); a line whose first chord comes later in a bar starts at the next bar
+  // that has one of its chords on beat 1, its words before that sung at the end of the bar before.
+  const lineOf = new Map(section.lines.flatMap((line) => line.chords.map((chord, index) => [chord.id, { line, index }] as const)));
+  const anchored = new Set<string>();
+  bars.forEach((bar, at) => {
+    const first = bar.chords[0];
+    const where = first && Math.abs(first.beat - 1) < EPS ? lineOf.get(first.chordId) : undefined;
+    if (!where) return;
+    bars[at] = { ...bar, lyricAnchor: { lineId: where.line.id, at: where.index === 0 ? 0 : wordStart(where.line.text, where.line.chords[where.index]!.at) } };
+    anchored.add(where.line.id);
+  });
+  // A line none of whose chords starts a bar: from the bar its first chord is in. A line without chords: where it
+  // started, in proportion.
+  const { starts } = layout(rhythm, timeBeats);
+  for (const line of section.lines) {
+    if (line.kind === "note" || anchored.has(line.id)) continue;
+    const mine = new Set(line.chords.map((chord) => chord.id));
+    if (mine.size > 0) {
+      // The first bar with one of its chords that no other line starts in: from that chord's word, the words
+      // before it sung at the end of the bar before.
+      const to = bars.findIndex((bar) => !bar.lyricAnchor && bar.chords.some((chord) => mine.has(chord.chordId)));
+      if (to < 0) continue;
+      const index = line.chords.findIndex((chord) => chord.id === bars[to]!.chords.find((one) => mine.has(one.chordId))!.chordId);
+      bars[to] = { ...bars[to]!, lyricAnchor: { lineId: line.id, at: index === 0 ? 0 : wordStart(line.text, line.chords[index]!.at) } };
+      continue;
+    }
+    const was = rhythm.bars.findIndex((bar) => bar.lyricAnchor?.lineId === line.id && bar.lyricAnchor.at === 0);
+    if (was < 0) continue;
+    const to = barAtTime(layout({ ...rhythm, bars }, timeBeats).starts, sizes, Math.min(room - 1, Math.floor(starts[was]! * scale)));
+    if (to >= 0 && !bars[to]!.lyricAnchor) bars[to] = { ...bars[to]!, lyricAnchor: { lineId: line.id, at: 0 } };
+  }
+  return { ...rhythm, bars };
 }

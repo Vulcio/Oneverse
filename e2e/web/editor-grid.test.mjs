@@ -26,19 +26,19 @@ try {
     await page.getByRole("radio", { name: "Bars", exact: true }).click();
     await page.getByTestId("chord-grid-edit").waitFor();
     if (await grid().getByTestId("chord-grid-save").count()) throw new Error("the grid has its own Save");
-    if ((await chordsOf(0)) !== "G" || (await chordsOf(1)) !== "C") throw new Error(`${await chordsOf(0)} / ${await chordsOf(1)}`);
+    if ((await chordsOf(0)) !== "G C" || (await chordsOf(1)) !== "G D") throw new Error(`${await chordsOf(0)} / ${await chordsOf(1)}`);
   });
 
-  await step("C tapped, then beat 3 of bar 1: moved there, the song changed", async () => {
-    await bar(1).locator('[data-grid-chord="C"]').click();
-    await bar(0).locator('[data-grid-slot][data-beat="3"]').click();
-    if ((await chordsOf(0)) !== "G C") throw new Error(`bar 1: ${await chordsOf(0)}`);
+  await step("C tapped, then beat 2 of its bar: moved there, the song changed", async () => {
+    await bar(0).locator('[data-grid-chord="C"]').click();
+    await bar(0).locator('[data-grid-slot][data-beat="2"]').click();
+    if ((await bar(0).locator('[data-grid-chord="C"]').getAttribute("data-beat-at")) !== "2") throw new Error("C not on beat 2");
     await page.getByRole("button", { name: "Save song" }).first().waitFor({ state: "visible" });
     if (await page.getByRole("button", { name: "Save song" }).first().isDisabled()) throw new Error("the song isn't changed");
     await page.screenshot({ path: `${SP}/editor-grid.png` });
   });
 
-  await step("back in Visual and saved: the section's rhythm has C on beat 3 of bar 1", async () => {
+  await step("back in Visual and saved: the section's rhythm has C on beat 2 of bar 1", async () => {
     await page.getByRole("radio", { name: "Visual", exact: true }).click();
     await page.getByTestId("structured-editor").waitFor();
     await page.getByRole("button", { name: "Save song" }).first().click();
@@ -47,7 +47,7 @@ try {
     const section = saved.documentJson.sections[0];
     const raw = new Map(section.lines.flatMap((line) => line.chords.map((chord) => [chord.id, chord.raw])));
     const first = section.rhythm.bars[0].chords.map((chord) => `${raw.get(chord.chordId)}@${chord.beat}`).join(" ");
-    if (first !== "G@1 C@3") throw new Error(`bar 1: ${first}`);
+    if (first !== "G@1 C@2") throw new Error(`bar 1: ${first}`);
   });
 
   await step("Bars again after the save: as saved", async () => {

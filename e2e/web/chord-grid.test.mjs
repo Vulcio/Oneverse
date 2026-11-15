@@ -38,14 +38,14 @@ try {
     await grid().waitFor();
     if (await page.getByTestId("song-chart").count()) throw new Error("the chart still shows");
     if ((await page.getByTestId("chart-view-grid").getAttribute("aria-pressed")) !== "true") throw new Error("Grid not pressed");
-    // As the bars row: the verse's 4 + 3 chords and a line without (2 bars), the chorus's 2 chords.
+    // As the bars row (issue #475): two bars a sung line, its chords shared between them - the verse 6, the chorus 2.
     const bars = grid().locator("[data-grid-bar]");
-    if ((await bars.count()) !== 11) throw new Error(`${await bars.count()} bars`);
-    if ((await grid().locator("[data-grid-beat]").count()) !== 44) throw new Error("not four beats a bar");
+    if ((await bars.count()) !== 8) throw new Error(`${await bars.count()} bars`);
+    if ((await grid().locator("[data-grid-beat]").count()) !== 32) throw new Error("not four beats a bar");
     const chords = await grid().locator("[data-grid-chord]").allInnerTexts();
     if (chords.join(" ") !== "G C G D G Em D C G") throw new Error(chords.join(" "));
     const words = (await grid().locator("[data-grid-words]").allInnerTexts()).map((one) => one.trim());
-    const expected = ["Amazing", "grace how", "sweet the", "sound", "That saved a", "wretch like", "me", "I once was lost", "", "My chains are", "gone"];
+    const expected = ["Amazing grace how", "sweet the sound", "That saved a wretch like", "me", "I once was lost", "", "My chains are", "gone"];
     if (JSON.stringify(words) !== JSON.stringify(expected)) throw new Error(JSON.stringify(words));
     // The line without a chord holds D: named again, quietly, in its bars.
     if ((await grid().locator('[data-grid-carried="D"]').count()) !== 2) throw new Error("the held chord isn't named");
@@ -125,9 +125,9 @@ try {
     await lyricsAs("between");
     if (await grid().locator("[data-grid-words]").count()) throw new Error("words still in the bars");
     const rows = await grid().getByTestId("chord-grid-lyric-row").allInnerTexts();
-    // Bars 1-4, 5-8, then the chorus's 10-11 (bar 9 sings nothing).
-    if (rows.length !== 3 || !rows[0].includes("Amazing grace how sweet the sound") || !rows[1].includes("wretch like") || !rows[2].includes("My chains are gone")) throw new Error(JSON.stringify(rows));
-    if ((await grid().locator("[data-grid-beat]").count()) !== 44) throw new Error("not every beat");
+    // Bars 1-4 (the first two lines), 5-6, then the chorus's 7-8 (bar 6 sings nothing).
+    if (rows.length !== 3 || !rows[0].includes("Amazing grace how sweet the sound") || !rows[0].includes("wretch like") || !rows[1].includes("I once was lost") || !rows[2].includes("My chains are gone")) throw new Error(JSON.stringify(rows));
+    if ((await grid().locator("[data-grid-beat]").count()) !== 32) throw new Error("not every beat");
     await playClick();
     await grid().locator("[data-lyric-bar][data-on]").first().waitFor({ timeout: 5000 });
     await page.screenshot({ path: `${SP}/chord-grid-between.png` });
@@ -139,7 +139,7 @@ try {
     const pinned = page.getByTestId("chord-grid-pinned");
     await pinned.waitFor();
     // The grid keeps every bar, without words in them.
-    if ((await grid().locator("[data-grid-bar]").count()) !== 11) throw new Error("not every bar");
+    if ((await grid().locator("[data-grid-bar]").count()) !== 8) throw new Error("not every bar");
     if (await grid().locator("[data-grid-words]").count()) throw new Error("words still in the bars");
     const order = ["Amazing grace how sweet the sound", "That saved a wretch like me", "I once was lost", "My chains are gone"];
     const shown = async () => [await pinned.locator("[data-lyric-line][data-on]").innerText(), await pinned.locator("[data-lyric-line][data-next]").innerText()].map((one) => one.trim());
@@ -162,7 +162,7 @@ try {
     await page.reload();
     await page.locator('[data-testid="chord-grid"][data-lyrics="off"]').waitFor();
     await lyricsAs("bars");
-    if ((await grid().locator("[data-grid-words]").count()) !== 11) throw new Error("the words aren't back in the bars");
+    if ((await grid().locator("[data-grid-words]").count()) !== 8) throw new Error("the words aren't back in the bars");
   });
 
   await step("Live reads it as the grid too, and switches back to the chart", async () => {
@@ -179,7 +179,7 @@ try {
     await page.getByTestId("song-chart").waitFor();
     await page.getByTestId("chart-view-grid").click();
     await grid().waitFor();
-    if ((await grid().locator("[data-grid-bar]").count()) !== 11) throw new Error("not the song's bars");
+    if ((await grid().locator("[data-grid-bar]").count()) !== 8) throw new Error("not the song's bars");
     for (let i = 0; i < 30; i++) {
       const saved = (await api(me, "GET", `/setlists/${set.id}/items/${item.id}/song`)).view.preferences;
       if (saved?.view === "GRID") break;

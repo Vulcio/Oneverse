@@ -128,8 +128,8 @@ describe("chartSeconds", () => {
   });
 
   it("otherwise its bars at each pass's tempo: two a sung line, a bar a chord", () => {
-    // The verse's first line has three chords (three bars), the other three lines two: 9 bars of 4 beats at 72 BPM.
-    expect(chartSeconds(renderChart(song))).toBeCloseTo((9 * 4 * 60) / 72);
+    // Every sung line two bars (issue #475), the first line's three chords shared between them: 8 bars of 4 beats at 72 BPM.
+    expect(chartSeconds(renderChart(song))).toBeCloseTo((8 * 4 * 60) / 72);
     // A 3/4 bar is three beats; no tempo is 90 BPM.
     const waltz = songDocumentFromText(null, { content: "[G]One\n[D]Two\n", format: "CHORDPRO", defaults: { timeSignature: { numerator: 3, denominator: 4 } } });
     expect(chartSeconds(renderChart(waltz))).toBeCloseTo((2 * 6 * 60) / 90);
@@ -144,25 +144,25 @@ describe("autoscroll's pace (issue #414)", () => {
     expect(barSeconds(chart, bars)).toEqual(bars.map(() => (4 * 60) / 72));
     const stretched = barSeconds(chart, bars, 90);
     expect(stretched.reduce((sum, one) => sum + one, 0)).toBeCloseTo(90);
-    expect(stretched[0]).toBeCloseTo(10);
+    expect(stretched[0]).toBeCloseTo(11.25);
   });
 
   it("goes from seconds to beats and back", () => {
     const seconds = barSeconds(chart, bars, 90);
     expect(positionAtSeconds(bars, seconds, 0)).toBe(0);
-    expect(positionAtSeconds(bars, seconds, 15)).toBeCloseTo(6);
-    expect(positionAtSeconds(bars, seconds, 500)).toBe(36);
-    expect(secondsAtPosition(bars, seconds, 6)).toBeCloseTo(15);
-    expect(secondsAtPosition(bars, seconds, 36)).toBeCloseTo(90);
+    expect(positionAtSeconds(bars, seconds, 22.5)).toBeCloseTo(8);
+    expect(positionAtSeconds(bars, seconds, 500)).toBe(32);
+    expect(secondsAtPosition(bars, seconds, 8)).toBeCloseTo(22.5);
+    expect(secondsAtPosition(bars, seconds, 32)).toBeCloseTo(90);
   });
 
   it("stops at each line in turn", () => {
     const stops = scrollStops(bars);
     expect(stops.map((stop) => [stop.passIndex, stop.start, stop.beats])).toEqual([
-      [0, 0, 12],
-      [0, 12, 8],
-      [1, 20, 8],
-      [2, 28, 8],
+      [0, 0, 8],
+      [0, 8, 8],
+      [1, 16, 8],
+      [2, 24, 8],
     ]);
     expect(stops[0]!.lineId).toBe(song.sections[0]!.lines[0]!.id);
   });

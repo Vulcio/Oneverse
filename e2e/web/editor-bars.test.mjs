@@ -71,13 +71,13 @@ async function save() {
 }
 
 try {
-  await step("the Bars menu fills the bar lines in from the chords: one before each chord, a line without two bars", async () => {
+  await step("the Bars menu fills the bar lines in from the chords: two bars a line, its chords shared (issue #475)", async () => {
     await open(await browser.newContext({ viewport: { width: 1280, height: 900 } }));
     await page.getByTestId("editor-bars").click();
     await page.getByTestId("bars-fill-song").click();
     await bars().first().waitFor();
     const lines = await marked();
-    const expected = ["|Amazing |grace how |sweet the |sound", "|That saved a |wretch like |me", "|×2I once was lost", "|My chains are |gone"];
+    const expected = ["|Amazing grace how |sweet the sound", "|That saved a wretch like |me", "|×2I once was lost", "|My chains are |gone"];
     if (JSON.stringify(lines) !== JSON.stringify(expected)) throw new Error(JSON.stringify(lines));
     await page.screenshot({ path: `${SP}/editor-bars.png` });
   });
@@ -86,14 +86,14 @@ try {
     await save();
     const doc = await stored();
     const verse = doc.sections[0].rhythm;
-    if (verse?.bars.length !== 9) throw new Error(JSON.stringify(verse));
+    if (verse?.bars.length !== 6) throw new Error(JSON.stringify(verse));
     const anchors = verse.bars.map((bar) => (bar.lyricAnchor ? bar.lyricAnchor.at : "-")).join(" ");
-    if (anchors !== "0 8 18 28 0 13 25 0 -") throw new Error(anchors);
+    if (anchors !== "0 18 0 25 0 -") throw new Error(anchors);
     if (doc.sections[1].rhythm?.bars.length !== 2) throw new Error("the chorus's bars");
   });
 
   await step("dragged by its knob with a mouse: it lands between the letters it's let go at", async () => {
-    // The verse's second bar line, before "grace", dragged to before "how" (character 14).
+    // The verse's second bar line, before "sweet", dragged to before "how" (character 14).
     const from = await knob(1);
     const to = await charBox(0, 14);
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -102,7 +102,7 @@ try {
     await page.mouse.move(to.x + 1, from.y + from.height / 2, { steps: 8 });
     await page.mouse.up();
     const [line] = await marked();
-    if (line !== "|Amazing grace |how |sweet the |sound") throw new Error(line);
+    if (line !== "|Amazing grace |how sweet the sound") throw new Error(line);
   });
 
   await step("a click selects it: its tools under it - a letter left, one more bar, and back", async () => {
@@ -110,15 +110,15 @@ try {
     const popover = page.getByTestId("bar-popover");
     await popover.waitFor();
     await popover.getByTestId("bar-left").click();
-    if ((await marked())[0] !== "|Amazing grace| how |sweet the |sound") throw new Error((await marked())[0]);
+    if ((await marked())[0] !== "|Amazing grace| how sweet the sound") throw new Error((await marked())[0]);
     await page.keyboard.press("ArrowRight");
     await popover.getByTestId("bar-more").click();
     if ((await popover.getByTestId("bar-count").innerText()) !== "2 bars") throw new Error("not 2 bars");
-    if ((await marked())[0] !== "|Amazing grace |×2how |sweet the |sound") throw new Error((await marked())[0]);
+    if ((await marked())[0] !== "|Amazing grace |×2how sweet the sound") throw new Error((await marked())[0]);
     await page.screenshot({ path: `${SP}/editor-bars-popover.png` });
     await popover.getByTestId("bar-fewer").click();
     await popover.getByTestId("bar-delete").click();
-    if ((await marked())[0] !== "|Amazing grace how |sweet the |sound") throw new Error((await marked())[0]);
+    if ((await marked())[0] !== "|Amazing grace how sweet the sound") throw new Error((await marked())[0]);
   });
 
   await step('"|" typed in the words adds a bar line; the palette\'s Bar line dragged onto them another', async () => {
@@ -135,7 +135,7 @@ try {
       }
     });
     await page.keyboard.type("|");
-    if ((await marked())[0] !== "|Amazing grace |how |sweet the |sound") throw new Error((await marked())[0]);
+    if ((await marked())[0] !== "|Amazing grace |how sweet the sound") throw new Error((await marked())[0]);
     // From the panel at the right, onto "saved" in the second line.
     const chip = await page.getByTestId("chord-panel").getByTestId("bar-new").boundingBox();
     const to = await charBox(1, 5);
@@ -144,7 +144,7 @@ try {
     await page.mouse.move(chip.x - 40, chip.y, { steps: 4 });
     await page.mouse.move(to.x + 1, to.y + to.height + 6, { steps: 12 });
     await page.mouse.up();
-    if ((await marked())[1] !== "|That |saved a |wretch like |me") throw new Error((await marked())[1]);
+    if ((await marked())[1] !== "|That |saved a wretch like |me") throw new Error((await marked())[1]);
   });
 
   await step("saved, the chord grid reads the bars as placed", async () => {
@@ -158,7 +158,7 @@ try {
     const grid = page.getByTestId("chord-grid");
     await grid.waitFor();
     const words = (await grid.locator("[data-grid-words]").allInnerTexts()).map((one) => one.trim());
-    if (words.slice(0, 5).join(" / ") !== "Amazing grace / how / sweet the / sound / That") throw new Error(words.join(" / "));
+    if (words.slice(0, 5).join(" / ") !== "Amazing grace / how sweet the sound / That / saved a wretch like / me") throw new Error(words.join(" / "));
     await page.getByTestId("chart-view-chart").click();
     await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
   });
@@ -191,16 +191,16 @@ try {
     const tools = page.getByTestId("bar-tools");
     await tools.waitFor();
     await tools.getByTestId("bar-right").tap();
-    if ((await marked())[0] !== "|Amazing g|race how |sweet the |sound") throw new Error((await marked())[0]);
+    if ((await marked())[0] !== "|Amazing grace how s|weet the sound") throw new Error((await marked())[0]);
     await tools.getByTestId("bar-left").tap();
     await tools.getByTestId("bar-more").tap();
-    if ((await marked())[0] !== "|Amazing |×2grace how |sweet the |sound") throw new Error((await marked())[0]);
+    if ((await marked())[0] !== "|Amazing grace how |×2sweet the sound") throw new Error((await marked())[0]);
     await page.screenshot({ path: `${SP}/editor-bars-phone.png` });
     await tools.getByTestId("bar-fewer").tap();
   });
 
   await step("on a phone: held a moment, a bar line lifts and follows the finger", async () => {
-    const from = await knob(2);
+    const from = await knob(1);
     const to = await charBox(0, 24);
     const [x, y] = [from.x + from.width / 2, from.y + from.height / 2];
     await touch("touchStart", x, y);
@@ -208,7 +208,7 @@ try {
     // Held by its knob, under the words: it stays on its line, where the finger goes.
     for (let i = 1; i <= 8; i++) await touch("touchMove", x + ((to.x + 1 - x) * i) / 8, y);
     await touch("touchEnd");
-    if ((await marked())[0] !== "|Amazing |grace how sweet |the |sound") throw new Error((await marked())[0]);
+    if ((await marked())[0] !== "|Amazing grace how sweet |the sound") throw new Error((await marked())[0]);
   });
 
   await step("no page errors", async () => {

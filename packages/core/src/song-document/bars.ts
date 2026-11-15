@@ -9,8 +9,8 @@ import type { RenderedChart, RenderedChord, RenderedPass } from "./render.js";
  * the metronome or a recording beat by beat.
  *
  * A section's own `rhythm` says its bars when it has one. Otherwise they're
- * filled in from the chart: each chord of a line gets a bar, a sung line
- * takes at least two (one chord and the bar it carries on), a line of
+ * filled in from the chart (`lineBars`): a sung line two bars, its chords
+ * shared between them (two a bar at most, more bars for more), a line of
  * chords alone one bar per chord, a pass with no lines two bars. Notes take
  * none. The beats of a bar are its pass's time signature's top number (4
  * without one), or the rhythm's own, or the bar's own (a pickup, an odd bar).
@@ -57,6 +57,27 @@ export interface ChartBar {
 /** Bars a sung line takes at least, filled in from the chart. */
 const BARS_PER_LINE = 2;
 
+/**
+ * A line's bars as filled in from the chart (issue #475): for each bar, its chords (by their place in the line) and
+ * their beats. A sung line takes two bars, its chords shared out in order, the first bars taking one more when they
+ * don't share evenly, two a bar at most (a line of five chords takes three bars), spread over the bar: on 1 and 3 in
+ * 4/4, 1 and 4 in 6/8. A line of chords alone (an intro, a turnaround) a bar per chord, one bar without any.
+ */
+export function lineBars(chords: number, sung: boolean, beats = 4): { chord: number; beat: number }[][] {
+  if (!sung) return chords === 0 ? [[]] : Array.from({ length: chords }, (_, chord) => [{ chord, beat: 1 }]);
+  const count = Math.max(BARS_PER_LINE, Math.ceil(chords / 2));
+  const base = Math.floor(chords / count);
+  const extra = chords % count;
+  const bars: { chord: number; beat: number }[][] = [];
+  let next = 0;
+  for (let bar = 0; bar < count; bar++) {
+    const here = base + (bar < extra ? 1 : 0);
+    bars.push(Array.from({ length: here }, (_, at) => ({ chord: next + at, beat: 1 + Math.round((at * beats) / here) })));
+    next += here;
+  }
+  return bars;
+}
+
 /** The bars of a rendered chart, in order; `song` gives the sections' own rhythm, where they have one. */
 export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">, song?: Pick<SongDocumentV2, "sections"> | null): ChartBar[] {
   const rhythms = new Map((song?.sections ?? []).map((section) => [section.id, section.rhythm ?? null]));
@@ -97,12 +118,8 @@ export function chartBars(chart: Pick<RenderedChart, "passes" | "timeSignature">
     const planned: { beats: number; chords: ChartBarChord[]; lineId: string | null; lyricAt: number | null; fromRhythm: boolean; beatAnchors: BeatAnchor[] }[] = [];
     for (const line of pass.lines) {
       if (line.kind === "note") continue;
-      // A line of chords alone (an intro, a turnaround): a bar each.
-      const sung = line.text.trim().length > 0;
-      const count = Math.max(line.chords.length, sung ? BARS_PER_LINE : 1);
-      for (let bar = 0; bar < count; bar++) {
-        const chord = line.chords[bar];
-        planned.push({ beats, chords: chord ? [barChord(chord, 1)] : [], lineId: line.id, lyricAt: null, fromRhythm: false, beatAnchors: [] });
+      for (const bar of lineBars(line.chords.length, line.text.trim().length > 0, beats)) {
+        planned.push({ beats, chords: bar.map((one) => barChord(line.chords[one.chord]!, one.beat)), lineId: line.id, lyricAt: null, fromRhythm: false, beatAnchors: [] });
       }
     }
     if (planned.length === 0) for (let bar = 0; bar < BARS_PER_LINE; bar++) planned.push({ beats, chords: [], lineId: null, lyricAt: null, fromRhythm: false, beatAnchors: [] });

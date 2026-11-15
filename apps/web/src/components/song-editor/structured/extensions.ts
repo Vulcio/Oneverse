@@ -951,7 +951,7 @@ export function fillBarLines(view: EditorView, sectionPos: number | null = null)
     if (section.type.name !== "section" || !sections.some((one) => one.node.attrs.id === section.attrs.id)) return;
     const lines = new Map<string, { node: PMNode; pos: number }>();
     section.forEach((line, offset) => lines.set(line.attrs.id as string, { node: line, pos: sectionAt + 1 + offset }));
-    const marks = suggestedBarLines({ lines: [...lines.values()].map((line) => lineFromNode(line.node)) });
+    const marks = suggestedBarLines({ lines: [...lines.values()].map((line) => lineFromNode(line.node)) }, (view.state.doc.attrs.beats as number | null) ?? 4);
     for (const [lineId, list] of Object.entries(marks)) {
       const line = lines.get(lineId);
       if (line) for (const mark of list) inserts.push({ pos: linePosition(line.node, line.pos, mark.at, mark.chordsBefore), bars: mark.bars });

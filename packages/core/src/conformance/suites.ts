@@ -1411,12 +1411,13 @@ export const CONFORMANCE: ConformanceArea[] = [
         ],
       },
       setRhythmBarCount: {
-        about: "A section given a number of bars in the chord grid (issue #462): empty bars added at its end, or the last taken off - only ones without chord changes.",
-        params: ["rhythm", "count"],
+        about: "A section given a number of bars in the chord grid (issue #462): empty bars added at its end, or the last taken off; with chords in them and the section given (issue #475), its chords shared out again over the bars left, in proportion, on whole beats else halves, the words following.",
+        params: ["rhythm", "count", "section", "beatsPerBar"],
         run: setRhythmBarCount,
         cases: [
           { name: "two more bars", args: [BARS_SONG.sections[1]!.rhythm, 5] },
-          { name: "the bar with Bm taken off: refused", args: [BARS_SONG.sections[1]!.rhythm, 2] },
+          { name: "the bar with Bm taken off, without the section: refused", args: [BARS_SONG.sections[1]!.rhythm, 2] },
+          { name: "the bar with Bm taken off: the chords shared out over two bars", args: [BARS_SONG.sections[1]!.rhythm, 2, BARS_SONG.sections[1], 4] },
         ],
       },
       matchingSections: {
