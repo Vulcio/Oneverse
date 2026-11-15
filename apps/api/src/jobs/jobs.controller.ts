@@ -16,7 +16,7 @@ export class JobsController {
     return this.jobs.status();
   }
 
-  /** A scheduled job run now (issue #235): "make-event-sets", "event-reminders", "clean-up-notifications" (issue #149), "record-live-sessions" or "end-gone-live-sessions" (issue #247). */
+  /** A scheduled job run now (issue #235): "make-event-sets", "event-reminders", "clean-up-notifications" (issue #149), "record-live-sessions" or "end-gone-live-sessions" (issue #247), "give-back-screens" (issue #480). */
   @Post("run/:name")
   async runNow(@Param("name") name: string) {
     const queued = await this.jobs.runNow(name);

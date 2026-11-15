@@ -15,6 +15,9 @@ export type ScreenMode = (typeof SCREEN_MODES)[number];
 /** How long a pairing lasts (issue #284): a guest's laptop for a service, a rented venue for a week, or until it's disconnected. */
 export const SCREEN_PAIRING_LENGTHS = ["12h", "1d", "1w", "unlimited"] as const;
 export type ScreenPairingLength = (typeof SCREEN_PAIRING_LENGTHS)[number];
+/** How long a screen is borrowed for a set (issue #480): it shows what it showed before afterwards. */
+export const SCREEN_BORROW_HOURS = [1, 3, 6, 12] as const;
+export type ScreenBorrowHours = (typeof SCREEN_BORROW_HOURS)[number];
 const PAIRING_LENGTH_MS: Record<ScreenPairingLength, number | null> = { "12h": 12 * 3600_000, "1d": 24 * 3600_000, "1w": 7 * 24 * 3600_000, unlimited: null };
 
 /** When a pairing made (or extended) at `now` for `lasts` ends; null: it doesn't. */

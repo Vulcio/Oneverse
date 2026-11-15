@@ -48,6 +48,11 @@ function OperatePage() {
       presets: { load: () => apiClient.getOperatorPresets(setlistId), save: (data) => apiClient.saveOperatorPresets(setlistId, data) },
       listScreens: () => apiClient.listScreens(setlistId),
       screenLooks: () => apiClient.getSetScreenLooks(setlistId),
+      borrowing: {
+        list: () => apiClient.listBorrowableScreens(setlistId),
+        borrow: (screenId: string, hours: number) => apiClient.borrowScreen(screenId, { setlistId: setlistId, hours: hours as 1 | 3 | 6 | 12 }),
+        giveBack: (screenId: string) => apiClient.giveBackScreen(screenId),
+      },
     }),
     [live, setlistId],
   );

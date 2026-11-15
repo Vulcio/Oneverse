@@ -145,7 +145,7 @@ export class JobsService {
    * not one of them.
    */
   async runNow(name: string): Promise<{ queued: string } | null> {
-    const scheduled: Record<string, Queue> = { "make-event-sets": this.teamEvents, "event-reminders": this.teamEvents, "clean-up-notifications": this.notifications, "record-live-sessions": this.liveSessions, "end-gone-live-sessions": this.liveSessions, "archive-tick": this.archives, "own-storage-tick": this.ownStorage };
+    const scheduled: Record<string, Queue> = { "make-event-sets": this.teamEvents, "event-reminders": this.teamEvents, "clean-up-notifications": this.notifications, "record-live-sessions": this.liveSessions, "end-gone-live-sessions": this.liveSessions, "give-back-screens": this.liveSessions, "archive-tick": this.archives, "own-storage-tick": this.ownStorage };
     const queue = scheduled[name];
     if (!queue) return null;
     await queue.add(name, {}, { removeOnComplete: 100, removeOnFail: 100 });

@@ -573,6 +573,31 @@ function ScreenTile({ screen, sets, themes, owners, onChanged }: { screen: Scree
               ? setlistTitle(screen.setlist, t, i18n.language)
               : t("screens.noSet")}
         </p>
+        {/* Borrowed for that set (issue #480): until when, by whom; given back sooner from here. */}
+        {screen.borrowed ? (
+          <p className="flex items-center gap-1 text-xs text-sky-700 dark:text-sky-300" data-testid="screen-borrowed">
+            <span className="min-w-0 flex-1 truncate">{t("screens.borrowedUntil", { name: screen.borrowed.by, time: new Date(screen.borrowed.until).toLocaleTimeString(i18n.language, { timeStyle: "short" }) })}</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-6 px-1.5 text-xs"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await apiClient.giveBackScreen(screen.id);
+                  await onChanged();
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              data-testid="screen-give-back"
+            >
+              {t("screens.giveBack")}
+            </Button>
+          </p>
+        ) : null}
         <p className="truncate text-xs text-muted-foreground">
           {lookName}
           {screen.effects === false ? ` · ${t("screens.effectsOff")}` : ""}

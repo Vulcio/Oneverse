@@ -6,11 +6,14 @@ import { JOB_WORKER_OPTIONS, LIVE_SESSIONS_QUEUE } from "../jobs/jobs.constants.
 import { redis } from "../jobs/redis.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { sessionKey } from "./set-sessions.js";
+import { giveBackDueScreens } from "../screens/borrowed-screens.js";
 
 // A set run live (issue #247, docs/live-session.md): its row, from when it starts until it ends.
 
 const END_SCHEDULER_ID = "end-gone-live-sessions";
 const RECORD_SCHEDULER_ID = "record-live-sessions";
+/** Screens borrowed for a set (issue #480) whose time is up, given back: every minute. */
+const GIVE_BACK_SCHEDULER_ID = "give-back-screens";
 const HOUR_MS = 60 * 60 * 1000;
 const RECORD_EVERY_MS = 60 * 1000;
 /** How long a session's record is kept after it ends (decided in #247). */
@@ -55,7 +58,7 @@ export async function endLiveSession(prisma: PrismaService, sessionId: string) {
 }
 
 /**
- * Every minute: the record's stream written to LiveSessionCommand (an entry
+ * Every minute: borrowed screens whose time is up given back (issue #480), and the record's stream written to LiveSessionCommand (an entry
  * whose session has no row is dropped). Hourly: LIVE sessions whose state is gone from Redis (nobody changed it for
  * SESSION_TTL_S) or is another session's now, ended, and the sessions ended
  * more than LIVE_RECORD_DAYS ago deleted with their record.
@@ -70,6 +73,7 @@ export class LiveSessionsProcessor extends WorkerHost {
 
   async process(job: Job): Promise<unknown> {
     if (job.name === RECORD_SCHEDULER_ID) return { recorded: await this.writeRecord() };
+    if (job.name === GIVE_BACK_SCHEDULER_ID) return { givenBack: await giveBackDueScreens(this.prisma) };
     return { ended: await this.endGone(), deleted: await this.deleteOld() };
   }
 
@@ -134,5 +138,6 @@ export class LiveSessionsScheduler implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     await this.queue.upsertJobScheduler(END_SCHEDULER_ID, { every: HOUR_MS }, { name: END_SCHEDULER_ID });
     await this.queue.upsertJobScheduler(RECORD_SCHEDULER_ID, { every: RECORD_EVERY_MS }, { name: RECORD_SCHEDULER_ID });
+    await this.queue.upsertJobScheduler(GIVE_BACK_SCHEDULER_ID, { every: RECORD_EVERY_MS }, { name: GIVE_BACK_SCHEDULER_ID });
   }
 }

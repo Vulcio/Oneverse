@@ -11,6 +11,7 @@ import { SetlistsService } from "../setlists/setlists.service.js";
 /** How long a pairing code waits to be confirmed. */
 export const PAIRING_TTL_S = 10 * 60;
 import { SCREEN_CHANNEL, screenOnlineKey, screenReportKey } from "./screen-channel.js";
+import { giveBackScreen, NOT_BORROWED, type BorrowedFrom } from "./borrowed-screens.js";
 import { templateLayout, templateLook, TEMPLATE_PARTS_SELECT, type TemplateParts } from "./screen-templates.js";
 import { ScreenThemesService } from "./screen-themes.service.js";
 
@@ -64,6 +65,8 @@ const SCREEN_SELECT = {
   ownerOrganization: { select: { name: true } },
   lastSeenAt: true,
   createdAt: true,
+  borrowedUntil: true,
+  setBy: { select: { displayName: true } },
   setlist: { select: { id: true, name: true, eventDate: true, eventDateOf: { select: { id: true } } } },
 } as const;
 
@@ -181,7 +184,9 @@ export class ScreensService {
   /** The screen a token signs in, or null - also once its pairing has ended (issue #284): it's gone then, and the screen shows a new code. */
   async byToken(token: string) {
     if (typeof token !== "string" || !token.startsWith("scr_") || token.length > 100) return null;
-    const screen = await this.prisma.client.screen.findUnique({ where: { tokenHash: hash(token) }, select: SCREEN_SELECT });
+    let screen = await this.prisma.client.screen.findUnique({ where: { tokenHash: hash(token) }, select: SCREEN_SELECT });
+    // Borrowed for a set whose time is up (issue #480): back to what it showed, without waiting for the Worker.
+    if (screen?.borrowedUntil && screen.borrowedUntil <= new Date() && (await giveBackScreen(this.prisma, screen.id))) screen = await this.prisma.client.screen.findUnique({ where: { id: screen.id }, select: SCREEN_SELECT });
     if (!screen || !ended(screen)) return screen;
     await this.prisma.client.screen.deleteMany({ where: { id: screen.id, expiresAt: { lte: new Date() } } });
     return null;
@@ -515,6 +520,8 @@ export class ScreensService {
         // A set put on it is fixed; the day's set is worked out when it next loads (issue #274).
         ...(change.setMode !== undefined ? { setMode: change.setMode, ...(change.setMode === "DAY" && change.setlistId === undefined && { setlistPickedOn: null }) } : change.setlistId ? { setMode: "FIXED" as const } : {}),
         ...(locationId !== undefined && { locationId }),
+        // Its set changed in its settings while borrowed (issue #480): that's what it shows now, nothing to give back.
+        ...((change.setlistId !== undefined || change.setMode !== undefined || change.locationId !== undefined) && NOT_BORROWED),
         ...lookChange(change),
         ...scriptureLookChange(change),
       },
@@ -523,6 +530,59 @@ export class ScreensService {
     if (updated.setMode === "LOCATION") updated = await this.followLocation(updated);
     await redis().publish(SCREEN_CHANNEL, screen.id);
     return present(updated, canManage);
+  }
+
+  /**
+   * The screens the user may borrow for a set (issue #480): those they may
+   * use or manage - theirs, their teams' and organisations' - that show
+   * another set now, or none. Not a Pulse: it runs its set's session.
+   */
+  async borrowable(user: AuthenticatedUser, setlistId: string) {
+    await this.assertCanPresent(user, setlistId);
+    const scope = await this.scopeOf(user);
+    const screens = await this.prisma.client.screen.findMany({
+      where: {
+        AND: [
+          { OR: [{ ownerUserId: user.id }, { ownerTeamId: { in: [...scope.teams, ...scope.managedTeams] } }, { ownerOrganizationId: { in: [...scope.organizations, ...scope.managedOrganizations] } }] },
+          { kind: "SCREEN" },
+          { OR: [{ setlistId: null }, { setlistId: { not: setlistId } }] },
+          notEnded(),
+        ],
+      },
+      select: SCREEN_SELECT,
+      orderBy: { name: "asc" },
+    });
+    return withOnline(screens.map((screen) => present(screen, manages(user, scope, screen))));
+  }
+
+  /**
+   * A screen borrowed for a set (issue #480): it shows the set, read as the
+   * user, for `hours`, then what it showed before - kept, even when it's
+   * borrowed again meanwhile. Whoever may put a set on it (its managers, its
+   * team's or organisation's members), for a set they can edit.
+   */
+  async borrow(user: AuthenticatedUser, screenId: string, { setlistId, hours = 3 }: { setlistId: string; hours?: number }) {
+    const screen = await this.prisma.client.screen.findUnique({ where: { id: screenId }, select: { ...SCREEN_SELECT, borrowedFrom: true } });
+    if (!screen || ended(screen)) throw new NotFoundException("Screen not found");
+    const scope = await this.scopeOf(user);
+    if (!manages(user, scope, screen) && !uses(user, scope, screen)) throw new NotFoundException("Screen not found");
+    if (screen.kind === "PULSE") throw new BadRequestException(["A Pulse runs its own set's session: it isn't borrowed"]);
+    await this.assertCanPresent(user, setlistId);
+    const from: BorrowedFrom = screen.borrowedUntil && screen.borrowedFrom ? (screen.borrowedFrom as unknown as BorrowedFrom) : { setlistId: screen.setlistId, setMode: screen.setMode, setByUserId: screen.setByUserId, locationId: screen.locationId, setlistPickedOn: screen.setlistPickedOn };
+    const updated = await this.prisma.client.screen.update({
+      where: { id: screen.id },
+      data: { setlistId, setMode: "FIXED", setByUserId: user.id, setlistPickedOn: null, borrowedUntil: new Date(Date.now() + hours * 3600_000), borrowedFrom: from as unknown as object },
+      select: SCREEN_SELECT,
+    });
+    await redis().publish(SCREEN_CHANNEL, screen.id);
+    return present(updated, manages(user, scope, screen));
+  }
+
+  /** A borrowed screen given back now (issue #480): by whoever may use it, or present the set it was borrowed for. */
+  async giveBack(user: AuthenticatedUser, screenId: string): Promise<void> {
+    const { screen } = await this.changeable(user, screenId);
+    if (!screen.borrowedUntil) return;
+    await giveBackScreen(this.prisma, screen.id);
   }
 
   /**
@@ -724,6 +784,8 @@ function present(
     kind: ScreenKind;
     location: { id: string; name: string } | null;
     createdAt: Date;
+    borrowedUntil?: Date | null;
+    setBy?: { displayName: string } | null;
     owner: { displayName: string } | null;
     ownerTeam: { name: string } | null;
     ownerOrganization: { name: string } | null;
@@ -756,5 +818,7 @@ function present(
     hiddenLayers: SCREEN_SWITCHABLE_LAYERS.filter((layer) => screen.hiddenLayers.includes(layer)),
     effects: screen.effects,
     expiresAt: screen.expiresAt?.toISOString() ?? null,
+    // Borrowed for its set (issue #480): until when, and by whom.
+    borrowed: screen.borrowedUntil ? { until: screen.borrowedUntil.toISOString(), by: screen.setBy?.displayName ?? "" } : null,
   };
 }

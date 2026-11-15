@@ -79,7 +79,9 @@ export function OperatorConsole({
   const { sendStage: send } = useOperatorHost();
   const [drawer, setDrawer] = useState(false);
   const items = useOperatorItems(copy);
-  const expected = useExpectedScreens();
+  const [screensChanged, setScreensChanged] = useState(0);
+  const expected = useExpectedScreens(screensChanged);
+  const onScreensChanged = () => setScreensChanged((n) => n + 1);
   useOperatorKeys({ items, itemId, onLook, onLayers: send, enabled: sync.ready && sync.canOperate });
   const root = useRef<HTMLDivElement>(null);
   const width = useWidth(root);
@@ -113,7 +115,7 @@ export function OperatorConsole({
         <div className="grid gap-6 xl:grid-cols-2" data-testid="operator-route-only">
           <p className="text-sm text-muted-foreground xl:col-span-2">{t("screens.operator.routeOnly")}</p>
           <div className="xl:col-span-2">
-            <ScreensView copy={copy} expected={expected} send={send} />
+            <ScreensView copy={copy} expected={expected} send={send} onScreensChanged={onScreensChanged} />
           </div>
         </div>
       ) : !sync.canOperate ? (
@@ -153,7 +155,7 @@ export function OperatorConsole({
               </Tabs>
             </div>
           </div>
-          <ScreensPanel copy={copy} items={items} itemId={itemId} open={drawer} onOpenChange={setDrawer} send={send} expected={expected} />
+          <ScreensPanel copy={copy} items={items} itemId={itemId} open={drawer} onOpenChange={setDrawer} send={send} expected={expected} onScreensChanged={onScreensChanged} />
         </OperatorPresetsProvider>
       )}
     </div>
@@ -165,7 +167,7 @@ export function OperatorConsole({
  * API through the host: those not connected are named as missing. Read again
  * when the set's screens come and go. Null where the host can't tell.
  */
-function useExpectedScreens(): ScreenSummary[] | null {
+function useExpectedScreens(changed = 0): ScreenSummary[] | null {
   const { listScreens } = useOperatorHost();
   const { members } = useLive();
   const connected = members
@@ -183,7 +185,7 @@ function useExpectedScreens(): ScreenSummary[] | null {
     return () => {
       live = false;
     };
-  }, [listScreens, connected]);
+  }, [listScreens, connected, changed]);
   return screens;
 }
 
@@ -465,7 +467,7 @@ const WIDE = "(min-width: 1024px)";
  * beside it; a column down the right that the page makes room for on a large
  * screen, as wide as its edge is dragged; at the bottom on a phone.
  */
-function ScreensPanel({ copy, items, itemId, open, onOpenChange, send, expected }: { copy: SetlistOfflineCopy; items: OperatorItem[]; itemId: string | null; open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void; expected: ScreenSummary[] | null }) {
+function ScreensPanel({ copy, items, itemId, open, onOpenChange, send, expected, onScreensChanged }: { copy: SetlistOfflineCopy; items: OperatorItem[]; itemId: string | null; open: boolean; onOpenChange: (open: boolean) => void; send: (command: SyncStageCommand) => void; expected: ScreenSummary[] | null; onScreensChanged: () => void }) {
   const { t } = useTranslation();
   const wide = useMediaQuery(WIDE);
   const stored = useOperatorDisplay().drawerWidth;
@@ -487,7 +489,7 @@ function ScreensPanel({ copy, items, itemId, open, onOpenChange, send, expected 
           </DrawerClose>
         </div>
         <div className="overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <ScreensView copy={copy} items={items} itemId={itemId} expected={expected} send={send} />
+          <ScreensView copy={copy} items={items} itemId={itemId} expected={expected} send={send} onScreensChanged={onScreensChanged} />
         </div>
       </DrawerContent>
     </Drawer>

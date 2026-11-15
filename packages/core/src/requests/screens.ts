@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { SCREEN_MODES, SCREEN_PAIRING_LENGTHS, SCREEN_PART_KINDS, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, ScreenBackgroundThemeRequestSchema, ScreenContentThemeRequestSchema, ScreenEffectsRequestSchema, ScreenTemplateRequestSchema, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
+import { SCREEN_BORROW_HOURS, SCREEN_MODES, SCREEN_PAIRING_LENGTHS, SCREEN_PART_KINDS, SCREEN_SWITCHABLE_LAYERS, SCREEN_TEMPLATES, ScreenBackgroundThemeRequestSchema, ScreenContentThemeRequestSchema, ScreenEffectsRequestSchema, ScreenTemplateRequestSchema, ScreenThemeRequestSchema, ScreenWidgetLookRequestSchema } from "../screens/index.js";
 import { optional } from "./fields.js";
 
 /** Screens (issue #186): a screen paired by its code, and changed later by whoever paired it. */
@@ -82,6 +82,18 @@ export const UpdateScreenSchema = z.strictObject({
   lasts: optional(screenFields.lasts).describe("Extended (issue #284): paired for this long from now, or unlimited"),
 });
 export type UpdateScreenRequest = z.input<typeof UpdateScreenSchema>;
+
+/** POST /screens/:id/borrow (issue #480): the screen shows this set for a while, then what it showed before. */
+export const BorrowScreenSchema = z.strictObject({
+  setlistId: z.string().min(1).max(40),
+  hours: optional(z.literal(SCREEN_BORROW_HOURS, { error: "hours must be 1, 3, 6 or 12" })).describe("For this many hours: 1, 3 (left out), 6 or 12"),
+});
+export type BorrowScreenRequest = z.input<typeof BorrowScreenSchema>;
+
+/** GET /screens/borrowable (issue #480): the screens one may borrow for this set. */
+export const BorrowableScreensQuerySchema = z.strictObject({
+  setlistId: z.string().min(1).max(40),
+});
 
 const themeName = z.string().trim().min(1, "name must not be empty").max(60);
 

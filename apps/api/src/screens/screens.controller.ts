@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query, Res, UnauthorizedException, BadRequestException } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, StartScreenPairingSchema, UpdateScreenSchema } from "@oneverse/core";
+import { BorrowableScreensQuerySchema, BorrowScreenSchema, ClaimScreenPairingSchema, ConfirmScreenPairingSchema, PickScreenSetSchema, PickScreenThemeSchema, ScreenCurrentQuerySchema, StartScreenPairingSchema, UpdateScreenSchema } from "@oneverse/core";
 import type { Response } from "express";
 import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { Public } from "../common/decorators/public.decorator.js";
@@ -16,6 +16,8 @@ class UpdateScreenDto extends zodDto(UpdateScreenSchema) {}
 class ScreenCurrentQueryDto extends zodDto(ScreenCurrentQuerySchema) {}
 class PickScreenSetDto extends zodDto(PickScreenSetSchema) {}
 class PickScreenThemeDto extends zodDto(PickScreenThemeSchema) {}
+class BorrowScreenDto extends zodDto(BorrowScreenSchema) {}
+class BorrowableScreensQueryDto extends zodDto(BorrowableScreensQuerySchema) {}
 
 /** A screen's token, sent as `Authorization: Screen <token>`. */
 function screenToken(header: string | undefined): string {
@@ -112,6 +114,12 @@ export class ScreensController {
   }
 
   /** Whose a screen paired now can be (issues #222, #322): the teams and organisations they run, or whose screens they manage by a role. */
+  /** The screens one may borrow for a set (issue #480). */
+  @Get("borrowable")
+  borrowable(@Query() query: BorrowableScreensQueryDto, @SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["borrowable"]> {
+    return this.screens.borrowable(user, query.setlistId);
+  }
+
   @Get("owners")
   owners(@SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["pairingOwners"]> {
     return this.screens.pairingOwners(user);
@@ -123,6 +131,19 @@ export class ScreensController {
   }
 
   /** A pairing code shown on it again (issue #284): another profile, beside this one. */
+  /** The screen shows this set for a while (issue #480), then what it showed before. */
+  @Post(":screenId/borrow")
+  borrow(@Param("screenId") screenId: string, @Body() dto: BorrowScreenDto, @SignedIn() user: AuthenticatedUser): ReturnType<ScreensService["borrow"]> {
+    return this.screens.borrow(user, screenId, dto);
+  }
+
+  /** A borrowed screen given back now (issue #480). */
+  @Post(":screenId/give-back")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  giveBack(@Param("screenId") screenId: string, @SignedIn() user: AuthenticatedUser): Promise<void> {
+    return this.screens.giveBack(user, screenId);
+  }
+
   @Post(":screenId/pair-again")
   @HttpCode(HttpStatus.NO_CONTENT)
   pairAgain(@Param("screenId") screenId: string, @SignedIn() user: AuthenticatedUser): Promise<void> {

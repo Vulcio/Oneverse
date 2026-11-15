@@ -69,7 +69,7 @@ import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest,
 import type { AttachmentTypeValue, AttachmentVisibilityValue, SaveFileSizeLimitsRequest } from "../requests/files.js";
 import type { CreateSongLinkRequest, UpdateSongLinkRequest } from "../requests/song-links.js";
 import type { SongLinkService } from "../streaming-links/reference.js";
-import type { ConfirmScreenPairingRequest, CreateScreenPartRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenPartRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
+import type { BorrowScreenRequest, ConfirmScreenPairingRequest, CreateScreenPartRequest, CreateScreenThemeRequest, SaveScreenWidgetDefaultRequest, UpdateScreenPartRequest, UpdateScreenRequest, UpdateScreenThemeRequest } from "../requests/screens.js";
 import type { ScreenSwitchableLayer, ScreenTheme, ScreenWidgetKind, ScreenWidgetLook } from "../screens/theme.js";
 import type { ScreenBackgroundTheme, ScreenContentTheme, ScreenEffects, ScreenPartKind, ScreenTemplateLayout } from "../screens/parts.js";
 import type { ScreenMode } from "../screens/index.js";
@@ -965,6 +965,8 @@ export interface ScreenSummary {
   report?: (ScreenReport & { at: string; tier: ScreenTier }) | null;
   /** When a temporary pairing ends (issue #284); null: until it's disconnected. Left out by an older API. */
   expiresAt?: string | null;
+  /** Borrowed for the set it shows (issue #480): until when, and by whom; then it shows what it showed before. Null: not borrowed. Left out by an older API. */
+  borrowed?: { until: string; by: string } | null;
 }
 
 /** A screen theme's own file (issue #194): a background picture or video ("media"), or a font, at a signed address. */
@@ -3208,7 +3210,7 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     getJobsStatus: () => request<JobsStatus>("/admin/jobs"),
     /** Clears the failed jobs, once their errors have been read (issue #93). */
     clearFailedJobs: () => request<{ cleared: number }>("/admin/jobs/failed", { method: "DELETE" }),
-    runScheduledJob: (name: "make-event-sets" | "event-reminders" | "clean-up-notifications" | "record-live-sessions" | "end-gone-live-sessions") => request<{ queued: string }>(`/admin/jobs/run/${name}`, { method: "POST" }),
+    runScheduledJob: (name: "make-event-sets" | "event-reminders" | "clean-up-notifications" | "record-live-sessions" | "end-gone-live-sessions" | "give-back-screens") => request<{ queued: string }>(`/admin/jobs/run/${name}`, { method: "POST" }),
     /** The songs before and after one in a list of the library, searched and filtered as `query` says (issue #84). */
     getSongNeighbors: (songVersionId: string, query: ListSongVersionsQuery = {}) => {
       const params = new URLSearchParams(
@@ -3718,6 +3720,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     listScreenPairingOwners: () => request<{ teams: { id: string; name: string }[]; organizations: { id: string; name: string }[] }>("/screens/owners"),
     listScreens: (setlistId?: string) => request<ScreenSummary[]>(`/screens${setlistId ? `?setlistId=${encodeURIComponent(setlistId)}` : ""}`),
     getSetScreenLooks: (setlistId: string) => request<SetScreenLooks>(`/screens/looks?setlistId=${encodeURIComponent(setlistId)}`),
+    /** The screens one may borrow for a set (issue #480). */
+    listBorrowableScreens: (setlistId: string) => request<ScreenSummary[]>(`/screens/borrowable?setlistId=${encodeURIComponent(setlistId)}`),
+    borrowScreen: (screenId: string, data: BorrowScreenRequest) => request<ScreenSummary>(`/screens/${screenId}/borrow`, { method: "POST", body: JSON.stringify(data) }),
+    giveBackScreen: (screenId: string) => request<void>(`/screens/${screenId}/give-back`, { method: "POST" }),
     updateScreen: (screenId: string, data: UpdateScreenRequest) => request<ScreenSummary>(`/screens/${screenId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteScreen: (screenId: string) => request<void>(`/screens/${screenId}`, { method: "DELETE" }),
     pairScreenAgain: (screenId: string) => request<void>(`/screens/${screenId}/pair-again`, { method: "POST" }),

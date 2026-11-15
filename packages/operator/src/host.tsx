@@ -53,6 +53,12 @@ export interface OperatorHost {
   listScreens?: () => Promise<ScreenSummary[]>;
   /** How those screens look (issue #358): the console draws each as it is; left out (offline), in the default look. */
   screenLooks?: () => Promise<SetScreenLooks>;
+  /** Screens not on this set, borrowed for it for a while (issue #480); left out (offline), the console doesn't offer it. */
+  borrowing?: {
+    list: () => Promise<ScreenSummary[]>;
+    borrow: (screenId: string, hours: number) => Promise<unknown>;
+    giveBack: (screenId: string) => Promise<unknown>;
+  };
 }
 
 const OperatorContext = createContext<OperatorHost | null>(null);

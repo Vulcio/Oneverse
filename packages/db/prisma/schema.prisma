@@ -3267,6 +3267,13 @@ model Screen {
   // A temporary pairing (issue #284): its token stops working then, and the
   // screen shows a new code. Null: until it's disconnected.
   expiresAt           DateTime?
+  // Borrowed for a set (issue #480): an operator put their set on it for a
+  // while. Until then it shows that set (setlistId, read as setByUserId);
+  // afterwards - or given back sooner - it shows what it showed before,
+  // kept in borrowedFrom ({ setlistId, setMode, setByUserId, locationId,
+  // setlistPickedOn }).
+  borrowedUntil       DateTime?
+  borrowedFrom        Json?
   lastSeenAt          DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -3287,6 +3294,7 @@ model Screen {
   @@index([themeId])
   @@index([scriptureThemeId])
   @@index([locationId])
+  @@index([borrowedUntil])
 }
 
 // A look for screens (issue #194): a screen-theme/v1 document

@@ -26,6 +26,11 @@ export function songverseOperatorHost(setId: string): OperatorHost {
       presets: { load: () => apiClient.getOperatorPresets(setId), save: (data) => apiClient.saveOperatorPresets(setId, data) },
       listScreens: () => apiClient.listScreens(setId),
       screenLooks: () => apiClient.getSetScreenLooks(setId),
+      borrowing: {
+        list: () => apiClient.listBorrowableScreens(setId),
+        borrow: (screenId: string, hours: number) => apiClient.borrowScreen(screenId, { setlistId: setId, hours: hours as 1 | 3 | 6 | 12 }),
+        giveBack: (screenId: string) => apiClient.giveBackScreen(screenId),
+      },
     };
     hosts.set(setId, host);
   }
