@@ -1,5 +1,6 @@
-import { beatAt, changeMetronome, clicksBetween, normalizeMetronome, patternFor, secondsPerBeat, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
+import { beatAt, changeMetronome, clicksBetween, normalizeMetronome, patternFor, secondsPerBeat, type ChartBar, type GrooveBar, type GrooveDrum, type MetronomeClick, type MetronomeSettings, type MetronomeSound } from "@oneverse/core";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { drumGain, makeDrumBuffers } from "#/lib/drum-kit";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
 
 /**
@@ -90,6 +91,7 @@ let context: AudioContext | null = null;
 let clock: OutputClock | null = null;
 let output: GainNode | null = null;
 let buffers: Map<string, AudioBuffer> | null = null;
+let drums: Map<GrooveDrum, AudioBuffer> | null = null;
 /** Where the timeline was anchored: position `anchorPosition` (beats) at `anchorTime` on the audio clock. */
 let anchorTime = 0;
 /** When beat `anchorPosition` is heard on the device's clock (ms): what the audio clock is kept against. */
@@ -140,7 +142,7 @@ function makeBuffers(ctx: AudioContext): Map<string, AudioBuffer> {
 }
 
 /** The metronome's own audio: its context, clock, output and sounds. */
-let own: { context: AudioContext; clock: OutputClock; output: GainNode; buffers: Map<string, AudioBuffer> } | null = null;
+let own: { context: AudioContext; clock: OutputClock; output: GainNode; buffers: Map<string, AudioBuffer>; drums: Map<GrooveDrum, AudioBuffer> } | null = null;
 
 /**
  * Playing with the recording (issue #448): the stems' own audio context and
@@ -173,12 +175,13 @@ function audio(): AudioContext {
     const ctx = new AudioContext({ latencyHint: "interactive" });
     const gain = ctx.createGain();
     gain.connect(ctx.destination);
-    own = { context: ctx, clock: new OutputClock(ctx), output: gain, buffers: makeBuffers(ctx) };
+    own = { context: ctx, clock: new OutputClock(ctx), output: gain, buffers: makeBuffers(ctx), drums: makeDrumBuffers(ctx) };
   }
   context = own.context;
   clock = own.clock;
   output = own.output;
   buffers = own.buffers;
+  drums = own.drums;
   return context;
 }
 
@@ -235,6 +238,8 @@ interface MetronomeProbe {
    * `recording`: played with the recording (issue #448), where in it (s).
    */
   clicks: (Pick<MetronomeClick, "position" | "bar" | "beat" | "sub" | "level"> & { time: number; heardAt: number; outputAt: number; clockAt: number; recording?: number })[];
+  /** The groove's hits (issue #105): which drum, where in the metronome's beats, in which bar of the song. */
+  drums: { time: number; position: number; drum: GrooveDrum; velocity: number; bar: number }[];
   now: () => number;
   /** When a time on the audio clock is heard, in ms since the epoch on this device's clock. */
   epoch: (time: number) => number;
@@ -244,6 +249,7 @@ function probe(): MetronomeProbe | null {
   const w = window as unknown as { songverseMetronome?: MetronomeProbe };
   w.songverseMetronome ??= {
     clicks: [],
+    drums: [],
     now: () => context?.currentTime ?? 0,
     epoch: epochFromAudioTime,
   };
@@ -272,7 +278,11 @@ function schedule() {
   if (host) return scheduleHosted(ctx, horizon);
   const until = positionAt(horizon);
   const log = probe();
+  const playing = grooveHere();
+  if (playing) scheduleGroove(ctx, playing, scheduledUntil, until);
   for (const click of clicksBetween(state.settings, scheduledUntil, until)) {
+    // A bar with a groove: the drums keep time, the click only if asked (issue #105).
+    if (playing && !grooveOptions.click && playing.bars[barIndexAt(playing, click.position - countInBeats())]) continue;
     const time = timeOf(click.position);
     if (time < ctx.currentTime) continue;
     const source = ctx.createBufferSource();
@@ -325,8 +335,137 @@ function cancelFrom(time: number) {
     return false;
   });
   const log = probe();
-  if (log) log.clicks = log.clicks.filter((click) => click.time < time - 0.001);
+  if (log) {
+    log.clicks = log.clicks.filter((click) => click.time < time - 0.001);
+    log.drums = log.drums.filter((hit) => hit.time < time - 0.001);
+  }
   hostScheduledUntil = Math.min(hostScheduledUntil, time);
+}
+
+// --- drum grooves (issue #105)
+
+/** A song's grooves, bar by bar: what its page gives while it's open. */
+export interface MetronomeGroove {
+  songId: string;
+  bars: readonly ChartBar[];
+  /** Each bar's groove (by index), null for a bar without one. */
+  played: readonly (GrooveBar | null)[];
+}
+
+let groove: MetronomeGroove | null = null;
+
+/** Whether grooves play, and the click with them: this device's choice. */
+export interface GrooveOptions {
+  /** The drums play where a song's sections have a groove. */
+  play: boolean;
+  /** The click too, in those bars. */
+  click: boolean;
+  /** How the Drums view shows it: every drum's row, or kick, snare and hi-hat on one line. */
+  look: "grid" | "line";
+}
+const GROOVE_KEY = "songverse.grooves";
+let grooveOptions: GrooveOptions = { play: true, click: false, look: "grid" };
+let grooveOptionsLoaded = false;
+const grooveListeners = new Set<() => void>();
+
+function loadGrooveOptions() {
+  if (grooveOptionsLoaded || typeof window === "undefined") return;
+  grooveOptionsLoaded = true;
+  try {
+    const stored = JSON.parse(localStorage.getItem(GROOVE_KEY) ?? "null") as Partial<GrooveOptions> | null;
+    if (stored) grooveOptions = { play: stored.play !== false, click: stored.click === true, look: stored.look === "line" ? "line" : "grid" };
+  } catch {
+    // Storage blocked: the defaults.
+  }
+}
+
+/** Plays (or stops playing) a song's grooves with the metronome started for it; from the next beat on. */
+export function setMetronomeGroove(next: MetronomeGroove | null) {
+  groove = next;
+  if (state.playing) rescheduleFromNow();
+}
+
+/** Stops playing this groove, unless another page's has taken its place. */
+export function releaseMetronomeGroove(mine: MetronomeGroove | null) {
+  if (mine && groove === mine) setMetronomeGroove(null);
+}
+
+export function changeGrooveOptions(change: Partial<GrooveOptions>) {
+  loadGrooveOptions();
+  grooveOptions = { ...grooveOptions, ...change };
+  try {
+    localStorage.setItem(GROOVE_KEY, JSON.stringify(grooveOptions));
+  } catch {
+    // Storage blocked: for this page only.
+  }
+  for (const listener of grooveListeners) listener();
+  if (state.playing) rescheduleFromNow();
+}
+
+export function useGrooveOptions(): GrooveOptions {
+  loadGrooveOptions();
+  return useSyncExternalStore(
+    (listener) => {
+      grooveListeners.add(listener);
+      return () => grooveListeners.delete(listener);
+    },
+    () => grooveOptions,
+    () => grooveOptions,
+  );
+}
+
+/** The groove playing now: the song's the metronome plays (or the leader's song, followed), when grooves play. */
+function grooveHere(): MetronomeGroove | null {
+  loadGrooveOptions();
+  if (!groove || !grooveOptions.play || host) return null;
+  if (state.songId !== groove.songId && !state.following) return null;
+  return groove.played.some(Boolean) ? groove : null;
+}
+
+const countInBeats = () => state.settings.countIn * state.settings.numerator;
+
+/** The bar at a position in the song (beats), or -1 outside it. */
+function barIndexAt(playing: MetronomeGroove, position: number): number {
+  if (position < 0) return -1;
+  for (const bar of playing.bars) if (position >= bar.start - 1e-9 && position < bar.start + bar.beats - 1e-9) return bar.index;
+  return -1;
+}
+
+/** The groove's hits from one position of the metronome's (included) to another (not), on the audio clock. */
+function scheduleGroove(ctx: AudioContext, playing: MetronomeGroove, from: number, to: number) {
+  if (!drums || !output) return;
+  const shift = countInBeats();
+  const log = probe();
+  for (const bar of playing.bars) {
+    const played = playing.played[bar.index];
+    if (!played || bar.start - shift >= to || bar.start + bar.beats - shift <= from) continue;
+    const step = bar.beats / played.style.steps;
+    for (const hit of played.hits) {
+      const position = bar.start + hit.step * step + shift;
+      if (position < from - 1e-9 || position >= to - 1e-9) continue;
+      const time = timeOf(position);
+      if (time < ctx.currentTime) continue;
+      const source = ctx.createBufferSource();
+      source.buffer = drums.get(hit.drum)!;
+      const gain = ctx.createGain();
+      gain.gain.value = drumGain(hit.velocity);
+      source.connect(gain).connect(output);
+      source.start(time);
+      scheduled.push({ source, time });
+      log?.drums.push({ time, position, drum: hit.drum, velocity: hit.velocity, bar: bar.index });
+    }
+  }
+  if (log && log.drums.length > 400) log.drums.splice(0, log.drums.length - 400);
+}
+
+/** What's scheduled from the next beat on, again: a groove or its options changed. */
+function rescheduleFromNow() {
+  const ctx = context;
+  if (!ctx || host) return;
+  const next = Math.ceil(positionAt(ctx.currentTime + 0.05));
+  cancelFrom(timeOf(next));
+  scheduledUntil = Math.min(scheduledUntil, next);
+  schedule();
 }
 
 // --- what pages call

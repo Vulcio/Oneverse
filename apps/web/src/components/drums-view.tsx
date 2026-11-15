@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@oneverse/ui/lib/utils";
+import { GrooveGrid } from "#/components/groove-grid";
+import { songGrooves } from "#/lib/song-groove";
 import { useBeatLevels, useRegisterDrumsView, useRequestPageBeat, useSongBeat, type PageBeatSource } from "#/lib/song-beat";
 
 /** Behind the Drums view the beat is the whole page: never so faint it can't be read from behind a kit. */
@@ -25,6 +27,7 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
   useRegisterDrumsView();
   const bars = useMemo(() => chartBars(chart, document), [chart, document]);
   const sections = useMemo(() => drumsSections(chart, bars), [chart, bars]);
+  const grooves = useMemo(() => songGrooves(chart, document, bars), [chart, document, bars]);
   const beat = useSongBeat(songId, bars);
   const [manual, setManual] = useState(0);
   useEffect(() => setManual(0), [songId]);
@@ -106,6 +109,9 @@ export function DrumsView({ songId, chart, document, settings, live = false }: {
             );
           })}
         </nav>
+
+        {/* The groove being played, under the sections: what the drummer reads next after where they are. */}
+        <GrooveGrid grooves={grooves} bars={bars} beat={beat} current={current} nextPass={next ? current + 1 : null} />
 
         <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:gap-4">
           <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-2xl border border-foreground/10 bg-background/40 p-4 sm:p-5">

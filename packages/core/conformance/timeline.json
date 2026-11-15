@@ -1941,6 +1941,298 @@
         }
       ]
     },
+    "grooveBar": {
+      "about": "What a bar's drum groove plays (issue #105): its section's style and variation as hits (step, drum, MIDI velocity), the fill on the section's last bar when asked, a crash as a later section starts; nothing in a bar of another time signature.",
+      "params": [
+        "groove",
+        "bar",
+        "timeSignature"
+      ],
+      "cases": [
+        {
+          "name": "pop-rock, simple, a verse's first bar",
+          "args": [
+            {
+              "styleId": "pop-rock",
+              "variant": "simple"
+            },
+            {
+              "index": 0,
+              "barInPass": 0,
+              "barsInPass": 4,
+              "beats": 4
+            },
+            {
+              "numerator": 4,
+              "denominator": 4
+            }
+          ],
+          "expected": {
+            "styleId": "pop-rock",
+            "steps": 16,
+            "variant": "simple",
+            "fill": false,
+            "hits": [
+              {
+                "drum": "kick",
+                "step": 0,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 0,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 2,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 4,
+                "velocity": 118
+              },
+              {
+                "drum": "hihat",
+                "step": 4,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 6,
+                "velocity": 92
+              },
+              {
+                "drum": "kick",
+                "step": 8,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 8,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 10,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 12,
+                "velocity": 118
+              },
+              {
+                "drum": "hihat",
+                "step": 12,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 14,
+                "velocity": 92
+              }
+            ]
+          }
+        },
+        {
+          "name": "a chorus starting: the crash",
+          "args": [
+            {
+              "styleId": "pop-rock",
+              "variant": "full"
+            },
+            {
+              "index": 8,
+              "barInPass": 0,
+              "barsInPass": 4,
+              "beats": 4
+            },
+            {
+              "numerator": 4,
+              "denominator": 4
+            }
+          ],
+          "expected": {
+            "styleId": "pop-rock",
+            "steps": 16,
+            "variant": "full",
+            "fill": false,
+            "hits": [
+              {
+                "drum": "kick",
+                "step": 0,
+                "velocity": 92
+              },
+              {
+                "drum": "crash",
+                "step": 0,
+                "velocity": 118
+              },
+              {
+                "drum": "hihat",
+                "step": 2,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 4,
+                "velocity": 118
+              },
+              {
+                "drum": "hihat",
+                "step": 4,
+                "velocity": 118
+              },
+              {
+                "drum": "kick",
+                "step": 6,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 6,
+                "velocity": 92
+              },
+              {
+                "drum": "kick",
+                "step": 8,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 8,
+                "velocity": 118
+              },
+              {
+                "drum": "kick",
+                "step": 10,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 10,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 12,
+                "velocity": 118
+              },
+              {
+                "drum": "hihat",
+                "step": 12,
+                "velocity": 118
+              },
+              {
+                "drum": "hihat",
+                "step": 14,
+                "velocity": 92
+              }
+            ]
+          }
+        },
+        {
+          "name": "6/8 ballad, the fill on the last bar",
+          "args": [
+            {
+              "styleId": "ballad-6-8",
+              "variant": "simple",
+              "fill": true
+            },
+            {
+              "index": 7,
+              "barInPass": 3,
+              "barsInPass": 4,
+              "beats": 6
+            },
+            {
+              "numerator": 6,
+              "denominator": 8
+            }
+          ],
+          "expected": {
+            "styleId": "ballad-6-8",
+            "steps": 12,
+            "variant": "simple",
+            "fill": true,
+            "hits": [
+              {
+                "drum": "kick",
+                "step": 0,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 0,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 2,
+                "velocity": 92
+              },
+              {
+                "drum": "hihat",
+                "step": 4,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 6,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 8,
+                "velocity": 92
+              },
+              {
+                "drum": "tomHigh",
+                "step": 8,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 10,
+                "velocity": 118
+              },
+              {
+                "drum": "tomLow",
+                "step": 10,
+                "velocity": 92
+              },
+              {
+                "drum": "snare",
+                "step": 11,
+                "velocity": 118
+              }
+            ]
+          }
+        },
+        {
+          "name": "a 4/4 style in a 6/8 bar: nothing",
+          "args": [
+            {
+              "styleId": "pop-rock",
+              "variant": "simple"
+            },
+            {
+              "index": 0,
+              "barInPass": 0,
+              "barsInPass": 4,
+              "beats": 6
+            },
+            {
+              "numerator": 6,
+              "denominator": 8
+            }
+          ],
+          "expected": null
+        }
+      ]
+    },
     "clicksBetween": {
       "about": "The clicks from one position (included) to another (not): each beat at its level (accent, medium, normal; issue #384), muted beats, subdivisions, count-in (the pattern, a muted beat normal). Every beat of the time signature clicks (six in 6/8), split into the subdivision; the tempo's note only sets the speed (issue #377).",
       "params": [

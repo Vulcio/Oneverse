@@ -42,6 +42,7 @@ import { ChordCheckNotice, ChordChecksCard } from "./chord-checks";
 import { useChordChecks } from "#/lib/chord-checks";
 import { useDismissed } from "./dismiss";
 import { BarPopover, BarsMenu, NewBarLine } from "./bar-tools";
+import { GrooveButton } from "./groove-tools";
 import { SectionInserter } from "./section-inserter";
 import { SongOrder } from "./song-order";
 import { SongOrderActionsContext, type SongOrderActions } from "./song-order-context";
@@ -604,6 +605,7 @@ function Toolbar({
         <BarsMenu editor={editor} disabled={!visual}>
           <SeparatorVertical />
         </BarsMenu>
+        <GrooveButton editor={editor} disabled={!visual} timeSignature={facts.timeSignature} tempo={facts.tempo} />
         {onReplaceChart ? (
           <ToolButton label={t("structuredEditor.replace")} onClick={onReplaceChart} testId="editor-replace">
             <FileUp />

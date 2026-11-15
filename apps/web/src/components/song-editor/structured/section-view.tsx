@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { cn } from "@oneverse/ui/lib/utils";
 import { BlockTools, RepeatAddTool, RepeatCounter, ToolButton } from "./block-tools";
+import { SectionGrooveTag } from "./groove-tools";
 import { deleteSection, duplicateLinked, duplicateSection, moveBlock, separateRepeats, setSung } from "./extensions";
 import { SectionInserter } from "./section-inserter";
 import { sectionNumberIn } from "./document";
@@ -99,6 +100,7 @@ export function SectionView({ node, editor, getPos, updateAttributes }: ReactNod
           ))}
         </select>
         <RepeatCounter editor={editor} at={at} repeats={repeats} />
+        <SectionGrooveTag groove={node.attrs.groove} />
         {/* Kept in place whether they show or not: showing them moves nothing. */}
         <div className={cn("ml-auto flex items-center", active ? "visible" : "invisible group-hover/section:visible pointer-coarse:visible")} data-section-tools="">
           <BlockTools

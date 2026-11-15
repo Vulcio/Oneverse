@@ -125,3 +125,11 @@ When a beat is sung somewhere else, move it in **Edit bars**. Each beat is a sma
 
 The song Editor shows the same beats under the words of a section with bar lines, to move there too (see [Beats in the words](/song-editor/#beats-in-the-words)). **Save bars** saves the beats with the bars. They are also what [Follow the music](/screens/#following-the-music) moves the screens with.
 
+
+## Drum grooves
+
+A song can play drums with the metronome instead of the click. In the song's Editor, **Drum groove** (the drum in the toolbar) picks a **Style** for the whole song - **Pop-Rock**, **Worship** (four on the floor), **Ballad**, **Shuffle**, **Gospel shuffle**, **Bossa** or **Half-time** in 4/4, **6/8 Ballad** and **6/8 Rock** in 6/8, **3/4 Waltz** - and each section's variation: **Light**, **Simple**, **Full**, **Half-time** or **Off**. A verse starts on **Simple**, a chorus on **Full**, an intro or an outro on **Light**, a bridge on **Half-time**. **Fill** plays a fill on the section's last bar, and the play button beside it lets you hear the variation on its own, at the song's tempo, before you choose. Each section shows its groove by its name; a tap on it opens the panel again. **No groove** takes it off every section. **Save song** keeps it with the chart.
+
+When the metronome plays for the song - its button on the song's page, in a set or in Live, or the leader's in Sync play - the drums play where a section has a groove, in time with the bars and on every device the same way: a crash on the first beat of each new section, the fill on its last bar. The click stops there and only counts you in. The kit is made on your device, so it plays offline. A song with its stems playing keeps to the stems.
+
+In the [Display](/display/) panel's **Drums** section: **Drum grooves** (**Played** or **Off**, on this device), **Click** (**With the drums** or **Drums only**) and **Groove** - how the [Drums view](/library/#drums-for-drummers) shows it: **Grid** (a row per drum, a column per step, the beat being played lit) or **One line** (hi-hat, snare and kick only).

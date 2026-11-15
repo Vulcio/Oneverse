@@ -17,6 +17,7 @@ import { useWordsOnScreen } from "#/lib/words-view";
 import { useDrumsOnScreen, usePageBeat } from "#/lib/song-beat";
 import { DrumsView } from "#/components/drums-view";
 import { PageBeatBackdrop, SongBeatDisplay } from "#/components/metronome-display";
+import { SongGroove } from "#/lib/song-groove";
 import { ModeSwitch } from "#/components/mode-switch";
 import { OfflineBanner } from "#/components/offline-banner";
 import { DisplayPanel } from "#/components/display-panel";
@@ -469,6 +470,7 @@ export function LiveView({
       {chart && !pdf && display.bars && !gridOnScreen && !wordsOnScreen && !drumsOnScreen ? <BarsRow songId={song.id} chart={chart} document={song.notes?.document} chordColors={display.chordColors} /> : null}
       {/* The metronome's beat as the player chose (issue #443). */}
       {chart && !pdf ? <SongBeatDisplay songId={song.id} chart={chart} document={song.notes?.document} settings={display.metronome} /> : null}
+      <SongGroove songId={song.id} chart={chart} document={song.notes?.document} />
       {steps.length > 0 && !pdf && !drumsOnScreen && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} /> : null}
 
       <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>

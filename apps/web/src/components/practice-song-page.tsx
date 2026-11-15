@@ -25,6 +25,7 @@ import { useWordsOnScreen } from "#/lib/words-view";
 import { useDrumsOnScreen } from "#/lib/song-beat";
 import { DrumsView } from "#/components/drums-view";
 import { SongBeatDisplay } from "#/components/metronome-display";
+import { SongGroove } from "#/lib/song-groove";
 import { Button } from "@oneverse/ui/components/button";
 import { AddToSetButton, AddToSetPopover } from "#/components/add-to-set";
 import { Card, CardContent } from "@oneverse/ui/components/card";
@@ -287,6 +288,7 @@ export function PracticeSongPage({
 
       {/* The metronome's beat as the player chose (issue #443): beat blocks, the count big, or the background in columns. */}
       <SongBeatDisplay songId={version.id} chart={chart} document={version.documentJson} settings={display.metronome} />
+      <SongGroove songId={version.id} chart={chart} document={version.documentJson} />
 
       {/* The chart, its chord grid (issue #238), its words (issue #416) or its PDF (issue #152). */}
       <div ref={reading}>

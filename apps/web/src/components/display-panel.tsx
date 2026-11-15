@@ -53,6 +53,7 @@ import {
   Drum,
   Activity,
 } from "lucide-react";
+import { changeGrooveOptions, useGrooveOptions } from "#/lib/metronome-engine";
 import { GRID_LYRICS, setGridLyrics, useGridLyrics, type GridLyrics } from "#/lib/grid-lyrics";
 import { useGridControls, type GridControls } from "#/lib/grid-controls";
 import { useWordsOnScreen } from "#/lib/words-view";
@@ -627,6 +628,8 @@ function MetronomeSection({ settings, onChange }: { settings: EffectiveDisplaySe
 /** The Drums view's options (issue #107): the words under the beat, the next section's cue. */
 function DrumsSection({ settings, onChange }: { settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
   const { t } = useTranslation();
+  // Kept on the device (issue #105): the drums are heard where it plays.
+  const grooves = useGrooveOptions();
   const both = (name: string, value: boolean, change: (value: boolean) => void) => (
     <Choices
       value={value ? "on" : "off"}
@@ -642,6 +645,39 @@ function DrumsSection({ settings, onChange }: { settings: EffectiveDisplaySettin
     <>
       <Row label={t("display.drumsWords")}>{both("drumsWords", settings.drums.words, (drumsWords) => onChange({ drumsWords }))}</Row>
       <Row label={t("display.drumsNext")}>{both("drumsNext", settings.drums.next, (drumsNext) => onChange({ drumsNext }))}</Row>
+      <Row label={t("grooves.play")}>
+        <Choices
+          value={grooves.play ? "on" : "off"}
+          onChange={(next) => changeGrooveOptions({ play: next === "on" })}
+          name="groovePlay"
+          options={[
+            { value: "on", label: t("grooves.played"), content: t("grooves.played") },
+            { value: "off", label: t("grooves.off"), content: t("grooves.off") },
+          ]}
+        />
+      </Row>
+      <Row label={t("grooves.click")}>
+        <Choices
+          value={grooves.click ? "on" : "off"}
+          onChange={(next) => changeGrooveOptions({ click: next === "on" })}
+          name="grooveClick"
+          options={[
+            { value: "on", label: t("grooves.clickOn"), content: t("grooves.clickOn") },
+            { value: "off", label: t("grooves.clickOff"), content: t("grooves.clickOff") },
+          ]}
+        />
+      </Row>
+      <Row label={t("grooves.look")}>
+        <Choices
+          value={grooves.look}
+          onChange={(next) => changeGrooveOptions({ look: next === "line" ? "line" : "grid" })}
+          name="grooveLook"
+          options={[
+            { value: "grid", label: t("grooves.lookGrid"), content: t("grooves.lookGrid") },
+            { value: "line", label: t("grooves.lookLine"), content: t("grooves.lookLine") },
+          ]}
+        />
+      </Row>
       <p className="text-xs text-muted-foreground">{t("display.drumsHint")}</p>
     </>
   );

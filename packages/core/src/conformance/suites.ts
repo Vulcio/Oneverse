@@ -24,6 +24,7 @@ import { structureOf } from "../song-document/structure.js";
 import { flowToChordPro, lineToInlineText, readSongDocument, sectionsFromText, songDocumentFromSections, songDocumentFromText, songFromText, songToChordPro } from "../song-document/text.js";
 import { findRepeats, linkRepeats } from "../song-document/repeats.js";
 import { sectionHeading } from "../chordpro/section-labels.js";
+import { grooveBar } from "../grooves/index.js";
 import { beatAt, changeMetronome, clicksBetween, defaultBeats, metronomeForSong, normalizeMetronome, tapTempo } from "../metronome/index.js";
 import { applyLayersCommand, applyStageCommand, clockOffset, readSyncLayers, screenLayers, deviceTime, metronomePositionAt, stemsPositionAt } from "../sync/index.js";
 import { cuesFromSections } from "../recording/cues.js";
@@ -1898,6 +1899,20 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "bar 2, beat 3 and a half", args: [{ numerator: 4, countIn: 0 }, 6.5] },
           { name: "in a bar of count-in", args: [{ numerator: 4, countIn: 1 }, 2] },
           { name: "after the count-in", args: [{ numerator: 3, countIn: 2 }, 7] },
+        ],
+      },
+      grooveBar: {
+        about: "What a bar's drum groove plays (issue #105): its section's style and variation as hits (step, drum, MIDI velocity), the fill on the section's last bar when asked, a crash as a later section starts; nothing in a bar of another time signature.",
+        params: ["groove", "bar", "timeSignature"],
+        run: (groove: unknown, bar: unknown, timeSignature: unknown) => {
+          const played = grooveBar(groove as never, bar as never, timeSignature as never);
+          return played && { styleId: played.style.id, steps: played.style.steps, variant: played.variant, fill: played.fill, hits: played.hits };
+        },
+        cases: [
+          { name: "pop-rock, simple, a verse's first bar", args: [{ styleId: "pop-rock", variant: "simple" }, { index: 0, barInPass: 0, barsInPass: 4, beats: 4 }, { numerator: 4, denominator: 4 }] },
+          { name: "a chorus starting: the crash", args: [{ styleId: "pop-rock", variant: "full" }, { index: 8, barInPass: 0, barsInPass: 4, beats: 4 }, { numerator: 4, denominator: 4 }] },
+          { name: "6/8 ballad, the fill on the last bar", args: [{ styleId: "ballad-6-8", variant: "simple", fill: true }, { index: 7, barInPass: 3, barsInPass: 4, beats: 6 }, { numerator: 6, denominator: 8 }] },
+          { name: "a 4/4 style in a 6/8 bar: nothing", args: [{ styleId: "pop-rock", variant: "simple" }, { index: 0, barInPass: 0, barsInPass: 4, beats: 6 }, { numerator: 6, denominator: 8 }] },
         ],
       },
       clicksBetween: {

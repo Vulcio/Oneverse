@@ -17,6 +17,7 @@ import { cn } from "@oneverse/ui/lib/utils";
 import { FieldError } from "@oneverse/ui/components/field";
 import { DrumsView } from "#/components/drums-view";
 import { SongBeatDisplay } from "#/components/metronome-display";
+import { SongGroove } from "#/lib/song-groove";
 
 const EMPTY: ChartPreferences = { $schema: "chart-preferences/v1", hiddenChordIds: [], simplifyChords: false, hideBassNotes: false };
 
@@ -143,6 +144,7 @@ export function PlayerChart({ view, openNoteId, grid = false, words = false, dru
       {(grid || words) && display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : null}
       {/* The metronome's beat as the player chose (issue #443). */}
       <SongBeatDisplay songId={song.id} chart={chart} document={song.document} settings={display.metronome} />
+      <SongGroove songId={song.id} chart={chart} document={song.document} />
       {drums ? <DrumsView songId={song.id} chart={chart} document={song.document} settings={display} /> : null}
       <div ref={chartArea} style={{ zoom: display.textSize }} hidden={drums}>
         {drums ? null : words ? (

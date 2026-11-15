@@ -104,10 +104,12 @@ export const RhythmSchema = z.object({
 });
 export type Rhythm = z.infer<typeof RhythmSchema>;
 
+/** A section's drum groove (issue #105): a built-in style's variation (`grooves/`), and a fill on its last bar. */
 export const GrooveRefSchema = z.object({
   styleId: z.string().min(1),
   variant: z.string().min(1),
   tempoRelative: z.number().positive().default(1.0),
+  fill: z.boolean().optional(),
 });
 export type GrooveRef = z.infer<typeof GrooveRefSchema>;
 
