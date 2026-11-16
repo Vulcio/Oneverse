@@ -7,6 +7,7 @@ import {
   SCREEN_CONTENT_THEMES,
   SCREEN_EFFECTS,
   SCREEN_TEMPLATES,
+  orderScreenTemplates,
   screenBuiltInPart,
   type ScreenPartKind,
   type ScreenPartSummary,
@@ -81,9 +82,14 @@ export function TemplatesTab({
   const changed = () => router.invalidate();
 
   const builtIns = filterScreenTemplates(
-    SCREEN_TEMPLATES.map((one) => ({ ...one, tags: one.template.tags })),
+    orderScreenTemplates(SCREEN_TEMPLATES).map((one) => ({ ...one, tags: one.template.tags })),
     tags,
   );
+  // The rest of the built-in ones under "More templates" (issue #431), unless tags pick among them all.
+  const [more, setMore] = useState(false);
+  const folded = tags.length === 0 && !more;
+  const shownBuiltIns = folded ? builtIns.filter((one) => !one.more) : builtIns;
+  const hidden = builtIns.length - shownBuiltIns.length;
   const saved = filterScreenTemplates(
     themes.map((one) => ({ ...one, tags: one.template.tags })),
     tags,
@@ -197,7 +203,7 @@ export function TemplatesTab({
               <h3 className="text-sm font-semibold">{t("screens.builtIn")}</h3>
               {builtIns.length === 0 && saved.length === 0 ? <p className="text-sm text-muted-foreground">{t("screens.noTemplatesTagged")}</p> : null}
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="builtin-themes">
-                {builtIns.map((template) => (
+                {shownBuiltIns.map((template) => (
                   <li key={template.id} className="flex flex-col gap-2" data-testid={`builtin-theme-${template.id}`}>
                     <ScreenThemePreview theme={composeBuiltInTemplate(template.id)!} sample={sampleFor(template.template)} versesPerSlide={template.template.versesPerSlide} />
                     <Tags tags={template.tags} />
@@ -213,6 +219,11 @@ export function TemplatesTab({
                   </li>
                 ))}
               </ul>
+              {hidden > 0 ? (
+                <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setMore(true)} data-testid="builtin-themes-more">
+                  {t("screens.moreTemplates", { count: hidden })}
+                </Button>
+              ) : null}
             </section>
           </TabsContent>
           {(["content", "background", "effects"] as const).map((kind) => (

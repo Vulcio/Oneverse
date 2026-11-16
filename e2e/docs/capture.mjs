@@ -365,7 +365,7 @@ try {
       "/screens?tab=templates",
       async () => {
         await page.getByTestId("builtin-themes").scrollIntoViewIfNeeded();
-        await page.getByTestId("builtin-theme-concert").getByTestId("screen-lyrics").waitFor();
+        await page.getByTestId("builtin-theme-drift").getByTestId("screen-lyrics").waitFor();
         await page.waitForTimeout(1500);
       },
       { element: page.getByTestId("builtin-themes") },
@@ -388,6 +388,7 @@ try {
       "screen-template-parts",
       "/screens?tab=templates",
       async () => {
+        await page.getByTestId("builtin-themes-more").click();
         await page.getByTestId("builtin-theme-concert").getByTestId("customize-theme").click();
         await page.getByTestId("theme-parts").waitFor();
         await page.waitForTimeout(1200);

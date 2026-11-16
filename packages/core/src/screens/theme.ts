@@ -535,6 +535,8 @@ function screenDisplaySchema(strict: boolean) {
     chart: object({
       /** How many lines of the next section show under the one being sung (issue #398): 0 for none. */
       next: z.number().int().min(0).max(4).default(2),
+      /** The slide's lines lit, the rest of the section dimmed (issue #431), so the band sees where the words are. */
+      highlight: z.boolean().default(true),
     }).prefault({}),
   });
 }

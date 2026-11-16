@@ -1153,6 +1153,13 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent);
   mask-image: linear-gradient(to bottom, #000 30%, transparent);
 }
+/* The slide's lines lit (issue #431): the rest of the section dimmed, so the band sees where the words are. */
+.sv-stage .sv-chart [data-line] {
+  transition: opacity 0.35s ease;
+}
+.sv-stage .sv-chart[data-highlight] [data-current] [data-line]:not([data-now]) {
+  opacity: 0.4;
+}
 /* A line of chords alone (an intro, a turnaround), and a performance note. */
 .sv-chord-row {
   font-family: var(--chord-font);

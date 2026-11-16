@@ -354,12 +354,21 @@ const TAGS: Record<string, ScreenTemplateTag[]> = {
   "band-chart": ["stage", "chords"],
 };
 
+/**
+ * Built-in effects are calm (issue #431): their reactions at 60% of what
+ * they first were, easier on a TV and over a long service; a template turns
+ * one up where it wants more.
+ */
+const CALM = 0.6;
+const calm = (input: { reactions: ({ amount: number } & Record<string, unknown>)[] } & Record<string, unknown>): ScreenEffects =>
+  ScreenEffectsSchema.parse({ ...input, reactions: input.reactions.map((one) => ({ ...one, amount: Math.round(one.amount * CALM * 100) / 100 })) });
+
 /** The built-in effects: those of the built-in templates whose background moved with the song, and a few more to start from. */
 const BUILT_IN_EFFECTS: ScreenBuiltInPart<ScreenEffects>[] = [
-  { id: "pulse", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "pulse", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.6 }] }) },
+  { id: "pulse", part: calm({ reactions: [{ on: "slide", target: "pulse", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.6 }] }) },
   {
     id: "concert",
-    part: ScreenEffectsSchema.parse({
+    part: calm({
       reactions: [
         { on: "slide", target: "pulse", amount: 0.7 },
         { on: "word", target: "elements", amount: 0.4 },
@@ -371,22 +380,22 @@ const BUILT_IN_EFFECTS: ScreenBuiltInPart<ScreenEffects>[] = [
   },
   {
     id: "sunrise",
-    part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "pulse", amount: 0.5 }, { on: "section", target: "hue", amount: 0.5 }, { on: "chorus", target: "brightness", amount: 0.5 }] }),
+    part: calm({ reactions: [{ on: "slide", target: "pulse", amount: 0.5 }, { on: "section", target: "hue", amount: 0.5 }, { on: "chorus", target: "brightness", amount: 0.5 }] }),
   },
   {
     id: "starlight",
-    part: ScreenEffectsSchema.parse({ reactions: [{ on: "word", target: "elements", amount: 0.5 }, { on: "chorus", target: "brightness", amount: 0.5 }], text: { animation: "shimmer", amount: 0.4, speed: 0.8 } }),
+    part: calm({ reactions: [{ on: "word", target: "elements", amount: 0.5 }, { on: "chorus", target: "brightness", amount: 0.5 }], text: { animation: "shimmer", amount: 0.4, speed: 0.8 } }),
   },
-  { id: "spotlight", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "movement", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.6 }], text: { animation: "pulse", amount: 0.3, speed: 1 } }) },
-  { id: "breathe", part: ScreenEffectsSchema.parse({ reactions: [{ on: "line", target: "pulse", amount: 0.3 }], text: { animation: "breathe", amount: 0.4, speed: 0.6 } }) },
+  { id: "spotlight", part: calm({ reactions: [{ on: "slide", target: "movement", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.6 }], text: { animation: "pulse", amount: 0.3, speed: 1 } }) },
+  { id: "breathe", part: calm({ reactions: [{ on: "line", target: "pulse", amount: 0.3 }], text: { animation: "breathe", amount: 0.4, speed: 0.6 } }) },
   // For shaders (issue #324): a slow background that speeds up as the words come, then settles quickly.
-  { id: "ramp", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "movement", amount: 1, rise: 150, fall: 700 }] }) },
+  { id: "ramp", part: calm({ reactions: [{ on: "slide", target: "movement", amount: 1, rise: 150, fall: 700 }] }) },
   // ...that turns a little further with each slide, and comes a little closer in a chorus.
-  { id: "turn", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "rotation", amount: 0.8, rise: 200, fall: 1200 }, { on: "chorus", target: "scale", amount: 0.6 }] }) },
+  { id: "turn", part: calm({ reactions: [{ on: "slide", target: "rotation", amount: 0.8, rise: 200, fall: 1200 }, { on: "chorus", target: "scale", amount: 0.6 }] }) },
   // ...that quickens and glows with each line.
-  { id: "nerves", part: ScreenEffectsSchema.parse({ reactions: [{ on: "line", target: "movement", amount: 0.7, rise: 100, fall: 500 }, { on: "line", target: "brightness", amount: 0.5, rise: 100, fall: 500 }] }) },
+  { id: "nerves", part: calm({ reactions: [{ on: "line", target: "movement", amount: 0.7, rise: 100, fall: 500 }, { on: "line", target: "brightness", amount: 0.5, rise: 100, fall: 500 }] }) },
   // ...calm in the verses, livelier while a chorus lasts.
-  { id: "chorus-lift", part: ScreenEffectsSchema.parse({ reactions: [{ on: "slide", target: "pulse", amount: 0.3 }, { on: "chorus", target: "movement", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.4 }] }) },
+  { id: "chorus-lift", part: calm({ reactions: [{ on: "slide", target: "pulse", amount: 0.3 }, { on: "chorus", target: "movement", amount: 0.6 }, { on: "chorus", target: "brightness", amount: 0.4 }] }) },
 ];
 
 const split = SCREEN_THEME_TEMPLATES.map((one) => ({ id: one.id, ...splitScreenTheme(one.theme) }));
@@ -411,14 +420,14 @@ export const SCREEN_BACKGROUND_THEMES: ScreenBuiltInPart<ScreenBackgroundTheme>[
   { id: "grid", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "grid", colors: ["#020617", "#2dd4bf", "#0ea5e9"], motion: 0.4 }, reacts: { elements: 0.8, brightness: 0.6, hue: 0.2 } }) },
   { id: "bokeh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "bokeh", colors: ["#0b0a1f", "#4f46e5", "#7c3aed", "#db2777"], motion: 0.4 }, reacts: { elements: 0.7, movement: 0.5, hue: 0.3 } }) },
   // Shaders (issue #297), drawn with WebGL.
-  { id: "mesh-gradient", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#0b0620", "#7c3aed", "#ec4899", "#0ea5e9"], shader: { builtIn: "mesh-gradient" } }, reacts: { movement: 0.5, hue: 0.3, brightness: 0.5 } }) },
+  { id: "mesh-gradient", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.45, colors: ["#0b0620", "#7c3aed", "#ec4899", "#0ea5e9"], shader: { builtIn: "mesh-gradient" } }, reacts: { movement: 0.5, hue: 0.3, brightness: 0.5 } }) },
   // Ported from Paper Shaders (issue #324).
-  { id: "paper-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#120a2e", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], shader: { builtIn: "paper-mesh" } }, reacts: { movement: 0.5, hue: 0.2, brightness: 0.4 } }) },
+  { id: "paper-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.45, colors: ["#120a2e", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], shader: { builtIn: "paper-mesh" } }, reacts: { movement: 0.5, hue: 0.2, brightness: 0.4 } }) },
   { id: "neuro-noise", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#000000", "#ffffff", "#47a6ff"], motion: 0.3, shader: { builtIn: "neuro-noise", values: { sv_brightness: 0.03, sv_contrast: 0.55 } } }, reacts: { movement: 0.8, brightness: 0.4 } }) },
   // Slow, for effects that speed it up (ramp) or turn it (turn).
-  { id: "slow-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#0c0a24", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], motion: 0.15, shader: { builtIn: "paper-mesh" } }, reacts: { movement: 1, hue: 0.2, brightness: 0.3 } }) },
-  { id: "turning-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.35, colors: ["#06121f", "#0ea5e9", "#22d3ee", "#a855f7", "#f472b6"], motion: 0.25, spin: 3, shader: { builtIn: "paper-mesh", values: { sv_swirl: 0.35 } } }, reacts: { movement: 0.3, rotation: 1, scale: 0.8 } }) },
-  { id: "glow-lines", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.2, colors: ["#02030a", "#22d3ee", "#a855f7", "#f43f5e"], shader: { builtIn: "glow-lines" } }, reacts: { movement: 0.6, elements: 0.7, brightness: 0.5 } }) },
+  { id: "slow-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.45, colors: ["#0c0a24", "#241d9a", "#f75092", "#9f50d3", "#0ea5e9"], motion: 0.15, shader: { builtIn: "paper-mesh" } }, reacts: { movement: 1, hue: 0.2, brightness: 0.3 } }) },
+  { id: "turning-mesh", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.45, colors: ["#06121f", "#0ea5e9", "#22d3ee", "#a855f7", "#f472b6"], motion: 0.25, spin: 3, shader: { builtIn: "paper-mesh", values: { sv_swirl: 0.35 } } }, reacts: { movement: 0.3, rotation: 1, scale: 0.8 } }) },
+  { id: "glow-lines", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", dim: 0.3, colors: ["#02030a", "#22d3ee", "#a855f7", "#f43f5e"], shader: { builtIn: "glow-lines" } }, reacts: { movement: 0.6, elements: 0.7, brightness: 0.5 } }) },
   { id: "embers", part: ScreenBackgroundThemeSchema.parse({ background: { kind: "shader", colors: ["#0a0503", "#f97316", "#facc15", "#ef4444"], shader: { builtIn: "embers" } }, reacts: { movement: 0.5, elements: 0.6, brightness: 0.6 } }) },
 ];
 export const SCREEN_EFFECTS: ScreenBuiltInPart<ScreenEffects>[] = BUILT_IN_EFFECTS;
@@ -482,6 +491,20 @@ export const SCREEN_TEMPLATES: ScreenBuiltInTemplate[] = [
     }),
   },
 ];
+
+/**
+ * The built-in templates shown first (issue #431), in this order: a few for
+ * each use, so a team picks without wading through them all; the rest are
+ * under "More templates".
+ */
+export const SCREEN_TEMPLATES_FIRST = ["classic", "chapel", "drift", "sunrise", "minimal", "stream", "stage-display", "stage-monitor", "band-chart", "scripture", "stage-scripture", "stream-scripture"] as const;
+
+/** Built-in templates in the order they're offered (issue #431): those shown first, then the rest; `more` marks the rest. */
+export function orderScreenTemplates<T extends { id: string }>(templates: readonly T[]): (T & { more: boolean })[] {
+  const first: readonly string[] = SCREEN_TEMPLATES_FIRST;
+  const rank = (one: T) => (first.includes(one.id) ? first.indexOf(one.id) : first.length);
+  return [...templates].sort((a, b) => rank(a) - rank(b)).map((one) => ({ ...one, more: !first.includes(one.id) }));
+}
 
 /**
  * Whether a template is made for a kind of content (issue #402): what it

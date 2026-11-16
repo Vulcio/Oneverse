@@ -1,6 +1,6 @@
 import "@fontsource-variable/inter";
 import "../screen-stage.css";
-import { SCREEN_PACE_EASING, evenScreenLine, screenSectionKind, screenShowsChart, screenSectionText, type ScreenSectionKind, type ScreenTransition, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
+import { SCREEN_PACE_EASING, evenScreenLine, screenSectionKind, screenShowsChart, screenSectionText, type ScreenSectionKind, type ScreenTransition, type ScreenSlide, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
 import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
@@ -142,6 +142,7 @@ export function ScreenStage({
           theme={look}
           song={song}
           passIndex={current.passIndex}
+          now={slideLines(song.slides, index)}
           phase={outgoing && (outgoing.songChange || outgoing.song?.slides[outgoing.index]?.passIndex !== current.passIndex) ? "in" : "still"}
           transition={transition}
         />
@@ -718,7 +719,30 @@ function reveal(line: string, kind: ScreenTheme["motion"]["reveal"], next: () =>
  * template says, or none); fitted to the stage, never bigger than the
  * template's chart size.
  */
-function ChartStage({ theme, song, passIndex, phase, transition }: { theme: ScreenTheme; song: StageSong; passIndex: number; phase: "in" | "out" | "still"; transition: ScreenTransition }) {
+/** Which of its pass's sung lines a slide shows (issue #431): from the first, how many - the slides cut the pass's lines in order. */
+function slideLines(slides: readonly ScreenSlide[], index: number): { from: number; count: number } | null {
+  const slide = slides[index];
+  if (!slide || slide.lines.length === 0) return null;
+  const from = slides.filter((one) => one.passIndex === slide.passIndex && one.part < slide.part).reduce((sum, one) => sum + one.lines.length, 0);
+  return { from, count: slide.lines.length };
+}
+
+function ChartStage({
+  theme,
+  song,
+  passIndex,
+  now = null,
+  phase,
+  transition,
+}: {
+  theme: ScreenTheme;
+  song: StageSong;
+  passIndex: number;
+  /** The slide's lines among the pass's sung ones, lit when the template says so. */
+  now?: { from: number; count: number } | null;
+  phase: "in" | "out" | "still";
+  transition: ScreenTransition;
+}) {
   const chart = song.chart!;
   const box = useRef<HTMLDivElement>(null);
   const id = useId().replace(/:/g, "");
@@ -765,9 +789,11 @@ function ChartStage({ theme, song, passIndex, phase, transition }: { theme: Scre
   const shown = size ?? most;
   const alignOf = (one: ScreenTheme["text"]["align"]) => ({ left: "items-start text-left", center: "items-center text-center", right: "items-end text-right" })[one];
   let li = 0;
+  const lit = theme.display.chart.highlight && now ? now : null;
   return (
     <div
       ref={box}
+      data-highlight={lit ? "" : undefined}
       className={cn("sv-words sv-chart justify-start", phase === "in" && `sv-in sv-in-${transition}`, phase === "out" && `sv-out sv-out-${transition}`)}
       style={{ padding: `${layout.margin}cqh ${layout.margin}cqw`, "--cs": chords.size, "--k": shown, visibility: size === null ? "hidden" : undefined } as CSSProperties}
       data-testid={phase === "out" ? "screen-out" : "screen-chart"}
@@ -785,6 +811,7 @@ function ChartStage({ theme, song, passIndex, phase, transition }: { theme: Scre
           </p>
         ) : null}
         {passes.map(({ pass, peek }) => {
+          let sung = 0;
           const kind = screenSectionKind(pass.section.type, pass.label ?? pass.section.label);
           const section = kind ? theme.sections[kind] : null;
           const look = looks[kind ?? "default"];
@@ -811,6 +838,9 @@ function ChartStage({ theme, song, passIndex, phase, transition }: { theme: Scre
                 const onlyChords = line.text === "" && line.chords.length > 0;
                 if (line.text === "" && !onlyChords) return null;
                 const i = li++;
+                // Counted as lyricSlides counts a pass's sung lines, to light the slide's.
+                const at = raw.kind === "lyric" && line.text !== "" ? sung++ : -1;
+                const lineNow = !peek && !!lit && at >= lit.from && at < lit.from + lit.count;
                 const content = onlyChords ? (
                   <span className="sv-chord-row">{line.chords.map(({ chord }) => chordName(chord, chords)).join("   ")}</span>
                 ) : (
@@ -824,6 +854,7 @@ function ChartStage({ theme, song, passIndex, phase, transition }: { theme: Scre
                     key={raw.id}
                     className={cn("sv-line", above && "sv-has-chords", note && "sv-chart-note")}
                     data-line=""
+                    data-now={lineNow ? "" : undefined}
                     data-line-id={line.lineId}
                     style={{ fontSize: "calc(var(--k) * 1cqmin)", filter, "--li": i, ...lineLook(look, text), ...(above ? { lineHeight: Math.max(look.lineHeight, 1.35 + chords.size) } : null) } as CSSProperties}
                   >

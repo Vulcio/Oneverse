@@ -152,13 +152,16 @@ try {
     await tv.getByTestId("screen-lyrics").waitFor();
   });
 
-  await step("switched to the chart from the phone: the band's chart, the pass being sung marked", async () => {
+  await step("switched to the chart from the phone: the band's chart, the pass being sung marked, the slide's lines lit", async () => {
     const [mine] = await api(leader, "GET", `/screens?setlistId=${set.id}`);
     await api(leader, "PATCH", `/screens/${mine.id}`, { mode: "CHART" });
     page = tv;
     await tv.locator('[data-testid="screen-showing"][data-mode="CHART"]').waitFor({ timeout: 10000 });
     await tv.getByTestId("screen-chart").locator("[data-pass][data-current]").getByText("Amazing grace", { exact: false }).waitFor();
     await tv.getByTestId("screen-chart").getByText("G", { exact: true }).first().waitFor();
+    // The slide's two lines lit, the rest of the section dimmed (issue #431).
+    const lit = await tv.locator('[data-testid="screen-chart"][data-highlight] [data-current] [data-line][data-now]').count();
+    if (lit !== 2) throw new Error(`lit lines: ${lit}`);
   });
 
   await step("disconnected from the phone: the screen goes back to a new code", async () => {

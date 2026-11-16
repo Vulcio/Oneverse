@@ -2053,7 +2053,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -2182,7 +2183,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -2314,7 +2316,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -2443,7 +2446,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -2571,7 +2575,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -2691,7 +2696,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -2848,7 +2854,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -3035,7 +3042,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -3192,7 +3200,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -3626,7 +3635,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -3944,7 +3954,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -4239,7 +4250,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -4534,7 +4546,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -4867,7 +4880,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -5182,7 +5196,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -5483,7 +5498,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -5808,7 +5824,8 @@
                   "words": true
                 },
                 "chart": {
-                  "next": 2
+                  "next": 2,
+                  "highlight": true
                 }
               },
               "sections": {
@@ -5966,7 +5983,8 @@
                   "words": true
                 },
                 "chart": {
-                  "next": 2
+                  "next": 2,
+                  "highlight": true
                 }
               },
               "sections": {
@@ -8964,7 +8982,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9084,7 +9103,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9207,7 +9227,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9329,7 +9350,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9452,7 +9474,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9574,7 +9597,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9695,7 +9719,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9815,7 +9840,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -9935,7 +9961,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {
@@ -10433,7 +10460,8 @@
                 "words": true
               },
               "chart": {
-                "next": 2
+                "next": 2,
+                "highlight": true
               }
             },
             "sections": {

@@ -94,9 +94,12 @@ export function DisplaySettings({ theme, onTheme }: { theme: ScreenTheme; onThem
       ) : null}
       {mode === "grid" ? <Check label={t("screens.editor.gridWords")} checked={display.grid.words} onChange={(words) => setDisplay({ grid: { words } })} /> : null}
       {mode === "chart" ? (
-        <Field label={t("screens.editor.chartNext")}>
-          <Choices value={String(display.chart.next) as "0"} options={["0", "1", "2", "3", "4"] as const} label={(one) => t(`screens.editor.chartNexts.${one}`)} onChange={(next) => setDisplay({ chart: { next: Number(next) } })} testId="theme-chart-next" />
-        </Field>
+        <>
+          <Field label={t("screens.editor.chartNext")}>
+            <Choices value={String(display.chart.next) as "0"} options={["0", "1", "2", "3", "4"] as const} label={(one) => t(`screens.editor.chartNexts.${one}`)} onChange={(next) => setDisplay({ chart: { ...display.chart, next: Number(next) } })} testId="theme-chart-next" />
+          </Field>
+          <Check label={t("screens.editor.chartHighlight")} checked={display.chart.highlight} onChange={(highlight) => setDisplay({ chart: { ...display.chart, highlight } })} testId="theme-chart-highlight" />
+        </>
       ) : (
         <Field label={t("screens.editor.follow")}>
           <Choices value={display.follow} options={SCREEN_FOLLOW} label={(one) => t(`screens.editor.follows.${one}`)} onChange={(follow) => setDisplay({ follow })} testId="theme-follow" />
