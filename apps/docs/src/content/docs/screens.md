@@ -190,6 +190,8 @@ How the words look, edited from **Contents** (**New content preset**, or **Custo
 - **Lines** - for slides: **The slide**, with the lines before and after it, or **The whole section** with the slide's lines picked out; the lines around them **Dimmed**, **Smaller**, **Blurred** or **Hidden**.
 - **Chords** - **Chords over the words**: **Above** the syllable each is played on, or **On beats**, a row of beat blocks over each line. Their **Names** in letters, numbers or Do Ré Mi, their size beside the words, **Simpler chords** (G7 as G, no bass notes), **Light the chord being played** while the music is followed, their colour and font, in every display mode, **Charts** too.
 
+The editor shows only what changes the screen with the choices made: in **Scroll** there are no transitions between slides (the glide keeps its **Pace**), no position, no **Words appear** and no **Lines**; **Focus** has no **Lines**; **Charts** has no position and no **Words appear**; **Grid** always puts the chords on its beats; a section's corner tag is for slides only. What's hidden keeps its value, and is back as it was when you change your mind.
+
 The editor checks the contrast between the words and the background and warns when it's under 4.5:1.
 
 ### Backgrounds
@@ -197,7 +199,7 @@ The editor checks the contrast between the words and the background and warns wh
 What's under the words:
 
 - **Base and video input** - the base colour and the screen's camera or capture card. See [Layers](/screens/#layers).
-- **Background** - a **Colour**, a **Gradient**, moving light (**Aurora**, **Waves**, **Particles**, **Spotlight**, in up to four colours), or your own **Picture** (drifting slowly closer) or looping **Video**: **Upload…** a JPEG, PNG, WebP, AVIF or GIF up to 15 MB, or an MP4 or WebM up to 150 MB. **Darken** keeps words readable over anything.
+- **Background** - a **Colour**, a **Gradient**, moving light (**Aurora**, **Waves**, **Particles**, **Spotlight**, in up to four colours), or your own **Picture** (drifting slowly closer) or looping **Video** (its colours then only show until it has one, and a video has no **Movement**): **Upload…** a JPEG, PNG, WebP, AVIF or GIF up to 15 MB, or an MP4 or WebM up to 150 MB. **Darken** keeps words readable over anything.
 - Four backgrounds follow the words on the screen, wherever the template puts them:
   - **Flow** - trails drifting across the screen, parting around the words, with a burst where each word appears;
   - **Strings** - glowing lines waving across the screen, bending round the words, ringing with each new slide;

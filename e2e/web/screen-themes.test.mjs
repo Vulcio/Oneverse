@@ -110,6 +110,24 @@ try {
     const part = editor;
     await part.getByTestId("theme-transition").locator('[data-value="zoom"]').click();
     await part.getByTestId("theme-reveal").locator('[data-value="letters"]').click();
+    // Only what has an effect is shown: Scroll has no slides to change, no position, no lines around;
+    // its glide still has a pace. Back to Slides, nothing hidden was lost.
+    await part.getByTestId("theme-display-mode").locator('[data-value="scroll"]').click();
+    await part.getByTestId("theme-scroll-options").waitFor();
+    for (const id of ["theme-transition", "theme-reveal", "theme-position-top", "theme-group-lines"]) await part.getByTestId(id).waitFor({ state: "detached" });
+    await part.getByTestId("theme-pace").waitFor();
+    // Focus: slides, but no lines around them.
+    await part.getByTestId("theme-display-mode").locator('[data-value="focus"]').click();
+    await part.getByTestId("theme-transition").waitFor();
+    await part.getByTestId("theme-group-lines").waitFor({ state: "detached" });
+    // Grid always puts the chords on its beats.
+    await part.getByTestId("theme-display-mode").locator('[data-value="grid"]').click();
+    await part.getByTestId("theme-chords-show").waitFor({ state: "detached" });
+    await part.getByTestId("theme-display-mode").locator('[data-value="slides"]').click();
+    await part.locator('[data-testid="theme-transition"] [data-value="zoom"][aria-pressed="true"]').waitFor();
+    await part.locator('[data-testid="theme-reveal"] [data-value="letters"][aria-pressed="true"]').waitFor();
+    await part.getByTestId("theme-group-lines").waitFor();
+    await part.getByTestId("theme-chords-show").waitFor();
     // Where the words sit (issue #431): icons under Display, the preview's words at the top.
     await part.getByTestId("theme-group-position").getByTestId("theme-position-top").click();
     await part.locator('[data-testid="theme-position-top"][aria-pressed="true"]').waitFor();

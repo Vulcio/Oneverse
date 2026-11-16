@@ -32,7 +32,6 @@ import {
   ScreenThemeSchema,
   screenBaseColor,
   screenBuiltInPart,
-  screenShowsChart,
   screenThemeContrast,
   SCREEN_CONTENT_KINDS,
   SCREEN_LAYOUT_PRESETS,
@@ -53,6 +52,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { Choices, ColorInput, Field, Group, Slider } from "#/components/screen-editor-fields";
+import { settingsShown } from "#/lib/screen-settings-shown";
 import { DisplaySettings, ChordSettings, PositionSettings, TextMotionSettings } from "#/components/screen-text-editor";
 import { ScreenThemePreview, useSamplePassage, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@oneverse/ui/components/button";
@@ -307,6 +307,8 @@ export function ScreenThemeEditor({
     return tweaks;
   }
   const tweaks = useMemo(() => (kind === "template" ? tweaksOf(theme) : {}), [kind, theme, refs, parts]);
+  // What the screen reads given the other choices (the rest is hidden, never cleared).
+  const relevant = settingsShown(theme, { picked: !!theme.background.media && files.some((asset) => asset.id === theme.background.media) });
 
   /** A tab's tweaks dropped, all, one group's or one setting's (issue #431): its preset's settings again. */
   function resetTweaks(slot: ScreenPartKind, group?: string, setting?: string) {
@@ -531,9 +533,9 @@ export function ScreenThemeEditor({
               onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))}
               fonts={{ assets: files, uploading: uploading === "font", onUpload: partId ? (file) => void upload("font", file) : null }}
             />
-            {/* Lines around the slide's: not for Charts, which shows the section (issue #398). */}
-            {!screenShowsChart(theme) ? (
-            <Group title={t("screens.editor.lines")}>
+            {/* Lines around the slide's: only where there are some (not Charts, Scroll or Focus). */}
+            {relevant.lines ? (
+            <Group title={t("screens.editor.lines")} testId="theme-group-lines">
               <Field label={t("screens.editor.group")}>
                 <Choices value={theme.lines.group} options={["slide", "section"] as const} label={(one) => t(`screens.editor.groups.${one}`)} onChange={(group) => set("lines", { group })} />
               </Field>
@@ -547,9 +549,11 @@ export function ScreenThemeEditor({
                   </Field>
                 </div>
               ) : null}
-              <Field label={t("screens.editor.contextStyle")}>
-                <Choices value={theme.lines.contextStyle} options={SCREEN_CONTEXT_STYLES} label={(one) => t(`screens.editor.contextStyles.${one}`)} onChange={(contextStyle) => set("lines", { contextStyle })} />
-              </Field>
+              {relevant.contextStyle ? (
+                <Field label={t("screens.editor.contextStyle")}>
+                  <Choices value={theme.lines.contextStyle} options={SCREEN_CONTEXT_STYLES} label={(one) => t(`screens.editor.contextStyles.${one}`)} onChange={(contextStyle) => set("lines", { contextStyle })} testId="theme-context-style" />
+                </Field>
+              ) : null}
             </Group>
             ) : null}
             <ChordSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
@@ -609,6 +613,7 @@ export function ScreenThemeEditor({
                   onRemove={kind === "template" ? null : (asset) => void removeAsset(asset)}
                 />
               ) : null}
+              {relevant.backgroundColors ? (
               <Field label={t("screens.editor.colors")}>
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Four colours, or up to eight for a shader (issue #324). */}
@@ -659,11 +664,14 @@ export function ScreenThemeEditor({
                   ) : null}
                 </div>
               </Field>
+              ) : null}
               {theme.background.kind !== "color" && theme.background.kind !== "gradient" ? (
                 <>
-                  <Field label={t("screens.editor.movement")}>
-                    <Slider value={theme.background.motion} min={0} max={1} step={0.05} onChange={(motion) => set("background", { motion })} />
-                  </Field>
+                  {relevant.backgroundMovement ? (
+                    <Field label={t("screens.editor.movement")}>
+                      <Slider value={theme.background.motion} min={0} max={1} step={0.05} onChange={(motion) => set("background", { motion })} />
+                    </Field>
+                  ) : null}
                   {theme.background.kind === "shader" ? (
                     <Field label={t("screens.editor.spin")}>
                       <div className="flex flex-col gap-0.5" data-testid="theme-spin">
@@ -680,7 +688,7 @@ export function ScreenThemeEditor({
             </Group>
                 <Group title={t("screens.editor.reacts")} open testId="theme-group-reacts">
                   <p className="text-xs text-muted-foreground">{t("screens.editor.reactsHint")}</p>
-                  {(theme.background.kind === "shader" ? (["movement", "hue", "brightness", "elements", "rotation", "scale"] as const) : (["movement", "hue", "brightness", "elements"] as const)).map((input) => (
+                  {(theme.background.kind === "shader" ? (["movement", "hue", "brightness", "elements", "rotation", "scale"] as const) : (["movement", "hue", "brightness", "elements"] as const)).filter((input) => input !== "elements" || relevant.reactsElements).map((input) => (
                     <Field key={input} label={t(`screens.editor.reactsInputs.${input}`)}>
                       <Slider value={theme.reacts[input]} min={0} max={1} step={0.05} onChange={(value) => set("reacts", { [input]: value })} />
                     </Field>

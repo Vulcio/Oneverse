@@ -190,6 +190,8 @@ L'apparence des paroles, modifiée depuis **Contenus** (**Nouveau préréglage d
 - **Lignes** - pour les diapositives : **La diapositive**, avec les lignes d'avant et d'après, ou **Toute la partie** avec les lignes de la diapositive mises en avant ; les lignes autour **Atténuées**, **Plus petites**, **Floues** ou **Masquées**.
 - **Accords** - **Accords sur les paroles** : **Au-dessus** de la syllabe où chacun est joué, ou **Sur les temps**, une rangée de blocs de temps au-dessus de chaque ligne. Leurs **Noms** en lettres, en chiffres ou en Do Ré Mi, leur taille par rapport aux paroles, **Accords simplifiés** (G7 en G, sans basse), **Éclairer l'accord joué** quand la musique est suivie, leur couleur et leur police, dans tous les affichages, **Grilles d'accords** comprises.
 
+L'éditeur ne montre que ce qui change l'écran avec les choix faits : en **Défilement**, ni transition entre diapositives (le glissement garde son **Rythme**), ni position, ni **Apparition des mots**, ni **Lignes** ; **Focus** n'a pas de **Lignes** ; les **Grilles d'accords** n'ont ni position ni **Apparition des mots** ; la **Grille** met toujours les accords sur ses temps ; l'étiquette dans le coin d'une section n'existe que sur les diapositives. Ce qui est masqué garde sa valeur, et revient tel quel si vous changez d'avis.
+
 L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1.
 
 ### Arrière-plans
@@ -197,7 +199,7 @@ L'éditeur vérifie le contraste entre les paroles et le fond et prévient en de
 Ce qu'il y a sous les paroles :
 
 - **Base et entrée vidéo** - la couleur de base et la caméra ou la carte de capture de l'écran. Voir [Calques](/fr/screens/#calques).
-- **Fond** - une **Couleur**, un **Dégradé**, de la lumière en mouvement (**Aurore**, **Vagues**, **Particules**, **Projecteurs**, jusqu'à quatre couleurs), ou votre propre **Image** (qui se rapproche lentement) ou **Vidéo** en boucle : **Envoyer…** un JPEG, PNG, WebP, AVIF ou GIF jusqu'à 15 Mo, ou un MP4 ou WebM jusqu'à 150 Mo. **Assombrir** garde les paroles lisibles sur n'importe quel fond.
+- **Fond** - une **Couleur**, un **Dégradé**, de la lumière en mouvement (**Aurore**, **Vagues**, **Particules**, **Projecteurs**, jusqu'à quatre couleurs), ou votre propre **Image** (qui se rapproche lentement) ou **Vidéo** en boucle (ses couleurs ne servent alors que tant qu'il n'y en a pas, et une vidéo n'a pas de **Mouvement**) : **Envoyer…** un JPEG, PNG, WebP, AVIF ou GIF jusqu'à 15 Mo, ou un MP4 ou WebM jusqu'à 150 Mo. **Assombrir** garde les paroles lisibles sur n'importe quel fond.
 - Quatre fonds suivent les paroles à l'écran, où que le modèle les place :
   - **Courants** - des traînées qui dérivent sur l'écran, s'écartent autour des paroles, et jaillissent là où chaque mot apparaît ;
   - **Cordes** - des lignes lumineuses qui ondulent sur l'écran, contournent les paroles et vibrent à chaque nouvelle diapositive ;

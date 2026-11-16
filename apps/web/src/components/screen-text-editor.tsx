@@ -34,6 +34,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { cn } from "@oneverse/ui/lib/utils";
 import { Choices, ColorInput, Field, Group, NumberProp, Prop, Slider, Tiles } from "#/components/screen-editor-fields";
+import { settingsShown } from "#/lib/screen-settings-shown";
 
 /*
  * A content theme's words (issue #395): how they're shown (Display), how
@@ -174,6 +175,7 @@ export function TextMotionSettings({
   fonts: { assets: ScreenThemeAsset[]; uploading: boolean; onUpload: ((file: File | undefined) => void) | null };
 }) {
   const { t } = useTranslation();
+  const shown = settingsShown(theme);
   const [tab, setTab] = useState<"default" | ScreenSectionKind>("default");
   const setText = (change: Partial<Text>) => onTheme((before) => ({ text: { ...before.text, ...change } }));
   const setMotion = (change: Partial<ScreenTheme["motion"]>) => onTheme((before) => ({ motion: { ...before.motion, ...change } }));
@@ -204,7 +206,7 @@ export function TextMotionSettings({
       {tab === "default" ? (
         <>
           <TextControls value={theme.text} base={null} onChange={setText} onReset={() => undefined} fonts={fonts} />
-          <MotionControls motion={theme.motion} onMotion={setMotion} />
+          <MotionControls motion={theme.motion} onMotion={setMotion} shown={shown} />
         </>
       ) : (
         <>
@@ -222,13 +224,17 @@ export function TextMotionSettings({
               <Field label={t("screens.editor.mark")}>
                 <Choices value={section.mark} options={SCREEN_SECTION_MARKS} label={(one) => t(`screens.editor.marks.${one}`)} onChange={(mark) => changeSection(tab, { mark })} testId="theme-section-mark" />
               </Field>
-              <Check label={t("screens.editor.sectionLabel")} checked={section.label} onChange={(label) => changeSection(tab, { label })} />
-              <Field label={t("screens.editor.transitionInto")}>
-                <TransitionSelect value={section.transitionInto} onChange={(transitionInto) => changeSection(tab, { transitionInto })} testId="theme-section-into" />
-              </Field>
-              <Field label={t("screens.editor.transitionWithin")}>
-                <TransitionSelect value={section.transitionWithin} onChange={(transitionWithin) => changeSection(tab, { transitionWithin })} />
-              </Field>
+              {shown.sectionLabel ? <Check label={t("screens.editor.sectionLabel")} checked={section.label} onChange={(label) => changeSection(tab, { label })} testId="theme-section-label" /> : null}
+              {shown.sectionTransitions ? (
+                <>
+                  <Field label={t("screens.editor.transitionInto")}>
+                    <TransitionSelect value={section.transitionInto} onChange={(transitionInto) => changeSection(tab, { transitionInto })} testId="theme-section-into" />
+                  </Field>
+                  <Field label={t("screens.editor.transitionWithin")}>
+                    <TransitionSelect value={section.transitionWithin} onChange={(transitionWithin) => changeSection(tab, { transitionWithin })} />
+                  </Field>
+                </>
+              ) : null}
             </>
           ) : null}
         </>
@@ -260,16 +266,20 @@ function TransitionSelect({ value, onChange, testId }: { value: ScreenTransition
 }
 
 /** How a slide changes (issue #398, as the #395 mockup had it): the transitions as tiles that play, a pace, and how the words come in. */
-function MotionControls({ motion, onMotion }: { motion: ScreenTheme["motion"]; onMotion: (change: Partial<ScreenTheme["motion"]>) => void }) {
+function MotionControls({ motion, onMotion, shown }: { motion: ScreenTheme["motion"]; onMotion: (change: Partial<ScreenTheme["motion"]>) => void; shown: ReturnType<typeof settingsShown> }) {
   const { t } = useTranslation();
   // A template using a transition no longer offered keeps it, and shows it.
   const transitions = SCREEN_TRANSITION_CHOICES.includes(motion.transition) ? SCREEN_TRANSITION_CHOICES : [...SCREEN_TRANSITION_CHOICES, motion.transition];
+  // Nothing of it has an effect (none in Scroll but the pace of its glide): no rule above an empty space.
+  if (!shown.transition && !shown.pace && !shown.reveal) return null;
   return (
     <div className="flex flex-col gap-3 border-t pt-3">
-      <Field label={t("screens.editor.transition")}>
-        <Tiles value={motion.transition} options={transitions} columns={4} label={(one) => t(`screens.editor.transitions.${one}`)} picture={(one) => <TransitionPicture transition={one} />} onChange={(transition) => onMotion({ transition })} testId="theme-transition" />
-      </Field>
-      {motion.transition !== "cut" ? (
+      {shown.transition ? (
+        <Field label={t("screens.editor.transition")}>
+          <Tiles value={motion.transition} options={transitions} columns={4} label={(one) => t(`screens.editor.transitions.${one}`)} picture={(one) => <TransitionPicture transition={one} />} onChange={(transition) => onMotion({ transition })} testId="theme-transition" />
+        </Field>
+      ) : null}
+      {shown.pace ? (
         <Field label={t("screens.editor.pace")}>
           <Choices
             value={motion.pace ?? "custom"}
@@ -281,15 +291,17 @@ function MotionControls({ motion, onMotion }: { motion: ScreenTheme["motion"]; o
           {motion.pace === null ? <Slider value={motion.duration} min={100} max={2000} step={50} unit="ms" onChange={(duration) => onMotion({ duration })} /> : null}
         </Field>
       ) : null}
-      <Field label={t("screens.editor.reveal")}>
-        <Choices value={motion.reveal} options={SCREEN_REVEALS} label={(one) => t(`screens.editor.reveals.${one}`)} onChange={(reveal) => onMotion({ reveal, stagger: REVEAL_PACE[reveal] })} testId="theme-reveal" />
-        {motion.reveal !== "none" ? (
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 text-xs text-muted-foreground">{t("screens.editor.stagger")}</span>
-            <Slider value={motion.stagger} min={0} max={400} step={5} unit="ms" onChange={(stagger) => onMotion({ stagger })} />
-          </div>
-        ) : null}
-      </Field>
+      {shown.reveal ? (
+        <Field label={t("screens.editor.reveal")}>
+          <Choices value={motion.reveal} options={SCREEN_REVEALS} label={(one) => t(`screens.editor.reveals.${one}`)} onChange={(reveal) => onMotion({ reveal, stagger: REVEAL_PACE[reveal] })} testId="theme-reveal" />
+          {motion.reveal !== "none" ? (
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-xs text-muted-foreground">{t("screens.editor.stagger")}</span>
+              <Slider value={motion.stagger} min={0} max={400} step={5} unit="ms" onChange={(stagger) => onMotion({ stagger })} />
+            </div>
+          ) : null}
+        </Field>
+      ) : null}
     </div>
   );
 }
@@ -446,9 +458,11 @@ export function PositionSettings({ theme, onTheme }: { theme: ScreenTheme; onThe
   const { t } = useTranslation();
   const layout = theme.layout;
   const set = (change: Partial<ScreenTheme["layout"]>) => onTheme((before) => ({ layout: { ...before.layout, ...change } }));
+  const shown = settingsShown(theme);
   return (
     <Group title={t("screens.editor.position")} hint={t("screens.editor.groupHints.position")} open testId="theme-group-position">
       <div className="flex flex-wrap items-end gap-3">
+        {shown.position ? (
         <IconBar>
           {SCREEN_POSITIONS.map((position) => {
             const Icon = POSITION_ICONS[position];
@@ -459,6 +473,7 @@ export function PositionSettings({ theme, onTheme }: { theme: ScreenTheme; onThe
             );
           })}
         </IconBar>
+        ) : null}
         <div className="min-w-40 flex-1">
           <Field label={t("screens.editor.margin")}>
             <Slider value={layout.margin} min={0} max={20} step={1} unit="%" onChange={(margin) => set({ margin })} />
@@ -662,7 +677,10 @@ export function ChordSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme:
   const named = show !== "off" || theme.display.mode === "grid";
   return (
     <Group title={t("screens.editor.chords")} hint={t("screens.editor.groupHints.chords")} open={named} testId="theme-group-chords">
-      <Choices value={show} options={chart ? SCREEN_LYRIC_CHORDS.filter((one) => one !== "off") : SCREEN_LYRIC_CHORDS} label={(one) => t(`screens.editor.chordShows.${one}`)} onChange={(show) => set({ show })} testId="theme-chords-show" />
+      {/* Grid always puts them on its beats. */}
+      {settingsShown(theme).chordShow ? (
+        <Choices value={show} options={chart ? SCREEN_LYRIC_CHORDS.filter((one) => one !== "off") : SCREEN_LYRIC_CHORDS} label={(one) => t(`screens.editor.chordShows.${one}`)} onChange={(show) => set({ show })} testId="theme-chords-show" />
+      ) : null}
       {named ? (
         <>
           <Field label={t("screens.editor.chordNotation")}>
