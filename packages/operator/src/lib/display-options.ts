@@ -4,7 +4,7 @@ import { createDeviceStore } from "@oneverse/ui/lib/device-store";
  * How the operator's console looks on this device (issue #358): the slides'
  * lettering, size and case, where a section's colour goes, slides grouped by
  * section or not, how many to a row, the screens' pictures as a grid or one
- * screen at a time, or none, and how wide the drawer is. Kept on the device: a laptop at the desk
+ * screen at a time, or none, how wide the drawer is, and where the running order goes. Kept on the device: a laptop at the desk
  * and a tablet by the stage each have theirs.
  */
 export interface OperatorDisplay {
@@ -27,6 +27,12 @@ export interface OperatorDisplay {
   previews: boolean;
   /** The Screens & layers drawer's width, in pixels; null for its default. */
   drawerWidth: number | null;
+  /**
+   * The running order: a column on the left (along the top when the console is
+   * too narrow for two columns), a row along the top, or hidden - Songverse's
+   * sidebar lists the set's songs too.
+   */
+  rundown: (typeof OPERATOR_RUNDOWNS)[number];
 }
 
 export const OPERATOR_FONTS = ["sans", "serif", "mono", "condensed"] as const;
@@ -35,8 +41,9 @@ export const OPERATOR_SECTION_COLORS = ["tile", "header", "none"] as const;
 export const OPERATOR_COLUMNS = ["auto", "1", "2", "3", "4", "5", "6"] as const;
 export const OPERATOR_TILES = ["app", "dark"] as const;
 export const OPERATOR_SCREEN_VIEWS = ["grid", "tabs"] as const;
+export const OPERATOR_RUNDOWNS = ["left", "top", "off"] as const;
 
-export const DEFAULT_OPERATOR_DISPLAY: OperatorDisplay = { font: "sans", size: "m", uppercase: false, sectionColor: "tile", grouped: false, columns: "auto", numbers: true, tiles: "app", screens: "grid", previews: true, drawerWidth: null };
+export const DEFAULT_OPERATOR_DISPLAY: OperatorDisplay = { font: "sans", size: "m", uppercase: false, sectionColor: "tile", grouped: false, columns: "auto", numbers: true, tiles: "app", screens: "grid", previews: true, drawerWidth: null, rundown: "left" };
 
 const pick = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(value as T) ? (value as T) : fallback);
 const flag = (value: unknown, fallback: boolean) => (typeof value === "boolean" ? value : fallback);
@@ -59,6 +66,7 @@ export function readOperatorDisplay(raw: string | null): OperatorDisplay {
     // "off" was a third way of showing the screens before the pictures had a toggle of their own.
     previews: value.screens === "off" ? false : flag(value.previews, d.previews),
     drawerWidth: typeof value.drawerWidth === "number" && Number.isFinite(value.drawerWidth) ? Math.round(value.drawerWidth) : null,
+    rundown: pick(value.rundown, OPERATOR_RUNDOWNS, d.rundown),
   };
 }
 

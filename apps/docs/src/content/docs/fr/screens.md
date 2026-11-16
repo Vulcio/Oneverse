@@ -310,7 +310,7 @@ Si vous fermez la vue opérateur, les écrans reviennent à qui mène. Si c'est 
 
 ### La liste et ses diapositives
 
-Les diapositives d'abord. Sur un ordinateur portable, le **Déroulé** est une colonne à gauche et les diapositives occupent le reste ; sur une tablette tenue droite, ou un téléphone, le déroulé est une rangée qu'on fait défiler au-dessus d'elles. **Minuteurs et messages** est un onglet à côté de **Diapositives**. Ce qui est sur les écrans, et les écrans eux-mêmes, sont dans **Écrans et calques** (plus bas).
+Les diapositives d'abord. Sur un ordinateur portable, le **Déroulé** est une colonne à gauche et les diapositives occupent le reste ; sur une tablette tenue droite, ou un téléphone, le déroulé est une rangée qu'on fait défiler au-dessus d'elles. **Affichage** le place où vous voulez sur cet appareil : **À gauche**, **En haut** (une rangée de cartes au-dessus des diapositives), ou **Masqué**, quand la barre latérale de Songverse montre déjà les chants de la liste. **Minuteurs et messages** est un onglet à côté de **Diapositives**. Ce qui est sur les écrans, et les écrans eux-mêmes, sont dans **Écrans et calques** (plus bas).
 
 Le **Déroulé** montre chaque élément de la liste, avec son nombre de diapositives. Celui qui est sur les écrans est marqué **À l'écran**, avec sa diapositive. Choisissez un élément pour voir ses diapositives ; son bouton écran affiche aussitôt sa première diapositive. Dans Songverse, la barre latérale montre aussi les chants de la liste, comme dans Live : celui qui est sur les écrans est marqué **En cours**, et ceux que les écrans ont dépassés sont cochés comme joués (**Reprendre au début** les efface).
 
