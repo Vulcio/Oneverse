@@ -36,6 +36,8 @@ try {
 
   await step("a songbook's, from its details", async () => {
     await page.goto(`${WEB}/songbooks/${book.id}`);
+    // Clicked once the page has hydrated: before, the toggle does nothing and the details never open.
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("songbook-details-toggle").click();
     await page.getByTestId("appearance").getByTestId("appearance-color-amber").click();
     await page.locator('h1').locator("..").locator('[data-color="amber"]').waitFor();
