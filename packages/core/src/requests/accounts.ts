@@ -3,7 +3,7 @@ import { z } from "zod";
 import { NEW_NOTES, NOTE_COLORS, NOTE_LOOKS, NOTE_PLACEMENTS, NOTE_SHOWS, NOTE_SIZES } from "../notes/index.js";
 import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, CHART_LOOKS, CHART_SECTION_COLORS, CHART_CURRENT, CHART_CHORUS_AGAIN, WORDS_SUNG, METRONOME_DISPLAYS, METRONOME_LIGHT_UP, METRONOME_BRIGHTNESSES, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
 import { isTuningId, type InstrumentId } from "../chords/shapes.js";
-import { clearableText, optional, requiredText } from "./fields.js";
+import { clearableInt, clearableText, optional, requiredText } from "./fields.js";
 
 /** A tuning for the instrument: one of TUNINGS, or the player's own ("custom:D2-A2-D3-F#3-A3-D4", issue #355). */
 const tuningField = (instrument: InstrumentId) =>
@@ -200,8 +200,20 @@ export type SaveStorageLimitsRequest = z.input<typeof SaveStorageLimitsSchema>;
 export const SaveAuthConfigSchema = z.strictObject({
   resendApiKey: optional(z.string().max(200)),
   emailFrom: optional(z.string().max(200)),
+  /** How email goes out (issue #38); "" goes back to the env var, then whichever has credentials. */
+  emailProvider: optional(z.enum(["resend", "smtp", ""])),
+  smtpHost: optional(z.string().max(253).regex(/^[A-Za-z0-9.:[\]-]*$/, "smtpHost must be a host name or address")),
+  smtpPort: clearableInt(1, 65535),
+  smtpSecure: z.boolean().nullable().optional(),
+  smtpUser: optional(z.string().max(320)),
+  smtpPassword: optional(z.string().max(500)),
   googleClientId: optional(z.string().max(200)),
   googleClientSecret: optional(z.string().max(200)),
+});
+
+/** Admin > Auth's test email (issue #38): to the admin's own address unless another is given. */
+export const SendTestEmailSchema = z.strictObject({
+  to: optional(z.string().trim().max(320).pipe(z.email())),
 });
 
 export const SaveStorageConfigSchema = z.strictObject({

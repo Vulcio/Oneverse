@@ -84,6 +84,7 @@ import type {
   CreateInviteLinkSchema,
   ImportSongbookFromCatalogSchema,
   SaveAuthConfigSchema,
+  SendTestEmailSchema,
   SaveStorageConfigSchema,
   UpdateCatalogSchema,
   UpdateUserByAdminSchema,
@@ -1330,7 +1331,14 @@ export type AuthConfigSource = "database" | "env" | "none";
 export interface AuthConfigSummary {
   emailSource: AuthConfigSource;
   emailFrom: string;
+  emailProvider: "resend" | "smtp";
+  emailConfigured: boolean;
   hasDatabaseResendKey: boolean;
+  smtpHost: string | null;
+  smtpPort: number | null;
+  smtpSecure: boolean | null;
+  smtpUser: string | null;
+  hasDatabaseSmtpPassword: boolean;
   googleSource: AuthConfigSource;
   googleClientId: string | null;
   hasDatabaseGoogleSecret: boolean;
@@ -3715,6 +3723,9 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     adminSaveAuthConfig: (data: SaveAuthConfigInput) =>
       request<void>("/admin/auth", { method: "PUT", body: JSON.stringify(data) }),
     adminClearAuthEmailConfig: () => request<void>("/admin/auth/email", { method: "DELETE" }),
+    /** Sends a test email (issue #38): `sent` false when no provider is set up (it was only logged); refused with why when the provider failed. */
+    adminSendTestEmail: (data: z.input<typeof SendTestEmailSchema> = {}) =>
+      request<{ sent: boolean; to: string }>("/admin/auth/email/test", { method: "POST", body: JSON.stringify(data) }),
     adminClearAuthGoogleConfig: () => request<void>("/admin/auth/google", { method: "DELETE" }),
     listStemSeparations: (songVersionId: string) => request<StemSeparations>(`/song-versions/${songVersionId}/stem-separations`),
     separateStems: (songVersionId: string, attachmentId: string, parts: StemSeparationParts, replace = false) =>

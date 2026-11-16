@@ -2842,6 +2842,14 @@ model AuthSettings {
   emailFrom             String?
   googleClientId        String?
   googleClientSecretEnc String?
+  // How email goes out (issue #38): "resend" or "smtp"; null: EMAIL_PROVIDER,
+  // then whichever has credentials. The SMTP password encrypted like the keys.
+  emailProvider         String?
+  smtpHost              String?
+  smtpPort              Int?
+  smtpSecure            Boolean?
+  smtpUser              String?
+  smtpPasswordEnc       String?
   updatedAt             DateTime @updatedAt
 }
 

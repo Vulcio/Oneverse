@@ -90,6 +90,13 @@ SETTINGS_ENCRYPTION_KEY=<any long random string>
 # prefer Admin > Auth once the app is up. See below.
 RESEND_API_KEY=<Resend API key>
 EMAIL_FROM=Songverse <onboarding@resend.dev>
+# …or any SMTP server instead (issue #38):
+# EMAIL_PROVIDER=smtp
+# SMTP_HOST=smtp.example.com
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER=<user>
+# SMTP_PASSWORD=<password>
 
 # Google sign-in — optional, also configurable via Admin > Auth. See below.
 GOOGLE_CLIENT_ID=<Google OAuth client ID>
@@ -110,7 +117,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 Keep this stable once set — BetterAuth encrypts its signing key with it in the database, so changing the secret without clearing the `Jwks` table breaks login for everyone until you do.
 
-**`RESEND_API_KEY` / `EMAIL_FROM`:** email addresses now have to be verified before sign-in works (`emailAndPassword.requireEmailVerification` in `apps/api/src/auth/better-auth.ts`), and "forgot password" sends a reset link — both go out through [Resend](https://resend.com). Sign up for a free account, verify a sending domain (or use their shared `onboarding@resend.dev` sender for testing), and create an API key. The env vars here are a fallback: once the app is up, sign in as a global admin and set this at **Admin > Auth** instead — it takes effect immediately, no redeploy needed. Whichever path is used, if no Resend API key is configured at all, emails are logged to the container's stdout instead of sent — fine for local dev, **not fine in production** (nobody can verify their account). The app only ever sends account emails (verification, password reset, and the two-step email change from the account page), never bulk/marketing mail, specifically to stay inside the free tier's daily/monthly send cap — don't add new call sites to `apps/api/src/auth/email.ts` without keeping that in mind.
+**`RESEND_API_KEY` / `EMAIL_FROM`:** email addresses now have to be verified before sign-in works (`emailAndPassword.requireEmailVerification` in `apps/api/src/auth/better-auth.ts`), and "forgot password" sends a reset link — both go out through [Resend](https://resend.com). Sign up for a free account, verify a sending domain (or use their shared `onboarding@resend.dev` sender for testing), and create an API key. The env vars here are a fallback: once the app is up, sign in as a global admin and set this at **Admin > Auth** instead — it takes effect immediately, no redeploy needed. **Or any SMTP server** (issue #38): your mail host's, or a sending service's (Amazon SES, Postmark, Mailgun, Brevo…), at **Admin > Auth** or with `EMAIL_PROVIDER=smtp`, `SMTP_HOST`, `SMTP_PORT` (default 587, or 465 with `SMTP_SECURE=true` - TLS from the start; otherwise STARTTLS when offered), `SMTP_USER` and `SMTP_PASSWORD`; set them on the Worker too, which sends notification emails. Without `EMAIL_PROVIDER`, Resend is used when it has a key, else SMTP when it has a host. **Send a test email** at Admin > Auth checks it. Whichever path is used, if the provider has nothing to send with, emails are logged to the container's stdout instead of sent — fine for local dev, **not fine in production** (nobody can verify their account). The app only ever sends account emails (verification, password reset, and the two-step email change from the account page), never bulk/marketing mail, specifically to stay inside the free tier's daily/monthly send cap — don't add new call sites to `apps/api/src/auth/email.ts` without keeping that in mind.
 
 **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`:** optional, and also settable at **Admin > Auth** instead of these env vars. Leave both unset everywhere to keep email+password (and passkeys) as the only sign-in methods — the "Continue with Google" button only renders once either path is configured. To enable it, create an OAuth 2.0 Client ID at the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) with an authorized redirect URI of `<AUTH_URL>/api/auth/callback/google` (e.g. `https://api.oneverse.top/api/auth/callback/google`).
 

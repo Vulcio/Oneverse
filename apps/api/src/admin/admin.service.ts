@@ -11,6 +11,7 @@ import {
   type AuthConfigSummary,
   type SaveAuthConfigInput,
 } from "../auth/auth-settings.js";
+import { sendTestEmail } from "../auth/email.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { BUILT_IN_DEFAULT_TEAM_STORAGE_LIMIT_MB, BUILT_IN_DEFAULT_USER_STORAGE_LIMIT_MB, StorageQuotaService } from "../storage/storage-quota.service.js";
 import { StorageService, type SaveStorageConfigInput } from "../storage/storage.service.js";
@@ -115,6 +116,15 @@ export class AdminService {
 
   clearGoogleAuthConfig(): Promise<void> {
     return clearGoogleAuthConfigSetting();
+  }
+
+  /** A test email (issue #38). A provider's refusal comes back as a 400 with its answer: the settings are what's wrong. */
+  async sendTestEmail(to: string): Promise<{ sent: boolean; to: string }> {
+    try {
+      return { sent: (await sendTestEmail(to)) === "sent", to };
+    } catch (error) {
+      throw new BadRequestException(error instanceof Error ? error.message : String(error));
+    }
   }
 
   /**

@@ -83,6 +83,7 @@
 "api/youversion": 2,
 "web/admin-roles": 16,
 "web/admin-security": 9,
+"web/email-smtp": 15,
 "web/error-reporting": 15,
 "web/appearance": 3,
 "web/arrangements": 26,

@@ -10,7 +10,7 @@ import { AuthConfigResponseDto } from "./dto/admin-auth-response.dto.js";
 import { AdminStorageResponseDto, StorageConfigResponseDto } from "./dto/admin-storage-response.dto.js";
 import { AdminUserResponseDto } from "./dto/admin-user-response.dto.js";
 import { DeleteUserDto, TransferLinkResponseDto, UpdateUserByAdminDto } from "./dto/manage-user.dto.js";
-import { SaveAuthConfigDto } from "./dto/save-auth-config.dto.js";
+import { SaveAuthConfigDto, SendTestEmailDto } from "./dto/save-auth-config.dto.js";
 import { SaveStorageConfigDto } from "./dto/save-storage-config.dto.js";
 import { SaveStorageLimitsDto, StorageLimitsResponseDto } from "./dto/storage-limits.dto.js";
 import { SaveSecuritySettingsDto } from "./dto/security-settings.dto.js";
@@ -235,6 +235,13 @@ export class AdminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   clearAuthEmailConfig(): Promise<void> {
     return this.adminService.clearEmailAuthConfig();
+  }
+
+  /** A test email (issue #38), to the admin unless `to` names another address; refused with the provider's answer when it fails. */
+  @Post("auth/email/test")
+  @HttpCode(HttpStatus.OK)
+  sendTestEmail(@SignedIn() admin: AuthenticatedUser, @Body() dto: SendTestEmailDto): Promise<{ sent: boolean; to: string }> {
+    return this.adminService.sendTestEmail(dto.to ?? admin.email);
   }
 
   @Delete("auth/google")
