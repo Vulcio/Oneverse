@@ -248,3 +248,27 @@ export async function takePresets(who, templateId) {
   const template = (await api(who, "GET", "/screen-themes")).find((one) => one.id === templateId);
   return api(who, "PATCH", `/screen-themes/${templateId}`, { template: { ...template.template, look: {} } });
 }
+
+/**
+ * Picks Edit, Practice or Live: the switch at the top of a page, or Live's
+ * mode button and its menu (issue #359).
+ */
+export async function chooseMode(p, name) {
+  const radio = p.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name });
+  await radio.or(p.getByTestId("mode-picker")).first().waitFor();
+  if (await radio.isVisible()) return radio.click();
+  await p.getByTestId("mode-picker").click();
+  await p.getByRole("menuitemradio", { name }).click();
+}
+
+/**
+ * Reads the song as `view` (chart, grid, words, drums, pdf, tracks): its tab,
+ * or, in Live's header on a narrow screen, the view button's menu (#359).
+ */
+export async function chooseView(p, view) {
+  const tab = p.getByTestId(`chart-view-${view}`);
+  const picker = p.locator('button[data-testid="chart-view"]');
+  await tab.or(picker).first().waitFor();
+  if (!(await tab.isVisible())) await picker.click();
+  await tab.click();
+}

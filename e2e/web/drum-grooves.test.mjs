@@ -4,7 +4,7 @@
 // click, which stops there unless Display says to click with it), and the Drums view shows the bar's pattern as a grid
 // or as one line, the beat being played lit. Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SP, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -104,7 +104,7 @@ try {
   });
 
   await step("Display: click with the drums, the groove as a grid or one line in the Drums view", async () => {
-    await page.getByTestId("chart-view-drums").click();
+    await chooseView(page, "drums");
     const grid = page.getByTestId("drums-groove");
     await grid.waitFor();
     if (!/Pop-Rock · Simple/.test(await grid.getByTestId("drums-groove-name").innerText())) throw new Error(await grid.innerText());

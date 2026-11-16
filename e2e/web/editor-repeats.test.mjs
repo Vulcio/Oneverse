@@ -7,7 +7,7 @@
 // The Song order strip shows them as one chip ("Chorus ×3") with one time
 // fewer / more, and the chart shows such a pass once, "×3" by its name.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -102,12 +102,12 @@ try {
   });
 
   await step("the chart: the chorus once, ×3 by its name; the one after the bridge on its own", async () => {
-    await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Practice" }).click();
+    await chooseMode(page, "Practice");
     const passes = page.getByTestId("song-chart").locator("[data-pass]");
     await passes.nth(1).locator("[data-pass-times='3']").waitFor();
     if ((await passes.count()) !== 4) throw new Error(`${await passes.count()} passes on the chart`);
     if ((await passes.nth(1).getAttribute("data-folded")) !== `f2${stamp} f3${stamp}`) throw new Error(await passes.nth(1).getAttribute("data-folded"));
-    await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Edit" }).click();
+    await chooseMode(page, "Edit");
     await page.getByTestId("structured-editor").waitFor();
   });
 

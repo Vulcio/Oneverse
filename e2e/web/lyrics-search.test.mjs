@@ -5,7 +5,7 @@
 // bold; opened at that line. Kept up to date with each save, filled in for
 // older songs by the Worker; only songs the user can see.
 import { chromium } from "playwright";
-import { WEB, api, call, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, call, check, finish, signIn, sql, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -128,6 +128,8 @@ try {
 
   await step("remembered on the device", async () => {
     await page.reload();
+    // Before it's hydrated, the button doesn't open the dialog yet.
+    await page.waitForLoadState("networkidle");
     await page.getByTestId("command-search").click();
     if ((await toggle().getAttribute("aria-pressed")) !== "true") throw new Error("forgotten");
     await page.keyboard.press("Escape");
@@ -147,7 +149,7 @@ try {
 
   await step("Live: opened full screen at the line", async () => {
     await page.goto(`${WEB}/library`);
-    await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Live" }).click();
+    await chooseMode(page, "Live");
     await page.getByTestId("command-search").click();
     await field().fill(`${stamp} been set free`);
     await group("In the lyrics").getByRole("option", { name: new RegExp(`^Chains ${stamp}`) }).click();

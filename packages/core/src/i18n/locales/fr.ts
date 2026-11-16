@@ -1368,6 +1368,7 @@ const fr: typeof en = {
     tracks: "Pistes",
     pdf: "PDF",
     which: "Quel PDF",
+    picker: "Vue : {{view}}",
     drums: "Batterie",
     page: "Page {{page}} sur {{pages}}",
     loading: "Ouverture de {{name}}…",
@@ -4300,6 +4301,7 @@ const fr: typeof en = {
   },
   mode: {
     label: "Mode",
+    picker: "Mode : {{mode}}",
     edit: "Édition",
     practice: "Session",
     live: "Live",

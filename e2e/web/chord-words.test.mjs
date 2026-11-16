@@ -3,7 +3,7 @@
 // chord, and the picked chord's place naming its word. Moving a chord in the bars leaves it on its word.
 // Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SP, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -45,7 +45,7 @@ try {
 
   await step("Edit bars: every chord's syllable underlined", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await grid().waitFor();
     await page.getByTestId("display-open").first().click();
     await page.getByTestId("chord-grid-edit-start").click();

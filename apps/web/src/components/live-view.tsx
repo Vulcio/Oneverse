@@ -1,12 +1,13 @@
 import { prettyChord, barSeconds, chartBars, chartSeconds, type ControlsPositionValue, type LiveControlValue, degreeChords, transposeChord, transposeKey, structureOf, type DiagramPlayer, type EffectiveDisplaySettings, type RenderedChart, type SetTransitionView, type SongDocumentV2, type SetlistItemText, type SetItemPassage } from "@oneverse/core";
 import { TextItemSlides } from "#/components/set-text-item";
 import { PassageReading } from "#/components/set-passage-item";
-import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
+import { AArrowDown, AArrowUp, ArrowLeft, ChevronDown, ChevronUp, Search, Settings2, ChevronLeft, ChevronRight, Expand, Minus, MonitorUp, Plus, Rabbit, Shrink, Turtle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode, type TouchEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
 import { PdfPages, ViewSwitch, type ReadingView } from "#/components/chart-or-pdf";
-import { CommandSearch } from "#/components/command-search";
+import { CommandSearch, openCommandSearch } from "#/components/command-search";
+import { DropdownMenuItem } from "@oneverse/ui/components/dropdown-menu";
 import { MetronomeSongButton } from "#/components/metronome";
 import { BarsRow } from "#/components/bars-row";
 import { useGridControls } from "#/lib/grid-controls";
@@ -134,6 +135,8 @@ export function LiveView({
 }) {
   const { t } = useTranslation();
   const scroller = useRef<HTMLElement>(null);
+  const [header, setHeader] = useState<HTMLElement | null>(null);
+  const headerRoom = useHeaderRoom(header);
   const sections = useRef<(HTMLElement | null)[]>([]);
   const head = songs[0]!;
   // The song being played, on which page: another page starts at its own start.
@@ -437,7 +440,7 @@ export function LiveView({
       {/* The beat behind everything (issue #107): the Drums view, or the metronome as the background. */}
       <PageBeatBackdrop />
       {/* Always the same height; the song's own title is at the top of its chart (issue #68). */}
-      <header className="flex h-14 shrink-0 items-center gap-0.5 border-b-2 border-b-primary px-2 sm:gap-3 sm:px-4">
+      <header ref={setHeader} className="flex h-14 shrink-0 items-center gap-1 border-b-2 border-b-primary px-2 sm:gap-2 sm:px-4">
         {/* The sidebar (issue #154): beside the song on a wider screen, a sheet on a phone. */}
         <SidebarTrigger className="size-10 text-muted-foreground [&_svg]:size-5" data-testid="live-sidebar" />
         {song.exit ? (
@@ -449,12 +452,26 @@ export function LiveView({
           {song.setName}
         </p>
         <OfflineBanner compact />
-        {/* Its chart or its PDF (issue #155), when it has one. */}
-        {song.reading ? <ViewSwitch reading={song.reading} compact /> : null}
+        {/* Its chart or its PDF (issue #155), when it has one: tabs where there's room, else one button and its menu (#359). */}
+        {song.reading ? (
+          <ViewSwitch
+            reading={song.reading}
+            look={headerRoom === "narrow" ? "picker" : headerRoom === "medium" ? "icons" : "tabs"}
+            extra={
+              headerRoom === "narrow" ? (
+                <DropdownMenuItem onClick={openCommandSearch} className="py-2.5 text-base text-muted-foreground [&_svg]:size-4.5">
+                  <Search />
+                  {t("search.open")}
+                </DropdownMenuItem>
+              ) : null
+            }
+          />
+        ) : null}
         {/* The song's tempo and time signature, one press (issue #2); the rest on the Metronome page. */}
         {song.setId ? <SyncControl setId={song.setId} itemId={song.id} compact /> : null}
         {shows("metronome") ? <MetronomeSongButton songId={song.id} tempo={chart?.tempo} tempoUnit={chart?.tempoUnit} timeSignature={chart?.timeSignature} metronomeBeats={chart?.metronomeBeats} /> : null}
-        <CommandSearch />
+        {/* On a phone, Search is at the end of the view menu. */}
+        <CommandSearch look={headerRoom === "narrow" && song.reading ? "hidden" : "icon"} />
         <DisplayPanel mode="LIVE" settings={display} player={head.player} compact className="size-10 border-0 text-muted-foreground [&_svg]:size-5" />
         {fullScreen.available ? (
           <span className="hidden sm:contents">
@@ -463,7 +480,8 @@ export function LiveView({
             </IconButton>
           </span>
         ) : null}
-        <ModeSwitch />
+        {/* One button: in Live you rarely switch, and the three-part switch took the room (#359). */}
+        <ModeSwitch picker named={headerRoom === "wide"} />
       </header>
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, following the music. */}
@@ -1084,4 +1102,25 @@ function KeyButton({ musicalKey, shift, extraSteps, onTranspose, testId }: { mus
       ) : null}
     </div>
   );
+}
+
+/**
+ * How much room Live's header has (#359), measured on the header itself so
+ * an open sidebar counts: `narrow` (a phone: the views in one button, Search
+ * in its menu), `medium` (the views as icons) or `wide` (named).
+ */
+function useHeaderRoom(element: HTMLElement | null): "narrow" | "medium" | "wide" {
+  const [room, setRoom] = useState<"narrow" | "medium" | "wide">("narrow");
+  useEffect(() => {
+    if (!element) return;
+    const measure = () => {
+      const width = element.clientWidth;
+      setRoom(width < 600 ? "narrow" : width < 960 ? "medium" : "wide");
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element]);
+  return room;
 }

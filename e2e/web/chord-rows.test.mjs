@@ -6,7 +6,7 @@
 // ♯ and ♭. Kept per mode; a row that only repeats the other isn't shown;
 // lyrics only hides both; a tapped chord's card names it as the rows do.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -34,7 +34,7 @@ try {
     await page.goto(`${WEB}/library/${song.id}`);
     await page.waitForLoadState("networkidle");
     if ((await page.evaluate(() => document.documentElement.dataset.mode)) !== "practice") {
-      await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Practice" }).click();
+      await chooseMode(page, "Practice");
       await page.waitForLoadState("networkidle");
     }
     await songChart().waitFor();

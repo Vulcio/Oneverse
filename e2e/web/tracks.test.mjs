@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { API, SP, WEB, api, call, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SP, WEB, api, call, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 const FIXTURES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../fixtures/stems");
 
@@ -51,7 +51,7 @@ try {
   await step("Tracks beside Chart and Grid: a lane per part, the sections across the top", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
     await page.locator('[data-testid="stem-player"][data-state="ready"]').waitFor({ timeout: 20000 });
-    await page.getByTestId("chart-view-tracks").click();
+    await chooseView(page, "tracks");
     await page.locator('[data-testid="tracks-view"][data-state="ready"]').waitFor();
     const lanes = await view().getByTestId("tracks-lane").count();
     if (lanes !== 2) throw new Error(`${lanes} lanes`);
@@ -252,7 +252,7 @@ try {
   await step("kept for the song on this device: Tracks again after a reload; Chart leaves it", async () => {
     await page.reload();
     await page.locator('[data-testid="tracks-view"]').waitFor();
-    await page.getByTestId("chart-view-chart").click();
+    await chooseView(page, "chart");
     await view().waitFor({ state: "detached" });
     await page.getByTestId("practice-chart").waitFor();
   });

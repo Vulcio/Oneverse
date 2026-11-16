@@ -1,4 +1,5 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
+import { Check } from "lucide-react";
 import type { ComponentProps } from "react";
 import { cn } from "../lib/utils";
 
@@ -50,6 +51,23 @@ function DropdownMenuLinkItem({ className, closeOnClick = true, ...props }: Menu
   return <MenuPrimitive.LinkItem data-slot="dropdown-menu-item" closeOnClick={closeOnClick} className={cn(ITEM, className)} {...props} />;
 }
 
+/** One choice of several: its items are `DropdownMenuRadioItem`s, the one chosen checked. */
+function DropdownMenuRadioGroup(props: MenuPrimitive.RadioGroup.Props) {
+  return <MenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
+}
+
+/** A choice, checked when it's the group's value; picking it closes the menu. */
+function DropdownMenuRadioItem({ className, children, closeOnClick = true, ...props }: MenuPrimitive.RadioItem.Props) {
+  return (
+    <MenuPrimitive.RadioItem data-slot="dropdown-menu-radio-item" closeOnClick={closeOnClick} className={cn(ITEM, "pr-8", className)} {...props}>
+      {children}
+      <MenuPrimitive.RadioItemIndicator className="absolute right-2 flex items-center">
+        <Check className="size-4" />
+      </MenuPrimitive.RadioItemIndicator>
+    </MenuPrimitive.RadioItem>
+  );
+}
+
 function DropdownMenuSeparator({ className, ...props }: MenuPrimitive.Separator.Props) {
   return <MenuPrimitive.Separator data-slot="dropdown-menu-separator" className={cn("-mx-1 my-1 h-px bg-border", className)} {...props} />;
 }
@@ -59,4 +77,14 @@ function DropdownMenuLabel({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="dropdown-menu-label" className={cn("px-2 py-1.5 text-sm font-medium", className)} {...props} />;
 }
 
-export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLinkItem, DropdownMenuSeparator, DropdownMenuLabel };
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLinkItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+};

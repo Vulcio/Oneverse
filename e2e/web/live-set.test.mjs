@@ -6,7 +6,7 @@
 // change and note), its symbol beside it and Live saying it before the end;
 // and the details each device picks to show beside the songs.
 import { chromium } from "playwright";
-import { WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, call, check, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -153,7 +153,7 @@ try {
 
   await step("the set's page: a transition chosen there, with its note", async () => {
     // In Edit: in Live, a set opens straight into Live.
-    await page.getByRole("radio", { name: "Edit" }).click();
+    await chooseMode(page, "Edit");
     await page.goto(`${WEB}/sets/${set.id}`);
     await page.waitForLoadState("networkidle");
     const row = page.getByTestId("set-song-row").filter({ hasText: `Called ${stamp}` });

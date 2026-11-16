@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { sidebarGo, API, WEB, api, call, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { sidebarGo, API, WEB, api, call, check, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 const FIXTURES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../fixtures/stems");
 const fixture = (name) => path.join(FIXTURES, name);
@@ -270,12 +270,12 @@ await step("it plays on elsewhere, with a button back to the song", async () => 
 });
 
 await step("leaving Practice keeps it playing; the floating button pauses it", async () => {
-  await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Edit" }).click();
+  await chooseMode(page, "Edit");
   await floating().waitFor();
   if (await player().count()) throw new Error("a dock in Edit");
   await floating().getByRole("button", { name: "Pause", exact: true }).click();
   await floating().waitFor({ state: "detached" });
-  await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Practice" }).click();
+  await chooseMode(page, "Practice");
   await page.locator('[data-testid="stem-player"][data-state="ready"]').waitFor();
   if (seconds(await time()) < 11) throw new Error(`lost its place: ${await time()}`);
 });

@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { sidebarGo, API, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { sidebarGo, API, WEB, api, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 import { FAKE_YT } from "../lib/fake-youtube.mjs";
 
 const FIXTURES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../fixtures/stems");
@@ -147,7 +147,7 @@ await step("a song with its own audio plays that, not its YouTube video", async 
 });
 
 await step("in Edit, no player", async () => {
-  await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Edit" }).click();
+  await chooseMode(page, "Edit");
   await stems().waitFor({ state: "detached" });
   await page.goto(`${WEB}/library/${video.id}`);
   await page.waitForLoadState("networkidle");

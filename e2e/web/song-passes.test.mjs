@@ -12,7 +12,7 @@
 // on the same edge. Chords stay over their letters in a copy, several on one
 // letter and after the last one too - and on the chart.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -118,7 +118,7 @@ try {
   });
 
   await step("the chart: the copy as it's sung, marked *", async () => {
-    await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Practice" }).click();
+    await chooseMode(page, "Practice");
     const passes = page.getByTestId("song-chart").locator("[data-pass]");
     await passes.nth(2).waitFor();
     await passes.nth(2).locator("[data-pass-changed]").waitFor();
@@ -131,7 +131,7 @@ try {
     const bridge = page.getByTestId("song-chart").locator("[data-pass]").last().locator("[data-line]").first();
     const [first, last] = await Promise.all([bridge.locator("[data-chord]:not([data-chord=''])").first(), bridge.locator("[data-chord]:not([data-chord=''])").last()].map((el) => el.evaluate((one) => Math.round(one.getBoundingClientRect().top))));
     if (first !== last) throw new Error(`trailing chords off the chords' row: ${first} / ${last}`);
-    await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Edit" }).click();
+    await chooseMode(page, "Edit");
   });
 
   await step("a copy duplicated: another copy of the chorus, not of the copy, with its changes", async () => {

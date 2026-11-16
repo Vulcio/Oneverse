@@ -3,7 +3,7 @@
 // device's to start with), Live always dark, with a set's songs full screen,
 // what's next, autoscroll and keys.
 import { chromium } from "playwright";
-import { WEB, api, check, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, check, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -64,8 +64,9 @@ const brightness = () =>
     const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
     return (r + g + b) / 3;
   });
-const modeSwitch = () => page.getByRole("radiogroup", { name: "Mode" });
-const checked = (name) => modeSwitch().getByRole("radio", { name }).and(page.locator("[aria-checked=true]")).waitFor();
+const modeSwitch = () => page.getByRole("radiogroup", { name: "Mode" }).or(page.getByTestId("mode-picker"));
+// The switch's radio, or in Live its one button naming the mode (issue #359).
+const checked = (name) => page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name }).and(page.locator("[aria-checked=true]")).or(page.getByRole("button", { name: `Mode: ${name}`, exact: true })).first().waitFor();
 const looks = {};
 // The light or dark theme: in the account menu at the bottom of the sidebar (issue #67).
 const theme = async (name) => {
@@ -101,7 +102,7 @@ await step("the account menu's moon makes Edit dark, remembered; the sun follows
 });
 
 await step("Practice has its own look, light and dark, and a set's songs open as usual", async () => {
-  await modeSwitch().getByRole("radio", { name: "Practice" }).click();
+  await chooseMode(page, "Practice");
   let state = await html();
   if (state.mode !== "practice" || state.dark) throw new Error(JSON.stringify(state));
   if (state.primary === looks.editLight.primary) throw new Error("the same colours as Edit");
@@ -177,7 +178,7 @@ await step("the right arrow goes to the next song; the last says the set ends", 
 });
 
 await step("leaving Live for Practice goes back to the song's page, in Practice's look", async () => {
-  await modeSwitch().getByRole("radio", { name: "Practice" }).click();
+  await chooseMode(page, "Practice");
   await page.waitForURL(`**/sets/${set.id}/songs/${firstItem.id}`);
   await page.getByText("My view").waitFor();
   const state = await html();
@@ -214,7 +215,7 @@ await step("a song counts as played once its chart is scrolled to the end, not j
 
 await step("the songs played are ticked on the set's page; Live resumes where it was", async () => {
   const number = (index) => page.getByTestId("set-song-number").nth(index);
-  await modeSwitch().getByRole("radio", { name: "Practice" }).click();
+  await chooseMode(page, "Practice");
   await page.goto(`${WEB}/sets/${set.id}`);
   await page.waitForLoadState("networkidle");
   await page.locator('[data-testid="set-song-number"][data-played]').waitFor();
@@ -230,7 +231,7 @@ await step("the songs played are ticked on the set's page; Live resumes where it
 });
 
 await step("in Live, picking a set opens it straight into Live, at the song last played; its × goes back to the sets", async () => {
-  await modeSwitch().getByRole("radio", { name: "Live" }).click();
+  await chooseMode(page, "Live");
   await page.waitForURL(`**/sets/${set.id}/live/${firstItem.id}`);
   await page.getByTestId("live-view").waitFor();
   await page.getByTestId("live-next").click();
@@ -265,7 +266,7 @@ await step("on a phone: no sideways scroll, the switch still in the header", asy
   await page.getByRole("dialog").getByRole("link", { name: new RegExp(`Closer ${stamp}`) }).click();
   await page.waitForURL(`**/live/${secondItem.id}`);
   await page.getByRole("heading", { name: `Closer ${stamp}` }).waitFor();
-  await modeSwitch().getByRole("radio", { name: "Edit" }).click();
+  await chooseMode(page, "Edit");
   await page.waitForURL(`**/songs/${secondItem.id}`);
 });
 await context.close();

@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { API, SP, WEB, api, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, SP, WEB, api, finish, signIn, sql, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -38,7 +38,7 @@ try {
 
   await step("Practice's grid: Edit bars for whoever can edit the song", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await grid().waitFor();
     // As filled in from the chart (issue #475): two bars a sung line, its chords shared - G C | G D | G Em | D | - | - || C | G.
     if ((await grid().locator("[data-grid-bar]").count()) !== 8) throw new Error(`${await grid().locator("[data-grid-bar]").count()} bars`);

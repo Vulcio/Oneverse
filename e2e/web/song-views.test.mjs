@@ -3,7 +3,7 @@
 // set in Live; the artists as a grid of round pictures; the theme in the
 // account menu, not the header.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -43,7 +43,7 @@ await step("the header stays at the top as the page scrolls", async () => {
 });
 
 await step("Practice: the chart, no tabs; Edit goes back to the editor", async () => {
-  await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Practice" }).click();
+  await chooseMode(page, "Practice");
   const practice = page.getByTestId("practice-song");
   await practice.getByRole("heading", { name: `First ${stamp}` }).waitFor();
   await practice.locator('[data-chord="G"]').first().waitFor();

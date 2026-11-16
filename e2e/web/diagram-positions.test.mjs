@@ -4,7 +4,7 @@
 // section, or hidden (a tapped chord still opens its card). Chosen in the
 // Display panel, per mode.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, finish, signIn, stamp, stepper, user, chooseMode } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -36,7 +36,7 @@ try {
     await page.goto(`${WEB}/library/${song.id}`);
     await page.waitForLoadState("networkidle");
     if ((await page.evaluate(() => document.documentElement.dataset.mode)) !== "practice") {
-      await page.getByRole("radiogroup", { name: "Mode" }).getByRole("radio", { name: "Practice" }).click();
+      await chooseMode(page, "Practice");
       await page.waitForLoadState("networkidle");
     }
     await page.getByTestId("song-chart").waitFor();

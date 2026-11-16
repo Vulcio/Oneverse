@@ -5,7 +5,7 @@
 // default from their settings.
 import { chromium } from "playwright";
 import { PDFDocument, StandardFonts, concatTransformationMatrix, drawObject, popGraphicsState, pushGraphicsState, rgb } from "pdf-lib";
-import { API, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -65,21 +65,21 @@ await step("with a PDF: Chart / PDF; the PDF's pages drawn, as wide as the page"
 await step("remembered for the song; back to the chart", async () => {
   await page.reload();
   await page.locator('[data-testid="pdf-view"][data-state="ready"]').waitFor({ timeout: 20000 });
-  await page.getByTestId("chart-view-chart").click();
+  await chooseView(page, "chart");
   await page.getByTestId("practice-song").locator('[data-chord="G"]').first().waitFor();
 });
 
 await step("on its page in a set too", async () => {
   await page.goto(`${WEB}/sets/${set.id}/songs/${item.id}`);
-  await page.getByTestId("chart-view-pdf").click();
+  await chooseView(page, "pdf");
   await page.locator('[data-testid="pdf-view"][data-state="ready"]').waitFor({ timeout: 20000 });
   if ((await page.getByTestId("pdf-page").count()) !== 2) throw new Error("not its pages");
-  await page.getByTestId("chart-view-chart").click();
+  await chooseView(page, "chart");
 });
 
 await step("the set song's choice follows the player to another device, and into Live (issue #155)", async () => {
   await page.goto(`${WEB}/sets/${set.id}/songs/${item.id}`);
-  await page.getByTestId("chart-view-pdf").click();
+  await chooseView(page, "pdf");
   await page.locator('[data-testid="pdf-view"][data-state="ready"]').waitFor({ timeout: 20000 });
   const other = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const tablet = await other.newPage();
@@ -120,7 +120,7 @@ await step("the player's default (their settings): PDF for a song they haven't c
 await step("on a phone, the PDF's pages go edge to edge, in Practice and in Live", async () => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${WEB}/sets/${set.id}/songs/${item.id}`);
-  await page.getByTestId("chart-view-pdf").click();
+  await chooseView(page, "pdf");
   await page.locator('[data-testid="pdf-view"][data-state="ready"]').waitFor({ timeout: 20000 });
   const edges = async () => {
     const box = await page.getByTestId("pdf-page").first().boundingBox();
@@ -136,7 +136,7 @@ await step("on a phone, the PDF's pages go edge to edge, in Practice and in Live
   if (await page.getByTestId("live-song-top").isVisible()) throw new Error("the song's title over its PDF");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 0) throw new Error(`${overflow}px sideways scroll`);
-  await page.getByTestId("chart-view-chart").click();
+  await chooseView(page, "chart");
   await page.setViewportSize({ width: 1280, height: 900 });
 });
 
@@ -163,7 +163,7 @@ await step("a long PDF streams (issue #156): fetched by byte ranges, its first p
     if (response.url().includes("/files/")) ranges.push({ status: response.status(), range: response.request().headers().range ?? null, url: response.url(), pdf: (response.headers()["content-type"] ?? "").includes("pdf") });
   });
   await page.goto(`${WEB}/library/${book.id}`);
-  await page.getByTestId("chart-view-pdf").click();
+  await chooseView(page, "pdf");
   await page.locator('[data-testid="pdf-view"][data-state="ready"]').waitFor({ timeout: 20000 });
   const pages = page.getByTestId("pdf-page");
   if ((await pages.count()) !== 20) throw new Error(`${await pages.count()} places for 20 pages`);
@@ -217,7 +217,7 @@ await step("a scanned page (CCITT fax, as sheet music is often scanned) draws it
   await fetch(`${API}/song-versions/${scanned.id}/attachments`, { method: "POST", headers: { Authorization: `Bearer ${me.bearer}` }, body: upload });
   await page.goto(`${WEB}/library/${scanned.id}`);
   await page.waitForLoadState("networkidle");
-  await page.getByTestId("chart-view-pdf").click();
+  await chooseView(page, "pdf");
   const drawn = page.getByTestId("pdf-page").first();
   await drawn.waitFor();
   let ink = 0;

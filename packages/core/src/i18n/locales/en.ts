@@ -1369,6 +1369,7 @@ const en = {
     pdf: "PDF",
     which: "Which PDF",
     drums: "Drums",
+    picker: "View: {{view}}",
     page: "Page {{page}} of {{pages}}",
     loading: "Opening {{name}}…",
     failed: "{{name}} couldn't be opened here.",
@@ -4297,6 +4298,7 @@ const en = {
   },
   mode: {
     label: "Mode",
+    picker: "Mode: {{mode}}",
     edit: "Edit",
     practice: "Practice",
     live: "Live",

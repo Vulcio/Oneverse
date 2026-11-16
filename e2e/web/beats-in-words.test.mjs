@@ -5,7 +5,7 @@
 // the section's rhythm. The Editor shows the same beats under the words of a section with bar lines, to tap (then a
 // letter) or drag; tapped twice, one placed by hand goes back to the grid's place. In Live, presenting, Follow the music moves the slides on with the click, and Next turns it off.
 import { chromium } from "playwright";
-import { WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -57,7 +57,7 @@ try {
 
   await step("the grid's words, cut at the beats placed in them", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await grid().waitFor();
     // "Amazing grace how" over 4 beats: Amazing, grace, how - and the 4th held over "how".
     const pieces = await bar(0).locator("[data-word-beat]").allInnerTexts();

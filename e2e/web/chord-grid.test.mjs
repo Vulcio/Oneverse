@@ -3,7 +3,7 @@
 // PDF's is (issue #155), so Live and a set's song page show it too, and "Songs read as" can make it the default. As
 // the metronome plays, the bar and beat being played light up. Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SP, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -34,7 +34,7 @@ try {
   await step("Practice: Grid shows the bars, four a row, the chords where they change and the words under them", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
     await page.getByTestId("song-chart").waitFor();
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await grid().waitFor();
     if (await page.getByTestId("song-chart").count()) throw new Error("the chart still shows");
     if ((await page.getByTestId("chart-view-grid").getAttribute("aria-pressed")) !== "true") throw new Error("Grid not pressed");
@@ -61,9 +61,9 @@ try {
     // The bars row repeats the grid: not shown while the grid is, back with the chart.
     if (await page.getByTestId("bars-row").count()) throw new Error("the bars row shows over the grid");
     if (await page.getByTestId("chord-grid-toolbar").count()) throw new Error("the grid still has its toolbar");
-    await page.getByTestId("chart-view-chart").click();
+    await chooseView(page, "chart");
     await page.getByTestId("bars-row").waitFor();
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await page.getByTestId("bars-row").waitFor({ state: "detached" });
     // A phone in portrait: one 4/4 bar a row in Practice; two when asked.
     await page.setViewportSize({ width: 390, height: 844 });
@@ -169,7 +169,7 @@ try {
     await page.goto(`${WEB}/library/${song.id}/live`);
     await page.getByTestId("live-view").getByTestId("chord-grid").waitFor();
     await page.screenshot({ path: `${SP}/chord-grid-live.png` });
-    await page.getByTestId("chart-view-chart").click();
+    await chooseView(page, "chart");
     await page.getByTestId("live-view").getByTestId("song-chart").waitFor();
     if (await grid().count()) throw new Error("the grid still shows");
   });
@@ -177,7 +177,7 @@ try {
   await step("a set's song page: Grid, kept for the song as the set plays it", async () => {
     await page.goto(`${WEB}/sets/${set.id}/songs/${item.id}`);
     await page.getByTestId("song-chart").waitFor();
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await grid().waitFor();
     if ((await grid().locator("[data-grid-bar]").count()) !== 8) throw new Error("not the song's bars");
     for (let i = 0; i < 30; i++) {

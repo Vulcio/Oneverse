@@ -5,7 +5,7 @@
 // song's page (blocks, a count, the background), and its Drums section hides the words or the next section. Kept for
 // the song like the other views, so Live shows it too. Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SP, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -44,7 +44,7 @@ try {
   await step("Practice: Drums shows the sections as badges, the tempo, the words and the next section", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
     await page.getByTestId("song-chart").waitFor();
-    await page.getByTestId("chart-view-drums").click();
+    await chooseView(page, "drums");
     await drums().waitFor();
     if (await page.getByTestId("song-chart").count()) throw new Error("the chart still shows");
     if ((await page.getByTestId("chart-view-drums").getAttribute("aria-pressed")) !== "true") throw new Error("Drums not pressed");
@@ -108,7 +108,7 @@ try {
   });
 
   await step("the metronome's background behind the chart, and its count", async () => {
-    await page.getByTestId("chart-view-chart").click();
+    await chooseView(page, "chart");
     await page.getByTestId("song-chart").waitFor();
     await page.getByTestId("display-open").first().click();
     await display("display-metronomeDisplay-background");
@@ -131,7 +131,7 @@ try {
   await step("a long song's sections wrap, none cut off; six columns in 6/8, the beat showing through the panels", async () => {
     await page.goto(`${WEB}/library/${long.id}`);
     await page.getByTestId("song-chart").waitFor();
-    await page.getByTestId("chart-view-drums").click();
+    await chooseView(page, "drums");
     await drums().waitFor();
     if ((await drums().getByTestId("drums-section").count()) !== 12) throw new Error(`${await drums().getByTestId("drums-section").count()} badges`);
     const view = await drums().boundingBox();
@@ -149,7 +149,7 @@ try {
   });
 
   await step("kept for the song: Drums again in Live", async () => {
-    await page.getByTestId("chart-view-drums").click();
+    await chooseView(page, "drums");
     await drums().waitFor();
     for (let i = 0; i < 30; i++) {
       const saved = await api(me, "GET", `/chart-preferences?songVersionId=${song.id}`);

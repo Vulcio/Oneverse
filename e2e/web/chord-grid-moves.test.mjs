@@ -4,7 +4,7 @@
 // with the same chords: the same words changed with it, other words offered, with a dashed preview, then linked.
 // Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SP, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -56,7 +56,7 @@ try {
 
   await step("Edit bars: In place by default, the chords on beat 1 are key chords", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await grid().waitFor();
     await page.getByTestId("display-open").first().click();
     await page.getByTestId("chord-grid-edit-start").click();

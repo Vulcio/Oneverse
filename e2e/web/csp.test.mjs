@@ -5,7 +5,7 @@
 // the metronome and a PDF (pdf.js's worker), with no violation reported.
 import { chromium } from "playwright";
 import { PDFDocument, StandardFonts } from "pdf-lib";
-import { API, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -106,9 +106,9 @@ await step("Practice: the stems play (worklets, WebAssembly), transposed; the PD
   await page.waitForTimeout(1500);
   if (await player.getByText("This browser can't transpose").count()) throw new Error("the stretch nodes refused");
   await page.getByTestId("stem-play").click();
-  await page.getByTestId("chart-view-pdf").click();
+  await chooseView(page, "pdf");
   await page.locator('[data-testid="pdf-view"][data-state="ready"]').waitFor({ timeout: 20000 });
-  await page.getByTestId("chart-view-chart").click();
+  await chooseView(page, "chart");
   const refused = await violations();
   if (refused.length) throw new Error(refused.join(" | "));
 });

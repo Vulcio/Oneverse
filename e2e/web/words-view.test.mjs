@@ -4,7 +4,7 @@
 // over the grid unless turned off. Following the metronome, the line being sung stands out. Kept for the song like the
 // other views, so Live shows it too, and "Songs read as" can make it the default. Screenshots go to e2e/.artifacts.
 import { chromium } from "playwright";
-import { SP, WEB, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { SP, WEB, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -41,7 +41,7 @@ try {
   await step("Practice: Words shows the words in the order they're sung, no chords, badges, the intro as one line", async () => {
     await page.goto(`${WEB}/library/${song.id}`);
     await page.getByTestId("song-chart").waitFor();
-    await page.getByTestId("chart-view-words").click();
+    await chooseView(page, "words");
     await words().waitFor();
     if (await page.getByTestId("song-chart").count()) throw new Error("the chart still shows");
     if ((await page.getByTestId("chart-view-words").getAttribute("aria-pressed")) !== "true") throw new Error("Words not pressed");
@@ -94,17 +94,17 @@ try {
     await display("display-sectionsBar-hidden");
     await closeDisplay();
     await page.getByTestId("live-structure").waitFor({ state: "detached" });
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     await page.getByTestId("chord-grid").waitFor();
     if (await page.getByTestId("live-structure").count()) throw new Error("the sections bar shows over the grid");
     await display("display-sectionsBar-shown");
     await closeDisplay();
     await page.getByTestId("live-structure").waitFor();
     // Not over the chart.
-    await page.getByTestId("chart-view-chart").click();
+    await chooseView(page, "chart");
     await page.getByTestId("song-chart").waitFor();
     if (await page.getByTestId("live-structure").count()) throw new Error("the sections bar shows over the chart");
-    await page.getByTestId("chart-view-words").click();
+    await chooseView(page, "words");
     await words().waitFor();
   });
 

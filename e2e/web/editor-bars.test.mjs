@@ -3,7 +3,7 @@
 // nudged a letter at a time, given bars after it (a held word) and deleted; "|" typed in the words adds one. They're
 // saved as each section's rhythm, which the bars row and the chord grid read. Screenshots go to e2e/.artifacts.
 import { chromium, devices } from "playwright";
-import { WEB, SP, api, finish, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { WEB, SP, api, finish, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -154,12 +154,12 @@ try {
     if (!bar) throw new Error(JSON.stringify(verse.bars.map((one) => one.lyricAnchor)));
     await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
     await page.goto(`${WEB}/library/${song.id}`);
-    await page.getByTestId("chart-view-grid").click();
+    await chooseView(page, "grid");
     const grid = page.getByTestId("chord-grid");
     await grid.waitFor();
     const words = (await grid.locator("[data-grid-words]").allInnerTexts()).map((one) => one.trim());
     if (words.slice(0, 5).join(" / ") !== "Amazing grace / how sweet the sound / That / saved a wretch like / me") throw new Error(words.join(" / "));
-    await page.getByTestId("chart-view-chart").click();
+    await chooseView(page, "chart");
     await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
   });
 

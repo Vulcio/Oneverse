@@ -1,9 +1,10 @@
 import type { Attachment, ChartPreferences, LiveViewValue } from "@oneverse/core";
-import { AudioLines, Drum, FileText, LayoutGrid, MicVocal, Music } from "lucide-react";
+import { AudioLines, ChevronDown, Drum, FileText, LayoutGrid, MicVocal, Music, type LucideIcon } from "lucide-react";
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@oneverse/ui/components/card";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
 import { apiClient } from "#/lib/api-client";
 import { loadPdfjs, pdfjsWasmUrl } from "#/lib/pdfjs";
 import { fileLoader, songFiles } from "#/lib/song-files";
@@ -129,89 +130,99 @@ export function useReadingView(songVersionId: string, attachments: Attachment[] 
   };
 }
 
+/**
+ * How the view switch looks: `tabs` named (on a phone only the one shown),
+ * `icons` alone, or `picker` - one button showing the view, the others in
+ * its menu (Live's header on a narrow screen, #359), with `extra` items
+ * at the end of that menu.
+ */
+export type ViewSwitchLook = "tabs" | "icons" | "picker";
+
 /** The Chart / Grid / Words / Drums / PDF switch - PDF when the song has one - and which PDF when there are several. */
-export function ViewSwitch({ reading, compact = false, tracks }: { reading: ReadingView; compact?: boolean; /** The Tracks view (issue #374), where the page offers it: shown or not, and how to show it. */ tracks?: { shown: boolean; show: () => void } }) {
+export function ViewSwitch({
+  reading,
+  look = "tabs",
+  tracks,
+  extra,
+}: {
+  reading: ReadingView;
+  look?: ViewSwitchLook;
+  /** The Tracks view (issue #374), where the page offers it: shown or not, and how to show it. */
+  tracks?: { shown: boolean; show: () => void };
+  /** In the picker's menu, after the views (Live's Search on a phone). */
+  extra?: ReactNode;
+}) {
   const { t } = useTranslation();
   const { pdfs, shown, grid, words, drums, choose } = reading;
   const onTracks = !!tracks?.shown;
-  const chart = !shown && !grid && !words && !drums && !onTracks;
-  // On a phone only the view shown is named, the others are their icons (and their titles); compact, none is.
-  const labelClass = (on: boolean) => (compact ? "sr-only sm:not-sr-only" : on ? undefined : "max-sm:sr-only");
+  const views: { key: string; label: string; icon: LucideIcon; on: boolean; pick: () => void }[] = [
+    { key: "chart", label: t("chartView.chart"), icon: Music, on: !shown && !grid && !words && !drums && !onTracks, pick: () => choose("CHART") },
+    { key: "grid", label: t("chartView.grid"), icon: LayoutGrid, on: grid && !onTracks, pick: () => choose("GRID") },
+    { key: "words", label: t("chartView.words"), icon: MicVocal, on: words && !onTracks, pick: () => choose("WORDS") },
+    { key: "drums", label: t("chartView.drums"), icon: Drum, on: drums && !onTracks, pick: () => choose("DRUMS") },
+    ...(pdfs.length > 0 ? [{ key: "pdf", label: t("chartView.pdf"), icon: FileText, on: !!shown && !onTracks, pick: () => choose("PDF", shown?.id ?? pdfs[0]!.id) }] : []),
+    ...(tracks ? [{ key: "tracks", label: t("chartView.tracks"), icon: AudioLines, on: onTracks, pick: tracks.show }] : []),
+  ];
+
+  if (look === "picker") {
+    const current = views.find((view) => view.on) ?? views[0]!;
+    const Icon = current.icon;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              aria-label={t("chartView.picker", { view: current.label })}
+              className="flex h-10 shrink-0 items-center gap-1 rounded-lg border px-2 text-muted-foreground hover:text-foreground data-popup-open:border-primary data-popup-open:text-foreground [&_svg]:size-4"
+              data-testid="chart-view"
+              data-view={current.key}
+            />
+          }
+        >
+          <Icon className="size-5!" />
+          <ChevronDown />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-48">
+          <DropdownMenuRadioGroup value={current.key}>
+            {views.map(({ key, label, icon: ViewIcon, pick }) => (
+              <DropdownMenuRadioItem key={key} value={key} onClick={pick} className="py-2.5 text-base [&_svg]:size-4.5" data-testid={`chart-view-${key}`}>
+                <ViewIcon />
+                {label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+          {extra ? (
+            <>
+              <DropdownMenuSeparator />
+              {extra}
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="chart-view">
       <div className="inline-flex rounded-md border p-0.5" role="group" aria-label={t("chartView.label")}>
-        <button
-          type="button"
-          aria-pressed={chart}
-          onClick={() => choose("CHART")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", chart ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact || !(chart) ? t("chartView.chart") : undefined}
-          data-testid="chart-view-chart"
-        >
-          <Music />
-          <span className={labelClass(chart)}>{t("chartView.chart")}</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={grid && !onTracks}
-          onClick={() => choose("GRID")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", grid && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact || !(grid && !onTracks) ? t("chartView.grid") : undefined}
-          data-testid="chart-view-grid"
-        >
-          <LayoutGrid />
-          <span className={labelClass(grid && !onTracks)}>{t("chartView.grid")}</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={words && !onTracks}
-          onClick={() => choose("WORDS")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", words && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact || !(words && !onTracks) ? t("chartView.words") : undefined}
-          data-testid="chart-view-words"
-        >
-          <MicVocal />
-          <span className={labelClass(words && !onTracks)}>{t("chartView.words")}</span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={drums && !onTracks}
-          onClick={() => choose("DRUMS")}
-          className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", drums && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-          title={compact || !(drums && !onTracks) ? t("chartView.drums") : undefined}
-          data-testid="chart-view-drums"
-        >
-          <Drum />
-          <span className={labelClass(drums && !onTracks)}>{t("chartView.drums")}</span>
-        </button>
-        {pdfs.length > 0 ? (
+        {views.map(({ key, label, icon: ViewIcon, on, pick }) => (
           <button
+            key={key}
             type="button"
-            aria-pressed={!!shown && !onTracks}
-            onClick={() => choose("PDF", shown?.id ?? pdfs[0]!.id)}
-            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", shown && !onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-            title={compact || !(!!shown && !onTracks) ? t("chartView.pdf") : undefined}
-            data-testid="chart-view-pdf"
+            aria-pressed={on}
+            onClick={pick}
+            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", look === "icons" ? "px-2" : "px-2.5", on ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
+            title={look === "icons" || !on ? label : undefined}
+            data-testid={`chart-view-${key}`}
           >
-            <FileText />
-            <span className={labelClass(!!shown && !onTracks)}>{t("chartView.pdf")}</span>
+            <ViewIcon />
+            {/* On a phone only the view shown is named, the others are their icons (and their titles). */}
+            <span className={look === "icons" ? "sr-only" : on ? undefined : "max-sm:sr-only"}>{label}</span>
           </button>
-        ) : null}
-        {tracks ? (
-          <button
-            type="button"
-            aria-pressed={onTracks}
-            onClick={tracks.show}
-            className={cn("flex items-center gap-1.5 rounded-sm py-1 text-sm [&_svg]:size-4", compact ? "px-1 sm:px-2.5" : "px-2.5", onTracks ? "bg-secondary font-medium" : "text-muted-foreground hover:text-foreground")}
-            title={compact || !(onTracks) ? t("chartView.tracks") : undefined}
-            data-testid="chart-view-tracks"
-          >
-            <AudioLines />
-            <span className={labelClass(onTracks)}>{t("chartView.tracks")}</span>
-          </button>
-        ) : null}
+        ))}
       </div>
-      {shown && !onTracks && pdfs.length > 1 && !compact ? (
+      {shown && !onTracks && pdfs.length > 1 && look === "tabs" ? (
         <NativeSelect compact value={shown.id} onChange={(event) => choose("PDF", event.target.value)} aria-label={t("chartView.which")}>
           {pdfs.map((file) => (
             <option key={file.id} value={file.id}>

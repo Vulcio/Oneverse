@@ -4,7 +4,7 @@
 // one part's download is held back, to see it waiting.
 import { execFileSync } from "node:child_process";
 import { chromium } from "playwright";
-import { API, WEB, api, finish, settledFiles, signIn, stamp, stepper, user } from "../lib/harness.mjs";
+import { API, WEB, api, finish, settledFiles, signIn, stamp, stepper, user, chooseView } from "../lib/harness.mjs";
 
 let page;
 const step = stepper(() => page);
@@ -61,7 +61,7 @@ try {
   });
 
   await step("in Tracks too: its lane drawn from the stored waveform, waiting", async () => {
-    await page.getByTestId("chart-view-tracks").click();
+    await chooseView(page, "tracks");
     const lane = page.getByTestId("tracks-view").getByTestId("tracks-lane").filter({ hasText: "Keys" });
     await lane.waitFor();
     if ((await lane.getAttribute("data-ready")) !== "false") throw new Error("ready before it arrived");

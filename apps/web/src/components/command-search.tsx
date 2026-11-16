@@ -44,7 +44,15 @@ const ICONS: Record<Kind, LucideIcon> = { entries: Hash, entriesPrefix: Hash, en
  * pull up one the leader calls that isn't in the set - or, in a set they can
  * change, is added to it: next, or at the end (issue #199).
  */
-export function CommandSearch() {
+const OPEN_SEARCH = "oneverse:open-search";
+
+/** Opens the search from somewhere else on the page (Live's view menu on a phone, #359). */
+export function openCommandSearch() {
+  window.dispatchEvent(new Event(OPEN_SEARCH));
+}
+
+/** `look`: a box on a wide screen and a magnifying glass on a phone (`box`), always the glass (`icon`), or no button (`hidden`, opened by `openCommandSearch()`). */
+export function CommandSearch({ look = "box" }: { look?: "box" | "icon" | "hidden" }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [shortcut, setShortcut] = useState("Ctrl K");
@@ -57,8 +65,13 @@ export function CommandSearch() {
         setOpen((o) => !o);
       }
     }
+    const onOpen = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener(OPEN_SEARCH, onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(OPEN_SEARCH, onOpen);
+    };
   }, []);
 
   return (
@@ -76,14 +89,20 @@ export function CommandSearch() {
               className={cn(
                 "flex h-8 shrink-0 items-center gap-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground [&_svg]:size-4",
                 // A search box on a wide screen, a magnifying glass on a phone.
-                "w-8 justify-center md:w-56 md:justify-start md:border md:bg-background md:px-2.5 md:shadow-xs",
+                look === "box" && "w-8 justify-center md:w-56 md:justify-start md:border md:bg-background md:px-2.5 md:shadow-xs",
+                look === "icon" && "size-10 justify-center [&_svg]:size-5",
+                look === "hidden" && "hidden",
               )}
             />
           }
         >
           <Search />
-          <span className="hidden flex-1 text-left md:inline">{t("search.open")}</span>
-          <CommandShortcut className="hidden md:inline">{shortcut}</CommandShortcut>
+          {look === "box" ? (
+            <>
+              <span className="hidden flex-1 text-left md:inline">{t("search.open")}</span>
+              <CommandShortcut className="hidden md:inline">{shortcut}</CommandShortcut>
+            </>
+          ) : null}
         </CommandDialogTrigger>
       }
     >
