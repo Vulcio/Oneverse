@@ -1,7 +1,7 @@
 import "../zod-config.js";
 import { z } from "zod";
 import { NEW_NOTES, NOTE_COLORS, NOTE_LOOKS, NOTE_PLACEMENTS, NOTE_SHOWS, NOTE_SIZES } from "../notes/index.js";
-import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, WORDS_SUNG, METRONOME_DISPLAYS, METRONOME_LIGHT_UP, METRONOME_BRIGHTNESSES, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
+import { CAPO_DISPLAY_MODES, CHORD_DIAGRAMS, DIAGRAM_POSITIONS, CHORD_ROW_COLORS, CHORD_ROW_FONTS, CHORD_ROW_NAMES, CHORD_ROW_WEIGHTS, SECOND_ROW_GAPS, SECOND_ROW_POSITIONS, SECOND_ROW_SIZES, CONTROLS_LAYOUTS, CONTROLS_OPACITIES, CONTROLS_POSITIONS, LIVE_CONTROLS, DISPLAY_COLUMNS, GRID_BARS_PER_ROW, DISPLAY_FONTS, DISPLAY_SPACINGS, DISPLAY_TEXT_SIZES, PIANO_HANDS, PIANO_NOTE_NAMES, CHORD_NOTATIONS, ENTITY_COLORS, INSTRUMENTS, LIVE_VIEWS, WORDS_LABELS, WORDS_LAYOUTS, WORDS_REPEATS, CHART_LOOKS, CHART_SECTION_COLORS, CHART_CURRENT, CHART_CHORUS_AGAIN, WORDS_SUNG, METRONOME_DISPLAYS, METRONOME_LIGHT_UP, METRONOME_BRIGHTNESSES, SUPPORTED_LOCALES, TEAM_ROLES, TECH_ROLES } from "../constants/index.js";
 import { isTuningId, type InstrumentId } from "../chords/shapes.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
@@ -76,6 +76,11 @@ export const DisplaySettingsSchema = z.strictObject({
   hideChords: z.boolean().nullable().optional(),
   /** A section sung again straight after: once (×4) or written out (issue #457). */
   chartRepeats: z.enum(WORDS_REPEATS).nullable().optional(),
+  /** How the chart looks (issue #226): a named look, its sections' colours, the current section, a chorus sung again. */
+  chartLook: z.enum(CHART_LOOKS).nullable().optional(),
+  lookSectionColors: z.enum(CHART_SECTION_COLORS).nullable().optional(),
+  lookCurrent: z.enum(CHART_CURRENT).nullable().optional(),
+  lookChorusAgain: z.enum(CHART_CHORUS_AGAIN).nullable().optional(),
   /** The bars row at the top (issue #238). */
   bars: z.boolean().nullable().optional(),
   /** The chord grid's bars a row (issue #408). */

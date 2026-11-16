@@ -17,6 +17,10 @@ import type {
   MetronomeLightUpValue,
   DisplayFontValue,
   DisplaySpacingValue,
+  ChartLookValue,
+  ChartSectionColorsValue,
+  ChartCurrentValue,
+  ChartChorusAgainValue,
 } from "../constants/index.js";
 import { APP_MODES } from "../constants/index.js";
 import type { DisplaySettings } from "../api-client/index.js";
@@ -47,6 +51,13 @@ export interface EffectiveDisplaySettings {
   hideChords: boolean;
   /** A section sung again straight after, the same way (issue #457): once, ×4 by its name, or written out every time. */
   chartRepeats: WordsRepeatsValue;
+  /** How the chart looks (issue #226): a named look, and the player's own changes to it. */
+  look: {
+    name: ChartLookValue;
+    sectionColors: ChartSectionColorsValue;
+    current: ChartCurrentValue;
+    chorusAgain: ChartChorusAgainValue;
+  };
   /** The bars row at the top (issue #238): the chords in bars and beats, following the metronome or the recording; on unless turned off. */
   bars: boolean;
   /** The chord grid's bars a row (issue #408): as many as fit their beats unless set. */
@@ -142,6 +153,13 @@ export function effectiveDisplaySettings(account: AccountDisplaySettings | null 
     diagramsPosition: own.diagramsPosition ?? "top",
     hideChords: own.hideChords ?? false,
     chartRepeats: own.chartRepeats ?? "once",
+    // Live's own look is made for a stage (issue #226); the others keep the chart as it was.
+    look: {
+      name: own.chartLook ?? (mode === "LIVE" ? "blocks" : "plain"),
+      sectionColors: own.lookSectionColors ?? "kind",
+      current: own.lookCurrent ?? "mark",
+      chorusAgain: own.lookChorusAgain ?? "written",
+    },
     bars: own.bars ?? true,
     gridBarsPerRow: own.gridBarsPerRow ?? "auto",
     structureBar: own.structureBar ?? true,

@@ -237,6 +237,11 @@ export function chartDisplayProps(settings: EffectiveDisplaySettings) {
     spacing: settings.spacing,
     hideChords: settings.hideChords,
     foldRepeats: settings.chartRepeats === "once",
+    // Its look (issue #226): the named one and the player's changes to it.
+    look: settings.look.name,
+    sectionColors: settings.look.sectionColors,
+    current: settings.look.current,
+    chorusAgain: settings.look.chorusAgain,
     chordScale: settings.chordSize / settings.textSize,
     rows: settings.chordRows,
     notation: settings.chordNotation,

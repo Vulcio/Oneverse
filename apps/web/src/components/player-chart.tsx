@@ -156,6 +156,7 @@ export function PlayerChart({ view, openNoteId, grid = false, words = false, dru
             notes={notes.layer}
             chart={chart}
             {...chartDisplayProps(display)}
+            currentPass={currentPass}
             player={player}
             songVersionId={song.id}
             emptyText={t("sets.noChart")}

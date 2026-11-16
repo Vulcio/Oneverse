@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { Fragment, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChartColumns } from "../lib/chart-columns";
-import type { DisplayFontValue, DisplaySpacingValue } from "@oneverse/core";
+import type { ChartChorusAgainValue, ChartCurrentValue, ChartLookValue, ChartSectionColorsValue, DisplayFontValue, DisplaySpacingValue } from "@oneverse/core";
 import { cn } from "@oneverse/ui/lib/utils";
 
 /** A pass's heading, by the one rule (issue #344, passName()): its own label, else its section's name - "Chorus", "Verse 2"; null for a kind that has none. */
@@ -84,8 +84,23 @@ export function SongChart({
   passAside,
   notes,
   foldRepeats = true,
+  look = "plain",
+  sectionColors = "kind",
+  current = "off",
+  chorusAgain = "written",
+  currentPass = null,
 }: {
   chart: RenderedChart;
+  /** How it looks (issue #226): plain, each section a tinted block, a bar down each section's side, high contrast. */
+  look?: ChartLookValue;
+  /** The sections' colours in a look: each kind its own, the chorus only, none. */
+  sectionColors?: ChartSectionColorsValue;
+  /** The section being played - the one with the line being sung, else `currentPass` - marked, the others dimmed too, or neither. */
+  current?: ChartCurrentValue;
+  /** A chorus sung again later: written out, or its first line as a reminder (its lines kept, hidden, for the sung line). */
+  chorusAgain?: ChartChorusAgainValue;
+  /** The pass being read (Live's structure bar, the page's scroll): current while no line is being sung. */
+  currentPass?: string | null;
   /** A pass sung again straight after the same way shown once, ×4 by its name; off, written out every time. */
   foldRepeats?: boolean;
   emptyText?: string;
@@ -118,6 +133,10 @@ export function SongChart({
   const labelFor = (pass: RenderedPass) => passLabel(pass, t);
 
   const flowed = columns !== "1";
+  // Each section's colour in a look (issue #226): its kind's, the chorus's only, or none ("plain" has none of its own).
+  const colorOf = (type: string) => (look === "plain" || sectionColors === "none" || (sectionColors === "chorus" && type !== "chorus") ? "plain" : type);
+  // Choruses already shown in full, for a chorus sung again as its first line.
+  const shownChoruses = new Set<string>();
   // A second row that only repeats the main one (the capo's shapes with no capo, say) isn't shown.
   const shownRows = rows ? { ...rows, second: rows.second && secondRowDiffers(chart, rows) ? rows.second : null } : undefined;
   return (
@@ -141,6 +160,8 @@ export function SongChart({
         ...(notes?.onAdd && { WebkitTouchCallout: "none" }),
       }}
       data-chord-scale={chordScale}
+      data-look={look}
+      data-look-current={current}
       data-columns={columns}
       data-font={font}
       data-spacing={spacing}
@@ -153,10 +174,20 @@ export function SongChart({
         const heading = pass.section.showLabel === false ? null : labelFor(pass);
         const aside = passAside?.(pass) ?? null;
         const marks = notes?.marks?.(pass);
+        // Sung again, as its first line (issue #226): not when it has notes or changes of its own to show.
+        const reminder =
+          chorusAgain === "first-line" && pass.section.type === "chorus" && shownChoruses.has(pass.section.id) && !notes?.passKey?.(pass) && !pass.changed && !pass.differs && !pass.keyChange
+            ? (pass.lines.find((line) => line.kind !== "note" && line.text.trim())?.text.trim() ?? null)
+            : null;
+        if (pass.section.type === "chorus") shownChoruses.add(pass.section.id);
+        const isCurrent = !!currentPass && (pass.id === currentPass || folded.some((one) => one.id === currentPass));
         return (
           <div
             key={pass.id}
             data-section={pass.section.type}
+            data-section-color={look === "plain" ? undefined : colorOf(pass.section.type)}
+            data-current={isCurrent ? "" : undefined}
+            data-reminder={reminder !== null ? "" : undefined}
             data-section-id={pass.section.id}
             data-pass={pass.id}
             data-folded={folded.length > 0 ? folded.map((one) => one.id).join(" ") : undefined}
@@ -207,7 +238,13 @@ export function SongChart({
                 {t("chart.problems", { count: pass.problems.length })}
               </p>
             ) : null}
-            <div className="flex flex-col gap-1">
+            {reminder !== null ? (
+              <p className="italic opacity-75" data-pass-reminder="">
+                {reminder} …
+              </p>
+            ) : null}
+            {/* A reminder's lines stay, hidden: the sung line still finds them. */}
+            <div className="flex flex-col gap-1" hidden={reminder !== null}>
               {pass.lines.map((line) => (
                 <Fragment key={line.id}>
                   <ChartLine

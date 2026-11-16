@@ -128,6 +128,18 @@ export type WordsLabelsValue = (typeof WORDS_LABELS)[number];
 /** A section sung again: its words again, or once, a reminder in its place (×2 when straight after). */
 export const WORDS_REPEATS = ["written", "once"] as const;
 export type WordsRepeatsValue = (typeof WORDS_REPEATS)[number];
+/** How a chart looks (issue #226): today's plain one, each section a tinted block, a coloured bar down each section's side, or high contrast for a bright stage. */
+export const CHART_LOOKS = ["plain", "blocks", "rail", "contrast"] as const;
+export type ChartLookValue = (typeof CHART_LOOKS)[number];
+/** Its sections' colours: each kind its own, the chorus only, or none. */
+export const CHART_SECTION_COLORS = ["kind", "chorus", "none"] as const;
+export type ChartSectionColorsValue = (typeof CHART_SECTION_COLORS)[number];
+/** The section being played: not marked, marked, or marked with the others dimmed. */
+export const CHART_CURRENT = ["off", "mark", "dim"] as const;
+export type ChartCurrentValue = (typeof CHART_CURRENT)[number];
+/** A chorus sung again later in the song: written out, or its first line as a reminder. */
+export const CHART_CHORUS_AGAIN = ["written", "first-line"] as const;
+export type ChartChorusAgainValue = (typeof CHART_CHORUS_AGAIN)[number];
 /** Lines already sung, while following the music: dimmed, or gone. */
 export const WORDS_SUNG = ["dim", "hide"] as const;
 export type WordsSungValue = (typeof WORDS_SUNG)[number];

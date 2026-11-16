@@ -8,6 +8,10 @@ import type {
   WordsLabelsValue,
   WordsLayoutValue,
   WordsRepeatsValue,
+  ChartLookValue,
+  ChartSectionColorsValue,
+  ChartCurrentValue,
+  ChartChorusAgainValue,
   WordsSungValue,
   MetronomeDisplayValue,
   MetronomeLightUpValue,
@@ -664,6 +668,11 @@ export interface DisplaySettings {
   hideChords?: boolean;
   /** A section sung again straight after, the same way (issue #457): once (×4) or written out. */
   chartRepeats?: WordsRepeatsValue;
+  /** How the chart looks (issue #226): a named look and the player's changes to it. */
+  chartLook?: ChartLookValue;
+  lookSectionColors?: ChartSectionColorsValue;
+  lookCurrent?: ChartCurrentValue;
+  lookChorusAgain?: ChartChorusAgainValue;
   /** The bars row at the top (issue #238): the chords in bars and beats, following the music. */
   bars?: boolean;
   /** The chord grid's bars a row (issue #408). */

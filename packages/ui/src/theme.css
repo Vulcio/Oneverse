@@ -164,3 +164,139 @@
 [data-section-color="instrumental"],
 [data-section-color="interlude"] { --section-h: 170; --section-c: 0.07; }
 [data-section-color="tag"] { --section-h: 345; --section-c: 0.12; }
+
+/*
+ * How a chart looks (issue #226), set on SongChart by data-look: "plain" is
+ * the chart as it always was; "blocks" each section a card in its colour, its
+ * name a tab on its edge; "rail" a bar down each section's side; "contrast"
+ * heavy words, yellow chords, for a bright stage. Each section's colour is
+ * data-section-color's (above). The current section is the one with the line
+ * being sung (data-sung), else the one the page says (data-current), marked
+ * unless data-look-current="off", the others dimmed with "dim". Backgrounds
+ * are see-through: the metronome's beat shows behind (issue #443).
+ */
+[data-look][data-look-current="dim"]:has([data-sung]) > [data-pass]:not(:has([data-sung])),
+[data-look][data-look-current="dim"]:not(:has([data-sung])):has(> [data-current]) > [data-pass]:not([data-current]) {
+  opacity: 0.5;
+}
+[data-look] > [data-pass] {
+  transition: opacity 200ms, box-shadow 200ms, background-color 200ms, border-color 200ms;
+}
+[data-look="blocks"] > [data-pass][data-section="chorus"],
+[data-look="rail"] > [data-pass][data-section="chorus"] {
+  font-weight: 700;
+}
+
+[data-look="blocks"] > [data-pass] {
+  position: relative;
+  margin-top: 0.75rem;
+  margin-left: 0;
+  padding: 1.25rem 0.875rem 0.625rem;
+  border: 1px solid var(--section-line);
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--section-tint) 55%, transparent);
+}
+[data-look="blocks"] > [data-pass] > [data-pass-heading] > p {
+  position: absolute;
+  top: -0.75rem;
+  left: 0.75rem;
+  max-width: calc(100% - 1.5rem);
+  border: 1px solid var(--section-line);
+  border-radius: 0.75rem;
+  background: var(--section-tag);
+  padding: 0.05rem 0.625rem;
+  color: var(--section-ink);
+  font-weight: 700;
+}
+[data-look="blocks"] > [data-pass][data-section="chorus"] {
+  border-width: 2px;
+  background: color-mix(in oklab, oklch(0.94 calc(var(--section-c) * 0.35) var(--section-h)) 65%, transparent);
+}
+.dark [data-look="blocks"] > [data-pass][data-section="chorus"] {
+  background: color-mix(in oklab, oklch(0.27 calc(var(--section-c) * 0.35) var(--section-h)) 60%, transparent);
+}
+[data-look="blocks"] > [data-pass][data-differs] {
+  border-left: 3px solid rgb(245 158 11 / 0.7);
+}
+[data-look="blocks"]:not([data-look-current="off"]):has([data-sung]) > [data-pass]:has([data-sung]),
+[data-look="blocks"]:not([data-look-current="off"]):not(:has([data-sung])) > [data-pass][data-current] {
+  box-shadow: 0 0 0 3px var(--section-ink), 0 0 1.75rem -0.25rem var(--section-ink);
+}
+
+[data-look="rail"] > [data-pass] {
+  margin-left: 0;
+  padding: 0.125rem 0 0.125rem 0.875rem;
+  border-left: 4px solid var(--section-line);
+  border-radius: 2px;
+}
+[data-look="rail"] > [data-pass] > [data-pass-heading] > p {
+  color: var(--section-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+[data-look="rail"] > [data-pass][data-section="chorus"] {
+  padding-left: 0.75rem;
+  border-left-width: 9px;
+}
+[data-look="rail"]:not([data-look-current="off"]):has([data-sung]) > [data-pass]:has([data-sung]),
+[data-look="rail"]:not([data-look-current="off"]):not(:has([data-sung])) > [data-pass][data-current] {
+  border-left-color: var(--section-ink);
+  background: linear-gradient(90deg, var(--section-tint), transparent 85%);
+}
+[data-look="blocks"] [data-line][data-sung],
+[data-look="rail"] [data-line][data-sung],
+[data-look="blocks"] [data-pass]:has([data-sung]) [data-pass-reminder],
+[data-look="rail"] [data-pass]:has([data-sung]) [data-pass-reminder] {
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--section-ink) 22%, transparent);
+  box-shadow: 0 0 0 0.25rem color-mix(in oklab, var(--section-ink) 22%, transparent);
+}
+
+[data-look="contrast"] {
+  --look-chord: oklch(0.48 0.12 70);
+  color: var(--foreground);
+  font-weight: 700;
+}
+.dark [data-look="contrast"] {
+  --look-chord: #ffd84a;
+}
+[data-look="contrast"] .text-primary {
+  color: var(--look-chord);
+  font-weight: 800;
+}
+[data-look="contrast"] > [data-pass] > [data-pass-heading] > p {
+  width: fit-content;
+  border-radius: 0.2rem;
+  background: oklch(0.38 calc(var(--section-c) * 1.1) var(--section-h));
+  padding: 0.05rem 0.5rem;
+  color: #fff;
+  font-weight: 800;
+}
+.dark [data-look="contrast"] > [data-pass] > [data-pass-heading] > p {
+  background: oklch(0.88 calc(var(--section-c) * 1.1) var(--section-h));
+  color: #000;
+}
+[data-look="contrast"] > [data-pass][data-section="chorus"] {
+  margin-left: 0;
+  padding: 0.5rem 0.625rem 0.375rem;
+  border: 2px solid var(--foreground);
+  border-radius: 0.375rem;
+}
+[data-look="contrast"]:not([data-look-current="off"]):has([data-sung]) > [data-pass]:has([data-sung]),
+[data-look="contrast"]:not([data-look-current="off"]):not(:has([data-sung])) > [data-pass][data-current] {
+  border-radius: 0.375rem;
+  outline: 4px solid var(--look-chord);
+  outline-offset: 3px;
+}
+[data-look="contrast"] [data-line][data-sung],
+[data-look="contrast"] [data-pass]:has([data-sung]) [data-pass-reminder] {
+  border-radius: 0.25rem;
+  background: var(--foreground);
+  box-shadow: 0 0 0 0.25rem var(--foreground);
+  color: var(--background);
+}
+[data-look="contrast"] [data-line][data-sung] .text-primary {
+  color: oklch(0.55 0.13 70);
+}
