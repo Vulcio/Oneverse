@@ -1,7 +1,8 @@
 // A screen that loses the network (issue #195): it keeps its set, its template and the template's files on the
 // device; with the sync gone, the remote's, keyboard's or clicker's keys move the slides on the screen itself; a reload
 // with no network still opens it on the slide it showed, background and all; back online, the session's slide wins
-// (a screen is a read-only member of it: nothing moved by hand is sent).
+// (nothing moved by hand is sent). With "Its keys move the slides" in its settings, its keys move the set for
+// everyone, online too.
 import { chromium } from "playwright";
 import { API, SCREEN, api, finish, stamp, stepper, user } from "../lib/harness.mjs";
 import { png } from "../lib/fake-providers.mjs";
@@ -31,6 +32,7 @@ const template = await api(leader, "POST", "/screen-themes", { name: `Kept ${sta
 
 const browser = await chromium.launch();
 let leading;
+let screen;
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   // The sync's socket, cut on demand: what a dropped Wi-Fi does to it.
@@ -61,7 +63,7 @@ try {
   await step("paired and presented: the set, the template and its picture kept on the device", async () => {
     await tv.goto(`${SCREEN}/`);
     const code = (await tv.getByTestId("screen-code").innerText()).replace("-", "");
-    await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Offline TV ${stamp}`, setlistId: set.id, themeId: template.id });
+    screen = await api(leader, "POST", `/screens/pairings/${code}/confirm`, { name: `Offline TV ${stamp}`, setlistId: set.id, themeId: template.id });
     leading = await syncDevice(leader);
     leading.send({ type: "join", setId: set.id });
     await leading.next((m) => m.type === "session");
@@ -113,6 +115,36 @@ try {
     // Online, the keys don't move the slides: the operator does.
     await tv.keyboard.press("ArrowLeft");
     await tv.waitForTimeout(500);
+    await showing(textItem.id, 0);
+  });
+
+  await step("Its keys move the slides, ticked in its settings: online, its arrows move the set for everyone", async () => {
+    // Not ticked, the server refuses a screen's present, whatever sends it.
+    const token = await tv.evaluate(() => localStorage.getItem("songverse.screen.token"));
+    const refused = await new Promise((resolve, reject) => {
+      const ws = new WebSocket(`${API.replace(/^http/, "ws")}/sync`);
+      const timer = setTimeout(() => reject(new Error("no answer")), 10000);
+      ws.onopen = () => ws.send(JSON.stringify({ type: "screen", token }));
+      ws.onmessage = (event) => {
+        const message = JSON.parse(String(event.data));
+        if (message.type === "screen") ws.send(JSON.stringify({ type: "present", presenting: { itemId: songItem.id, slide: 0, black: false } }));
+        if (message.type === "error") {
+          clearTimeout(timer);
+          ws.close();
+          resolve(message);
+        }
+      };
+    });
+    if (refused.code !== "forbidden") throw new Error(JSON.stringify(refused));
+    const changed = await api(leader, "PATCH", `/screens/${screen.id}`, { remoteKeys: true });
+    if (changed.remoteKeys !== true) throw new Error(JSON.stringify(changed));
+    // Told by the server: its keys work once it knows.
+    await tv.waitForTimeout(1000);
+    await tv.keyboard.press("ArrowLeft");
+    await leading.next((m) => m.type === "session" && m.session?.presenting?.itemId === songItem.id && m.session.presenting.slide === 1);
+    await showing(songItem.id, 1);
+    await tv.keyboard.press("PageDown");
+    await leading.next((m) => m.type === "session" && m.session?.presenting?.itemId === textItem.id);
     await showing(textItem.id, 0);
   });
 

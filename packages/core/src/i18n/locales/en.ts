@@ -307,6 +307,8 @@ const en = {
     noTemplatesTagged: "No template has all these tags.",
     effects: "Effects",
     effectsHint: "The background answering the words and the words' own movement. Turn them off on a screen that can't keep up.",
+    remoteKeys: "Its keys move the slides",
+    remoteKeysHint: "Its own remote, keyboard or presenter clicker moves the set's slides for everyone, as Next slide in Live. Off, they only move this screen while it's offline.",
     device: {
       title: "Device",
       none: "No report yet: it reports what it is and how it's drawing once it's connected.",

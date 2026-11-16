@@ -25,9 +25,9 @@ const membersKey = (setId: string) => `songverse:sync:members:${setId}`;
  * slide the first one moved from.
  */
 /** What a sync connection keeps of a screen, read from its row. */
-const SCREEN_INFO_SELECT = { id: true, name: true, mode: true, setlistId: true, kind: true, expiresAt: true } as const;
-type ScreenInfoRow = { id: string; name: string; mode: "LYRICS" | "CHART"; setlistId: string | null; kind: "SCREEN" | "PULSE"; expiresAt: Date | null };
-const screenInfo = (screen: ScreenInfoRow) => ({ id: screen.id, name: screen.name, mode: screen.mode, setId: screen.setlistId, ...(screen.kind === "PULSE" && { pulse: true }) });
+const SCREEN_INFO_SELECT = { id: true, name: true, mode: true, setlistId: true, kind: true, expiresAt: true, remoteKeys: true } as const;
+type ScreenInfoRow = { id: string; name: string; mode: "LYRICS" | "CHART"; setlistId: string | null; kind: "SCREEN" | "PULSE"; expiresAt: Date | null; remoteKeys: boolean };
+const screenInfo = (screen: ScreenInfoRow) => ({ id: screen.id, name: screen.name, mode: screen.mode, setId: screen.setlistId, ...(screen.kind === "PULSE" && { pulse: true }), ...(screen.remoteKeys && { remoteKeys: true }) });
 
 /** Who mirrors a set's session and hands it back (issue #247): someone who can edit it, or a Pulse paired to follow it (issue #320). */
 const mayMirror = (connection: Connection) => connection.canLead || !!connection.screen?.pulse;
@@ -242,6 +242,34 @@ export class SetSessions {
    */
   async presentFromOperator(connection: Connection, presenting: SyncPresenting | null, basedOn: unknown) {
     await this.command(connection, { kind: "present", presenting, basedOn: basedOn as number | undefined }, "Join a set first");
+  }
+
+  /**
+   * A screen whose own keys move the slides (issue #195, its `remoteKeys`):
+   * its remote's Next or Previous, as anyone who may present - once a session
+   * is going, unless someone runs the screens alone. Recorded as the screen's,
+   * with no person.
+   */
+  async presentFromScreen(connection: Connection, presenting: SyncPresenting | null, basedOn: unknown) {
+    const screen = connection.screen;
+    const setId = connection.setId;
+    if (!screen?.remoteKeys) return this.hub.send(connection, { type: "error", code: "forbidden", message: "This screen's keys don't move the slides" });
+    if (!setId) return this.hub.send(connection, { type: "error", code: "bad-request", message: "This screen has no set" });
+    if (!(await this.stillAllowed(connection)) || !connection.screen?.remoteKeys) return;
+    const actor: LiveActor = { userId: `screen:${screen.id}`, name: screen.name, device: `s:${screen.id}`, canLead: false, canOperate: true };
+    const op: LiveOp = { kind: "present", presenting, basedOn: basedOn as number | undefined };
+    const result = await this.withSetLock(setId, async () => {
+      const applied = applyLiveOp(await this.read(setId), actor, op, Date.now());
+      if (applied.ok && applied.changed && applied.session) {
+        await this.write(setId, applied.session);
+        const session = applied.session;
+        if (session.sessionId) await recordLiveOp({ sessionId: session.sessionId, rev: session.rev, epoch: session.epoch ?? 0, at: Date.now(), userId: null, deviceId: actor.device, origin: "cloud", op }).catch(() => undefined);
+      }
+      return applied;
+    });
+    if (result.ok) return;
+    this.hub.send(connection, { type: "error", code: result.code, message: result.message });
+    if (result.code === "stale") void this.broadcastLocal(setId);
   }
 
   /** The leader hands presenting to someone in the set, or takes it back (issue #305): someone in the set now, by the name they're there with. */

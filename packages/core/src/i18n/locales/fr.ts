@@ -307,6 +307,8 @@ const fr: typeof en = {
     noTemplatesTagged: "Aucun modèle n'a tous ces tags.",
     effects: "Effets",
     effectsHint: "Le fond qui répond aux paroles et le mouvement propre des paroles. Désactivez-les sur un écran qui ne suit pas.",
+    remoteKeys: "Ses touches font avancer les diapositives",
+    remoteKeysHint: "Sa propre télécommande, son clavier ou sa télécommande de présentation fait avancer les diapositives de la liste pour tout le monde, comme Diapositive suivante dans Live. Désactivé, elles ne font avancer que cet écran quand il est hors ligne.",
     device: {
       title: "Appareil",
       none: "Pas encore de rapport : il dit ce qu'il est et comment il dessine une fois connecté.",

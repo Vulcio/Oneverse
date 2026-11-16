@@ -961,6 +961,8 @@ export interface ScreenSummary {
   hiddenLayers?: ScreenSwitchableLayer[];
   /** Effects shown (issue #281), or off on a screen that can't keep up; left out by an older API. */
   effects?: boolean;
+  /** Its own remote's, keyboard's or clicker's keys move the set's slides for everyone (issue #195); left out by an older API. */
+  remoteKeys?: boolean;
   /** Its latest report about itself (issue #286), with what it can run; for who manages it, and null before its first. */
   report?: (ScreenReport & { at: string; tier: ScreenTier }) | null;
   /** When a temporary pairing ends (issue #284); null: until it's disconnected. Left out by an older API. */

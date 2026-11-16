@@ -169,7 +169,9 @@ export class SyncServer implements OnModuleDestroy {
       if (message.type === "pass") return this.sets.pass(connection);
       return this.sets.handBack(connection, message.handback);
     }
-    // A screen only follows: it pings and reports, and that's all.
+    // A screen whose own keys move the slides (issue #195) presents with them.
+    if (connection.screen && message.type === "present") return this.sets.presentFromScreen(connection, message.presenting, message.basedOn);
+    // Otherwise a screen only follows: it pings and reports, and that's all.
     if (connection.screen) return this.send(connection, { type: "error", code: "forbidden", message: "A screen only follows its set" });
     if (!connection.user) return this.send(connection, { type: "error", code: "unauthorized", message: "Sign in first" });
     switch (message.type) {

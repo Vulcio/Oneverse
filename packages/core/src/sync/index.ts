@@ -95,6 +95,8 @@ export interface SyncScreenInfo {
   setId: string | null;
   /** A Oneverse Pulse (issue #320): it mirrors its set's session and hands it back; left out for a screen. */
   pulse?: boolean;
+  /** Its own keys move the set's slides for everyone (issue #195): it may send `present`. Left out: they don't, online. */
+  remoteKeys?: boolean;
 }
 
 export interface SyncSession {

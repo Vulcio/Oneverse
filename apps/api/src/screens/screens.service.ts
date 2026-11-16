@@ -50,6 +50,7 @@ const SCREEN_SELECT = {
   scriptureThemeTemplate: true,
   hiddenLayers: true,
   effects: true,
+  remoteKeys: true,
   expiresAt: true,
   ownerUserId: true,
   ownerTeamId: true,
@@ -493,7 +494,7 @@ export class ScreensService {
    * leads the set it shows, gives it another set (one they can edit) - it
    * then reads that set as them.
    */
-  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean; lasts?: ScreenPairingLength }) {
+  async update(user: AuthenticatedUser, screenId: string, change: { owner?: ScreenOwnerRequest; name?: string; mode?: ScreenMode; setMode?: SetMode; setlistId?: string | null; locationId?: string | null; themeId?: string | null; themeTemplate?: string | null; scriptureThemeId?: string | null; scriptureThemeTemplate?: string | null; hiddenLayers?: string[]; effects?: boolean; remoteKeys?: boolean; lasts?: ScreenPairingLength }) {
     const { screen, canManage } = await this.changeable(user, screenId);
     const onlySet = Object.entries(change).every(([key, value]) => value === undefined || key === "setlistId" || key === "setMode" || key === "locationId");
     if (!canManage && !onlySet) throw new ForbiddenException("Only whoever manages this screen changes more than its set");
@@ -514,6 +515,7 @@ export class ScreensService {
         ...(change.mode !== undefined && { mode: change.mode }),
         ...(change.hiddenLayers !== undefined && { hiddenLayers: [...new Set(change.hiddenLayers)] }),
         ...(change.effects !== undefined && { effects: change.effects }),
+        ...(change.remoteKeys !== undefined && { remoteKeys: change.remoteKeys }),
         // Extended (issue #284): for this long from now.
         ...(change.lasts !== undefined && { expiresAt: screenPairingEnds(change.lasts) }),
         ...(change.setlistId !== undefined && { setlistId: change.setlistId, setByUserId: change.setlistId ? user.id : null, setlistPickedOn: null }),
@@ -778,6 +780,7 @@ function present(
     scriptureThemeTemplate: string | null;
     hiddenLayers: string[];
     effects: boolean;
+    remoteKeys?: boolean;
     expiresAt: Date | null;
     lastSeenAt: Date | null;
     setMode: SetMode;
@@ -817,6 +820,7 @@ function present(
     scriptureThemeTemplate: screen.scriptureThemeTemplate,
     hiddenLayers: SCREEN_SWITCHABLE_LAYERS.filter((layer) => screen.hiddenLayers.includes(layer)),
     effects: screen.effects,
+    remoteKeys: !!screen.remoteKeys,
     expiresAt: screen.expiresAt?.toISOString() ?? null,
     // Borrowed for its set (issue #480): until when, and by whom.
     borrowed: screen.borrowedUntil ? { until: screen.borrowedUntil.toISOString(), by: screen.setBy?.displayName ?? "" } : null,

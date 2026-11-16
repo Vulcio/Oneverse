@@ -29,7 +29,7 @@ export function ScreenDisplay({ pairUrl, pinnedTheme }: { pairUrl: string; pinne
     <div className="fixed inset-0 cursor-none overflow-hidden bg-black text-white select-none" data-testid="screen-display" data-state={state.kind}>
       {state.kind === "pairing" ? <Pairing code={state.code} pairUrl={pairUrl} adding={state.adding} /> : null}
       {state.kind === "showing" ? (
-        <Showing current={state.current} presenting={state.presenting} online={state.online} step={state.step} stage={state.stage} offset={state.offset} music={state.music} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
+        <Showing current={state.current} presenting={state.presenting} online={state.online} keys={state.keys} step={state.step} stage={state.stage} offset={state.offset} music={state.music} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
       ) : null}
     </div>
   );
@@ -83,6 +83,7 @@ function Showing({
   current,
   presenting,
   online,
+  keys,
   step,
   stage,
   offset,
@@ -93,6 +94,8 @@ function Showing({
   current: ScreenCurrent;
   presenting: SyncPresenting | null;
   online: boolean;
+  /** Its own keys move the slides (issue #195): offline, or online when its settings say so. */
+  keys: boolean;
   step: (step: ScreenStep) => void;
   stage: SyncStage | null;
   offset: number;
@@ -135,9 +138,9 @@ function Showing({
         event.preventDefault();
         return opensMenu();
       }
-      // Offline (issue #195): the remote, the keyboard or a clicker moves the slides on this screen. OK is Next at
-      // once, and held still opens the menu.
-      const move = !online && set ? screenStepKey(event.key) : null;
+      // Offline, or online when its settings say so (issue #195): the remote, the keyboard or a clicker moves the
+      // slides. OK is Next at once, and held still opens the menu.
+      const move = keys && set ? screenStepKey(event.key) : null;
       if (move && !(event.repeat && (event.key === "Enter" || event.key === " "))) {
         event.preventDefault();
         step(move);
@@ -157,8 +160,8 @@ function Showing({
       const short = event.key === " " || hold !== undefined;
       clearTimeout(hold);
       hold = undefined;
-      // Offline, a short OK was Next (issue #195): not counted towards the menu or the sets.
-      if (!short || (!online && set)) return;
+      // A short OK was Next (issue #195): not counted towards the menu or the sets.
+      if (!short || (keys && set)) return;
       presses += 1;
       clearTimeout(settle);
       if (presses >= 3) return opensMenu();
@@ -175,7 +178,7 @@ function Showing({
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [daySet, presenting, showPicker, menu, online, set, step]);
+  }, [daySet, presenting, showPicker, menu, keys, set, step]);
   // Picked: the set comes, the list goes.
   useEffect(() => setPicking(false), [current.screen.setlistId]);
   const press = useLongPress(() => setMenu(true));

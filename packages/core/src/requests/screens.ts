@@ -20,6 +20,8 @@ const screenFields = {
   hiddenLayers: z.array(z.enum(SCREEN_SWITCHABLE_LAYERS)).max(SCREEN_SWITCHABLE_LAYERS.length),
   /** Effects shown (issue #281), or off on a screen that can't keep up. */
   effects: z.boolean(),
+  /** Its own keys move the set's slides for everyone (issue #195); off, only while it's offline. */
+  remoteKeys: z.boolean(),
   /** How long the pairing lasts (issue #284), from now: 12h, 1d, 1w or unlimited. */
   lasts: z.enum(SCREEN_PAIRING_LENGTHS),
 };
@@ -79,6 +81,7 @@ export const UpdateScreenSchema = z.strictObject({
   scriptureThemeTemplate: screenFields.themeTemplate.optional().describe("...or a built-in one by its id; null: its look for songs"),
   hiddenLayers: optional(screenFields.hiddenLayers),
   effects: optional(screenFields.effects),
+  remoteKeys: optional(screenFields.remoteKeys),
   lasts: optional(screenFields.lasts).describe("Extended (issue #284): paired for this long from now, or unlimited"),
 });
 export type UpdateScreenRequest = z.input<typeof UpdateScreenSchema>;

@@ -48,8 +48,14 @@ export type ScreenDisplayState =
       /** The leader's click and the item they have open (issue #395): a template following the music follows it on the song it's for. */
       music: { metronome: SyncMetronome | null; itemId: string | null };
       /**
-       * Moves the slide on this screen alone (issue #195): only while the sync is gone, from the remote's,
-       * keyboard's or clicker's keys. The session's slide wins again when it's back; nothing is sent.
+       * Whether its own keys move the slides now (issue #195): while the sync is gone, on this screen alone;
+       * online, for everyone, when its settings say so (`remoteKeys`).
+       */
+      keys: boolean;
+      /**
+       * Moves the slide (issue #195), from the remote's, keyboard's or clicker's keys. Offline: on this screen
+       * alone, and the session's slide wins again when it's back - nothing is sent. Online, with `remoteKeys`:
+       * for everyone, as Next slide in Live.
        */
       step: (step: ScreenStep) => void;
     }
@@ -330,6 +336,10 @@ export function useScreenDisplay(): ScreenDisplayState {
     let firstReport: ReturnType<typeof setTimeout> | null = null;
     let current: ScreenCurrent | null = null;
     let online = false;
+    /** Its own keys move the set's slides for everyone (issue #195), as its settings say. */
+    let remoteKeys = false;
+    /** The session's presentingRev: a move by key is based on it, so two presses at once move the screens once. */
+    let presentingRev = 0;
     /** The words last loaded again for: a key this screen still can't match isn't fetched over and over. */
     let reloadedFor: string | null = null;
 
@@ -340,16 +350,21 @@ export function useScreenDisplay(): ScreenDisplayState {
     };
     // Offline (issue #195): the slide moved by hand, through the set as this screen cuts it; kept, so a reload starts there.
     const step = (move: ScreenStep) => {
-      if (online || !current?.set) return;
+      if (!current?.set || (online && !remoteKeys)) return;
       const items = current.set.songs.map((view) => ({ id: view.item.id, slides: setItemView(view).slides.length }));
       const next = stepPresenting(items, presenting.current, move);
       if (!next) return;
+      // Online: sent, and shown when the session has it (refused when someone runs the screens alone).
+      if (online) {
+        if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "present", presenting: next, basedOn: presentingRev }));
+        return;
+      }
       presenting.current = next;
       void keepPresenting(kept, next);
       show();
     };
     const show = () => {
-      if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current, music: music.current, step });
+      if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current, music: music.current, keys: !online || remoteKeys, step });
     };
     async function load() {
       // Its own day and time: a screen following its owner's schedule shows the set of the day (issue #274).
@@ -392,6 +407,7 @@ export function useScreenDisplay(): ScreenDisplayState {
         if (message.type === "screen") {
           // Another set, mode or name: loaded again.
           online = true;
+          remoteKeys = !!message.screen.remoteKeys;
           void load();
         }
         if (message.type === "pong") {
@@ -405,6 +421,7 @@ export function useScreenDisplay(): ScreenDisplayState {
           // The session wins (issue #195): whatever was moved by hand while offline gives way to it.
           const was = presenting.current;
           presenting.current = message.session?.presenting ?? null;
+          presentingRev = message.session?.presentingRev ?? 0;
           if (JSON.stringify(was) !== JSON.stringify(presenting.current)) void keepPresenting(kept, presenting.current);
           stage.current = message.stage ?? null;
           const metronome = message.session?.metronome ?? null;

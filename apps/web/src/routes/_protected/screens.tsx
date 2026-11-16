@@ -818,6 +818,14 @@ function ScreenSettingsDialog({ screen, sets, themes, owners, onChanged, onClose
                 <span className="block text-xs text-muted-foreground">{t("screens.effectsHint")}</span>
               </span>
             </label>
+            {/* Its own remote, keyboard or clicker moves the slides for everyone (issue #195); offline, it always does. */}
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-1 size-4 accent-primary" checked={!!screen.remoteKeys} onChange={(event) => void change({ remoteKeys: event.target.checked })} data-testid="screen-remote-keys" />
+              <span>
+                {t("screens.remoteKeys")}
+                <span className="block text-xs text-muted-foreground">{t("screens.remoteKeysHint")}</span>
+              </span>
+            </label>
             <fieldset className="flex flex-col gap-1.5" data-testid="screen-layers">
               <legend className="mb-1.5 text-sm font-medium">{t("screens.layersShown")}</legend>
               <p className="text-xs text-muted-foreground">{t("screens.layersShownHint")}</p>
