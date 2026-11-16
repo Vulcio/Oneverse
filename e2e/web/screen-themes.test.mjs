@@ -127,7 +127,8 @@ try {
     await part.locator('[data-testid="theme-transition"] [data-value="zoom"][aria-pressed="true"]').waitFor();
     await part.locator('[data-testid="theme-reveal"] [data-value="letters"][aria-pressed="true"]').waitFor();
     await part.getByTestId("theme-group-lines").waitFor();
-    await part.getByTestId("theme-chords-show").waitFor();
+    // In the Chords group, closed while they're off: there, not necessarily seen.
+    await part.getByTestId("theme-chords-show").waitFor({ state: "attached" });
     // Where the words sit (issue #431): icons under Display, the preview's words at the top.
     await part.getByTestId("theme-group-position").getByTestId("theme-position-top").click();
     await part.locator('[data-testid="theme-position-top"][aria-pressed="true"]').waitFor();
