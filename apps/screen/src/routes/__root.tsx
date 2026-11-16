@@ -11,7 +11,8 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: ReactNode }) {
   return (
     // Songverse's address: where a screen is paired (its QR code). Dark always: a screen is black under its words.
-    <AppDocument env={["SONGVERSE_URL", "ONEVERSE_URL"]} htmlClassName="dark" bodyClassName="min-h-screen bg-black text-white antialiased">
+    // Its service worker (issue #195): a screen reloaded with no network still opens.
+    <AppDocument env={["SONGVERSE_URL", "ONEVERSE_URL"]} serviceWorker htmlClassName="dark" bodyClassName="min-h-screen bg-black text-white antialiased">
       {children}
     </AppDocument>
   );

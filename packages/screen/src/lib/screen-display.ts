@@ -1,6 +1,7 @@
-import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, slideKey, type ScreenCurrent, type SyncMetronome, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
+import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, slideKey, stepPresenting, type ScreenCurrent, type ScreenStep, type SyncMetronome, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
 import { useEffect, useRef, useState } from "react";
 import { getApiUrl } from "@oneverse/app/public-env";
+import { forgetKept, keepPresenting, keepScreen, keptScreen } from "./screen-kept";
 import { screenReport } from "./screen-report";
 import { setItemView } from "./set-items";
 
@@ -46,6 +47,11 @@ export type ScreenDisplayState =
       offset: number;
       /** The leader's click and the item they have open (issue #395): a template following the music follows it on the song it's for. */
       music: { metronome: SyncMetronome | null; itemId: string | null };
+      /**
+       * Moves the slide on this screen alone (issue #195): only while the sync is gone, from the remote's,
+       * keyboard's or clicker's keys. The session's slide wins again when it's back; nothing is sent.
+       */
+      step: (step: ScreenStep) => void;
     }
   | { kind: "error"; message: string };
 
@@ -314,6 +320,7 @@ export function useScreenDisplay(): ScreenDisplayState {
   // A token: its set, and what's presented on it.
   useEffect(() => {
     if (!token || adding) return;
+    const kept: string = token;
     let stopped = false;
     let socket: WebSocket | null = null;
     let retry: ReturnType<typeof setTimeout> | null = null;
@@ -327,9 +334,22 @@ export function useScreenDisplay(): ScreenDisplayState {
     let reloadedFor: string | null = null;
 
     // Disconnected, or its pairing ended (issue #284): another profile, or a new code.
-    const forget = () => setToken(forgetShown());
+    const forget = () => {
+      void forgetKept(kept);
+      setToken(forgetShown());
+    };
+    // Offline (issue #195): the slide moved by hand, through the set as this screen cuts it; kept, so a reload starts there.
+    const step = (move: ScreenStep) => {
+      if (online || !current?.set) return;
+      const items = current.set.songs.map((view) => ({ id: view.item.id, slides: setItemView(view).slides.length }));
+      const next = stepPresenting(items, presenting.current, move);
+      if (!next) return;
+      presenting.current = next;
+      void keepPresenting(kept, next);
+      show();
+    };
     const show = () => {
-      if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current, music: music.current });
+      if (current) setState({ kind: "showing", current, presenting: presenting.current, online, stage: stage.current, offset: offset.current, music: music.current, step });
     };
     async function load() {
       // Its own day and time: a screen following its owner's schedule shows the set of the day (issue #274).
@@ -338,9 +358,13 @@ export function useScreenDisplay(): ScreenDisplayState {
       if (stopped) return;
       if (response?.status === 404) return forget();
       if (!response?.ok) return;
-      current = await json<ScreenCurrent>(response);
+      const loaded = await json<ScreenCurrent>(response).catch(() => null);
+      if (stopped || !loaded) return;
+      current = loaded;
       nameShown(current.screen.name, current.screen.owner.name);
       show();
+      // Kept for when the network goes (issue #195), with its template's files.
+      void keepScreen(kept, loaded);
     }
     function connect() {
       const ws = new WebSocket(`${getApiUrl().replace(/^http/, "ws").replace(/\/$/, "")}${SYNC_PATH}`);
@@ -378,7 +402,10 @@ export function useScreenDisplay(): ScreenDisplayState {
         }
         if (message.type === "session") {
           online = true;
+          // The session wins (issue #195): whatever was moved by hand while offline gives way to it.
+          const was = presenting.current;
           presenting.current = message.session?.presenting ?? null;
+          if (JSON.stringify(was) !== JSON.stringify(presenting.current)) void keepPresenting(kept, presenting.current);
           stage.current = message.stage ?? null;
           const metronome = message.session?.metronome ?? null;
           const open = message.session?.itemId ?? null;
@@ -405,6 +432,13 @@ export function useScreenDisplay(): ScreenDisplayState {
         retry = setTimeout(connect, Math.min(10_000, 500 * 2 ** retries++));
       };
     }
+    // What it kept from last time (issue #195), shown at once - offline until the sync says otherwise - while it loads.
+    void keptScreen(kept).then((copy) => {
+      if (stopped || current || !copy) return;
+      current = copy.current;
+      if (!online) presenting.current = copy.presenting;
+      show();
+    });
     void load();
     connect();
     const reload = setInterval(() => void load(), RELOAD_EVERY_MS);

@@ -118,8 +118,8 @@ export async function serveWebApp({ dir, name, scriptSources = [], frameSources 
       .filter((file) => !precacheSkip?.test(file))
       .sort()
       .map((file) => `/assets/${file}`),
-    "/manifest.webmanifest",
-    "/icon.svg",
+    // Those the app has (the screen app has no manifest): one missing would fail the whole install.
+    ...(await Promise.all(["/manifest.webmanifest", "/icon.svg"].map(async (file) => ((await stat(join(clientDir, file.slice(1))).catch(() => null))?.isFile() ? file : null)))).filter(Boolean),
   ];
   // Changes with every build, so browsers install the new service worker.
   const build = createHash("sha256").update(precache.join("\n")).update(shell ?? "").digest("hex").slice(0, 16);

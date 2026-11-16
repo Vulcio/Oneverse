@@ -35,7 +35,8 @@
     "apps/screen": {
       "entry": [
         "src/pulse/main.tsx",
-        "vite.pulse.config.ts"
+        "vite.pulse.config.ts",
+        "public/sw.js"
       ]
     },
     "apps/planiverse": {

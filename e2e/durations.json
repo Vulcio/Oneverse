@@ -173,6 +173,7 @@
 "web/screen-effects": 10,
 "web/screen-layers": 16,
 "web/screen-menu": 9,
+"web/screen-offline": 12,
 "web/screen-operator": 16,
 "web/screen-reports": 13,
 "web/screen-shaders": 29,

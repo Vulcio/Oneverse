@@ -1,4 +1,4 @@
-import { screenShowsChart, composeBuiltInTemplate, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
+import { screenShowsChart, screenStepKey, composeBuiltInTemplate, type ScreenStep, metronomePositionAt, type SyncMetronome, formatScreenCode, screenBuiltInTemplate, type ScreenCurrent, type ScreenTheme, type SyncPresenting, type SyncStage } from "@oneverse/core";
 import { ChevronLeft, Music2, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,7 @@ export function ScreenDisplay({ pairUrl, pinnedTheme }: { pairUrl: string; pinne
     <div className="fixed inset-0 cursor-none overflow-hidden bg-black text-white select-none" data-testid="screen-display" data-state={state.kind}>
       {state.kind === "pairing" ? <Pairing code={state.code} pairUrl={pairUrl} adding={state.adding} /> : null}
       {state.kind === "showing" ? (
-        <Showing current={state.current} presenting={state.presenting} online={state.online} stage={state.stage} offset={state.offset} music={state.music} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
+        <Showing current={state.current} presenting={state.presenting} online={state.online} step={state.step} stage={state.stage} offset={state.offset} music={state.music} theme={(pinned && composeBuiltInTemplate(pinned, { effects: state.current.screen.effects !== false })) || state.current.theme} itemThemes={pinned ? undefined : state.current.itemThemes} />
       ) : null}
     </div>
   );
@@ -83,6 +83,7 @@ function Showing({
   current,
   presenting,
   online,
+  step,
   stage,
   offset,
   music,
@@ -92,6 +93,7 @@ function Showing({
   current: ScreenCurrent;
   presenting: SyncPresenting | null;
   online: boolean;
+  step: (step: ScreenStep) => void;
   stage: SyncStage | null;
   offset: number;
   music?: { metronome: SyncMetronome | null; itemId: string | null };
@@ -133,6 +135,13 @@ function Showing({
         event.preventDefault();
         return opensMenu();
       }
+      // Offline (issue #195): the remote, the keyboard or a clicker moves the slides on this screen. OK is Next at
+      // once, and held still opens the menu.
+      const move = !online && set ? screenStepKey(event.key) : null;
+      if (move && !(event.repeat && (event.key === "Enter" || event.key === " "))) {
+        event.preventDefault();
+        step(move);
+      }
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       if (event.repeat || hold || event.key !== "Enter") return;
@@ -148,7 +157,8 @@ function Showing({
       const short = event.key === " " || hold !== undefined;
       clearTimeout(hold);
       hold = undefined;
-      if (!short) return;
+      // Offline, a short OK was Next (issue #195): not counted towards the menu or the sets.
+      if (!short || (!online && set)) return;
       presses += 1;
       clearTimeout(settle);
       if (presses >= 3) return opensMenu();
@@ -165,7 +175,7 @@ function Showing({
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [daySet, presenting, showPicker, menu]);
+  }, [daySet, presenting, showPicker, menu, online, set, step]);
   // Picked: the set comes, the list goes.
   useEffect(() => setPicking(false), [current.screen.setlistId]);
   const press = useLongPress(() => setMenu(true));
@@ -217,8 +227,8 @@ function Showing({
           onClose={() => setMenu(false)}
         />
       ) : null}
-      {/* Lost the connection: said quietly, in a corner; it comes back by itself. */}
-      {!online ? <WifiOff className="absolute right-[2vmin] bottom-[2vmin] z-10 size-[3vmin] text-neutral-600" aria-label={t("screens.displayOffline")} /> : null}
+      {/* Lost the connection: said quietly, in a corner; it comes back by itself, and the keys move the slides meanwhile (issue #195). */}
+      {!online ? <WifiOff className="absolute right-[2vmin] bottom-[2vmin] z-10 size-[3vmin] text-neutral-600" aria-label={t("screens.displayOffline")} data-testid="screen-offline" /> : null}
     </div>
   );
 }

@@ -89,6 +89,17 @@ While nothing plays, the button says **Waiting for the music**. **Next slide**, 
 
 Someone whose role lets them **Move the screens on** (see [Roles](/admin/#roles)) - a singer leading the set on, say - doesn't present, but has **Move the screens** in Live's Sync menu: **Previous song**, **Previous section**, **Next section** and **Next song**. The screens go to the first slide of that song or section, as everyone's Live cuts it: past a song's last section, **Next section** goes to the next song. Like **Next slide**, two people pressing at the same moment move the screens once, and while someone runs the screens alone it does nothing. A Bible passage counts as one section. It works the same on Pulse when the internet goes.
 
+### When a screen loses the network
+
+A screen keeps its set on the device: every song's words and chords, its template, and the template's pictures, videos and fonts. When the network drops, it goes on showing the slide it had, with a small sign in a corner, and the keys on the screen itself move the slides meanwhile: a TV remote, a keyboard or a presenter clicker.
+
+- **Right**, **Down**, **Page Down** or **OK**: the next slide, on into the next song after the last one.
+- **Left**, **Up** or **Page Up**: the previous slide.
+- **Channel up** and **Channel down** (or a remote's next and previous track): the next or previous song.
+- **B**, **.** or **Back**: black, and back again.
+
+Holding OK, or the remote's **Menu** key, still opens [the screen's menu](/screens/#the-screens-menu). Even restarted with no network, the screen opens on the slide it last showed. When the connection is back, it follows the set's session again: the slide being presented wins, and nothing moved on the screen is sent. While it's online, these keys don't move the slides: whoever presents does.
+
 ### When the internet goes: Continue on Pulse
 
 Oneverse Pulse, a small computer that stays at the venue, is in preparation. Where a set has one, it follows the set's session while the internet is there, and keeps its slides. If the internet goes for more than a few seconds, Pulse runs the session in the room, and Live (and the media operator's console) shows **Continue on Pulse**. Tap it, on a device connected to the venue's network: Pulse's own page opens with the set's slides and the screen controls, and you go on from where the screens were, without signing in again. When the internet is back, what the room did becomes the set's session again, and Live picks it up.
@@ -103,7 +114,7 @@ With a template for the audience, each slide's two lines are big and centred. Th
 
 With a template for the band, such as **Band chart**, the screen shows the song's chart with chords, in the set's key, and keeps the section being sung highlighted and in view.
 
-The words come from the version and key the set plays. Song notes and chords are never shown to the audience. If the screen loses its connection, it says so in a corner and reconnects by itself.
+The words come from the version and key the set plays. Song notes and chords are never shown to the audience. If the screen loses its connection, it says so in a corner, keeps showing what it had and reconnects by itself (see [When a screen loses the network](/screens/#when-a-screen-loses-the-network)).
 
 ## Templates
 

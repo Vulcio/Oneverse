@@ -89,6 +89,17 @@ Tant que rien ne joue, le bouton indique **En attente de la musique**. **Diaposi
 
 Qui a un rôle qui permet d'**Avancer les écrans** (voir [Rôles](/fr/admin/#rôles)) - un chanteur qui fait avancer la liste, par exemple - ne présente pas, mais a **Avancer les écrans** dans le menu Synchro de Live : **Chant précédent**, **Partie précédente**, **Partie suivante** et **Chant suivant**. Les écrans passent à la première diapositive de ce chant ou de cette partie, telle que le Live de chacun la découpe : après la dernière partie d'un chant, **Partie suivante** passe au chant suivant. Comme **Diapositive suivante**, deux personnes qui appuient au même moment ne font avancer les écrans qu'une fois, et tant que quelqu'un pilote les écrans seul, rien ne se passe. Un passage de la Bible compte pour une seule partie. Cela marche de même sur Pulse quand Internet tombe.
 
+### Quand un écran perd le réseau
+
+Un écran garde sa liste sur l'appareil : les paroles et les accords de chaque chant, son modèle, et les images, vidéos et polices du modèle. Quand le réseau tombe, il continue d'afficher sa diapositive, avec un petit signe dans un coin, et les touches de l'écran lui-même font avancer les diapositives en attendant : une télécommande de télé, un clavier ou une télécommande de présentation.
+
+- **Droite**, **Bas**, **Page suivante** ou **OK** : la diapositive suivante, puis le chant suivant après la dernière.
+- **Gauche**, **Haut** ou **Page précédente** : la diapositive précédente.
+- **Chaîne +** et **Chaîne -** (ou les touches piste suivante et précédente d'une télécommande) : le chant suivant ou précédent.
+- **B**, **.** ou **Retour** : écran noir, puis retour.
+
+OK maintenu, ou la touche **Menu** de la télécommande, ouvre toujours [le menu de l'écran](/fr/screens/#le-menu-de-lécran). Même rallumé sans réseau, l'écran s'ouvre sur la dernière diapositive affichée. Quand la connexion revient, il suit de nouveau la session de la liste : la diapositive présentée l'emporte, et rien de ce qui a été avancé sur l'écran n'est envoyé. Tant qu'il est en ligne, ces touches ne font pas avancer les diapositives : c'est la personne qui présente qui le fait.
+
 ### Quand Internet tombe : Continuer sur Pulse
 
 Oneverse Pulse, un petit ordinateur qui reste dans la salle, est en préparation. Quand une liste en a un, il suit sa session tant qu'Internet est là, et garde ses diapositives. Si Internet tombe plus de quelques secondes, Pulse mène la session dans la salle, et Live (et la console de l'opérateur média) affiche **Continuer sur Pulse**. Touchez-le, sur un appareil connecté au réseau de la salle : la page de Pulse s'ouvre avec les diapositives de la liste et les commandes des écrans, et vous reprenez là où en étaient les écrans, sans vous reconnecter. Quand Internet revient, ce que la salle a fait redevient la session de la liste, et Live la reprend.
@@ -103,7 +114,7 @@ Avec un modèle pour l'assemblée, les deux lignes de chaque diapositive sont gr
 
 Avec un modèle pour les musiciens, comme **Grille du groupe**, l'écran affiche la grille du chant avec ses accords, dans la tonalité de la liste, et garde la section chantée en évidence et à l'écran.
 
-Les paroles sont celles de la version et de la tonalité que joue la liste. Les notes du chant et les accords ne sont jamais montrés à l'assemblée. Si l'écran perd sa connexion, il l'indique dans un coin et se reconnecte tout seul.
+Les paroles sont celles de la version et de la tonalité que joue la liste. Les notes du chant et les accords ne sont jamais montrés à l'assemblée. Si l'écran perd sa connexion, il l'indique dans un coin, continue d'afficher ce qu'il avait et se reconnecte tout seul (voir [Quand un écran perd le réseau](/fr/screens/#quand-un-écran-perd-le-réseau)).
 
 ## Modèles
 
