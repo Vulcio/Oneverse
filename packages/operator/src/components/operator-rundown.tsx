@@ -57,10 +57,13 @@ export function nextSlide(items: OperatorItem[], presenting: Pick<SyncPresenting
 
 /**
  * The set's running order (issue #358): every item, the one on the screens
- * marked live, the one looked at picked out. A row looks at its item; its
- * button puts it up. `strip`: one scrolling row, for a narrow console.
+ * marked live, the one looked at picked out. An item looks at itself; its
+ * button puts it up. `layout`: a column down the left, or a row along the
+ * top that scrolls sideways (Display options). Each item is a card of its
+ * own, so it can show more than the sidebar's list does - a timer, autoplay -
+ * as those come.
  */
-export function Rundown({ items, itemId, onLook, strip = false }: { items: OperatorItem[]; itemId: string | null; onLook: (itemId: string) => void; strip?: boolean }) {
+export function Rundown({ items, itemId, onLook, layout = "column" }: { items: OperatorItem[]; itemId: string | null; onLook: (itemId: string) => void; layout?: "column" | "row" }) {
   const { t } = useTranslation();
   const { session, canPresent } = useLive();
   const { present } = useOperatorHost();
@@ -69,47 +72,25 @@ export function Rundown({ items, itemId, onLook, strip = false }: { items: Opera
     present({ itemId: item.itemId, slide: 0, black: false, slideKey: item.key });
     if (item.itemId !== itemId) onLook(item.itemId);
   };
-  if (strip) {
-    return (
-      <nav aria-label={t("screens.operator.rundown")} className="-mx-1 overflow-x-auto px-1 pb-1" data-testid="operator-rundown" data-strip="">
-        <ol className="flex gap-2">
-          {items.map((item, index) => {
-            const live = presenting?.itemId === item.itemId;
-            return (
-              <li key={item.itemId} className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => onLook(item.itemId)}
-                  aria-current={item.itemId === itemId ? "true" : undefined}
-                  className={cn("flex max-w-56 items-center gap-2 rounded-full border px-3 py-1.5 text-sm", item.itemId === itemId ? "border-primary bg-primary/10" : "bg-card", live && "ring-2 ring-red-500/60")}
-                  data-testid="operator-rundown-item"
-                  data-live={live ? "" : undefined}
-                >
-                  <span className="text-xs text-muted-foreground tabular-nums">{index + 1}</span>
-                  <span className="truncate">{item.title}</span>
-                  {live ? <span className="size-2 shrink-0 rounded-full bg-red-500" aria-label={t("screens.operator.live")} /> : null}
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
-    );
-  }
+  const row = layout === "row";
   return (
-    <nav aria-label={t("screens.operator.rundown")} className="flex min-w-0 flex-col gap-2" data-testid="operator-rundown">
-      <h2 className="text-sm font-semibold">{t("screens.operator.rundown")}</h2>
-      <ol className="flex flex-col gap-1">
+    <nav aria-label={t("screens.operator.rundown")} className={cn("flex min-w-0 flex-col gap-2", row && "-mx-1 px-1")} data-testid="operator-rundown" data-layout={layout} data-strip={row ? "" : undefined}>
+      {row ? null : <h2 className="text-sm font-semibold">{t("screens.operator.rundown")}</h2>}
+      <ol className={cn("flex gap-1", row ? "gap-2 overflow-x-auto pb-1" : "flex-col")}>
         {items.map((item, index) => {
           const live = presenting?.itemId === item.itemId;
           const looked = item.itemId === itemId;
           return (
-            <li key={item.itemId} className={cn("group flex items-center gap-1 rounded-md border", looked ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted", live && "border-red-500/60")}>
-              <button type="button" onClick={() => onLook(item.itemId)} aria-current={looked ? "true" : undefined} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left text-sm" data-testid="operator-rundown-item" data-live={live ? "" : undefined}>
-                <span className="w-5 shrink-0 text-right text-xs text-muted-foreground tabular-nums">{index + 1}</span>
+            <li
+              key={item.itemId}
+              className={cn("group flex items-center gap-1 rounded-md border", row ? "w-56 shrink-0 bg-card" : null, looked ? "border-primary bg-primary/10" : row ? null : "border-transparent hover:bg-muted", live && "border-red-500/60")}
+              data-testid="operator-rundown-card"
+            >
+              <button type="button" onClick={() => onLook(item.itemId)} aria-current={looked ? "true" : undefined} className={cn("flex min-w-0 flex-1 items-center gap-2 text-left text-sm", row ? "px-2.5 py-1.5" : "px-2 py-2")} data-testid="operator-rundown-item" data-live={live ? "" : undefined}>
+                <span className={cn("shrink-0 text-xs text-muted-foreground tabular-nums", row ? null : "w-5 text-right")}>{index + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{item.title}</span>
-                  <span className="block text-xs text-muted-foreground">
+                  <span className="block truncate text-xs text-muted-foreground">
                     {live ? (
                       <span className="font-medium text-red-600 dark:text-red-400">
                         {t("screens.operator.live")} · {t("screens.slideOf", { slide: (presenting?.slide ?? 0) + 1, count: item.slides.length })}

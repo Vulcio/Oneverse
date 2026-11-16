@@ -553,6 +553,32 @@ try {
     if (await slides.getByTestId("operator-slide-group").count()) throw new Error("still grouped after the reset");
   });
 
+  await step("the running order (issue #489): along the top as a row of cards, hidden, back on the left; kept on the device", async () => {
+    page = desk;
+    const pick = async (where) => {
+      await desk.getByTestId("operator-display").click();
+      await desk.getByTestId(`operator-display-rundown-${where}`).click();
+      await desk.keyboard.press("Escape");
+      await desk.getByTestId("operator-display-menu").waitFor({ state: "detached" });
+    };
+    await pick("top");
+    await desk.locator('[data-testid="operator-columns"][data-rundown="top"]').waitFor();
+    const row = desk.locator('[data-testid="operator-rundown"][data-layout="row"]');
+    await row.waitFor();
+    // Above the slides, each item a card with its put-up button.
+    const [strip, slides] = await Promise.all([row.boundingBox(), desk.getByTestId("operator-slides").boundingBox()]);
+    if (!strip || !slides || strip.y + strip.height > slides.y) throw new Error(`the running order isn't above the slides: ${JSON.stringify({ strip, slides })}`);
+    if ((await row.getByTestId("operator-rundown-card").count()) !== 3 || (await row.getByTestId("operator-rundown-present").count()) !== 3) throw new Error("not a card per item");
+    await row.getByTestId("operator-rundown-item").filter({ hasText: `Opening ${stamp}` }).click();
+    await pick("off");
+    await desk.locator('[data-testid="operator-columns"][data-rundown="off"]').waitFor();
+    if (await desk.getByTestId("operator-rundown").count()) throw new Error("the running order is still shown");
+    await desk.reload();
+    await desk.locator('[data-testid="operator-columns"][data-rundown="off"]').waitFor({ timeout: 15000 });
+    await pick("left");
+    await desk.locator('[data-testid="operator-rundown"][data-layout="column"]').waitFor();
+  });
+
   await step("the sidebar's Operator: the next set's console", async () => {
     page = desk;
     const soon = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);

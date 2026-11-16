@@ -1,5 +1,5 @@
 import { passName, slideKey, type RenderedChart, type ScreenSlide, type SetlistOfflineCopy, type SetlistSongView, type SongNote, type TeamMember, type TeamPosition } from "@oneverse/core";
-import { ChevronLeft, ChevronRight, MonitorOff, RotateCcw, SlidersHorizontal, Square } from "lucide-react";
+import { ChevronLeft, ChevronRight, EyeOff, MonitorOff, PanelLeft, PanelTop, RotateCcw, SlidersHorizontal, Square } from "lucide-react";
 import { useMemo, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -15,6 +15,7 @@ import {
   OPERATOR_FONTS,
   OPERATOR_SECTION_COLORS,
   OPERATOR_SIZES,
+  OPERATOR_RUNDOWNS,
   OPERATOR_TILES,
   resetOperatorDisplay,
   useOperatorDisplay,
@@ -298,6 +299,18 @@ export function DisplayMenu() {
           {choice("columns", OPERATOR_COLUMNS, t("screens.operator.display.columns"))}
           {check("numbers", t("screens.operator.display.numbers"))}
           {choice("tiles", OPERATOR_TILES, t("screens.operator.display.tiles"))}
+        </fieldset>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-xs font-semibold text-muted-foreground uppercase">{t("screens.operator.display.rundown")}</legend>
+          <div className="grid grid-cols-3 gap-0.5 rounded-md border p-0.5" role="group" aria-label={t("screens.operator.display.rundown")}>
+            {OPERATOR_RUNDOWNS.map((rundown) => (
+              <Button key={rundown} size="sm" variant={display.rundown === rundown ? "secondary" : "ghost"} className="h-auto min-w-0 flex-col gap-1 px-1 py-1.5 text-xs whitespace-normal" aria-pressed={display.rundown === rundown} onClick={() => changeOperatorDisplay({ rundown })} data-testid={`operator-display-rundown-${rundown}`}>
+                {rundown === "left" ? <PanelLeft /> : rundown === "top" ? <PanelTop /> : <EyeOff />}
+                {t(`screens.operator.display.rundownOptions.${rundown}`)}
+              </Button>
+            ))}
+          </div>
+          {display.rundown === "left" ? <p className="text-xs text-muted-foreground">{t("screens.operator.display.rundownHint")}</p> : null}
         </fieldset>
         <Button variant="ghost" size="sm" className="self-start" onClick={resetOperatorDisplay} data-testid="operator-display-reset">
           <RotateCcw />

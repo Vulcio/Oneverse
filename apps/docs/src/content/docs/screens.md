@@ -310,7 +310,7 @@ If you close the operator view, the screens go back to the leader. If your conne
 
 ### The set and its slides
 
-The slides come first. On a laptop, the **Running order** is a column on the left and the slides fill the rest; on a tablet held upright, or a phone, the running order is a row you scroll above them. **Timers & messages** is a tab beside **Slides**. What's on the screens, and the screens themselves, are in **Screens & layers** (below).
+The slides come first. On a laptop, the **Running order** is a column on the left and the slides fill the rest; on a tablet held upright, or a phone, the running order is a row you scroll above them. **Display** puts it where you want it on this device: **On the left**, **Along the top** (a row of cards above the slides), or **Hidden**, when Songverse's sidebar already lists the set's songs. **Timers & messages** is a tab beside **Slides**. What's on the screens, and the screens themselves, are in **Screens & layers** (below).
 
 The **Running order** lists every item of the set, with its number of slides. The one on the screens is marked **On screens**, with its slide. Pick an item to see its slides; its screen button puts its first slide up at once. In Songverse, the sidebar lists the set's songs too, as in Live: the one on the screens is marked **Now**, and the ones the screens have moved past are ticked as played (**Start from the top** clears them).
 

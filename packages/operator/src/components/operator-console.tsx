@@ -88,6 +88,9 @@ export function OperatorConsole({
   const view = copy.songs.find((one) => one.item.id === itemId) ?? null;
   const slidesTab = <SlidesTab copy={copy} view={view} item={items.find((one) => one.itemId === itemId) ?? null} members={members} positions={positions} />;
   const columns = width >= TWO_COLUMNS ? 2 : 1;
+  // Where the running order goes (Display options): on the left only with room for two columns, along the top otherwise, or nowhere.
+  const placement = useOperatorDisplay().rundown;
+  const rundown = placement === "off" ? null : placement === "left" && columns === 2 ? "left" : "top";
 
   return (
     <div ref={root} className="@container flex flex-col gap-4" data-testid="operator" data-columns={columns}>
@@ -125,15 +128,15 @@ export function OperatorConsole({
       ) : (
         <OperatorPresetsProvider>
           <ControlBar items={items} expected={expected} onScreens={() => setDrawer(true)} />
-          {/* The slides first (issue #358): the rundown down the left when there's room, a strip above them when not, and the timers and messages a tab away. */}
-          <div className={cn("grid items-start gap-5", columns === 2 && "grid-cols-[13rem_minmax(0,1fr)]")} data-testid="operator-columns">
-            {columns === 2 ? (
+          {/* The slides first (issue #358): the running order down the left, along the top or hidden (Display options), and the timers and messages a tab away. */}
+          <div className={cn("grid items-start gap-5", rundown === "left" && "grid-cols-[13rem_minmax(0,1fr)]")} data-testid="operator-columns" data-rundown={rundown ?? "off"}>
+            {rundown === "left" ? (
               <div className="sticky top-4">
                 <Rundown items={items} itemId={itemId} onLook={onLook} />
               </div>
             ) : null}
             <div className="flex min-w-0 flex-col gap-3">
-              {columns === 1 ? <Rundown items={items} itemId={itemId} onLook={onLook} strip /> : null}
+              {rundown === "top" ? <Rundown items={items} itemId={itemId} onLook={onLook} layout="row" /> : null}
               <Tabs defaultValue="slides" className="min-w-0">
                 <TabsList>
                   <TabsTrigger value="slides" data-testid="operator-tab-slides">
