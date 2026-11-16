@@ -18,7 +18,7 @@ Un **écran** affiche une liste sur grand écran : les paroles pour l'assemblée
 
 L'écran se souvient qu'il est associé : la fois suivante, ouvrez la même page et il se reconnecte tout seul. Un écran associé avant l'application d'écran, sur **songverse.top/screen**, y est envoyé et reste associé. Seul qui peut modifier la liste (son propriétaire, ou un administrateur de son équipe) peut y associer un écran, puisque c'est lui qui la mène.
 
-**Écrans** a quatre onglets : **Écrans**, **Modèles**, **Widgets** et **Marques** (les [marques](/fr/brands/) de vos équipes et organisations). Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, changer son **Modèle des chants** et son **Modèle des passages bibliques** (**Comme les chants** tant que vous n'en choisissez pas ; un passage qui a choisi son propre modèle dans la liste le garde, voir [Bible](/fr/bible/#lajouter-à-une-liste)) ou son propriétaire, activer ou non ses **Effets** (voir [Effets](/fr/screens/#effets)) et choisir les **Calques affichés** (voir [Calques](/fr/screens/#calques)), avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
+**Écrans** a trois onglets : **Écrans**, **Modèles** (avec les widgets qu'un modèle peut placer) et **Marques** (les [marques](/fr/brands/) de vos équipes et organisations). Dans **Écrans**, **Ajouter un écran** ouvre le formulaire d'association ci-dessus (un code QR l'ouvre avec le code déjà saisi). En dessous, chaque écran est une vignette : son apparence, s'il est **Connecté** (ou quand il l'a été pour la dernière fois), la liste qu'il affiche, son modèle et à qui il est. **Réglages** ouvre une boîte de dialogue pour renommer l'écran, le passer à une autre liste, changer son **Modèle des chants** et son **Modèle des passages bibliques** (**Comme les chants** tant que vous n'en choisissez pas ; un passage qui a choisi son propre modèle dans la liste le garde, voir [Bible](/fr/bible/#lajouter-à-une-liste)) ou son propriétaire, activer ou non ses **Effets** (voir [Effets](/fr/screens/#effets)) et choisir les **Calques affichés** (voir [Calques](/fr/screens/#calques)), avec l'apparence de l'écran à côté ; l'écran change aussitôt, et **Terminé** la ferme. **Déconnecter**, sur la vignette, l'arrête : il revient à un nouveau code.
 
 ### La liste du jour
 
@@ -81,7 +81,7 @@ D'autres peuvent présenter à côté de vous. Dans le menu Synchro, quand vous 
 
 **Suivre la musique**, au bout de la rangée des sections, fait avancer les diapositives d'elles-mêmes pendant que le chant joue : avec le clic du chant (le métronome lancé pour lui), les pistes de son enregistrement, ou le clic du meneur de la synchro. Chaque diapositive arrive deux temps avant que sa première ligne soit chantée, pour être lue à temps. L'endroit où chaque ligne est chantée vient des temps placés dans les paroles (voir [Placer les temps dans les paroles](/fr/metronome/#placer-les-temps-dans-les-paroles)) : placés par la grille elle-même, ou à la main là où elle s'est trompée. Les mesures sans paroles, comme une intro, montrent la première diapositive de leur section.
 
-Un modèle peut aussi suivre la musique sur les écrans, ligne par ligne ou en remplissant les mots au fil du chant, avec le clic du meneur : voir **Suivre la musique** dans [Thèmes de contenu](/fr/screens/#thèmes-de-contenu).
+Un modèle peut aussi suivre la musique sur les écrans, ligne par ligne ou en remplissant les mots au fil du chant, avec le clic du meneur : voir **Suivre la musique** dans [Contenus](/fr/screens/#contenus).
 
 Tant que rien ne joue, le bouton indique **En attente de la musique**. **Diapositive suivante**, **Diapositive précédente** ou une section choisie à la main l'arrête : vous pouvez reprendre la main à tout moment, et appuyer de nouveau pour suivre encore. Il reste activé sur cet appareil jusqu'à ce que vous l'arrêtiez, et ne fait rien pendant que les écrans sont noirs.
 
@@ -109,21 +109,21 @@ Les paroles sont celles de la version et de la tonalité que joue la liste. Les 
 
 Un modèle, c'est l'apparence d'un écran et ce à quoi il sert. Il est fait de trois parties, chacune enregistrée et modifiée à part, pour qu'un changement suive partout où elle sert :
 
-- un **thème de contenu** - l'apparence des paroles et leur façon d'arriver et de partir, ou la grille d'accords pour les musiciens ;
-- un **thème de fond** - la couleur, l'image, la vidéo ou la lumière en mouvement sous les paroles, et l'entrée vidéo ;
+- un **contenu** - l'apparence des paroles et leur façon d'arriver et de partir, ou la grille d'accords pour les musiciens ;
+- un **arrière-plan** - la couleur, l'image, la vidéo ou la lumière en mouvement sous les paroles, et l'entrée vidéo ;
 - des **effets** - le lien entre les deux : le fond qui répond aux paroles, et le mouvement propre des paroles.
 
-Un modèle y ajoute ses **tags** et sa mise en page - des [widgets](/fr/screens/#widgets) sur une grille, et des [masques](/fr/screens/#calques). Chacun est fait pour un seul usage : il n'y a pas de bascule entre paroles et grille, un modèle pour les musiciens utilise un thème de contenu en grille d'accords. Un écran choisit un modèle dans **Modèle**, dans les **Réglages** de sa vignette ; l'écran change aussitôt.
+Un modèle y ajoute ses **tags** et sa mise en page - des [widgets](/fr/screens/#widgets) sur une grille, et des [masques](/fr/screens/#calques). Chacun est fait pour un seul usage : il n'y a pas de bascule entre paroles et grille, un modèle pour les musiciens utilise un contenu en grille d'accords. Un écran choisit un modèle dans **Modèle**, dans les **Réglages** de sa vignette ; l'écran change aussitôt.
 
 ![Les modèles sur la page Écrans](../../../assets/screenshots/fr/screen-themes.jpg)
 
-L'onglet **Modèles** a quatre vues : **Modèles**, **Thèmes de contenu**, **Thèmes de fond** et **Effets**. Chaque élément joue un chant d'exemple, pour voir comment il bouge.
+L'onglet **Modèles** a cinq vues : **Modèles**, **Contenus**, **Arrière-plans**, **Effets** et **Widgets**. Chaque élément joue un chant d'exemple, pour voir comment il bouge. Un contenu, un arrière-plan ou des effets, intégrés ou enregistrés, sont des *préréglages* : un modèle en choisit un de chaque et peut changer ses réglages.
 
 ### Les modèles et leurs tags
 
 Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentation**, **Paroles**, **Accords**, **Affichage** et **Écriture**. Choisissez des tags au-dessus de la liste pour ne voir que les modèles qui les ont tous. **Nouveau modèle** en commence un avec les parties intégrées. Les **Modèles intégrés** :
 
-- **Classique** - paroles blanches sur noir, la ligne d'avant et d'après atténuées : l'apparence par défaut.
+- **Classique** - paroles blanches sur noir, seulement les lignes chantées : l'apparence par défaut.
 - **Concert** - majuscules grasses sur une lumière colorée en mouvement, les mots révélés un à un.
 - **Chapelle** - une police élégante sur des tons chauds et sombres, les lignes en fondu.
 - **Aube** - des mots arrondis sur de lentes vagues chaudes, plus vives dans un refrain.
@@ -149,7 +149,7 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 
 **Un modèle est fait de** liste ce qu'il combine, une ligne chacun avec celui qu'il utilise ; choisissez une ligne pour ne changer que cette partie :
 
-- **Paroles**, **Fond** et **Effets** - les trois parties du modèle, chacune dans son onglet. Choisissez un préréglage dans chacun - un thème de contenu, un thème de fond ou des effets intégrés, ou les vôtres et ceux de vos équipes - et changez ses réglages sur place : ce que vous changez reste dans ce modèle, le préréglage n'est pas modifié. L'onglet liste ce qui diffère du préréglage ; **×** rétablit un groupe, **Tout rétablir** tout l'onglet. **Enregistrer comme nouveau préréglage** garde ces réglages pour un autre modèle ; **Mettre à jour « … »** les écrit dans le préréglage lui-même.
+- **Paroles**, **Fond** et **Effets** - les trois parties du modèle, chacune dans son onglet. Choisissez un préréglage dans chacun - un contenu, un arrière-plan ou des effets intégrés, ou les vôtres et ceux de vos équipes - et changez ses réglages sur place : ce que vous changez reste dans ce modèle, le préréglage n'est pas modifié. L'onglet liste ce qui diffère du préréglage ; **×** rétablit un groupe, **Tout rétablir** tout l'onglet. **Enregistrer comme nouveau préréglage** garde ces réglages pour un autre modèle ; **Mettre à jour « … »** les écrit dans le préréglage lui-même.
 - Un modèle garde l'apparence avec laquelle il a été enregistré. Quand un préréglage qu'il utilise tel quel est modifié ensuite, sa carte le dit, avec **Mettre à jour** pour prendre ses nouvelles valeurs ; un modèle qui a ses propres changements les garde, sans qu'on le lui propose.
 - **Widgets et masques** - **Mise en page et widgets** place des [widgets](/fr/screens/#widgets) sur une grille (voir plus bas) ; les **Masques** mettent du noir sur une partie de l'image, ou une fenêtre sur l'entrée vidéo (voir [Calques](/fr/screens/#calques)).
 - **Marque** - les polices et couleurs de votre organisation, bientôt.
@@ -157,9 +157,9 @@ Les tags disent à quoi sert un modèle : **Public**, **Scène**, **Présentatio
 
 Nommez le modèle et **Enregistrer le modèle** : il est à vous ou - si vous administrez une équipe - à l'équipe, pour que chaque membre puisse le choisir pour ses écrans (seuls ses administrateurs le modifient). Le modèle d'une équipe utilise les parties de l'équipe. Un modèle que vous pouvez modifier a **Modifier** et **Supprimer** ; le supprimer remet ses écrans sur l'apparence par défaut, et ses parties restent.
 
-### Thèmes de contenu
+### Contenus
 
-L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thème de contenu**, ou **Personnaliser** un thème intégré) ou, pour un seul modèle, dans son onglet **Paroles**. **Aperçu dans** le montre **Seul** ou dans n'importe lequel de vos modèles ou des modèles intégrés, avec leur fond et leurs widgets ; les widgets se changent dans **Widgets et masques** du modèle :
+L'apparence des paroles, modifiée depuis **Contenus** (**Nouveau préréglage de contenu**, ou **Personnaliser** un préréglage intégré) ou, pour un seul modèle, dans son onglet **Paroles**. **Aperçu dans** le montre **Seul** ou dans n'importe lequel de vos modèles ou des modèles intégrés, avec leur fond et leurs widgets ; les widgets se changent dans **Widgets et masques** du modèle :
 
 - **Affichage** - comment les paroles sont montrées :
   - **Diapositives** - une diapositive à la fois, avec les lignes autour comme le dit **Lignes**.
@@ -181,7 +181,7 @@ L'apparence des paroles, modifiée depuis **Thèmes de contenu** (**Nouveau thè
 
 L'éditeur vérifie le contraste entre les paroles et le fond et prévient en dessous de 4,5:1.
 
-### Thèmes de fond
+### Arrière-plans
 
 Ce qu'il y a sous les paroles :
 
@@ -193,7 +193,7 @@ Ce qu'il y a sous les paroles :
   - **Grille** - une grille discrète dont les cases s'allument sous chaque mot qui apparaît, puis s'éteignent ;
   - **Bokeh** - de grands disques flous qui dérivent et se rassemblent derrière les paroles.
 
-  ![Courants, Cordes, Grille et Bokeh parmi les thèmes de fond](../../../assets/screenshots/fr/screen-backgrounds.jpg)
+  ![Courants, Cordes, Grille et Bokeh parmi les arrière-plans](../../../assets/screenshots/fr/screen-backgrounds.jpg)
 
   La première couleur est le fond, les autres celles des traînées, cordes, cases ou disques. Avec des effets, ils bougent aussi plus vite, changent de couleur, s'éclairent ou grossissent, selon **Sa réponse aux effets**. Avec un **Mouvement** à 0, ils restent immobiles.
 - Un **Shader** est dessiné par la puce graphique de l'écran (WebGL 2) : **Dégradé maillé** (des couleurs douces qui se fondent les unes dans les autres), **Dégradé maillé Paper** (toutes les couleurs qui coulent les unes dans les autres, déformées et tourbillonnantes), **Bruit neuronal** (des fils lumineux qui se tissent comme des nerfs), **Lignes lumineuses** (des lignes qui ondulent sur l'écran) ou **Braises** (des points de lumière qui montent en profondeur) ; le Dégradé maillé Paper et le Bruit neuronal viennent de [Paper Shaders](https://shaders.paper.design). Chacun a ses **Réglages du shader** - luminosité, contraste, saturation, changement de couleur, grain, rotation, échelle et position, les mêmes pour tous les shaders, puis les siens (douceur, nombre, etc.) - et reste plus calme derrière les paroles. Un shader prend jusqu'à huit **Couleurs** : ajoutez-en une avec **+**.  **Réinitialiser les réglages** les remet par défaut. **Mouvement** règle son rythme, et **Rotation continue** le fait tourner lentement, dans un sens ou dans l'autre, pour un shader qui peut tourner.
@@ -205,7 +205,7 @@ Ce qu'il y a sous les paroles :
   Un écran qui ne suit pas dessine le shader avec moins de détails d'abord, puis plus petit, et revient dès qu'il peut : une clé TV bouge encore sans à-coups, un mini PC le dessine entièrement en pleine taille. Un écran sans WebGL 2 (certaines anciennes clés TV) montre les couleurs du shader, qui dérivent lentement, à la place.
 - **Sa réponse aux effets** - à quel point son **Mouvement**, son **Changement de couleur**, sa **Luminosité** et ses **Éléments** (taches, vagues, particules, faisceaux) bougent quand des effets les déclenchent ; pour un shader, sa **Rotation** et son **Échelle** aussi.
 
-Les polices et les images s'ajoutent à un thème de contenu ou de fond enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage.
+Les polices et les images s'ajoutent à un préréglage de contenu ou d'arrière-plan enregistré : enregistrez-le d'abord ; elles comptent dans votre stockage.
 
 ### Effets
 
@@ -236,7 +236,7 @@ Pour essayer un modèle intégré sur un écran, ou afficher les paroles dans un
 
 ## Widgets
 
-Un modèle peut placer des widgets sur une grille : un affichage de scène montre aux chanteurs la diapositive en cours et la suivante, l'heure et le temps restant ; l'écran de l'assemblée peut ajouter une horloge dans un coin, ou le mot de passe Wi-Fi. L'onglet **Widgets** les liste :
+Un modèle peut placer des widgets sur une grille : un affichage de scène montre aux chanteurs la diapositive en cours et la suivante, l'heure et le temps restant ; l'écran de l'assemblée peut ajouter une horloge dans un coin, ou le mot de passe Wi-Fi. La vue **Widgets** de **Modèles** les liste :
 
 - **Paroles ou grille** - ce que l'écran affiche sans grille : les paroles, ou la grille pour le groupe, avec l'apparence du modèle.
 - **Diapositive en cours** et **Diapositive suivante** - les paroles affichées pour l'assemblée, et celles qui arrivent (la première du chant suivant, à la fin d'un chant).
@@ -254,7 +254,7 @@ Un modèle peut placer des widgets sur une grille : un affichage de scène montr
 - **Numéro de diapositive** - quelle diapositive est à l'écran, sous la forme 3 / 12 : **Compter** **Les diapositives du chant** ou **Les diapositives de toute la liste**, avec une **Barre de progression** (**Fine**, **Épaisse** ou **Aucune**) dessous.
 - **Code QR** - un code que l'on scanne avec son téléphone. **Il contient** **Une adresse web**, **Un événement** (son titre, son début, sa fin et son lieu, ajouté à l'agenda), **Une fiche contact** (nom, téléphone, e-mail, organisation) ou **Le Wi-Fi** (le nom du réseau et son mot de passe, pour s'y connecter d'un geste). Son libellé s'écrit dessous.
 
-Chacun s'anime dans l'onglet **Widgets**, avec un chant d'exemple. **Personnaliser** règle son apparence par défaut - ses options, sa police, sa couleur, sa taille, son fond et ses coins - qu'il prend quand on l'ajoute à un modèle : **Enregistrer par défaut** pour vous, ou, avec **Pour**, pour une équipe dont vous êtes administrateur. Un modèle d'équipe prend l'apparence de l'équipe, sinon la vôtre, sinon celle intégrée ; **Revenir à l'apparence intégrée** oublie la vôtre. Un modèle qui a déjà le widget garde la sienne.
+Chacun s'anime dans **Modèles** > **Widgets**, avec un chant d'exemple. **Personnaliser** règle son apparence par défaut - ses options, sa police, sa couleur, sa taille, son fond et ses coins - qu'il prend quand on l'ajoute à un modèle : **Enregistrer par défaut** pour vous, ou, avec **Pour**, pour une équipe dont vous êtes administrateur. Un modèle d'équipe prend l'apparence de l'équipe, sinon la vôtre, sinon celle intégrée ; **Revenir à l'apparence intégrée** oublie la vôtre. Un modèle qui a déjà le widget garde la sienne.
 
 Dans l'éditeur de modèle, **Mise en page et widgets** les place :
 

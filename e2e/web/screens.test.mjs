@@ -67,12 +67,12 @@ try {
     await tablet.getByTestId("screens-list").getByTestId("screen-Front TV").waitFor({ state: "detached" });
     await tablet.getByTestId(`screens-filter-team:${band.id}`).click();
     await tablet.getByTestId("screens-list").getByTestId("screen-Front TV").waitFor();
-    // The other tabs: the templates, and the widgets a template can place (issue #267).
-    await tablet.getByTestId("screens-tab-widgets").click();
-    await tablet.waitForURL(`${WEB}/screens?tab=widgets`);
-    await tablet.getByTestId("widgets-list").getByTestId("widget-countdown").getByText("Countdown").waitFor();
+    // The other tabs: the templates, and in them the widgets a template can place (issues #267, #431).
+    if ((await tablet.getByTestId("screens-tabs").getByRole("tab").count()) !== 3) throw new Error("Screens should have three tabs");
     await tablet.getByTestId("screens-tab-templates").click();
     await tablet.getByTestId("builtin-themes").waitFor();
+    await tablet.getByTestId("templates-view-widgets").click();
+    await tablet.getByTestId("widgets-list").getByTestId("widget-countdown").getByText("Countdown").waitFor();
     await tablet.getByTestId("screens-tab-screens").click();
     await tablet.getByTestId("screen-add").waitFor();
     page = tv;
@@ -81,7 +81,7 @@ try {
     await tv.getByTestId("screen-idle").getByText(`Sunday ${stamp}`).waitFor();
   });
 
-  await step("presenting from Live: the screen shows the first slide, the title, the next line faint and the credits", async () => {
+  await step("presenting from Live: the screen shows the first slide, the title and the credits, only the lines being sung (issue #431)", async () => {
     page = tablet;
     await tablet.evaluate(() => localStorage.setItem("songverse.mode", "live"));
     await tablet.goto(`${WEB}/sets/${set.id}/live/${items[0].id}`);
@@ -100,18 +100,18 @@ try {
     page = tv;
     await tv.getByTestId("screen-lyrics").waitFor({ timeout: 10000 });
     if ((await lines()) !== "Amazing grace / how sweet the sound") throw new Error(await lines());
-    if ((await tv.getByTestId("screen-after").innerText()) !== "that saved a wretch") throw new Error("not the next line");
+    if ((await tv.getByTestId("screen-after").count()) !== 0) throw new Error("the default look shows the next line");
     await tv.getByText(`Grace ${stamp}`, { exact: false }).first().waitFor();
     await tv.locator('[data-testid="widget-credits"], [data-testid="screen-credits"]').getByText("CCLI song 22025", { exact: false }).waitFor();
   });
 
-  await step("Next, then the down arrow (a pedal's key): the screen follows, the line before faint", async () => {
+  await step("Next, then the down arrow (a pedal's key): the screen follows", async () => {
     page = tablet;
     await tablet.getByTestId("present-next").click();
     page = tv;
     await tv.locator('[data-testid="screen-showing"][data-slide="1"]').waitFor();
     if ((await lines()) !== "that saved a wretch / like me") throw new Error(await lines());
-    if ((await tv.getByTestId("screen-before").innerText()) !== "how sweet the sound") throw new Error("not the line before");
+    if ((await tv.getByTestId("screen-before").count()) !== 0) throw new Error("the default look shows the line before");
     page = tablet;
     await tablet.keyboard.press("ArrowDown");
     page = tv;

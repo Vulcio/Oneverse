@@ -298,9 +298,9 @@ const en = {
     notYours: "Its team's or organisation's admins change it; you can put one of your sets on it.",
     yours: "Your screens",
     none: "No screens yet.",
-    tabs: { screens: "Screens", templates: "Templates", widgets: "Widgets", brands: "Brands" },
+    tabs: { screens: "Screens", templates: "Templates", brands: "Brands" },
     /** Templates' views (issue #281): the templates, then each kind of part. */
-    views: { templates: "Templates", content: "Content themes", background: "Background themes", effects: "Effects" },
+    views: { templates: "Templates", content: "Contents", background: "Backgrounds", effects: "Effects", widgets: "Widgets" },
     /** What a template is for (issue #281). */
     tags: { audience: "Audience", stage: "Stage", presentation: "Presentation", lyrics: "Lyrics", chords: "Chords", signage: "Signage", scripture: "Scripture" },
     sectionKinds: { chorus: "Chorus", bridge: "Bridge" },
@@ -336,13 +336,13 @@ const en = {
     effectsOff: "effects off",
     /** A template's parts (issue #281). */
     parts: {
-      kinds: { content: "Content theme", background: "Background theme", effects: "Effects" },
+      kinds: { content: "Content", background: "Background", effects: "Effects" },
       about: {
         content: "How the words look and how they come and go - or the chord chart for the band. A template starts from one and keeps the look it was saved with; change it here and the templates using it as it was offer to update.",
         background: "The colour, picture, video or moving light under the words, the video input, and how much the background answers effects.",
         effects: "The glue between the words and the background: what makes the background pulse, move, change colour or brighten, and how the words themselves move.",
       },
-      new: { content: "New content theme", background: "New background theme", effects: "New effects" },
+      new: { content: "New content preset", background: "New background preset", effects: "New effects" },
       newName: { content: "My words", background: "My background", effects: "My effects" },
       saved: "Yours and your teams'",
       edit: "Edit",
@@ -663,7 +663,6 @@ const en = {
     },
     newTemplate: "New template",
     newTemplateName: "My template",
-    widgetsTitle: "Widgets",
     widgetsDescription: "What a screen can show besides the words. Place them on a template's grid; every screen using that template shows them.",
     widgetKinds: {
       stage: { name: "Lyrics or chart", description: "What the screen shows now: the lyrics, or the chart for the band." },
@@ -814,14 +813,14 @@ const en = {
       widgets: "Layout and widgets",
       title: {
         template: { new: "New template", edit: "Edit template" },
-        content: { new: "New content theme", edit: "Edit content theme" },
-        background: { new: "New background theme", edit: "Edit background theme" },
+        content: { new: "New content preset", edit: "Edit content preset" },
+        background: { new: "New background preset", edit: "Edit background preset" },
         effects: { new: "New effects", edit: "Edit effects" },
       },
-      save: { template: "Save template", content: "Save content theme", background: "Save background theme", effects: "Save effects" },
-      nameOf: { template: "Template name", content: "Content theme name", background: "Background theme name", effects: "Effects name" },
+      save: { template: "Save template", content: "Save content preset", background: "Save background preset", effects: "Save effects" },
+      nameOf: { template: "Template name", content: "Content preset name", background: "Background preset name", effects: "Effects name" },
       parts: "Content, background and effects",
-      partsHint: "A template is made of a content theme, a background theme and effects: built-in ones, or yours. Customize one to make it your own.",
+      partsHint: "A template is made of a content, a background and effects: built-in ones, or yours. Customize one to make it your own.",
       previewIn: "Preview in",
       previewAlone: "On its own",
       madeOf: "A template is made of",
@@ -844,7 +843,7 @@ const en = {
         },
       },
       partRowHints: {
-        content: "How the words look and move, and the chords: a content theme, built in or yours.",
+        content: "How the words look and move, and the chords: a content preset, built in or yours.",
         background: "What's behind the words: a colour, gradient, picture, video or shader, and the video input.",
         effects: "How the background answers the words: a pulse on each slide, the chorus lighting it up.",
         widgets: "What sits around the words (a clock, the next song, a QR code), and masks that cut the screen.",
@@ -1086,7 +1085,7 @@ const en = {
       chordScale: "Chart size",
     },
     templates: {
-      classic: { name: "Classic", description: "White words on black, the line before and after dimmed." },
+      classic: { name: "Classic", description: "White words on black, only the lines being sung." },
       concert: { name: "Concert", description: "Bold capitals over moving coloured light, words revealed one by one." },
       chapel: { name: "Chapel", description: "An elegant serif on warm dark tones, lines fading in." },
       sunrise: { name: "Sunrise", description: "Rounded words over slow warm waves that brighten in a chorus." },

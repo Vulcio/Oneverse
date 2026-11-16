@@ -18,7 +18,7 @@ A **screen** shows a set on a big screen: the lyrics for the audience, two lines
 
 The screen remembers it's paired: next time, open the same page and it reconnects by itself. A screen paired before the screen app, at **songverse.top/screen**, is sent there and stays paired. Only someone who can edit the set (its owner, or an admin of its team) can pair a screen to it, because they're the ones who lead it.
 
-**Screens** has four tabs: **Screens**, **Templates**, **Widgets** and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, change its **Template for songs** and its **Template for Bible passages** (**Same as songs** until you pick one; a passage that picks its own template in the set keeps it, see [Bible](/bible/#adding-it-to-a-set)) or its owner, turn its **Effects** on or off (see [Effects](/screens/#effects)), and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
+**Screens** has three tabs: **Screens**, **Templates** (with the widgets a template can place) and **Brands** (your teams' and organisations' [brands](/brands/)). On **Screens**, **Add screen** opens the pairing form above (a QR code opens it with the code filled in). Under it, each screen is a tile: how it looks, whether it's **Connected** (or when it last was), the set it shows, its template and whose it is. **Settings** opens a dialog to rename the screen, move it to another set, change its **Template for songs** and its **Template for Bible passages** (**Same as songs** until you pick one; a passage that picks its own template in the set keeps it, see [Bible](/bible/#adding-it-to-a-set)) or its owner, turn its **Effects** on or off (see [Effects](/screens/#effects)), and choose the **Layers it shows** (see [Layers](/screens/#layers)), with the screen's look beside them; the screen changes at once, and **Done** closes it. **Disconnect**, on the tile, stops it: it goes back to showing a new code.
 
 ### The day's set
 
@@ -81,7 +81,7 @@ Others can present beside you. In the Sync menu, while you lead, **Also presenti
 
 **Follow the music**, at the end of the row of sections, moves the slides on by themselves as the song plays: with the song's click (the metronome started for it), its recording's stems, or the Sync leader's click. Each slide comes up two beats before its first line is sung, so it's read in time. Where each line is sung comes from the beats placed in the words (see [Placing beats in the words](/metronome/#placing-beats-in-the-words)): placed by the grid itself, or by hand where it got them wrong. Bars with no words, such as an intro, show their section's first slide.
 
-A template can follow the music on the screens too, line by line or filling the words as they're sung, with the leader's click: see **Follow the music** in [Content themes](/screens/#content-themes).
+A template can follow the music on the screens too, line by line or filling the words as they're sung, with the leader's click: see **Follow the music** in [Contents](/screens/#contents).
 
 While nothing plays, the button says **Waiting for the music**. **Next slide**, **Previous slide** or a section picked by hand turns it off, so you can take over at any moment; press it again to follow once more. It stays on, on this device, until you turn it off, and does nothing while the screens are black.
 
@@ -109,21 +109,21 @@ The words come from the version and key the set plays. Song notes and chords are
 
 A template is how a screen looks and what it's for. It's made of three parts, each saved and edited on its own, so one change follows everywhere it's used:
 
-- a **content theme** - how the words look and how they come and go, or the chord chart for the band;
-- a **background theme** - the colour, picture, video or moving light under the words, and the video input;
+- a **content** - how the words look and how they come and go, or the chord chart for the band;
+- a **background** - the colour, picture, video or moving light under the words, and the video input;
 - **effects** - the glue between the two: the background answering the words, and the words' own movement.
 
-A template adds its **tags** and its layout - [widgets](/screens/#widgets) on a grid, and [masks](/screens/#layers). Each one is built for a single use: there's no switch between lyrics and chart, a template for the band uses a chord-chart content theme. A screen picks a template in **Template**, in its tile's **Settings**; the screen changes at once.
+A template adds its **tags** and its layout - [widgets](/screens/#widgets) on a grid, and [masks](/screens/#layers). Each one is built for a single use: there's no switch between lyrics and chart, a template for the band uses a chord-chart content. A screen picks a template in **Template**, in its tile's **Settings**; the screen changes at once.
 
 ![Templates on the Screens page](../../assets/screenshots/en/screen-themes.jpg)
 
-The **Templates** tab has four views: **Templates**, **Content themes**, **Background themes** and **Effects**. Each plays on a sample song, so you see how it moves.
+The **Templates** tab has five views: **Templates**, **Contents**, **Backgrounds**, **Effects** and **Widgets**. Each plays on a sample song, so you see how it moves. A built-in or saved content, background or effects is a *preset*: a template picks one of each and can change its settings.
 
 ### Templates and their tags
 
 Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Lyrics**, **Chords**, **Signage** and **Scripture**. Pick tags above the list to see only the templates with all of them. **New template** starts one from the built-in parts. The **Built-in templates**:
 
-- **Classic** - white words on black, the line before and after dimmed: the default.
+- **Classic** - white words on black, only the lines being sung: the default.
 - **Concert** - bold capitals over moving coloured light, words revealed one by one.
 - **Chapel** - an elegant serif on warm dark tones, lines fading in.
 - **Sunrise** - rounded words over slow warm waves that brighten in a chorus.
@@ -149,7 +149,7 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 
 **A template is made of** lists what it combines, a row each with the one it uses; pick a row to change that part alone:
 
-- **Words**, **Background** and **Effects** - the template's three parts, each a tab. Pick a preset in each - a built-in content theme, background theme or effects, or one of yours or your teams' - and change its settings right there: what you change stays in this template, and the preset isn't touched. The tab lists what differs from the preset; **×** puts one group back, **Reset all** the whole tab. **Save as a new preset** keeps those settings to use in another template; **Update "…"** writes them into the preset itself.
+- **Words**, **Background** and **Effects** - the template's three parts, each a tab. Pick a preset in each - a built-in content, background or effects, or one of yours or your teams' - and change its settings right there: what you change stays in this template, and the preset isn't touched. The tab lists what differs from the preset; **×** puts one group back, **Reset all** the whole tab. **Save as a new preset** keeps those settings to use in another template; **Update "…"** writes them into the preset itself.
 - A template keeps the look it was saved with. When a preset it uses unchanged is edited later, its card says so, with **Update** to take the preset's new values; a template with changes of its own keeps them and isn't asked.
 - **Widgets and masks** - **Layout and widgets** places [widgets](/screens/#widgets) on a grid (below); **Masks** put black over part of the picture, or a window to the video input (see [Layers](/screens/#layers)).
 - **Brand** - your organisation's fonts and colours, coming soon.
@@ -157,9 +157,9 @@ Tags say what a template is for: **Audience**, **Stage**, **Presentation**, **Ly
 
 Name the template and **Save template**: it's yours, or - if you're an admin of a team - the team's, for every member to pick for their screens (only its admins change it). A team's template uses the team's parts. A template you can change has **Edit** and **Delete**; deleting it puts its screens back to the default look, and its parts stay.
 
-### Content themes
+### Contents
 
-How the words look, edited from **Content themes** (**New content theme**, or **Customize** a built-in one) or, for one template, in its **Words** tab. **Preview in** shows it **On its own** or in any of your templates or the built-in ones, with their background and widgets; the widgets are changed on the template's own **Widgets and masks**:
+How the words look, edited from **Contents** (**New content preset**, or **Customize** a built-in one) or, for one template, in its **Words** tab. **Preview in** shows it **On its own** or in any of your templates or the built-in ones, with their background and widgets; the widgets are changed on the template's own **Widgets and masks**:
 
 - **Display** - how the words are shown:
   - **Slides** - a slide at a time, with the lines around it as **Lines** says.
@@ -181,7 +181,7 @@ How the words look, edited from **Content themes** (**New content theme**, or **
 
 The editor checks the contrast between the words and the background and warns when it's under 4.5:1.
 
-### Background themes
+### Backgrounds
 
 What's under the words:
 
@@ -193,7 +193,7 @@ What's under the words:
   - **Grid** - a faint grid whose cells light up under each word as it appears, then fade;
   - **Bokeh** - big soft discs drifting and gathering behind the words.
 
-  ![Flow, Strings, Grid and Bokeh among the background themes](../../assets/screenshots/en/screen-backgrounds.jpg)
+  ![Flow, Strings, Grid and Bokeh among the backgrounds](../../assets/screenshots/en/screen-backgrounds.jpg)
 
   The first colour is the background, the others the trails, strings, cells or discs. With effects, they also move faster, change colour, brighten or swell, as **How it answers effects** says. With **Movement** at 0, they stand still.
 - A **Shader** is drawn by the screen's graphics chip (WebGL 2): **Mesh gradient** (soft colours morphing into one another), **Paper mesh gradient** (every colour flowing into the others, warped and swirled), **Neuro noise** (glowing threads weaving like nerves), **Glow lines** (glowing lines waving across the screen) or **Embers** (points of light rising in depth); Paper mesh gradient and Neuro noise come from [Paper Shaders](https://shaders.paper.design). Each has its **Shader controls** - brightness, contrast, saturation, colour shift, grain, rotation, scale and position, the same for every shader, then its own (softness, how many, and so on) - and keeps the area behind the words quieter. A shader takes up to eight **Colours**: add one with **+**.  **Reset controls** puts them back. **Movement** sets its pace, and **Spin** turns it slowly, one way or the other, for a shader that can turn.
@@ -205,7 +205,7 @@ What's under the words:
   A screen that can't keep up draws the shader with less detail first, then smaller, and back again once it can: a TV stick still moves smoothly, a mini PC draws it all at full size. A screen without WebGL 2 (some older TV sticks) shows the shader's colours, slowly drifting, instead.
 - **How it answers effects** - how much its **Movement**, **Colour shift**, **Brightness** and **Elements** (blobs, waves, particles, beams) move when effects set them off; for a shader, its **Rotation** and **Scale** too.
 
-Fonts and pictures are added to a saved content or background theme, so save it first; they count toward your storage.
+Fonts and pictures are added to a saved content or background preset, so save it first; they count toward your storage.
 
 ### Effects
 
@@ -236,7 +236,7 @@ To try a built-in template on one screen, or to show the words in streaming soft
 
 ## Widgets
 
-A template can place widgets on a grid: a stage display shows the singers the slide now and the next one, the time and how long is left; an audience screen can add a clock in a corner, or the Wi-Fi password. The **Widgets** tab lists them:
+A template can place widgets on a grid: a stage display shows the singers the slide now and the next one, the time and how long is left; an audience screen can add a clock in a corner, or the Wi-Fi password. **Templates** > **Widgets** lists them:
 
 - **Lyrics or chart** - what the screen shows without a grid: the lyrics, or the chart for the band, in the template's look.
 - **Current slide** and **Next slide** - the words on the audience's screens now, and the ones coming (the next song's first, at the end of a song).
@@ -254,7 +254,7 @@ A template can place widgets on a grid: a stage display shows the singers the sl
 - **Slide count** - which slide is on screen, as 3 / 12: **Count** **The song's slides** or **The whole set's slides**, with a **Progress bar** (**Thin**, **Thick** or **None**) under it.
 - **QR code** - a code people scan with their phone. **It holds** **A web address**, **An event** (its title, start, end and place, added to their calendar), **A contact card** (name, phone, email, organisation) or **The Wi-Fi** (the network's name and password, to join it in one tap). Its label is written under it.
 
-Each one plays live on the **Widgets** tab, with a sample song. **Customize** sets its default look - its options, font, colour, size, panel and corners - which it gets when it's added to a template: **Save as default** for yourself, or, with **For**, for a team you're an admin of. A team's template takes the team's look, else yours, else the built-in one; **Back to the built-in look** forgets yours. A template that already has the widget keeps its own.
+Each one plays live in **Templates** > **Widgets**, with a sample song. **Customize** sets its default look - its options, font, colour, size, panel and corners - which it gets when it's added to a template: **Save as default** for yourself, or, with **For**, for a team you're an admin of. A team's template takes the team's look, else yours, else the built-in one; **Back to the built-in look** forgets yours. A template that already has the widget keeps its own.
 
 In the template editor, **Layout and widgets** places them:
 

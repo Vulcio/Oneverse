@@ -22,12 +22,13 @@ import { apiClient } from "#/lib/api-client";
 import { setlistTitle } from "#/lib/setlists";
 import { FieldError } from "@oneverse/ui/components/field";
 
-/** Screens' tabs (issue #267): the screens, the templates they pick from, the widgets placed on templates, the brands they use (issue #279). */
-const TABS = ["screens", "templates", "widgets", "brands"] as const;
+/** Screens' tabs (issue #267): the screens, the templates they pick from (with their parts and widgets, issue #431), the brands they use (issue #279). */
+const TABS = ["screens", "templates", "brands"] as const;
 type ScreensTab = (typeof TABS)[number];
 
 export interface ScreensSearch {
-  tab?: Exclude<ScreensTab, "screens">;
+  /** "widgets" (a tab of its own before issue #431) opens Templates > Widgets. */
+  tab?: Exclude<ScreensTab, "screens"> | "widgets";
   /** The code a screen shows, from its QR code. */
   code?: string;
   /** The set to show, from its Live view. */
@@ -90,14 +91,14 @@ export const Route = createFileRoute("/_protected/screens")({
  * paired by the code it shows - typed, or scanned from its QR code, which
  * opens this page with it - and the screens one may use as tiles, filtered by
  * whose they are, each opening to rename it, change what it shows and how
- * (issue #194), or disconnect it. Templates: how screens look. Widgets: what
- * else a template can put on a screen (issue #268).
+ * (issue #194), or disconnect it. Templates: how screens look, with what
+ * else a template can put on a screen, its widgets (issue #268).
  */
 function ScreensPage() {
   const { t } = useTranslation();
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
-  const tab: ScreensTab = search.tab ?? "screens";
+  const tab: ScreensTab = search.tab === "widgets" ? "templates" : (search.tab ?? "screens");
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -117,10 +118,13 @@ function ScreensPage() {
           <ScreensTabPanel key={`${search.code ?? ""}|${search.setlistId ?? ""}`} />
         </TabsContent>
         <TabsContent value="templates" className="pt-4">
-          <TemplatesTab themes={Route.useLoaderData().themes} parts={Route.useLoaderData().parts} widgetDefaults={Route.useLoaderData().widgetDefaults} />
-        </TabsContent>
-        <TabsContent value="widgets" className="pt-4">
-          <WidgetsCard />
+          <TemplatesTab
+            themes={Route.useLoaderData().themes}
+            parts={Route.useLoaderData().parts}
+            widgetDefaults={Route.useLoaderData().widgetDefaults}
+            initialView={search.tab === "widgets" ? "widgets" : undefined}
+            widgets={<Widgets />}
+          />
         </TabsContent>
         <TabsContent value="brands" className="pt-4">
           <BrandsCard />
@@ -229,23 +233,12 @@ function screenFilters(screens: ScreenSummary[], t: (key: string, values?: Recor
   return [...filters.values()];
 }
 
-/** What a screen can show besides the words (issue #267), each live, with its default look (issue #273). */
-function WidgetsCard() {
-  const { t } = useTranslation();
+/** What a screen can show besides the words (issue #267), each live, with its default look (issue #273): a view of Templates since issue #431. */
+function Widgets() {
   const router = useRouter();
   const { widgetDefaults } = Route.useLoaderData();
   const { teams } = useRouteContext({ from: "/_protected" });
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t("screens.widgetsTitle")}</CardTitle>
-        <CardDescription>{t("screens.widgetsDescription")}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <WidgetGallery defaults={widgetDefaults} teams={teams} onChanged={() => router.invalidate()} />
-      </CardContent>
-    </Card>
-  );
+  return <WidgetGallery defaults={widgetDefaults} teams={teams} onChanged={() => router.invalidate()} />;
 }
 
 function BrandsCard() {

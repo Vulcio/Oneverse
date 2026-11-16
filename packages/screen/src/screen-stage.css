@@ -1040,12 +1040,16 @@
   }
 }
 
-/* Text reveal: each piece (line, word or letter) after the one before. */
+/*
+ * Text reveal: each piece (line, word or letter) after the one before. No
+ * will-change: a slide typed in has a piece per letter, and a layer each
+ * (hundreds) is heavy for a TV and has left a letter undrawn in Chrome
+ * ("gr ce", issue #431). The browser promotes a piece only while it moves.
+ */
 .sv-piece {
   display: inline-block;
   animation-fill-mode: both;
   animation-delay: calc(var(--i) * var(--stagger) + var(--t) * 0.35);
-  will-change: transform, opacity;
 }
 .sv-reveal-lines .sv-piece {
   display: block;
@@ -1060,8 +1064,9 @@
   animation: sv-piece-letter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i) * var(--stagger) + var(--t) * 0.35);
 }
+/* Typed: each letter appears at once, in a quick fade rather than a 1 ms step a compositor can miss. */
 .sv-reveal-typewriter .sv-piece {
-  animation: sv-piece-type 1ms steps(1) both;
+  animation: sv-piece-type 60ms linear both;
   animation-delay: calc(var(--i) * var(--stagger) + var(--t) * 0.35);
 }
 .sv-reveal-glow .sv-piece {

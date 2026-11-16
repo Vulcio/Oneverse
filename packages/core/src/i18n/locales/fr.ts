@@ -298,9 +298,9 @@ const fr: typeof en = {
     notYours: "Les administrateurs de son équipe ou de son organisation le modifient ; vous pouvez y mettre une de vos listes.",
     yours: "Vos écrans",
     none: "Aucun écran pour l'instant.",
-    tabs: { screens: "Écrans", templates: "Modèles", widgets: "Widgets", brands: "Marques" },
+    tabs: { screens: "Écrans", templates: "Modèles", brands: "Marques" },
     /** Templates' views (issue #281): the templates, then each kind of part. */
-    views: { templates: "Modèles", content: "Thèmes de contenu", background: "Thèmes de fond", effects: "Effets" },
+    views: { templates: "Modèles", content: "Contenus", background: "Arrière-plans", effects: "Effets", widgets: "Widgets" },
     /** What a template is for (issue #281). */
     tags: { audience: "Public", stage: "Scène", presentation: "Présentation", lyrics: "Paroles", chords: "Accords", signage: "Affichage", scripture: "Écriture" },
     sectionKinds: { chorus: "Refrain", bridge: "Pont" },
@@ -336,13 +336,13 @@ const fr: typeof en = {
     effectsOff: "effets désactivés",
     /** A template's parts (issue #281). */
     parts: {
-      kinds: { content: "Thème de contenu", background: "Thème de fond", effects: "Effets" },
+      kinds: { content: "Contenu", background: "Arrière-plan", effects: "Effets" },
       about: {
         content: "L'apparence des paroles et leur façon d'arriver et de partir - ou la grille des accords pour les musiciens. Un modèle part de l'un d'eux et garde l'apparence avec laquelle il a été enregistré ; changez-le ici et les modèles qui l'utilisent tel quel proposent de se mettre à jour.",
         background: "La couleur, l'image, la vidéo ou la lumière en mouvement sous les paroles, l'entrée vidéo, et à quel point le fond répond aux effets.",
         effects: "Le lien entre les paroles et le fond : ce qui fait pulser, bouger, changer de couleur ou s'éclairer le fond, et comment les paroles elles-mêmes bougent.",
       },
-      new: { content: "Nouveau thème de contenu", background: "Nouveau thème de fond", effects: "Nouveaux effets" },
+      new: { content: "Nouveau préréglage de contenu", background: "Nouveau préréglage d'arrière-plan", effects: "Nouveaux effets" },
       newName: { content: "Mes paroles", background: "Mon fond", effects: "Mes effets" },
       saved: "Les vôtres et ceux de vos équipes",
       edit: "Modifier",
@@ -663,7 +663,6 @@ const fr: typeof en = {
     },
     newTemplate: "Nouveau modèle",
     newTemplateName: "Mon modèle",
-    widgetsTitle: "Widgets",
     widgetsDescription: "Ce qu'un écran peut afficher en plus des paroles. Placez-les sur la grille d'un modèle ; chaque écran qui l'utilise les affiche.",
     widgetKinds: {
       stage: { name: "Paroles ou grille", description: "Ce que l'écran affiche déjà : les paroles, ou la grille pour le groupe." },
@@ -814,14 +813,14 @@ const fr: typeof en = {
       widgets: "Mise en page et widgets",
       title: {
         template: { new: "Nouveau modèle", edit: "Modifier le modèle" },
-        content: { new: "Nouveau thème de contenu", edit: "Modifier le thème de contenu" },
-        background: { new: "Nouveau thème de fond", edit: "Modifier le thème de fond" },
+        content: { new: "Nouveau préréglage de contenu", edit: "Modifier le préréglage de contenu" },
+        background: { new: "Nouveau préréglage d'arrière-plan", edit: "Modifier le préréglage d'arrière-plan" },
         effects: { new: "Nouveaux effets", edit: "Modifier les effets" },
       },
-      save: { template: "Enregistrer le modèle", content: "Enregistrer le thème de contenu", background: "Enregistrer le thème de fond", effects: "Enregistrer les effets" },
-      nameOf: { template: "Nom du modèle", content: "Nom du thème de contenu", background: "Nom du thème de fond", effects: "Nom des effets" },
+      save: { template: "Enregistrer le modèle", content: "Enregistrer le préréglage de contenu", background: "Enregistrer le préréglage d'arrière-plan", effects: "Enregistrer les effets" },
+      nameOf: { template: "Nom du modèle", content: "Nom du préréglage de contenu", background: "Nom du préréglage d'arrière-plan", effects: "Nom des effets" },
       parts: "Contenu, fond et effets",
-      partsHint: "Un modèle est fait d'un thème de contenu, d'un thème de fond et d'effets : intégrés, ou les vôtres. Personnalisez-en un pour qu'il soit à vous.",
+      partsHint: "Un modèle est fait d'un contenu, d'un arrière-plan et d'effets : intégrés, ou les vôtres. Personnalisez-en un pour qu'il soit à vous.",
       previewIn: "Aperçu dans",
       previewAlone: "Seul",
       madeOf: "Un modèle est fait de",
@@ -844,7 +843,7 @@ const fr: typeof en = {
         },
       },
       partRowHints: {
-        content: "L'apparence et le mouvement des paroles, et les accords : un thème de contenu, intégré ou le vôtre.",
+        content: "L'apparence et le mouvement des paroles, et les accords : un préréglage de contenu, intégré ou le vôtre.",
         background: "Ce qu'il y a derrière les paroles : une couleur, un dégradé, une image, une vidéo ou un shader, et l'entrée vidéo.",
         effects: "Comment le fond répond aux paroles : une pulsation à chaque diapositive, le refrain qui l'illumine.",
         widgets: "Ce qui entoure les paroles (une horloge, le chant suivant, un QR code), et les masques qui découpent l'écran.",
@@ -1086,7 +1085,7 @@ const fr: typeof en = {
       chordScale: "Taille de la grille",
     },
     templates: {
-      classic: { name: "Classique", description: "Paroles blanches sur noir, la ligne d'avant et d'après atténuées." },
+      classic: { name: "Classique", description: "Paroles blanches sur noir, seulement les lignes chantées." },
       concert: { name: "Concert", description: "Majuscules grasses sur une lumière colorée en mouvement, les mots révélés un à un." },
       chapel: { name: "Chapelle", description: "Une police élégante sur des tons chauds et sombres, les lignes en fondu." },
       sunrise: { name: "Aube", description: "Des mots arrondis sur de lentes vagues chaudes, plus vives dans un refrain." },

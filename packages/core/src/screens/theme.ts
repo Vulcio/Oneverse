@@ -622,8 +622,9 @@ function screenThemeSchema(strict: boolean) {
    */
   lines: object({
       group: z.enum(["slide", "section"]).default("slide"),
-      before: z.number().int().min(0).max(3).default(1),
-      after: z.number().int().min(0).max(3).default(1),
+      // Only the lines being sung by default (issue #431): the audience reads what's sung; stage displays add the others.
+      before: z.number().int().min(0).max(3).default(0),
+      after: z.number().int().min(0).max(3).default(0),
       contextStyle: z.enum(SCREEN_CONTEXT_STYLES).default("dim"),
     })
     .prefault({}),
@@ -892,7 +893,7 @@ export const SCREEN_THEME_TEMPLATES: ScreenThemeTemplate[] = [
   template("classic", {}),
   template("concert", {
     text: { font: "geometric", weight: 800, upperCase: true, effect: "glow", letterSpacing: 0.02 },
-    lines: { before: 0, after: 1, contextStyle: "blur" },
+    lines: { contextStyle: "blur" },
     background: { kind: "aurora", colors: ["#05010f", "#6d28d9", "#db2777", "#0ea5e9"], reactive: true, motion: 0.7, dim: 0.15 },
     motion: { transition: "blur", duration: 500, reveal: "words", stagger: 70 },
   }),
@@ -905,13 +906,13 @@ export const SCREEN_THEME_TEMPLATES: ScreenThemeTemplate[] = [
   }),
   template("sunrise", {
     text: { font: "rounded", weight: 700, effect: "shadow" },
-    lines: { before: 1, after: 1, contextStyle: "small" },
+    lines: { contextStyle: "small" },
     background: { kind: "waves", colors: ["#1e1b4b", "#f97316", "#facc15", "#ec4899"], reactive: true, motion: 0.5, dim: 0.25 },
     motion: { transition: "rise", duration: 450, reveal: "words", stagger: 50 },
   }),
   template("starlight", {
     text: { font: "serif", weight: 600, effect: "glow", lineHeight: 1.25 },
-    lines: { before: 1, after: 1, contextStyle: "blur" },
+    lines: { contextStyle: "blur" },
     background: { kind: "particles", colors: ["#020617", "#1e3a8a", "#e0f2fe"], reactive: true, motion: 0.4 },
     motion: { transition: "zoom", duration: 600, reveal: "glow", stagger: 90 },
   }),
@@ -1062,6 +1063,9 @@ export function screenSectionText(text: ScreenTheme["text"], style: ScreenSectio
   return { ...text, ...(effectsSet ? { shadow: effects.shadow, outline: effects.outline, glow: effects.glow } : {}), ...own };
 }
 
+/** How much larger the auto size is than it first was (issue #431). */
+const AUTO_TEXT_SCALE = 1.15;
+
 /**
  * The words' size when the theme says "auto" (issue #395): one for the whole
  * song, so nothing jumps from slide to slide - set by its longer lines (the
@@ -1074,6 +1078,6 @@ export function screenAutoTextSize(lines: readonly string[], text: Pick<ScreenTh
   const long = lengths.length === 0 ? 8 : Math.max(8, lengths[Math.floor((lengths.length - 1) * 0.9)]!);
   // Narrow fonts fit more letters, handwriting a few more, monospaced ones fewer.
   const width = ["condensed", "display", "anton"].includes(text.font) ? 0.72 : ["dancing", "caveat"].includes(text.font) ? 0.85 : ["mono", "jetbrains"].includes(text.font) ? 1.2 : 1;
-  const size = (8 * 26) / (long * width * (text.upperCase ? 1.15 : 1));
-  return Math.round(Math.max(3.2, Math.min(text.upperCase ? 8 : 8.5, size)) * 100) / 100;
+  const size = (AUTO_TEXT_SCALE * 8 * 26) / (long * width * (text.upperCase ? 1.15 : 1));
+  return Math.round(Math.max(3.2 * AUTO_TEXT_SCALE, Math.min((text.upperCase ? 8 : 8.5) * AUTO_TEXT_SCALE, size)) * 100) / 100;
 }

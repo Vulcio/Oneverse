@@ -16,7 +16,7 @@ import {
 } from "@oneverse/core";
 import { useRouteContext, useRouter } from "@tanstack/react-router";
 import { CircleAlert, Copy, Palette, Pencil, Plus, Users } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
@@ -27,7 +27,8 @@ import { ScreenThemePreview } from "#/components/screen-theme-preview";
 import { apiClient } from "#/lib/api-client";
 import { FieldError } from "@oneverse/ui/components/field";
 
-const VIEWS = ["templates", "content", "background", "effects"] as const;
+/** The templates, then each kind of part, then the widgets a template places (a tab of Screens before issue #431). */
+const VIEWS = ["templates", "content", "background", "effects", "widgets"] as const;
 type View = (typeof VIEWS)[number];
 
 /** What each kind of part is previewed with, besides itself (issue #281). */
@@ -57,11 +58,24 @@ function partPreview(kind: ScreenPartKind, document: unknown) {
 /** What a template's card plays (issue #402): a passage for one made for scripture alone, else the sample song. */
 const sampleFor = (template: { madeFor?: readonly string[] }) => (template.madeFor?.length === 1 && template.madeFor[0] === "scripture" ? "scripture" : "songs");
 
-export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: ScreenThemeSummary[]; parts: ScreenPartSummary[]; widgetDefaults: ScreenWidgetDefault[] }) {
+export function TemplatesTab({
+  themes,
+  parts,
+  widgetDefaults,
+  initialView,
+  widgets,
+}: {
+  themes: ScreenThemeSummary[];
+  parts: ScreenPartSummary[];
+  widgetDefaults: ScreenWidgetDefault[];
+  initialView?: View;
+  /** The Widgets view's content: the gallery of widgets and their default looks. */
+  widgets: ReactNode;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const { teams } = useRouteContext({ from: "/_protected" });
-  const [view, setView] = useState<View>("templates");
+  const [view, setView] = useState<View>(initialView ?? "templates");
   const [tags, setTags] = useState<ScreenTemplateTag[]>([]);
   const [draft, setDraft] = useState<ThemeDraft | null>(null);
   const changed = () => router.invalidate();
@@ -206,6 +220,10 @@ export function TemplatesTab({ themes, parts, widgetDefaults }: { themes: Screen
               <PartsList kind={kind} parts={parts.filter((one) => one.kind === kind)} onOpen={setDraft} onChanged={changed} />
             </TabsContent>
           ))}
+          <TabsContent value="widgets" className="flex flex-col gap-4 pt-4">
+            <p className="text-sm text-muted-foreground">{t("screens.widgetsDescription")}</p>
+            {widgets}
+          </TabsContent>
         </Tabs>
       </CardContent>
       {draft ? (
