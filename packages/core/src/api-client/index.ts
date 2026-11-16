@@ -2356,10 +2356,23 @@ export interface MetadataSettings {
 export interface YouVersionSettings {
   source: "database" | "env" | "none";
   hasDatabaseKey: boolean;
-  /** How long passages are kept (issue #485), in hours: 0, never - the default until YouVersion allows it. */
-  cacheHours: number;
-  /** Where that comes from: the admin's, YOUVERSION_CACHE_HOURS, or neither (0). */
+  /** Whether passages are kept as long as YouVersion's Cache-Control allows (issue #485): yes by default. */
+  cache: boolean;
+  /** Where that comes from: the admin's, YOUVERSION_CACHE, or neither (yes). */
   cacheSource: "database" | "env" | "default";
+}
+
+/** One of YouVersion's last answers (issue #485), as Admin > Bibles lists it: its Cache-Control and what it allows. */
+export interface YouVersionAnswer {
+  at: string;
+  /** The path and query asked (never the App Key). */
+  asked: string;
+  status: number;
+  cacheControl: string | null;
+  age: number | null;
+  /** Seconds the server may keep it, and a screen; null when the header says nothing (not kept). */
+  shared: number | null;
+  private: number | null;
 }
 
 /** A YouVersion version (issue #304): its attribution goes with every passage shown. */
@@ -3647,8 +3660,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** YouVersion's App Key (issue #304); empty clears it. */
     getYouVersionSettings: () => request<YouVersionSettings>("/admin/scriptures/youversion"),
     saveYouVersionKey: (appKey: string) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ appKey }) }),
-    /** How many hours YouVersion passages are kept (issue #485): 0 never, null back to the environment's. */
-    saveYouVersionCache: (cacheHours: number | null) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ cacheHours }) }),
+    /** Whether YouVersion passages are kept as long as it allows (issue #485); null back to the environment's. */
+    saveYouVersionCache: (cache: boolean | null) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ cache }) }),
+    /** YouVersion's last answers, newest first, with their Cache-Control (issue #485). */
+    getYouVersionAnswers: () => request<YouVersionAnswer[]>("/admin/scriptures/youversion/answers"),
     resetYouVersionKey: () => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "DELETE" }),
     testYouVersionKey: () => request<{ ok: boolean; message: string }>("/admin/scriptures/youversion/test", { method: "POST" }),
     /** MusicBrainz's contact, in its User-Agent; empty goes back to MUSICBRAINZ_CONTACT. */

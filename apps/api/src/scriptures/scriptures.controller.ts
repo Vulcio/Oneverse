@@ -114,6 +114,13 @@ export class ScripturesController {
     return this.youversion.resetKey();
   }
 
+  /** YouVersion's last answers with their Cache-Control (issue #485): how long it lets them be kept. */
+  @Get("admin/scriptures/youversion/answers")
+  @UseGuards(GlobalAdminGuard)
+  answers() {
+    return this.youversion.answers();
+  }
+
   @Post("admin/scriptures/youversion/test")
   @UseGuards(GlobalAdminGuard)
   test() {

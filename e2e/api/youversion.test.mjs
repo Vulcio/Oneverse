@@ -100,7 +100,7 @@ const yvVerses = async (query = "") => {
 check("the screens' copy reads it", (await yvVerses("?for=screens")) === 1);
 check("…never the offline copy", (await yvVerses()) === 0);
 r = await call(reader, "GET", `/setlists/${set.id}/offline?for=screens`);
-check("…to be kept on a screen 0 hours: never", r.body.songs.find((view) => view.item.id === yvItem.id)?.passage?.keepHours === 0, JSON.stringify(r.body.songs.find((view) => view.item.id === yvItem.id)?.passage).slice(0, 300));
+check("…to be kept on a screen 0 seconds: YouVersion's answer said nothing", r.body.songs.find((view) => view.item.id === yvItem.id)?.passage?.keepSeconds === 0, JSON.stringify(r.body.songs.find((view) => view.item.id === yvItem.id)?.passage).slice(0, 300));
 
 // --- a screen showing the set (issue #485): what it already has isn't asked again on each reload
 async function anonymous(method, path, body, headers = {}) {
@@ -123,26 +123,52 @@ check("…reloading with it held: not asked again, said held", onScreen.held ===
 const looks = await call(reader, "GET", `/screens/looks?setlistId=${set.id}`);
 check("the console's screen looks don't ask for the text", looks.status === 200 && youversionKey.passages === asked, `${looks.status} ${youversionKey.passages - asked}`);
 
-// --- keeping passages (issue #485): off by default, an admin's to turn on
+// --- keeping passages (issue #485): as long as YouVersion's Cache-Control allows, unless an admin says never
 settings = await api(admin, "GET", "/admin/scriptures/youversion");
-check("not kept by default", settings.cacheHours === 0 && settings.cacheSource === "default", JSON.stringify(settings));
-check("only admins set it", (await call(reader, "PUT", "/admin/scriptures/youversion", { cacheHours: 4 })).status === 403);
-check("a week at most", (await call(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: 1000 })).status === 400);
-settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: 4 });
-check("kept 4 hours, the App Key kept", settings.cacheHours === 4 && settings.cacheSource === "database" && settings.hasDatabaseKey, JSON.stringify(settings));
+check("kept as YouVersion allows by default", settings.cache === true && settings.cacheSource === "default", JSON.stringify(settings));
+check("only admins set it", (await call(reader, "PUT", "/admin/scriptures/youversion", { cache: false })).status === 403);
+check("yes or no only", (await call(admin, "PUT", "/admin/scriptures/youversion", { cache: 4 })).status === 400);
+const reads = async (reference) => {
+  const at = youversionKey.passages;
+  await passage(3034, reference);
+  await passage(3034, reference);
+  return youversionKey.passages - at;
+};
+check("an answer without Cache-Control isn't kept: asked for each read", (await reads("John 3:22-23")) === 2);
+youversionKey.cacheControl = "no-store";
+check("…nor one saying no-store", (await reads("John 3:22-24")) === 2);
+youversionKey.cacheControl = "private, max-age=600";
+check("…nor a private one, on the server", (await reads("John 3:22-25")) === 2);
+r = await call(reader, "GET", `/setlists/${set.id}/offline?for=screens`);
+check("…but a screen keeps it as long as max-age says", r.body.songs.find((view) => view.item.id === yvItem.id)?.passage?.keepSeconds === 600, JSON.stringify(r.body.songs.find((view) => view.item.id === yvItem.id)?.passage).slice(0, 300));
+youversionKey.cacheControl = "public, max-age=3600";
+check("kept as long as max-age says: asked once for two reads", (await reads("John 3:20-21")) === 1);
+let answers = await call(admin, "GET", "/admin/scriptures/youversion/answers");
+check(
+  "Admin lists YouVersion's last answers, newest first, with their Cache-Control and what it allows",
+  answers.status === 200 && answers.body[0]?.asked.startsWith("/v1/bibles/3034/passages/JHN.3.20-21") && answers.body[0].cacheControl === "public, max-age=3600" && answers.body[0].shared === 3600 && answers.body[0].private === 3600 && answers.body.some((one) => one.cacheControl === "private, max-age=600" && one.shared === 0 && one.private === 600) && answers.body.some((one) => one.cacheControl === null && one.shared === null),
+  JSON.stringify(answers.body?.slice?.(0, 2)),
+);
+check("…never the App Key", !JSON.stringify(answers.body).includes(youversionKey.key));
+check("…for admins only", (await call(reader, "GET", "/admin/scriptures/youversion/answers")).status === 403);
+youversionKey.cacheControl = null;
 asked = youversionKey.passages;
 await passage(3034, "John 3:20-21");
-await passage(3034, "John 3:20-21");
-check("kept: asked once for two reads", youversionKey.passages === asked + 1, String(youversionKey.passages - asked));
-r = await call(reader, "GET", `/setlists/${set.id}/offline?for=screens`);
-check("…and kept on a screen as long", r.body.songs.find((view) => view.item.id === yvItem.id)?.passage?.keepHours === 4);
-settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: 0 });
-check("turned off", settings.cacheHours === 0 && settings.cacheSource === "database", JSON.stringify(settings));
+check("…read from what was kept, even once YouVersion says nothing more", youversionKey.passages === asked, String(youversionKey.passages - asked));
+settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cache: false });
+check("turned off", settings.cache === false && settings.cacheSource === "database" && settings.hasDatabaseKey, JSON.stringify(settings));
 asked = youversionKey.passages;
 await passage(3034, "John 3:20-21");
 check("…what was kept is gone: asked again", youversionKey.passages === asked + 1, String(youversionKey.passages - asked));
-settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: null });
-check("null: back to the environment's (none here)", settings.cacheHours === 0 && settings.cacheSource === "default", JSON.stringify(settings));
+youversionKey.cacheControl = "public, max-age=3600";
+check("…and nothing kept while off, whatever YouVersion says", (await reads("John 3:20-21")) === 2);
+r = await call(reader, "GET", `/setlists/${set.id}/offline?for=screens`);
+check("…nor on screens", r.body.songs.find((view) => view.item.id === yvItem.id)?.passage?.keepSeconds === 0);
+youversionKey.cacheControl = null;
+settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cache: null });
+check("null: back to the environment's (none here: kept)", settings.cache === true && settings.cacheSource === "default", JSON.stringify(settings));
+await api(admin, "PUT", "/admin/scriptures/youversion", { cache: false });
+await api(admin, "PUT", "/admin/scriptures/youversion", { cache: null });
 check("no per-version switch left", (await call(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true })).status === 404);
 
 // --- a refused key, a spent one, then back to the environment (none here)

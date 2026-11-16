@@ -169,8 +169,12 @@ const spotifyTracks = (title, artist) => [
 export const youtubeKey = { key: null, searches: 0 };
 
 // --- YouVersion (issue #304)
-/** The App Key the YouVersion stand-in accepts, and how many passages it gave: a suite sets it. */
-export const youversionKey = { key: null, passages: 0 };
+/**
+ * The App Key the YouVersion stand-in accepts, and how many passages it gave:
+ * a suite sets it - and the Cache-Control its passages come with (issue
+ * #485), none unless a suite says.
+ */
+export const youversionKey = { key: null, passages: 0, cacheControl: null };
 
 const youversionBibles = {
   3034: {
@@ -222,6 +226,7 @@ function youversionAnswer(req, url, res) {
       url.searchParams.get("format") === "html"
         ? `<div class="p">${Array.from({ length: to - from + 1 }, (_, i) => `<span class="yv-v" v="${from + i}"></span><span class="yv-vlbl">${from + i}</span>${text(from + i)}`).join(" ")}</div>`
         : Array.from({ length: to - from + 1 }, (_, i) => text(from + i)).join(" ");
+    if (youversionKey.cacheControl) res.setHeader("Cache-Control", youversionKey.cacheControl);
     return json(res, { id: passage[1], content, reference });
   }
   return json(res, { message: "Passage not found" }, 404);

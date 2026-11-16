@@ -275,11 +275,14 @@ export interface SetItemPassage {
   /** The template the screens show it with (issue #310), with how many verses it puts on a slide; null or left out: the screen's own, a verse a slide. */
   template?: SetItemTemplate | null;
   /**
-   * On a screen, how many hours its verses may be kept on the device (issue
-   * #485): a YouVersion passage's, 0 (never) unless an admin allows keeping
-   * them. Left out: as the set's other items (an imported Bible's).
+   * On a screen, how many seconds from now its verses may be kept on the
+   * device (issue #485): a YouVersion passage's, as its Cache-Control allows
+   * a private cache - 0 when it doesn't or an admin turned keeping off. Left
+   * out: as the set's other items (an imported Bible's).
    */
-  keepHours?: number;
+  keepSeconds?: number;
+  /** The screen's own note of when it must let go of a YouVersion passage's verses (ms, its own clock), from `keepSeconds` when they came. */
+  keepUntil?: number;
   /** Its verses left out because the screen said it already has them (issue #485): it keeps showing its own. */
   held?: boolean;
 }

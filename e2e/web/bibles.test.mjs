@@ -78,6 +78,21 @@ try {
     await passage.getByText("BSB text of John 3:17.").waitFor();
     await passage.getByText("The Holy Bible, Berean Standard Bible, BSB.").waitFor();
   });
+
+  await step("YouVersion's last answers, with their Cache-Control and how long it lets them be kept (issue #485)", async () => {
+    youversionKey.cacheControl = "public, max-age=7200";
+    await page.locator("#youversion-reference").fill("John 3:18");
+    await page.getByTestId("youversion-try").getByRole("button", { name: "Read" }).click();
+    await page.getByTestId("youversion-passage").getByText("BSB text of John 3:18.").waitFor();
+    youversionKey.cacheControl = null;
+    const answers = page.getByTestId("youversion-answers");
+    await answers.getByRole("button", { name: "Refresh" }).click();
+    const newest = answers.getByTestId("youversion-answer").first();
+    await newest.getByText("/v1/bibles/3034/passages/JHN.3.18").waitFor();
+    await newest.getByText("public, max-age=7200").waitFor();
+    await newest.getByText("2 hours").first().waitFor();
+    if ((await answers.getByTestId("youversion-answer").count()) > 10) throw new Error("more than the last 10 shown at first");
+  });
 } finally {
   await api(admin, "DELETE", "/admin/scriptures/youversion");
   await browser.close();

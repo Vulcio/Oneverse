@@ -1,19 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { YOUVERSION_CACHE_HOURS_MAX, type YouVersionBible, type YouVersionPassage, type YouVersionSettings } from "@oneverse/core";
+import { type YouVersionAnswer, type YouVersionBible, type YouVersionPassage, type YouVersionSettings } from "@oneverse/core";
 import { useState } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
 import { Input } from "@oneverse/ui/components/input";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@oneverse/ui/components/table";
 import { apiClient } from "#/lib/api-client";
 import { ImportedBiblesCard } from "./-imported-bibles";
 import { Actions, Field, Said, useAction } from "./-metadata-providers";
 
 export const Route = createFileRoute("/_protected/admin/bibles")({
   loader: async () => {
-    const [youversion, imported] = await Promise.all([apiClient.getYouVersionSettings(), apiClient.listAdminBibles()]);
-    return { youversion, imported };
+    const [youversion, imported, answers] = await Promise.all([apiClient.getYouVersionSettings(), apiClient.listAdminBibles(), apiClient.getYouVersionAnswers().catch(() => [])]);
+    return { youversion, imported, answers };
   },
   component: AdminBiblesPage,
 });
@@ -32,6 +34,7 @@ function AdminBiblesPage() {
       <ImportedBiblesCard initial={loaded.imported} />
       <YouVersionCard settings={settings} onSaved={setSettings} />
       {settings.source === "none" ? null : <TryPassageCard />}
+      {settings.source === "none" ? null : <YouVersionAnswersCard initial={loaded.answers} />}
     </div>
   );
 }
@@ -39,12 +42,12 @@ function AdminBiblesPage() {
 function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; onSaved: (next: YouVersionSettings) => void }) {
   const { t } = useTranslation();
   const [appKey, setAppKey] = useState("");
-  const [hours, setHours] = useState(String(settings.cacheHours));
+  const [cache, setCache] = useState(settings.cache);
   const { busy, message, run } = useAction();
   const apply = (next: YouVersionSettings) => {
     onSaved(next);
     setAppKey("");
-    setHours(String(next.cacheHours));
+    setCache(next.cache);
   };
   return (
     <Card data-testid="youversion-settings">
@@ -66,21 +69,22 @@ function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; o
             onChange={(event) => setAppKey(event.target.value.trim())}
           />
         </Field>
-        {/* Keeping passages (issue #485): off until YouVersion allows it. */}
-        <Field id="youversion-cache-hours" label={t("bibles.cacheHours")} hint={t("bibles.cacheHoursHint")}>
-          <Input id="youversion-cache-hours" type="number" min={0} max={YOUVERSION_CACHE_HOURS_MAX} step={1} value={hours} className="w-32" onChange={(event) => setHours(event.target.value)} />
+        {/* Keeping passages (issue #485): as long as YouVersion's Cache-Control allows. */}
+        <Field id="youversion-cache" label={t("bibles.cache")} hint={t("bibles.cacheHint")}>
+          <NativeSelect id="youversion-cache" value={cache ? "allowed" : "never"} className="w-64" onChange={(event) => setCache(event.target.value === "allowed")}>
+            <option value="allowed">{t("bibles.cacheAllowed")}</option>
+            <option value="never">{t("bibles.cacheNever")}</option>
+          </NativeSelect>
         </Field>
         <p className="text-xs text-muted-foreground" data-testid="youversion-cache-source">
-          {settings.cacheHours === 0 ? t("bibles.cacheOff") : t("bibles.cacheOn", { count: settings.cacheHours })} {t(`bibles.cache_${settings.cacheSource}`)}
+          {settings.cache ? t("bibles.cacheOn") : t("bibles.cacheOff")} {t(`bibles.cache_${settings.cacheSource}`)}
         </p>
         <Actions
           busy={busy}
           onSave={() =>
             void run(async () => {
-              const wanted = Math.round(Number(hours));
-              if (!Number.isFinite(wanted) || wanted < 0 || wanted > YOUVERSION_CACHE_HOURS_MAX) throw new Error(t("bibles.cacheHoursInvalid", { max: YOUVERSION_CACHE_HOURS_MAX }));
               if (appKey) apply(await apiClient.saveYouVersionKey(appKey));
-              if (wanted !== settings.cacheHours || settings.cacheSource !== "database") apply(await apiClient.saveYouVersionCache(wanted));
+              if (cache !== settings.cache) apply(await apiClient.saveYouVersionCache(cache));
               return t("metadataProviders.saved");
             })
           }
@@ -105,6 +109,95 @@ function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; o
           }
         />
         <Said message={message} />
+      </CardContent>
+    </Card>
+  );
+}
+
+/** A number of seconds as people say it: "45 s", "10 min", "2 h", "3 days". */
+function keptFor(seconds: number | null, t: TFunction): string {
+  if (seconds === null) return t("bibles.answersUnsaid");
+  if (seconds <= 0) return t("bibles.answersNotKept");
+  if (seconds < 120) return t("bibles.answersSeconds", { count: seconds });
+  if (seconds < 3600) return t("bibles.answersMinutes", { count: Math.round(seconds / 60) });
+  if (seconds < 172800) return t("bibles.answersHours", { count: Math.round(seconds / 3600) });
+  return t("bibles.answersDays", { count: Math.round(seconds / 86400) });
+}
+
+/**
+ * YouVersion's last answers (issue #485), newest first: what was asked, the
+ * Cache-Control it came with, and so how long the server and screens may
+ * keep it.
+ */
+function YouVersionAnswersCard({ initial }: { initial: YouVersionAnswer[] }) {
+  const { t } = useTranslation();
+  const [answers, setAnswers] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [all, setAll] = useState(false);
+  const shown = all ? answers : answers.slice(0, 10);
+  return (
+    <Card data-testid="youversion-answers">
+      <CardHeader>
+        <CardTitle className="text-sm">{t("bibles.answersTitle")}</CardTitle>
+        <CardDescription>{t("bibles.answersDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {answers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("bibles.answersNone")}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("bibles.answersWhen")}</TableHead>
+                  <TableHead>{t("bibles.answersAsked")}</TableHead>
+                  <TableHead>Cache-Control</TableHead>
+                  <TableHead>{t("bibles.answersServer")}</TableHead>
+                  <TableHead>{t("bibles.answersScreens")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shown.map((answer, index) => (
+                  <TableRow key={`${answer.at}-${index}`} data-testid="youversion-answer">
+                    <TableCell className="whitespace-nowrap text-xs">{new Date(answer.at).toLocaleString()}</TableCell>
+                    <TableCell className="max-w-64 truncate font-mono text-xs" title={answer.asked}>
+                      {answer.status === 200 ? null : <span className="mr-1 text-destructive">{answer.status}</span>}
+                      {answer.asked.replace(/\?.*$/, "")}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {answer.cacheControl ?? <span className="text-muted-foreground">{t("bibles.answersNoHeader")}</span>}
+                      {answer.age ? <span className="text-muted-foreground"> · Age {answer.age}</span> : null}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">{keptFor(answer.shared, t)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">{keptFor(answer.private, t)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        <div className="flex gap-2">
+          {answers.length > shown.length ? (
+            <Button variant="outline" size="sm" onClick={() => setAll(true)}>
+              {t("bibles.answersAll", { count: answers.length })}
+            </Button>
+          ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void apiClient
+                .getYouVersionAnswers()
+                .then(setAnswers)
+                .catch(() => undefined)
+                .finally(() => setBusy(false));
+            }}
+          >
+            {t("bibles.answersRefresh")}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

@@ -121,13 +121,59 @@ export function youVersionBibleBooks(json: YouVersionBibleJson): YouVersionBible
   };
 }
 
+/**
+ * How long an answer may be kept, in seconds from now, as its Cache-Control
+ * header says (RFC 9111, formerly 7234 - YouVersion's rule for keeping
+ * anything it answers, issue #485): by a shared cache (this server, for
+ * everyone: s-maxage before max-age, nothing marked private) and by a private
+ * one (a screen, for itself: max-age). Expires counts when there's no
+ * max-age; the Age header is taken off. No-store or no-cache: 0, as we never
+ * ask again whether a kept answer still holds. Null: the header says nothing.
+ */
+export interface Freshness {
+  shared: number | null;
+  private: number | null;
+}
+
+export function cacheFreshness(headers: Pick<Headers, "get">, now = Date.now()): Freshness {
+  const directives = new Map<string, string | null>();
+  for (const piece of (headers.get("cache-control") ?? "").split(",")) {
+    const [name, ...value] = piece.split("=");
+    const key = name?.trim().toLowerCase();
+    if (key) directives.set(key, value.length ? value.join("=").trim().replace(/^"|"$/g, "") : null);
+  }
+  if (directives.has("no-store") || directives.has("no-cache")) return { shared: 0, private: 0 };
+  const seconds = (name: string): number | null => {
+    if (!directives.has(name)) return null;
+    const value = Number.parseInt(directives.get(name) ?? "", 10);
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+  };
+  let lifetime = seconds("max-age");
+  if (lifetime === null && headers.get("expires")) {
+    const expires = Date.parse(headers.get("expires")!);
+    const date = Date.parse(headers.get("date") ?? "");
+    lifetime = Number.isNaN(expires) ? 0 : Math.max(0, Math.floor((expires - (Number.isNaN(date) ? now : date)) / 1000));
+  }
+  const age = Math.max(0, Number.parseInt(headers.get("age") ?? "0", 10) || 0);
+  const left = (value: number | null) => (value === null ? null : Math.max(0, value - age));
+  return {
+    shared: directives.has("private") ? 0 : left(seconds("s-maxage") ?? lifetime),
+    private: left(lifetime),
+  };
+}
+
 /** A request with the key; YouVersion's errors told apart (developers.youversion.com/error-codes). */
 async function get<T>(path: string, appKey: string, fetcher: Fetcher): Promise<T> {
+  return (await getFresh<T>(path, appKey, fetcher)).body;
+}
+
+/** The same, with how long the answer may be kept. */
+async function getFresh<T>(path: string, appKey: string, fetcher: Fetcher): Promise<{ body: T; fresh: Freshness }> {
   const res = await fetcher(`${apiBase()}${path}`, {
     headers: { "X-YVP-App-Key": appKey, Accept: "application/json" },
     signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
   });
-  if (res.ok) return (await res.json()) as T;
+  if (res.ok) return { body: (await res.json()) as T, fresh: cacheFreshness(res.headers) };
   const text = await res.text().catch(() => "");
   let said: string | undefined;
   try {
@@ -159,8 +205,10 @@ export async function youVersionBibles(language: string, appKey: string, fetcher
   return (body.data ?? []).map(youVersionBible);
 }
 
-export async function youVersionBibleById(id: number, appKey: string, fetcher: Fetcher = fetch): Promise<YouVersionBibleBooks> {
-  return youVersionBibleBooks(await get<YouVersionBibleJson>(`/v1/bibles/${id}`, appKey, fetcher));
+/** A version with its books, and how long its answer may be kept. */
+export async function youVersionBibleById(id: number, appKey: string, fetcher: Fetcher = fetch): Promise<{ bible: YouVersionBibleBooks; fresh: Freshness }> {
+  const { body, fresh } = await getFresh<YouVersionBibleJson>(`/v1/bibles/${id}`, appKey, fetcher);
+  return { bible: youVersionBibleBooks(body), fresh };
 }
 
 /**
@@ -256,20 +304,28 @@ function plainEntities(text: string): string {
   );
 }
 
+/** One request's verses, and how many seconds they may be kept (issue #485): by this server for everyone, by a screen for itself. Never without a Cache-Control header saying so. */
+export interface YouVersionPiece {
+  parts: YouVersionPassagePart[];
+  shared: number;
+  private: number;
+}
+
 /**
  * One request's text, verse by verse ("JHN.3.16" each): asked as HTML,
  * which marks where each verse starts - plain text doesn't. A piece without
  * markers is one part, under the id it was asked by.
  */
-export async function youVersionPiece(bibleId: number, id: string, appKey: string, fetcher: Fetcher = fetch): Promise<YouVersionPassagePart[]> {
-  const piece = await get<PassageJson>(`/v1/bibles/${bibleId}/passages/${encodeURIComponent(id)}?format=html&include_headings=false&include_notes=false`, appKey, fetcher);
+export async function youVersionPiece(bibleId: number, id: string, appKey: string, fetcher: Fetcher = fetch): Promise<YouVersionPiece> {
+  const { body: piece, fresh } = await getFresh<PassageJson>(`/v1/bibles/${bibleId}/passages/${encodeURIComponent(id)}?format=html&include_headings=false&include_notes=false`, appKey, fetcher);
+  const kept = { shared: fresh.shared ?? 0, private: fresh.private ?? 0 };
   const [book, chapter] = id.split(".");
   const verses = youVersionHtmlVerses(piece.content ?? "");
   if (verses.length === 0) {
     const text = (piece.content ?? "").replace(/<[^>]*>/g, " ");
-    return [{ id: piece.id || id, reference: piece.reference, text: plainEntities(text).replace(/\s+/g, " ").trim() }];
+    return { parts: [{ id: piece.id || id, reference: piece.reference, text: plainEntities(text).replace(/\s+/g, " ").trim() }], ...kept };
   }
-  return verses.map((one) => ({ id: `${book}.${chapter}.${one.verse}`, reference: piece.reference, text: one.text }));
+  return { parts: verses.map((one) => ({ id: `${book}.${chapter}.${one.verse}`, reference: piece.reference, text: one.text })), ...kept };
 }
 
 /** The verse numbers a part's id names: "JHN.3.16" 16 to 16, "JHN.3.16-18" 16 to 18, "JHN.3" none. */
@@ -283,22 +339,26 @@ function partVerses(id: string): { from: number; to: number } | null {
 /**
  * A reference's text in a version, as plain text: one request a chapter it
  * touches (`piece` asks it: the service keeps or shares answers), verse by
- * verse. Never stored here.
+ * verse - with how long a screen may keep it, the shortest of its pieces'.
+ * Never stored here.
  */
 export async function youVersionPassage(
   bibleId: number,
   reference: BibleReference,
   appKey: string,
   fetcher: Fetcher = fetch,
-  piece: (id: string) => Promise<YouVersionPassagePart[]> = (id) => youVersionPiece(bibleId, id, appKey, fetcher),
-): Promise<YouVersionPassagePart[]> {
+  piece: (id: string) => Promise<YouVersionPiece> = (id) => youVersionPiece(bibleId, id, appKey, fetcher),
+): Promise<{ parts: YouVersionPassagePart[]; keepSeconds: number }> {
   const found: YouVersionPassagePart[] = [];
+  let keepSeconds = Number.POSITIVE_INFINITY;
   for (const ask of youVersionAsks(reference)) {
-    for (const part of await piece(ask.id)) {
+    const answer = await piece(ask.id);
+    keepSeconds = Math.min(keepSeconds, answer.private);
+    for (const part of answer.parts) {
       const verses = partVerses(part.id);
       if (verses && ((ask.from !== null && verses.to < ask.from) || (ask.to !== null && verses.from > ask.to))) continue;
       if (!found.some((one) => one.id === part.id)) found.push(part);
     }
   }
-  return found;
+  return { parts: found, keepSeconds: Number.isFinite(keepSeconds) ? keepSeconds : 0 };
 }

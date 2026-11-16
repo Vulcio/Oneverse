@@ -56,41 +56,51 @@ function eachPassage(current: ScreenCurrent, change: (passage: SetItemPassage) =
   return { ...current, set: { ...current.set, songs: current.set.songs.map((view) => (view.passage ? { ...view, passage: change(view.passage) } : view)) } };
 }
 
-/**
- * A copy as it may be kept (issue #485): a YouVersion passage's verses only
- * for as long as an admin allows them kept (`keepHours`, never by default) -
- * the reference stays, without verses. Read back after that time, the same.
- */
-export function keepable(current: ScreenCurrent, keptAt: number, now = Date.now()): ScreenCurrent {
-  return eachPassage(current, (passage) => {
-    if (passage.keepHours === undefined && passage.youversionId === undefined) return passage;
-    const hours = passage.keepHours ?? 0;
-    return hours > 0 && now - keptAt < hours * 3_600_000 ? passage : { ...passage, chapters: [] };
-  });
+/** Whether a YouVersion passage's verses may still be kept (issue #485): until the time its Cache-Control allowed when they came. */
+function stillKept(passage: SetItemPassage, now: number): boolean {
+  return passage.keepUntil !== undefined && now < passage.keepUntil;
 }
 
-/** The passages a screen has the verses of (issue #485), to say so when it loads again: YouVersion isn't asked for them every time. */
-export function heldPassages(current: ScreenCurrent | null): string[] {
+/**
+ * A copy as it may be kept (issue #485): a YouVersion passage's verses only
+ * as long as YouVersion's Cache-Control allowed (`keepUntil`) - the reference
+ * stays, without verses. Read back after that time, the same.
+ */
+export function keepable(current: ScreenCurrent, now = Date.now()): ScreenCurrent {
+  return eachPassage(current, (passage) => (passage.youversionId === undefined || stillKept(passage, now) ? passage : { ...passage, chapters: [] }));
+}
+
+/**
+ * The passages a screen has the verses of and may still keep (issue #485),
+ * to say so when it loads again: YouVersion isn't asked for them every time.
+ * Past their time, they're asked for again.
+ */
+export function heldPassages(current: ScreenCurrent | null, now = Date.now()): string[] {
   const keys = new Set<string>();
   for (const view of current?.set?.songs ?? []) {
-    const key = view.passage && view.passage.chapters.length > 0 ? passageHeldKey(view.passage) : null;
+    const key = view.passage && view.passage.chapters.length > 0 && stillKept(view.passage, now) ? passageHeldKey(view.passage) : null;
     if (key) keys.add(key);
   }
   return [...keys];
 }
 
-/** A copy just loaded with the verses it was spared (`held`) taken from the one before (issue #485). */
-export function withHeld(loaded: ScreenCurrent, before: ScreenCurrent | null): ScreenCurrent {
+/**
+ * A copy just loaded (issue #485): the verses it was spared (`held`) taken
+ * from the one before, with the time they may be kept until; the others'
+ * time counted from now (`keepSeconds`).
+ */
+export function withHeld(loaded: ScreenCurrent, before: ScreenCurrent | null, now = Date.now()): ScreenCurrent {
   const had = new Map<string, SetItemPassage>();
   for (const view of before?.set?.songs ?? []) {
     const key = view.passage ? passageHeldKey(view.passage) : null;
     if (key && view.passage!.chapters.length > 0) had.set(key, view.passage!);
   }
   return eachPassage(loaded, (passage) => {
-    if (!passage.held) return passage;
+    if (passage.youversionId === undefined) return passage;
+    if (!passage.held) return { ...passage, keepUntil: now + (passage.keepSeconds ?? 0) * 1000 };
     const key = passageHeldKey(passage);
     const from = key ? had.get(key) : undefined;
-    const shown: SetItemPassage = { ...passage, chapters: from?.chapters ?? [] };
+    const shown: SetItemPassage = { ...passage, chapters: from?.chapters ?? [], keepUntil: from?.keepUntil ?? now };
     delete shown.held;
     return shown;
   });
@@ -100,7 +110,7 @@ export function withHeld(loaded: ScreenCurrent, before: ScreenCurrent | null): S
 export async function keptScreen(token: string): Promise<KeptScreen | null> {
   try {
     const kept = ((await store("readonly", (s) => s.get(token))) as KeptScreen | undefined) ?? null;
-    return kept && { ...kept, current: keepable(kept.current, kept.at) };
+    return kept && { ...kept, current: keepable(kept.current) };
   } catch {
     return null;
   }
@@ -124,7 +134,7 @@ function update(token: string, change: (kept: KeptScreen | null) => KeptScreen |
 /** The set and look as just loaded, and its files kept for offline. */
 export async function keepScreen(token: string, current: ScreenCurrent): Promise<void> {
   const at = Date.now();
-  await update(token, (kept) => ({ current: keepable(current, at, at), presenting: kept?.presenting ?? null, at }));
+  await update(token, (kept) => ({ current: keepable(current, at), presenting: kept?.presenting ?? null, at }));
   await keepFiles();
 }
 

@@ -1,6 +1,6 @@
 import { parseBibleReference } from "@oneverse/core";
 import { describe, expect, it } from "vite-plus/test";
-import { youVersionBibleById, youVersionBibles, youVersionHtmlVerses, youVersionPassage, YouVersionApiError, type Fetcher } from "./youversion-api.js";
+import { cacheFreshness, youVersionBibleById, youVersionBibles, youVersionHtmlVerses, youVersionPassage, YouVersionApiError, type Fetcher } from "./youversion-api.js";
 
 // Answers shaped as developers.youversion.com/api documents them (no App
 // Key was registered yet to record real ones): version 3034 is the Berean
@@ -56,6 +56,9 @@ function fakeApi(appKey = "test-key") {
   return { fetcher, asked };
 }
 
+/** Answers without a Cache-Control header. */
+const api200 = () => fakeApi().fetcher;
+
 describe("YouVersion's Platform API", () => {
   it("lists a language's versions, the key in X-YVP-App-Key", async () => {
     const api = fakeApi();
@@ -70,36 +73,36 @@ describe("YouVersion's Platform API", () => {
 
   it("takes the long copyright when there's no short one, else the title and info, as plain text", async () => {
     const answer = (body: unknown): Fetcher => async () => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
-    const long = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: "", promotional_content: "<p>Scripture taken from the <b>BSB</b> &amp; used by permission.</p>" }));
+    const { bible: long } = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: "", promotional_content: "<p>Scripture taken from the <b>BSB</b> &amp; used by permission.</p>" }));
     expect(long.copyright).toBe("Scripture taken from the BSB & used by permission.");
-    const none = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: " ", promotional_content: null }));
+    const { bible: none } = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: " ", promotional_content: null }));
     expect(none.copyright).toBeNull();
     // A text out of copyright, as Martin 1744 (FMAR) comes: its title and info instead.
     expect(none.attribution).toBe(`Berean Standard Bible. ${BSB.info}`);
-    const bare = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: null, promotional_content: null, info: null }));
+    const { bible: bare } = await youVersionBibleById(3034, "test-key", answer({ ...BSB, copyright: null, promotional_content: null, info: null }));
     expect(bare.attribution).toBe("Berean Standard Bible");
   });
 
   it("asks once a chapter: a verse, verses of a chapter, a whole chapter, as HTML split into verses", async () => {
     const api = fakeApi();
-    const verse = await youVersionPassage(3034, parseBibleReference("John 3:16")!, "test-key", api.fetcher);
+    const { parts: verse } = await youVersionPassage(3034, parseBibleReference("John 3:16")!, "test-key", api.fetcher);
     expect(verse).toEqual([{ id: "JHN.3.16", reference: "John 3:16", text: VERSES["JHN.3.16"] }]);
     expect(api.asked[0]!.url.searchParams.get("format")).toBe("html");
 
     api.asked.length = 0;
-    const range = await youVersionPassage(3034, parseBibleReference("Jean 3.16-18")!, "test-key", api.fetcher);
+    const { parts: range } = await youVersionPassage(3034, parseBibleReference("Jean 3.16-18")!, "test-key", api.fetcher);
     expect(range.map((part) => part.id)).toEqual(["JHN.3.16", "JHN.3.17", "JHN.3.18"]);
     expect(range[1]!.text).toBe(VERSES["JHN.3.17"]);
     // One request, not a verse list and one a verse (issue #485).
     expect(api.asked.map((call) => call.url.pathname)).toEqual(["/v1/bibles/3034/passages/JHN.3.16-18"]);
 
-    const chapter = await youVersionPassage(3034, parseBibleReference("John 3")!, "test-key", api.fetcher);
+    const { parts: chapter } = await youVersionPassage(3034, parseBibleReference("John 3")!, "test-key", api.fetcher);
     expect(chapter).toHaveLength(36);
     expect(chapter[15]).toMatchObject({ id: "JHN.3.16", text: VERSES["JHN.3.16"] });
 
     api.asked.length = 0;
     // Across chapters: each chapter once, its verses outside the passage left out.
-    const across = await youVersionPassage(3034, parseBibleReference("John 3:35-4:2")!, "test-key", api.fetcher);
+    const { parts: across } = await youVersionPassage(3034, parseBibleReference("John 3:35-4:2")!, "test-key", api.fetcher);
     expect(across.map((part) => part.id)).toEqual(["JHN.3.35", "JHN.3.36", "JHN.4.1", "JHN.4.2"]);
     expect(api.asked.map((call) => call.url.pathname)).toEqual(["/v1/bibles/3034/passages/JHN.3", "/v1/bibles/3034/passages/JHN.4"]);
   });
@@ -109,7 +112,7 @@ describe("YouVersion's Platform API", () => {
     await expect(youVersionPassage(3034, parseBibleReference("John")!, "test-key", api.fetcher)).rejects.toMatchObject({ status: 400 });
     // The same verses twice are asked for once.
     api.asked.length = 0;
-    const twice = await youVersionPassage(3034, parseBibleReference("John 3:16-17, 16-17")!, "test-key", api.fetcher);
+    const { parts: twice } = await youVersionPassage(3034, parseBibleReference("John 3:16-17, 16-17")!, "test-key", api.fetcher);
     expect(twice.map((part) => part.id)).toEqual(["JHN.3.16", "JHN.3.17"]);
     expect(api.asked).toHaveLength(1);
     api.asked.length = 0;
@@ -127,6 +130,39 @@ describe("YouVersion's Platform API", () => {
       { verse: "18-19", text: "Two verses \u2014 one." },
     ]);
     expect(youVersionHtmlVerses("<p>No marks here.</p>")).toEqual([]);
+  });
+
+  it("keeps an answer as long as its Cache-Control says (RFC 9111), never without one", () => {
+    const fresh = (headers: Record<string, string>) => cacheFreshness(new Headers(headers), Date.parse("2026-11-16T12:00:00Z"));
+    expect(fresh({})).toEqual({ shared: null, private: null });
+    expect(fresh({ "cache-control": "public, max-age=3600" })).toEqual({ shared: 3600, private: 3600 });
+    expect(fresh({ "Cache-Control": "max-age=3600, s-maxage=600" })).toEqual({ shared: 600, private: 3600 });
+    // A private answer: a screen may keep it for itself, this server not for everyone.
+    expect(fresh({ "cache-control": "private, max-age=86400" })).toEqual({ shared: 0, private: 86400 });
+    expect(fresh({ "cache-control": "no-store" })).toEqual({ shared: 0, private: 0 });
+    expect(fresh({ "cache-control": "max-age=3600, no-cache" })).toEqual({ shared: 0, private: 0 });
+    // Already this old when it came: that much less.
+    expect(fresh({ "cache-control": "max-age=3600", age: "600" })).toEqual({ shared: 3000, private: 3000 });
+    expect(fresh({ "cache-control": "max-age=60", age: "600" })).toEqual({ shared: 0, private: 0 });
+    expect(fresh({ "cache-control": 'max-age="120"' })).toEqual({ shared: 120, private: 120 });
+    expect(fresh({ "cache-control": "max-age=soon" })).toEqual({ shared: 0, private: 0 });
+    // Expires counts when there's no max-age, from the answer's own Date.
+    expect(fresh({ date: "Mon, 16 Nov 2026 12:00:00 GMT", expires: "Mon, 16 Nov 2026 13:00:00 GMT" })).toEqual({ shared: 3600, private: 3600 });
+    expect(fresh({ expires: "0" })).toEqual({ shared: 0, private: 0 });
+  });
+
+  it("says how long a passage may be kept on a screen: the shortest of its requests'", async () => {
+    const answer =
+      (control: (path: string) => string): Fetcher =>
+      async (input) => {
+        const path = new URL(String(input)).pathname;
+        const id = path.split("/").pop()!;
+        return new Response(JSON.stringify({ id, content: `<span class="yv-v" v="1"></span>Verse.`, reference: id }), { status: 200, headers: { "content-type": "application/json", "cache-control": control(path) } });
+      };
+    const across = await youVersionPassage(3034, parseBibleReference("John 3:36-4:1")!, "test-key", answer((path) => (path.endsWith("JHN.3") ? "max-age=7200" : "max-age=600")));
+    expect(across.keepSeconds).toBe(600);
+    const none = await youVersionPassage(3034, parseBibleReference("John 3:16")!, "test-key", api200());
+    expect(none.keepSeconds).toBe(0);
   });
 
   it("tells its errors apart", async () => {
