@@ -140,7 +140,9 @@ function Showing({
       }
       // Offline, or online when its settings say so (issue #195): the remote, the keyboard or a clicker moves the
       // slides. OK is Next at once, and held still opens the menu.
-      const move = keys && set ? screenStepKey(event.key) : null;
+      // A screen following the day's set with nothing presented keeps OK for its list of sets.
+      const ok = event.key === "Enter" || event.key === " ";
+      const move = keys && set && !(ok && daySet && !presenting) ? screenStepKey(event.key) : null;
       if (move && !(event.repeat && (event.key === "Enter" || event.key === " "))) {
         event.preventDefault();
         step(move);
@@ -161,7 +163,7 @@ function Showing({
       clearTimeout(hold);
       hold = undefined;
       // A short OK was Next (issue #195): not counted towards the menu or the sets.
-      if (!short || (keys && set)) return;
+      if (!short || (keys && set && !(daySet && !presenting))) return;
       presses += 1;
       clearTimeout(settle);
       if (presses >= 3) return opensMenu();
