@@ -4,7 +4,7 @@ import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { YOUVERSION_CACHE_HOURS_MAX } from "@oneverse/core";
 import { redis } from "../jobs/redis.js";
-import { youVersionBibleById, youVersionBibles, youVersionPassage, youVersionPiece, YouVersionApiError, type Fetcher, type YouVersionBible, type YouVersionBibleBooks, type YouVersionPassagePart } from "./youversion-api.js";
+import { youVersionBibleById, youVersionBibles, youVersionPassage, youVersionPiece, withoutBooks, YouVersionApiError, type Fetcher, type YouVersionBible, type YouVersionBibleBooks, type YouVersionPassagePart } from "./youversion-api.js";
 
 export interface YouVersionSettings {
   /** Where the App Key comes from: the database's, YOUVERSION_APP_KEY, or none (YouVersion off). */
@@ -181,7 +181,7 @@ export class YouVersionService {
     const reference = parseBibleReference(text);
     if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
     if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
-    const { books: _books, ...bible } = await this.asked(() => this.version(bibleId, appKey));
+    const bible = withoutBooks(await this.asked(() => this.version(bibleId, appKey)));
     const parts = await this.asked(async () => youVersionPassage(bibleId, reference, appKey, this.fetcher, this.pieceAsker(bibleId, appKey, await this.cacheHours())));
     return { reference: formatBibleReference(reference, { locale: locale ?? (bible.languageTag.startsWith("fr") ? "fr" : "en") }), bible, parts, rights: { offline: false, projection: true, export: false } };
   }

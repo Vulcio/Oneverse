@@ -90,8 +90,14 @@ function plainText(value: string | null | undefined): string {
 }
 
 export function youVersionBible(json: YouVersionBibleJson): YouVersionBible {
-  const { books: _books, ...bible } = youVersionBibleBooks(json);
-  return bible;
+  return withoutBooks(youVersionBibleBooks(json));
+}
+
+/** A version as clients see it: its list of books left out. */
+export function withoutBooks(version: YouVersionBibleBooks): YouVersionBible {
+  const bible: Partial<YouVersionBibleBooks> = { ...version };
+  delete bible.books;
+  return bible as YouVersionBible;
 }
 
 export function youVersionBibleBooks(json: YouVersionBibleJson): YouVersionBibleBooks {
