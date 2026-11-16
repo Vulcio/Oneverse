@@ -1041,7 +1041,7 @@ const fr: typeof en = {
       follows: { off: "Non", line: "Ligne", fill: "Remplissage" },
       followHint: "Suit le clic du meneur quand il joue pour le chant à l'écran : la ligne chantée ressort, ou ses mots se remplissent au fil du chant. Sans lui, rien ne change.",
       textMotion: "Texte et mouvement",
-      groupHints: { display: "la place des paroles", textMotion: "par type de section", chords: "au-dessus des paroles" },
+      groupHints: { display: "la place des paroles", position: "où sur l'écran", textMotion: "par type de section", chords: "au-dessus des paroles" },
       textEffects: "Effets",
       textStyle: "Style",
       spacing: "Espacement",

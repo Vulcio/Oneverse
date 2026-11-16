@@ -21,7 +21,6 @@ import {
   SCREEN_MASK_KINDS,
   SCREEN_MASK_SHAPES,
   SCREEN_MASKS_MAX,
-  SCREEN_POSITIONS,
   SCREEN_REACTIONS_MAX,
   SCREEN_REACTION_FALL_MS,
   SCREEN_TEMPLATE_TAGS,
@@ -54,7 +53,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { Choices, ColorInput, Field, Group, Slider } from "#/components/screen-editor-fields";
-import { DisplaySettings, ChordSettings, TextMotionSettings } from "#/components/screen-text-editor";
+import { DisplaySettings, ChordSettings, PositionSettings, TextMotionSettings } from "#/components/screen-text-editor";
 import { ScreenThemePreview, useSamplePassage, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
@@ -520,6 +519,7 @@ export function ScreenThemeEditor({
             {part === "content" ? (
               <>
             <DisplaySettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+            <PositionSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
             <TextMotionSettings
               theme={theme}
               onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))}
@@ -546,14 +546,6 @@ export function ScreenThemeEditor({
               </Field>
             </Group>
             ) : null}
-            <Group title={t("screens.editor.layout")}>
-              <Field label={t("screens.editor.position")}>
-                <Choices value={theme.layout.position} options={SCREEN_POSITIONS} label={(one) => t(`screens.editor.positions.${one}`)} onChange={(position) => set("layout", { position })} />
-              </Field>
-              <Field label={t("screens.editor.margin")}>
-                <Slider value={theme.layout.margin} min={0} max={20} step={1} unit="%" onChange={(margin) => set("layout", { margin })} />
-              </Field>
-            </Group>
             <ChordSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
               </>
             ) : null}

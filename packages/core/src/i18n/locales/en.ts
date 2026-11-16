@@ -1041,7 +1041,7 @@ const en = {
       follows: { off: "Off", line: "Line", fill: "Fill" },
       followHint: "Follows the leader's click while it plays for the song on screen: the line being sung stands out, or its words fill as they're sung. Without it, nothing changes.",
       textMotion: "Text and motion",
-      groupHints: { display: "how the words sit", textMotion: "by kind of section", chords: "over the words" },
+      groupHints: { display: "how the words sit", position: "where on the screen", textMotion: "by kind of section", chords: "over the words" },
       textEffects: "Effects",
       textStyle: "Style",
       spacing: "Spacing",

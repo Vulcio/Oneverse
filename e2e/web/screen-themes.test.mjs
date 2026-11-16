@@ -104,6 +104,10 @@ try {
     const part = editor;
     await part.getByTestId("theme-transition").locator('[data-value="zoom"]').click();
     await part.getByTestId("theme-reveal").locator('[data-value="letters"]').click();
+    // Where the words sit (issue #431): icons under Display, the preview's words at the top.
+    await part.getByTestId("theme-group-position").getByTestId("theme-position-top").click();
+    await part.locator('[data-testid="theme-position-top"][aria-pressed="true"]').waitFor();
+    await part.locator('[data-testid="theme-preview"] .sv-words.justify-start').first().waitFor();
     // A step in the preview: the next slide comes in letter by letter, over the template's background.
     await part.getByTestId("theme-preview-next").click();
     await part.locator('[data-testid="theme-preview"] [data-background="particles"] .sv-reveal-letters .sv-piece').first().waitFor();
@@ -136,7 +140,7 @@ try {
     await editor.getByTestId("theme-save").click();
     await tablet.getByTestId(`saved-theme-Starry ${stamp}`).waitFor();
     const saved = (await api(leader, "GET", "/screen-themes")).find((one) => one.name === `Starry ${stamp}`);
-    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant" || saved.theme.sections.chorus?.mark !== "band" || saved.theme.sections.chorus.text.italic !== true || saved.theme.sections.chorus.text.color !== undefined || saved.parts.background.name !== `Starry sky ${stamp}` || !saved.template.tags.includes("presentation") || saved.template.madeFor.join() !== "songs,scripture")
+    if (saved?.theme.background.kind !== "particles" || saved.theme.motion.reveal !== "letters" || saved.theme.text.font !== "elegant" || saved.theme.layout.position !== "top" || saved.theme.sections.chorus?.mark !== "band" || saved.theme.sections.chorus.text.italic !== true || saved.theme.sections.chorus.text.color !== undefined || saved.parts.background.name !== `Starry sky ${stamp}` || !saved.template.tags.includes("presentation") || saved.template.madeFor.join() !== "songs,scripture")
       throw new Error(JSON.stringify(saved));
   });
 

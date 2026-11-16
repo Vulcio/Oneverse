@@ -11,6 +11,7 @@ import {
   SCREEN_OUTLINES,
   SCREEN_PACE_MS,
   SCREEN_PACES,
+  SCREEN_POSITIONS,
   SCREEN_REVEALS,
   SCREEN_SECTION_KINDS,
   SCREEN_SECTION_MARKS,
@@ -25,7 +26,7 @@ import {
   type ScreenThemeAsset,
   type ScreenTransition,
 } from "@oneverse/core";
-import { AlignCenter, AlignLeft, AlignRight, CaseUpper, Check as CheckIcon, ChevronDown, Italic, MoveVertical, RotateCcw, Type } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, CaseUpper, Check as CheckIcon, ChevronDown, Italic, MoveVertical, PanelBottom, RotateCcw, Type } from "lucide-react";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { loadScreenFont } from "@oneverse/screen/lib/screen-fonts";
 import { useTranslation } from "react-i18next";
@@ -429,6 +430,39 @@ function EffectRow({ label, color, onColor, colorTestId, children }: { label: st
       {children}
       {color && onColor ? <ColorInput value={color} onChange={onColor} testId={colorTestId} /> : <span />}
     </div>
+  );
+}
+
+const POSITION_ICONS = { top: AlignVerticalJustifyStart, center: AlignVerticalJustifyCenter, bottom: AlignVerticalJustifyEnd, "lower-third": PanelBottom } as const;
+
+/**
+ * Where the words sit on the screen (issue #431): top, middle, bottom or a
+ * lower third, as icons beside the margin, right under Display.
+ */
+export function PositionSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: (change: (before: ScreenTheme) => Partial<ScreenTheme>) => void }) {
+  const { t } = useTranslation();
+  const layout = theme.layout;
+  const set = (change: Partial<ScreenTheme["layout"]>) => onTheme((before) => ({ layout: { ...before.layout, ...change } }));
+  return (
+    <Group title={t("screens.editor.position")} hint={t("screens.editor.groupHints.position")} open testId="theme-group-position">
+      <div className="flex flex-wrap items-end gap-3">
+        <IconBar>
+          {SCREEN_POSITIONS.map((position) => {
+            const Icon = POSITION_ICONS[position];
+            return (
+              <IconToggle key={position} label={t(`screens.editor.positions.${position}`)} on={layout.position === position} onChange={() => set({ position })} testId={`theme-position-${position}`}>
+                <Icon className="size-4" aria-hidden />
+              </IconToggle>
+            );
+          })}
+        </IconBar>
+        <div className="min-w-40 flex-1">
+          <Field label={t("screens.editor.margin")}>
+            <Slider value={layout.margin} min={0} max={20} step={1} unit="%" onChange={(margin) => set({ margin })} />
+          </Field>
+        </div>
+      </div>
+    </Group>
   );
 }
 
