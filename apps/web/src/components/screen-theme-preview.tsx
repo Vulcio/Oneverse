@@ -1,4 +1,4 @@
-import { chartBars, lyricSlides, passageSlides, renderChart, screenLayers, songDocumentFromText, type ScreenContentKind, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
+import { chartBars, lyricSlides, passageSlides, renderChart, screenLayers, songDocumentFromText, type PassageLayout, type ScreenContentKind, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenStage, type StageSong } from "@oneverse/screen/components/screen-stage";
@@ -38,6 +38,7 @@ export function ScreenThemePreview({
   hiddenLayers,
   sample: kind = "songs",
   versesPerSlide = 1,
+  passages,
   className,
   children,
 }: {
@@ -55,13 +56,15 @@ export function ScreenThemePreview({
   sample?: ScreenContentKind;
   /** The passage's verses on a slide. */
   versesPerSlide?: number;
+  /** How the passage is cut into slides beyond that (issue #485). */
+  passages?: PassageLayout;
   className?: string;
   /** Drawn over it: the template editor's grid (issue #268). */
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const songs = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
-  const passage = useSamplePassage(versesPerSlide);
+  const passage = useSamplePassage(versesPerSlide, passages);
   const song = kind === "scripture" ? passage : songs;
   const [slide, setSlide] = useState(0);
   const sample = useSampleLive(song);
@@ -100,14 +103,16 @@ export function useSampleSong(title: string, writers: string): StageSong {
 }
 
 /** A sample Bible passage (issue #402), John 3:16-18 in a public-domain translation, as a set's passage would be on a screen. */
-export function useSamplePassage(versesPerSlide = 1): StageSong {
+export function useSamplePassage(versesPerSlide = 1, passages?: PassageLayout): StageSong {
   const { t } = useTranslation();
+  const layout = JSON.stringify(passages ?? null);
   return useMemo(() => {
     const book = t("screens.samplePassage.book");
     const verses = [16, 17, 18].map((number) => ({ number, text: t(`screens.samplePassage.v${number}`) }));
-    const slides = passageSlides({ bookName: book, chapters: [{ book: 43, chapter: 3, verses }], projection: true, template: { id: null, builtIn: null, name: null, versesPerSlide } });
-    return { key: `sample-passage-${versesPerSlide}`, title: `${book} 3:16-18`, slides, attribution: t("screens.samplePassage.credit") };
-  }, [t, versesPerSlide]);
+    const cut = (JSON.parse(layout) as PassageLayout | null) ?? undefined;
+    const slides = passageSlides({ bookName: book, chapters: [{ book: 43, chapter: 3, verses }], projection: true, template: { id: null, builtIn: null, name: null, versesPerSlide, passages: cut } });
+    return { key: `sample-passage-${versesPerSlide}-${layout}`, title: `${book} 3:16-18`, slides, attribution: t("screens.samplePassage.credit") };
+  }, [t, versesPerSlide, layout]);
 }
 
 /** What a template's widgets show in a preview (issue #268): a next song, a running countdown, a message. */

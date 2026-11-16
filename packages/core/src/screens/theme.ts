@@ -198,6 +198,8 @@ export const SCREEN_OUTLINES = ["none", "thin", "medium"] as const;
 export const SCREEN_GLOWS = ["none", "soft"] as const;
 /** Chords over a lyrics template's words (issue #395): none, above the syllable they're on, or a row of beat blocks over each line. */
 export const SCREEN_LYRIC_CHORDS = ["off", "above", "beats"] as const;
+/** Where a passage's verse numbers sit (issue #485): in the line, or raised like a footnote. */
+export const SCREEN_VERSE_POSITIONS = ["inline", "raised"] as const;
 export const SCREEN_CHORD_NOTATIONS = ["letters", "numbers", "solfege"] as const;
 /** How a kind of section is set apart (issue #395): nothing, a bar beside its lines, a band behind them. */
 export const SCREEN_SECTION_MARKS = ["none", "bar", "band"] as const;
@@ -699,6 +701,19 @@ function screenThemeSchema(strict: boolean) {
       simple: z.boolean().default(false),
       /** The chord being played lit, when the music is followed. */
       current: z.boolean().default(true),
+    })
+    .prefault({}),
+  /**
+   * A passage's verse numbers (issue #485): raised like a footnote or in the
+   * line, their size beside the words', their own colour and font (null: the
+   * words'). Whether a slide has them is its template's to say (passageSlides).
+   */
+  verses: object({
+      position: z.enum(SCREEN_VERSE_POSITIONS).default("inline"),
+      size: z.number().min(0.3).max(1.5).default(1),
+      color: color.nullable().default(null),
+      font: fontSchema(strict).nullable().default(null),
+      bold: z.boolean().default(false),
     })
     .prefault({}),
   /** Widgets placed on a grid (issue #268); none, and the words fill the screen as they always have. */

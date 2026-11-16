@@ -105,6 +105,7 @@ export function TemplatesTab({
     name: from ? t(`screens.templates.${from.id}.name`) : t("screens.newTemplateName"),
     tags: from?.template.tags ?? [],
     versesPerSlide: from?.template.versesPerSlide ?? 1,
+    passages: from?.template.passages,
     grid: from?.template.grid ?? null,
     masks: from?.template.masks ?? [],
     titleWidgets: from?.template.titleWidgets ?? true,
@@ -146,7 +147,7 @@ export function TemplatesTab({
                 <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="saved-themes">
                   {saved.map((theme) => (
                     <li key={theme.id} className="flex flex-col gap-2" data-testid={`saved-theme-${theme.name}`}>
-                      <ScreenThemePreview theme={theme.theme} assets={theme.assets} sample={sampleFor(theme.template)} versesPerSlide={theme.template.versesPerSlide} />
+                      <ScreenThemePreview theme={theme.theme} assets={theme.assets} sample={sampleFor(theme.template)} versesPerSlide={theme.template.versesPerSlide} passages={theme.template.passages} />
                       <Tags tags={theme.template.tags} />
                       {theme.updates?.length ? (
                         // A preset it uses as it was has changed since (issue #428): its look is kept until they take the new one.
@@ -180,7 +181,7 @@ export function TemplatesTab({
                               size="sm"
                               variant="outline"
                               onClick={() =>
-                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, grid: theme.template.grid, masks: theme.template.masks, titleWidgets: theme.template.titleWidgets, madeFor: theme.template.madeFor ?? [], tweaks: theme.template.tweaks, look: theme.template.look, updates: theme.updates, refs: theme.parts })
+                                setDraft({ kind: "template", id: theme.id, name: theme.name, ownerTeamId: theme.ownerTeamId, tags: theme.template.tags, versesPerSlide: theme.template.versesPerSlide, passages: theme.template.passages, grid: theme.template.grid, masks: theme.template.masks, titleWidgets: theme.template.titleWidgets, madeFor: theme.template.madeFor ?? [], tweaks: theme.template.tweaks, look: theme.template.look, updates: theme.updates, refs: theme.parts })
                               }
                               data-testid="edit-theme"
                             >
@@ -212,7 +213,7 @@ export function TemplatesTab({
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-testid="builtin-themes">
                 {shownBuiltIns.map((template) => (
                   <li key={template.id} className="flex flex-col gap-2" data-testid={`builtin-theme-${template.id}`}>
-                    <ScreenThemePreview theme={composeBuiltInTemplate(template.id)!} sample={sampleFor(template.template)} versesPerSlide={template.template.versesPerSlide} />
+                    <ScreenThemePreview theme={composeBuiltInTemplate(template.id)!} sample={sampleFor(template.template)} versesPerSlide={template.template.versesPerSlide} passages={template.template.passages} />
                     <Tags tags={template.tags} />
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">

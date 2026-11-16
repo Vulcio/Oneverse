@@ -1,7 +1,7 @@
 import { screenSectionText, type ChartBar, type ScreenTheme } from "@oneverse/core";
 import { cn } from "@oneverse/ui/lib/utils";
 import { useContext, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { BeatRow, beatsOf, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songBars, songBarWords, songLines, StageSide, type StageSong } from "./screen-text";
+import { BeatRow, beatsOf, chordsAbove, fillWords, withVerseNumbers, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songBars, songBarWords, songLines, StageSide, type StageSong } from "./screen-text";
 
 const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -146,7 +146,7 @@ function ScrollRows({ theme, song, index, size, looks, filterOf }: { theme: Scre
                     }}
                   >
                     {beats.length > 0 ? <BeatRow bars={beats} chart={song.chart} options={chords} /> : null}
-                    {above && line.chords ? chordsAbove(line.chords, chords) : theme.display.follow === "fill" && line.chords ? fillWords(line.text) : line.text}
+                    {above && line.chords ? chordsAbove(line.chords, chords) : theme.display.follow === "fill" && line.chords ? fillWords(line.text) : withVerseNumbers(line.text, line.numbers, theme.verses, (text) => text)}
                   </p>
                 );
               })}

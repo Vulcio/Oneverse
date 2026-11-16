@@ -151,11 +151,11 @@ export class BiblesService {
    * reference, and its verses only where the Bible's rights allow that use.
    * A Bible deleted since leaves the reference, with no Bible and no verses.
    */
-  async itemPassage(value: unknown, use: PassageUse): Promise<SetItemPassage | null> {
+  async itemPassage(value: unknown, use: PassageUse, held?: ReadonlySet<string>): Promise<SetItemPassage | null> {
     const ref = readItemPassage(value);
     if (!ref) return null;
-    // A YouVersion version's (issue #310): read from YouVersion, never kept.
-    if (ref.youversionId !== undefined) return this.youversion.itemPassage(ref.youversionId, ref.reference, use);
+    // A YouVersion version's (issue #310): read from YouVersion, kept only as an admin allows (issue #485); `held`, what a screen has already.
+    if (ref.youversionId !== undefined) return this.youversion.itemPassage(ref.youversionId, ref.reference, use, held);
     if (!ref.bibleId) return null;
     const row = await this.prisma.client.bible.findFirst({ where: { id: ref.bibleId, status: "READY" } });
     const reference = parseBibleReference(ref.reference);

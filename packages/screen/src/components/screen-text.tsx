@@ -130,6 +130,8 @@ export interface StageLine {
   /** The slide it's on, and the pass. */
   slide: number;
   passIndex: number;
+  /** A passage's verse numbers in it (issue #485), by character. */
+  numbers?: { from: number; to: number }[];
 }
 
 /** Each slide's lines with their chords (issue #395): the chart's lines, matched to the slides however many lines they hold. */
@@ -147,11 +149,49 @@ export function songLines(song: StageSong): StageLine[][] {
     taken.set(slide.passIndex, from + slide.lines.length);
     return slide.lines.map((text, i): StageLine => {
       const chords = chartLines?.[from + i];
-      return { text, chords: chords && chords.text === text ? chords : null, slide: index, passIndex: slide.passIndex };
+      const numbers = slide.numbers?.filter((one) => one.line === i).map(({ from: start, to }) => ({ from: start, to }));
+      return { text, chords: chords && chords.text === text ? chords : null, slide: index, passIndex: slide.passIndex, ...(numbers?.length && { numbers }) };
     });
   });
   linesCache.set(song, lines);
   return lines;
+}
+
+/** A verse number's look (issue #485): its size beside the words', raised or in the line, its own colour, font and weight. */
+export function verseNumberLook(look: ScreenTheme["verses"]): CSSProperties {
+  const raised = look.position === "raised";
+  return {
+    fontSize: `${(raised ? 0.6 : 1) * look.size}em`,
+    verticalAlign: raised ? "0.55em" : undefined,
+    lineHeight: raised ? 0 : undefined,
+    color: look.color ?? undefined,
+    fontFamily: look.font ? SCREEN_FONT_FAMILIES[look.font] : undefined,
+    fontWeight: look.bold ? 800 : undefined,
+  };
+}
+
+/**
+ * A passage's line with its verse numbers in their own look (issue #485):
+ * the words between them drawn by `words` (plain, revealed, word by word),
+ * each number as a piece of its own.
+ */
+export function withVerseNumbers(text: string, numbers: { from: number; to: number }[] | undefined, look: ScreenTheme["verses"], words: (part: string, key: number) => ReactNode): ReactNode {
+  if (!numbers?.length) return words(text, 0);
+  const out: ReactNode[] = [];
+  let at = 0;
+  [...numbers]
+    .sort((a, b) => a.from - b.from)
+    .forEach((one, i) => {
+      if (one.from > at) out.push(words(text.slice(at, one.from), i * 2));
+      out.push(
+        <span key={`n${i}`} className="sv-verse-number" style={verseNumberLook(look)} data-testid="screen-verse-number">
+          {text.slice(one.from, one.to)}
+        </span>,
+      );
+      at = one.to;
+    });
+  if (at < text.length) out.push(words(text.slice(at), numbers.length * 2 + 1));
+  return out;
 }
 
 /** The song's bars (issue #395): its own, else worked out from the chart. */

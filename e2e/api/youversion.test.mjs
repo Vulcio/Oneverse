@@ -1,9 +1,9 @@
 // YouVersion's Platform API as a Bible provider (issue #304): off without an
 // App Key, the key in Admin > Bibles (encrypted, never shown back, tested),
 // a language's versions, a passage with its version's copyright and no
-// rights beyond reading it, never cached; in a set, its reference only, read
-// live, on screens once an admin allows the version, never offline (issue
-// #310) - against the suites' stand-in (lib/fake-providers.mjs), shaped as
+// rights beyond reading it, never cached unless an admin allows it (issue
+// #485), one request a chapter; in a set, its reference only, read live, on
+// screens, never offline (issue #310) - against the suites' stand-in (lib/fake-providers.mjs), shaped as
 // YouVersion's documentation describes.
 import { API, api, call, check, finish, sql, user } from "../lib/harness.mjs";
 import { startFakeProviders, youversionKey } from "../lib/fake-providers.mjs";
@@ -53,17 +53,17 @@ const passage = (id, reference) => fetch(`${API}/scriptures/youversion/bibles/${
 let res = await passage(3034, "Jean 3.16-18");
 let body = await res.json();
 check(
-  "verses, one by one, with the version and its copyright",
+  "verses, each its own, with the version and its copyright",
   res.status === 200 && body.reference === "John 3:16-18" && body.parts.map((p) => p.id).join() === "JHN.3.16,JHN.3.17,JHN.3.18" && body.parts[0].text === "BSB text of John 3:16." && /Berean/.test(body.bible.copyright) && body.bible.attribution === body.bible.copyright,
   JSON.stringify(body).slice(0, 400),
 );
 check("on screens, never offline or exported", body.rights && body.rights.projection === true && !body.rights.offline && !body.rights.export, JSON.stringify(body.rights));
 check("never cached", res.headers.get("cache-control") === "no-store", String(res.headers.get("cache-control")));
-check("asked for afresh each time", youversionKey.passages === 3, String(youversionKey.passages));
-await passage(3034, "John 3:16");
-check("not kept between requests", youversionKey.passages === 4, String(youversionKey.passages));
+check("three verses of a chapter: one request (issue #485)", youversionKey.passages === 1, String(youversionKey.passages));
+await passage(3034, "Jean 3.16-18");
+check("not kept between requests by default", youversionKey.passages === 2, String(youversionKey.passages));
 body = await (await passage(3034, "John 3")).json();
-check("a whole chapter in one piece", body.parts?.length === 1 && body.parts[0].id === "JHN.3", JSON.stringify(body).slice(0, 300));
+check("a whole chapter in one request, verse by verse", body.parts?.length === 36 && body.parts[15].id === "JHN.3.16" && youversionKey.passages === 3, JSON.stringify(body).slice(0, 300));
 res = await passage(3034, "John");
 check("a whole book is refused", res.status === 400, String(res.status));
 res = await passage(3034, "Hezekiah 1:1");
@@ -79,7 +79,9 @@ r = await call(reader, "POST", `/setlists/${set.id}/items`, { passage: { bibleId
 check("one of bibleId or youversionId, not both", r.status === 400, JSON.stringify(r.body));
 r = await call(reader, "POST", `/setlists/${set.id}/items`, { passage: { youversionId: 4242, reference: "John 3:16" } });
 check("a version YouVersion doesn't have: refused", r.status === 404, `${r.status} ${JSON.stringify(r.body)}`);
+let asked = youversionKey.passages;
 r = await call(reader, "POST", `/setlists/${set.id}/items`, { passage: { youversionId: 3034, reference: "Jn 3.16-17" } });
+check("added without its text asked again (issue #485)", youversionKey.passages === asked, String(youversionKey.passages - asked));
 const yvItem = r.body.items?.find((item) => item.kind === "PASSAGE");
 check("a YouVersion passage goes into a set", r.status === 201 && yvItem?.passage?.youversionId === 3034 && yvItem.passage.reference === "John 3:16-17", `${r.status} ${JSON.stringify(r.body).slice(0, 300)}`);
 check("…only the reference and the version stored", Object.entries(JSON.parse(sql(`select passage from "SetlistItem" where id='${yvItem?.id}'`))).sort().join() === "reference,John 3:16-17,youversionId,3034");
@@ -97,6 +99,50 @@ const yvVerses = async (query = "") => {
 // Its licence is settled with YouVersion, not in Oneverse: no switch per version.
 check("the screens' copy reads it", (await yvVerses("?for=screens")) === 1);
 check("…never the offline copy", (await yvVerses()) === 0);
+r = await call(reader, "GET", `/setlists/${set.id}/offline?for=screens`);
+check("…to be kept on a screen 0 hours: never", r.body.songs.find((view) => view.item.id === yvItem.id)?.passage?.keepHours === 0, JSON.stringify(r.body.songs.find((view) => view.item.id === yvItem.id)?.passage).slice(0, 300));
+
+// --- a screen showing the set (issue #485): what it already has isn't asked again on each reload
+async function anonymous(method, path, body, headers = {}) {
+  const res = await fetch(`${API}${path}`, { method, headers: { "Content-Type": "application/json", ...headers }, body: body ? JSON.stringify(body) : undefined });
+  return { status: res.status, body: await res.json().catch(() => null) };
+}
+const pairing = (await anonymous("POST", "/screens/pairings")).body;
+await api(reader, "POST", `/screens/pairings/${pairing.code}/confirm`, { name: `YouVersion screen ${Date.now()}`, mode: "LYRICS", setlistId: set.id });
+const screenToken = (await anonymous("POST", `/screens/pairings/${pairing.pairingId}/claim`, { secret: pairing.secret })).body.token;
+const shown = async (held) => {
+  const query = held ? `?${new URLSearchParams({ held })}` : "";
+  return (await anonymous("GET", `/screens/current${query}`, null, { Authorization: `Screen ${screenToken}` })).body.set.songs.find((view) => view.item.id === yvItem.id).passage;
+};
+asked = youversionKey.passages;
+let onScreen = await shown();
+check("a screen loads the passage's verses", onScreen.chapters[0]?.verses.length === 2 && youversionKey.passages === asked + 1, `${youversionKey.passages - asked} ${JSON.stringify(onScreen).slice(0, 200)}`);
+asked = youversionKey.passages;
+onScreen = await shown(`3034:${yvItem.passage.reference}`);
+check("…reloading with it held: not asked again, said held", onScreen.held === true && onScreen.chapters.length === 0 && youversionKey.passages === asked, `${youversionKey.passages - asked} ${JSON.stringify(onScreen).slice(0, 200)}`);
+const looks = await call(reader, "GET", `/screens/looks?setlistId=${set.id}`);
+check("the console's screen looks don't ask for the text", looks.status === 200 && youversionKey.passages === asked, `${looks.status} ${youversionKey.passages - asked}`);
+
+// --- keeping passages (issue #485): off by default, an admin's to turn on
+settings = await api(admin, "GET", "/admin/scriptures/youversion");
+check("not kept by default", settings.cacheHours === 0 && settings.cacheSource === "default", JSON.stringify(settings));
+check("only admins set it", (await call(reader, "PUT", "/admin/scriptures/youversion", { cacheHours: 4 })).status === 403);
+check("a week at most", (await call(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: 1000 })).status === 400);
+settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: 4 });
+check("kept 4 hours, the App Key kept", settings.cacheHours === 4 && settings.cacheSource === "database" && settings.hasDatabaseKey, JSON.stringify(settings));
+asked = youversionKey.passages;
+await passage(3034, "John 3:20-21");
+await passage(3034, "John 3:20-21");
+check("kept: asked once for two reads", youversionKey.passages === asked + 1, String(youversionKey.passages - asked));
+r = await call(reader, "GET", `/setlists/${set.id}/offline?for=screens`);
+check("…and kept on a screen as long", r.body.songs.find((view) => view.item.id === yvItem.id)?.passage?.keepHours === 4);
+settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: 0 });
+check("turned off", settings.cacheHours === 0 && settings.cacheSource === "database", JSON.stringify(settings));
+asked = youversionKey.passages;
+await passage(3034, "John 3:20-21");
+check("…what was kept is gone: asked again", youversionKey.passages === asked + 1, String(youversionKey.passages - asked));
+settings = await api(admin, "PUT", "/admin/scriptures/youversion", { cacheHours: null });
+check("null: back to the environment's (none here)", settings.cacheHours === 0 && settings.cacheSource === "default", JSON.stringify(settings));
 check("no per-version switch left", (await call(admin, "PUT", "/admin/scriptures/youversion/versions/3034", { canProject: true })).status === 404);
 
 // --- a refused key, a spent one, then back to the environment (none here)

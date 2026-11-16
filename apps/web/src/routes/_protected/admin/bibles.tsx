@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { YouVersionBible, YouVersionPassage, YouVersionSettings } from "@oneverse/core";
+import { YOUVERSION_CACHE_HOURS_MAX, type YouVersionBible, type YouVersionPassage, type YouVersionSettings } from "@oneverse/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -39,10 +39,12 @@ function AdminBiblesPage() {
 function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; onSaved: (next: YouVersionSettings) => void }) {
   const { t } = useTranslation();
   const [appKey, setAppKey] = useState("");
+  const [hours, setHours] = useState(String(settings.cacheHours));
   const { busy, message, run } = useAction();
   const apply = (next: YouVersionSettings) => {
     onSaved(next);
     setAppKey("");
+    setHours(String(next.cacheHours));
   };
   return (
     <Card data-testid="youversion-settings">
@@ -64,11 +66,21 @@ function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; o
             onChange={(event) => setAppKey(event.target.value.trim())}
           />
         </Field>
+        {/* Keeping passages (issue #485): off until YouVersion allows it. */}
+        <Field id="youversion-cache-hours" label={t("bibles.cacheHours")} hint={t("bibles.cacheHoursHint")}>
+          <Input id="youversion-cache-hours" type="number" min={0} max={YOUVERSION_CACHE_HOURS_MAX} step={1} value={hours} className="w-32" onChange={(event) => setHours(event.target.value)} />
+        </Field>
+        <p className="text-xs text-muted-foreground" data-testid="youversion-cache-source">
+          {settings.cacheHours === 0 ? t("bibles.cacheOff") : t("bibles.cacheOn", { count: settings.cacheHours })} {t(`bibles.cache_${settings.cacheSource}`)}
+        </p>
         <Actions
           busy={busy}
           onSave={() =>
             void run(async () => {
+              const wanted = Math.round(Number(hours));
+              if (!Number.isFinite(wanted) || wanted < 0 || wanted > YOUVERSION_CACHE_HOURS_MAX) throw new Error(t("bibles.cacheHoursInvalid", { max: YOUVERSION_CACHE_HOURS_MAX }));
               if (appKey) apply(await apiClient.saveYouVersionKey(appKey));
+              if (wanted !== settings.cacheHours || settings.cacheSource !== "database") apply(await apiClient.saveYouVersionCache(wanted));
               return t("metadataProviders.saved");
             })
           }
@@ -83,7 +95,7 @@ function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; o
                   })
           }
           onRevert={
-            settings.hasDatabaseKey
+            settings.hasDatabaseKey || settings.cacheSource === "database"
               ? () =>
                   run(async () => {
                     apply(await apiClient.resetYouVersionKey());

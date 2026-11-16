@@ -210,11 +210,19 @@ function youversionAnswer(req, url, res) {
   const rest = bible[2] ?? "";
   if (rest === "") return json(res, found);
   if (rest === "/books/JHN/chapters/3/verses") return json(res, { data: Array.from({ length: 36 }, (_, i) => ({ id: String(i + 1), passage_id: `JHN.3.${i + 1}`, title: String(i + 1) })) });
-  const passage = /^\/passages\/(JHN\.3(?:\.(\d+))?)$/.exec(rest);
-  if (passage && (!passage[2] || Number(passage[2]) <= 36)) {
+  // A verse, verses of the chapter (JHN.3.16-18) or the whole chapter; as HTML, each verse after its marker (issue #485).
+  const passage = /^\/passages\/(JHN\.3(?:\.(\d+)(?:-(\d+))?)?)$/.exec(decodeURIComponent(rest));
+  const from = passage?.[2] ? Number(passage[2]) : 1;
+  const to = passage?.[3] ? Number(passage[3]) : passage?.[2] ? from : 36;
+  if (passage && from <= to && to <= 36) {
     youversionKey.passages++;
-    const reference = passage[2] ? `John 3:${passage[2]}` : "John 3";
-    return json(res, { id: passage[1], content: `${found.abbreviation} text of ${reference}.`, reference });
+    const reference = passage[2] ? `John 3:${from}${to > from ? `-${to}` : ""}` : "John 3";
+    const text = (v) => `${found.abbreviation} text of John 3:${v}.`;
+    const content =
+      url.searchParams.get("format") === "html"
+        ? `<div class="p">${Array.from({ length: to - from + 1 }, (_, i) => `<span class="yv-v" v="${from + i}"></span><span class="yv-vlbl">${from + i}</span>${text(from + i)}`).join(" ")}</div>`
+        : Array.from({ length: to - from + 1 }, (_, i) => text(from + i)).join(" ");
+    return json(res, { id: passage[1], content, reference });
   }
   return json(res, { message: "Passage not found" }, 404);
 }

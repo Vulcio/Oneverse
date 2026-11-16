@@ -1,10 +1,18 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { clearableText, optional } from "./fields.js";
+import { clearableInt, clearableText, optional } from "./fields.js";
 
-/** YouVersion's App Key (issue #304); empty clears the saved one. */
+/** The longest YouVersion passages may be kept (issue #485): a week. */
+export const YOUVERSION_CACHE_HOURS_MAX = 168;
+
+/**
+ * YouVersion's settings (issues #304, #485), each left out kept: the App Key
+ * (empty clears the saved one), and how many hours passages are kept - 0
+ * never (the default), null back to YOUVERSION_CACHE_HOURS.
+ */
 export const YouVersionKeySchema = z.strictObject({
-  appKey: z.string().trim().max(200),
+  appKey: optional(z.string().trim().max(200)),
+  cacheHours: clearableInt(0, YOUVERSION_CACHE_HOURS_MAX),
 });
 
 /** The YouVersion versions in a language (issue #304): a BCP 47 tag ("fr", "en-GB"). */

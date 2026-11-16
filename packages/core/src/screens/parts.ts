@@ -38,6 +38,36 @@ export const SCREEN_CONTENT_KINDS = ["songs", "scripture"] as const;
 export type ScreenContentKind = (typeof SCREEN_CONTENT_KINDS)[number];
 /** How many verses of a passage a template puts on a slide (issue #310), at most. */
 export const SCREEN_VERSES_PER_SLIDE_MAX = 10;
+
+/** How a passage is cut into slides (issue #485): a number of verses a slide, or as many whole verses as fill one. */
+export const PASSAGE_SPLITS = ["verses", "fill"] as const;
+/** When a passage's slide shows its verses' numbers (issue #485): with several verses on it (as before), always, never. */
+export const PASSAGE_NUMBERS = ["several", "always", "never"] as const;
+export const PASSAGE_LINES_LIMITS = { min: 1, max: 12 } as const;
+export const PASSAGE_LINE_LENGTH_LIMITS = { min: 16, max: 90 } as const;
+
+/**
+ * How a template cuts a passage into slides (issue #485), beside its verses
+ * per slide. Every client cuts a passage the same way from these
+ * (passageSlides), so only "this item, slide N" crosses the network.
+ */
+function passageLayoutSchema(strict: boolean) {
+  const object = strict ? z.strictObject : z.object;
+  return object({
+    split: z.enum(PASSAGE_SPLITS).default("verses"),
+    /** Lines on a slide, at most; null: 4 a verse, 10 at most (by verses), 6 (filling). */
+    lines: z.number().int().min(PASSAGE_LINES_LIMITS.min).max(PASSAGE_LINES_LIMITS.max).nullable().default(null),
+    /** Characters on a line, at most (a longer word keeps its own line). */
+    lineLength: z.number().int().min(PASSAGE_LINE_LENGTH_LIMITS.min).max(PASSAGE_LINE_LENGTH_LIMITS.max).default(44),
+    /** Each verse starts a line of its own. */
+    verseLines: z.boolean().default(false),
+    /** A verse too long for a slide goes on at the end of a sentence, when there's one late enough on it. */
+    sentences: z.boolean().default(false),
+    numbers: z.enum(PASSAGE_NUMBERS).default("several"),
+  });
+}
+export const PassageLayoutSchema = passageLayoutSchema(false);
+export type PassageLayout = z.output<typeof PassageLayoutSchema>;
 export type ScreenTemplateTag = (typeof SCREEN_TEMPLATE_TAGS)[number];
 export const SCREEN_PART_KINDS = ["content", "background", "effects"] as const;
 export type ScreenPartKind = (typeof SCREEN_PART_KINDS)[number];
@@ -101,6 +131,7 @@ function contentSchema(strict: boolean) {
     credits: theme.credits,
     motion: theme.motion,
     chords: theme.chords,
+    verses: theme.verses,
     display: theme.display,
     sections: theme.sections,
   });
@@ -136,6 +167,8 @@ function templateSchema(strict: boolean) {
     grid: theme.grid,
     masks: theme.masks,
     versesPerSlide: z.number().int().min(1).max(SCREEN_VERSES_PER_SLIDE_MAX).default(1),
+    /** How it cuts a passage into slides beyond that (issue #485). */
+    passages: passageLayoutSchema(strict).prefault({}),
     /**
      * The song's title and credits are widgets in the grid (issue #398). A
      * template from before has its content theme's made widgets when it's
@@ -224,6 +257,11 @@ function readLook(input: unknown): ScreenTemplateLayout["look"] {
   };
 }
 
+/** A template's passage layout as a client reads it (issue #485): a setting it can't read (a later version's) is its default. Never throws. */
+export function readPassageLayout(input: unknown): PassageLayout {
+  return readByPart(PassageLayoutSchema, PassageLayoutSchema.shape, input);
+}
+
 /** A template's layout as a client reads it: a widget or a mask it can't read is left out, the rest stays. Never throws. */
 export function readScreenTemplate(input: unknown): ScreenTemplateLayout {
   const raw = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
@@ -241,6 +279,7 @@ export function readScreenTemplate(input: unknown): ScreenTemplateLayout {
     grid: resolveGrid(raw.grid),
     masks: masks.slice(0, SCREEN_MASKS_MAX),
     versesPerSlide: verses.success ? verses.data : undefined,
+    passages: readPassageLayout(raw.passages),
     titleWidgets: raw.titleWidgets === true,
     madeFor,
     tweaks: readTweaks(raw.tweaks),
@@ -312,7 +351,7 @@ export function composeScreenTheme(
  */
 export function splitScreenTheme(input: unknown): { content: ScreenContentTheme; background: ScreenBackgroundTheme; effects: ScreenEffects | null; template: ScreenTemplateLayout } {
   const theme = resolveScreenTheme(input);
-  const content = ScreenContentThemeSchema.parse({ shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords, display: theme.display, sections: theme.sections });
+  const content = ScreenContentThemeSchema.parse({ shows: theme.shows, text: theme.text, lines: theme.lines, layout: theme.layout, title: theme.title, credits: theme.credits, motion: theme.motion, chords: theme.chords, verses: theme.verses, display: theme.display, sections: theme.sections });
   const background = ScreenBackgroundThemeSchema.parse({ base: theme.base, video: theme.video, background: { ...theme.background, reactive: false }, reacts: theme.reacts });
   const effects = theme.effects
     ? ScreenEffectsSchema.parse(theme.effects)

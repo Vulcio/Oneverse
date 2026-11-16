@@ -2149,6 +2149,25 @@ export const CONFORMANCE: ConformanceArea[] = [
               },
             ],
           },
+          {
+            name: "filling each slide with whole verses, 5 lines at most (issue #485)",
+            args: [{ bookName: "John", projection: true, template: { id: null, builtIn: null, name: "Fill", versesPerSlide: 1, passages: { split: "fill", lines: 5, lineLength: 44, verseLines: false, sentences: false, numbers: "several" } }, chapters: [{ book: 43, chapter: 3, verses: [{ number: 16, text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." }, { number: 17, text: "For God sent not his Son into the world to condemn the world; but that the world through him might be saved." }, { number: 18, endNumber: 19, text: "He that believeth on him is not condemned." }, { number: 20, text: "For every one that doeth evil hateth the light." }] }] }],
+          },
+          {
+            name: "numbers always, each verse on its own lines, 30 characters a line (issue #485)",
+            args: [{ bookName: "John", projection: true, template: { id: null, builtIn: null, name: "Lines", versesPerSlide: 2, passages: { split: "verses", lines: null, lineLength: 30, verseLines: true, sentences: false, numbers: "always" } }, chapters: [{ book: 43, chapter: 3, verses: [{ number: 16, text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." }, { number: 17, text: "For God sent not his Son into the world to condemn the world; but that the world through him might be saved." }, { number: 18, endNumber: 19, text: "He that believeth on him is not condemned." }, { number: 20, text: "For every one that doeth evil hateth the light." }] }] }],
+          },
+          {
+            name: "a long verse going on at a sentence's end, numbers never (issue #485)",
+            args: [
+              {
+                bookName: "Romans",
+                projection: true,
+                template: { id: null, builtIn: null, name: "Sentences", versesPerSlide: 1, passages: { split: "verses", lines: 3, lineLength: 30, verseLines: false, sentences: true, numbers: "never" } },
+                chapters: [{ book: 45, chapter: 8, verses: [{ number: 38, text: "For I am persuaded. That neither death, nor life, nor angels, nor principalities, nor powers, nor things present, nor things to come, nor height, nor depth." }] }],
+              },
+            ],
+          },
         ],
       },
       resolveScreenTheme: {

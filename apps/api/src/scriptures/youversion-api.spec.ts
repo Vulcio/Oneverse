@@ -1,6 +1,6 @@
 import { parseBibleReference } from "@oneverse/core";
 import { describe, expect, it } from "vite-plus/test";
-import { youVersionBibleById, youVersionBibles, youVersionPassage, YouVersionApiError, type Fetcher } from "./youversion-api.js";
+import { youVersionBibleById, youVersionBibles, youVersionHtmlVerses, youVersionPassage, YouVersionApiError, type Fetcher } from "./youversion-api.js";
 
 // Answers shaped as developers.youversion.com/api documents them (no App
 // Key was registered yet to record real ones): version 3034 is the Berean
@@ -43,8 +43,14 @@ function fakeApi(appKey = "test-key") {
     if (path === "/v1/bibles/3034") return json(BSB);
     if (path === "/v1/bibles/3034/books/JHN/chapters/3/verses") return json({ data: Array.from({ length: 36 }, (_, i) => ({ id: String(i + 1), passage_id: `JHN.3.${i + 1}`, title: String(i + 1) })) });
     const passage = /^\/v1\/bibles\/3034\/passages\/(.+)$/.exec(path)?.[1];
-    if (passage === "JHN.3") return json({ id: "JHN.3", content: "Now there was a Pharisee named Nicodemus,\n a leader of the Jews.", reference: "John 3" });
-    if (passage && VERSES[passage]) return json({ id: passage, content: VERSES[passage], reference: `John 3:${passage.split(".")[2]}` });
+    // As YouVersion's HTML marks verses: an empty marker, then a label (its SDK's own test data).
+    const html = (from: number, to: number) =>
+      `<div class="p">${Array.from({ length: to - from + 1 }, (_, i) => from + i)
+        .map((v) => `<span class="yv-v" v="${v}"></span><span class="yv-vlbl">${v}</span>${VERSES[`JHN.3.${v}`] ?? `Verse ${v}.`}`)
+        .join(" ")}</div>`;
+    if (passage === "JHN.3" || passage === "JHN.4") return json({ id: passage, content: html(1, 36), reference: `John ${passage.slice(4)}` });
+    const range = /^JHN\.3\.(\d+)(?:-(\d+))?$/.exec(passage ?? "");
+    if (range) return json({ id: passage, content: html(Number(range[1]), Number(range[2] ?? range[1])), reference: `John 3:${range[1]}${range[2] ? `-${range[2]}` : ""}` });
     return json({ message: "Not found" }, 404);
   };
   return { fetcher, asked };
@@ -74,35 +80,53 @@ describe("YouVersion's Platform API", () => {
     expect(bare.attribution).toBe("Berean Standard Bible");
   });
 
-  it("asks for a verse, a chapter, and verses one by one", async () => {
+  it("asks once a chapter: a verse, verses of a chapter, a whole chapter, as HTML split into verses", async () => {
     const api = fakeApi();
     const verse = await youVersionPassage(3034, parseBibleReference("John 3:16")!, "test-key", api.fetcher);
     expect(verse).toEqual([{ id: "JHN.3.16", reference: "John 3:16", text: VERSES["JHN.3.16"] }]);
-
-    const chapter = await youVersionPassage(3034, parseBibleReference("John 3")!, "test-key", api.fetcher);
-    expect(chapter).toEqual([{ id: "JHN.3", reference: "John 3", text: "Now there was a Pharisee named Nicodemus, a leader of the Jews." }]);
+    expect(api.asked[0]!.url.searchParams.get("format")).toBe("html");
 
     api.asked.length = 0;
     const range = await youVersionPassage(3034, parseBibleReference("Jean 3.16-18")!, "test-key", api.fetcher);
     expect(range.map((part) => part.id)).toEqual(["JHN.3.16", "JHN.3.17", "JHN.3.18"]);
-    expect(api.asked.map((call) => call.url.pathname)).toEqual([
-      "/v1/bibles/3034/books/JHN/chapters/3/verses",
-      "/v1/bibles/3034/passages/JHN.3.16",
-      "/v1/bibles/3034/passages/JHN.3.17",
-      "/v1/bibles/3034/passages/JHN.3.18",
-    ]);
-    expect(api.asked[1]!.url.searchParams.get("format")).toBe("text");
+    expect(range[1]!.text).toBe(VERSES["JHN.3.17"]);
+    // One request, not a verse list and one a verse (issue #485).
+    expect(api.asked.map((call) => call.url.pathname)).toEqual(["/v1/bibles/3034/passages/JHN.3.16-18"]);
+
+    const chapter = await youVersionPassage(3034, parseBibleReference("John 3")!, "test-key", api.fetcher);
+    expect(chapter).toHaveLength(36);
+    expect(chapter[15]).toMatchObject({ id: "JHN.3.16", text: VERSES["JHN.3.16"] });
+
+    api.asked.length = 0;
+    // Across chapters: each chapter once, its verses outside the passage left out.
+    const across = await youVersionPassage(3034, parseBibleReference("John 3:35-4:2")!, "test-key", api.fetcher);
+    expect(across.map((part) => part.id)).toEqual(["JHN.3.35", "JHN.3.36", "JHN.4.1", "JHN.4.2"]);
+    expect(api.asked.map((call) => call.url.pathname)).toEqual(["/v1/bibles/3034/passages/JHN.3", "/v1/bibles/3034/passages/JHN.4"]);
   });
 
-  it("refuses a whole book and a passage of too many parts", async () => {
+  it("refuses a whole book and a passage of too many chapters", async () => {
     const api = fakeApi();
     await expect(youVersionPassage(3034, parseBibleReference("John")!, "test-key", api.fetcher)).rejects.toMatchObject({ status: 400 });
     // The same verses twice are asked for once.
+    api.asked.length = 0;
     const twice = await youVersionPassage(3034, parseBibleReference("John 3:16-17, 16-17")!, "test-key", api.fetcher);
     expect(twice.map((part) => part.id)).toEqual(["JHN.3.16", "JHN.3.17"]);
+    expect(api.asked).toHaveLength(1);
     api.asked.length = 0;
     await expect(youVersionPassage(3034, parseBibleReference("Psalm 1-61")!, "test-key", api.fetcher)).rejects.toMatchObject({ status: 400 });
     expect(api.asked).toEqual([]);
+  });
+
+  it("reads verses out of YouVersion's HTML, leaving labels, notes and headings out", () => {
+    const html = `<div class="s1">The Love of God</div><div class="p"><span class="yv-v" v="16"></span><span class="yv-vlbl">16</span>For God so loved<span class="yv-n f"><span class="ft">Or <i>only begotten</i></span></span> the world.</div>
+      <div class="q1"><span class="yv-v" v="17"><span class="yv-vlbl">17</span>He sent &ldquo;His&rdquo; Son &amp; saved<br/>us.</span></div>
+      <div class="p"><span class="yv-v" v="18-19"></span><span class="yv-vlbl">18-19</span>Two verses &#8212; one.</div>`;
+    expect(youVersionHtmlVerses(html)).toEqual([
+      { verse: "16", text: "For God so loved the world." },
+      { verse: "17", text: "He sent \u201cHis\u201d Son & saved us." },
+      { verse: "18-19", text: "Two verses \u2014 one." },
+    ]);
+    expect(youVersionHtmlVerses("<p>No marks here.</p>")).toEqual([]);
   });
 
   it("tells its errors apart", async () => {

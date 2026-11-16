@@ -105,7 +105,7 @@ export class ScripturesController {
   @Put("admin/scriptures/youversion")
   @UseGuards(GlobalAdminGuard)
   saveKey(@Body() dto: YouVersionKeyDto) {
-    return this.youversion.saveKey(dto.appKey);
+    return this.youversion.saveKey(dto);
   }
 
   @Delete("admin/scriptures/youversion")

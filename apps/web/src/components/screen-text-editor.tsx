@@ -8,6 +8,7 @@ import {
   SCREEN_FONTS,
   SCREEN_GLOWS,
   SCREEN_LYRIC_CHORDS,
+  SCREEN_VERSE_POSITIONS,
   SCREEN_OUTLINES,
   SCREEN_PACE_MS,
   SCREEN_PACES,
@@ -683,6 +684,37 @@ export function ChordSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme:
           <Check label={t("screens.editor.chordCurrent")} checked={chords.current} onChange={(current) => set({ current })} />
         </>
       ) : null}
+    </Group>
+  );
+}
+
+/**
+ * A passage's verse numbers (issue #485): raised or in the line, their size,
+ * colour, font and weight. Whether a slide has them is the template's
+ * (Passages); this is how they look where they are.
+ */
+export function VerseNumberSettings({ theme, onTheme }: { theme: ScreenTheme; onTheme: OnTheme }) {
+  const { t } = useTranslation();
+  const verses = theme.verses;
+  const set = (change: Partial<ScreenTheme["verses"]>) => onTheme((before) => ({ verses: { ...before.verses, ...change } }));
+  return (
+    <Group title={t("screens.editor.verseNumbers")} hint={t("screens.editor.groupHints.verseNumbers")} testId="theme-group-verse-numbers">
+      <Field label={t("screens.editor.verseNumberPosition")}>
+        <Choices value={verses.position} options={SCREEN_VERSE_POSITIONS} label={(one) => t(`screens.editor.verseNumberPositions.${one}`)} onChange={(position) => set({ position })} testId="theme-verse-number-position" />
+      </Field>
+      <Field label={t("screens.editor.verseNumberSize")}>
+        <Slider value={Math.round(verses.size * 100)} min={30} max={150} step={5} unit="%" onChange={(size) => set({ size: size / 100 })} />
+      </Field>
+      <Field label={t("screens.editor.verseNumberColor")}>
+        <div className="flex items-center gap-2">
+          <Check label={t("screens.editor.verseNumberSameColor")} checked={verses.color === null} onChange={(same) => set({ color: same ? null : theme.text.color })} testId="theme-verse-number-same-color" />
+          {verses.color !== null ? <ColorField value={verses.color} onChange={(color) => set({ color })} testId="theme-verse-number-color" /> : null}
+        </div>
+      </Field>
+      <Field label={t("screens.editor.verseNumberFont")}>
+        <FontSelect value={verses.font} onChange={(font) => set({ font })} testId="theme-verse-number-font" />
+      </Field>
+      <Check label={t("screens.editor.verseNumberBold")} checked={verses.bold} onChange={(bold) => set({ bold })} testId="theme-verse-number-bold" />
     </Group>
   );
 }

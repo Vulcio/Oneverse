@@ -26,6 +26,12 @@ import {
   SCREEN_TEMPLATE_TAGS,
   SCREEN_TEMPLATES,
   SCREEN_VERSES_PER_SLIDE_MAX,
+  PASSAGE_LINE_LENGTH_LIMITS,
+  PASSAGE_LINES_LIMITS,
+  PASSAGE_NUMBERS,
+  PASSAGE_SPLITS,
+  readPassageLayout,
+  type PassageLayout,
   SCREEN_TEXT_ANIMATIONS,
   SCREEN_VIDEO_SOURCES,
   ScreenMaskSchema,
@@ -53,7 +59,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GridOverlay, LayoutSettings, type Grid } from "#/components/screen-layout-editor";
 import { Choices, ColorInput, Field, Group, Slider } from "#/components/screen-editor-fields";
-import { DisplaySettings, ChordSettings, PositionSettings, TextMotionSettings } from "#/components/screen-text-editor";
+import { DisplaySettings, ChordSettings, PositionSettings, TextMotionSettings, VerseNumberSettings } from "#/components/screen-text-editor";
 import { ScreenThemePreview, useSamplePassage, useSampleSong } from "#/components/screen-theme-preview";
 import { Button } from "@oneverse/ui/components/button";
 import { Dialog, DialogContent, DialogTitle } from "@oneverse/ui/components/dialog";
@@ -87,6 +93,8 @@ export interface ThemeDraft {
   tags?: ScreenTemplateTag[];
   /** How many verses of a passage it puts on a slide (issue #310). */
   versesPerSlide?: number;
+  /** How it cuts a passage into slides beyond that (issue #485). */
+  passages?: PassageLayout;
   grid?: ScreenTheme["grid"];
   masks?: ScreenMask[];
   /** What a template sets differently from its parts (issue #428). */
@@ -184,6 +192,8 @@ export function ScreenThemeEditor({
   const [refs, setRefs] = useState<TemplateRefs>(draft.refs ?? { content: { builtIn: "classic" }, background: { builtIn: "classic" }, effects: null });
   const [tags, setTags] = useState<ScreenTemplateTag[]>(draft.tags ?? []);
   const [versesPerSlide, setVersesPerSlide] = useState(draft.versesPerSlide ?? 1);
+  const [passages, setPassages] = useState<PassageLayout>(() => readPassageLayout(draft.passages));
+  const setPassage = (change: Partial<PassageLayout>) => setPassages((before) => ({ ...before, ...change }));
   const [madeFor, setMadeFor] = useState<ScreenContentKind[]>(draft.madeFor ?? []);
   // What the preview plays (issue #402): a song, or a passage - what the template is made for, when it's one thing.
   const [previewWith, setPreviewWith] = useState<ScreenContentKind>(draft.madeFor?.length === 1 ? draft.madeFor[0]! : "songs");
@@ -235,7 +245,7 @@ export function ScreenThemeEditor({
   const original = (slot: ScreenPartKind) => (kind === "template" ? partDocument(slot, refs[slot], parts) : draft.document);
   const setGrid = (grid: Grid | null) => setTheme((before) => ScreenThemeSchema.parse({ ...before, grid }));
   const sampleSong = useSampleSong(t("screens.sampleTitle"), t("screens.sampleWriters"));
-  const samplePassage = useSamplePassage(versesPerSlide);
+  const samplePassage = useSamplePassage(versesPerSlide, passages);
   const sample = previewWith === "scripture" ? samplePassage : sampleSong;
   const adminTeams = teams.filter((team) => team.currentUserRole === "ADMIN");
   const contrast = screenThemeContrast(theme);
@@ -348,7 +358,7 @@ export function ScreenThemeEditor({
     try {
       let saved: ScreenThemeSummary | ScreenPartSummary;
       if (kind === "template") {
-        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide, titleWidgets: true, madeFor, tweaks: tweaksOf(theme), look: lookOf(theme) as never }, content: refs.content, background: refs.background, effects: refs.effects };
+        const body = { name: name.trim(), template: { tags, grid: theme.grid, masks: theme.masks, versesPerSlide, passages, titleWidgets: true, madeFor, tweaks: tweaksOf(theme), look: lookOf(theme) as never }, content: refs.content, background: refs.background, effects: refs.effects };
         saved = draft.id && !asNew ? await apiClient.updateScreenTheme(draft.id, body) : await apiClient.createScreenTheme({ ...body, ...(teamId && { teamId }) });
       } else {
         const document = extractPart(kind, theme, draft.document) as Parameters<typeof apiClient.createScreenPart>[0]["document"];
@@ -483,19 +493,49 @@ export function ScreenThemeEditor({
                       <TagPicker value={tags} onChange={setTags} testId="theme-tags" />
                       <span className="text-xs text-muted-foreground">{t("screens.editor.tagsHint")}</span>
                     </Group>
-                    <Group title={t("screens.editor.passages")} open={versesPerSlide !== 1 || tags.includes("scripture")} testId="theme-group-passages">
-                      <Field label={t("screens.editor.versesPerSlide")}>
-                        <Input
-                          type="number"
-                          className="h-8 w-24"
-                          min={1}
-                          max={SCREEN_VERSES_PER_SLIDE_MAX}
-                          value={versesPerSlide}
-                          onChange={(event) => setVersesPerSlide(Math.min(SCREEN_VERSES_PER_SLIDE_MAX, Math.max(1, Math.round(Number(event.target.value) || 1))))}
-                          data-testid="theme-verses-per-slide"
-                        />
-                      </Field>
+                    <Group title={t("screens.editor.passages")} open={versesPerSlide !== 1 || tags.includes("scripture") || madeFor.includes("scripture")} testId="theme-group-passages">
                       <span className="text-xs text-muted-foreground">{t("screens.editor.versesPerSlideHint")}</span>
+                      {/* How a passage is cut into slides (issue #485): only what changes the slides shows. */}
+                      <Field label={t("screens.editor.passageSplit")}>
+                        <Choices value={passages.split} options={PASSAGE_SPLITS} label={(one) => t(`screens.editor.passageSplits.${one}`)} onChange={(split) => setPassage({ split })} testId="theme-passage-split" />
+                      </Field>
+                      {passages.split === "verses" ? (
+                        <Field label={t("screens.editor.versesPerSlide")}>
+                          <Input
+                            type="number"
+                            className="h-8 w-24"
+                            min={1}
+                            max={SCREEN_VERSES_PER_SLIDE_MAX}
+                            value={versesPerSlide}
+                            onChange={(event) => setVersesPerSlide(Math.min(SCREEN_VERSES_PER_SLIDE_MAX, Math.max(1, Math.round(Number(event.target.value) || 1))))}
+                            data-testid="theme-verses-per-slide"
+                          />
+                        </Field>
+                      ) : null}
+                      <Field label={t("screens.editor.passageLines")}>
+                        <NativeSelect className="h-8 w-40 text-sm" value={passages.lines ?? ""} onChange={(event) => setPassage({ lines: event.target.value ? Number(event.target.value) : null })} data-testid="theme-passage-lines">
+                          <option value="">{t(`screens.editor.passageLinesAuto.${passages.split}`)}</option>
+                          {Array.from({ length: PASSAGE_LINES_LIMITS.max - PASSAGE_LINES_LIMITS.min + 1 }, (_, i) => PASSAGE_LINES_LIMITS.min + i).map((count) => (
+                            <option key={count} value={count}>
+                              {t("screens.editor.passageLinesCount", { count })}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      </Field>
+                      <Field label={t("screens.editor.passageLineLength")}>
+                        <Slider value={passages.lineLength} min={PASSAGE_LINE_LENGTH_LIMITS.min} max={PASSAGE_LINE_LENGTH_LIMITS.max} step={1} onChange={(lineLength) => setPassage({ lineLength })} />
+                      </Field>
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="checkbox" checked={passages.verseLines} onChange={(event) => setPassage({ verseLines: event.target.checked })} data-testid="theme-passage-verse-lines" />
+                        {t("screens.editor.passageVerseLines")}
+                      </label>
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="checkbox" checked={passages.sentences} onChange={(event) => setPassage({ sentences: event.target.checked })} data-testid="theme-passage-sentences" />
+                        {t("screens.editor.passageSentences")}
+                      </label>
+                      <Field label={t("screens.editor.passageNumbers")}>
+                        <Choices value={passages.numbers} options={PASSAGE_NUMBERS} label={(one) => t(`screens.editor.passageNumbersShown.${one}`)} onChange={(numbers) => setPassage({ numbers })} testId="theme-passage-numbers" />
+                      </Field>
                     </Group>
                   </>
                 ) : null}
@@ -553,6 +593,7 @@ export function ScreenThemeEditor({
             </Group>
             ) : null}
             <ChordSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
+            <VerseNumberSettings theme={theme} onTheme={(change) => setTheme((before) => ScreenThemeSchema.parse({ ...before, ...change(before) }))} />
               </>
             ) : null}
             {part === "background" ? (
@@ -742,7 +783,7 @@ export function ScreenThemeEditor({
                 </Button>
               </span>
             </div>
-            <ScreenThemePreview theme={shown} assets={shownAssets} sample={previewWith} versesPerSlide={versesPerSlide} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
+            <ScreenThemePreview theme={shown} assets={shownAssets} sample={previewWith} versesPerSlide={versesPerSlide} passages={passages} aspect={aspect} playing={playing} slide={playing ? undefined : (slide ?? 0)} className={cn("w-full", aspect === "4/3" && "mx-auto max-w-[75%]")}>
               {showGrid && kind === "template" ? <GridOverlay grid={theme.grid ?? WORDS_GRID} margin={theme.layout.margin} selected={selected} onSelect={pickWidget} onGrid={setGrid} /> : null}
             </ScreenThemePreview>
             <p className={cn("flex items-center gap-1.5 text-xs", contrast < 4.5 ? "text-destructive" : "text-muted-foreground")} data-testid="theme-contrast">

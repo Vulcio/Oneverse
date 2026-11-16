@@ -2331,6 +2331,10 @@ export interface MetadataSettings {
 export interface YouVersionSettings {
   source: "database" | "env" | "none";
   hasDatabaseKey: boolean;
+  /** How long passages are kept (issue #485), in hours: 0, never - the default until YouVersion allows it. */
+  cacheHours: number;
+  /** Where that comes from: the admin's, YOUVERSION_CACHE_HOURS, or neither (0). */
+  cacheSource: "database" | "env" | "default";
 }
 
 /** A YouVersion version (issue #304): its attribution goes with every passage shown. */
@@ -3618,6 +3622,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     /** YouVersion's App Key (issue #304); empty clears it. */
     getYouVersionSettings: () => request<YouVersionSettings>("/admin/scriptures/youversion"),
     saveYouVersionKey: (appKey: string) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ appKey }) }),
+    /** How many hours YouVersion passages are kept (issue #485): 0 never, null back to the environment's. */
+    saveYouVersionCache: (cacheHours: number | null) => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "PUT", body: JSON.stringify({ cacheHours }) }),
     resetYouVersionKey: () => request<YouVersionSettings>("/admin/scriptures/youversion", { method: "DELETE" }),
     testYouVersionKey: () => request<{ ok: boolean; message: string }>("/admin/scriptures/youversion/test", { method: "POST" }),
     /** MusicBrainz's contact, in its User-Agent; empty goes back to MUSICBRAINZ_CONTACT. */

@@ -194,7 +194,7 @@ export class ScreensService {
   }
 
   /** What a screen shows: itself, and its set as the person who paired it reads it (null without one, or when they no longer can). */
-  async current(token: string, day: { today?: string; time?: string } = {}) {
+  async current(token: string, day: { today?: string; time?: string; held?: string } = {}) {
     let screen = await this.byToken(token);
     if (!screen) throw new NotFoundException("This screen was disconnected");
     // Its owner's set of the day (issue #274): worked out now, from the screen's own day and time.
@@ -209,7 +209,9 @@ export class ScreensService {
     if (screen.setlistId) {
       for (const reader of await this.readersFor(screen, screen.setlistId)) {
         try {
-          const copy = await this.setlists.offlineCopy(reader, screen.setlistId, { withNotes: false, passages: "screen" });
+          // Passages the screen has already aren't asked of YouVersion again on each reload (issue #485).
+          const held = new Set((day.held ?? "").split("|").filter(Boolean));
+          const copy = await this.setlists.offlineCopy(reader, screen.setlistId, { withNotes: false, passages: "screen", held });
           set = { ...copy, credits: await this.credits(copy.songs.flatMap((song) => (song.song ? [song.song.id] : []))) };
           break;
         } catch {
@@ -245,7 +247,8 @@ export class ScreensService {
       select: { id: true, mode: true, effects: true, hiddenLayers: true, themeTemplate: true, scriptureThemeTemplate: true, theme: { select: { ...TEMPLATE_PARTS_SELECT, name: true } }, scriptureTheme: { select: TEMPLATE_PARTS_SELECT } },
       orderBy: { createdAt: "asc" },
     });
-    const copy = await this.setlists.offlineCopy(user, setlistId, { withNotes: false, passages: "screen" });
+    // Only the items' templates and the songs' credits are needed: not the passages' verses (issue #485).
+    const copy = await this.setlists.offlineCopy(user, setlistId, { withNotes: false, passages: "list" });
     const assets: SetScreenLooks["assets"] = [];
     const keep = (more: SetScreenLooks["assets"]) => {
       for (const asset of more) if (!assets.some((one) => one.id === asset.id)) assets.push(asset);

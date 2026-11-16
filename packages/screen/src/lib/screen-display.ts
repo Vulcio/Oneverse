@@ -1,7 +1,7 @@
 import { SCREEN_REPORT_EVERY_MS, SYNC_PATH, slideKey, stepPresenting, type ScreenCurrent, type ScreenStep, type SyncMetronome, type SyncPresenting, type SyncServerMessage, type SyncStage } from "@oneverse/core";
 import { useEffect, useRef, useState } from "react";
 import { getApiUrl } from "@oneverse/app/public-env";
-import { forgetKept, keepPresenting, keepScreen, keptScreen } from "./screen-kept";
+import { forgetKept, heldPassages, keepPresenting, keepScreen, keptScreen, withHeld } from "./screen-kept";
 import { screenReport } from "./screen-report";
 import { setItemView } from "./set-items";
 
@@ -369,12 +369,17 @@ export function useScreenDisplay(): ScreenDisplayState {
     async function load() {
       // Its own day and time: a screen following its owner's schedule shows the set of the day (issue #274).
       const { today, time } = screenNow();
-      const response = await fetch(api(`/screens/current?today=${today}&time=${time}`), { headers: { Authorization: `Screen ${token}` } }).catch(() => null);
+      // The passages it shows already: their verses aren't asked of YouVersion again (issue #485).
+      const before = current;
+      const held = heldPassages(before).join("|");
+      const query = new URLSearchParams({ today, time, ...(held && held.length <= 4000 && { held }) });
+      const response = await fetch(api(`/screens/current?${query}`), { headers: { Authorization: `Screen ${token}` } }).catch(() => null);
       if (stopped) return;
       if (response?.status === 404) return forget();
       if (!response?.ok) return;
-      const loaded = await json<ScreenCurrent>(response).catch(() => null);
-      if (stopped || !loaded) return;
+      const answer = await json<ScreenCurrent>(response).catch(() => null);
+      if (stopped || !answer) return;
+      const loaded = withHeld(answer, before);
       current = loaded;
       nameShown(current.screen.name, current.screen.owner.name);
       show();
