@@ -102,8 +102,9 @@ export function SongPeek({ songs, index, onIndexChange, onClose, from, onFavorit
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest("input, textarea, select, [contenteditable], [role=listbox], [role=menu], [data-testid=add-to-set-list]")) return;
-    // On a button or a link, Enter and Space are theirs.
-    const onControl = !!target?.closest("button, a");
+    // On a button or a link in the preview, Enter and Space are theirs - not on the card's button that opened it,
+    // still focused for a moment while the dialog takes the focus.
+    const onControl = !!target?.closest("button, a") && !!target.closest('[data-testid="song-peek"]');
     const act: Record<string, (() => void) | undefined> = {
       ArrowRight: () => go(1),
       ArrowLeft: () => go(-1),
