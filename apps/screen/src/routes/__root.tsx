@@ -12,7 +12,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     // Songverse's address: where a screen is paired (its QR code). Dark always: a screen is black under its words.
     // Its service worker (issue #195): a screen reloaded with no network still opens.
-    <AppDocument env={["SONGVERSE_URL", "ONEVERSE_URL"]} serviceWorker htmlClassName="dark" bodyClassName="min-h-screen bg-black text-white antialiased">
+    <AppDocument app="screen" env={["SONGVERSE_URL", "ONEVERSE_URL"]} serviceWorker htmlClassName="dark" bodyClassName="min-h-screen bg-black text-white antialiased">
       {children}
     </AppDocument>
   );

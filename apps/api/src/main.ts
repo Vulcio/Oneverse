@@ -17,8 +17,11 @@ import { webOrigins } from "./common/utils/web-apps.js";
 import { apiDocsAllowed } from "./security/security-settings.js";
 import { requestMemoMiddleware } from "./common/request-memo.js";
 import { serverVersion } from "./common/version.js";
+import { reportProcessErrors } from "./error-reporting/error-reporter.js";
 
 async function bootstrap() {
+  // What nothing caught is reported before the process goes (issue #469).
+  reportProcessErrors("api");
   // rawBody: a webhook's signature is checked against the bytes it came as (the Demucs API's, issue #63).
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
   // Above Express's 100kb default: a songbook catalogue file is imported as

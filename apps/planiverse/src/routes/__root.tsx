@@ -13,7 +13,7 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     // Songverse's address too: a date's set opens there. The service worker is for notifications on
     // this device (push): Planiverse isn't kept offline.
-    <AppDocument env={["SONGVERSE_URL", "ONEVERSE_URL"]} themeScript={THEME_SCRIPT} serviceWorker>
+    <AppDocument app="planiverse" env={["SONGVERSE_URL", "ONEVERSE_URL"]} themeScript={THEME_SCRIPT} serviceWorker>
       {children}
     </AppDocument>
   );

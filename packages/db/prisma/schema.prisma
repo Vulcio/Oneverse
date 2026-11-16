@@ -2824,6 +2824,18 @@ model CollaborationSettings {
   updatedAt     DateTime @updatedAt
 }
 
+// Error reporting (issue #469), edited in Admin > Error reporting: where
+// reports go (a Sentry or GlitchTip project's DSN), whether the web apps'
+// errors are reported too, and the environment they're filed under. A null
+// field falls back to its env var, then off (apps/api/src/error-reporting/).
+model ErrorReportingSettings {
+  id          String   @id @default("singleton")
+  dsn         String?
+  browsers    Boolean?
+  environment String?
+  updatedAt   DateTime @updatedAt
+}
+
 model AuthSettings {
   id                    String   @id @default("singleton")
   resendApiKeyEnc       String?

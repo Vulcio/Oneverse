@@ -60,6 +60,7 @@ import type { SetItemPassage } from "../screens/index.js";
 import type { BibleSourceFormat } from "../scriptures/bible.js";
 import type { PassageChapter } from "../scriptures/references.js";
 import type { SaveCollaborationSettingsRequest, SaveSecuritySettingsRequest, SaveStorageLimitsRequest, UpdateTeamRequest } from "../requests/accounts.js";
+import type { SaveErrorReportingSettingsRequest } from "../requests/error-reports.js";
 import type { SaveBackupConfigRequest } from "../requests/backups.js";
 import type { CreateGroupRequest, CreateOrganizationRequest, DeclineOrganizationRequestRequest, OrganizationKind, OrganizationSize, RequestOrganizationRequest, OrganizationMode, SaveOrganizationSettingsRequest, SaveOwnStorageRequest, OwnStorageLimitsRequest, UpdateGroupRequest, UpdateOrganizationRequest } from "../requests/organizations.js";
 import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
@@ -1197,6 +1198,13 @@ export interface AdminTeamSummary {
 export interface CollaborationSettingsSummary {
   source: "database" | "env" | "none";
   settings: { liveCoEditing: SecuritySetting<boolean> };
+}
+
+/** Admin > Error reporting (issue #469): each setting, and whether it comes from the database, its env var or the default; `on` once a DSN is set. */
+export interface ErrorReportingSummary {
+  source: "database" | "env" | "none";
+  on: boolean;
+  settings: { dsn: SecuritySetting<string | null>; browsers: SecuritySetting<boolean>; environment: SecuritySetting<string> };
 }
 
 /** A Song provider plugin's server (issue #157), as Admin > Plugins shows it: its key is never sent back. */
@@ -3832,6 +3840,10 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
       request<ChordContent>(`/plugins/chords/${encodeURIComponent(providerId)}/songs/${encodeURIComponent(songId)}${versionId ? `?${new URLSearchParams({ version: versionId })}` : ""}`),
     adminSaveCollaborationSettings: (data: SaveCollaborationSettingsRequest) => request<void>("/admin/collaboration", { method: "PUT", body: JSON.stringify(data) }),
     adminClearCollaborationSettings: () => request<void>("/admin/collaboration", { method: "DELETE" }),
+    adminGetErrorReporting: () => request<ErrorReportingSummary>("/admin/error-reporting"),
+    adminSaveErrorReporting: (data: SaveErrorReportingSettingsRequest) => request<void>("/admin/error-reporting", { method: "PUT", body: JSON.stringify(data) }),
+    adminClearErrorReporting: () => request<void>("/admin/error-reporting", { method: "DELETE" }),
+    adminTestErrorReporting: () => request<{ sent: boolean }>("/admin/error-reporting/test", { method: "POST" }),
     adminGetBackups: () => request<BackupSummary>("/admin/backups"),
     adminSaveBackupConfig: (data: SaveBackupConfigRequest) => request<void>("/admin/backups/config", { method: "PUT", body: JSON.stringify(data) }),
     adminClearBackupConfig: () => request<void>("/admin/backups/config", { method: "DELETE" }),

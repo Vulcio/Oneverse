@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module.js";
 import { startJobs } from "./jobs/start-jobs.js";
+import { reportProcessErrors } from "./error-reporting/error-reporter.js";
 
 /**
  * The Worker (issue #92): the same image and app graph as the API
@@ -17,6 +18,8 @@ import { startJobs } from "./jobs/start-jobs.js";
  * timer does too.
  */
 async function bootstrap() {
+  // What nothing caught is reported before the process goes (issue #469).
+  reportProcessErrors("worker");
   const app = await NestFactory.createApplicationContext(AppModule);
   const stopHeartbeat = startJobs(app, "worker");
   console.log("Songverse worker started");

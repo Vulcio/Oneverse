@@ -2,7 +2,9 @@ import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { PluginsModule } from "./plugins/plugins.module.js";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { ErrorReportingFilter } from "./error-reporting/error-reporting.filter.js";
+import { ErrorReportsController } from "./error-reporting/error-reports.controller.js";
 import { AdminModule } from "./admin/admin.module.js";
 import { ArrangementsModule } from "./arrangements/arrangements.module.js";
 import { AccessModule } from "./access/access.module.js";
@@ -111,12 +113,14 @@ import { LookupsModule } from "./lookups/lookups.module.js";
     NotesModule,
     UploadsModule,
   ],
-  controllers: [AppController, SecurityController],
+  controllers: [AppController, SecurityController, ErrorReportsController],
   providers: [
     // JwtAuthGuard runs on every route by default; opt out with @Public().
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     // Then the rate limits (issue #113): after it, so a signed-in user is counted as themselves.
     { provide: APP_GUARD, useClass: RateLimitGuard },
+    // A request's error that isn't an answer the code chose is reported (issue #469), then handled as Nest does.
+    { provide: APP_FILTER, useClass: ErrorReportingFilter },
   ],
 })
 export class AppModule {}

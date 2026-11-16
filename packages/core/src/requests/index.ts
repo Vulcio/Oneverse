@@ -24,3 +24,4 @@ export * from "./locations.js";
 export * from "./scriptures.js";
 export * from "./backups.js";
 export * from "./plugins.js";
+export * from "./error-reports.js";

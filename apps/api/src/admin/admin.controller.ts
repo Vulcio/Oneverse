@@ -15,6 +15,9 @@ import { SaveStorageConfigDto } from "./dto/save-storage-config.dto.js";
 import { SaveStorageLimitsDto, StorageLimitsResponseDto } from "./dto/storage-limits.dto.js";
 import { SaveSecuritySettingsDto } from "./dto/security-settings.dto.js";
 import { SaveCollaborationSettingsDto } from "./dto/collaboration-settings.dto.js";
+import { SaveErrorReportingSettingsDto } from "./dto/error-reporting-settings.dto.js";
+import { clearErrorReportingSettings, getErrorReportingSummary, saveErrorReportingSettings } from "../error-reporting/error-reporting-settings.js";
+import { reportError } from "../error-reporting/error-reporter.js";
 import { clearCollaborationSettings, getCollaborationSettingsSummary, saveCollaborationSettings } from "../sync/collaboration-settings.js";
 import { clearSecuritySettings, getSecuritySettingsSummary, saveSecuritySettings } from "../security/security-settings.js";
 import { SaveNotificationServerSettingsDto } from "./dto/notification-settings.dto.js";
@@ -160,6 +163,34 @@ export class AdminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   clearCollaborationSettings(): Promise<void> {
     return clearCollaborationSettings();
+  }
+
+  // --- error reporting (issue #469): where the API's, the Worker's and the web apps' errors go
+
+  @Get("error-reporting")
+  @ApiOkResponse({ description: "Where error reports go (a Sentry or GlitchTip DSN), whether the web apps' are sent too, the environment, and where each comes from: the database, its ERROR_REPORTING_* env var, or the default." })
+  getErrorReporting(): ReturnType<typeof getErrorReportingSummary> {
+    return getErrorReportingSummary();
+  }
+
+  @Put("error-reporting")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  saveErrorReporting(@Body() dto: SaveErrorReportingSettingsDto): Promise<void> {
+    return saveErrorReportingSettings(dto);
+  }
+
+  @Delete("error-reporting")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  clearErrorReporting(): Promise<void> {
+    return clearErrorReportingSettings();
+  }
+
+  /** A report sent now, to check the DSN: whether its server took it. */
+  @Post("error-reporting/test")
+  @ApiOkResponse({ description: "Whether the error reporting server took a test report." })
+  async testErrorReporting(): Promise<{ sent: boolean }> {
+    const sent = await reportError({ type: "TestReport", message: `A test report from Admin > Error reporting, ${new Date().toISOString()}` }, { source: "api", where: "Admin > Error reporting" });
+    return { sent };
   }
 
   // --- how notifications go out besides the bell (issue #236)

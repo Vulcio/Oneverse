@@ -40,6 +40,7 @@ import { Route as ProtectedAdminBackupsRouteImport } from './routes/_protected/a
 import { Route as ProtectedAdminBiblesRouteImport } from './routes/_protected/admin/bibles'
 import { Route as ProtectedAdminCatalogsRouteImport } from './routes/_protected/admin/catalogs'
 import { Route as ProtectedAdminCollaborationRouteImport } from './routes/_protected/admin/collaboration'
+import { Route as ProtectedAdminErrorReportingRouteImport } from './routes/_protected/admin/error-reporting'
 import { Route as ProtectedAdminInstrumentsRouteImport } from './routes/_protected/admin/instruments'
 import { Route as ProtectedAdminMetadataRouteImport } from './routes/_protected/admin/metadata'
 import { Route as ProtectedAdminNotificationsRouteImport } from './routes/_protected/admin/notifications'
@@ -238,6 +239,12 @@ const ProtectedAdminCollaborationRoute =
   ProtectedAdminCollaborationRouteImport.update({
     id: '/collaboration',
     path: '/collaboration',
+    getParentRoute: () => ProtectedAdminRoute,
+  } as any)
+const ProtectedAdminErrorReportingRoute =
+  ProtectedAdminErrorReportingRouteImport.update({
+    id: '/error-reporting',
+    path: '/error-reporting',
     getParentRoute: () => ProtectedAdminRoute,
   } as any)
 const ProtectedAdminInstrumentsRoute =
@@ -512,6 +519,7 @@ export interface FileRoutesByFullPath {
   '/admin/bibles': typeof ProtectedAdminBiblesRoute
   '/admin/catalogs': typeof ProtectedAdminCatalogsRoute
   '/admin/collaboration': typeof ProtectedAdminCollaborationRoute
+  '/admin/error-reporting': typeof ProtectedAdminErrorReportingRoute
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
@@ -586,6 +594,7 @@ export interface FileRoutesByTo {
   '/admin/bibles': typeof ProtectedAdminBiblesRoute
   '/admin/catalogs': typeof ProtectedAdminCatalogsRoute
   '/admin/collaboration': typeof ProtectedAdminCollaborationRoute
+  '/admin/error-reporting': typeof ProtectedAdminErrorReportingRoute
   '/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/admin/notifications': typeof ProtectedAdminNotificationsRoute
@@ -664,6 +673,7 @@ export interface FileRoutesById {
   '/_protected/admin/bibles': typeof ProtectedAdminBiblesRoute
   '/_protected/admin/catalogs': typeof ProtectedAdminCatalogsRoute
   '/_protected/admin/collaboration': typeof ProtectedAdminCollaborationRoute
+  '/_protected/admin/error-reporting': typeof ProtectedAdminErrorReportingRoute
   '/_protected/admin/instruments': typeof ProtectedAdminInstrumentsRoute
   '/_protected/admin/metadata': typeof ProtectedAdminMetadataRoute
   '/_protected/admin/notifications': typeof ProtectedAdminNotificationsRoute
@@ -742,6 +752,7 @@ export interface FileRouteTypes {
     | '/admin/bibles'
     | '/admin/catalogs'
     | '/admin/collaboration'
+    | '/admin/error-reporting'
     | '/admin/instruments'
     | '/admin/metadata'
     | '/admin/notifications'
@@ -816,6 +827,7 @@ export interface FileRouteTypes {
     | '/admin/bibles'
     | '/admin/catalogs'
     | '/admin/collaboration'
+    | '/admin/error-reporting'
     | '/admin/instruments'
     | '/admin/metadata'
     | '/admin/notifications'
@@ -893,6 +905,7 @@ export interface FileRouteTypes {
     | '/_protected/admin/bibles'
     | '/_protected/admin/catalogs'
     | '/_protected/admin/collaboration'
+    | '/_protected/admin/error-reporting'
     | '/_protected/admin/instruments'
     | '/_protected/admin/metadata'
     | '/_protected/admin/notifications'
@@ -1171,6 +1184,13 @@ declare module '@tanstack/react-router' {
       path: '/collaboration'
       fullPath: '/admin/collaboration'
       preLoaderRoute: typeof ProtectedAdminCollaborationRouteImport
+      parentRoute: typeof ProtectedAdminRoute
+    }
+    '/_protected/admin/error-reporting': {
+      id: '/_protected/admin/error-reporting'
+      path: '/error-reporting'
+      fullPath: '/admin/error-reporting'
+      preLoaderRoute: typeof ProtectedAdminErrorReportingRouteImport
       parentRoute: typeof ProtectedAdminRoute
     }
     '/_protected/admin/instruments': {
@@ -1490,6 +1510,7 @@ interface ProtectedAdminRouteChildren {
   ProtectedAdminBiblesRoute: typeof ProtectedAdminBiblesRoute
   ProtectedAdminCatalogsRoute: typeof ProtectedAdminCatalogsRoute
   ProtectedAdminCollaborationRoute: typeof ProtectedAdminCollaborationRoute
+  ProtectedAdminErrorReportingRoute: typeof ProtectedAdminErrorReportingRoute
   ProtectedAdminInstrumentsRoute: typeof ProtectedAdminInstrumentsRoute
   ProtectedAdminMetadataRoute: typeof ProtectedAdminMetadataRoute
   ProtectedAdminNotificationsRoute: typeof ProtectedAdminNotificationsRoute
@@ -1510,6 +1531,7 @@ const ProtectedAdminRouteChildren: ProtectedAdminRouteChildren = {
   ProtectedAdminBiblesRoute: ProtectedAdminBiblesRoute,
   ProtectedAdminCatalogsRoute: ProtectedAdminCatalogsRoute,
   ProtectedAdminCollaborationRoute: ProtectedAdminCollaborationRoute,
+  ProtectedAdminErrorReportingRoute: ProtectedAdminErrorReportingRoute,
   ProtectedAdminInstrumentsRoute: ProtectedAdminInstrumentsRoute,
   ProtectedAdminMetadataRoute: ProtectedAdminMetadataRoute,
   ProtectedAdminNotificationsRoute: ProtectedAdminNotificationsRoute,

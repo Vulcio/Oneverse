@@ -18,6 +18,7 @@ const MANIFESTS: Record<string, string> = { fr: "/manifest.fr.webmanifest" };
 function RootDocument({ children }: { children: ReactNode }) {
   return (
     <AppDocument
+      app="web"
       env={["ONEVERSE_URL", "SCREEN_URL"]}
       themeScript={MODE_SCRIPT}
       serviceWorker

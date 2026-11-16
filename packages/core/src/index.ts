@@ -88,6 +88,7 @@ export * from "./calendar/index.js";
 export * from "./calendar/ical.js";
 export * from "./notifications/index.js";
 export * from "./requests/index.js";
+export * from "./error-reporting/index.js";
 export * from "./pdf-chart/index.js";
 export * from "./pdf-chart/read.js";
 export * from "./pdf-chart/ocr.js";

@@ -1,6 +1,7 @@
 import { HeadContent, Scripts, useMatches } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { renderPublicEnvScript } from "../public-env";
+import { errorReportScript, type ReportingApp } from "../error-reports";
 
 /** What every app's root route puts in its head: the page's name, its stylesheet and its icon. */
 export function appHead({ title, css, meta = [], links = [] }: {
@@ -49,7 +50,9 @@ const REGISTER_SW_SCRIPT = `if('serviceWorker' in navigator){window.addEventList
  * An app's whole page, the same in each (issue #427): the page's language, the public addresses the
  * browser needs, the script that sets light or dark before the page paints, the app, its scripts.
  */
-export function AppDocument({ env, themeScript, serviceWorker = false, htmlClassName, bodyClassName, head, children }: {
+export function AppDocument({ app, env, themeScript, serviceWorker = false, htmlClassName, bodyClassName, head, children }: {
+  /** Which app it is, for its error reports (issue #469). */
+  app: ReportingApp;
   /** The other apps' addresses this one links to (public-env). */
   env: string[];
   /** Sets `<html>`'s theme before hydration: `THEME_SCRIPT`, or Songverse's modes. */
@@ -68,6 +71,7 @@ export function AppDocument({ env, themeScript, serviceWorker = false, htmlClass
     <html lang={lang} className={htmlClassName} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: renderPublicEnvScript(env) }} />
+        <script dangerouslySetInnerHTML={{ __html: errorReportScript(app) }} />
         {themeScript ? <script dangerouslySetInnerHTML={{ __html: themeScript }} /> : null}
         <HeadContent />
         {head?.(lang)}

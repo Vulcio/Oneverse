@@ -21,6 +21,7 @@ import { ChartReadingProcessor } from "../chart-reading/chart-reading.processor.
 import { HEARTBEAT_KEY, settingsKeyCheck } from "./jobs.constants.js";
 import { redis } from "./redis.js";
 import { serverVersion } from "../common/version.js";
+import { reportError } from "../error-reporting/error-reporter.js";
 
 /** Every job processor: a new one needs adding here, or no process runs its jobs. */
 const PROCESSORS = [BulkUploadProcessor, TransferExpiryProcessor, LookupsProcessor, BackfillsProcessor, RecordingsProcessor, StemSeparationProcessor, TeamEventsProcessor, NotificationsProcessor, BibleImportProcessor, LiveSessionsProcessor, BackupsProcessor, ArchivesProcessor, OwnStorageProcessor, SongInfoProcessor, WaveformsProcessor, ChartReadingProcessor];
@@ -37,6 +38,11 @@ export function startJobs(app: INestApplicationContext, role: "worker" | "api"):
   for (const processor of PROCESSORS) {
     const host = app.get<WorkerHost>(processor, { strict: false });
     queues.push(host.worker.name);
+    // A job that failed for good - its last attempt - is reported (issue #469): its queue and name, not its data.
+    host.worker.on("failed", (job, err) => {
+      if (job && job.attemptsMade < (job.opts.attempts ?? 1)) return;
+      void reportError(err, { source: role === "worker" ? "worker" : "api", where: `${host.worker.name}:${job?.name ?? "?"}`, tags: { queue: host.worker.name } });
+    });
     host.worker.run().catch((err: unknown) => logger.error(`${processor.name} stopped: ${err instanceof Error ? err.message : String(err)}`));
   }
   // Whether this process can process recorded takes (issue #127), for Admin.
