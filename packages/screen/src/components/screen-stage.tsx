@@ -2,14 +2,14 @@ import "@fontsource-variable/inter";
 import "../screen-stage.css";
 import { SCREEN_PACE_EASING, evenScreenLine, screenSectionKind, screenShowsChart, screenSectionText, type ScreenSectionKind, type ScreenTransition, type ScreenSlide, SCREEN_FONT_FAMILIES, SCREEN_SHADERS, SCREEN_TEXT_BACKGROUNDS, screenShader, screenBaseColor, screenLayers, screenWidgetLayer, sectionEnergy, type ScreenMask, type ScreenMode, type ScreenTheme, type ScreenThemeAsset } from "@oneverse/core";
 import { Video } from "lucide-react";
-import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { Fragment, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { ScreenGrid, type StageLive } from "./screen-widgets";
 import { useScreenEffects, type ScreenSignals } from "../lib/screen-effects";
 import { TextBackground, type StageText } from "./screen-text-background";
 import { ShaderBackground } from "./screen-shader-background";
 import { moveWords } from "../lib/screen-move";
-import { BeatRow, chordName, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songLines, songSize, StageSide, useStageSide, type StageLine, type StageSong } from "./screen-text";
+import { BeatRow, chordName, chordsAbove, fillWords, effectFilter, kindOf, lineBars, lineLook, OutlineFilter, songLines, songSize, StageSide, useStageSide, withVerseNumbers, type StageLine, type StageSong } from "./screen-text";
 import { Flow } from "./screen-flow";
 import { useFollowMusic } from "../lib/screen-follow";
 import { useScreenFonts } from "../lib/screen-fonts";
@@ -632,16 +632,15 @@ function Words({ theme, song, index, phase, transition, size }: { theme: ScreenT
                 // Chords over the words (issue #395): pinned above their letters, or the line's bars as beats.
                 const above = chords.show === "above" && !!line.chords && line.chords.chords.length > 0;
                 const beats = chords.show === "beats" ? lineBars(song, line) : [];
+                // A passage's verse numbers in their own look (issue #485), the words around them drawn as any line's.
+                const words = (text: string, key: number) =>
+                  now && phase !== "out" && motion.reveal !== "none" ? <Fragment key={key}>{reveal(text, motion.reveal, () => piece++)}</Fragment> : transition === "move" || (now && transition === "cascade") ? <Fragment key={key}>{wordSpans(text, first)}</Fragment> : text;
                 const body =
                   above && line.chords
                     ? chordsAbove(line.chords, chords)
                     : theme.display.follow === "fill" && line.chords
                       ? fillWords(line.text)
-                      : now && phase !== "out" && motion.reveal !== "none"
-                        ? reveal(line.text, motion.reveal, () => piece++)
-                        : transition === "move" || (now && transition === "cascade")
-                          ? wordSpans(line.text, first)
-                          : line.text;
+                      : withVerseNumbers(line.text, line.numbers, theme.verses, words);
                 const content = (
                   <>
                     {beats.length > 0 ? <BeatRow bars={beats} chart={song.chart} options={chords} /> : null}

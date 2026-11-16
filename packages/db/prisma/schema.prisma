@@ -2930,6 +2930,8 @@ model BibleVerse {
 model ScriptureSettings {
   id                  String   @id @default("singleton")
   youversionAppKeyEnc String?
+  // How many hours YouVersion passages are kept (issue #485): null, YOUVERSION_CACHE_HOURS (else 0, never).
+  youversionCacheHours Int?
   updatedAt           DateTime @updatedAt
 }
 

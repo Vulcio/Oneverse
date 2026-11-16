@@ -1,4 +1,4 @@
-import type { ScreenCurrent, ScreenThemeAsset, SyncPresenting } from "@oneverse/core";
+import { passageHeldKey, type ScreenCurrent, type ScreenThemeAsset, type SetItemPassage, type SyncPresenting } from "@oneverse/core";
 
 /**
  * What a screen keeps on the device (issue #195), so a dropped network - or a
@@ -50,10 +50,57 @@ async function store<T>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => ID
   return request(run(db.transaction(STORE, mode).objectStore(STORE)));
 }
 
-/** What the profile with `token` kept, if anything. */
+/** Each passage of a set changed by `change` (issue #485). */
+function eachPassage(current: ScreenCurrent, change: (passage: SetItemPassage) => SetItemPassage): ScreenCurrent {
+  if (!current.set) return current;
+  return { ...current, set: { ...current.set, songs: current.set.songs.map((view) => (view.passage ? { ...view, passage: change(view.passage) } : view)) } };
+}
+
+/**
+ * A copy as it may be kept (issue #485): a YouVersion passage's verses only
+ * for as long as an admin allows them kept (`keepHours`, never by default) -
+ * the reference stays, without verses. Read back after that time, the same.
+ */
+export function keepable(current: ScreenCurrent, keptAt: number, now = Date.now()): ScreenCurrent {
+  return eachPassage(current, (passage) => {
+    if (passage.keepHours === undefined && passage.youversionId === undefined) return passage;
+    const hours = passage.keepHours ?? 0;
+    return hours > 0 && now - keptAt < hours * 3_600_000 ? passage : { ...passage, chapters: [] };
+  });
+}
+
+/** The passages a screen has the verses of (issue #485), to say so when it loads again: YouVersion isn't asked for them every time. */
+export function heldPassages(current: ScreenCurrent | null): string[] {
+  const keys = new Set<string>();
+  for (const view of current?.set?.songs ?? []) {
+    const key = view.passage && view.passage.chapters.length > 0 ? passageHeldKey(view.passage) : null;
+    if (key) keys.add(key);
+  }
+  return [...keys];
+}
+
+/** A copy just loaded with the verses it was spared (`held`) taken from the one before (issue #485). */
+export function withHeld(loaded: ScreenCurrent, before: ScreenCurrent | null): ScreenCurrent {
+  const had = new Map<string, SetItemPassage>();
+  for (const view of before?.set?.songs ?? []) {
+    const key = view.passage ? passageHeldKey(view.passage) : null;
+    if (key && view.passage!.chapters.length > 0) had.set(key, view.passage!);
+  }
+  return eachPassage(loaded, (passage) => {
+    if (!passage.held) return passage;
+    const key = passageHeldKey(passage);
+    const from = key ? had.get(key) : undefined;
+    const shown: SetItemPassage = { ...passage, chapters: from?.chapters ?? [] };
+    delete shown.held;
+    return shown;
+  });
+}
+
+/** What the profile with `token` kept, if anything: verses kept past their time left out (issue #485). */
 export async function keptScreen(token: string): Promise<KeptScreen | null> {
   try {
-    return ((await store("readonly", (s) => s.get(token))) as KeptScreen | undefined) ?? null;
+    const kept = ((await store("readonly", (s) => s.get(token))) as KeptScreen | undefined) ?? null;
+    return kept && { ...kept, current: keepable(kept.current, kept.at) };
   } catch {
     return null;
   }
@@ -76,7 +123,8 @@ function update(token: string, change: (kept: KeptScreen | null) => KeptScreen |
 
 /** The set and look as just loaded, and its files kept for offline. */
 export async function keepScreen(token: string, current: ScreenCurrent): Promise<void> {
-  await update(token, (kept) => ({ current, presenting: kept?.presenting ?? null, at: Date.now() }));
+  const at = Date.now();
+  await update(token, (kept) => ({ current: keepable(current, at, at), presenting: kept?.presenting ?? null, at }));
   await keepFiles();
 }
 

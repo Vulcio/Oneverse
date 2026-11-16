@@ -173,6 +173,8 @@ export const ScreenWidgetDefaultQuerySchema = z.strictObject({
 export const ScreenCurrentQuerySchema = z.strictObject({
   today: optional(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "today is a date written YYYY-MM-DD")),
   time: optional(z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "time is written HH:MM")),
+  /** The passages whose verses the screen has already (issue #485), by passageHeldKey, between "|": not asked of YouVersion again. */
+  held: optional(z.string().max(4000)),
 });
 
 /** POST /screens/current/set (issue #274): a set picked on the screen for today; null goes back to the day's own. */

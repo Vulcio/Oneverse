@@ -2,6 +2,7 @@ import type { RenderedChart, RenderedChord } from "../song-document/render.js";
 import { barAt, lineAtPosition, type BeatPlace, type ChartBar } from "../song-document/bars.js";
 import type { PassageChapter } from "../scriptures/references.js";
 import { formatChord, nashvilleChord, simplifyChord } from "../chords/chord.js";
+import { readPassageLayout, type PassageLayout } from "./parts.js";
 
 /**
  * Screens (issue #186): a set's lyrics on a big screen, or its chart for the
@@ -39,6 +40,8 @@ export interface ScreenSlide {
   lines: string[];
   /** Its place among its pass's slides, from 0. */
   part: number;
+  /** A passage's verse numbers in its lines (issue #485), by line and characters: a screen draws them in the template's look. */
+  numbers?: { line: number; from: number; to: number }[];
 }
 
 /**
@@ -271,6 +274,19 @@ export interface SetItemPassage {
   projection: boolean;
   /** The template the screens show it with (issue #310), with how many verses it puts on a slide; null or left out: the screen's own, a verse a slide. */
   template?: SetItemTemplate | null;
+  /**
+   * On a screen, how many hours its verses may be kept on the device (issue
+   * #485): a YouVersion passage's, 0 (never) unless an admin allows keeping
+   * them. Left out: as the set's other items (an imported Bible's).
+   */
+  keepHours?: number;
+  /** Its verses left out because the screen said it already has them (issue #485): it keeps showing its own. */
+  held?: boolean;
+}
+
+/** How a screen names a passage whose verses it has (issue #485), to not be sent them again: its YouVersion version and reference. */
+export function passageHeldKey(passage: Pick<SetItemPassage, "youversionId" | "reference">): string | null {
+  return passage.youversionId === undefined ? null : `${passage.youversionId}:${passage.reference}`;
 }
 
 /** A set item's own screen template (issue #310): a saved one by its id and name, or a built-in one by its id (named in `screens.templates`). */
@@ -279,61 +295,142 @@ export interface SetItemTemplate {
   builtIn: string | null;
   name: string | null;
   versesPerSlide: number;
+  /** How it cuts the passage beyond that (issue #485); left out (an older API): the defaults. */
+  passages?: PassageLayout;
 }
 
-/** Characters on a line of a passage's slide, at most (a longer word keeps its own line). */
+/** Characters on a line of a passage's slide, at most (a longer word keeps its own line), unless its template says otherwise. */
 export const PASSAGE_LINE_CHARS = 44;
 /** Lines of a passage on a slide, at most: a longer verse goes on over several. */
 export const PASSAGE_LINES_PER_SLIDE = 4;
 /** Lines on a slide of several verses, at most, however many its template puts together. */
 export const PASSAGE_LINES_MAX = 10;
+/** Lines on a slide filled with whole verses (issue #485), unless its template says otherwise. */
+export const PASSAGE_FILL_LINES = 6;
 
-/** Words put on lines of at most `width` characters, in order; a longer word is a line of its own. */
-function wrapWords(text: string, width: number): string[] {
-  const lines: string[] = [];
-  let line = "";
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    if (line && line.length + 1 + word.length > width) {
+/** A piece of a passage's text kept on one line: a word, or a verse's number with the word after it. */
+interface Unit {
+  text: string;
+  /** Where its number is, in its text. */
+  number?: { from: number; to: number };
+}
+
+/** Units put on lines of at most `width` characters, in order, the numbers' places kept; a longer unit is a line of its own. */
+interface WrappedLine {
+  text: string;
+  numbers: { from: number; to: number }[];
+}
+
+function wrapUnits(units: Unit[], width: number): WrappedLine[] {
+  const lines: WrappedLine[] = [];
+  let line: WrappedLine | null = null;
+  for (const unit of units) {
+    if (line && line.text.length + 1 + unit.text.length > width) {
       lines.push(line);
-      line = word;
-    } else {
-      line = line ? `${line} ${word}` : word;
+      line = null;
     }
+    const at: number = line ? line.text.length + 1 : 0;
+    line = line ? { text: `${line.text} ${unit.text}`, numbers: line.numbers } : { text: unit.text, numbers: [] };
+    if (unit.number) line.numbers.push({ from: at + unit.number.from, to: at + unit.number.to });
   }
   if (line) lines.push(line);
   return lines;
 }
 
+/** A verse's units: its number glued to its first word (a number never ends a line), then its words. */
+function verseUnits(verse: { number: number; endNumber?: number; text: string }, numbered: boolean): Unit[] {
+  const words = verse.text.split(/\s+/).filter(Boolean);
+  if (!numbered) return words.map((text) => ({ text }));
+  const number = verse.endNumber !== undefined && verse.endNumber > verse.number ? `${verse.number}-${verse.endNumber}` : `${verse.number}`;
+  const [first, ...rest] = words;
+  return [{ text: first ? `${number} ${first}` : number, number: { from: 0, to: number.length } }, ...rest.map((text) => ({ text }))];
+}
+
 /**
- * A passage's slides (issues #301, #310): its verses, as many together as its
- * template puts on a slide (one by default, never across chapters), their
- * words on lines of at most PASSAGE_LINE_CHARS - PASSAGE_LINES_PER_SLIDE
- * lines a slide for one verse, more for several, up to PASSAGE_LINES_MAX -
- * labelled with their place ("John 3:16", "John 3:16-17" for verses printed
- * or shown together). Several verses on a slide each start with their
- * number. None when its Bible may not be shown on screens, or has no verses
- * for it.
+ * Lines cut into slides of at most `size` lines; with `sentences`, the units
+ * cut at sentences' ends first, as many whole sentences on a slide as fit, a
+ * sentence too long for one going on line by line.
+ */
+function cutSlides(units: Unit[], wrap: (units: Unit[]) => WrappedLine[], size: number, sentences: boolean): WrappedLine[][] {
+  const bySize = (lines: WrappedLine[]) => Array.from({ length: Math.ceil(lines.length / size) }, (_, i) => lines.slice(i * size, (i + 1) * size));
+  const all = wrap(units);
+  if (!sentences || all.length <= size) return bySize(all);
+  const pieces: Unit[][] = [[]];
+  for (const unit of units) {
+    pieces[pieces.length - 1]!.push(unit);
+    if (/[.!?;:][\u201d\u2019"'\u00bb)\]]*$/.test(unit.text)) pieces.push([]);
+  }
+  const slides: WrappedLine[][] = [];
+  let taken: Unit[] = [];
+  for (const piece of pieces.filter((one) => one.length > 0)) {
+    if (taken.length > 0 && wrap([...taken, ...piece]).length <= size) {
+      taken.push(...piece);
+      continue;
+    }
+    if (taken.length > 0) slides.push(wrap(taken));
+    taken = [];
+    const lines = wrap(piece);
+    if (lines.length <= size) taken = [...piece];
+    else slides.push(...bySize(lines));
+  }
+  if (taken.length > 0) slides.push(wrap(taken));
+  return slides;
+}
+
+/**
+ * A passage's slides (issues #301, #310, #485), cut as its template says:
+ * its verses `versesPerSlide` together (one by default), or as many whole
+ * verses as fill a slide - never across chapters - their words on lines of
+ * at most `lineLength` characters (each verse on its own lines if asked),
+ * `lines` a slide at most (by default 4 for one verse, more for several up
+ * to 10; 6 filling), a verse too long going on over several - at a
+ * sentence's end if asked - labelled with their place ("John 3:16", "John
+ * 3:16-17"). Verse numbers start their verses as the template says (with
+ * several verses on a slide by default), marked for the screens' look. None
+ * when its Bible may not be shown on screens, or has no verses for it.
  */
 export function passageSlides(passage: Pick<SetItemPassage, "bookName" | "chapters" | "projection" | "template">): ScreenSlide[] {
   if (!passage.projection) return [];
+  const layout = passage.template?.passages ?? readPassageLayout(undefined);
+  const fill = layout.split === "fill";
   const together = Math.max(1, Math.floor(passage.template?.versesPerSlide ?? 1));
-  const perSlide = Math.min(PASSAGE_LINES_PER_SLIDE * together, PASSAGE_LINES_MAX);
+  const perSlide = layout.lines ?? (fill ? PASSAGE_FILL_LINES : Math.min(PASSAGE_LINES_PER_SLIDE * together, PASSAGE_LINES_MAX));
+  const unitsOf = (verses: PassageChapter["verses"]) => {
+    const numbered = layout.numbers === "always" || (layout.numbers === "several" && verses.length > 1);
+    // Each verse on its own lines: a break before each verse's first unit.
+    return verses.flatMap((verse) => verseUnits(verse, numbered).map((unit, index) => (layout.verseLines && index === 0 ? { ...unit, newLine: true } : unit)));
+  };
+  const wrap = (units: (Unit & { newLine?: boolean })[]) => {
+    if (!layout.verseLines) return wrapUnits(units, layout.lineLength);
+    const runs: Unit[][] = [];
+    for (const unit of units) (unit.newLine || runs.length === 0 ? runs[runs.push([]) - 1]! : runs[runs.length - 1]!).push(unit);
+    return runs.flatMap((run) => wrapUnits(run, layout.lineLength));
+  };
+  const linesOf = (verses: PassageChapter["verses"]) => wrap(unitsOf(verses));
   const slides: ScreenSlide[] = [];
   let passIndex = 0;
   for (const chapter of passage.chapters) {
-    for (let at = 0; at < chapter.verses.length; at += together) {
-      const verses = chapter.verses.slice(at, at + together);
+    // The verses each slide (or run of slides, for a long verse) holds.
+    const groups: PassageChapter["verses"][] = [];
+    if (!fill) for (let at = 0; at < chapter.verses.length; at += together) groups.push(chapter.verses.slice(at, at + together));
+    else {
+      for (const verse of chapter.verses) {
+        const last = groups[groups.length - 1];
+        if (last && linesOf([...last, verse]).length <= perSlide) last.push(verse);
+        else groups.push([verse]);
+      }
+    }
+    for (const verses of groups) {
       const first = verses[0]!;
       const last = verses[verses.length - 1]!;
       const end = Math.max(last.endNumber ?? last.number, last.number);
       const number = end > first.number ? `${first.number}-${end}` : `${first.number}`;
       const label = `${passage.bookName} ${chapter.chapter}:${number}`;
       const passId = `verse-${chapter.chapter}-${first.number}`;
-      const text = verses.length > 1 ? verses.map((verse) => `${verse.endNumber !== undefined && verse.endNumber > verse.number ? `${verse.number}-${verse.endNumber}` : verse.number} ${verse.text}`).join(" ") : first.text;
-      const lines = wrapWords(text, PASSAGE_LINE_CHARS);
-      for (let line = 0, part = 0; line < lines.length; line += perSlide, part++) {
-        slides.push({ passIndex, passId, label, lines: lines.slice(line, line + perSlide), part });
-      }
+      cutSlides(unitsOf(verses), wrap, perSlide, layout.sentences).forEach((shown, part) => {
+        const numbers = shown.flatMap((one, index) => one.numbers.map((mark) => ({ line: index, ...mark })));
+        slides.push({ passIndex, passId, label, lines: shown.map((one) => one.text), part, ...(numbers.length > 0 && { numbers }) });
+      });
       passIndex++;
     }
   }

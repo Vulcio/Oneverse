@@ -1,13 +1,29 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
-import { bibleBookName, formatBibleReference, parseBibleReference, type PassageChapter, type SetItemPassage } from "@oneverse/core";
+import { bibleBookName, formatBibleReference, parseBibleReference, passageHeldKey, usfmBookId, type PassageChapter, type SetItemPassage } from "@oneverse/core";
 import { decryptSecret, encryptSecret } from "@oneverse/secret-crypto";
 import { PrismaService } from "../prisma/prisma.service.js";
-import { youVersionBibleById, youVersionBibles, youVersionPassage, YouVersionApiError, type Fetcher, type YouVersionBible, type YouVersionPassagePart } from "./youversion-api.js";
+import { YOUVERSION_CACHE_HOURS_MAX } from "@oneverse/core";
+import { redis } from "../jobs/redis.js";
+import { youVersionBibleById, youVersionBibles, youVersionPassage, youVersionPiece, withoutBooks, YouVersionApiError, type Fetcher, type YouVersionBible, type YouVersionBibleBooks, type YouVersionPassagePart } from "./youversion-api.js";
 
 export interface YouVersionSettings {
   /** Where the App Key comes from: the database's, YOUVERSION_APP_KEY, or none (YouVersion off). */
   source: "database" | "env" | "none";
   hasDatabaseKey: boolean;
+  /** How many hours passages are kept (issue #485): 0, never. */
+  cacheHours: number;
+  cacheSource: "database" | "env" | "default";
+}
+
+/** Where kept passages are in Redis (issue #485): never in the database, so never in a backup. */
+const CACHE_PREFIX = "oneverse:youversion:passage:";
+
+/** YOUVERSION_CACHE_HOURS as a number of hours, or null when it isn't one. */
+function envCacheHours(): number | null {
+  const raw = process.env.YOUVERSION_CACHE_HOURS?.trim();
+  if (!raw) return null;
+  const hours = Number(raw);
+  return Number.isInteger(hours) && hours >= 0 ? Math.min(hours, YOUVERSION_CACHE_HOURS_MAX) : null;
 }
 
 /**
@@ -25,7 +41,7 @@ export interface YouVersionRights {
 /** How long a version's name and attribution are kept in memory: its details, never its text. */
 const VERSION_TTL_MS = 60 * 60 * 1000;
 
-/** YouVersion's pieces of a passage as chapters of verses (a whole chapter as its first verse), each verse's number from its id ("JHN.3.16"). */
+/** YouVersion's pieces of a passage as chapters of verses (a chapter without verse marks as its first verse), each verse's numbers from its id ("JHN.3.16", "JHN.3.16-17"). */
 function chaptersOf(book: number, parts: YouVersionPassagePart[]): PassageChapter[] {
   const chapters: PassageChapter[] = [];
   for (const part of parts) {
@@ -34,8 +50,9 @@ function chaptersOf(book: number, parts: YouVersionPassagePart[]): PassageChapte
     if (!Number.isInteger(chapter)) continue;
     let into = chapters.find((one) => one.chapter === chapter);
     if (!into) chapters.push((into = { book, chapter, verses: [] }));
-    const verse = Number.parseInt(verseText ?? "1", 10);
-    into.verses.push({ number: Number.isInteger(verse) ? verse : 1, text: part.text });
+    const [from, to] = (verseText ?? "1").split("-").map((one) => Number.parseInt(one, 10));
+    const number = Number.isInteger(from) ? from! : 1;
+    into.verses.push({ number, ...(Number.isInteger(to) && to! > number && { endNumber: to }), text: part.text });
   }
   return chapters;
 }
@@ -61,26 +78,61 @@ export class YouVersionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async settings(): Promise<YouVersionSettings> {
-    const row = await this.prisma.client.scriptureSettings.findUnique({ where: { id: "singleton" }, select: { youversionAppKeyEnc: true } });
+    const row = await this.prisma.client.scriptureSettings.findUnique({ where: { id: "singleton" }, select: { youversionAppKeyEnc: true, youversionCacheHours: true } });
+    const env = envCacheHours();
     return {
       source: row?.youversionAppKeyEnc ? "database" : process.env.YOUVERSION_APP_KEY ? "env" : "none",
       hasDatabaseKey: !!row?.youversionAppKeyEnc,
+      cacheHours: row?.youversionCacheHours ?? env ?? 0,
+      cacheSource: row?.youversionCacheHours != null ? "database" : env !== null ? "env" : "default",
     };
   }
 
-  /** Saves the App Key, encrypted; empty clears it. */
-  async saveKey(appKey: string): Promise<YouVersionSettings> {
-    const clean = appKey.trim();
-    if (clean && !/^[\w.~+/=-]{8,200}$/.test(clean)) throw new BadRequestException("A YouVersion App Key is letters, digits and - _ . ~ + / =");
-    const data = { youversionAppKeyEnc: clean ? encryptSecret(clean, process.env.SETTINGS_ENCRYPTION_KEY) : null };
+  /**
+   * Saves what's given, the rest kept: the App Key, encrypted (empty clears
+   * it), and the hours passages are kept (null: the environment's). Kept
+   * passages go when keeping is turned off.
+   */
+  async saveKey(change: { appKey?: string; cacheHours?: number | null }): Promise<YouVersionSettings> {
+    const data: { youversionAppKeyEnc?: string | null; youversionCacheHours?: number | null } = {};
+    if (change.appKey !== undefined) {
+      const clean = change.appKey.trim();
+      if (clean && !/^[\w.~+/=-]{8,200}$/.test(clean)) throw new BadRequestException("A YouVersion App Key is letters, digits and - _ . ~ + / =");
+      data.youversionAppKeyEnc = clean ? encryptSecret(clean, process.env.SETTINGS_ENCRYPTION_KEY) : null;
+    }
+    if (change.cacheHours !== undefined) data.youversionCacheHours = change.cacheHours;
     await this.prisma.client.scriptureSettings.upsert({ where: { id: "singleton" }, create: { id: "singleton", ...data }, update: data });
-    return this.settings();
+    const settings = await this.settings();
+    if (settings.cacheHours === 0 || data.youversionAppKeyEnc !== undefined) await this.forget();
+    return settings;
   }
 
-  /** Back to YOUVERSION_APP_KEY (without it, YouVersion off). */
+  /** Back to the environment: YOUVERSION_APP_KEY (without it, YouVersion off) and YOUVERSION_CACHE_HOURS. */
   async resetKey(): Promise<YouVersionSettings> {
-    await this.prisma.client.scriptureSettings.updateMany({ where: { id: "singleton" }, data: { youversionAppKeyEnc: null } });
-    return this.settings();
+    await this.prisma.client.scriptureSettings.updateMany({ where: { id: "singleton" }, data: { youversionAppKeyEnc: null, youversionCacheHours: null } });
+    const settings = await this.settings();
+    await this.forget();
+    return settings;
+  }
+
+  /** How long passages may be kept now, in hours (issue #485): the admin's, else YOUVERSION_CACHE_HOURS, else 0 - never. */
+  async cacheHours(): Promise<number> {
+    const row = await this.prisma.client.scriptureSettings.findUnique({ where: { id: "singleton" }, select: { youversionCacheHours: true } });
+    return row?.youversionCacheHours ?? envCacheHours() ?? 0;
+  }
+
+  /** Every kept passage removed (issue #485): keeping turned off, or another App Key whose licences may differ. */
+  async forget(): Promise<void> {
+    try {
+      let cursor = "0";
+      do {
+        const [next, keys] = await redis().scan(cursor, "MATCH", `${CACHE_PREFIX}*`, "COUNT", 500);
+        cursor = next;
+        if (keys.length) await redis().del(...keys);
+      } while (cursor !== "0");
+    } catch (err) {
+      this.logger.warn(`YouVersion's kept passages couldn't be removed: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   async test(): Promise<{ ok: boolean; message: string }> {
@@ -129,18 +181,36 @@ export class YouVersionService {
     const reference = parseBibleReference(text);
     if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
     if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
-    const bible = await this.asked(() => youVersionBibleById(bibleId, appKey, this.fetcher));
-    const parts = await this.asked(() => youVersionPassage(bibleId, reference, appKey, this.fetcher));
+    const bible = withoutBooks(await this.asked(() => this.version(bibleId, appKey)));
+    const parts = await this.asked(async () => youVersionPassage(bibleId, reference, appKey, this.fetcher, this.pieceAsker(bibleId, appKey, await this.cacheHours())));
     return { reference: formatBibleReference(reference, { locale: locale ?? (bible.languageTag.startsWith("fr") ? "fr" : "en") }), bible, parts, rights: { offline: false, projection: true, export: false } };
+  }
+
+  /**
+   * A reference to keep in a set (issues #310, #485), as the version's
+   * language writes it: checked against the version's books, without asking
+   * for its text - it was read just before, and is read again when shown.
+   */
+  async reference(bibleId: number, text: string): Promise<string> {
+    const appKey = await this.requireKey();
+    const reference = parseBibleReference(text);
+    if (!reference) throw new BadRequestException(["reference must be a passage of one book, like John 3:16-18"]);
+    if (reference.ranges.length === 0) throw new BadRequestException(["reference must be a chapter or verses, not a whole book"]);
+    const bible = await this.asked(() => this.version(bibleId, appKey));
+    const book = usfmBookId(reference.book);
+    if (bible.books && book && !bible.books.includes(book)) throw new NotFoundException(`YouVersion has no such passage or version: ${bible.abbreviation} has no ${bibleBookName(reference.book, "en")}`);
+    return formatBibleReference(reference, { locale: bible.languageTag.startsWith("fr") ? "fr" : "en" });
   }
 
   /**
    * A set's passage from a version (issue #310) as `use` may have it: its
    * verses asked of YouVersion each time someone reads it or a screen shows
-   * it - never kept, so never offline. YouVersion
-   * off or not answering leaves the reference, without verses.
+   * it - kept only as long as an admin allows (issue #485, never by
+   * default), so never offline. `held`: what a screen already shows, not
+   * asked again (its verses left out, `held` said). YouVersion off or not
+   * answering leaves the reference, without verses.
    */
-  async itemPassage(bibleId: number, text: string, use: "read" | "list" | "offline" | "screen"): Promise<SetItemPassage> {
+  async itemPassage(bibleId: number, text: string, use: "read" | "list" | "offline" | "screen", held?: ReadonlySet<string>): Promise<SetItemPassage> {
     const reference = parseBibleReference(text);
     const passage: SetItemPassage = { bibleId: "", youversionId: bibleId, reference: text, bookName: reference ? bibleBookName(reference.book, "en") : "", bible: null, chapters: [], projection: true, link: null };
     const appKey = await this.appKey();
@@ -149,16 +219,53 @@ export class YouVersionService {
       const bible = await this.version(bibleId, appKey);
       const named: SetItemPassage = { ...passage, bookName: text.replace(/\s*\d[\d:,.\s;-]*$/, "") || passage.bookName, bible: { name: bible.title, abbreviation: bible.abbreviation, copyright: bible.attribution }, link: bible.link };
       if (!reference || reference.ranges.length === 0 || !(use === "read" || use === "screen")) return named;
-      return { ...named, chapters: chaptersOf(reference.book, await youVersionPassage(bibleId, reference, appKey, this.fetcher)) };
+      const hours = await this.cacheHours();
+      // On a screen, kept on the device as long as on the server (issue #485).
+      const kept = use === "screen" ? { keepHours: hours } : {};
+      if (use === "screen" && held?.has(passageHeldKey({ youversionId: bibleId, reference: text })!)) return { ...named, ...kept, held: true };
+      return { ...named, ...kept, chapters: chaptersOf(reference.book, await youVersionPassage(bibleId, reference, appKey, this.fetcher, this.pieceAsker(bibleId, appKey, hours))) };
     } catch (err) {
       this.logger.warn(`YouVersion's passage for a set failed: ${err instanceof Error ? err.message : String(err)}`);
       return passage;
     }
   }
 
+  /**
+   * What asks YouVersion for one passage id: the same request at the same
+   * moment (screens loading together) asked once, and answers kept in Redis
+   * for `hours` when an admin allows it (issue #485) - never otherwise.
+   */
+  private readonly asking = new Map<string, Promise<YouVersionPassagePart[]>>();
+  private pieceAsker(bibleId: number, appKey: string, hours: number): (id: string) => Promise<YouVersionPassagePart[]> {
+    return (id) => {
+      const key = `${CACHE_PREFIX}${bibleId}:${id}`;
+      const pending = this.asking.get(key);
+      if (pending) return pending;
+      const ask = (async () => {
+        if (hours > 0) {
+          const kept = await redis()
+            .get(key)
+            .catch(() => null);
+          if (kept) {
+            try {
+              return JSON.parse(kept) as YouVersionPassagePart[];
+            } catch {
+              // Not readable: asked again.
+            }
+          }
+        }
+        const parts = await youVersionPiece(bibleId, id, appKey, this.fetcher);
+        if (hours > 0) await redis().set(key, JSON.stringify(parts), "EX", hours * 3600).catch(() => undefined);
+        return parts;
+      })().finally(() => this.asking.delete(key));
+      this.asking.set(key, ask);
+      return ask;
+    };
+  }
+
   /** A version's details, kept an hour in memory: a set lists its passages often. */
-  private readonly versions = new Map<number, { bible: YouVersionBible; at: number }>();
-  private async version(bibleId: number, appKey: string): Promise<YouVersionBible> {
+  private readonly versions = new Map<number, { bible: YouVersionBibleBooks; at: number }>();
+  private async version(bibleId: number, appKey: string): Promise<YouVersionBibleBooks> {
     const kept = this.versions.get(bibleId);
     if (kept && Date.now() - kept.at < VERSION_TTL_MS) return kept.bible;
     const bible = await youVersionBibleById(bibleId, appKey, this.fetcher);

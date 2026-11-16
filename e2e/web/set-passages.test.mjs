@@ -110,6 +110,28 @@ try {
     await tv.locator('[data-testid="widget-credits"], [data-testid="screen-credits"]').getByText("Public Domain").waitFor();
   });
 
+  await step("a template numbering every verse, raised and red (issue #485): the screen draws the numbers so", async () => {
+    const numbered = await api(leader, "POST", "/screen-themes", {
+      name: `Numbered ${stamp}`,
+      content: { builtIn: "chapel" },
+      background: { builtIn: "chapel" },
+      template: { tags: ["scripture"], passages: { numbers: "always" }, tweaks: { content: { verses: { position: "raised", color: "#ff0000" } } } },
+    });
+    await api(leader, "PATCH", `/setlists/${set.id}/items/${passageId}`, { screenTemplate: { id: numbered.id } });
+    // A change to the set reaches the screen: it loads again.
+    await tv.reload();
+    leading.send({ type: "update", presenting: { itemId: passageId, slide: 0, black: false } });
+    const number = tv.getByTestId("screen-lines").getByTestId("screen-verse-number");
+    await number.first().waitFor({ timeout: 15000 });
+    const look = await number.first().evaluate((element) => ({ text: element.textContent, color: getComputedStyle(element).color, raised: getComputedStyle(element).verticalAlign }));
+    if (look.text !== "1" || look.color !== "rgb(255, 0, 0)" || look.raised === "baseline") throw new Error(JSON.stringify(look));
+    await api(leader, "PATCH", `/setlists/${set.id}/items/${passageId}`, { screenTemplate: null });
+    await api(leader, "DELETE", `/screen-themes/${numbered.id}`);
+    await tv.reload();
+    leading.send({ type: "update", presenting: { itemId: passageId, slide: 1, black: false } });
+    await tv.getByTestId("screen-lines").getByText("He maketh me to lie down in green").waitFor({ timeout: 15000 });
+  });
+
   await step("the operator's page: the passage in the set's list, a slide a verse, the one on the screens", async () => {
     page = desk;
     await desk.goto(`${WEB}/sets/${set.id}/operate?item=${passageId}`);

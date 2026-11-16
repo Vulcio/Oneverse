@@ -582,6 +582,7 @@ export class SetlistsService {
     itemId: string,
     passages: PassageUse,
     references?: Map<string, string[]>,
+    held?: ReadonlySet<string>,
   ) {
     const index = set.items.findIndex((item) => item.id === itemId);
     if (index === -1) throw new NotFoundException("Item not found");
@@ -608,7 +609,7 @@ export class SetlistsService {
       // A text item's (issue #305).
       text: song ? null : readItemText(item.text),
       // A passage's (issue #301), with its verses as `passages` may have them.
-      passage: item.kind === "PASSAGE" ? await this.itemPassage(item, passages) : null,
+      passage: item.kind === "PASSAGE" ? await this.itemPassage(item, passages, held) : null,
       // What happens after it (issue #199), with the key and tempo it goes from and to.
       transition: item.transition
         ? this.transitionView({ ...item, songVersion: song }, next && hasSong(next) && (readable.has(next.id) || inViewersLibrary(next.songVersion)) ? next : null, shown)
@@ -687,13 +688,13 @@ export class SetlistsService {
    * Passages' verses only where their Bible allows `passages` (issue #301):
    * kept on a device by default, shown on screens for the screens.
    */
-  async offlineCopy(user: AuthenticatedUser, setlistId: string, { withNotes = true, passages = "offline" as PassageUse } = {}) {
+  async offlineCopy(user: AuthenticatedUser, setlistId: string, { withNotes = true, passages = "offline" as PassageUse, held = undefined as ReadonlySet<string> | undefined } = {}) {
     const set = await this.findOne(user, setlistId);
     // What every song's view needs, read once for the whole set (issue #341).
     const context = await this.songViewContext(user, setlistId);
     const references = await this.songbookReferences(user, context.set.items.flatMap((item) => (item.songVersionId ? [item.songVersionId] : [])));
     const songs = [];
-    for (const item of set.items) songs.push(await this.songViewIn(user, context, item.id, passages, references));
+    for (const item of set.items) songs.push(await this.songViewIn(user, context, item.id, passages, references, held));
     // The notes one sees on each song in this set (issue #256), by song.
     const notes: Record<string, SongNotes> = {};
     if (withNotes) for (const view of songs) if (view.song && !notes[view.song.id]) notes[view.song.id] = await this.notes.list(user, view.song.id, { setlistId });
@@ -720,8 +721,8 @@ export class SetlistsService {
   }
 
   /** A passage item's passage (issue #301), with the screen template it's shown with (issue #310). */
-  private async itemPassage(item: { passage: unknown; screenTemplate: unknown }, use: PassageUse): Promise<SetItemPassage | null> {
-    const passage = await this.bibles.itemPassage(item.passage, use);
+  private async itemPassage(item: { passage: unknown; screenTemplate: unknown }, use: PassageUse, held?: ReadonlySet<string>): Promise<SetItemPassage | null> {
+    const passage = await this.bibles.itemPassage(item.passage, use, held);
     return passage && { ...passage, template: await this.itemTemplate(item.screenTemplate) };
   }
 
@@ -731,10 +732,12 @@ export class SetlistsService {
     if (!ref) return null;
     if ("builtIn" in ref) {
       const builtIn = screenBuiltInTemplate(ref.builtIn);
-      return builtIn ? { id: null, builtIn: builtIn.id, name: null, versesPerSlide: builtIn.template.versesPerSlide } : null;
+      return builtIn ? { id: null, builtIn: builtIn.id, name: null, versesPerSlide: builtIn.template.versesPerSlide, passages: builtIn.template.passages } : null;
     }
     const row = await this.prisma.client.screenTheme.findUnique({ where: { id: ref.id }, select: { id: true, name: true, document: true } });
-    return row ? { id: row.id, builtIn: null, name: row.name, versesPerSlide: templateLayout(row).versesPerSlide } : null;
+    if (!row) return null;
+    const layout = templateLayout(row);
+    return { id: row.id, builtIn: null, name: row.name, versesPerSlide: layout.versesPerSlide, passages: layout.passages };
   }
 
   /** A template someone gives a passage (issue #310): a built-in one, or one they may pick for a screen - theirs or a team's they're in. */
@@ -752,11 +755,8 @@ export class SetlistsService {
 
   /** A passage to keep in a set (issue #301): its Bible imported, its reference read and found there, as that Bible names it. */
   private async passageRef(passage: { bibleId?: string; youversionId?: number; reference: string }): Promise<{ bibleId: string; reference: string } | { youversionId: number; reference: string }> {
-    // A YouVersion version's (issue #310): read there once to check it, as its language writes it; only the reference is kept.
-    if (passage.youversionId !== undefined) {
-      const found = await this.youversion.passage(passage.youversionId, passage.reference);
-      return { youversionId: passage.youversionId, reference: found.reference };
-    }
+    // A YouVersion version's (issue #310): checked against the version's books, as its language writes it - its text isn't asked again (issue #485); only the reference is kept.
+    if (passage.youversionId !== undefined) return { youversionId: passage.youversionId, reference: await this.youversion.reference(passage.youversionId, passage.reference) };
     const found = await this.bibles.passage(passage.bibleId!, passage.reference);
     return { bibleId: passage.bibleId!, reference: found.reference };
   }

@@ -1976,7 +1976,19 @@
                 "everlasting life. 17-18 For God sent not his",
                 "Son."
               ],
-              "part": 0
+              "part": 0,
+              "numbers": [
+                {
+                  "line": 0,
+                  "from": 0,
+                  "to": 2
+                },
+                {
+                  "line": 3,
+                  "from": 18,
+                  "to": 23
+                }
+              ]
             },
             {
               "passIndex": 1,
@@ -1995,7 +2007,290 @@
                 "1 When therefore the Lord knew 2 Though",
                 "Jesus himself baptized not"
               ],
+              "part": 0,
+              "numbers": [
+                {
+                  "line": 0,
+                  "from": 0,
+                  "to": 1
+                },
+                {
+                  "line": 0,
+                  "from": 31,
+                  "to": 32
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "filling each slide with whole verses, 5 lines at most (issue #485)",
+          "args": [
+            {
+              "bookName": "John",
+              "projection": true,
+              "template": {
+                "id": null,
+                "builtIn": null,
+                "name": "Fill",
+                "versesPerSlide": 1,
+                "passages": {
+                  "split": "fill",
+                  "lines": 5,
+                  "lineLength": 44,
+                  "verseLines": false,
+                  "sentences": false,
+                  "numbers": "several"
+                }
+              },
+              "chapters": [
+                {
+                  "book": 43,
+                  "chapter": 3,
+                  "verses": [
+                    {
+                      "number": 16,
+                      "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."
+                    },
+                    {
+                      "number": 17,
+                      "text": "For God sent not his Son into the world to condemn the world; but that the world through him might be saved."
+                    },
+                    {
+                      "number": 18,
+                      "endNumber": 19,
+                      "text": "He that believeth on him is not condemned."
+                    },
+                    {
+                      "number": 20,
+                      "text": "For every one that doeth evil hateth the light."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "passIndex": 0,
+              "passId": "verse-3-16",
+              "label": "John 3:16",
+              "lines": [
+                "For God so loved the world, that he gave his",
+                "only begotten Son, that whosoever believeth",
+                "in him should not perish, but have",
+                "everlasting life."
+              ],
               "part": 0
+            },
+            {
+              "passIndex": 1,
+              "passId": "verse-3-17",
+              "label": "John 3:17-20",
+              "lines": [
+                "17 For God sent not his Son into the world",
+                "to condemn the world; but that the world",
+                "through him might be saved. 18-19 He that",
+                "believeth on him is not condemned. 20 For",
+                "every one that doeth evil hateth the light."
+              ],
+              "part": 0,
+              "numbers": [
+                {
+                  "line": 0,
+                  "from": 0,
+                  "to": 2
+                },
+                {
+                  "line": 2,
+                  "from": 28,
+                  "to": 33
+                },
+                {
+                  "line": 3,
+                  "from": 35,
+                  "to": 37
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "numbers always, each verse on its own lines, 30 characters a line (issue #485)",
+          "args": [
+            {
+              "bookName": "John",
+              "projection": true,
+              "template": {
+                "id": null,
+                "builtIn": null,
+                "name": "Lines",
+                "versesPerSlide": 2,
+                "passages": {
+                  "split": "verses",
+                  "lines": null,
+                  "lineLength": 30,
+                  "verseLines": true,
+                  "sentences": false,
+                  "numbers": "always"
+                }
+              },
+              "chapters": [
+                {
+                  "book": 43,
+                  "chapter": 3,
+                  "verses": [
+                    {
+                      "number": 16,
+                      "text": "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."
+                    },
+                    {
+                      "number": 17,
+                      "text": "For God sent not his Son into the world to condemn the world; but that the world through him might be saved."
+                    },
+                    {
+                      "number": 18,
+                      "endNumber": 19,
+                      "text": "He that believeth on him is not condemned."
+                    },
+                    {
+                      "number": 20,
+                      "text": "For every one that doeth evil hateth the light."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "passIndex": 0,
+              "passId": "verse-3-16",
+              "label": "John 3:16-17",
+              "lines": [
+                "16 For God so loved the world,",
+                "that he gave his only begotten",
+                "Son, that whosoever believeth",
+                "in him should not perish, but",
+                "have everlasting life.",
+                "17 For God sent not his Son",
+                "into the world to condemn the",
+                "world; but that the world"
+              ],
+              "part": 0,
+              "numbers": [
+                {
+                  "line": 0,
+                  "from": 0,
+                  "to": 2
+                },
+                {
+                  "line": 5,
+                  "from": 0,
+                  "to": 2
+                }
+              ]
+            },
+            {
+              "passIndex": 0,
+              "passId": "verse-3-16",
+              "label": "John 3:16-17",
+              "lines": [
+                "through him might be saved."
+              ],
+              "part": 1
+            },
+            {
+              "passIndex": 1,
+              "passId": "verse-3-18",
+              "label": "John 3:18-20",
+              "lines": [
+                "18-19 He that believeth on him",
+                "is not condemned.",
+                "20 For every one that doeth",
+                "evil hateth the light."
+              ],
+              "part": 0,
+              "numbers": [
+                {
+                  "line": 0,
+                  "from": 0,
+                  "to": 5
+                },
+                {
+                  "line": 2,
+                  "from": 0,
+                  "to": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "a long verse going on at a sentence's end, numbers never (issue #485)",
+          "args": [
+            {
+              "bookName": "Romans",
+              "projection": true,
+              "template": {
+                "id": null,
+                "builtIn": null,
+                "name": "Sentences",
+                "versesPerSlide": 1,
+                "passages": {
+                  "split": "verses",
+                  "lines": 3,
+                  "lineLength": 30,
+                  "verseLines": false,
+                  "sentences": true,
+                  "numbers": "never"
+                }
+              },
+              "chapters": [
+                {
+                  "book": 45,
+                  "chapter": 8,
+                  "verses": [
+                    {
+                      "number": 38,
+                      "text": "For I am persuaded. That neither death, nor life, nor angels, nor principalities, nor powers, nor things present, nor things to come, nor height, nor depth."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "passIndex": 0,
+              "passId": "verse-8-38",
+              "label": "Romans 8:38",
+              "lines": [
+                "For I am persuaded."
+              ],
+              "part": 0
+            },
+            {
+              "passIndex": 0,
+              "passId": "verse-8-38",
+              "label": "Romans 8:38",
+              "lines": [
+                "That neither death, nor life,",
+                "nor angels, nor",
+                "principalities, nor powers,"
+              ],
+              "part": 1
+            },
+            {
+              "passIndex": 0,
+              "passId": "verse-8-38",
+              "label": "Romans 8:38",
+              "lines": [
+                "nor things present, nor things",
+                "to come, nor height, nor",
+                "depth."
+              ],
+              "part": 2
             }
           ]
         }
@@ -2113,6 +2408,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": null,
             "masks": [],
@@ -2243,6 +2545,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": null,
             "masks": [],
@@ -2378,6 +2687,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -2506,6 +2822,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": null,
             "masks": [],
@@ -2636,6 +2959,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -2756,6 +3086,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": null,
             "masks": [],
@@ -2914,6 +3251,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": {
               "columns": 6,
@@ -3103,6 +3447,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -3260,6 +3611,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": {
               "columns": 12,
@@ -3697,6 +4055,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": {
               "columns": 12,
               "rows": 12,
@@ -4015,6 +4380,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": {
               "columns": 12,
               "rows": 12,
@@ -4311,6 +4683,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": {
               "columns": 12,
               "rows": 12,
@@ -4606,6 +4985,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": {
               "columns": 12,
@@ -4942,6 +5328,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": {
               "columns": 12,
               "rows": 12,
@@ -5258,6 +5651,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": {
               "columns": 12,
               "rows": 12,
@@ -5559,6 +5959,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": {
               "columns": 12,
               "rows": 12,
@@ -5809,6 +6216,13 @@
                 "simple": false,
                 "current": true
               },
+              "verses": {
+                "position": "inline",
+                "size": 1,
+                "color": null,
+                "font": null,
+                "bold": false
+              },
               "display": {
                 "mode": "slides",
                 "follow": "off",
@@ -5875,6 +6289,14 @@
               "grid": null,
               "masks": [],
               "versesPerSlide": 1,
+              "passages": {
+                "split": "verses",
+                "lines": null,
+                "lineLength": 44,
+                "verseLines": false,
+                "sentences": false,
+                "numbers": "several"
+              },
               "titleWidgets": false,
               "madeFor": [],
               "tweaks": {},
@@ -5967,6 +6389,13 @@
                 "size": 0.55,
                 "simple": false,
                 "current": true
+              },
+              "verses": {
+                "position": "inline",
+                "size": 1,
+                "color": null,
+                "font": null,
+                "bold": false
               },
               "display": {
                 "mode": "slides",
@@ -6114,6 +6543,14 @@
               },
               "masks": [],
               "versesPerSlide": 1,
+              "passages": {
+                "split": "verses",
+                "lines": null,
+                "lineLength": 44,
+                "verseLines": false,
+                "sentences": false,
+                "numbers": "several"
+              },
               "titleWidgets": false,
               "madeFor": [],
               "tweaks": {},
@@ -6210,6 +6647,14 @@
             "grid": null,
             "masks": [],
             "versesPerSlide": 1,
+            "passages": {
+              "split": "verses",
+              "lines": null,
+              "lineLength": 44,
+              "verseLines": false,
+              "sentences": false,
+              "numbers": "several"
+            },
             "titleWidgets": false,
             "madeFor": [],
             "tweaks": {},
@@ -6251,6 +6696,14 @@
               }
             ],
             "versesPerSlide": 1,
+            "passages": {
+              "split": "verses",
+              "lines": null,
+              "lineLength": 44,
+              "verseLines": false,
+              "sentences": false,
+              "numbers": "several"
+            },
             "titleWidgets": false,
             "madeFor": [],
             "tweaks": {},
@@ -6275,6 +6728,14 @@
             "grid": null,
             "masks": [],
             "versesPerSlide": 3,
+            "passages": {
+              "split": "verses",
+              "lines": null,
+              "lineLength": 44,
+              "verseLines": false,
+              "sentences": false,
+              "numbers": "several"
+            },
             "titleWidgets": false,
             "madeFor": [],
             "tweaks": {},
@@ -6294,6 +6755,14 @@
             "grid": null,
             "masks": [],
             "versesPerSlide": 1,
+            "passages": {
+              "split": "verses",
+              "lines": null,
+              "lineLength": 44,
+              "verseLines": false,
+              "sentences": false,
+              "numbers": "several"
+            },
             "titleWidgets": false,
             "madeFor": [],
             "tweaks": {},
@@ -6313,6 +6782,14 @@
             "grid": null,
             "masks": [],
             "versesPerSlide": 1,
+            "passages": {
+              "split": "verses",
+              "lines": null,
+              "lineLength": 44,
+              "verseLines": false,
+              "sentences": false,
+              "numbers": "several"
+            },
             "titleWidgets": true,
             "madeFor": [],
             "tweaks": {},
@@ -6336,6 +6813,14 @@
             "grid": null,
             "masks": [],
             "versesPerSlide": 1,
+            "passages": {
+              "split": "verses",
+              "lines": null,
+              "lineLength": 44,
+              "verseLines": false,
+              "sentences": false,
+              "numbers": "several"
+            },
             "titleWidgets": false,
             "madeFor": [
               "scripture"
@@ -9043,6 +9528,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -9167,6 +9659,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -9289,6 +9788,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": null,
             "masks": [],
@@ -9414,6 +9920,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -9537,6 +10050,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -9659,6 +10179,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -9779,6 +10306,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": null,
             "masks": [],
@@ -9901,6 +10435,13 @@
               "simple": false,
               "current": true
             },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
+            },
             "grid": null,
             "masks": [],
             "shows": "lyrics",
@@ -10021,6 +10562,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": {
               "columns": 12,
@@ -10520,6 +11068,13 @@
               "size": 0.55,
               "simple": false,
               "current": true
+            },
+            "verses": {
+              "position": "inline",
+              "size": 1,
+              "color": null,
+              "font": null,
+              "bold": false
             },
             "grid": null,
             "masks": [],

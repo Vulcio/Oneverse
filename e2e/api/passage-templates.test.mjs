@@ -34,10 +34,26 @@ check("one or the other, not both", r.status === 400, `${r.status}`);
 r = await call(leader, "POST", "/screen-themes", { name: `Readings ${stamp}`, content: { builtIn: "chapel" }, background: { builtIn: "chapel" }, effects: null, template: { tags: ["audience", "scripture"], versesPerSlide: 3 } });
 check("a template that says three verses a slide", r.status === 201 && r.body.template.versesPerSlide === 3 && r.body.template.tags.includes("scripture"), JSON.stringify(r.body?.template ?? r.body));
 const readings = r.body;
+// How it cuts passages (issue #485): filling slides, numbers always; the look of its numbers in its tweaks.
+r = await call(leader, "POST", "/screen-themes", {
+  name: `Filled ${stamp}`,
+  content: { builtIn: "chapel" },
+  background: { builtIn: "chapel" },
+  template: { tags: ["scripture"], passages: { split: "fill", lines: 8, numbers: "always" }, tweaks: { content: { verses: { position: "raised", color: "#ff0000" } } } },
+});
+check("a template's passage layout: saved, the rest default", r.status === 201 && r.body.template.passages.split === "fill" && r.body.template.passages.lines === 8 && r.body.template.passages.lineLength === 44 && r.body.template.passages.numbers === "always", `${r.status} ${JSON.stringify(r.body.template ?? r.body).slice(0, 300)}`);
+const filled = r.body;
+check("…its verse numbers' look in its content", filled.theme?.verses?.position === "raised" && filled.theme.verses.color === "#ff0000", JSON.stringify(filled.theme?.verses));
+r = await call(leader, "POST", "/screen-themes", { name: "Bad", content: { builtIn: "classic" }, background: { builtIn: "classic" }, template: { passages: { split: "sideways" } } });
+check("a split it doesn't know: refused", r.status === 400, String(r.status));
 r = await call(leader, "POST", "/screen-themes", { name: "Too many", content: { builtIn: "classic" }, background: { builtIn: "classic" }, template: { versesPerSlide: 40 } });
 check("more than ten verses a slide: 400", r.status === 400, `${r.status}`);
 const strangers = await api(stranger, "POST", "/screen-themes", { name: `Not yours ${stamp}`, content: { builtIn: "classic" }, background: { builtIn: "classic" }, template: { tags: ["scripture"] } });
 
+r = await call(leader, "PATCH", `/setlists/${set.id}/items/${item.id}`, { screenTemplate: { id: filled.id } });
+r = await call(leader, "GET", `/setlists/${set.id}/offline?for=screens`);
+check("the item carries its template's passage layout, for every client to cut it alike", r.body.songs?.find((one) => one.item.id === item.id)?.passage?.template?.passages?.split === "fill", JSON.stringify(r.body.songs?.find((one) => one.item.id === item.id)?.passage?.template));
+await api(leader, "DELETE", `/screen-themes/${filled.id}`);
 r = await call(leader, "PATCH", `/setlists/${set.id}/items/${item.id}`, { screenTemplate: { id: strangers.id } });
 check("someone else's template: 404", r.status === 404, `${r.status}`);
 r = await call(leader, "PATCH", `/setlists/${set.id}/items/${item.id}`, { screenTemplate: { id: readings.id } });
