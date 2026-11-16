@@ -308,12 +308,18 @@ export function ScreenThemeEditor({
   }
   const tweaks = useMemo(() => (kind === "template" ? tweaksOf(theme) : {}), [kind, theme, refs, parts]);
 
-  /** A tab's tweaks dropped, all or one group's: its preset's settings again. */
-  function resetTweaks(slot: ScreenPartKind, group?: string) {
+  /** A tab's tweaks dropped, all, one group's or one setting's (issue #431): its preset's settings again. */
+  function resetTweaks(slot: ScreenPartKind, group?: string, setting?: string) {
     setTheme((before) => {
       const now = lookOf(before);
       const preset = extractPart(slot, compose(refs, { grid: null, masks: [], titleWidgets: true }), partDocument(slot, refs[slot], parts)) as Record<string, unknown>;
-      return compose(refs, { grid: before.grid, masks: before.masks, titleWidgets: true, look: { ...now, [slot]: group ? { ...now[slot], [group]: preset[group] } : undefined } });
+      const part = now[slot] as Record<string, unknown> | undefined;
+      const back = !group
+        ? undefined
+        : setting
+          ? { ...part, [group]: { ...(part?.[group] as Record<string, unknown>), [setting]: (preset[group] as Record<string, unknown> | undefined)?.[setting] } }
+          : { ...part, [group]: preset[group] };
+      return compose(refs, { grid: before.grid, masks: before.masks, titleWidgets: true, look: { ...now, [slot]: back } });
     });
   }
 
@@ -464,7 +470,7 @@ export function ScreenThemeEditor({
                         name={presetName}
                         onName={setPresetName}
                         suggested={t("screens.parts.copyOf", { name: partName(layer, refs[layer]) })}
-                        onReset={(group) => resetTweaks(layer, group)}
+                        onReset={(group, setting) => resetTweaks(layer, group, setting)}
                         onSave={(asNew) => void savePreset(layer, asNew)}
                       />
                     ) : null}
@@ -920,7 +926,8 @@ function TweaksBar({
   name: string | null;
   onName: (name: string | null) => void;
   suggested: string;
-  onReset: (group?: string) => void;
+  /** All of the tab's tweaks dropped, a group's, or one setting's (issue #431). */
+  onReset: (group?: string, setting?: string) => void;
   onSave: (asNew: string | null) => void;
 }) {
   const { t } = useTranslation();
@@ -941,6 +948,8 @@ function TweaksBar({
       </div>
     );
   const label = (group: string) => t(`screens.editor.tweaks.groups.${slot}.${group}`, { defaultValue: group });
+  // A setting's name: its own words, else its key spelt out ("lineHeight": "line height").
+  const settingLabel = (setting: string) => t(`screens.editor.tweaks.settings.${setting}`, { defaultValue: setting.replace(/([A-Z])/g, " $1").toLowerCase() });
   return (
     <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-2.5" data-testid="theme-tweaks" data-count={groups.length}>
       <div className="flex items-center gap-2">
@@ -950,15 +959,30 @@ function TweaksBar({
           {t("screens.editor.tweaks.reset")}
         </Button>
       </div>
-      <ul className="flex flex-wrap gap-1">
-        {groups.map((group) => (
-          <li key={group} className="flex items-center gap-0.5 rounded-full border bg-background py-0.5 pr-0.5 pl-2 text-xs" data-testid="theme-tweak" data-group={group}>
-            {label(group)}
-            <button type="button" className="flex size-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("screens.editor.tweaks.resetGroup", { group: label(group) })} onClick={() => onReset(group)}>
-              <X className="size-3" aria-hidden />
-            </button>
-          </li>
-        ))}
+      <ul className="flex flex-col gap-1">
+        {groups.map((group) => {
+          // Each setting changed in the group, to reset on its own (issue #431); a group changed whole has none.
+          const value = tweaks[group];
+          const settings = value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value) : [];
+          return (
+            <li key={group} className="flex flex-wrap items-center gap-1 text-xs" data-testid="theme-tweak" data-group={group}>
+              <span className="flex items-center gap-0.5 rounded-full border bg-background py-0.5 pr-0.5 pl-2 font-medium">
+                {label(group)}
+                <button type="button" className="flex size-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={t("screens.editor.tweaks.resetGroup", { group: label(group) })} onClick={() => onReset(group)}>
+                  <X className="size-3" aria-hidden />
+                </button>
+              </span>
+              {settings.map((setting) => (
+                    <span key={setting} className="flex items-center gap-0.5 rounded-full bg-background/70 py-0.5 pr-0.5 pl-2 text-muted-foreground" data-testid="theme-tweak-setting" data-setting={setting}>
+                      {settingLabel(setting)}
+                      <button type="button" className="flex size-5 items-center justify-center rounded-full hover:bg-muted hover:text-foreground" aria-label={t("screens.editor.tweaks.resetGroup", { group: settingLabel(setting) })} onClick={() => onReset(group, setting)}>
+                        <X className="size-3" aria-hidden />
+                      </button>
+                    </span>
+              ))}
+            </li>
+          );
+        })}
       </ul>
       {name === null ? (
         <div className="flex flex-wrap items-center gap-1.5">

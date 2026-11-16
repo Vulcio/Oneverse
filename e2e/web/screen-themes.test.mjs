@@ -89,7 +89,13 @@ try {
     await editor.getByTestId("theme-background").locator('[data-value="particles"]').click();
     await editor.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor();
     await editor.locator('[data-testid="theme-tweak"][data-group="background"]').waitFor();
-    // ...put back as the preset has them...
+    // ...one setting put back on its own (issue #431)...
+    await editor.locator('[data-testid="theme-tweak-setting"][data-setting="kind"]').getByRole("button").click();
+    await editor.locator('[data-testid="theme-preview"] [data-background="particles"]').waitFor({ state: "detached" });
+    await editor.locator('[data-testid="theme-tweak-setting"][data-setting="kind"]').waitFor({ state: "detached" });
+    await editor.getByTestId("theme-background").locator('[data-value="particles"]').click();
+    await editor.locator('[data-testid="theme-tweak-setting"][data-setting="kind"]').waitFor();
+    // ...all put back as the preset has them...
     await editor.getByTestId("theme-tweaks-reset").click();
     await editor.locator('[data-testid="theme-tweaks"][data-count="0"]').waitFor();
     await editor.getByTestId("theme-background").locator('[data-value="particles"]').click();
