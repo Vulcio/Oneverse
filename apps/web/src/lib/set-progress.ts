@@ -79,12 +79,15 @@ export function resumeItemOf(progress: SetProgress | null, itemIds: string[]): s
   return current && itemIds.includes(current) ? current : (itemIds[0] ?? null);
 }
 
+/** Called whenever any set's progress changes on this device; returns the way to stop. */
+export function subscribeSetProgress(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 export function useSetProgress(setId: string | null | undefined): SetProgress | null {
   return useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribeSetProgress,
     () => (setId ? read(setId) : null),
     () => null,
   );

@@ -40,7 +40,7 @@ import { getApiUrl } from "@oneverse/app/public-env";
 import { fileLoader, songFiles } from "#/lib/song-files";
 import { followStems, getStemState, realignStems, setStemsDirectOutput, setStemsSpeed, setStemsTranspose, unfollowStems, unlockStemsAudio, useStems } from "#/lib/stem-engine";
 import { playableOf, type StemSong, type StemState } from "#/lib/stem-files";
-import { markPlayed, useSetProgress, type SetProgress } from "#/lib/set-progress";
+import { markPlayed, setProgressOf, subscribeSetProgress, useSetProgress, type SetProgress } from "#/lib/set-progress";
 
 /**
  * Sync play in the browser (issue #13): one connection per tab to the API's
@@ -98,8 +98,6 @@ export interface SyncState {
   sending?: boolean;
   /** The set's Pulse's page with this person's pass (issue #247, core's PulseDoor): "Continue on Pulse" while the cloud's gone. */
   pulseLink?: string | null;
-  /** Goes up each time the server says the set changed (issue #200): the pages showing it read it again. */
-  setChanges?: number;
 }
 
 let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false, canPresent: false, canOperate: false };
@@ -290,10 +288,11 @@ function receive(message: SyncServerMessage) {
         publishStems(getStemState());
       }
       applySession();
+      sharePlayed();
       return;
     }
     case "set-changed":
-      if (message.setId === state.setId) emit({ setChanges: (state.setChanges ?? 0) + 1 });
+      if (message.setId === state.setId) onSetChanged?.();
       return;
     case "ack":
       if (commands.receive(message)) emit({});
@@ -583,10 +582,30 @@ export function publishPlayback(itemId: string, source: PlaybackSource | null) {
   send({ type: "update", playback: { [itemId]: source } });
 }
 
-/** Leading: the set's songs played (issue #200), all of them, for everyone's list; [] from the top. */
-export function publishPlayed(played: string[]) {
-  if (!state.leading || sameList(state.session?.played ?? [], played)) return;
-  send({ type: "update", played });
+/** What the app does when the set changed (issue #200): set by useSyncBridge. */
+let onSetChanged: (() => void) | null = null;
+/** Leading since: the songs the session had played before were taken in, once. */
+let playedTakenIn = false;
+
+/**
+ * Leading: the set's songs played on this device (issue #200), all of them,
+ * out for everyone's list as they change; [] from the top. Having just taken
+ * over, those the session had played before are taken in first.
+ */
+function sharePlayed() {
+  const { setId, leading, status, session } = state;
+  if (!setId || !leading || status !== "on" || !session) {
+    playedTakenIn = false;
+    return;
+  }
+  const played = setProgressOf(setId)?.played ?? [];
+  if (!playedTakenIn) {
+    playedTakenIn = true;
+    const before = (session.played ?? []).filter((id) => !played.includes(id));
+    // Each marked here calls back, the last one sending the whole list.
+    if (before.length) return before.forEach((id) => markPlayed(setId, id));
+  }
+  if (!sameList(session.played ?? [], played)) send({ type: "update", played });
 }
 
 const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((one, i) => one === b[i]);
@@ -614,36 +633,23 @@ export function useSync(): SyncState {
 export function useSyncBridge() {
   const metronome = useMetronome();
   const stems = useStems();
-  const sync = useSync();
   const router = useRouter();
   // The set changed (issue #200): its pages - Live's next and previous, the sidebar, the overview - read it again.
+  // Told outside React, so the app shell doesn't render again with every change of sync or of the set's progress.
   useEffect(() => {
-    if (!sync.setChanges) return;
-    const later = setTimeout(() => void router.invalidate(), 150);
-    return () => clearTimeout(later);
-  }, [sync.setChanges, router]);
-  // Leading: the songs this device played go out, for everyone's list (issue #200) -
-  // having just taken over, with those the session had played before.
-  const progress = useSetProgress(sync.setId);
-  const leading = sync.leading && sync.status === "on" && !!sync.setId;
-  const played = leading ? (progress?.played ?? []) : null;
-  const playedKey = played ? played.join(" ") : null;
-  const tookOver = useRef(false);
-  useEffect(() => {
-    if (!leading || !played) {
-      tookOver.current = false;
-      return;
-    }
-    if (!tookOver.current) {
-      tookOver.current = true;
-      const before = (sync.session?.played ?? []).filter((id) => !played.includes(id));
-      if (before.length) {
-        for (const id of before) markPlayed(sync.setId!, id);
-        return;
-      }
-    }
-    publishPlayed(played);
-  }, [leading, playedKey, sync.session?.played]);
+    let later: ReturnType<typeof setTimeout> | null = null;
+    onSetChanged = () => {
+      if (later) clearTimeout(later);
+      later = setTimeout(() => void router.invalidate(), 150);
+    };
+    // Leading: the songs this device played go out as they change.
+    const unsubscribe = subscribeSetProgress(sharePlayed);
+    return () => {
+      onSetChanged = null;
+      if (later) clearTimeout(later);
+      unsubscribe();
+    };
+  }, [router]);
   useEffect(() => {
     const kept = storedSync();
     if (kept?.setId && state.status === "off") enableSync(kept.setId, !!kept.lead);
