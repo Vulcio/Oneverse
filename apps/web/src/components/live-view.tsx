@@ -593,7 +593,7 @@ export function LiveView({
 }
 
 /** A Live song's chart with its notes (issue #256): the song's own above it, the rest where they're pinned, as Live's Display setting shows them. */
-function LiveChartWithNotes({ song, notes: source, chart, display }: { song: LiveSong; notes: NonNullable<LiveSong["notes"]>; chart: RenderedChart; display: EffectiveDisplaySettings }) {
+function LiveChartWithNotes({ song, notes: source, chart, display, currentPass }: { song: LiveSong; notes: NonNullable<LiveSong["notes"]>; chart: RenderedChart; display: EffectiveDisplaySettings; currentPass: string | null }) {
   const { t } = useTranslation();
   // Someone else's new notes: held behind a button, unless Live's Display says at once (issue #263).
   const notes = useChartNotes({ state: useSongNotes(source.context, { hold: display.newNotes === "HOLD" }), chart, document: source.document, show: display.notes, marks: display.noteMarks, style: display.noteStyle, context: source.context });
@@ -607,7 +607,7 @@ function LiveChartWithNotes({ song, notes: source, chart, display }: { song: Liv
           {notes.incoming ? <div className="absolute top-full right-0 z-10 mt-1.5 whitespace-nowrap shadow-sm">{notes.incoming}</div> : null}
         </div>
       </div>
-      <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={song.player} songVersionId={song.songVersionId} notes={notes.layer} />
+      <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} currentPass={currentPass} player={song.player} songVersionId={song.songVersionId} notes={notes.layer} />
       {notes.dialogs}
     </>
   );
@@ -639,7 +639,7 @@ function LiveSongSection({
   /** The next song is stacked under it: the transition goes between them. */
   followed: boolean;
   display: EffectiveDisplaySettings;
-  /** The pass being read (the structure bar's), for the Words view's cue of the next section. */
+  /** The pass being read (the structure bar's): the Words view's cue of the next section, the chart's current section (issue #226). */
   currentPass: string | null;
   extraSteps: number;
   /** The next song's last-minute transpose, when it's stacked under this one. */
@@ -705,9 +705,9 @@ function LiveSongSection({
           // Its words laid out for singers (issue #416), at their own size.
           <WordsView songId={song.id} chart={chart} document={song.notes?.document} settings={display.words} currentPass={currentPass} zoom={display.textSize} live emptyText={t("sets.noChart")} />
         ) : chart && song.notes ? (
-          <LiveChartWithNotes song={song} notes={song.notes} chart={chart} display={display} />
+          <LiveChartWithNotes song={song} notes={song.notes} chart={chart} display={display} currentPass={currentPass} />
         ) : chart ? (
-          <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={song.player} songVersionId={song.songVersionId} />
+          <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} currentPass={currentPass} player={song.player} songVersionId={song.songVersionId} />
         ) : song.text ? (
           <TextItemSlides text={song.text} />
         ) : song.passage ? (

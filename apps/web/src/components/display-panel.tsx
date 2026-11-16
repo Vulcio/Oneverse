@@ -1,4 +1,4 @@
-import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings, METRONOME_BRIGHTNESSES, METRONOME_DISPLAYS, METRONOME_LIGHT_UP } from "@oneverse/core";
+import { NOTE_COLORS, NOTE_PRESETS, notePresetOf, type NoteColor, type NoteLook, type NotePlacement, type NotePreset, type NoteSize, type NoteStyle, type DiagramPositionValue, SECOND_ROW_GAPS, SECOND_ROW_SIZES, type ChordRow, type SecondChordRow, CONTROLS_POSITIONS, DISPLAY_TEXT_SIZES, LIVE_CONTROLS, type ControlsPositionValue, type AppModeValue, type ChordDiagramsValue, type DiagramPlayer, type DisplayColumnsValue, type EffectiveDisplaySettings, METRONOME_BRIGHTNESSES, METRONOME_DISPLAYS, METRONOME_LIGHT_UP, CHART_LOOKS, CHART_SECTION_COLORS, CHART_CURRENT, CHART_CHORUS_AGAIN } from "@oneverse/core";
 import {
   ArrowDown,
   Superscript,
@@ -74,9 +74,9 @@ import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@oneverse/ui/lib/utils";
 
-const SECTIONS = ["grid", "words", "drums", "text", "chords", "metronome", "instrument", "layout", "notes", "controls", "tracks"] as const;
+const SECTIONS = ["grid", "words", "drums", "look", "text", "chords", "metronome", "instrument", "layout", "notes", "controls", "tracks"] as const;
 type Section = (typeof SECTIONS)[number];
-const SECTION_ICONS: Record<Section, LucideIcon> = { grid: Grid2x2, words: MicVocal, drums: Drum, text: Type, metronome: Activity, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
+const SECTION_ICONS: Record<Section, LucideIcon> = { look: Palette, grid: Grid2x2, words: MicVocal, drums: Drum, text: Type, metronome: Activity, chords: Music, instrument: Guitar, layout: Columns3, notes: MessageSquare, controls: PanelBottom, tracks: AudioLines };
 /** Only Live has controls to lay out (issue #224); the Tracks view's look, where the page has it (issue #390); the chord grid's, the Words view's and the Drums view's, while one is on screen (issues #408, #416, #107). */
 const sectionsFor = (mode: AppModeValue, tracks: boolean, grid: boolean, words: boolean, drums: boolean) =>
   SECTIONS.filter((one) => (one !== "controls" || mode === "LIVE") && (one !== "tracks" || tracks) && (one !== "grid" || grid) && (one !== "words" || words) && (one !== "drums" || drums));
@@ -198,7 +198,7 @@ export function DisplayPanel({
             variant="ghost"
             size="icon"
             className="ml-auto size-8"
-            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chartRepeats: null, bars: null, gridBarsPerRow: null, structureBar: null, wordsSize: null, wordsLayout: null, wordsLabels: null, wordsRepeats: null, wordsInstrumental: null, wordsNext: null, wordsSung: null, wordsFill: null, wordsChords: null, metronomeDisplay: null, metronomeBrightness: null, metronomeLightUp: null, drumsWords: null, drumsNext: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
+            onClick={() => change({ textSize: null, chordSize: null, font: null, spacing: null, columns: null, chordNotation: null, chordColors: null, capoDisplayMode: null, chordDiagrams: null, diagramsPosition: null, hideChords: null, chartRepeats: null, chartLook: null, lookSectionColors: null, lookCurrent: null, lookChorusAgain: null, bars: null, gridBarsPerRow: null, structureBar: null, wordsSize: null, wordsLayout: null, wordsLabels: null, wordsRepeats: null, wordsInstrumental: null, wordsNext: null, wordsSung: null, wordsFill: null, wordsChords: null, metronomeDisplay: null, metronomeBrightness: null, metronomeLightUp: null, drumsWords: null, drumsNext: null, chordFont: null, chordWeight: null, chordColor: null, secondRow: null, controls: null, controlsPosition: null, hiddenControls: null, controlsOpacity: null, notes: null, noteMarks: null, newNotes: null, notesPlacement: null, notesLook: null, notesSize: null, notesColor: null })}
             title={t("display.resetHint", { mode: modeName })}
             aria-label={t("display.resetHint", { mode: modeName })}
             data-testid="display-reset"
@@ -223,6 +223,11 @@ export function DisplayPanel({
           {drums && shown("drums") ? (
             <SectionBlock section="drums" heading={wide}>
               <DrumsSection settings={settings} onChange={change} />
+            </SectionBlock>
+          ) : null}
+          {shown("look") ? (
+            <SectionBlock section="look" heading={wide}>
+              <LookSection settings={settings} onChange={change} />
             </SectionBlock>
           ) : null}
           {shown("text") ? (
@@ -585,6 +590,90 @@ function SectionsBarRow({ mode, settings, onChange }: { mode: AppModeValue; sett
 }
 
 /** The Words view's section (issue #416): how the words read for a singer. */
+/**
+ * How the chart looks (issue #226): a named look, then the player's own
+ * changes to it - the sections' colours, the current section, a chorus
+ * sung again.
+ */
+function LookSection({ settings, onChange }: { settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
+  const { t } = useTranslation();
+  const look = settings.look;
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label={t("display.look")}>
+        {CHART_LOOKS.map((name) => (
+          <button
+            key={name}
+            type="button"
+            role="radio"
+            aria-checked={look.name === name}
+            onClick={() => onChange({ chartLook: name })}
+            title={t(`display.looks.${name}Hint`)}
+            className={cn(
+              "flex min-w-0 items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs font-medium",
+              look.name === name ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            data-testid={`display-look-${name}`}
+          >
+            <LookSwatch look={name} />
+            <span className="truncate">{t(`display.looks.${name}`)}</span>
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground" data-testid="display-look-hint">{t(`display.looks.${look.name}Hint`)}</p>
+      {/* Plain has no colours of its own. */}
+      {look.name === "plain" ? null : (
+        <Row label={t("display.lookSectionColors")}>
+          <Choices
+            value={look.sectionColors}
+            onChange={(lookSectionColors) => onChange({ lookSectionColors })}
+            name="lookSectionColors"
+            options={CHART_SECTION_COLORS.map((value) => ({ value, label: t(`display.lookSectionColorsChoice.${value}`), content: t(`display.lookSectionColorsChoice.${value}`) }))}
+          />
+        </Row>
+      )}
+      <Row label={t("display.lookCurrent")}>
+        <Choices
+          value={look.name === "plain" && look.current === "mark" ? "off" : look.current}
+          onChange={(lookCurrent) => onChange({ lookCurrent })}
+          name="lookCurrent"
+          // Plain marks nothing: dimming the others is all it does.
+          options={CHART_CURRENT.filter((value) => look.name !== "plain" || value !== "mark").map((value) => ({ value, label: t("display.lookCurrentHint"), content: t(`display.lookCurrentChoice.${value}`) }))}
+        />
+      </Row>
+      <Row label={t("display.lookChorusAgain")}>
+        <Choices
+          value={look.chorusAgain}
+          onChange={(lookChorusAgain) => onChange({ lookChorusAgain })}
+          name="lookChorusAgain"
+          options={CHART_CHORUS_AGAIN.map((value) => ({ value, label: t("display.lookChorusAgainHint"), content: t(`display.lookChorusAgainChoice.${value}`) }))}
+        />
+      </Row>
+    </>
+  );
+}
+
+/** A look in small: two sections and a chorus, as the look draws them. */
+function LookSwatch({ look }: { look: (typeof CHART_LOOKS)[number] }) {
+  return (
+    <span aria-hidden="true" className="flex h-6 w-7 shrink-0 flex-col justify-center gap-0.5 rounded-sm bg-background p-0.5" data-look-swatch={look}>
+      {(["verse", "chorus", "bridge"] as const).map((type) => (
+        <span
+          key={type}
+          data-section-color={type}
+          className={cn(
+            "block h-1.5 rounded-[2px]",
+            look === "plain" && "bg-muted-foreground/40",
+            look === "blocks" && "border border-[var(--section-line)] bg-[var(--section-tag)]",
+            look === "rail" && "border-l-[3px] border-[var(--section-ink)] bg-muted",
+            look === "contrast" && (type === "chorus" ? "border border-foreground bg-foreground/80" : "bg-foreground/80"),
+          )}
+        />
+      ))}
+    </span>
+  );
+}
+
 /** How the metronome's beat shows on a song's page, while it plays (issue #443). */
 function MetronomeSection({ settings, onChange }: { settings: EffectiveDisplaySettings; onChange: (change: Parameters<typeof changeDisplaySettings>[1]) => void }) {
   const { t } = useTranslation();

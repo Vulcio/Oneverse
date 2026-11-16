@@ -350,7 +350,7 @@ export function PracticeSongPage({
             {/* Zoom, not font size: the chart's own sizes keep their proportions. */}
             {notes.top}
             <div ref={chartArea} style={{ zoom: display.textSize }} data-testid="practice-chart">
-              <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} player={player} songVersionId={version.id} notes={notes.layer} />
+              <ChartWithDiagrams chart={chart} emptyText={t("sets.noChart")} {...chartDisplayProps(display)} currentPass={currentPass} player={player} songVersionId={version.id} notes={notes.layer} />
             </div>
           </CardContent>
         </Card>

@@ -16759,6 +16759,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -16840,6 +16846,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "plain",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -16916,6 +16928,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -16994,6 +17012,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17086,6 +17110,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "plain",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17165,6 +17195,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17257,6 +17293,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17333,6 +17375,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17409,6 +17457,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17487,6 +17541,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "plain",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17564,6 +17624,12 @@
             "diagramsPosition": "bottom",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17639,6 +17705,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": false,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17720,6 +17792,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "blocks",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
@@ -17807,6 +17885,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "plain",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": false,
@@ -17878,6 +17962,12 @@
             "diagramsPosition": "top",
             "hideChords": false,
             "chartRepeats": "once",
+            "look": {
+              "name": "plain",
+              "sectionColors": "kind",
+              "current": "mark",
+              "chorusAgain": "written"
+            },
             "bars": true,
             "gridBarsPerRow": "auto",
             "structureBar": true,
