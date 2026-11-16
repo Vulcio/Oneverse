@@ -5,7 +5,8 @@
 // next song opens on the follower's screen; a follower's metronome is the
 // leader's (only sound and volume their own); a reload rejoins, the
 // leader's included (still leading, still in time); ending the session
-// stops everyone's. The suites can't hear it: they read the clicks the
+// stops everyone's. A change to the set, and the songs the leader played,
+// reach the follower at once (issue #200). The suites can't hear it: they read the clicks the
 // engine scheduled (window.songverseMetronome).
 import { chromium } from "playwright";
 import { WEB, api, check, finish, signIn, sql, stamp, stepper, user } from "../lib/harness.mjs";
@@ -125,6 +126,28 @@ await step("the leader's next song opens on the follower's screen", async () => 
   await leader.waitForURL(new RegExp(`/live/${item2.id}$`));
   page = follower;
   await follower.waitForURL(new RegExp(`/live/${item2.id}$`), { timeout: 10000 });
+});
+
+await step("the leader's changes to the set and the songs they played reach the follower at once (issue #200)", async () => {
+  const songs = (p) => p.getByTestId("sidebar-set-song");
+  // The first song fits the screen: played once the leader moved on from it.
+  page = follower;
+  await songs(follower).first().getByTestId("sidebar-played").waitFor({ timeout: 10000 });
+  // Play next, from the leader: in the follower's list straight away, and Live's next is it - no song change needed.
+  const third = await song(`Third ${stamp}`, 100);
+  await api(leaderUser, "POST", `/setlists/${set.id}/items`, { songVersionId: third.id, afterItemId: item1.id });
+  await songs(follower).nth(1).getByText(`Third ${stamp}`).waitFor({ timeout: 10000 });
+  if ((await songs(follower).count()) !== 3) throw new Error("not three songs");
+  // Only the leader starts from the top, for everyone: the follower's ticks go with theirs.
+  if (await follower.getByTestId("sidebar-reset-played").count()) throw new Error("a follower can start from the top");
+  page = leader;
+  await leader.getByTestId("sidebar-reset-played").click();
+  page = follower;
+  await songs(follower).first().getByTestId("sidebar-played").waitFor({ state: "detached", timeout: 10000 });
+  // Taken back out: gone from the follower's list too.
+  const added = (await api(leaderUser, "GET", `/setlists/${set.id}`)).items.find((item) => item.song?.id === third.id);
+  await api(leaderUser, "DELETE", `/setlists/${set.id}/items/${added.id}`);
+  await follower.getByTestId("sidebar-set-song").getByText(`Third ${stamp}`).waitFor({ state: "detached", timeout: 10000 });
 });
 
 await step("a new tempo from the leader's Metronome page: the follower's changes with it, in time", async () => {

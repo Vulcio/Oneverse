@@ -18,6 +18,7 @@ import { AccessPolicyService } from "../access/access-policy.service.js";
 import { liveCoEditingEnabled } from "./collaboration-settings.js";
 import { CoEditing } from "./co-editing.js";
 import { DOC_CHANNEL } from "./doc-room.js";
+import { SET_CHANNEL } from "../setlists/set-announce.js";
 import { CHANNEL, SetSessions } from "./set-sessions.js";
 import { PRESENCE_CHANNEL, SongWatch } from "./song-watch.js";
 import { PRESENCE_MS, type Connection, type SyncHub } from "./sync-connection.js";
@@ -89,7 +90,7 @@ export class SyncServer implements OnModuleDestroy {
       this.wss!.handleUpgrade(request, socket, head, (ws) => this.connected(ws));
     });
     this.subscriber = redis().duplicate();
-    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL, NOTIFICATIONS_CHANNEL, DOC_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
+    this.subscriber.subscribe(CHANNEL, SCREEN_CHANNEL, NOTES_CHANNEL, SONG_CHANNEL, PRESENCE_CHANNEL, NOTIFICATIONS_CHANNEL, DOC_CHANNEL, SET_CHANNEL).catch((err: unknown) => this.logger.error(`Can't listen for sync changes: ${String(err)}`));
     this.subscriber.on("message", (channel, id: string) => {
       if (channel === SCREEN_CHANNEL) void (id.startsWith("pair:") ? this.sets.screenPairAgain(id.slice(5)) : this.sets.screenChanged(id));
       else if (channel === NOTES_CHANNEL) this.songs.notesChanged(id);
@@ -97,6 +98,7 @@ export class SyncServer implements OnModuleDestroy {
       else if (channel === PRESENCE_CHANNEL) void this.songs.presenceChanged(id);
       else if (channel === NOTIFICATIONS_CHANNEL) this.songs.notificationsChanged(id);
       else if (channel === DOC_CHANNEL) this.coEditing.docAnnounced(id);
+      else if (channel === SET_CHANNEL) this.sets.setChanged(id);
       else this.sets.queueBroadcast(id);
     });
     this.presenceTimer = setInterval(() => void this.refreshPresence(), PRESENCE_MS);

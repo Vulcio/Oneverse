@@ -58,9 +58,9 @@ import { docsUrl, docsView } from "#/lib/docs";
 import { EntityAvatar } from "@oneverse/ui/components/entity-avatar";
 import { initials } from "@oneverse/ui/lib/initials";
 import { useMode } from "#/lib/mode";
-import { clearSetProgress, useSetProgress } from "#/lib/set-progress";
+import { clearSetProgress } from "#/lib/set-progress";
 import { setStackSegues, useStackSegues } from "#/lib/live-stack";
-import { useSync } from "#/lib/sync-client";
+import { useShownSetProgress, useSync } from "#/lib/sync-client";
 import type { AppSession } from "@oneverse/app/server-auth";
 import { deviceStorage } from "#/lib/offline-data";
 import { setItemTitle, setlistTitle, setOwnerLabel, transposeLabel } from "#/lib/setlists";
@@ -557,7 +557,8 @@ function SetSongsPanel({ setId, pathname, sets, onBack }: { setId: string; pathn
   const { t, i18n } = useTranslation();
   const { mode } = useMode();
   const router = useRouter();
-  const progress = useSetProgress(setId);
+  // Following the leader in a session: the songs they played (issue #200).
+  const { progress, shared: playedShared } = useShownSetProgress(setId);
   const [set, setSet] = useState<SetlistDetail | null>(null);
   const [reorderError, setReorderError] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
@@ -671,9 +672,11 @@ function SetSongsPanel({ setId, pathname, sets, onBack }: { setId: string; pathn
       {progress?.played.length ? (
         <div className="flex items-center justify-between border-b px-3 py-1.5 text-xs text-muted-foreground">
           <span>{t("sets.playedCount", { count: progress.played.filter((id) => set?.items.some((item) => item.id === id) ?? true).length })}</span>
-          <button type="button" className="rounded-md px-1.5 py-0.5 hover:bg-sidebar-accent hover:text-foreground" onClick={() => clearSetProgress(setId)} data-testid="sidebar-reset-played">
-            {t("sets.fromTheTop")}
-          </button>
+          {playedShared ? null : (
+            <button type="button" className="rounded-md px-1.5 py-0.5 hover:bg-sidebar-accent hover:text-foreground" onClick={() => clearSetProgress(setId)} data-testid="sidebar-reset-played">
+              {t("sets.fromTheTop")}
+            </button>
+          )}
         </div>
       ) : null}
       {reorderError ? (

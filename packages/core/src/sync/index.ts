@@ -138,6 +138,12 @@ export interface SyncSession {
    * choice. Left out or missing an item: each person's own.
    */
   playback?: Record<string, PlaybackSource>;
+  /**
+   * The set's songs played, as the leader played them (issue #200), by item:
+   * every follower's list ticks the same ones, and the leader's "Start from
+   * the top" clears them for everyone. Left out: each device's own.
+   */
+  played?: string[];
 }
 
 /**
@@ -453,7 +459,8 @@ export type SyncClientMessage =
    * was decided from; refused ("stale") when the screens have moved on since.
    */
   | { type: "present"; presenting: SyncPresenting | null; basedOn?: number }
-  | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null; presentingBasedOn?: number; playback?: Record<string, PlaybackSource | null> }
+  /** `played`: the set's songs the leader played (issue #200), all of them, in place of the session's. */
+  | { type: "update"; metronome?: SyncMetronome | null; stems?: SyncStems | null; itemId?: string | null; presenting?: SyncPresenting | null; presentingBasedOn?: number; playback?: Record<string, PlaybackSource | null>; played?: string[] }
   /** The leader hands presenting to someone in the set, live, or takes it back (issue #305). */
   | { type: "presenter"; userId: string; allow: boolean }
   | { type: "end" }
@@ -563,6 +570,12 @@ export type SyncServerMessage =
   | { type: "doc-reset"; songVersionId: string }
   /** Not joined: co-editing is off, or one can't change this song. */
   | { type: "doc-refused"; songVersionId: string; reason: "off" | "forbidden" }
+  /**
+   * The set this device is in changed (issue #200): its songs, their order,
+   * what happens after one, its name. Read it again - with one's own rights,
+   * the signal carries nothing.
+   */
+  | { type: "set-changed"; setId: string }
   /** One's notifications changed (one came, or was read elsewhere): the bell reads its count again (issue #27). */
   | { type: "notifications" }
   /** A watched song's notes changed (added, edited, resolved, deleted, replied to): read them again - with one's own rights, the signal carries nothing. */

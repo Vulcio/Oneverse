@@ -14,7 +14,8 @@ import { Label } from "@oneverse/ui/components/label";
 import { apiClient } from "#/lib/api-client";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setMode, useMode } from "#/lib/mode";
-import { clearSetProgress, resumeItemOf, setProgressOf, useSetProgress } from "#/lib/set-progress";
+import { clearSetProgress, resumeItemOf, setProgressOf } from "#/lib/set-progress";
+import { useShownSetProgress } from "#/lib/sync-client";
 import { formatSetDate, setOwnerLabel, setlistTitle } from "#/lib/setlists";
 import { AddPassage, AddSongs, AddText } from "./-add-songs";
 import { SetSongList } from "./-set-song-list";
@@ -77,7 +78,8 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
   const [set, setSet] = useState<SetlistDetail>(loaded);
   const [error, setError] = useState<string | null>(null);
   // Where it got to in Live (issue #153): Live picks up there.
-  const progress = useSetProgress(set.id);
+  // Following the leader in a session: the songs they played, and only they start from the top (issue #200).
+  const { progress, shared: playedShared } = useShownSetProgress(set.id);
   const resumeAt = resumeItemOf(progress, set.items.map((item) => item.id));
   const resuming = !!progress && resumeAt !== set.items[0]?.id;
 
@@ -136,7 +138,7 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
           <OfflinePinButton kind="SET" targetId={set.id} />
           {/* Sync play (issue #13). */}
           <SyncControl setId={set.id} />
-          {progress ? (
+          {progress && !playedShared ? (
             <Button variant="outline" onClick={() => clearSetProgress(set.id)} data-testid="set-progress-clear">
               <RotateCcw />
               {t("sets.fromTheTop")}

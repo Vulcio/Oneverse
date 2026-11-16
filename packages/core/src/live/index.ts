@@ -97,6 +97,12 @@ export const LIVE_PLAYBACK_MAX = 200;
 /** What plays with each song of the set, as the leader chose it for everyone (issue #366): by item, null to leave it to each person. */
 export const SyncPlaybackSchema = z.record(id, z.enum(PLAYBACK_SOURCES).nullable()).refine((items) => Object.keys(items).length <= LIVE_PLAYBACK_MAX);
 
+/** The most songs of a set marked played in a session (issue #200). */
+export const LIVE_PLAYED_MAX = 500;
+
+/** The set's songs the leader played (issue #200), by item. */
+export const SyncPlayedSchema = z.array(id).max(LIVE_PLAYED_MAX);
+
 /** The revision of what's presented a command was decided from (issue #305). */
 const basedOn = z.int().min(0).optional();
 
@@ -115,6 +121,8 @@ export const LiveOpSchema = z.discriminatedUnion("kind", [
     basedOn,
     /** What plays with these songs of the set, for everyone (issue #366): merged into the session's, null taking one back. */
     playback: SyncPlaybackSchema.optional(),
+    /** The set's songs played, for everyone (issue #200): all of them, in place of the session's; [] from the top. */
+    played: SyncPlayedSchema.optional(),
   }),
   /** The media operator takes the screens, shared or alone (issue #275), or gives them back (null). */
   z.object({ kind: z.literal("screens"), control: z.enum(["shared", "exclusive"]).nullable() }),
@@ -154,6 +162,7 @@ const INVALID: Record<string, string> = {
   control: "Invalid control",
   userId: "Give a userId and allow",
   allow: "Give a userId and allow",
+  played: "played must list the set's items",
   direction: "direction must be next or previous",
   to: "to must be item or section",
 };
@@ -234,6 +243,8 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
         itemId: current?.itemId ?? null,
         presenting: current?.presenting ?? null,
         presentingRev: current?.presentingRev ?? 0,
+        // What was played stays the set's (issue #200).
+        ...(current?.played && { played: current.played }),
         // Who the last leader handed presenting to keeps it (issue #305), and an operator running the screens keeps them (issue #275).
         presenters: current?.presenters ?? [],
         screens: current?.screens ?? null,
@@ -253,6 +264,8 @@ export function applyLiveOp(stored: LiveSessionState | null, actor: LiveActor, i
         if (Object.keys(playback).length > LIVE_PLAYBACK_MAX) return refuse("bad-request", "Too many songs");
         next.playback = playback;
       }
+      // Each item once, in the order played.
+      if (op.played !== undefined) next.played = [...new Set(op.played)];
       if (op.presenting !== undefined) {
         // Control locked to an operator (issues #275, #305): the leader's Live waits.
         if (lockedBy) return refuse("forbidden", `${lockedBy} runs the screens`);

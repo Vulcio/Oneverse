@@ -743,6 +743,292 @@
           }
         },
         {
+          "name": "the leader's played songs, for everyone, each once",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "played": [
+                "item_1",
+                "item_2",
+                "item_1"
+              ]
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null,
+              "played": [
+                "item_1",
+                "item_2"
+              ]
+            }
+          }
+        },
+        {
+          "name": "the leader starts from the top: nothing played",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null,
+              "played": [
+                "item_1"
+              ]
+            },
+            {
+              "userId": "u_a",
+              "name": "Ana",
+              "device": "i:1",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "played": []
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null,
+              "played": []
+            }
+          }
+        },
+        {
+          "name": "someone else can't mark songs played for everyone",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            },
+            {
+              "userId": "u_s",
+              "name": "Sam",
+              "device": "i:5",
+              "canLead": false,
+              "canOperate": false
+            },
+            {
+              "kind": "tempo",
+              "played": [
+                "item_1"
+              ]
+            },
+            1000
+          ],
+          "expected": {
+            "ok": false,
+            "code": "forbidden",
+            "message": "Only the leader changes the session"
+          }
+        },
+        {
+          "name": "taking over the lead keeps the songs played",
+          "args": [
+            {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 7,
+              "leader": {
+                "id": "u_a",
+                "name": "Ana",
+                "device": "i:1"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null,
+              "played": [
+                "item_1"
+              ]
+            },
+            {
+              "userId": "u_b",
+              "name": "Bea",
+              "device": "i:2",
+              "canLead": true,
+              "canOperate": false
+            },
+            {
+              "kind": "lead"
+            },
+            1000
+          ],
+          "expected": {
+            "ok": true,
+            "changed": true,
+            "session": {
+              "sessionId": "ls_1",
+              "epoch": 0,
+              "rev": 8,
+              "leader": {
+                "id": "u_b",
+                "name": "Bea",
+                "device": "i:2"
+              },
+              "metronome": null,
+              "stems": null,
+              "itemId": "item_1",
+              "presenting": {
+                "itemId": "item_1",
+                "slide": 2,
+                "black": false
+              },
+              "presentingRev": 4,
+              "played": [
+                "item_1"
+              ],
+              "presenters": [
+                {
+                  "id": "u_p",
+                  "name": "Pia"
+                }
+              ],
+              "screens": null
+            }
+          }
+        },
+        {
           "name": "Next pressed twice from the same slide: the second is stale",
           "args": [
             {

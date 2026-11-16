@@ -20,6 +20,7 @@ import {
   type SyncStems,
   type PlaybackSource,
 } from "@oneverse/core";
+import { useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { apiToken, forgetApiToken } from "#/lib/api-client";
 import {
@@ -39,6 +40,7 @@ import { getApiUrl } from "@oneverse/app/public-env";
 import { fileLoader, songFiles } from "#/lib/song-files";
 import { followStems, getStemState, realignStems, setStemsDirectOutput, setStemsSpeed, setStemsTranspose, unfollowStems, unlockStemsAudio, useStems } from "#/lib/stem-engine";
 import { playableOf, type StemSong, type StemState } from "#/lib/stem-files";
+import { markPlayed, useSetProgress, type SetProgress } from "#/lib/set-progress";
 
 /**
  * Sync play in the browser (issue #13): one connection per tab to the API's
@@ -96,6 +98,8 @@ export interface SyncState {
   sending?: boolean;
   /** The set's Pulse's page with this person's pass (issue #247, core's PulseDoor): "Continue on Pulse" while the cloud's gone. */
   pulseLink?: string | null;
+  /** Goes up each time the server says the set changed (issue #200): the pages showing it read it again. */
+  setChanges?: number;
 }
 
 let state: SyncState = { setId: null, status: "off", session: null, members: [], leading: false, canLead: false, error: null, offset: null, stage: null, screensMine: false, canPresent: false, canOperate: false };
@@ -288,6 +292,9 @@ function receive(message: SyncServerMessage) {
       applySession();
       return;
     }
+    case "set-changed":
+      if (message.setId === state.setId) emit({ setChanges: (state.setChanges ?? 0) + 1 });
+      return;
     case "ack":
       if (commands.receive(message)) emit({});
       return;
@@ -576,6 +583,14 @@ export function publishPlayback(itemId: string, source: PlaybackSource | null) {
   send({ type: "update", playback: { [itemId]: source } });
 }
 
+/** Leading: the set's songs played (issue #200), all of them, for everyone's list; [] from the top. */
+export function publishPlayed(played: string[]) {
+  if (!state.leading || sameList(state.session?.played ?? [], played)) return;
+  send({ type: "update", played });
+}
+
+const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((one, i) => one === b[i]);
+
 /** Sync's state now, outside React. */
 export function syncState(): SyncState {
   return state;
@@ -599,6 +614,36 @@ export function useSync(): SyncState {
 export function useSyncBridge() {
   const metronome = useMetronome();
   const stems = useStems();
+  const sync = useSync();
+  const router = useRouter();
+  // The set changed (issue #200): its pages - Live's next and previous, the sidebar, the overview - read it again.
+  useEffect(() => {
+    if (!sync.setChanges) return;
+    const later = setTimeout(() => void router.invalidate(), 150);
+    return () => clearTimeout(later);
+  }, [sync.setChanges, router]);
+  // Leading: the songs this device played go out, for everyone's list (issue #200) -
+  // having just taken over, with those the session had played before.
+  const progress = useSetProgress(sync.setId);
+  const leading = sync.leading && sync.status === "on" && !!sync.setId;
+  const played = leading ? (progress?.played ?? []) : null;
+  const playedKey = played ? played.join(" ") : null;
+  const tookOver = useRef(false);
+  useEffect(() => {
+    if (!leading || !played) {
+      tookOver.current = false;
+      return;
+    }
+    if (!tookOver.current) {
+      tookOver.current = true;
+      const before = (sync.session?.played ?? []).filter((id) => !played.includes(id));
+      if (before.length) {
+        for (const id of before) markPlayed(sync.setId!, id);
+        return;
+      }
+    }
+    publishPlayed(played);
+  }, [leading, playedKey, sync.session?.played]);
   useEffect(() => {
     const kept = storedSync();
     if (kept?.setId && state.status === "off") enableSync(kept.setId, !!kept.lead);
@@ -661,4 +706,18 @@ export function useSyncSong(setId: string, itemId: string, go: (itemId: string) 
     if (leaderItem && leaderItem !== itemId) goRef.current(leaderItem);
     // Only when the leader moves: the follower may look at another song meanwhile.
   }, [leaderItem]);
+}
+
+/**
+ * The set's progress as it shows (issue #200): following the leader in a
+ * sync session, the songs they played - the same ticks on every device, and
+ * only the leader starts from the top (`shared`). Otherwise this device's own.
+ */
+export function useShownSetProgress(setId: string | null | undefined): { progress: SetProgress | null; shared: boolean } {
+  const own = useSetProgress(setId);
+  const sync = useSync();
+  const played = setId && sync.setId === setId && sync.status === "on" && !sync.leading ? sync.session?.played : undefined;
+  if (!played) return { progress: own, shared: false };
+  const current = own?.current ?? sync.session?.itemId ?? played.at(-1);
+  return { progress: current || played.length ? { current: current ?? "", played, at: own?.at ?? 0 } : null, shared: true };
 }

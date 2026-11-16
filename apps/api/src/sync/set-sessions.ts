@@ -117,6 +117,11 @@ export class SetSessions {
     for (const connection of mine) await this.refreshScreen(connection, screen);
   }
 
+  /** A set changed (issue #200, announced by SetlistsService): the people in it here are told, to read it again. */
+  setChanged(setId: string) {
+    for (const connection of this.hub.connections()) if (connection.setId === setId && connection.user) this.hub.send(connection, { type: "set-changed", setId });
+  }
+
   /** A screen asked to show a pairing code again (issue #284): its connections here are told. */
   screenPairAgain(screenId: string) {
     for (const connection of this.hub.connections()) if (connection.screen?.id === screenId) this.hub.send(connection, { type: "pair-again" });
@@ -221,8 +226,8 @@ export class SetSessions {
 
   /** The leader's metronome, stems, open item and what's presented. */
   async update(connection: Connection, message: Extract<SyncClientMessage, { type: "update" }>) {
-    const { metronome, stems, itemId, presenting, presentingBasedOn, playback } = message;
-    await this.command(connection, { kind: "tempo", metronome, stems, itemId, presenting, basedOn: presentingBasedOn, playback }, "Only the leader changes the session", "forbidden");
+    const { metronome, stems, itemId, presenting, presentingBasedOn, playback, played } = message;
+    await this.command(connection, { kind: "tempo", metronome, stems, itemId, presenting, basedOn: presentingBasedOn, playback, played }, "Only the leader changes the session", "forbidden");
   }
 
   /**

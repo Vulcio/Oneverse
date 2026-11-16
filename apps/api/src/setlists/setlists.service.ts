@@ -23,6 +23,7 @@ import { songSearchWhere } from "../song-versions/song-search.js";
 import { BiblesService, type PassageUse } from "../scriptures/bibles.service.js";
 import { YouVersionService } from "../scriptures/youversion.service.js";
 import { templateLayout } from "../screens/screen-templates.js";
+import { announceSetChanged } from "./set-announce.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -328,6 +329,7 @@ export class SetlistsService {
         ...(dto.eventDate !== undefined && { eventDate: dto.eventDate === null ? null : parseDate(dto.eventDate) }),
       },
     });
+    await announceSetChanged(setlistId);
     return this.findOne(user, setlistId);
   }
 
@@ -375,6 +377,7 @@ export class SetlistsService {
   async remove(user: AuthenticatedUser, setlistId: string): Promise<void> {
     await this.sets.findEditable(user, setlistId);
     await this.prisma.client.setlist.delete({ where: { id: setlistId } });
+    await announceSetChanged(setlistId);
   }
 
   /**
@@ -432,6 +435,7 @@ export class SetlistsService {
         data: { setlistId, songVersionId, transposeSteps: dto.transposeSteps ?? 0, position, arrangementId },
       });
     });
+    await announceSetChanged(setlistId);
     return this.findOne(user, setlistId);
   }
 
@@ -460,6 +464,7 @@ export class SetlistsService {
           ...(dto.screenTemplate !== undefined && { screenTemplate: dto.screenTemplate ?? Prisma.DbNull }),
         },
       });
+      await announceSetChanged(setlistId);
       return this.findOne(user, setlistId);
     }
     if (dto.text !== undefined) throw new BadRequestException("Only a text item has a text");
@@ -507,6 +512,7 @@ export class SetlistsService {
       },
       });
     });
+    await announceSetChanged(setlistId);
     return this.findOne(user, setlistId);
   }
 
@@ -520,7 +526,9 @@ export class SetlistsService {
     const set = await this.sets.findEditable(user, setlistId);
     const item = await this.findItem(setlistId, itemId);
     if (!item.songVersionId) throw new BadRequestException("Only a song has an arrangement");
-    return { arrangementId: await this.arrangements.forSetItem(user, set, { ...item, songVersionId: item.songVersionId }, name) };
+    const arrangementId = await this.arrangements.forSetItem(user, set, { ...item, songVersionId: item.songVersionId }, name);
+    await announceSetChanged(setlistId);
+    return { arrangementId };
   }
 
   async removeItem(user: AuthenticatedUser, setlistId: string, itemId: string) {
@@ -531,6 +539,7 @@ export class SetlistsService {
       const remaining = await tx.setlistItem.findMany({ where: { setlistId }, orderBy: { position: "asc" }, select: { id: true } });
       await setOrder(tx, "SetlistItem", remaining.map(({ id }) => id));
     });
+    await announceSetChanged(setlistId);
     return this.findOne(user, setlistId);
   }
 
@@ -543,6 +552,7 @@ export class SetlistsService {
       throw new BadRequestException("itemIds must list every item of the set exactly once");
     }
     await setOrder(this.prisma.client, "SetlistItem", itemIds);
+    await announceSetChanged(setlistId);
     return this.findOne(user, setlistId);
   }
 
