@@ -12,11 +12,14 @@ import {
   type ScreenPartKind,
   type ScreenPartSummary,
   type ScreenTemplateTag,
+  type ScreenSummary,
   type ScreenThemeSummary,
   type ScreenWidgetDefault,
 } from "@oneverse/core";
 import { useRouteContext, useRouter } from "@tanstack/react-router";
-import { CircleAlert, Copy, Palette, Pencil, Plus, Users } from "lucide-react";
+import { CircleAlert, Copy, MonitorUp, Palette, Pencil, Plus, Users } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@oneverse/ui/components/dropdown-menu";
+import { toast } from "@oneverse/ui/components/toast";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -65,6 +68,7 @@ export function TemplatesTab({
   widgetDefaults,
   initialView,
   widgets,
+  screens = [],
 }: {
   themes: ScreenThemeSummary[];
   parts: ScreenPartSummary[];
@@ -72,6 +76,8 @@ export function TemplatesTab({
   initialView?: View;
   /** The Widgets view's content: the gallery of widgets and their default looks. */
   widgets: ReactNode;
+  /** The screens one can change, for a template's "Use on…" (issue #357). */
+  screens?: ScreenSummary[];
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -167,6 +173,7 @@ export function TemplatesTab({
                       <div className="flex items-center gap-2">
                         <p className="min-w-0 flex-1 truncate text-sm font-medium">{theme.name}</p>
                         <TeamMark team={theme.teamName} />
+                        <UseOn screens={screens} template={{ id: theme.id }} madeFor={theme.template.madeFor} onChanged={changed} />
                         {theme.canEdit ? (
                           <>
                             <Button
@@ -212,6 +219,7 @@ export function TemplatesTab({
                         <p className="text-sm font-medium">{t(`screens.templates.${template.id}.name`)}</p>
                         <p className="text-xs text-muted-foreground">{t(`screens.templates.${template.id}.description`)}</p>
                       </div>
+                      <UseOn screens={screens} template={{ builtIn: template.id }} madeFor={template.template.madeFor} onChanged={changed} />
                       <Button size="sm" variant="outline" onClick={() => setDraft(newTemplate(template))} data-testid="customize-theme">
                         {t("screens.customize")}
                       </Button>
@@ -342,6 +350,50 @@ function PartsList({ kind, parts, onOpen, onChanged }: { kind: ScreenPartKind; p
         </ul>
       </section>
     </div>
+  );
+}
+
+/**
+ * A template put on a screen in one tap (issue #357): the screens one can
+ * change, its template for songs - or for Bible passages, for a template
+ * made for them alone - set to this one.
+ */
+function UseOn({ screens, template, madeFor, onChanged }: { screens: ScreenSummary[]; template: { builtIn: string } | { id: string }; madeFor?: readonly string[]; onChanged: () => Promise<void> | void }) {
+  const { t } = useTranslation();
+  const mine = screens.filter((one) => one.canManage);
+  if (mine.length === 0) return null;
+  const scripture = madeFor?.length === 1 && madeFor[0] === "scripture";
+  async function use(screen: ScreenSummary) {
+    const data =
+      "builtIn" in template
+        ? scripture
+          ? { scriptureThemeTemplate: template.builtIn }
+          : { themeTemplate: template.builtIn }
+        : scripture
+          ? { scriptureThemeId: template.id }
+          : { themeId: template.id };
+    try {
+      await apiClient.updateScreen(screen.id, data);
+      toast.success(t("screens.usedOn", { name: screen.name }));
+      await onChanged();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    }
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button type="button" size="sm" variant="outline" data-testid="use-on" />}>
+        <MonitorUp />
+        {t("screens.useOn")}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {mine.map((screen) => (
+          <DropdownMenuItem key={screen.id} onClick={() => void use(screen)} data-testid={`use-on-${screen.name}`}>
+            {screen.name}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

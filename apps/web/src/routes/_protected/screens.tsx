@@ -124,6 +124,7 @@ function ScreensPage() {
             widgetDefaults={Route.useLoaderData().widgetDefaults}
             initialView={search.tab === "widgets" ? "widgets" : undefined}
             widgets={<Widgets />}
+            screens={Route.useLoaderData().screens}
           />
         </TabsContent>
         <TabsContent value="brands" className="pt-4">
@@ -146,6 +147,8 @@ function ScreensTabPanel() {
   const [paired, setPaired] = useState<ScreenSummary | null>(null);
   // Open from a screen's QR code, or from a set's Live view.
   const [adding, setAdding] = useState(!!search.code || !!search.setlistId);
+  // What it's for, picked on the first screen's card (issue #357), the pairing form starting from it.
+  const [startRole, setStartRole] = useState<ScreenRole>("audience");
   const [filter, setFilter] = useState<ScreenFilter>("all");
   const setName = (id: string | null) => {
     const set = sets.find((one) => one.id === id);
@@ -172,10 +175,18 @@ function ScreensTabPanel() {
           sets={sets}
           code={search.code ?? ""}
           setlistId={search.setlistId}
+          role={startRole}
           onClose={() => setAdding(false)}
           onPaired={async (screen) => {
             setPaired(screen);
             await router.invalidate();
+          }}
+        />
+      ) : screens.length === 0 ? (
+        <FirstScreen
+          onPick={(role) => {
+            setStartRole(role);
+            setAdding(true);
           }}
         />
       ) : (
@@ -383,7 +394,59 @@ function LastsSelect({ id, value, onChange, placeholder, testId }: { id: string;
   );
 }
 
-function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClose }: { owners: ScreenOwnerChoice[]; sets: SetlistSummary[]; code: string; setlistId?: string; onPaired: (screen: ScreenSummary) => Promise<void>; onClose: () => void }) {
+/**
+ * A team's first screen (issue #357): what it's for, each with the look it
+ * starts with, playing; picked, the pairing form opens on it. A screen in
+ * minutes: pick, type the TV's code, done.
+ */
+function FirstScreen({ onPick }: { onPick: (role: ScreenRole) => void }) {
+  const { t } = useTranslation();
+  return (
+    <Card data-testid="screen-first">
+      <CardHeader>
+        <CardTitle className="text-base">{t("screens.first.title")}</CardTitle>
+        <CardDescription>{t("screens.first.description", { address: screenAddress() })}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {(Object.keys(SCREEN_ROLES) as ScreenRole[]).map((role) => (
+            <li key={role}>
+              <button
+                type="button"
+                className="flex w-full flex-col gap-2 rounded-lg border p-2 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+                onClick={() => onPick(role)}
+                data-testid={`screen-first-${role}`}
+              >
+                <ScreenThemePreview theme={composeBuiltInTemplate(SCREEN_ROLES[role].songs ?? "classic")!} />
+                <span className="text-sm font-medium">{t(`screens.roles.${role}`)}</span>
+                <span className="text-xs text-muted-foreground">{t(`screens.first.roles.${role}`)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PairForm({
+  owners,
+  sets,
+  code: initialCode,
+  setlistId,
+  role: initialRole = "audience",
+  onPaired,
+  onClose,
+}: {
+  owners: ScreenOwnerChoice[];
+  sets: SetlistSummary[];
+  code: string;
+  setlistId?: string;
+  /** What it's for, as picked on the first screen's card. */
+  role?: ScreenRole;
+  onPaired: (screen: ScreenSummary) => Promise<void>;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const [owner, setOwner] = useState("user");
   const [code, setCode] = useState(initialCode ? formatScreenCode(normalizeScreenCode(initialCode) ?? initialCode) : "");
@@ -392,7 +455,7 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
   const [name, setName] = useState(t("screens.defaultName"));
   const [lasts, setLasts] = useState<ScreenPairingLength>("unlimited");
   // What it's for (issue #402): the templates it starts with, for songs and for passages.
-  const [role, setRole] = useState<ScreenRole>("audience");
+  const [role, setRole] = useState<ScreenRole>(initialRole);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A Oneverse Pulse's code (issue #320): said so, and named so.
@@ -478,6 +541,7 @@ function PairForm({ owners, sets, code: initialCode, setlistId, onPaired, onClos
               <p className="text-xs text-muted-foreground">
                 {t("screens.roleHint", { songs: t(`screens.templates.${SCREEN_ROLES[role].songs ?? "classic"}.name`), scripture: t(`screens.templates.${SCREEN_ROLES[role].scripture}.name`) })}
               </p>
+              <ScreenThemePreview className="max-w-md" theme={composeBuiltInTemplate(SCREEN_ROLES[role].songs ?? "classic")!} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="screen-set">{t("screens.set")}</Label>

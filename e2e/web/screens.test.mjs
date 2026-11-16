@@ -47,9 +47,18 @@ try {
     if (!(await tv.getByTestId("screen-qr").locator("svg").count())) throw new Error("no QR code");
   });
 
-  await step("the leader opens the QR code's link, names the screen and picks the set: paired", async () => {
+  await step("no screen yet (issue #357): a card asks what the first one is for; Stage picked, the pairing form starts on it", async () => {
     page = tablet;
     await signIn(tablet, leader);
+    await tablet.goto(`${WEB}/screens`);
+    await tablet.getByTestId("screen-first").getByTestId("theme-preview").first().waitFor();
+    await tablet.getByTestId("screen-first-stage").click();
+    await tablet.locator('[data-testid="screen-role"] [data-value="stage"][aria-pressed="true"]').waitFor();
+    await tablet.getByTestId("screen-role").getByText("Stage display", { exact: false }).first().waitFor();
+  });
+
+  await step("the leader opens the QR code's link, names the screen and picks the set: paired", async () => {
+    page = tablet;
     await tablet.goto(`${WEB}/screens?code=${code}&setlistId=${set.id}`);
     await tablet.getByLabel("Code on the screen").waitFor();
     if ((await tablet.getByLabel("Code on the screen").inputValue()) !== `${code.slice(0, 3)}-${code.slice(3)}`) throw new Error("code not filled in");
@@ -71,6 +80,12 @@ try {
     if ((await tablet.getByTestId("screens-tabs").getByRole("tab").count()) !== 3) throw new Error("Screens should have three tabs");
     await tablet.getByTestId("screens-tab-templates").click();
     await tablet.getByTestId("builtin-themes").waitFor();
+    // A template put on a screen in one tap (issue #357): Classic, the look it has anyway.
+    await tablet.getByTestId("builtin-theme-classic").getByTestId("use-on").click();
+    await tablet.getByTestId("use-on-Front TV").click();
+    await tablet.getByText("Now on Front TV").waitFor();
+    const [front] = await api(leader, "GET", `/screens?setlistId=${set.id}`);
+    if (front.themeTemplate !== "classic") throw new Error(`template: ${front.themeTemplate}`);
     await tablet.getByTestId("templates-view-widgets").click();
     await tablet.getByTestId("widgets-list").getByTestId("widget-countdown").getByText("Countdown").waitFor();
     await tablet.getByTestId("screens-tab-screens").click();
