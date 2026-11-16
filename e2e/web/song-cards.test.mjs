@@ -220,6 +220,8 @@ await step("a laptop with a touch screen and a mouse: the cards still come alive
 
 await step("on a touch screen: a favorite's star on its cover, no buttons; a long press opens the preview, a swipe goes on with the buttons in place, a tap still opens the song", async () => {
   await api(me, "PUT", `/song-versions/${hymn.id}/favorite`);
+  // Long names don't push the preview's buttons out of it on a phone (issue #359).
+  await api(me, "PATCH", `/song-versions/${hymn.id}`, { artists: ["Eleanor Farjeon", "La Chapelle Évangélique de Paris Musique"] });
   await page.context().close();
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
   page = await context.newPage();
@@ -246,6 +248,11 @@ await step("on a touch screen: a favorite's star on its cover, no buttons; a lon
   await peek().getByTestId("add-to-set").waitFor();
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${shots}/preview-phone.png` });
+  const fits = await peek().evaluate((el) => {
+    const right = el.getBoundingClientRect().right;
+    return { wider: el.scrollWidth - el.clientWidth, past: [...el.querySelectorAll("button")].filter((one) => one.getBoundingClientRect().right > right + 0.5).map((one) => one.textContent) };
+  });
+  if (fits.wider > 0 || fits.past.length) throw new Error(`the preview overflows: ${JSON.stringify(fits)}`);
   const where = await settled(peek().getByTestId("song-peek-next"));
   // A swipe to the left: the next song, its buttons where they were.
   const middle = await centre(peek().getByTestId("song-peek-lines"));

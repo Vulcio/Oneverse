@@ -253,9 +253,10 @@ export function SongPeek({ songs, index, onIndexChange, onClose, from, onFavorit
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Nothing shrinks: on a phone, Add to set and Listen are their icons, with room for Open. */}
+          <div className="flex items-center gap-2 *:shrink-0">
             <FavoriteButton key={song.id} songVersionId={song.id} initial={detail?.isFavorite ?? !!song.isFavorite} variant="outline" onChange={onFavoriteChange} />
-            <AddToSetButton songVersionId={song.id} songTitle={song.title} />
+            <AddToSetButton songVersionId={song.id} songTitle={song.title} labelClassName="max-sm:sr-only" />
             <Button
               type="button"
               variant="outline"
