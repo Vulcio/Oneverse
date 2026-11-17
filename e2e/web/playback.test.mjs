@@ -96,15 +96,23 @@ await step("a song with everything offers each source, and plays its master by d
   await stems().getByTestId("stem-recording-name").getByText("Master.wav").waitFor();
 });
 
-await step("the stems the person didn't choose aren't loaded: only the master, one quick file", async () => {
-  await page.waitForLoadState("networkidle");
-  const fetched = [...new Set(page.downloads)];
-  check("only the master fetched", fetched.length === 1 && fetched[0] === master.id, fetched.join());
+await step("the stems the person didn't choose aren't loaded first: the master, one quick file, then the rest behind it", async () => {
+  await page.locator('[data-testid="stem-player"][data-complete="true"]').waitFor({ timeout: 15000 });
+  const first = [...new Set(page.downloads)];
+  check("only the master fetched while it loads", first.length === 1 && first[0] === master.id, first.join());
+  // Ready: the stems and the take follow in the background, not decoded, so switching needs no download.
+  for (let waited = 0; waited < 15000 && ![drums.id, bass.id, take.id].every((id) => page.downloads.includes(id)); waited += 200) await page.waitForTimeout(200);
+  const after = [...new Set(page.downloads)];
+  check("the other files fetched behind it", [drums.id, bass.id, take.id].every((id) => after.includes(id)), after.join());
+  check("decoded only the master", (await page.evaluate(() => window.songverseStems?.decodes)) === 1);
 });
 
-await step("choosing the stems: kept on the account, without the take", async () => {
+await step("choosing the stems: kept on the account, without the take - and nothing downloaded again", async () => {
+  const before = page.downloads.length;
   await control().selectOption("STEMS");
   await stems().getByTestId("stem-part-count").getByText("2 parts").waitFor();
+  await page.locator('[data-testid="stem-player"][data-complete="true"]').waitFor({ timeout: 15000 });
+  check("the stems came from what was fetched", page.downloads.length === before, page.downloads.slice(before).join());
   await page.waitForFunction(() => document.querySelector('[data-testid="playback-source"]')?.dataset.chosen === "STEMS");
   // Saved on the server, for their other devices.
   await page.waitForTimeout(300);
@@ -135,6 +143,22 @@ await step("the takes: the vocals take joins, from where the stems were", async 
   check("carried on, not from the start", after >= before && after > 0.5, `${before} -> ${after}`);
 });
 
+await step("back to the recording and to the takes: nothing fetched or decoded again", async () => {
+  const downloads = page.downloads.length;
+  const decodes = await page.evaluate(() => window.songverseStems?.decodes);
+  await control().selectOption("MASTER");
+  await stems().getByTestId("stem-recording-name").getByText("Master.wav").waitFor();
+  await page.locator('[data-testid="stem-player"][data-complete="true"]').waitFor({ timeout: 15000 });
+  const switched = Date.now();
+  await control().selectOption("TAKES");
+  await stems().getByTestId("stem-part-count").getByText("3 parts").waitFor();
+  await page.locator('[data-testid="stem-player"][data-complete="true"]').waitFor({ timeout: 15000 });
+  console.log(`    switching back to the takes: ready in ${Date.now() - switched} ms`);
+  check("nothing downloaded again", page.downloads.length === downloads, page.downloads.slice(downloads).join());
+  const now = await page.evaluate(() => window.songverseStems?.decodes);
+  check("nothing decoded again", now === decodes, `${decodes} -> ${now}`);
+});
+
 await step("metronome only: the stems stop, its own dock plays the song's tempo", async () => {
   await control().selectOption("METRONOME");
   await page.getByTestId("metronome-dock").getByText("96 BPM").waitFor();
@@ -163,6 +187,26 @@ await step("the video: its dock, and the choice survives a reload", async () => 
   await control().waitFor();
   await page.waitForFunction(() => document.querySelector('[data-testid="playback-source"]')?.value === "YOUTUBE");
   await page.getByTestId("youtube-dock").waitFor();
+});
+
+await step("a multitrack remembered on the device doesn't load while the account's choice, the recording, is on its way", async () => {
+  await control().selectOption("MASTER");
+  await page.waitForFunction(() => document.querySelector('[data-testid="playback-source"]')?.dataset.chosen === "MASTER");
+  await page.waitForTimeout(300);
+  // Picked in the player's own list once (its original stems): kept on this device.
+  await page.evaluate((id) => localStorage.setItem(`songverse.stems.multitrack.${id}`, ""), full.id);
+  page.downloads = [];
+  await page.reload();
+  await control().waitFor();
+  await page.locator('[data-testid="stem-player"][data-complete="true"]').waitFor({ timeout: 15000 });
+  check("the recording plays", (await control().inputValue()) === "MASTER");
+  const first = [...new Set(page.downloads)];
+  check("only the master fetched first", first.length === 1 && first[0] === master.id, first.join());
+  await page.evaluate((id) => localStorage.removeItem(`songverse.stems.multitrack.${id}`), full.id);
+  // The video again, as the set's song plays it below.
+  await control().selectOption("YOUTUBE");
+  await page.waitForFunction(() => document.querySelector('[data-testid="playback-source"]')?.dataset.chosen === "YOUTUBE");
+  await page.waitForTimeout(300);
 });
 
 await step("a song with only a tempo: the metronome by default", async () => {

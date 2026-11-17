@@ -120,7 +120,7 @@ export function downloadOnce(songVersionId: string, file: Attachment, onProgress
 /** Fetches a song's files ahead, one after another, so its Play is quick (issue #366). Not when the device asks to save data. */
 export async function prefetchFiles(songVersionId: string, files: Attachment[]) {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  if (connection?.saveData) return;
+  if (connection?.saveData || (typeof navigator !== "undefined" && navigator.onLine === false)) return;
   // Their waveforms first (issue #388): a few kilobytes, and its player shows them at once.
   void songWaveforms(songVersionId, files.map((file) => file.id));
   for (const file of files) await downloadOnce(songVersionId, file).catch(() => {});

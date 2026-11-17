@@ -1,4 +1,4 @@
-import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, STEM_PARTS, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type BeatLevel, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
+import { beatsPerTempoUnit, defaultTempoUnit, filesForSource, isTake, multitracksOf, playbackSourcesOf, STEM_PARTS, TIME_SIGNATURE_PATTERN, transposesPart, type Attachment, type TempoUnit, type BeatLevel, type CueSection, type StemPart, type BeatMap } from "@oneverse/core";
 import type { ReactNode } from "react";
 
 /**
@@ -361,4 +361,20 @@ export const TAKE_ID = "__take";
 export function shownDuration(current: Pick<StemState, "duration" | "tracks">): number {
   if (current.duration > 0) return current.duration;
   return current.tracks.reduce((longest, track) => Math.max(longest, track.length), 0);
+}
+
+/**
+ * The song's files for the other way of playing it from the player: its
+ * stems (with the takes, as the player's switch plays them) while its
+ * recording plays, its recording while the stems do. Fetched behind what
+ * plays, so switching needs no download.
+ */
+export function otherSourceFiles(attachments: Attachment[], source: "MASTER" | "STEMS" | "TAKES", multitrackId: string | null | undefined, setlistId?: string, versionMultitrackId?: string | null): Attachment[] {
+  if (source !== "MASTER") {
+    const recording = wholeRecordingOf(attachments);
+    return recording ? [recording] : [];
+  }
+  const offered = playbackSourcesOf({ files: attachments, youtube: false });
+  const to = offered.includes("TAKES") ? "TAKES" : offered.includes("STEMS") ? "STEMS" : null;
+  return to ? sourceFilesOf(attachments, to, multitrackId, setlistId, versionMultitrackId).stems : [];
 }

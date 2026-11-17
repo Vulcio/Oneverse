@@ -37,16 +37,29 @@ export function setPlaybackStore(setId: string, itemId: string, initial: Playbac
 // Chosen in this tab: back on the song, it's what it was, before the server answers.
 const chosenHere = new Map<string, PlaybackSource>();
 
-/** The person's choice for the song: null while there's none (or it's loading). */
-export function usePlaybackChoice(store: PlaybackStore): { chosen: PlaybackSource | null; choose: (source: PlaybackSource) => void } {
+/** How long the saved choice is waited for before loading what plays without it (ms): a slow answer shouldn't hold the song back. */
+const CHOICE_WAIT_MS = 1500;
+
+/**
+ * The person's choice for the song: null while there's none (or it's
+ * loading). `known` once it's settled - kept here, handed over, or the
+ * server answered (or took too long): until then nothing is fetched, so
+ * the files of a source they didn't choose aren't loaded while their
+ * choice is on its way.
+ */
+export function usePlaybackChoice(store: PlaybackStore): { chosen: PlaybackSource | null; known: boolean; choose: (source: PlaybackSource) => void } {
   const [chosen, setChosen] = useState<PlaybackSource | null>(() => chosenHere.get(store.key) ?? store.initial ?? null);
+  const settledAt = (key: string) => chosenHere.has(key) || !store.load;
+  const [known, setKnown] = useState(() => settledAt(store.key));
   // Chosen before the saved choice arrived: that one's older.
   const touched = useRef(false);
   useEffect(() => {
     touched.current = false;
     setChosen(chosenHere.get(store.key) ?? store.initial ?? null);
-    if (chosenHere.has(store.key) || !store.load) return;
+    if (settledAt(store.key) || !store.load) return setKnown(true);
+    setKnown(false);
     let live = true;
+    const waited = setTimeout(() => live && setKnown(true), CHOICE_WAIT_MS);
     store
       .load()
       .then((saved) => {
@@ -54,20 +67,26 @@ export function usePlaybackChoice(store: PlaybackStore): { chosen: PlaybackSourc
       })
       .catch(() => {
         // Offline or signed out: what the song has decides.
+      })
+      .finally(() => {
+        clearTimeout(waited);
+        if (live) setKnown(true);
       });
     return () => {
       live = false;
+      clearTimeout(waited);
     };
   }, [store.key]);
   const choose = (source: PlaybackSource) => {
     touched.current = true;
     chosenHere.set(store.key, source);
     setChosen(source);
+    setKnown(true);
     store.save(source).catch(() => {
       // Kept for this tab; saved the next time it's chosen online.
     });
   };
-  return { chosen, choose };
+  return { chosen, known, choose };
 }
 
 /**

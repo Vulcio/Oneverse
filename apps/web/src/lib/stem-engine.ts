@@ -412,9 +412,61 @@ if (typeof document !== "undefined") {
   });
 }
 
-/** Forgets the loaded song and frees its audio. */
-export function unloadStems() {
+// --- decoded audio kept for a while: switching what plays and back, or closing the recorder, decodes nothing again
+
+/** A file's audio as decoded, and its waveform. */
+interface Decoded {
+  buffer: AudioBuffer;
+  peaks: number[];
+  bytes: number;
+}
+/** By file, oldest first. The loaded song's are in here too; only the others count against the budget. */
+const decoded = new Map<string, Decoded>();
+const MB = 1024 * 1024;
+
+/**
+ * How much decoded audio is kept besides what's loaded (bytes): what the
+ * device can spare - Chrome says how much memory it has (GB, at most 8),
+ * Safari doesn't, so a phone's share there. A song's recording (about
+ * 20 MB a minute, decoded) fits in any of them.
+ */
+function decodedBudget(): number {
+  const memory = typeof navigator === "undefined" ? undefined : (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  return (memory ? Math.min(384, memory * 48) : 128) * MB;
+}
+
+function keepDecoded(id: string, buffer: AudioBuffer, peaks: number[]) {
+  if (id === TAKE_ID) return;
+  decoded.delete(id);
+  decoded.set(id, { buffer, peaks, bytes: buffer.length * buffer.numberOfChannels * 4 });
+  trimDecoded();
+}
+
+/** The oldest go first, those loaded aside. */
+function trimDecoded() {
+  const budget = decodedBudget();
+  let spare = [...decoded].reduce((sum, [id, entry]) => sum + (buffers.has(id) ? 0 : entry.bytes), 0);
+  for (const [id, entry] of decoded) {
+    if (spare <= budget) break;
+    if (buffers.has(id)) continue;
+    decoded.delete(id);
+    spare -= entry.bytes;
+  }
+}
+
+/** A file's audio decoded earlier, if it's still kept (now the newest). */
+function decodedAgain(id: string): Decoded | null {
+  const entry = decoded.get(id);
+  if (!entry) return null;
+  decoded.delete(id);
+  decoded.set(id, entry);
+  return entry;
+}
+
+/** Forgets the loaded song and frees its audio - and, unless `keep` (another song or source loading next, the recorder closed), what's kept decoded besides. */
+export function unloadStems(keep = false) {
   generation++;
+  if (!keep) decoded.clear();
   storedWaves = new Map();
   loadedSong = null;
   stopSources();
@@ -429,6 +481,7 @@ export function unloadStems() {
   element = null;
   streamOut = null;
   buffers = new Map();
+  trimDecoded();
   gains = new Map();
   tracksInfo = new Map();
   plain = null;
@@ -460,7 +513,7 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
   const ids = new Set(song.stems.map((stem) => stem.id));
   const muted = new Set([...state.muted].filter((id) => ids.has(id)));
   const soloed = new Set([...state.soloed].filter((id) => ids.has(id)));
-  unloadStems();
+  unloadStems(true);
   loadedSong = song;
   const mine = generation;
   setAudioSession();
@@ -538,15 +591,23 @@ async function loadNow(song: StemSong, key: string): Promise<boolean> {
   const fetchOne = async (stem: StemFile) => {
     let buffer: AudioBuffer | null = null;
     let empty = false;
-    try {
-      const blob = await song.load(stem, (bytes, total) => progress(stem.id, bytes, total));
-      progress(stem.id, blob.size, blob.size, true);
-      // A few hundred bytes: headers, no sound.
-      empty = blob.size < 1024;
-      // Ogg Opus where Safari can't read it (before 18.4): rewrapped as WebM (issue #185).
-      buffer = await decodeAudio(ctx, await blob.arrayBuffer());
-    } catch {
-      // Shown on its row; the other parts still play.
+    // Decoded already (the source switched and back, the recorder closed): nothing to fetch or decode.
+    const again = decodedAgain(stem.id);
+    if (again) {
+      buffer = again.buffer;
+      progress(stem.id, stem.sizeBytes ?? 1, stem.sizeBytes ?? 1, true);
+    } else {
+      try {
+        const blob = await song.load(stem, (bytes, total) => progress(stem.id, bytes, total));
+        progress(stem.id, blob.size, blob.size, true);
+        // A few hundred bytes: headers, no sound.
+        empty = blob.size < 1024;
+        // Ogg Opus where Safari can't read it (before 18.4): rewrapped as WebM (issue #185).
+        buffer = await decodeAudio(ctx, await blob.arrayBuffer());
+        noteDecode();
+      } catch {
+        // Shown on its row; the other parts still play.
+      }
     }
     if (mine !== generation) return;
     settled.set(stem.id, { buffer, empty });
@@ -608,7 +669,10 @@ async function join(stem: StemFile, buffer: AudioBuffer | null, empty: boolean, 
   gain.connect(plain);
   buffers.set(stem.id, buffer);
   gains.set(stem.id, gain);
-  track({ peaks: peaksOf(buffer), length: buffer.duration, failed: false, empty: false, ready: true, downloaded: 1 });
+  const kept = decoded.get(stem.id);
+  const peaks = kept?.buffer === buffer ? kept.peaks : peaksOf(buffer);
+  keepDecoded(stem.id, buffer, peaks);
+  track({ peaks, length: buffer.duration, failed: false, empty: false, ready: true, downloaded: 1 });
   const before = latency;
   await route();
   if (mine !== generation) return;
@@ -873,6 +937,14 @@ export async function playStems(song: StemSong, from?: number) {
   updateMediaSession();
 }
 
+/** For the end-to-end suites: how many files were decoded (one kept decoded isn't again). */
+function noteDecode() {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { songverseStems?: { starts: unknown[]; decodes?: number } };
+  w.songverseStems ??= { starts: [] };
+  w.songverseStems.decodes = (w.songverseStems.decodes ?? 0) + 1;
+}
+
 /** How long from `pressed` (performance.now()) until the start just scheduled is heard: kept in the state, and for the end-to-end suites. */
 function noteFirstSound(pressed: number) {
   if (!context) return;
@@ -936,7 +1008,8 @@ export function toggleStemMute(id: string) {
 const VOLUMES_KEY = "songverse.stems.volumes.";
 
 /** The volumes set for a song's parts on this device, of the files it has now. */
-function savedVolumes(songVersionId: string, ids: Set<string>): Record<string, number> {
+/** Each part's volume as last set on this device for the song (issue #140): what the faders show before it loads too. */
+export function savedVolumes(songVersionId: string, ids: Set<string>): Record<string, number> {
   try {
     const saved = JSON.parse(localStorage.getItem(VOLUMES_KEY + songVersionId) ?? "{}") as Record<string, unknown>;
     return Object.fromEntries(Object.entries(saved).filter((entry): entry is [string, number] => ids.has(entry[0]) && typeof entry[1] === "number"));
@@ -1129,6 +1202,15 @@ export function useStems(): StemState {
   );
 }
 
+/** One thing about the player, re-rendering only when it changes (a page shouldn't redraw as the position moves). */
+export function useStemsValue<T extends string | number | boolean | null>(pick: (current: StemState) => T): T {
+  return useSyncExternalStore(
+    subscribe,
+    () => pick(state),
+    () => pick(EMPTY),
+  );
+}
+
 // --- the metronome with the recording (issue #448)
 
 /**
@@ -1263,5 +1345,5 @@ export function endStemsRecording() {
   recordingDirect = false;
   if (!context) return;
   if (state.playing) pause();
-  unloadStems();
+  unloadStems(true);
 }
