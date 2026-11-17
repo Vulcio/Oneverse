@@ -45,7 +45,7 @@ import { setMode } from "#/lib/mode";
 import { useMultitrackName } from "#/lib/multitrack-name";
 import { barLineNear, setRecordingClick, useRecordingClick } from "#/lib/recording-click";
 import { unlockSyncAudio } from "#/lib/sync-client";
-import { dockStems, refreshStemsBeat, setStemsSpeed, setStemsTranspose, pauseStems, playStems, prefetchStems, setStemLoop, stopStems, resetStemVolumes, setStemVolume, seekStems, toggleStemMute, toggleStemSolo, undockStems, useStems } from "#/lib/stem-engine";
+import { dockStems, refreshStemsBeat, savedVolumes, setStemsSpeed, setStemsTranspose, pauseStems, playStems, prefetchStems, setStemLoop, stopStems, resetStemVolumes, setStemVolume, seekStems, toggleStemMute, toggleStemSolo, undockStems, useStems } from "#/lib/stem-engine";
 import { RECORDING_CHOICE, beatOf, isTransposed, isAudible, shownDuration, songBeatTempo, stemKey, TAKE_ID, tracksOf, volumeGain, type StemSong, type StemTrack } from "#/lib/stem-files";
 import { chooseMultitrack, chooseStemSpeed, chooseStemTranspose, useChosenSpeed, useChosenTranspose } from "#/lib/stem-choices";
 import { sizedAvatarUrl } from "@oneverse/ui/lib/avatar-url";
@@ -279,7 +279,10 @@ export function StemDock({ song: page }: { song: StemSong }) {
       // Remembered for this page only.
     }
   };
-  const volumeOf = (track: StemTrack) => (active ? (engine.volumes[track.id] ?? 1) : 1);
+  // Not loaded yet (the person's choice of what plays on its way): as last set here, so the faders don't jump.
+  const idsKey = song.stems.map((stem) => stem.id).join();
+  const stored = useMemo(() => (active ? null : savedVolumes(song.songVersionId, new Set(song.stems.map((stem) => stem.id)))), [active, song.songVersionId, idsKey]);
+  const volumeOf = (track: StemTrack) => (active ? (engine.volumes[track.id] ?? 1) : (stored?.[track.id] ?? 1));
   const mixerButton = (
     <Button
       type="button"
@@ -390,10 +393,11 @@ export function StemDock({ song: page }: { song: StemSong }) {
   }, [song.songVersionId]);
 
   // Downloaded as the page opens in Practice, so Play is usually instant - when the person chose it, or it's one quick file (issue #366).
+  const prefetch = song.prefetch !== false;
   useEffect(() => {
-    if (song.prefetch !== false) prefetchStems(song);
-    // Once per set of stems (`key`); `song` is a new object on every render.
-  }, [key]);
+    if (prefetch) prefetchStems(song);
+    // Once per set of stems (`key`), or once it may (the person's choice known); `song` is a new object on every render.
+  }, [key, prefetch]);
 
   // Its beat changed (moved by hand, issue #448): the stems loaded already play with the new one.
   const beatKey = JSON.stringify(beatOf(song));

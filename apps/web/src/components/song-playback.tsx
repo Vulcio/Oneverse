@@ -13,8 +13,9 @@ import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { cn } from "@oneverse/ui/lib/utils";
 import { startMetronome, stopMetronome, useMetronome, useMetronomeBeat } from "#/lib/metronome-engine";
 import { usePlaybackChoice, type PlaybackStore } from "#/lib/playback";
-import { getStemState, pauseStems, playStems } from "#/lib/stem-engine";
-import { RECORDING_CHOICE, sourceFilesOf, type StemSong } from "#/lib/stem-files";
+import { prefetchFiles } from "#/lib/song-files";
+import { getStemState, pauseStems, playStems, useStemsValue } from "#/lib/stem-engine";
+import { RECORDING_CHOICE, otherSourceFiles, sourceFilesOf, stemKey, type StemSong } from "#/lib/stem-files";
 import { useChosenMultitrack } from "#/lib/stem-choices";
 import { publishPlayback, unlockSyncAudio, useSync } from "#/lib/sync-client";
 import { pauseYouTube, useYouTube } from "#/lib/youtube-player";
@@ -76,7 +77,7 @@ export interface SongPlaybackProps {
  */
 export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode; dock: ReactNode; source: PlaybackSource } {
   const { t } = useTranslation();
-  const { chosen, choose } = usePlaybackChoice(props.store);
+  const { chosen, known, choose } = usePlaybackChoice(props.store);
   const sync = useSync();
   const inSet = !!props.set && sync.setId === props.set.id && sync.status === "on";
   const leaders = inSet && props.set ? (sync.session?.playback?.[props.set.itemId] ?? null) : null;
@@ -131,8 +132,9 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
   );
 
   // Loaded as the page opens: what plays, chosen or by default - the master when there's one, so
-  // stems nobody chose aren't fetched until they are.
-  const prefetch = true;
+  // stems nobody chose aren't fetched until they are. Not before the person's choice is known: a
+  // multitrack remembered on the device would otherwise start its stems while the account says the recording.
+  const prefetch = known;
   const files = playsFiles(source) ? sourceFilesOf(props.attachments, source as "MASTER" | "STEMS" | "TAKES", multitrack, props.set?.id, props.versionMultitrackId) : null;
   const song: StemSong | null =
     files && files.stems.length > 0
@@ -166,6 +168,19 @@ export function useSongPlayback(props: SongPlaybackProps): { control: ReactNode;
     if (from === null || !song) return;
     void playStems(song, from);
   }, [songKey]);
+
+  // What plays loaded, the song's other files are fetched behind it, quietly (not decoded): switching to
+  // them later needs no download. Only once everything chosen is in, so it never slows that down.
+  const loadedKey = song ? stemKey(song) : null;
+  const loadedHere = useStemsValue((current) => !!loadedKey && current.key === loadedKey && current.complete);
+  const others = playsFiles(source) ? otherSourceFiles(props.attachments, source as "MASTER" | "STEMS" | "TAKES", multitrack, props.set?.id, props.versionMultitrackId) : [];
+  const othersKey = others.map((file) => file.id).join();
+  useEffect(() => {
+    if (!loadedHere || others.length === 0 || props.docked === false) return;
+    // A moment after, so the page and the first Play have the network to themselves.
+    const timer = setTimeout(() => void prefetchFiles(props.songVersionId, others), 2000);
+    return () => clearTimeout(timer);
+  }, [loadedHere, othersKey]);
 
   // One thing plays at a time: the video and the song's metronome stop when it moves on.
   const yt = useYouTube();
