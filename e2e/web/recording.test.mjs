@@ -66,6 +66,8 @@ const countIn = () => dialog().getByTestId("recorder-status").getByText(/^\d+ be
 
 /** The recorder's part (issue #131): a voice or an instrument, then which. */
 async function pickPart(kind, which) {
+  // Folded once the part is known (issue #501): Change shows the choices.
+  await more();
   await dialog().getByTestId("part-kind").selectOption({ label: kind });
   await dialog().getByTestId(kind === "Voice" ? "part-voice" : "part-instrument").selectOption({ label: which });
 }
@@ -175,6 +177,7 @@ await step("a part added to it: hearing the others, with the multitrack's own te
   const box = page.locator('[data-testid="stems-recording"]').filter({ hasText: "Acoustic" });
   await box.getByText("1 part").waitFor();
   await box.getByTestId("record-part").click();
+  await more();
   if ((await dialog().getByTestId("recorder-target").inputValue()) !== first.multitrackId) throw new Error("not into Acoustic");
   await dialog().getByTestId("recorder-beat").getByText("90 BPM · 3/4").waitFor();
   await pickPart("Voice", "Lead vocal");
@@ -326,6 +329,7 @@ await step("recording in the player (issue #134): from bar 2 over the mix transp
   await player.getByRole("slider", { name: "Position" }).fill("4.5");
   await player.getByTestId("stem-record").click();
   await page.locator('[data-testid="recorder"][data-engine="player"][data-phase="ready"]').waitFor({ timeout: 15000 });
+  await more();
   await dialog().getByText("a punch-in at 0:04: what's before it stays").waitFor();
   // Not modal: the player behind it still takes taps.
   await player.getByRole("button", { name: "Down a semitone" }).waitFor();
@@ -388,16 +392,17 @@ await step("a voice of one's own naming, and a harmony someone else recorded: na
   // Mine, recorded in the player: a descant, named.
   await page.getByTestId("stem-player").getByRole("slider", { name: "Position" }).fill("0");
   await page.getByTestId("stem-player").getByTestId("stem-record").click();
+  await more();
   await dialog().getByTestId("part-kind").selectOption({ label: "Voice" });
   await dialog().getByTestId("part-voice").selectOption({ label: "Another name…" });
   await dialog().getByTestId("part-name").fill("Descant");
   await dialog().getByTestId("part-name").press("Enter");
-  // On a phone, recording: the player keeps to play, the time and the microphone; the multitrack, transposition, speed and the other tools wait.
+  // On a phone, recording (issue #501): the recorder's slim bar is all the player shows - the time, the click, following and Stop; play, the multitrack, transposition, speed and the other tools wait.
   await page.setViewportSize({ width: 390, height: 844 });
   await recordInPlayer(1, async () => {
     const player = page.getByTestId("stem-player");
-    await player.getByTestId("stem-record").waitFor();
-    for (const id of ["stem-controls", "stem-mixer", "stem-click"]) if (await player.getByTestId(id).isVisible()) throw new Error(`${id} shown while recording on a phone`);
+    for (const id of ["recorder-status", "recorder-click", "recorder-follow", "recorder-stop"]) if (!(await dialog().getByTestId(id).isVisible())) throw new Error(`${id} not shown while recording on a phone`);
+    for (const id of ["stem-play", "stem-record", "stem-controls", "stem-mixer", "stem-click", "stem-tab-mix", "recorder-summary"]) if (await player.getByTestId(id).first().isVisible()) throw new Error(`${id} shown while recording on a phone`);
   });
   await page.setViewportSize({ width: 1280, height: 900 });
   await dialog().getByTestId("recorder-keep").click();
@@ -427,6 +432,7 @@ await step("a part in sections (issue #141): the microphone's level before recor
   await player.getByRole("slider", { name: "Position" }).fill("0");
   await player.getByTestId("stem-record").click();
   await page.locator('[data-testid="recorder"][data-engine="player"][data-phase="ready"]').waitFor({ timeout: 15000 });
+  await more();
   // What the microphone hears, before anything's recorded.
   await page.waitForFunction(() => ["quiet", "good", "loud"].includes(document.querySelector('[data-testid="input-level"]')?.dataset.level), null, { timeout: 5000 });
   await pickPart("Voice", "Harmony 1 (soprano)");
@@ -511,6 +517,7 @@ await step("recording into a recording (issue #142): its part and itself chosen 
   const row = player.locator('[data-testid="stem-track"][data-part="GUITAR"]');
   await row.getByTestId("stem-track-name").click();
   await row.getByTestId("stem-track-record-into").click();
+  await more();
   await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
   if ((await dialog().getByTestId("part-instrument").inputValue()) !== "GUITAR") throw new Error(await dialog().getByTestId("part-instrument").inputValue());
   if (!(await dialog().getByTestId("recorder-use").inputValue()).startsWith("instead:")) throw new Error("not into it");
@@ -529,6 +536,7 @@ await step("on a set's song page: a new multitrack for that set, what the player
   // A new multitrack: from the player's recording drawer.
   await player.getByTestId("stem-record").click();
   await page.locator('[data-testid="recorder"][data-phase="ready"]').waitFor({ timeout: 15000 });
+  await more();
   await dialog().getByTestId("recorder-target").selectOption("new");
   await dialog().getByText(`For this set: Sunday ${stamp}`).waitFor();
   if (!(await dialog().getByTestId("recorder-for-set").isChecked())) throw new Error("not for the set");

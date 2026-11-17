@@ -99,7 +99,7 @@ const NOTHING_OVER = 60;
  * whether it's loud enough, too loud, or hears nothing at all - said while
  * there's still time to fix it, not after the take.
  */
-export function LevelLine({ recorder, className }: { recorder: Recorder | null; className?: string }) {
+export function LevelLine({ recorder, className, compact = false }: { recorder: Recorder | null; className?: string; /** A dot, its words only when it isn't good (issue #501): the recording bar. */ compact?: boolean }) {
   const { t } = useTranslation();
   const [verdict, setVerdict] = useState<InputLevelVerdict | "nothing" | null>(null);
   useEffect(() => {
@@ -122,7 +122,7 @@ export function LevelLine({ recorder, className }: { recorder: Recorder | null; 
       data-level={verdict}
     >
       <span className={cn("size-2 shrink-0 rounded-full", verdict === "good" ? "bg-primary" : verdict === "loud" ? "bg-destructive" : "bg-amber-500")} aria-hidden />
-      <span className="min-w-0 truncate">{[words, recorder.microphone.label].filter(Boolean).join(" · ")}</span>
+      <span className={cn("min-w-0 truncate", compact && verdict === "good" && "sr-only", compact && "max-w-28")}>{compact ? words : [words, recorder.microphone.label].filter(Boolean).join(" · ")}</span>
     </p>
   );
 }

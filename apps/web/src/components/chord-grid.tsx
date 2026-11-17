@@ -37,6 +37,7 @@ import { GROUP_COLORS } from "#/components/bars-row";
 import { keepInView } from "#/lib/follow-view";
 import { FAMILY_COLORS, passLabel } from "@oneverse/screen/components/song-chart";
 import { useBarsClock } from "#/lib/bars-clock";
+import { useFollowMusic } from "#/lib/follow-music";
 import { useGridPlayer } from "#/lib/grid-player";
 import { useGridLyrics, type GridLyrics } from "#/lib/grid-lyrics";
 import { registerGrid, type GridControls } from "#/lib/grid-controls";
@@ -221,6 +222,8 @@ export function ChordGrid({
   const places = useMemo(() => barBeatPlaces(chart, bars), [chart, bars]);
   const steps = useMemo(() => structureOf(chart), [chart]);
   const { source, position } = useBarsClock(songId, bars);
+  // Scrolled with the music unless that's turned off on the device (issue #501).
+  const follow = useFollowMusic();
   const player = useGridPlayer(songId, bars, chart);
   const grid = useRef<HTMLDivElement>(null);
   const changed = Object.keys(draft).length > 0;
@@ -646,7 +649,7 @@ export function ChordGrid({
         light(where?.bar ?? null, where?.beat ?? 0);
         if (where && where.bar !== shownBar) {
           // Kept in view, without moving the page under the reader for every bar: only when it nears an edge.
-          if (litBar) keepInView(litBar);
+          if (litBar && follow) keepInView(litBar);
         }
         shownBar = where?.bar ?? -1;
       }
@@ -657,7 +660,7 @@ export function ChordGrid({
       light(null, 0);
       clearLine();
     };
-  }, [position, bars, lyrics, width, barsPerRow, lineOfBar]);
+  }, [position, bars, lyrics, width, barsPerRow, lineOfBar, follow]);
 
   // A pass's name over its bars.
   const passHeading = (passIndex: number) => {

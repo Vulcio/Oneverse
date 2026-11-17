@@ -18,8 +18,8 @@ import {
   type Multitrack,
   type RecordingDetails,
 } from "@oneverse/core";
-import { useRouteContext } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronUp, Circle, CloudOff, Hand, Headphones, ListPlus, Mic, Play, RotateCcw, Square, Trash2, TriangleAlert, X } from "lucide-react";
+import { useBlocker, useRouteContext } from "@tanstack/react-router";
+import { Check, ChevronDown, Circle, CloudOff, Hand, Headphones, ListPlus, Metronome, Mic, Play, RotateCcw, ScrollText, Square, Trash2, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -39,6 +39,10 @@ import { useMultitrackName } from "#/lib/multitrack-name";
 import { openOwnEngine, openPlayerEngine, type RecordEngine } from "#/lib/record-engine";
 import type { Beat, Take } from "#/lib/recorder";
 import { getStemState, pauseStems } from "#/lib/stem-engine";
+import { setFollowMusic, useFollowMusic } from "#/lib/follow-music";
+import { useRecordingClick } from "#/lib/recording-click";
+import { refusedWhileRecording, setRecordingTake } from "#/lib/recording-lock";
+import { pauseYouTube } from "#/lib/youtube-player";
 import type { StemSong } from "#/lib/stem-files";
 import { keepTake, TakeLog, type TakeTarget } from "#/lib/take-store";
 import { Spinner } from "@oneverse/ui/components/spinner";
@@ -144,6 +148,8 @@ export function RecordScreen({
   const [opened, setOpened] = useState<RecordEngine | null>(null);
   const [phase, setPhase] = useState<Phase>("opening");
   useEffect(() => onPhase?.(phase), [phase]);
+  // Leaving the page would end the take (issue #501): it waits for Stop, and says so; the browser asks before closing it.
+  useBlocker({ shouldBlockFn: () => refusedWhileRecording(), enableBeforeUnload: () => phase === "recording", disabled: phase !== "recording" });
   const [error, setError] = useState<string | null>(null);
   const [micRefused, setMicRefused] = useState(false);
   const [target, setTarget] = useState(initialTarget);
@@ -242,7 +248,10 @@ export function RecordScreen({
             label: null,
           };
 
-  const [click, setClick] = useState(true);
+  const [ownClick, setOwnClick] = useState(true);
+  // Over the player, its own click with the recording (issue #501: one toggle, before and during the take).
+  const playerClick = useRecordingClick();
+  const follow = useFollowMusic();
   const [heard, setHeard] = useState<Set<string>>(new Set());
   const [level, setLevel] = useState(true);
   const [noise, setNoise] = useState(false);
@@ -258,6 +267,17 @@ export function RecordScreen({
   const [interrupted, setInterrupted] = useState<"device" | "suspended" | null>(null);
   // The sound now goes elsewhere (its name): said once, with its delay.
   const [routeChanged, setRouteChanged] = useState<string | null>(null);
+
+  const click = opened?.kind === "player" ? playerClick : ownClick;
+  /** The click heard or not, at once, even while a take records. */
+  function toggleClick() {
+    const next = !click;
+    if (opened?.kind === "player") engine.current?.setClick(next);
+    else {
+      setOwnClick(next);
+      engine.current?.setClick(next);
+    }
+  }
 
   // The take being recorded, and those recorded so far (newest last); the one picked to keep.
   const zeroAt = useRef(0);
@@ -278,8 +298,9 @@ export function RecordScreen({
   const sections = useRef<Float32Array | null>(null);
   const [sectionCount, setSectionCount] = useState(0);
   const [confirmClose, setConfirmClose] = useState(false);
-  // All the choices, or only the take (the song behind stays in view): pulled down once recording starts.
-  const [more, setMore] = useState(true);
+  // All the choices, or only the take (the song behind stays in view): folded once the part is known - into a
+  // multitrack, it's picked for you - and while recording (issue #501); a new multitrack opens on its name and tempo.
+  const [more, setMore] = useState(initialTarget === NEW_TARGET);
   const closed = useRef(false);
 
   /** Opens the microphone, and what plays with it: the player's clock, or one of its own with the multitrack's parts. */
@@ -322,10 +343,12 @@ export function RecordScreen({
     closed.current = false;
     // Nothing else plays over the take; the player, when it's recorded over, is started by the take.
     if (!onPlayer) pauseStems();
+    pauseYouTube();
     if (getMetronomeState().playing && !getMetronomeState().following) stopMetronome();
     open();
     return () => {
       closed.current = true;
+      setRecordingTake(false);
       engine.current?.close();
       engine.current = null;
       // Closed without keeping them: the takes go (one kept was already handed over).
@@ -399,6 +422,8 @@ export function RecordScreen({
     recording.current = { from, to, label, log: null };
     setPosition(from - lead);
     setMore(false);
+    // Nothing else plays over it (issue #501).
+    setRecordingTake(true);
     setPhase("recording");
     const at = await current.start({ from, lead, beat, click, heard, replace });
     zeroAt.current = at;
@@ -418,6 +443,7 @@ export function RecordScreen({
     const now = recording.current;
     if (!current || !now || stopping.current) return;
     stopping.current = true;
+    setRecordingTake(false);
     try {
       const done = await current.stop(zeroAt.current);
       await now.log?.finish();
@@ -611,6 +637,41 @@ export function RecordScreen({
     return section ? [{ at: item.at, label: cueNames.short(section) }] : [];
   });
 
+  const intoName = multitrack ? nameOf(multitrack, multitracks.indexOf(multitrack)) : t("stems.newMultitrack");
+  const summary = [partLabel(choice), intoName, multitrack ? (range.label ?? (what === "song" ? t("recorder.screen.wholeSong") : null)) : null].filter(Boolean).join(" · ");
+  const clickToggle = beat ? (
+    <Button
+      type="button"
+      variant={click ? "secondary" : "outline"}
+      size="sm"
+      className={cn("h-9 rounded-full", click && "bg-primary/15 text-primary hover:bg-primary/20", phase === "recording" && "size-9 rounded-md p-0")}
+      aria-pressed={click}
+      onClick={toggleClick}
+      title={t("recorder.screen.clickToggle")}
+      aria-label={phase === "recording" ? t("recorder.screen.clickToggle") : undefined}
+      data-testid="recorder-click"
+    >
+      <Metronome />
+      {phase === "recording" ? null : click ? t("recorder.screen.clickOn") : t("recorder.screen.clickOff")}
+    </Button>
+  ) : null;
+  const followToggle = (
+    <Button
+      type="button"
+      variant={follow ? "secondary" : "outline"}
+      size="sm"
+      className={cn("h-9 rounded-full", follow && "bg-primary/15 text-primary hover:bg-primary/20", phase === "recording" && "size-9 rounded-md p-0")}
+      aria-pressed={follow}
+      onClick={() => setFollowMusic(!follow)}
+      title={t("recorder.screen.followToggle")}
+      aria-label={phase === "recording" ? t("recorder.screen.followToggle") : undefined}
+      data-testid="recorder-follow"
+    >
+      <ScrollText />
+      {phase === "recording" ? null : t("recorder.screen.follow")}
+    </Button>
+  );
+
   return (
     <Shell
       inline={inline}
@@ -621,34 +682,25 @@ export function RecordScreen({
       data-engine={opened?.kind}
       data-more={more ? "true" : "false"}
     >
-        <div className="flex items-center gap-2 px-4 pb-2">
-          <Mic className={cn("size-4 shrink-0", phase === "recording" ? "text-destructive" : "text-muted-foreground")} aria-hidden />
+        {/* The part, where it goes and what's recorded, on one line; Change unfolds the choices (issue #501). While a take records, a phone gives this line to the chart. */}
+        <div className={cn("flex items-center gap-2 px-4 pb-2", phase === "recording" && "max-sm:hidden")}>
+          <Mic className={cn("size-4 shrink-0", phase === "recording" ? "text-destructive" : "text-primary")} aria-hidden />
           <Title inline={inline}>
-            {[partLabel(choice), multitrack ? (range.label ?? (what === "song" ? t("recorder.screen.wholeSong") : null)) : t("stems.newMultitrack")].filter(Boolean).join(" · ")}
-            <span className="font-normal text-muted-foreground"> · {songTitle}</span>
+            <span data-testid="recorder-summary">{summary}</span>
+            <span className="font-normal text-muted-foreground max-sm:hidden"> · {songTitle}</span>
           </Title>
-          {phase === "recording" ? (
-            <span className="text-sm font-semibold text-destructive tabular-nums" role="status" data-testid="recorder-status">
-              {counting
-                ? beatsLeft
-                  ? t("recorder.screen.countInBeats", { count: beatsLeft })
-                  : t("recorder.countIn")
-                : t("recorder.recordingAt", {
-                    time: formatDuration(Math.max(0, position)),
-                  })}
-            </span>
-          ) : null}
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="size-8"
+            size={more ? "icon" : "sm"}
+            className={cn(more ? "size-8" : "h-8 px-2 font-semibold text-primary")}
             onClick={() => setMore(!more)}
+            disabled={phase === "recording"}
             aria-expanded={more}
             aria-label={more ? t("recorder.screen.less") : t("recorder.screen.more")}
             data-testid="recorder-more"
           >
-            {more ? <ChevronDown /> : <ChevronUp />}
+            {more ? <ChevronDown /> : t("recorder.screen.change")}
           </Button>
           <Button
             type="button"
@@ -663,11 +715,18 @@ export function RecordScreen({
             <X />
           </Button>
         </div>
-        <div className={cn("flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4", inline && "max-h-[45dvh] px-3")}>
+        <div className={cn("flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4", inline && "max-h-[45dvh] px-3", phase === "recording" && "max-sm:pt-2 max-sm:pb-1")}>
           {/* The take as it's recorded: the microphone left of the playhead, the parts to come right of it. */}
-          <TakeStrip recorder={opened?.recorder ?? null} ahead={aheadParts} position={stripPosition} marks={stripMarks} recording={phase === "recording" && !counting} />
-          {/* The level in a line once the choices (and their meter) are folded away. */}
-          {!more && (phase === "ready" || phase === "recording") ? <LevelLine recorder={opened?.recorder ?? null} className="-mt-2" /> : null}
+          <TakeStrip recorder={opened?.recorder ?? null} ahead={aheadParts} position={stripPosition} marks={stripMarks} recording={phase === "recording" && !counting} className={cn(phase === "recording" && "max-sm:h-9")} />
+          {/* The level in a line once the choices (and their meter) are folded away; while recording, a dot in the bar below. */}
+          {!more && phase === "ready" ? <LevelLine recorder={opened?.recorder ?? null} className="-mt-2" /> : null}
+          {/* The click and following the music, in reach before the take (issue #501). */}
+          {phase === "ready" || phase === "opening" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {clickToggle}
+              {followToggle}
+            </div>
+          ) : null}
           {more ? (
             <div className="flex flex-col gap-4">
               {/* Into what, and which part. */}
@@ -857,12 +916,6 @@ export function RecordScreen({
                       </label>
                     ))}
                   </fieldset>
-                ) : null}
-                {opened?.kind !== "player" ? (
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" checked={click} disabled={busy || !beat} onChange={(event) => setClick(event.target.checked)} data-testid="recorder-click" />
-                    {t("recorder.click")}
-                  </label>
                 ) : null}
               </div>
 
@@ -1061,16 +1114,34 @@ export function RecordScreen({
             </div>
           ) : null}
         </div>
-        <div className={cn("flex flex-row flex-wrap items-center justify-end gap-2 border-t bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", inline && "rounded-b-lg bg-background px-3 pb-3")}>
+        <div className={cn("flex flex-row flex-wrap items-center justify-end gap-2 border-t bg-popover px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", inline && "rounded-b-lg bg-background px-3 pb-3", phase === "recording" && "flex-nowrap max-sm:pt-2")}>
           {phase === "waiting" ? (
             <Button type="button" onClick={onClose} data-testid="recorder-close">
               {t("recorder.close")}
             </Button>
           ) : phase === "recording" ? (
-            <Button type="button" variant="destructive" size="lg" onClick={() => void stop()} data-testid="recorder-stop">
-              <Square />
-              {t("recorder.stop")}
-            </Button>
+            // The slim bar (issue #501): where the take is, the part, the level, the click, following, and Stop.
+            <>
+              <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold whitespace-nowrap text-destructive tabular-nums" role="status" data-testid="recorder-status">
+                <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-destructive" aria-hidden />
+                {counting
+                  ? beatsLeft
+                    ? t("recorder.screen.countInBeats", { count: beatsLeft })
+                    : t("recorder.countIn")
+                  : t("recorder.recordingAt", {
+                      time: formatDuration(Math.max(0, position)),
+                    })}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground sm:hidden">{summary}</span>
+              <span className="hidden flex-1 sm:block" />
+              <LevelLine recorder={opened?.recorder ?? null} compact />
+              {clickToggle}
+              {followToggle}
+              <Button type="button" variant="destructive" onClick={() => void stop()} data-testid="recorder-stop">
+                <Square />
+                {t("recorder.stop")}
+              </Button>
+            </>
           ) : (
             <>
               {chosen && multitrack && (what === "section" || what === "bar" || sectionCount > 0) ? (

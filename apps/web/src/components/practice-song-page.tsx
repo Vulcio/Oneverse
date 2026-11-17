@@ -45,6 +45,7 @@ import { stemsOf } from "#/lib/stem-files";
 import { songLengthText, useAutoscroll } from "#/lib/autoscroll";
 import { useBarsClock } from "#/lib/bars-clock";
 import { FloatingAutoscroll } from "#/components/autoscroll-control";
+import { useRecordingTake } from "#/lib/recording-lock";
 
 /**
  * A library song in Practice (issue #67): its chart, as written and read
@@ -197,6 +198,7 @@ export function PracticeSongPage({
   });
   const length = songLengthText(written, songDuration, version.documentJson);
   const details = [...references, chart.key].filter(Boolean);
+  const recordingTake = useRecordingTake();
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6" data-testid="practice-song">
@@ -257,7 +259,8 @@ export function PracticeSongPage({
             <AddToSetPopover songVersionId={version.id} songTitle={version.title} open={addingToSet} onOpenChange={setAddingToSet} anchor={more} />
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2" data-testid="practice-pills">
+        {/* While a take records on a phone, the chart gets the room (issue #501). */}
+        <div className={cn("flex flex-wrap items-center gap-2", recordingTake && "max-sm:hidden")} data-testid="practice-pills">
           {details.length > 0 ? <span className={PILL}>{details.join(" · ")}</span> : null}
           {/* How long it lasts, or "~" the guess autoscroll goes by (issue #414). */}
           {length ? (
@@ -284,7 +287,7 @@ export function PracticeSongPage({
 
       {/* The bars (issue #238): the chords in bars and beats, with the metronome, kept in view as the page scrolls - under the header (h-14), never behind it. */}
       {/* Not over the chord grid (issue #408): it shows the same bars. */}
-      {display.bars && !gridOnScreen && !wordsOnScreen && !drumsOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className="sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border" /> : null}
+      {display.bars && !gridOnScreen && !wordsOnScreen && !drumsOnScreen ? <BarsRow songId={version.id} chart={chart} document={version.documentJson} chordColors={display.chordColors} metronome={false} className={cn("sticky top-14 z-20 -mx-4 rounded-none sm:mx-0 sm:rounded-lg sm:border", recordingTake && "max-sm:hidden")} /> : null}
 
       {/* The metronome's beat as the player chose (issue #443): beat blocks, the count big, or the background in columns. */}
       <SongBeatDisplay songId={version.id} chart={chart} document={version.documentJson} settings={display.metronome} />

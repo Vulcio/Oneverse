@@ -141,6 +141,8 @@ export class Recorder {
   private sources: AudioScheduledSourceNode[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private clickGain: GainNode;
+  /** The song's click while recording or playing back: muted and unmuted as it plays (issue #501). */
+  private beatGain: GainNode;
   /** Hears each block captured (4096 samples or so), for a live waveform. */
   onChunk: ((data: Float32Array) => void) | null = null;
   /** Hears each block captured with its frame on the context's clock: kept on the device as it comes (take-store.ts, issue #365). */
@@ -185,6 +187,8 @@ export class Recorder {
     this.clickGain = context.createGain();
     this.clickGain.gain.value = 0.6;
     this.clickGain.connect(context.destination);
+    this.beatGain = context.createGain();
+    this.beatGain.connect(this.clickGain);
     capture.port.onmessage = (event: MessageEvent<{ frame: number; data: Float32Array }>) => {
       this.chunks.push(event.data);
       this.onChunk?.(event.data.data);
@@ -293,14 +297,19 @@ export class Recorder {
     return this.backing.get(id)?.duration ?? 0;
   }
 
-  private click(at: number, level: Click["level"]) {
+  /** The song's click heard or not, at once: a take goes on recording either way (issue #501). */
+  setClickHeard(on: boolean) {
+    this.beatGain.gain.setValueAtTime(on ? 1 : 0, this.context.currentTime);
+  }
+
+  private click(at: number, level: Click["level"], out: AudioNode = this.clickGain) {
     const oscillator = this.context.createOscillator();
     const envelope = this.context.createGain();
     // A pitch per level (issue #384): accent, medium, small; all as loud, for the round trip's measure.
     oscillator.frequency.value = level === "accent" ? 1600 : level === "medium" ? 1300 : 1000;
     envelope.gain.setValueAtTime(1, at);
     envelope.gain.exponentialRampToValueAtTime(0.001, at + 0.04);
-    oscillator.connect(envelope).connect(this.clickGain);
+    oscillator.connect(envelope).connect(out);
     oscillator.start(at);
     oscillator.stop(at + 0.05);
     this.sources.push(oscillator);
@@ -340,13 +349,15 @@ export class Recorder {
       this.sources.push(source);
     }
     const { beat } = options;
-    if (!beat || !options.click) return;
+    // Scheduled whenever there's a beat, heard when asked: it can be turned on and off as it plays.
+    if (!beat) return;
+    this.setClickHeard(options.click);
     // The next click not yet scheduled is at `next` or after.
     let next = options.from - options.lead;
     const schedule = () => {
       const until = this.context.currentTime + LOOKAHEAD - zeroAt;
       if (until < next) return;
-      for (const click of clickTimes({ ...beat, from: next, to: until })) this.click(zeroAt + click.at, click.level);
+      for (const click of clickTimes({ ...beat, from: next, to: until })) this.click(zeroAt + click.at, click.level, this.beatGain);
       next = until + 1e-6;
     };
     schedule();
@@ -519,7 +530,7 @@ export class Recorder {
     for (const track of this.stream.getTracks()) track.stop();
     // Its own context closed; the stem player's left playing, the recorder's nodes taken off it.
     if (this.owned) void this.context.close().catch(() => {});
-    else for (const node of [...this.nodes, this.clickGain]) node.disconnect();
+    else for (const node of [...this.nodes, this.beatGain, this.clickGain]) node.disconnect();
     setAudioSession("playback");
     // The stem player made afresh: one made before the session switched crackled (issue #136).
     endStemsRecording();

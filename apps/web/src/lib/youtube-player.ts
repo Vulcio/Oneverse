@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { otherPlayers, pauseStems } from "#/lib/stem-engine";
+import { refusedWhileRecording } from "#/lib/recording-lock";
 
 /**
  * A song's YouTube video as its playback in Practice, when it has no audio
@@ -157,6 +158,8 @@ async function ensurePlayer(video: YouTubeVideo, autoplay: boolean) {
         if (autoplay) player?.playVideo();
       },
       onStateChange: ({ data }) => {
+        // Played from the video itself while a take records: it waits (issue #501).
+        if (data === PLAYING && refusedWhileRecording()) return player?.pauseVideo();
         const playing = data === PLAYING;
         if (playing) {
           // One thing plays at a time: the stems stop.
@@ -217,6 +220,8 @@ export function showYouTube(video: YouTubeVideo) {
 }
 
 export function playYouTube(video: YouTubeVideo) {
+  // Nothing over a take being recorded (issue #501).
+  if (refusedWhileRecording()) return;
   pauseStems();
   if (state.video?.videoId !== video.videoId || !player) {
     set({ video });

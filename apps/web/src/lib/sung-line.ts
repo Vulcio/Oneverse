@@ -1,6 +1,7 @@
 import { barAt, barBeatPlaces, chartBars, lineAtPosition, type RenderedChart, type SongDocumentV2 } from "@oneverse/core";
 import { useEffect, useMemo, type RefObject } from "react";
 import { useBarsClock } from "#/lib/bars-clock";
+import { useFollowMusic } from "#/lib/follow-music";
 import { keepInView } from "#/lib/follow-view";
 import { passSelector } from "@oneverse/screen/components/song-chart";
 
@@ -18,9 +19,11 @@ export function useSungLine(container: RefObject<HTMLElement | null>, songId: st
   const bars = useMemo(() => chartBars(chart, document), [chart, document]);
   const places = useMemo(() => barBeatPlaces(chart, bars), [chart, bars]);
   const { position } = useBarsClock(songId, bars);
+  // Turned off on the device (issue #501): nothing lit, nothing scrolled.
+  const follow = useFollowMusic();
   useEffect(() => {
     const root = container.current;
-    if (!root || !position || bars.length === 0) return;
+    if (!root || !position || !follow || bars.length === 0) return;
     let lit: HTMLElement | null = null;
     let shown: string | null = null;
     let frame = requestAnimationFrame(function tick() {
@@ -48,5 +51,5 @@ export function useSungLine(container: RefObject<HTMLElement | null>, songId: st
       if (lit) delete lit.dataset.sung;
       delete root.dataset.sung;
     };
-  }, [container, position, bars, places, chart]);
+  }, [container, position, follow, bars, places, chart]);
 }

@@ -415,7 +415,8 @@ export function StemDock({ song: page }: { song: StemSong }) {
       size="icon"
       className={cn("size-10 shrink-0 rounded-full", engine.following && engine.audioBlocked && "animate-pulse ring-2 ring-amber-500")}
       onClick={() => (engine.following ? unlockSyncAudio() : void (playing ? pauseStems() : playStems(song)))}
-      disabled={loading || (!!engine.following && !engine.audioBlocked)}
+      // While a take records, only Stop ends it (issue #501).
+      disabled={loading || recordingNow || (!!engine.following && !engine.audioBlocked)}
       aria-label={engine.following ? (engine.audioBlocked ? t("sync.tapToHear") : t("sync.followingShort", { name: engine.following })) : playing ? t("stems.pause") : t("stems.play")}
       title={engine.following ? t("sync.followingShort", { name: engine.following }) : undefined}
       data-testid="stem-play"
@@ -762,7 +763,8 @@ export function StemDock({ song: page }: { song: StemSong }) {
       {expanded ? (
         <div className={cn("mx-auto flex w-full flex-col gap-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]", EDGES)}>
           {/* On a phone, play, the time, the tools and minimize on one line (the time giving way); the multitrack and the transposition on the next (issue #140). */}
-          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:gap-x-3">
+          {/* While a take records on a phone, the recorder's slim bar is all the dock shows (issue #501): the chart gets the screen. */}
+          <div className={cn("grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] sm:gap-x-3", recordingNow && "max-md:hidden")}>
             <span className="flex items-center gap-1">
               {play}
               {/* The transport (issue #162). */}
@@ -794,7 +796,7 @@ export function StemDock({ song: page }: { song: StemSong }) {
           </div>
           {status}
           {cueEditor && canPlaceCues && active && engine.status === "ready" ? <CueEditor song={song} cues={cues} onChange={setDraftCues} onClose={closeCueEditor} /> : null}
-          {cues.length ? <SectionLane
+          {cues.length ? <div className={cn(recordingNow && "max-md:hidden")}><SectionLane
               cues={cues}
               sections={cueSections}
               duration={duration || Math.max(...cues.map((cue) => cue.at)) + 10}
@@ -802,11 +804,11 @@ export function StemDock({ song: page }: { song: StemSong }) {
               onSeek={active && engine.status === "ready" && !following ? seekStems : undefined}
               // Placing them: a handle on each, as in a video editor (issue #110).
               editing={cueEditor && canPlaceCues && active && engine.status === "ready" ? { beat: engine.beat, onMove: (index, at) => setDraftCues(cues.map((cue, i) => (i === index ? { ...cue, at } : cue))) } : null}
-            /> : null}
+            /></div> : null}
           {recordPanel && recordable && song.record ? (
             // Recording (issue #365) is a part of the player, over its own mix and clock: the take and the tracks side by side on a wide screen, one above the other on a tall one (a tablet upright), two tabs on a phone.
             <div className={cn("flex flex-col gap-2 md:gap-3", !lanesShown && "md:landscape:grid md:landscape:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] md:landscape:items-start md:landscape:gap-4")} data-testid="stem-record-split" data-lanes={lanesShown ? "" : undefined}>
-              <div className="grid grid-cols-2 rounded-md bg-muted p-[3px] text-sm md:hidden" role="tablist" aria-label={t("stems.title")}>
+              <div className={cn("grid grid-cols-2 rounded-md bg-muted p-[3px] text-sm md:hidden", recordingNow && "hidden")} role="tablist" aria-label={t("stems.title")}>
                 <button type="button" role="tab" aria-selected={dockTab === "mix"} className={cn("h-8 rounded-sm", dockTab === "mix" ? "bg-background font-medium shadow-sm" : "text-muted-foreground")} onClick={() => setDockTab("mix")} data-testid="stem-tab-mix">
                   {t("stems.mixTab", { count: tracks.length })}
                 </button>
@@ -835,7 +837,11 @@ export function StemDock({ song: page }: { song: StemSong }) {
               onClose={closeRecordPanel}
               onSaved={song.record.onSaved}
               inline
-              onPhase={(phase) => setRecordingNow(phase === "recording")}
+              onPhase={(phase) => {
+                setRecordingNow(phase === "recording");
+                // The recorder's own bar is what a phone shows while recording (issue #501).
+                if (phase === "recording") setDockTab("record");
+              }}
             />
               </div>
             </div>

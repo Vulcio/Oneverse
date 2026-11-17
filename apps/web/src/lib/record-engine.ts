@@ -1,5 +1,6 @@
 import type { Attachment } from "@oneverse/core";
 import { Recorder, type Beat, type Take } from "#/lib/recorder";
+import { setRecordingClick } from "#/lib/recording-click";
 import { downloadOnce } from "#/lib/song-files";
 import { directStemsOutput, getStemState, pauseStems, playStems, seekStems, setStemsTake, stemBuffer, stemMono, stemsAudioContext, stemsZeroAt, toggleStemMute } from "#/lib/stem-engine";
 import { isAudible, TAKE_ID, type StemSong } from "#/lib/stem-files";
@@ -45,6 +46,8 @@ export interface RecordEngine {
     },
   ): Promise<void>;
   stopPlaying(): void;
+  /** The click heard or not, while a take records or plays back (issue #501). */
+  setClick(on: boolean): void;
   /** What's heard with the take, decoded: drawn ahead of the playhead while recording. */
   ahead(heard: Set<string>, replace: string | null): AudioBuffer[];
   /** Whether it's playing back now. */
@@ -104,6 +107,7 @@ async function ownEngine(recorder: Recorder, songVersionId: string, files: Attac
       playingUntil = 0;
       recorder.stopPlaying();
     },
+    setClick: (on) => recorder.setClickHeard(on),
     ahead: (heard, replace) => parts.filter((part) => heard.has(part.id) && part.id !== replace).flatMap((part) => recorder.backingBuffer(part.id) ?? []),
     playing: () => recorder.context.currentTime < playingUntil,
     close: () => recorder.close(),
@@ -145,7 +149,7 @@ export async function openPlayerEngine(song: StemSong): Promise<RecordEngine> {
       pauseStems();
       seekStems(Math.max(0, from - lead));
       recorder.startCapture();
-      await playStems(song);
+      await playStems(song, undefined, { take: true });
       return stemsZeroAt() ?? 0;
     },
     position: () => getStemState().position,
@@ -169,9 +173,11 @@ export async function openPlayerEngine(song: StemSong): Promise<RecordEngine> {
           : null,
       );
       seekStems(Math.max(0, from));
-      await playStems(song);
+      await playStems(song, undefined, { take: true });
     },
     stopPlaying: () => pauseStems(),
+    // The player's own click, with the recording.
+    setClick: (on) => setRecordingClick(on),
     ahead(_heard, replace) {
       const now = getStemState();
       return now.tracks.filter((track) => track.id !== TAKE_ID && track.id !== replace && isAudible(now, track.id)).flatMap((track) => stemBuffer(track.id) ?? []);

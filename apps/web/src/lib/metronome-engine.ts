@@ -2,6 +2,7 @@ import { beatAt, changeMetronome, clicksBetween, normalizeMetronome, patternFor,
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { drumGain, makeDrumBuffers } from "#/lib/drum-kit";
 import { deviceNow, OutputClock } from "#/lib/output-clock";
+import { refusedWhileRecording } from "#/lib/recording-lock";
 
 /**
  * The metronome's sound (issue #2), kept outside any page like the stem
@@ -477,6 +478,8 @@ function rescheduleFromNow() {
  * song, so the count-in's beats are the ones before it.
  */
 export function startMetronome(settings?: MetronomeSettings, songId: string | null = null, from = 0) {
+  // Nothing over a take being recorded (issue #501).
+  if (refusedWhileRecording()) return;
   load();
   // Following Sync play's leader: theirs to start.
   if (state.following) return unlockMetronomeAudio();

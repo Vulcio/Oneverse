@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useBarsClock } from "#/lib/bars-clock";
+import { useFollowMusic } from "#/lib/follow-music";
 import { keepInView } from "#/lib/follow-view";
 import { useRegisterWordsView } from "#/lib/words-view";
 import { cn } from "@oneverse/ui/lib/utils";
@@ -132,7 +133,9 @@ export function WordsView({
   const model = useMemo(() => wordsModel(chart, document, settings.repeats, typeName), [chart, document, settings.repeats, t]);
   const bars = useMemo(() => chartBars(chart, document), [chart, document]);
   const places = useMemo(() => barBeatPlaces(chart, bars), [chart, bars]);
-  const { position } = useBarsClock(songId, bars);
+  const clock = useBarsClock(songId, bars);
+  // Turned off on the device (issue #501): the words as they are, nothing lit or scrolled.
+  const position = useFollowMusic() ? clock.position : null;
   const root = useRef<HTMLDivElement>(null);
   // What the music has reached: the item (line, or block without words) being sung.
   const [now, setNow] = useState<string | null>(null);

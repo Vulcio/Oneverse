@@ -16,6 +16,7 @@ import { nestedSidebarFor } from "#/lib/sidebar-kind";
 import { ItemPanel, NestedSidebar } from "#/components/nested-sidebar";
 import { SidebarInset, SidebarProvider, useSidebar } from "@oneverse/ui/components/sidebar";
 import { PageBeatBackdrop } from "#/components/metronome-display";
+import { useRecordingLockNotice } from "#/lib/recording-lock";
 
 export function AppShell({
   session,
@@ -36,6 +37,8 @@ export function AppShell({
   useSyncBridge();
   // The metronome with the recording (issue #100).
   useRecordingClickBridge();
+  // Nothing plays over a take (issue #501): says why.
+  useRecordingLockNotice();
   // Signed out (or out of the app): the stems and the metronome stop.
   useEffect(
     () => () => {

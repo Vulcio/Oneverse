@@ -7,6 +7,7 @@ import { songWaveforms, type StoredWave } from "#/lib/song-files";
 import { waveformSlices } from "@oneverse/core";
 import type { MetronomeHost } from "#/lib/metronome-engine";
 import { beatOf, isAudible, stemKey, TAKE_ID, tracksOf, volumeGain, type StemFile, type StemSong, type StemState, type StemTrack } from "#/lib/stem-files";
+import { refusedWhileRecording } from "#/lib/recording-lock";
 
 /**
  * The stem player's audio (issue #64), kept outside any page so a song
@@ -909,8 +910,12 @@ export function refreshStemsBeat(song: StemSong) {
 /** Other players (YouTube, #66) paused when the stems start: one thing plays at a time. */
 export const otherPlayers = new Set<() => void>();
 
-/** Plays `song`, loading it first (and stopping another one) if it isn't what's loaded; `from` (s): there rather than where it was - another source of the song taking over (issue #366). */
-export async function playStems(song: StemSong, from?: number) {
+/**
+ * Plays `song`, loading it first (and stopping another one) if it isn't what's loaded; `from` (s): there rather than where it was - another source of the song taking over (issue #366).
+ * While a take records, only the recorder plays them (`take`, issue #501).
+ */
+export async function playStems(song: StemSong, from?: number, { take = false }: { take?: boolean } = {}) {
+  if (!take && refusedWhileRecording()) return;
   // Following Sync play's leader: theirs to start; a press only lets the browser make sound.
   if (state.following) return unlockStemsAudio();
   lastSong = song;

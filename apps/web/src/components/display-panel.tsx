@@ -73,6 +73,7 @@ import { TuningPicker } from "#/components/tuning-picker";
 import { noteColorValue } from "#/components/notes";
 import { useMarginCrowded } from "#/components/notes-overlay";
 import { cn } from "@oneverse/ui/lib/utils";
+import { setFollowMusic, useFollowMusic } from "#/lib/follow-music";
 
 const SECTIONS = ["grid", "words", "drums", "look", "text", "chords", "metronome", "instrument", "layout", "notes", "controls", "tracks"] as const;
 type Section = (typeof SECTIONS)[number];
@@ -366,6 +367,7 @@ export function DisplayPanel({
                   ]}
                 />
               </Row>
+              <FollowRow />
             </SectionBlock>
           ) : null}
           {sections.includes("notes") && shown("notes") ? (
@@ -1086,6 +1088,25 @@ function foldedSections(): Section[] {
 }
 
 /** The Tracks view's look (issue #390): kept on the device, as its own buttons keep it. */
+/** The line sung lit and kept in view as the music plays, or not (issue #501): on this device. */
+function FollowRow() {
+  const { t } = useTranslation();
+  const follow = useFollowMusic();
+  return (
+    <Row label={t("display.followMusic")}>
+      <Choices
+        value={follow ? "on" : "off"}
+        onChange={(value) => setFollowMusic(value === "on")}
+        name="follow"
+        options={[
+          { value: "on", label: t("display.followOn"), content: t("display.followOn") },
+          { value: "off", label: t("display.followOff"), content: t("display.followOff") },
+        ]}
+      />
+    </Row>
+  );
+}
+
 function TracksSection() {
   const { t } = useTranslation();
   const coloured = useTrackColours();
