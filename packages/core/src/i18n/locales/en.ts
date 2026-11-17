@@ -3133,7 +3133,10 @@ const en = {
     now: "Now",
     afterThisSong: "After this song",
     // The set page's song list, its columns named (what each choice is).
-    columns: { song: "Song", version: "Version", key: "Key", timer: "Timer on the screens" },
+    columns: { song: "Song", key: "Key", tempo: "BPM", tempoLabel: "Tempo (BPM)", version: "Version", then: "Then", timer: "Timer", length: "Length", end: "End", total: "Total ≈ {{time}}" },
+    changeItem: "Settings for {{title}}",
+    intoNext: "Then, into {{title}}",
+    removeFromSet: "Remove from the set",
     timer: "Timer on the screens",
     timerNone: "No timer",
     timerUp: "Count up",

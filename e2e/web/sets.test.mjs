@@ -23,7 +23,7 @@ const longDate = new Date(`${date}T00:00:00Z`).toLocaleDateString("en", { weekda
 const browser = await chromium.launch();
 page = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
 const rows = () => page.getByTestId("set-song-row");
-const rowTitles = async () => (await rows().allInnerTexts()).map((text) => text.split("\n").find((line) => line.includes(tag)));
+const rowTitles = async () => (await rows().allInnerTexts()).map((text) => text.split(/[\n\t]/).find((line) => line.includes(tag)));
 let setUrl;
 
 await step("sidebar has a Sets section", async () => {

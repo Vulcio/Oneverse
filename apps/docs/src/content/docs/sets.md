@@ -19,13 +19,14 @@ Choose **Sets** > **New set**:
 
 - **Add songs** by searching for them as the search box at the top does: by title, subtitle, version, artist, CCLI number or songbook number ("HY 42", "42"), and in their words with **In lyrics**. With nothing typed, it lists the songs edited last. A click on a song adds it, and so do the arrow keys and **Enter**. A team set includes the team's own songs, songs [shared with the team](/people/#with-a-team) and approved global songs, so everyone in the team can open them. Your own personal songs are listed too: adding one asks you to **Share with** the team (it stays yours) or **Move to** the team (it becomes the team's song), then adds it.
 - **Reorder** by dragging a song's handle (or focus the handle and use Space and the arrow keys).
-- For each song, choose (on a wide screen the columns are named above the list: **Song**, **Version**, **Key**, **Timer on the screens**; on a phone each choice has its name above it):
+- The songs are a running order: on a computer or tablet, a table with the columns **Song**, **Key**, **BPM**, **Version**, **Then**, **Timer** and **Length**, the set's total length under it. Each value reads as text: point at it (or tap it) to change it. On a phone, each song is one line - its key, tempo and version under its title, and what happens after it below - and **›** opens the song's settings. For each song, choose:
   - its **Translation**, when the song has [translations or adaptations](/library/#translations-and-adaptations) (the same song in another language, say);
   - its **Version** - **As written**, or one of your or your team's [versions](/versions/). In a team set, the team's usual version is picked for you;
   - its **Key** - moves the song from the version's key ("a tone lower this Sunday") without changing the version;
-  - **After this song**, on its own line under the song, between it and the next - what happens next: **Stop** (the end, wait for the leader), **Go to next** (straight into the next song), **Segue (no pause)** (the next song's count-in on the last bar) or **Transition**, a bridge into the next song with a note beside it ("Pad under the prayer") and [chords to play into it](/sets/#chords-into-the-next-song). Live says it before the song ends, with the change of key and tempo when the next song has another one.
-  - its **Timer on the screens** - **No timer**, **Count up** or a countdown: started on the set's [screens](/screens/#the-media-operator) when Live comes to the song.
-- **×** removes a song from the set (the song itself isn't affected).
+  - its **BPM** - the song's tempo in this set, typed; empty, or the song's own, puts the song's back;
+  - **Then** (**After this song**) - what happens next: **Stop** (the end, wait for the leader), **Go to next** (straight into the next song), **Segue (no pause)** (the next song's count-in on the last bar) or **Transition**, a bridge into the next song with a note beside it ("Pad under the prayer") and [chords to play into it](/sets/#chords-into-the-next-song). A transition's chords and note go on a line under the song, with the key change into the next one. Live says it before the song ends, with the change of key and tempo when the next song has another one.
+  - its **Timer** (on the screens) - **No timer**, **Count up** or a countdown: started on the set's [screens](/screens/#the-media-operator) when Live comes to the song.
+- **×** (on a phone, **Remove from the set** in its settings) removes a song from the set (the song itself isn't affected).
 
 ### Adding a song from the song or the library
 
@@ -46,7 +47,7 @@ In a team's sets, each song says how often it was in the team's sets lately - "P
 
 ### Chords into the next song
 
-For a **Transition** - or between two songs where nothing is said yet - the **Chords** button on the **After this song** line suggests chords to play into the next song: from the last chord of this song to the first chord of the next, as the set plays them (with each song's version and **Key**). The two frame the list - **From C → … → into D** - and the suggestions lead into that first chord ("I" below): if the next song starts on its 4 or its 6m rather than its 1, they lead there. Chords are shown with their numbers in the next song's key, as Nashville charts write them: **5⁷** is its 5 with a 7th (A7 in D), **7°7** a diminished 7th on its 7 (C#°7), **♭7/6** C over B.
+For a **Transition** - or between two songs where nothing is said yet - the **Chords** button on the line under the song suggests chords to play into the next song: from the last chord of this song to the first chord of the next, as the set plays them (with each song's version and **Key**). The two frame the list - **From C → … → into D** - and the suggestions lead into that first chord ("I" below): if the next song starts on its 4 or its 6m rather than its 1, they lead there. Chords are shown with their numbers in the next song's key, as Nashville charts write them: **5⁷** is its 5 with a 7th (A7 in D), **7°7** a diminished 7th on its 7 (C#°7), **♭7/6** C over B.
 
 Each way in is one row: its chords as steps (tap one to hear it) and **Use**; hover its name for when to use it. Once one is chosen, **‹ ›** beside its chords goes through its variations, here, on the set's page and in Live. From a song ending on C into a song in D:
 

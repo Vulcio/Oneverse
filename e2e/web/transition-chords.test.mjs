@@ -115,7 +115,7 @@ try {
     await page.goto(`${WEB}/sets/${set.id}`);
     await page.waitForLoadState("networkidle");
     const columns = page.getByTestId("set-song-columns");
-    for (const name of ["Song", "Version", "Key", "Timer on the screens"]) await columns.getByText(name, { exact: true }).waitFor();
+    for (const name of ["Song", "Key", "BPM", "Version", "Then", "Timer", "Length"]) await columns.getByText(name, { exact: true }).waitFor();
     const second = page.getByTestId("set-song-row").filter({ hasText: `In D ${stamp}` });
     if ((await second.getByTestId("set-song-transition").inputValue()) !== "") throw new Error("something said already");
     await second.getByTestId("set-song-key-change").getByText("D → A").waitFor();
