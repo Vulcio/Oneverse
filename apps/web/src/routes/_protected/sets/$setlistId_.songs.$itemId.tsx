@@ -20,6 +20,7 @@ import { apiClient } from "#/lib/api-client";
 import { useMode } from "#/lib/mode";
 import { deviceStorage, useKeepSet } from "#/lib/offline-data";
 import { setItemTitle, setlistTitle, transposeLabel } from "#/lib/setlists";
+import { SetSongAfter } from "#/components/set-song-after";
 import { TextItemSlides } from "#/components/set-text-item";
 import { PassageReading } from "#/components/set-passage-item";
 import { useSongView } from "#/lib/song-views";
@@ -255,6 +256,9 @@ function SetSongPage({ view }: { view: SetlistSongView }) {
           </CardContent>
         </Card>
       ) : null}
+
+      {/* What happens after it, and the next song underneath when it runs on into it. */}
+      <SetSongAfter view={view} onChanged={() => void router.invalidate()} />
 
       <nav className="flex items-center justify-between gap-3" aria-label={t("sets.songs")}>
         {view.previousItemId ? (

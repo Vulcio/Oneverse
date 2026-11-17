@@ -111,6 +111,49 @@ try {
     await saved(["2m7", "57"]);
   });
 
+  await step("the set's page: its columns named, and chords offered between songs where nothing is said yet", async () => {
+    await page.goto(`${WEB}/sets/${set.id}`);
+    await page.waitForLoadState("networkidle");
+    const columns = page.getByTestId("set-song-columns");
+    for (const name of ["Song", "Version", "Key", "Timer on the screens"]) await columns.getByText(name, { exact: true }).waitFor();
+    const second = page.getByTestId("set-song-row").filter({ hasText: `In D ${stamp}` });
+    if ((await second.getByTestId("set-song-transition").inputValue()) !== "") throw new Error("something said already");
+    await second.getByTestId("set-song-key-change").getByText("D → A").waitFor();
+    // Choosing chords there makes it a transition.
+    await second.getByTestId("set-song-transition-chords").click();
+    await page.getByTestId("transition-chords-picker").getByTestId("transition-suggestion-use").first().click();
+    for (let i = 0; ; i++) {
+      const item = (await items())[1];
+      if (item.transition === "TRANSITION" && item.transitionChords.length > 0) break;
+      if (i > 20) throw new Error(JSON.stringify(item));
+      await page.waitForTimeout(250);
+    }
+    await second.getByTestId("set-song-transition-note").waitFor();
+    // Back as it was, for Live's steps below.
+    await api(leader, "PATCH", `/setlists/${set.id}/items/${secondItem}`, { transition: null, transitionChords: [] });
+  });
+
+  await step("Practice: after this song under the chart, chosen there, and the next song underneath", async () => {
+    await page.evaluate(() => localStorage.setItem("songverse.mode", "practice"));
+    await page.goto(`${WEB}/sets/${set.id}/songs/${firstItem}`);
+    await page.waitForLoadState("networkidle");
+    const card = page.getByTestId("set-song-after-card");
+    await card.getByText(`Next: In D ${stamp}`).waitFor();
+    if ((await card.getByTestId("set-song-page-transition").inputValue()) !== "TRANSITION") throw new Error("not the transition");
+    await card.getByTestId("set-song-transition-chords").getByText("Em7 A7").waitFor();
+    await page.getByTestId("set-song-next").getByRole("heading", { name: `In D ${stamp}` }).waitFor();
+    // A segue runs on too: the next song stays underneath; a stop doesn't.
+    await card.getByTestId("set-song-page-transition").selectOption("SEGUE");
+    await card.getByTestId("set-song-page-transition-text").getByText(/Segue/).waitFor();
+    await page.getByTestId("set-song-next").waitFor();
+    await card.getByTestId("set-song-page-transition").selectOption("STOP");
+    await page.getByTestId("set-song-next").waitFor({ state: "detached" });
+    await card.getByTestId("set-song-page-transition").selectOption("TRANSITION");
+    await page.getByTestId("set-song-next").waitFor();
+    if ((await items())[0].transition !== "TRANSITION") throw new Error("not saved");
+    await page.evaluate(() => localStorage.setItem("songverse.mode", "edit"));
+  });
+
   await step("Live: the next song stacked under it, the transition between them", async () => {
     await page.goto(`${WEB}/sets/${set.id}/live/${firstItem}`);
     await page.getByTestId("live-view").waitFor();

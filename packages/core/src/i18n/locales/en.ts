@@ -3132,6 +3132,8 @@ const en = {
     played: "Played",
     now: "Now",
     afterThisSong: "After this song",
+    // The set page's song list, its columns named (what each choice is).
+    columns: { song: "Song", version: "Version", key: "Key", timer: "Timer on the screens" },
     timer: "Timer on the screens",
     timerNone: "No timer",
     timerUp: "Count up",

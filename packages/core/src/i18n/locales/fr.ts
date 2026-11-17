@@ -3136,6 +3136,7 @@ const fr: typeof en = {
     played: "Joué",
     now: "En cours",
     afterThisSong: "Après ce chant",
+    columns: { song: "Chant", version: "Version", key: "Tonalité", timer: "Minuteur sur les écrans" },
     timer: "Minuteur sur les écrans",
     timerNone: "Pas de minuteur",
     timerUp: "Chronomètre",
