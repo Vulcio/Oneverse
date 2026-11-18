@@ -1,11 +1,12 @@
-import { addDays, coversPart, HOST, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamPosition } from "@oneverse/core";
+import { addDays, coversPart, HOST, INSTRUMENTS, localDate, partKey, TECH_ROLES, type CustomInstrument, type EventPart, type MemberEventAnswer, type TeamAnswerRequest, type TeamEvent, type TeamEventDateSummary, type TeamEventType, type TeamPosition } from "@oneverse/core";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Ban, CalendarPlus, CircleCheck, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
+import { Ban, CalendarPlus, CircleCheck, Shapes, MapPin, MessageCircleQuestion, MoreHorizontal, Pencil, Repeat, RotateCcw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { DatePicker } from "@oneverse/ui/components/date-picker";
 import { EventAnswer } from "./event-answer";
+import { EventTypesDialog, WithSetField } from "./event-types";
 import { Badge } from "@oneverse/ui/components/badge";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
@@ -64,6 +65,9 @@ export function TeamCalendar({
   const [past, setPast] = useState<TeamEventDateSummary[] | null>(null);
   const [dates, setDates] = useState<TeamEventDateSummary[] | null>(null);
   const [events, setEvents] = useState<TeamEvent[]>([]);
+  // The team's event types (issue #523).
+  const [types, setTypes] = useState<TeamEventType[]>([]);
+  const [typesOpen, setTypesOpen] = useState(false);
   const [editing, setEditing] = useState<TeamEvent | "new" | null>(null);
   const [answersOf, setAnswersOf] = useState<TeamEventDateSummary | null>(null);
   // The date whose line-up is open, by event and date: shown fresh from `dates` after each change.
@@ -76,8 +80,9 @@ export function TeamCalendar({
   const load = useCallback(async () => {
     // From today where the browser is: the API keeps a date until its own day is over.
     const today = addDays(localDate(new Date(), browserZone()), -1);
-    const [found, all, asked] = await Promise.all([api.listTeamEventDates(teamId, today, addDays(today, weeks * 7)), api.listTeamEvents(teamId), api.listTeamAnswerRequests(teamId)]);
+    const [found, all, asked, kinds] = await Promise.all([api.listTeamEventDates(teamId, today, addDays(today, weeks * 7)), api.listTeamEvents(teamId), api.listTeamAnswerRequests(teamId), api.listTeamEventTypes(teamId)]);
     setRequests(asked);
+    setTypes(kinds);
     const now = Date.now();
     setDates(found.filter((date) => Date.parse(date.endsAt) >= now - 12 * 3600_000));
     setEvents(all);
@@ -109,6 +114,8 @@ export function TeamCalendar({
       if (setHref) await navigate({ to: setHref(setlistId) });
     });
 
+  // The team's own part names used before: its events' and its types'.
+  const teamNames = [...new Set([...events, ...types].flatMap((one) => one.parts.filter((part) => !part.part && !part.position && part.name).map((part) => part.name!)))];
   const dayFormat = new Intl.DateTimeFormat(i18n.language, { weekday: "short", day: "numeric", month: "short" });
   const timeFormat = (zone: string) => new Intl.DateTimeFormat(i18n.language, { hour: "2-digit", minute: "2-digit", timeZone: zone });
 
@@ -121,6 +128,10 @@ export function TeamCalendar({
         </div>
         {isAdmin ? (
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setTypesOpen(true)} data-testid="calendar-event-types">
+              <Shapes />
+              {t("teamCalendar.eventTypes")}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setAsking(true)} data-testid="calendar-ask">
               <MessageCircleQuestion />
               {t("teamCalendar.askAnswers")}
@@ -256,7 +267,7 @@ export function TeamCalendar({
                       {t("teamCalendar.openSet")}
                       <span className="text-muted-foreground">· {t("teamCalendar.songs", { count: date.songCount })}</span>
                     </Button>
-                  ) : !date.cancelled && !rehearsal && isAdmin && makesSets ? (
+                  ) : !date.cancelled && !rehearsal && isAdmin && makesSets && date.withSet !== false ? (
                     <Button variant="outline" size="sm" className="col-start-2 row-start-1" onClick={() => void planSet(date)} data-testid="calendar-plan-set">
                       {t("teamCalendar.planSet")}
                     </Button>
@@ -378,12 +389,27 @@ export function TeamCalendar({
           }}
         />
       ) : null}
+      {typesOpen ? (
+        <EventTypesDialog
+          teamId={teamId}
+          types={types}
+          makesSets={makesSets}
+          teamNames={teamNames}
+          positions={positions}
+          customInstruments={customInstruments}
+          partLabel={partLabel}
+          onChanged={load}
+          onClose={() => setTypesOpen(false)}
+        />
+      ) : null}
       {editing ? (
         <EventDialog
           teamId={teamId}
           event={editing === "new" ? null : editing}
           teamEvents={events}
-          teamNames={[...new Set(events.flatMap((one) => one.parts.filter((part) => !part.part && !part.position && part.name).map((part) => part.name!)))]}
+          types={types}
+          makesSets={makesSets}
+          teamNames={teamNames}
           positions={positions}
           customInstruments={customInstruments}
           partLabel={partLabel}
@@ -540,6 +566,8 @@ function EventDialog({
   teamId,
   event,
   teamEvents,
+  types,
+  makesSets,
   teamNames,
   positions,
   customInstruments,
@@ -551,6 +579,10 @@ function EventDialog({
   event: TeamEvent | null;
   /** The team's events, a rehearsal's possible event. */
   teamEvents: TeamEvent[];
+  /** The team's event types (issue #523): picking one fills the form. */
+  types: TeamEventType[];
+  /** The team keeps sets: whether the event's dates get one is asked. */
+  makesSets: boolean;
   teamNames: string[];
   positions: readonly TeamPosition[];
   customInstruments: readonly CustomInstrument[];
@@ -580,10 +612,27 @@ function EventDialog({
   const [note, setNote] = useState(event?.note ?? "");
   const [everyWeeks, setEveryWeeks] = useState(event?.repeat ? String(event.repeat.everyWeeks) : "");
   const [until, setUntil] = useState(event?.repeat?.until ?? "");
+  // Its type (issue #523), and whether its dates get a set.
+  const [typeId, setTypeId] = useState(event?.typeId ?? "");
+  const [withSet, setWithSet] = useState(event?.withSet ?? true);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const zones = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [timeZone];
+
+  /** A type picked: the form takes its timing, parts and sets; its name as the title unless one was typed. */
+  const pickType = (id: string) => {
+    const previous = types.find((one) => one.id === typeId);
+    const type = types.find((one) => one.id === id);
+    setTypeId(id);
+    if (!type) return;
+    if (!title.trim() || title === previous?.name) setTitle(type.name);
+    if (type.startTime) setStartTime(type.startTime);
+    if (type.durationMinutes) setDuration(String(type.durationMinutes));
+    setCall(type.callMinutes ? String(type.callMinutes) : "");
+    setParts(type.parts);
+    setWithSet(type.withSet);
+  };
 
   const save = async () => {
     setBusy(true);
@@ -614,12 +663,14 @@ function EventDialog({
           note: note || null,
           repeat,
           parts: parts.map(partBody),
+          typeId: typeId || null,
+          withSet,
           ...(event?.rehearsalFor ? { rehearsalFor: null } : {}),
         };
     try {
-      if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody), callMinutes: call ? Number(call) : null });
+      if (event && planned) await api.updateTeamEvent(teamId, event.id, { parts: parts.map(partBody), callMinutes: call ? Number(call) : null, withSet });
       else if (event) await api.updateTeamEvent(teamId, event.id, body);
-      else await api.createTeamEvent(teamId, body);
+      else await api.createTeamEvent(teamId, { ...body, typeId: typeId || undefined });
       await onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -629,7 +680,7 @@ function EventDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg" data-testid="event-dialog">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg" data-testid="event-dialog">
         <DialogHeader>
           <DialogTitle>{event ? t("teamCalendar.editEvent") : t("teamCalendar.newEvent")}</DialogTitle>
         </DialogHeader>
@@ -648,6 +699,19 @@ function EventDialog({
             </p>
           ) : (
           <>
+          {types.length > 0 && !parentEvent ? (
+            <div className="col-span-2 flex flex-col gap-1.5">
+              <Label htmlFor="event-type">{t("teamCalendar.eventType")}</Label>
+              <NativeSelect id="event-type" value={typeId} onChange={(e) => pickType(e.target.value)} data-testid="event-type">
+                <option value="">{t("teamCalendar.eventTypeNone")}</option>
+                {types.map((one) => (
+                  <option key={one.id} value={one.id}>
+                    {one.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+          ) : null}
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="event-title">{t("teamCalendar.eventTitle")}</Label>
             <Input id="event-title" value={title} maxLength={120} required placeholder={t("teamCalendar.titlePlaceholder")} onChange={(e) => setTitle(e.target.value)} />
@@ -740,6 +804,7 @@ function EventDialog({
             <Input id="event-call" type="number" min={1} max={480} value={call} placeholder="—" onChange={(e) => setCall(e.target.value)} data-testid="event-call" />
             <p className="text-xs text-muted-foreground">{t("teamCalendar.callMinutesHint")}</p>
           </div>
+          {makesSets && !parentEvent ? <WithSetField id="event-with-set" checked={withSet} onChange={setWithSet} /> : null}
           {parentEvent ? null : <PartsEditor parts={parts} onChange={setParts} teamNames={teamNames} positions={positions} customInstruments={customInstruments} partLabel={partLabel} />}
         </form>
         {error ? <FieldError>{error}</FieldError> : null}

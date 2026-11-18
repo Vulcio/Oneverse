@@ -17,6 +17,14 @@ La page de l'équipe commence par son **Calendrier** : ses cultes, répétitions
 - Le menu **…** d'une date : **Annuler cette date** (sa liste est supprimée si elle n'a pas encore de chants) ou **Rétablir cette date**, et **Modifier l'événement**.
 - Modifier un événement (son titre, sa date, sa fréquence) met à jour ses listes à venir. Les dates où il n'a plus lieu perdent leur liste si elle est encore vide ; une liste avec des chants reste, comme liste de l'équipe. **Supprimer l'événement** fait de même. Une liste supprimée à la main n'est pas recréée ; **Préparer la liste** la fait revenir.
 
+### Types d'événement
+
+Tous les événements ne se ressemblent pas : un culte a besoin d'une présidence et d'un responsable musique, et d'une liste ; une réunion n'a besoin ni de l'un ni de l'autre. **Types d'événement**, à côté de **Nouvel événement**, garde les sortes d'événements de l'équipe. Une équipe qui n'en a pas se voit proposer **Ajouter Culte** (Présidence, Responsable musique), **Ajouter Soirée de louange** (Responsable musique) et **Ajouter Réunion** (sans liste) ; **Nouveau type** crée le vôtre : son **Nom**, son **Heure de début** habituelle, sa durée et son heure d'arrivée, ses **Postes nécessaires** (voir [Postes nécessaires](/fr/teams/#postes-nécessaires)), et **Créer une liste pour chaque date**. Le crayon à côté d'un type le modifie ; **Supprimer le type** le retire.
+
+Dans **Nouvel événement**, **Type** en choisit un : l'événement prend son nom comme titre (sauf si vous en avez tapé un), son heure, ses postes et s'il a des listes. Tout peut encore être changé pour cet événement. Un événement garde ce qu'il a reçu : modifier ou supprimer son type ensuite le laisse tel quel.
+
+**Créer une liste pour chaque date**, dans la fenêtre d'un événement, est activé par défaut. Désactivez-le pour un événement sans chants - une réunion, un temps de prière : ses dates n'ont ni liste ni **Préparer la liste**. Le désactiver sur un événement existant supprime ses listes à venir encore vides (une liste qui contient quelque chose reste) ; le réactiver les recrée.
+
 ### Disponibilités
 
 Sous chaque date, dites si vous pouvez jouer : **Disponible**, **Si besoin** (libre si on vous le demande, pas en premier choix) ou **Pas disponible**. Appuyez de nouveau sur votre réponse pour la retirer. Une fois répondu, ajoutez une note pour les administrateurs de l'équipe (« Clavier seulement », « j'arrive en retard ») ; seuls vous et eux la voient. Ne pas répondre n'est jamais compté comme disponible.

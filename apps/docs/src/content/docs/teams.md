@@ -17,6 +17,14 @@ The team's page starts with its **Calendar**: its services, rehearsals and other
 - A date's **…** menu: **Cancel this date** (its set is deleted if it has no songs yet) or **Restore this date**, and **Edit event**.
 - Changing an event (its title, its date, how often it repeats) updates its coming sets. Dates it no longer falls on lose their sets if they're still empty; a set with songs stays, as a set of the team's. **Delete event** works the same way. A set deleted by hand isn't made again; **Plan the set** brings it back.
 
+### Event types
+
+Not every event is the same: a service needs a host and a music leader and gets a set; a meeting needs neither. **Event types**, beside **New event**, keeps the kinds of events the team holds. A team with none is offered **Add Service** (Host, Music leader), **Add Worship night** (Music leader) and **Add Meeting** (no set); **New type** makes your own: its **Name**, its usual **Start time**, length and call time, its **Parts needed** (see [Parts needed](/teams/#parts-needed)), and **Make a set for each date**. The pencil beside a type changes it; **Delete type** removes it.
+
+In **New event**, **Type** picks one: the event takes its name as its title (unless you typed one), its time, its parts and whether it gets sets. Everything can still be changed for that event. An event keeps what it was given: changing or deleting its type later leaves it as it is.
+
+**Make a set for each date**, in an event's dialog, is on by default. Turn it off for an event without songs - a meeting, a prayer time: its dates get no set and no **Plan the set**. Turning it off on an existing event deletes its coming sets that are still empty (a set with something in it stays); turning it back on makes them again.
+
 ### Availability
 
 Under each date, say whether you can play: **Available**, **If needed** (free if asked, not first choice) or **Not available**. Press your answer again to take it back. Once you've answered, add a note for the team's admins ("Keys only", "arriving late"); only you and they see it. Not answering is never taken as available.

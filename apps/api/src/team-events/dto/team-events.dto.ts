@@ -1,4 +1,4 @@
-import { AnswerEventDateSchema, AssignPartSchema, CreateAnswerRequestSchema, RequestSwapSchema, RespondAssignmentSchema, CreateAwaySchema, UpdateAwaySchema, MyEventDatesQuerySchema, CreateTeamEventSchema, TeamEventDatesQuerySchema, UpdateTeamCalendarSchema, UpdateTeamEventDateSchema, UpdateTeamEventSchema } from "@oneverse/core";
+import { AnswerEventDateSchema, AssignPartSchema, CreateAnswerRequestSchema, RequestSwapSchema, RespondAssignmentSchema, CreateAwaySchema, UpdateAwaySchema, MyEventDatesQuerySchema, CreateTeamEventSchema, CreateTeamEventTypeSchema, UpdateTeamEventTypeSchema, TeamEventDatesQuerySchema, UpdateTeamCalendarSchema, UpdateTeamEventDateSchema, UpdateTeamEventSchema } from "@oneverse/core";
 import { zodDto } from "../../common/zod-validation.js";
 
 export class CreateTeamEventDto extends zodDto(CreateTeamEventSchema) {}
@@ -14,3 +14,5 @@ export class CreateAnswerRequestDto extends zodDto(CreateAnswerRequestSchema) {}
 export class AssignPartDto extends zodDto(AssignPartSchema) {}
 export class RespondAssignmentDto extends zodDto(RespondAssignmentSchema) {}
 export class RequestSwapDto extends zodDto(RequestSwapSchema) {}
+export class CreateTeamEventTypeDto extends zodDto(CreateTeamEventTypeSchema) {}
+export class UpdateTeamEventTypeDto extends zodDto(UpdateTeamEventTypeSchema) {}

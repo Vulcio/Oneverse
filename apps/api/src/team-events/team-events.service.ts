@@ -124,6 +124,8 @@ export class TeamEventsService {
       parts: partsOf(event),
       rehearsalFor: event.rehearsalForId ? { eventId: event.rehearsalForId, daysBefore: event.daysBefore ?? 0 } : null,
       organizationEventId: event.organizationEventId,
+      typeId: event.typeId,
+      withSet: event.withSet,
     };
   }
 
@@ -134,8 +136,16 @@ export class TeamEventsService {
     return parent;
   }
 
+  /** An event type (issue #523): one of the team's. */
+  private async checkType(teamId: string, typeId: string | null | undefined): Promise<string | null | undefined> {
+    if (!typeId) return typeId;
+    const type = await this.prisma.client.teamEventType.findFirst({ where: { id: typeId, teamId }, select: { id: true } });
+    if (!type) throw new BadRequestException(["typeId must be one of the team's event types"]);
+    return type.id;
+  }
+
   /** Parts that name an instrument or role must be one: built in, or an admin's custom instrument. */
-  private async checkParts(parts: EventPart[] | undefined, teamId: string): Promise<Prisma.InputJsonValue | undefined> {
+  async checkParts(parts: EventPart[] | undefined, teamId: string): Promise<Prisma.InputJsonValue | undefined> {
     if (!parts) return undefined;
     // The group's own positions (issue #241): its, not another group's.
     const positionIds = parts.map((part) => part.position).filter((id): id is string => !!id);
@@ -209,6 +219,8 @@ export class TeamEventsService {
         rehearsalForId: parent?.id ?? null,
         daysBefore: parent ? dto.rehearsalFor!.daysBefore : null,
         organizationEventId,
+        typeId: (await this.checkType(teamId, dto.typeId)) ?? null,
+        withSet: dto.withSet ?? true,
         createdByUserId: userId,
       },
       include: withDates,
@@ -220,8 +232,8 @@ export class TeamEventsService {
   /** `planned`: the change comes from the organisation's event it's a group's part of (issue #241). */
   async update(teamId: string, eventId: string, dto: UpdateTeamEventDto, by: string | null = null, planned = false) {
     const before = await this.find(teamId, eventId);
-    // The group's admins choose its parts and its call time; the rest is the organisation's.
-    if (Object.keys(dto).some((key) => key !== "parts" && key !== "callMinutes" && dto[key as keyof UpdateTeamEventDto] !== undefined)) this.notPlanned(before, planned);
+    // The group's admins choose its parts, its call time and whether it has sets; the rest is the organisation's.
+    if (Object.keys(dto).some((key) => !["parts", "callMinutes", "withSet"].includes(key) && dto[key as keyof UpdateTeamEventDto] !== undefined)) this.notPlanned(before, planned);
     const signedUp = await this.signedUp(eventId, localDate(new Date(), before.timeZone));
     const repeat = dto.repeat === undefined ? timingOf(before).repeat : dto.repeat;
     const date = dto.date ?? dateText(before.date);
@@ -243,6 +255,8 @@ export class TeamEventsService {
         repeatEveryWeeks: dto.repeat === undefined ? undefined : (dto.repeat?.everyWeeks ?? null),
         repeatUntil: dto.repeat === undefined ? undefined : dto.repeat?.until ? day(dto.repeat.until) : null,
         parts: await this.checkParts(dto.parts, teamId),
+        typeId: await this.checkType(teamId, dto.typeId),
+        withSet: dto.withSet,
         ...(dto.rehearsalFor === undefined
           ? {}
           : dto.rehearsalFor === null
@@ -258,6 +272,16 @@ export class TeamEventsService {
       const rowDate = dateText(row.date);
       if (rowDate < today || eventFallsOn(timing, rowDate)) continue;
       await this.dropDate(row.id, row.setlist);
+    }
+    // No sets any more (issue #523): coming empty ones go, so they're made again if it changes back; sets with songs stay.
+    if (before.withSet && !after.withSet) {
+      for (const row of after.dates) {
+        if (dateText(row.date) < today || !row.setlist || row.setlist._count.items > 0) continue;
+        await this.prisma.client.$transaction([
+          this.prisma.client.setlist.delete({ where: { id: row.setlist.id } }),
+          this.prisma.client.teamEventDate.update({ where: { id: row.id }, data: { setCreatedAt: null } }),
+        ]);
+      }
     }
     // Answers for coming dates it no longer falls on go too.
     const answers = await this.prisma.client.teamEventAnswer.findMany({ where: { eventId, date: { gte: day(today) } }, select: { id: true, date: true } });
@@ -339,6 +363,7 @@ export class TeamEventsService {
       timeZone: event.timeZone,
       callAt: callAt(date.startsAt, event.callMinutes),
       repeats: !!event.repeatEveryWeeks,
+      withSet: event.withSet,
       setlistId: row?.setlist?.id ?? null,
       songCount: row?.setlist?._count.items ?? 0,
       // When an admin said its set is ready (issue #235).
@@ -383,6 +408,7 @@ export class TeamEventsService {
     const event = await this.find(teamId, eventId);
     if (event.rehearsalForId) throw new BadRequestException(["A rehearsal uses its event's set"]);
     if (!(await this.usesSongverse(event.teamId))) throw new BadRequestException(["A group that doesn't use Songverse has no sets"]);
+    if (!event.withSet) throw new BadRequestException(["This event's dates have no set"]);
     if (!eventFallsOn(timingOf(event), date)) throw new NotFoundException("The event isn't on that date");
     const setlistId = await this.makeSet(event, date, true);
     if (!setlistId) throw new BadRequestException(["That date is cancelled"]);
@@ -399,8 +425,8 @@ export class TeamEventsService {
     if (row?.cancelled) return null;
     if (row?.setlistId) return row.setlistId;
     if (row?.setCreatedAt && !again) return null;
-    // A group that only plans (issue #241): its dates have no set.
-    if (!(await this.usesSongverse(event.teamId))) return null;
+    // A group that only plans (issue #241), or an event without sets (issue #523): its dates have none.
+    if (!event.withSet || !(await this.usesSongverse(event.teamId))) return null;
     return this.prisma.client.$transaction(async (tx) => {
       const set = await tx.setlist.create({ data: { ownerTeamId: event.teamId, name: row?.title || event.title, eventDate: day(date) } });
       await tx.teamEventDate.upsert({
@@ -433,7 +459,7 @@ export class TeamEventsService {
 
   /** Every team's coming sets (the daily job). */
   async makeAllSets(): Promise<number> {
-    const events = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: null, team: { usesSongverse: true } }, select: { id: true } });
+    const events = await this.prisma.client.teamEvent.findMany({ where: { rehearsalForId: null, withSet: true, team: { usesSongverse: true } }, select: { id: true } });
     let made = 0;
     for (const { id } of events) made += await this.makeSets(id);
     return made;

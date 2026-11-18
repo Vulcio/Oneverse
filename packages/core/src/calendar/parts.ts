@@ -154,3 +154,31 @@ export function partCoverage(parts: EventPart[], members: (PartMember & { answer
     return { key, part: part.part ?? null, position: part.position ?? null, name: part.part ? null : (part.name ?? null), count: part.count, available, ifNeeded, scheduled, missing: Math.max(0, part.count - filled) };
   });
 }
+
+/**
+ * A kind of event a team holds (issue #523): its name, usual timing, the
+ * parts it needs and whether its dates get a set. A new event picked from
+ * it starts as a copy.
+ */
+export interface EventTypeTemplate {
+  /** Its name's key under teamCalendar.typeSuggestion, for a suggestion; the name itself once saved. */
+  key: string;
+  startTime: string | null;
+  durationMinutes: number | null;
+  parts: EventPart[];
+  withSet: boolean;
+}
+
+/** The most types a team keeps. */
+export const EVENT_TYPES_LIMIT = 30;
+
+/**
+ * Types a team with none is offered (issue #523): a service with its host
+ * and music leader; a worship night led by its music leader; a
+ * meeting, with no set.
+ */
+export const EVENT_TYPE_SUGGESTIONS: readonly EventTypeTemplate[] = [
+  { key: "service", startTime: "10:00", durationMinutes: 120, parts: [{ part: HOST, count: 1 }, { part: MUSIC_LEADER, count: 1 }], withSet: true },
+  { key: "worshipNight", startTime: "19:30", durationMinutes: 120, parts: [{ part: MUSIC_LEADER, count: 1 }], withSet: true },
+  { key: "meeting", startTime: "19:00", durationMinutes: 60, parts: [], withSet: false },
+];

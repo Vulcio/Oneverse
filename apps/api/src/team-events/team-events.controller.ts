@@ -7,10 +7,11 @@ import { SignedIn } from "../common/decorators/signed-in.decorator.js";
 import { TeamAdminGuard } from "../common/guards/team-admin.guard.js";
 import { TeamMemberGuard } from "../common/guards/team-member.guard.js";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
-import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto } from "./dto/team-events.dto.js";
+import { AnswerEventDateDto, AssignPartDto, CreateAnswerRequestDto, RequestSwapDto, RespondAssignmentDto, CreateTeamEventDto, CreateTeamEventTypeDto, TeamEventDatesQueryDto, UpdateTeamCalendarDto, UpdateTeamEventDateDto, UpdateTeamEventDto, UpdateTeamEventTypeDto } from "./dto/team-events.dto.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { AvailabilityService } from "./availability.service.js";
 import { CalendarFeedService } from "./calendar-feed.service.js";
+import { EventTypesService } from "./event-types.service.js";
 import { LineupService } from "./lineup.service.js";
 import { RemindersService } from "./reminders.service.js";
 import { TeamEventsService } from "./team-events.service.js";
@@ -36,7 +37,35 @@ export class TeamEventsController {
     private readonly lineup: LineupService,
     private readonly access: AccessPolicyService,
     private readonly feeds: CalendarFeedService,
+    private readonly types: EventTypesService,
   ) {}
+
+  /** The team's event types (issue #523): every member sees them; its admins keep them. */
+  @Get("event-types")
+  @UseGuards(TeamMemberGuard)
+  listTypes(@Param("teamId") teamId: string) {
+    return this.types.list(teamId);
+  }
+
+  @Post("event-types")
+  @UseGuards(TeamAdminGuard)
+  createType(@Param("teamId") teamId: string, @Body() dto: CreateTeamEventTypeDto) {
+    return this.types.create(teamId, dto);
+  }
+
+  @Patch("event-types/:typeId")
+  @UseGuards(TeamAdminGuard)
+  updateType(@Param("teamId") teamId: string, @Param("typeId") typeId: string, @Body() dto: UpdateTeamEventTypeDto) {
+    return this.types.update(teamId, typeId, dto);
+  }
+
+  /** Its events stay, with no type. */
+  @Delete("event-types/:typeId")
+  @UseGuards(TeamAdminGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeType(@Param("teamId") teamId: string, @Param("typeId") typeId: string) {
+    return this.types.remove(teamId, typeId);
+  }
 
   /** The team's calendar link (issue #240): all its dates, no answers. Its admins make, reset or turn it off. */
   @Get("calendar-feed")

@@ -694,6 +694,7 @@ model Team {
   screens              Screen[]
   // Its calendar (issue #235), and how many weeks ahead each date's set is made (1-52).
   events               TeamEvent[]
+  eventTypes           TeamEventType[]
   calendarFeed         CalendarFeed?
   answerRequests       TeamAnswerRequest[]
   setsAheadWeeks       Int                    @default(4)
@@ -1487,11 +1488,16 @@ model TeamEvent {
   // A group's part of an organisation's event (issue #241): its timing is
   // that event's, set there; the group's admins only choose its parts.
   organizationEventId String?
+  // Its type (issue #523): what it was made from - a copy, changed freely; null: none, or the type was deleted.
+  typeId              String?
+  // Whether its dates get a set (issue #523): false for a meeting, a prayer evening; a group that only plans has none anyway.
+  withSet             Boolean   @default(true)
   createdByUserId     String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
   team              Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  type              TeamEventType?        @relation(fields: [typeId], references: [id], onDelete: SetNull)
   createdBy         User?                 @relation("TeamEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   dates             TeamEventDate[]
   answers           TeamEventAnswer[]
@@ -1505,6 +1511,7 @@ model TeamEvent {
   @@unique([organizationEventId, teamId])
   @@index([teamId])
   @@index([locationId])
+  @@index([typeId])
 }
 
 // An organisation's event (issue #241, Planiverse): its host, its timing,
@@ -1538,6 +1545,28 @@ model OrganizationEvent {
 
   @@index([organizationId])
   @@index([locationId])
+}
+
+// A kind of event a team holds (issue #523): "Service" asks for a Host and a
+// Music leader and gets a set, "Meeting" gets none. A new event
+// picked from it copies its title, usual timing, parts and withSet.
+model TeamEventType {
+  id              String   @id @default(cuid())
+  teamId          String
+  name            String
+  startTime       String?
+  durationMinutes Int?
+  callMinutes     Int?
+  // [{ part, position, name, count }], as TeamEvent.parts.
+  parts           Json
+  withSet         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  team   Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  events TeamEvent[]
+
+  @@unique([teamId, name])
 }
 
 // A saved list of what an organisation's event needs (issue #241):

@@ -52,6 +52,8 @@ export const CreateTeamEventSchema = z.strictObject({
   repeat: optional(RepeatSchema).describe("Left out: a one-off"),
   parts: optional(eventParts),
   rehearsalFor: optional(RehearsalForSchema).describe("A rehearsal tied to another event (issue #235): its dates follow that event's"),
+  typeId: optional(z.string().trim().min(1).max(64)).describe("The team's event type it's made from (issue #523), kept for reference: the other fields are sent as they are"),
+  withSet: optional(z.boolean()).describe("Whether its dates get a set (issue #523); true when left out. Ignored for a group that only plans"),
 });
 export type CreateTeamEventRequest = z.input<typeof CreateTeamEventSchema>;
 
@@ -69,8 +71,32 @@ export const UpdateTeamEventSchema = z.strictObject({
   repeat: RepeatSchema.nullable().optional().describe("null makes it a one-off"),
   parts: eventParts.optional(),
   rehearsalFor: RehearsalForSchema.nullable().optional().describe("null: an event of its own"),
+  typeId: z.string().trim().min(1).max(64).nullable().optional().describe("null: no type"),
+  withSet: z.boolean().optional().describe("false: coming empty sets are deleted (sets with songs stay); true: they're made"),
 });
 export type UpdateTeamEventRequest = z.input<typeof UpdateTeamEventSchema>;
+
+/** A kind of event the team holds (issue #523): what a new event of it starts with. */
+export const CreateTeamEventTypeSchema = z.strictObject({
+  name: requiredText(120).describe("Its name, and a new event's title"),
+  startTime: optional(time("startTime")),
+  durationMinutes: optional(duration),
+  callMinutes: optional(callMinutes),
+  parts: optional(eventParts),
+  withSet: optional(z.boolean()).describe("Whether its events' dates get a set; true when left out"),
+});
+export type CreateTeamEventTypeRequest = z.input<typeof CreateTeamEventTypeSchema>;
+
+/** Omitted fields are left as they are; null clears. Events already made from it keep what they have. */
+export const UpdateTeamEventTypeSchema = z.strictObject({
+  name: requiredText(120).optional(),
+  startTime: time("startTime").nullable().optional(),
+  durationMinutes: duration.nullable().optional(),
+  callMinutes: callMinutes.nullable().optional(),
+  parts: eventParts.optional(),
+  withSet: z.boolean().optional(),
+});
+export type UpdateTeamEventTypeRequest = z.input<typeof UpdateTeamEventTypeSchema>;
 
 /** One date of an event changed by itself. null (or "") goes back to the event's. */
 export const UpdateTeamEventDateSchema = z.strictObject({

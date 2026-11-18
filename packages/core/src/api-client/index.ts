@@ -67,7 +67,7 @@ import type { CreateSignupInvitationRequest } from "../requests/invitations.js";
 import type { CreatePushSubscriptionRequest, SaveNotificationServerSettingsRequest, UpdateNotificationPreferencesRequest } from "../requests/notifications.js";
 import type { AddQuickSelectionSchema, AddSetlistItemSchema, OperatorPresetsRequest, OperatorTimerPreset, SetlistItemText, UpdateSetlistItemRequest } from "../requests/sets.js";
 import type { CreateNoteRequest, UpdateNoteRequest } from "../requests/notes.js";
-import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
+import type { AnswerEventDateRequest, AssignPartRequest, CreateAnswerRequestRequest, RequestSwapRequest, RespondAssignmentRequest, CreateAwayRequest, UpdateAwayRequest, CreateTeamEventRequest, UpdateTeamEventDateRequest, UpdateTeamEventRequest, CreateTeamEventTypeRequest, UpdateTeamEventTypeRequest, CreateOrganizationEventRequest, UpdateOrganizationEventRequest, OrganizationEventPresetRequest } from "../requests/events.js";
 import type { AssignmentStatus, AvailabilityAnswer, EventDate, EventPart, EventRepeat, PartCoverage } from "../calendar/index.js";
 import type { AnalyseRecordingRequest, SaveSonicServerRequest, SaveStemSeparationSettingsRequest, StemSeparationParts } from "../requests/stem-separation.js";
 import type { AssignRolesRequest, CreateInstrumentRequest, CreateOwnRoleRequest, CreateRoleRequest, UpdateInstrumentRequest, UpdateOwnRoleRequest, UpdateRoleRequest } from "../requests/roles.js";
@@ -1583,6 +1583,24 @@ export interface TeamEvent {
   /** A group's part of an organisation's event (issue #241): its timing is set there. */
   organizationEventId?: string | null;
   planned?: { organizationEventId: string; organizationId: string; organizationName: string; hostName: string | null } | null;
+  /** The team's event type it was made from (issue #523); null: none. */
+  typeId?: string | null;
+  /** Whether its dates get a set (issue #523). */
+  withSet?: boolean;
+}
+
+/** A kind of event a team holds (issue #523): what a new event of it starts with. */
+export interface TeamEventType {
+  id: string;
+  teamId: string;
+  name: string;
+  startTime: string | null;
+  durationMinutes: number | null;
+  callMinutes: number | null;
+  parts: EventPart[];
+  withSet: boolean;
+  /** How many of the team's events were made from it. */
+  eventCount: number;
 }
 
 /** What an organisation's event needs from one of its groups (issue #241). */
@@ -1680,6 +1698,8 @@ export interface TeamEventDateSummary extends EventDate {
   /** When to be there (issue #240), ISO 8601; null without a call time. */
   callAt: string | null;
   repeats: boolean;
+  /** Whether its event's dates get a set (issue #523). */
+  withSet?: boolean;
   setlistId: string | null;
   songCount: number;
   /** When an admin said its set is ready. */
@@ -3133,6 +3153,13 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     updateTeamEvent: (teamId: string, eventId: string, data: UpdateTeamEventRequest) =>
       request<TeamEvent>(`/teams/${teamId}/events/${eventId}`, { method: "PATCH", body: JSON.stringify(data) }),
     deleteTeamEvent: (teamId: string, eventId: string) => request<void>(`/teams/${teamId}/events/${eventId}`, { method: "DELETE" }),
+    // A team's event types (issue #523).
+    listTeamEventTypes: (teamId: string) => request<TeamEventType[]>(`/teams/${teamId}/event-types`),
+    createTeamEventType: (teamId: string, data: CreateTeamEventTypeRequest) =>
+      request<TeamEventType>(`/teams/${teamId}/event-types`, { method: "POST", body: JSON.stringify(data) }),
+    updateTeamEventType: (teamId: string, typeId: string, data: UpdateTeamEventTypeRequest) =>
+      request<TeamEventType>(`/teams/${teamId}/event-types/${typeId}`, { method: "PATCH", body: JSON.stringify(data) }),
+    deleteTeamEventType: (teamId: string, typeId: string) => request<void>(`/teams/${teamId}/event-types/${typeId}`, { method: "DELETE" }),
     updateTeamEventDate: (teamId: string, eventId: string, date: string, data: UpdateTeamEventDateRequest) =>
       request<TeamEventDateSummary>(`/teams/${teamId}/events/${eventId}/dates/${date}`, { method: "PATCH", body: JSON.stringify(data) }),
     ensureTeamEventDateSet: (teamId: string, eventId: string, date: string) =>

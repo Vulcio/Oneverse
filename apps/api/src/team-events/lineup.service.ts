@@ -134,7 +134,7 @@ export class LineupService {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("They're already on that part");
       throw error;
     }
-    if (dto.userId && guest) await this.letSeeSet(teamId, eventId, date, dto.userId);
+    if (dto.userId && guest && event.withSet) await this.letSeeSet(teamId, eventId, date, dto.userId);
     if (dto.userId && !accepted) {
       await this.notifications.notify([{ userId: dto.userId, kind: "SCHEDULED", data: { event: this.titleOn(event, date), date, team: event.team.name, ...(await this.partData(event, dto.part)) }, url: "/calendar", teamId }]);
     }
