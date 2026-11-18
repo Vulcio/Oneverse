@@ -29,7 +29,7 @@ export function AdminVersion({ className }: { className?: string }) {
   if (!info) return null;
   return (
     <Link
-      to="/admin/metadata"
+      to="/admin/server"
       data-testid="admin-version"
       title={info.commit ?? undefined}
       className={cn("block px-4 py-3 text-xs text-muted-foreground hover:text-foreground", className)}

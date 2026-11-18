@@ -34,7 +34,7 @@ Under **Servers**, **Add a server**:
 
 **Add** asks the provider what it answers first: a provider that doesn't answer, or refuses the key, isn't added, and the page says why. Each server then shows what it's **Asked for**, among what it answers: **Song info**, **Artwork**, **Artists' pictures** and **Chords and lyrics**. Untick one to stop asking it for that, or untick **On** to stop asking it at all. **Test connection** asks it again; the last error it gave, if any, shows under it. Servers are asked in their order: the arrow moves one up.
 
-For song info, artwork and artists' pictures, providers are also listed as **Song providers** in Admin > Metadata (see [Admin](/admin/#server-maintenance)), with the other services, in the order you choose there.
+For song info, artwork and artists' pictures, providers are also listed as **Song providers** in Admin > Metadata (see [Admin](/admin/#metadata)), with the other services, in the order you choose there.
 
 Songverse calls a provider from its server, never from people's browsers, with the same rules as every outside address: no redirects, at most 2 MB an answer, 8 seconds at most. An image is downloaded only from the provider's own address or a music service's image host.
 

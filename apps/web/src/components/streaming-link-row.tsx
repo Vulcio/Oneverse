@@ -1,6 +1,6 @@
 import type { LinkCandidate, SongVersionLink } from "@oneverse/core";
 import { Search, X } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
 import { Input } from "@oneverse/ui/components/input";
@@ -14,6 +14,7 @@ export function StreamingLinkRow({
   onSave,
   onRemove,
   onSearch,
+  searchUnavailable,
 }: {
   id: string;
   label: string;
@@ -22,6 +23,8 @@ export function StreamingLinkRow({
   onRemove: () => Promise<void>;
   /** The song looked up at this service (issue #169); left out where it can't be. */
   onSearch?: () => Promise<LinkCandidate[]>;
+  /** Why it can't be searched yet (issue #518): its button shows, dimmed, and says so when pressed. */
+  searchUnavailable?: { text: string; action?: ReactNode };
 }) {
   const { t } = useTranslation();
   const [value, setValue] = useState(current?.sourceUrl ?? "");
@@ -29,6 +32,7 @@ export function StreamingLinkRow({
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<LinkCandidate[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [showUnavailable, setShowUnavailable] = useState(false);
 
   async function save(url = value) {
     setBusy(true);
@@ -93,6 +97,20 @@ export function StreamingLinkRow({
           >
             {results ? <X /> : <Search />}
           </Button>
+        ) : searchUnavailable ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="size-8 opacity-50"
+            aria-label={searchUnavailable.text}
+            aria-expanded={showUnavailable}
+            title={searchUnavailable.text}
+            onClick={() => setShowUnavailable((shown) => !shown)}
+            data-testid={`${id}-search-unavailable`}
+          >
+            <Search />
+          </Button>
         ) : null}
         <Button type="button" size="sm" onClick={() => void save()} disabled={busy || !value.trim()}>
           {busy ? t("songEditor.saving") : t("songEditor.links.save")}
@@ -103,6 +121,11 @@ export function StreamingLinkRow({
           </Button>
         ) : null}
       </div>
+      {searchUnavailable && showUnavailable ? (
+        <p className="text-xs text-muted-foreground" role="status" data-testid={`${id}-search-hint`}>
+          {searchUnavailable.text} {searchUnavailable.action}
+        </p>
+      ) : null}
       {searching ? <p className="text-xs text-muted-foreground">{t("songEditor.links.searching")}</p> : null}
       {results ? (
         results.length === 0 ? (

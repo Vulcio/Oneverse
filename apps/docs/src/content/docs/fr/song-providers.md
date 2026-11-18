@@ -34,7 +34,7 @@ Sous **Serveurs**, **Ajouter un serveur** :
 
 **Ajouter** demande d'abord au fournisseur ce à quoi il répond : un fournisseur qui ne répond pas, ou refuse la clé, n'est pas ajouté, et la page dit pourquoi. Chaque serveur montre ensuite pour quoi il est **Interrogé**, parmi ce à quoi il répond : **Infos du chant**, **Pochettes**, **Photos d'artistes** et **Accords et paroles**. Décochez-en un pour ne plus le lui demander, ou décochez **Activé** pour ne plus l'interroger du tout. **Tester la connexion** l'interroge à nouveau ; sa dernière erreur, s'il y en a une, s'affiche dessous. Les serveurs sont interrogés dans leur ordre : la flèche en monte un.
 
-Pour les infos du chant, les pochettes et les photos d'artistes, les fournisseurs sont aussi listés comme **Song providers** dans Administration > Métadonnées (voir [Administration](/fr/admin/#maintenance-du-serveur)), avec les autres services, dans l'ordre que vous y choisissez.
+Pour les infos du chant, les pochettes et les photos d'artistes, les fournisseurs sont aussi listés comme **Song providers** dans Administration > Métadonnées (voir [Administration](/fr/admin/#métadonnées)), avec les autres services, dans l'ordre que vous y choisissez.
 
 Songverse appelle un fournisseur depuis son serveur, jamais depuis le navigateur des gens, avec les mêmes règles que pour toute adresse extérieure : pas de redirections, au plus 2 Mo par réponse, 8 secondes au plus. Une image n'est téléchargée que depuis l'adresse du fournisseur lui-même ou l'hébergeur d'images d'un service de musique.
 

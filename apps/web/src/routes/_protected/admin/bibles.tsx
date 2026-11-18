@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { apiClient } from "#/lib/api-client";
 import { ImportedBiblesCard } from "./-imported-bibles";
 import { Actions, Field, Said, useAction } from "./-metadata-providers";
+import { ProviderSetupGuide } from "./-setup-guide";
 
 export const Route = createFileRoute("/_protected/admin/bibles")({
   loader: async () => {
@@ -59,6 +60,7 @@ function YouVersionCard({ settings, onSaved }: { settings: YouVersionSettings; o
         <p className="text-sm text-muted-foreground" data-testid="youversion-source">
           {t(`bibles.youversion_${settings.source}`)}
         </p>
+        <ProviderSetupGuide guide="youversion" defaultOpen={settings.source === "none"} />
         <Field id="youversion-app-key" label={t("bibles.appKey")} hint={t("metadataProviders.apiKeyHint")}>
           <Input
             id="youversion-app-key"

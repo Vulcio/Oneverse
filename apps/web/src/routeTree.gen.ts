@@ -48,6 +48,7 @@ import { Route as ProtectedAdminOrganizationsRouteImport } from './routes/_prote
 import { Route as ProtectedAdminPluginsRouteImport } from './routes/_protected/admin/plugins'
 import { Route as ProtectedAdminRolesRouteImport } from './routes/_protected/admin/roles'
 import { Route as ProtectedAdminSecurityRouteImport } from './routes/_protected/admin/security'
+import { Route as ProtectedAdminServerRouteImport } from './routes/_protected/admin/server'
 import { Route as ProtectedAdminStemSeparationRouteImport } from './routes/_protected/admin/stem-separation'
 import { Route as ProtectedAdminStorageRouteImport } from './routes/_protected/admin/storage'
 import { Route as ProtectedAdminTeamsRouteImport } from './routes/_protected/admin/teams'
@@ -283,6 +284,11 @@ const ProtectedAdminRolesRoute = ProtectedAdminRolesRouteImport.update({
 const ProtectedAdminSecurityRoute = ProtectedAdminSecurityRouteImport.update({
   id: '/security',
   path: '/security',
+  getParentRoute: () => ProtectedAdminRoute,
+} as any)
+const ProtectedAdminServerRoute = ProtectedAdminServerRouteImport.update({
+  id: '/server',
+  path: '/server',
   getParentRoute: () => ProtectedAdminRoute,
 } as any)
 const ProtectedAdminStemSeparationRoute =
@@ -527,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/admin/plugins': typeof ProtectedAdminPluginsRoute
   '/admin/roles': typeof ProtectedAdminRolesRoute
   '/admin/security': typeof ProtectedAdminSecurityRoute
+  '/admin/server': typeof ProtectedAdminServerRoute
   '/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
   '/admin/storage': typeof ProtectedAdminStorageRoute
   '/admin/teams': typeof ProtectedAdminTeamsRoute
@@ -602,6 +609,7 @@ export interface FileRoutesByTo {
   '/admin/plugins': typeof ProtectedAdminPluginsRoute
   '/admin/roles': typeof ProtectedAdminRolesRoute
   '/admin/security': typeof ProtectedAdminSecurityRoute
+  '/admin/server': typeof ProtectedAdminServerRoute
   '/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
   '/admin/storage': typeof ProtectedAdminStorageRoute
   '/admin/teams': typeof ProtectedAdminTeamsRoute
@@ -681,6 +689,7 @@ export interface FileRoutesById {
   '/_protected/admin/plugins': typeof ProtectedAdminPluginsRoute
   '/_protected/admin/roles': typeof ProtectedAdminRolesRoute
   '/_protected/admin/security': typeof ProtectedAdminSecurityRoute
+  '/_protected/admin/server': typeof ProtectedAdminServerRoute
   '/_protected/admin/stem-separation': typeof ProtectedAdminStemSeparationRoute
   '/_protected/admin/storage': typeof ProtectedAdminStorageRoute
   '/_protected/admin/teams': typeof ProtectedAdminTeamsRoute
@@ -760,6 +769,7 @@ export interface FileRouteTypes {
     | '/admin/plugins'
     | '/admin/roles'
     | '/admin/security'
+    | '/admin/server'
     | '/admin/stem-separation'
     | '/admin/storage'
     | '/admin/teams'
@@ -835,6 +845,7 @@ export interface FileRouteTypes {
     | '/admin/plugins'
     | '/admin/roles'
     | '/admin/security'
+    | '/admin/server'
     | '/admin/stem-separation'
     | '/admin/storage'
     | '/admin/teams'
@@ -913,6 +924,7 @@ export interface FileRouteTypes {
     | '/_protected/admin/plugins'
     | '/_protected/admin/roles'
     | '/_protected/admin/security'
+    | '/_protected/admin/server'
     | '/_protected/admin/stem-separation'
     | '/_protected/admin/storage'
     | '/_protected/admin/teams'
@@ -1242,6 +1254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAdminSecurityRouteImport
       parentRoute: typeof ProtectedAdminRoute
     }
+    '/_protected/admin/server': {
+      id: '/_protected/admin/server'
+      path: '/server'
+      fullPath: '/admin/server'
+      preLoaderRoute: typeof ProtectedAdminServerRouteImport
+      parentRoute: typeof ProtectedAdminRoute
+    }
     '/_protected/admin/stem-separation': {
       id: '/_protected/admin/stem-separation'
       path: '/stem-separation'
@@ -1518,6 +1537,7 @@ interface ProtectedAdminRouteChildren {
   ProtectedAdminPluginsRoute: typeof ProtectedAdminPluginsRoute
   ProtectedAdminRolesRoute: typeof ProtectedAdminRolesRoute
   ProtectedAdminSecurityRoute: typeof ProtectedAdminSecurityRoute
+  ProtectedAdminServerRoute: typeof ProtectedAdminServerRoute
   ProtectedAdminStemSeparationRoute: typeof ProtectedAdminStemSeparationRoute
   ProtectedAdminStorageRoute: typeof ProtectedAdminStorageRoute
   ProtectedAdminTeamsRoute: typeof ProtectedAdminTeamsRoute
@@ -1539,6 +1559,7 @@ const ProtectedAdminRouteChildren: ProtectedAdminRouteChildren = {
   ProtectedAdminPluginsRoute: ProtectedAdminPluginsRoute,
   ProtectedAdminRolesRoute: ProtectedAdminRolesRoute,
   ProtectedAdminSecurityRoute: ProtectedAdminSecurityRoute,
+  ProtectedAdminServerRoute: ProtectedAdminServerRoute,
   ProtectedAdminStemSeparationRoute: ProtectedAdminStemSeparationRoute,
   ProtectedAdminStorageRoute: ProtectedAdminStorageRoute,
   ProtectedAdminTeamsRoute: ProtectedAdminTeamsRoute,

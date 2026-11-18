@@ -102,7 +102,11 @@ await step("the admin's providers: reordered, one off, reverted", async () => {
   await card.getByLabel("Album artwork from Deezer").uncheck();
   // What a provider can't do isn't offered.
   if (await card.getByLabel("Album artwork from MusicBrainz").count()) throw new Error("MusicBrainz offered for artwork");
-  await card.getByTestId("provider-spotify").getByText("(needs a key)").first().waitFor();
+  // Each one's status (issue #518); "(needs a key)" only beside what needs it when the rest works.
+  await card.getByTestId("provider-apple_music").getByText("(needs a key)").waitFor();
+  await card.getByTestId("provider-spotify-status").getByText("Needs setup").waitFor();
+  await card.getByTestId("provider-deezer-status").getByText("No setup needed").waitFor();
+  await card.getByTestId("provider-apple_music-status").getByText("Works without a key").waitFor();
   await card.getByRole("button", { name: "Save configuration" }).click();
   await card.getByText("Currently using: settings saved here.").waitFor();
   const settings = await api(me, "GET", "/admin/metadata");
@@ -137,6 +141,7 @@ await step("a developer token address, until there's a key", async () => {
   const pair = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   Object.assign(appleMusicKey, { publicKey: pair.publicKey, privateKey: pair.privateKey, teamId: "MINT123456", keyId: "MINTKEY123" });
   const card = page.getByTestId("apple-music-key");
+  await card.getByText("No key yet? Use a developer token address instead").click();
   await card.getByLabel("Developer token URL (without a key)").fill(`${FAKE_PROVIDERS_URL}/applemusic-token`);
   await card.getByRole("button", { name: "Save configuration" }).click();
   await card.getByText(`Currently using: developer tokens from ${FAKE_PROVIDERS_URL}/applemusic-token`, { exact: false }).waitFor();
@@ -152,13 +157,15 @@ await step("Spotify's app: saved, tested, reverted", async () => {
   await page.getByRole("button", { name: "Spotify settings" }).click();
   const card = page.getByTestId("spotify-settings");
   await card.getByText("Currently using: no app - Spotify isn't asked.").waitFor();
+  // Not set up yet: How to set it up is open, with its links (issue #518).
+  await card.getByTestId("setup-spotify").getByRole("link", { name: "Spotify for Developers dashboard" }).waitFor();
   await card.getByLabel("Client ID").fill(spotifyApp.clientId);
   await card.getByLabel("Client secret").fill(spotifyApp.clientSecret);
   await card.getByRole("button", { name: "Save configuration" }).click();
   await card.getByText(`Currently using: the app saved here (${spotifyApp.clientId}).`).waitFor();
   if ((await card.getByLabel("Client secret").inputValue()) !== "") throw new Error("the secret is still shown");
-  // Ready now: no "needs a key" beside Spotify.
-  if (await page.getByTestId("provider-spotify").getByText("(needs a key)").count()) throw new Error("still needs a key");
+  // Ready now.
+  await page.getByTestId("provider-spotify-status").getByText("Ready").waitFor();
   await card.getByRole("button", { name: "Test connection" }).click();
   await card.getByText("Spotify answered", { exact: false }).waitFor();
   await card.getByRole("button", { name: "Revert to environment variables" }).click();

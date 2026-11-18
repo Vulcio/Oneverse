@@ -1,7 +1,9 @@
 import { METADATA_CAPABILITIES, type MetadataCapability, type MetadataSettings } from "@oneverse/core";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@oneverse/ui/components/badge";
 import { ConfirmButton } from "@oneverse/ui/components/confirm-button";
 import { Button } from "@oneverse/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@oneverse/ui/components/card";
@@ -9,6 +11,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { Textarea } from "@oneverse/ui/components/textarea";
 import { apiClient } from "#/lib/api-client";
+import { ProviderSetupGuide } from "./-setup-guide";
 
 type Provider = MetadataSettings["providers"][number];
 type Message = { kind: "ok" | "error"; text: string } | null;
@@ -37,6 +40,28 @@ export function Said({ message }: { message: Message }) {
     <p className={`text-sm ${message.kind === "error" ? "text-destructive" : "text-muted-foreground"}`} role={message.kind === "error" ? "alert" : "status"}>
       {message.text}
     </p>
+  );
+}
+
+/** Whether a provider is ready to be asked, or what it needs first (issue #518). */
+function ProviderStatus({ provider, settings }: { provider: Provider; settings: MetadataSettings }) {
+  const { t } = useTranslation();
+  const asked = Object.values(provider.capabilities).some(Boolean);
+  const [status, variant]: [string, "success" | "warning" | "muted"] = !asked
+    ? ["off", "muted"]
+    : provider.key === "deezer"
+      ? ["noSetup", "success"]
+      : provider.key === "apple_music" && settings.appleMusic.source === "none"
+        ? ["optional", "success"]
+        : provider.key === "spotify" && settings.spotify.source === "none"
+          ? ["needsSetup", "warning"]
+          : provider.key === "song_providers" && !Object.values(provider.ready).some(Boolean)
+            ? ["needsServer", "warning"]
+            : ["ready", "success"];
+  return (
+    <Badge variant={variant} data-testid={`provider-${provider.key}-status`}>
+      {t(`metadataProviders.status_${status}`)}
+    </Badge>
   );
 }
 
@@ -93,8 +118,11 @@ export function MetadataProvidersCard() {
                 <span className="w-5 pt-0.5 text-sm text-muted-foreground tabular-nums">{index + 1}.</span>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div>
-                    <p className="text-sm font-medium">{provider.name}</p>
-                    <p className="text-xs text-muted-foreground">{t(`metadataProviders.about_${provider.key}`)}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">{provider.name}</p>
+                      {settings ? <ProviderStatus provider={provider} settings={settings} /> : null}
+                    </div>
+                    {provider.key === "song_providers" ? null : <p className="text-xs text-muted-foreground">{t(`metadataProviders.about_${provider.key}`)}</p>}
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                     {METADATA_CAPABILITIES.filter((capability) => provider.supports.includes(capability)).map((capability) => (
@@ -107,7 +135,10 @@ export function MetadataProvidersCard() {
                           onChange={(event) => toggle(provider.key, capability, event.target.checked)}
                         />
                         {t(`metadataProviders.capability_${capability}`)}
-                        {!provider.ready[capability] ? <span className="text-xs text-muted-foreground">({t(provider.key === "song_providers" ? "metadataProviders.needsServer" : "metadataProviders.needsKey")})</span> : null}
+                        {/* Only where some of it works already (Apple Music without its key): the status says the rest (issue #518). */}
+                        {!provider.ready[capability] && Object.values(provider.ready).some(Boolean) ? (
+                          <span className="text-xs text-muted-foreground">({t(provider.key === "song_providers" ? "metadataProviders.needsServer" : "metadataProviders.needsKey")})</span>
+                        ) : null}
                       </label>
                     ))}
                   </div>
@@ -127,26 +158,34 @@ export function MetadataProvidersCard() {
                   </Button>
                 </div>
               </div>
-              <div className="pl-8">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-expanded={open === provider.key}
-                  aria-label={t("metadataProviders.settingsOf", { name: provider.name })}
-                  onClick={() => setOpen(open === provider.key ? null : provider.key)}
-                >
-                  {open === provider.key ? <ChevronDown /> : <ChevronRight />}
-                  {t("metadataProviders.settings")}
-                </Button>
-                {open === provider.key && settings ? (
-                  <div className="mt-2 flex flex-col gap-4 rounded-md bg-muted/40 p-3">
-                    {provider.key === "musicbrainz" ? <MusicBrainzSettings settings={settings} onSaved={applyOwn} /> : null}
-                    {provider.key === "apple_music" ? <AppleMusicSettings settings={settings} onSaved={applyOwn} /> : null}
-                    {provider.key === "deezer" ? <p className="text-sm text-muted-foreground">{t("metadataProviders.noSettings")}</p> : null}
-                    {provider.key === "spotify" ? <SpotifySettings settings={settings} onSaved={applyOwn} /> : null}
-                  </div>
-                ) : null}
-              </div>
+              {provider.key === "song_providers" ? (
+                <div className="pl-8">
+                  <Button variant="ghost" size="sm" render={<Link to="/admin/plugins" />}>
+                    <ChevronRight />
+                    {t("metadataProviders.openPlugins")}
+                  </Button>
+                </div>
+              ) : provider.key !== "deezer" ? (
+                <div className="pl-8">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-expanded={open === provider.key}
+                    aria-label={t("metadataProviders.settingsOf", { name: provider.name })}
+                    onClick={() => setOpen(open === provider.key ? null : provider.key)}
+                  >
+                    {open === provider.key ? <ChevronDown /> : <ChevronRight />}
+                    {t("metadataProviders.settings")}
+                  </Button>
+                  {open === provider.key && settings ? (
+                    <div className="mt-2 flex flex-col gap-4 rounded-md bg-muted/40 p-3">
+                      {provider.key === "musicbrainz" ? <MusicBrainzSettings settings={settings} onSaved={applyOwn} /> : null}
+                      {provider.key === "apple_music" ? <AppleMusicSettings settings={settings} onSaved={applyOwn} /> : null}
+                      {provider.key === "spotify" ? <SpotifySettings settings={settings} onSaved={applyOwn} /> : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </li>
           ))}
         </ol>
@@ -246,6 +285,7 @@ function MusicBrainzSettings({ settings, onSaved }: { settings: MetadataSettings
     });
   return (
     <div className="flex flex-col gap-3" data-testid="musicbrainz-settings">
+      <ProviderSetupGuide guide="musicbrainz" />
       <p className="text-sm text-muted-foreground">{t(`metadataProviders.contact_${settings.musicbrainz.source}`, { contact: settings.musicbrainz.contact })}</p>
       <Field id="musicbrainz-contact" label={t("metadataProviders.contact")} hint={t("metadataProviders.contactHint")}>
         <Input id="musicbrainz-contact" value={contact} placeholder={settings.musicbrainz.contact} onChange={(event) => setContact(event.target.value)} />
@@ -284,6 +324,7 @@ function AppleMusicSettings({ settings, onSaved }: { settings: MetadataSettings;
   return (
     <div className="flex flex-col gap-4" data-testid="apple-music-key">
       <p className="text-sm text-muted-foreground">{t("metadataProviders.keyDescription")}</p>
+      <ProviderSetupGuide guide="apple_music" defaultOpen={apple.source === "none"} />
       <p className="text-sm text-muted-foreground">{t(`metadataProviders.${currently}`, { teamId: apple.teamId ?? "", keyId: apple.keyId ?? "", url: apple.tokenUrl ?? "" })}</p>
       <Field id="apple-country" label={t("artwork.country")} hint={t("artwork.countryHint")}>
         <Input id="apple-country" className="max-w-24" value={country} maxLength={2} onChange={(event) => setCountry(event.target.value)} />
@@ -308,16 +349,22 @@ function AppleMusicSettings({ settings, onSaved }: { settings: MetadataSettings;
           onChange={(event) => setPrivateKey(event.target.value)}
         />
       </Field>
-      <Field id="apple-token-url" label={t("metadataProviders.tokenUrl")} hint={t("metadataProviders.tokenUrlHint")}>
-        <Input
-          id="apple-token-url"
-          type="url"
-          value={tokenUrl}
-          autoComplete="off"
-          placeholder={apple.tokenUrlSource === "env" ? (apple.tokenUrl ?? "") : "https://"}
-          onChange={(event) => setTokenUrl(event.target.value)}
-        />
-      </Field>
+      {/* The stopgap, out of the way (issue #518): open only once it's used. */}
+      <details className="text-sm" open={apple.tokenUrlSource !== "none"} data-testid="apple-token-url-section">
+        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">{t("metadataProviders.tokenUrlSection")}</summary>
+        <div className="mt-3">
+          <Field id="apple-token-url" label={t("metadataProviders.tokenUrl")} hint={t("metadataProviders.tokenUrlHint")}>
+            <Input
+              id="apple-token-url"
+              type="url"
+              value={tokenUrl}
+              autoComplete="off"
+              placeholder={apple.tokenUrlSource === "env" ? (apple.tokenUrl ?? "") : "https://"}
+              onChange={(event) => setTokenUrl(event.target.value)}
+            />
+          </Field>
+        </div>
+      </details>
       <Actions
         busy={busy}
         onSave={() =>
@@ -371,6 +418,7 @@ function SpotifySettings({ settings, onSaved }: { settings: MetadataSettings; on
   return (
     <div className="flex flex-col gap-4" data-testid="spotify-settings">
       <p className="text-sm text-muted-foreground">{t("metadataProviders.spotifyDescription")}</p>
+      <ProviderSetupGuide guide="spotify" defaultOpen={spotify.source === "none"} />
       <p className="text-sm text-muted-foreground">{t(`metadataProviders.spotify_${spotify.source}`, { clientId: spotify.clientId ?? "" })}</p>
       <Field id="spotify-client-id" label={t("metadataProviders.clientId")}>
         <Input id="spotify-client-id" value={clientId} autoComplete="off" onChange={(event) => setClientId(event.target.value.trim())} />
@@ -444,11 +492,15 @@ export function YouTubeCard() {
   return (
     <Card data-testid="youtube-settings">
       <CardHeader>
-        <CardTitle className="text-sm">{t("metadataProviders.youtubeTitle")}</CardTitle>
+        <CardTitle className="flex flex-wrap items-center gap-2 text-sm">
+          {t("metadataProviders.youtubeTitle")}
+          <Badge variant={youtube.source === "none" ? "warning" : "success"}>{t(youtube.source === "none" ? "metadataProviders.status_needsSetup" : "metadataProviders.status_ready")}</Badge>
+        </CardTitle>
         <CardDescription>{t("metadataProviders.youtubeDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">{t(`metadataProviders.youtube_${youtube.source}`)}</p>
+        <ProviderSetupGuide guide="youtube" defaultOpen={youtube.source === "none"} />
         <Field id="youtube-api-key" label={t("metadataProviders.apiKey")} hint={t("metadataProviders.apiKeyHint")}>
           <Input
             id="youtube-api-key"

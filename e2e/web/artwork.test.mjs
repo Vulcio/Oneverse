@@ -124,12 +124,14 @@ await step("the admin's artwork settings", async () => {
   await settings.getByRole("button", { name: "Find artwork for songs without one" }).click();
   // A background job (issue #92): its result shows under Background jobs, refreshed on its own.
   await settings.getByText("Started in the background", { exact: false }).waitFor();
-  const jobs = page.getByTestId("background-jobs");
-  await jobs.getByText(/The Worker is running|runs background jobs itself/).first().waitFor();
-  await jobs.getByTestId("jobs-recent").getByText(/Tried \d+ songs, found artwork for \d+\./).first().waitFor({ timeout: 90000 });
   await settings.getByRole("button", { name: "Revert to defaults" }).click();
   await settings.getByRole("button", { name: "Revert", exact: true }).click();
   await settings.getByText("Currently using: the defaults").waitFor();
+  // Background jobs are on Admin > Server (issue #518).
+  await page.goto(`${WEB}/admin/server`);
+  const jobs = page.getByTestId("background-jobs");
+  await jobs.getByText(/The Worker is running|runs background jobs itself/).first().waitFor();
+  await jobs.getByTestId("jobs-recent").getByText(/Tried \d+ songs, found artwork for \d+\./).first().waitFor({ timeout: 90000 });
 });
 
 await browser.close();

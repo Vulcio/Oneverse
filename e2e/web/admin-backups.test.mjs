@@ -54,16 +54,16 @@ await step("back to the environment", async () => {
   await page.getByTestId("backups-source").getByText("Nothing configured").waitFor();
 });
 
-await step("the version is at the foot of Admin's sidebar, and opens Metadata", async () => {
+await step("the version is at the foot of Admin's sidebar, and opens Server", async () => {
   await page.goto(`${WEB}/admin/backups`);
   const version = page.getByTestId("admin-version").filter({ visible: true }).first();
   await version.getByText(/Oneverse \d+\.\d+\.\d+/).waitFor();
   await version.click();
-  await page.waitForURL(/\/admin\/metadata/);
+  await page.waitForURL(/\/admin\/server/);
 });
 
 await step("Background jobs says which version runs, and the database's migration", async () => {
-  await page.goto(`${WEB}/admin/metadata`);
+  await page.goto(`${WEB}/admin/server`);
   await page.getByTestId("server-version").getByText(/Oneverse \d+\.\d+\.\d+/).waitFor();
   await page.getByTestId("server-version").getByText(/Database at migration \d+_/).waitFor();
 });

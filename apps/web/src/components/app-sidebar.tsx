@@ -48,6 +48,8 @@ import {
   Check,
   ListChecks,
   Trash2,
+  Server,
+  Disc3,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { AdminVersion } from "#/components/admin-version";
@@ -600,10 +602,11 @@ function AdminNav({ pathname }: { pathname: string }) {
     { to: "/admin/collaboration" as const, label: t("nav.adminCollaboration"), icon: Handshake },
     { to: "/admin/error-reporting" as const, label: t("nav.adminErrorReporting"), icon: Bug },
     { to: "/admin/storage" as const, label: t("nav.adminStorage"), icon: Database },
+    { to: "/admin/server" as const, label: t("nav.adminServer"), icon: Server },
     { to: "/admin/backups" as const, label: t("nav.adminBackups"), icon: ArchiveRestore },
     { to: "/admin/stem-separation" as const, label: t("nav.adminStemSeparation"), icon: AudioWaveform },
     { to: "/admin/catalogs" as const, label: t("nav.adminCatalogs"), icon: FileStack },
-    { to: "/admin/metadata" as const, label: t("nav.adminMetadata"), icon: LayoutDashboard },
+    { to: "/admin/metadata" as const, label: t("nav.adminMetadata"), icon: Disc3 },
     { to: "/admin/bibles" as const, label: t("nav.adminBibles"), icon: BookMarked },
     { to: "/admin/plugins" as const, label: t("nav.adminPlugins"), icon: Puzzle },
   ];

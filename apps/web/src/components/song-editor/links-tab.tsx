@@ -1,5 +1,5 @@
 import { type AttachmentAudience, type MusicBrainzWorkMatch, type LinkSearchServices, type SongLink, type SongVersionDetail, type StreamingLinkType, type TeamSummary } from "@oneverse/core";
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,6 +29,7 @@ export function LinksTab({
 }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { session } = useRouteContext({ from: "/_protected" });
   // Which services the links can be searched at (issue #169), by the song's title and first artist.
   const [searchable, setSearchable] = useState<LinkSearchServices | null>(null);
   useEffect(() => {
@@ -82,6 +83,20 @@ export function LinksTab({
                   await router.invalidate();
                 }}
                 onSearch={searchable?.[type] ? () => apiClient.searchLinks(type, version.title, artist) : undefined}
+                searchUnavailable={
+                  searchable && !searchable[type]
+                    ? session.isGlobalAdmin
+                      ? {
+                          text: t("songEditor.links.searchUnavailableAdmin", { service: label }),
+                          action: (
+                            <Link to="/admin/metadata" className="font-medium text-primary hover:underline">
+                              {t("songEditor.links.searchSetUp")}
+                            </Link>
+                          ),
+                        }
+                      : { text: t("songEditor.links.searchUnavailable", { service: label }) }
+                    : undefined
+                }
               />
             );
           })}

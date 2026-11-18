@@ -42,7 +42,7 @@ const routes = [
   "/songbooks", "/songbooks/new", `/songbooks/${songbook.id}`,
   "/songbook-catalogs", "/songbook-catalogs/new", `/songbook-catalogs/${catalog.id}`,
   "/teams", "/teams/new", `/teams/${team.id}`,
-  "/admin", "/admin/users", "/admin/storage", "/admin/auth", "/admin/catalogs", "/admin/metadata",
+  "/admin", "/admin/users", "/admin/storage", "/admin/auth", "/admin/catalogs", "/admin/metadata", "/admin/server",
 ];
 
 const browser = await chromium.launch();

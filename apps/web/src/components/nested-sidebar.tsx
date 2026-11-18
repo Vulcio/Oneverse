@@ -28,7 +28,6 @@ import {
   GripVertical,
   SlidersHorizontal,
   KeyRound,
-  LayoutDashboard,
   ListMusic,
   Music2,
   Plus,
@@ -40,6 +39,8 @@ import {
   Monitor,
   MonitorPlay,
   BookText,
+  Server,
+  Disc3,
 } from "lucide-react";
 import { bibleTurnedOn } from "#/lib/bible";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
@@ -275,10 +276,11 @@ function SectionPanel({
           { to: "/admin/collaboration", label: t("nav.adminCollaboration"), icon: <Handshake /> },
           { to: "/admin/error-reporting", label: t("nav.adminErrorReporting"), icon: <Bug /> },
           { to: "/admin/storage", label: t("nav.adminStorage"), icon: <Database /> },
+          { to: "/admin/server", label: t("nav.adminServer"), icon: <Server /> },
           { to: "/admin/backups", label: t("nav.adminBackups"), icon: <ArchiveRestore /> },
           { to: "/admin/stem-separation", label: t("nav.adminStemSeparation"), icon: <AudioWaveform /> },
           { to: "/admin/catalogs", label: t("nav.adminCatalogs"), icon: <FileStack /> },
-          { to: "/admin/metadata", label: t("nav.adminMetadata"), icon: <LayoutDashboard /> },
+          { to: "/admin/metadata", label: t("nav.adminMetadata"), icon: <Disc3 /> },
           { to: "/admin/bibles", label: t("nav.adminBibles"), icon: <BookMarked /> },
           { to: "/admin/plugins", label: t("nav.adminPlugins"), icon: <Puzzle /> },
           { to: "/library", label: t("nav.backToApp"), icon: <ArrowLeft /> },
@@ -980,7 +982,7 @@ function PeoplePanel({ title }: { title: string }) {
   );
 }
 
-function LinksPanel({ title, pathname, links, footer }: { title: string; pathname: string; footer?: ReactNode; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/error-reporting" | "/admin/storage" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles" | "/admin/plugins"; label: string; icon: ReactNode }[] }) {
+function LinksPanel({ title, pathname, links, footer }: { title: string; pathname: string; footer?: ReactNode; links: { to: "/review" | "/library" | "/admin/users" | "/admin/teams" | "/admin/roles" | "/admin/instruments" | "/admin/auth" | "/admin/security" | "/admin/notifications" | "/admin/collaboration" | "/admin/error-reporting" | "/admin/storage" | "/admin/server" | "/admin/backups" | "/admin/stem-separation" | "/admin/catalogs" | "/admin/metadata" | "/admin/bibles" | "/admin/plugins"; label: string; icon: ReactNode }[] }) {
   return (
     <>
       <PanelHeader title={title} />

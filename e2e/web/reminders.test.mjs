@@ -43,7 +43,7 @@ try {
   });
 
   await step("Admin > Background jobs: the calendar reminders run now", async () => {
-    await page.goto(`${WEB}/admin/metadata`);
+    await page.goto(`${WEB}/admin/server`);
     await page.getByTestId("run-event-reminders").click();
     await page.getByText("Queued: Calendar reminders").waitFor();
   });
