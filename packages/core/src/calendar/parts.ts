@@ -26,15 +26,15 @@ export interface PartMember {
   techRoles: string[];
   /** The group's own positions they cover (issue #241). */
   positionIds?: string[];
-  /** Hosts the team's dates, by a role (issue #520): the only ones who cover the part HOST. */
-  canHost?: boolean;
+  /** The given parts (GIVEN_PARTS) a role lets them fill there (issue #520): the only ones who cover them. */
+  givenParts?: string[];
 }
 
 /** Whether a member covers a part: they listed its instrument or role, or ticked the group's position. A named part, anyone. */
 export function coversPart(member: PartMember, part: EventPart): boolean {
   if (part.position) return (member.positionIds ?? []).includes(part.position);
   if (!part.part) return true;
-  if (part.part === HOST) return !!member.canHost;
+  if (isGivenPart(part.part)) return (member.givenParts ?? []).includes(part.part);
   return member.instruments.includes(part.part) || member.techRoles.includes(part.part);
 }
 
@@ -47,12 +47,13 @@ export function partKey(part: EventPart): string {
 /**
  * The parts someone may say they'd like to play on a date (issue #520): the
  * date's own parts, when its event lists any; else what they play - their
- * instruments and roles. Hosting only for those a role lets host. Wishes are
- * kept by partKey().
+ * instruments and roles. A given part (hosting) only for those a role gives
+ * it. Wishes are kept by partKey().
  */
 export function wishOptions(parts: readonly EventPart[], member: PartMember): EventPart[] {
-  if (parts.length > 0) return parts.filter((part) => part.part !== HOST || member.canHost);
-  return [...(member.canHost ? [HOST] : []), ...member.instruments, ...member.techRoles].map((part) => ({ part, count: 1 }));
+  const given = member.givenParts ?? [];
+  if (parts.length > 0) return parts.filter((part) => !part.part || !isGivenPart(part.part) || given.includes(part.part));
+  return [...given, ...member.instruments, ...member.techRoles].map((part) => ({ part, count: 1 }));
 }
 
 /** The longest list of wishes kept with an answer. */
@@ -62,10 +63,23 @@ export const WISHES_LIMIT = 30;
 export const MUSIC_LEADER = "MUSIC_LEADER";
 /**
  * Who hosts it ("Présidence", issue #520): picks its songs, passages and
- * announcements. A part events ask for, covered only by those a role lets
- * host (Role.canHost) - not something one lists oneself.
+ * announcements. A given part: covered only by those a role lets host
+ * (Role.canHost) - not something one lists oneself.
  */
 export const HOST = "HOST";
+
+/**
+ * Parts filled only by those a role gives them (issue #520), never listed by
+ * oneself: the part's key, and the Role field that gives it. An
+ * organisation's role given to one of its groups gives it to the group's
+ * members; given to one person, to them alone.
+ */
+export const GIVEN_PARTS = { [HOST]: "canHost" } as const satisfies Record<string, string>;
+
+/** Whether a part is one a role gives (GIVEN_PARTS). */
+export function isGivenPart(key: string): boolean {
+  return Object.hasOwn(GIVEN_PARTS, key);
+}
 /** The parts whose people edit the date's set (issue #520), in the order they're shown. */
 export const SET_LEADING_PARTS: readonly string[] = [HOST, MUSIC_LEADER];
 

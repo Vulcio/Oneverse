@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@oneverse/db";
+import { GIVEN_PARTS } from "@oneverse/core";
 import { requestMemo } from "../common/request-memo.js";
 
 /**
@@ -139,7 +140,18 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
   if (!team) return everywhere;
   const scoped = await prisma.role.findMany({
     // The server's roles teams may give, and the team's or its organisation's own (only ever given there).
-    where: { OR: [{ teamAssignable: true }, { ownerKey: { not: "" } }], assignments: { some: { userId, OR: [{ scopeTeamId: teamId }, ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId }] : [])] } } },
+    where: {
+      OR: [{ teamAssignable: true }, { ownerKey: { not: "" } }],
+      assignments: {
+        some: {
+          OR: [
+            { userId, OR: [{ scopeTeamId: teamId }, ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId }] : [])] },
+            // An organisation's role given to one of its groups (issue #520): its members have it across the organisation.
+            ...(team.organizationId ? [{ scopeOrganizationId: team.organizationId, team: { memberships: { some: { userId } } } }] : []),
+          ],
+        },
+      },
+    },
     select: { id: true, canOperateScreens: true, canCue: true, canRoute: true, canHost: true },
   });
   return {
@@ -151,11 +163,24 @@ export async function capabilitiesIn(prisma: PrismaClient, userId: string, teamI
   };
 }
 
-/** Who among `userIds` hosts a team's dates (issue #520): a role giving canHost, everywhere or on that team or its organisation. */
-export async function hostsAmong(prisma: PrismaClient, teamId: string, userIds: readonly string[]): Promise<Set<string>> {
-  const hosts = new Set<string>();
-  for (const userId of new Set(userIds)) if ((await capabilitiesIn(prisma, userId, teamId)).canHost) hosts.add(userId);
-  return hosts;
+/**
+ * The given parts (GIVEN_PARTS: hosting) each of `userIds` may fill on a
+ * team's dates (issue #520): from their roles everywhere, or given on that
+ * team or its organisation - to them, or to a group of the organisation
+ * they're in.
+ */
+export async function givenPartsAmong(prisma: PrismaClient, teamId: string, userIds: readonly string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  for (const userId of new Set(userIds)) {
+    const capabilities = await capabilitiesIn(prisma, userId, teamId);
+    out.set(userId, Object.entries(GIVEN_PARTS).filter(([, field]) => capabilities[field]).map(([part]) => part));
+  }
+  return out;
+}
+
+/** Whether someone may fill a given part on a team's dates. */
+export async function mayFill(prisma: PrismaClient, teamId: string, userId: string, part: string): Promise<boolean> {
+  return ((await givenPartsAmong(prisma, teamId, [userId])).get(userId) ?? []).includes(part);
 }
 
 /**

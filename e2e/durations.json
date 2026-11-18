@@ -36,6 +36,7 @@
 "api/lineup-guests": 2,
 "api/lineup": 3,
 "api/set-availability": 2,
+"api/organization-hosts": 2,
 "api/link-search": 1,
 "api/linked-songs": 1,
 "api/live-commands": 4,

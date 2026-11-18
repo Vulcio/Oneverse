@@ -1194,7 +1194,9 @@
             {
               "instruments": [],
               "techRoles": [],
-              "canHost": true
+              "givenParts": [
+                "HOST"
+              ]
             },
             {
               "part": "HOST",
@@ -1300,7 +1302,9 @@
             {
               "instruments": [],
               "techRoles": [],
-              "canHost": true
+              "givenParts": [
+                "HOST"
+              ]
             }
           ],
           "expected": [
@@ -1352,7 +1356,9 @@
                 "PIANO"
               ],
               "techRoles": [],
-              "canHost": true
+              "givenParts": [
+                "HOST"
+              ]
             }
           ],
           "expected": [
