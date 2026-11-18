@@ -52,11 +52,13 @@ export function SetAvailabilityCard({ setlistId, refreshKey }: { setlistId: stri
 
   const labelOf = (key: string) => partLabel(partOf(data.parts, key));
   const names = (ids: readonly string[]) => ids.map((id) => data.members.find((member) => member.userId === id)?.displayName ?? data.lineup.find((place) => place.userId === id)?.displayName ?? "").filter(Boolean);
-  // Its host and music leader (issue #520): on the line-up, else who'd like to be, when the date asks for one or someone offers.
+  // Its host and music leader (issue #520): on the line-up, else who'd like to be. Not every date has a host:
+  // "nobody yet" only when the date asks for one.
   const leading = SET_LEADING_PARTS.map((key) => {
     const on = names(data.leaders.filter((leader) => leader.partKey === key).map((leader) => leader.userId));
     const volunteers = data.members.filter((member) => groupOf(member) !== "UNAVAILABLE" && member.wishes?.includes(key)).map((member) => member.displayName);
-    return { key, on, volunteers, shown: on.length > 0 || volunteers.length > 0 || data.parts.some((part) => partKey(part) === key) };
+    const asked = data.parts.some((part) => partKey(part) === key);
+    return { key, on, volunteers, asked, shown: on.length > 0 || volunteers.length > 0 || asked };
   }).filter((one) => one.shown);
   const placesOf = (userId: string) => data.lineup.filter((place) => place.userId === userId && place.status !== "DECLINED").map((place) => labelOf(place.partKey));
   const day = new Intl.DateTimeFormat(i18n.language, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${data.date}T12:00:00Z`));
@@ -76,11 +78,15 @@ export function SetAvailabilityCard({ setlistId, refreshKey }: { setlistId: stri
       <CardContent className="flex flex-col gap-4">
         {leading.length > 0 ? (
           <div className="flex flex-col gap-1.5 text-sm">
-            {leading.map(({ key, on, volunteers }) => (
+            {leading.map(({ key, on, volunteers, asked }) => (
               <div key={key} className="flex flex-col gap-0.5" data-leading={key}>
-                <span className={cn(on.length === 0 && "text-warning")}>
-                  {on.length > 0 ? t("teamCalendar.leadingPart", { part: labelOf(key), names: on.join(", ") }) : t("teamCalendar.leadingPartNone", { part: labelOf(key) })}
-                </span>
+                {on.length > 0 ? (
+                  <span>{t("teamCalendar.leadingPart", { part: labelOf(key), names: on.join(", ") })}</span>
+                ) : asked ? (
+                  <span className="text-warning">{t("teamCalendar.leadingPartNone", { part: labelOf(key) })}</span>
+                ) : (
+                  <span>{labelOf(key)}</span>
+                )}
                 {on.length === 0 && volunteers.length > 0 ? <span className="text-xs text-muted-foreground">{t("teamCalendar.leadingPartWished", { names: volunteers.join(", ") })}</span> : null}
               </div>
             ))}

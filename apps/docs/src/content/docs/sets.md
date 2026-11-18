@@ -15,7 +15,7 @@ Choose **Sets** > **New set**:
 
 ### Who can play
 
-A set made for a date of the team's calendar shows, to those who can change it, **Who can play** that date: the team's members under **Available**, **If needed**, **Not available** (with **Away** for days away) and **No answer**, each with the parts they'd like to play and their place on the line-up. The date's **Host** and **Music leader** are named at the top, or, while nobody is on the line-up for them, who would like to be. Notes are shown to the team's admins only. **Open the calendar** goes to the team's calendar.
+A set made for a date of the team's calendar shows, to those who can change it, **Who can play** that date: the team's members under **Available**, **If needed**, **Not available** (with **Away** for days away) and **No answer**, each with the parts they'd like to play and their place on the line-up. The date's **Host** and **Music leader** are named at the top when it has them. Not every date needs a host: only when the event asks for one (in **Parts needed**) and nobody is on the line-up for it yet does it say so, with who would like to be. Notes are shown to the team's admins only. **Open the calendar** goes to the team's calendar.
 
 ## Songs in a set
 
