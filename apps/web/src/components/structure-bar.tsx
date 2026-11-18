@@ -1,8 +1,8 @@
-import { passName, type RenderedChart, type StructureGroup, type StructureStep } from "@oneverse/core";
+import { drumsBeatAt, passName, type ChartBar, type RenderedChart, type StructureGroup, type StructureStep } from "@oneverse/core";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@oneverse/ui/lib/utils";
-import { passSelector } from "@oneverse/screen/components/song-chart";
+import { foldRepeatedPasses, passSelector } from "@oneverse/screen/components/song-chart";
 
 /**
  * The pass being sung: the last one whose top has scrolled past the upper
@@ -71,25 +71,83 @@ const GROUP_STYLES: Record<StructureGroup, { filled: string; outlined: string }>
   other: { filled: "bg-zinc-500 text-white border-zinc-500", outlined: "border-zinc-500/70 text-zinc-700 dark:border-zinc-400/70 dark:text-zinc-300" },
 };
 
+/** What the song's bars follow (`useBarsClock`), for the bar to count the times a part is played. */
+export interface StructureMusic {
+  bars: readonly ChartBar[];
+  /** Where the music is, in beats; null while nothing plays. */
+  position: (() => number) | null;
+}
+
+/** The pass the music is in (its index in the chart's passes), while it plays; a new value only when it changes. */
+function usePlayingPass(music: StructureMusic | undefined): number | null {
+  const [playing, setPlaying] = useState<number | null>(null);
+  const position = music?.position ?? null;
+  const bars = music?.bars;
+  useEffect(() => {
+    if (!position || !bars) {
+      setPlaying(null);
+      return;
+    }
+    let frame = requestAnimationFrame(function tick() {
+      const now = drumsBeatAt(bars, position());
+      setPlaying(now && !now.countIn ? now.passIndex : null);
+      frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [position, bars]);
+  return playing;
+}
+
+/** A badge of the bar: a pass, with the times it's played again straight after, the same way, folded into it (×4, issue #457's rule). */
+interface StructureChip {
+  step: StructureStep;
+  /** Its index in the song's passes. */
+  index: number;
+  /** Every time it's played: its own pass and the ones folded into it. */
+  passIds: string[];
+}
+
+function chipsOf(steps: StructureStep[], chart: RenderedChart | null): StructureChip[] {
+  const folded = new Map((chart ? foldRepeatedPasses(chart.passes) : []).map((group) => [group.pass.id, [group.pass.id, ...group.folded.map((pass) => pass.id)]]));
+  const chips: StructureChip[] = [];
+  steps.forEach((step, index) => {
+    const last = chips.at(-1);
+    if (last && last.passIds.includes(step.passId)) return;
+    chips.push({ step, index, passIds: folded.get(step.passId) ?? [step.passId] });
+  });
+  return chips;
+}
+
 /**
  * The song's structure (issue #68), fixed under the header: its passes in
  * order, coloured by kind, the one being sung ringed, those sung filled.
  * Tapping one goes there. Named in full - Verse 1 Chorus Verse 2 Chorus -
  * when they all fit, as everywhere (issue #344: a pass's own name, or its
- * section's); shortened to V1 C V2 C otherwise.
+ * section's); shortened to V1 C V2 C otherwise. A part played again
+ * straight after, the same way, is one badge, "Intro ×4", as the chart
+ * folds it; while the music plays, it counts the times through: 1/4, 2/4…
  */
-export function StructureBar({ steps, chart, current, onPick, className }: { steps: StructureStep[]; chart: RenderedChart | null; current: string | null; onPick: (passId: string) => void; className?: string }) {
+export function StructureBar({ steps, chart, current, onPick, music, className }: { steps: StructureStep[]; chart: RenderedChart | null; current: string | null; onPick: (passId: string) => void; /** What the song's bars follow: the badges follow the music while it plays. */ music?: StructureMusic; className?: string }) {
   const { t } = useTranslation();
   const bar = useRef<HTMLDivElement>(null);
   const fullRow = useRef<HTMLDivElement>(null);
   const [full, setFull] = useState(true);
-  const reached = Math.max(0, steps.findIndex((step) => step.passId === current));
+  // More badges past an edge, faded out there: no scrollbar (a swipe still moves it).
+  const [more, setMore] = useState<{ start: boolean; end: boolean }>({ start: false, end: false });
+  const chips = useMemo(() => chipsOf(steps, chart), [steps, chart]);
+  const playingIndex = usePlayingPass(music);
+  // The music says where the song is while it plays; the page's scroll otherwise.
+  const playingId = playingIndex != null ? (steps[playingIndex]?.passId ?? null) : null;
+  const shown = playingId ?? current;
+  const currentChip = chips.findIndex((chip) => shown != null && chip.passIds.includes(shown));
+  const reached = Math.max(0, currentChip);
   const passes = useMemo(() => new Map((chart?.passes ?? []).map((pass) => [pass.id, pass])), [chart]);
-  const names = steps.map((step) => {
+  const names = chips.map(({ step }) => {
     const pass = passes.get(step.passId);
     const typeName = (type: string) => t(`chart.sections.${type}`);
     return (pass && passName(pass, pass.section, pass.section.number, typeName)) || `${typeName(step.type)}${step.number ? ` ${step.number}` : ""}`;
   });
+  const times = (chip: StructureChip) => (chip.passIds.length > 1 ? `×${chip.passIds.length}` : "");
 
   // Full names when the row of them fits the bar; measured on a hidden copy, so showing one or the other doesn't flicker.
   useEffect(() => {
@@ -100,32 +158,54 @@ export function StructureBar({ steps, chart, current, onPick, className }: { ste
       const style = getComputedStyle(nav);
       const room = nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
       setFull(row.scrollWidth <= room);
+      edges();
+    };
+    const edges = () => {
+      const start = nav.scrollLeft > 1;
+      const end = nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1;
+      setMore((was) => (was.start === start && was.end === end ? was : { start, end }));
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(nav);
-    return () => observer.disconnect();
-  }, [names.join("|")]);
+    nav.addEventListener("scroll", edges, { passive: true });
+    return () => {
+      observer.disconnect();
+      nav.removeEventListener("scroll", edges);
+    };
+  }, [names.join("|"), chips.map(times).join("|"), full]);
 
   // The current one kept in view, on a long song on a phone.
   useEffect(() => {
     bar.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [current, full]);
+  }, [currentChip, full]);
 
-  const pill = "flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full border px-1.5 text-xs font-semibold whitespace-nowrap";
+  const pill = "flex h-7 min-w-7 shrink-0 items-center justify-center gap-1 rounded-full border px-1.5 text-xs font-semibold whitespace-nowrap";
   return (
-    <nav ref={bar} className={cn("relative flex shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-2 sm:px-4", className)} aria-label={t("live.structure")} data-testid="live-structure" data-names={full ? "full" : "short"}>
+    <nav
+      ref={bar}
+      className={cn("structure-bar relative flex shrink-0 items-center gap-1.5 overflow-x-auto px-2 py-2 sm:px-4", className)}
+      aria-label={t("live.structure")}
+      data-testid="live-structure"
+      data-names={full ? "full" : "short"}
+      data-more-start={more.start || undefined}
+      data-more-end={more.end || undefined}
+    >
       <div ref={fullRow} aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex w-max gap-1.5">
-        {steps.map((step, index) => (
-          <span key={step.passId} className={cn(pill, "px-2.5")}>
+        {chips.map((chip, index) => (
+          <span key={chip.step.passId} className={cn(pill, "px-2.5")}>
             {names[index]}
+            {chip.passIds.length > 1 ? <span className="tabular-nums">{`${chip.passIds.length}/${chip.passIds.length}`}</span> : null}
           </span>
         ))}
       </div>
-      {steps.map((step, index) => {
+      {chips.map((chip, index) => {
+        const { step } = chip;
         const name = names[index]!;
         const style = GROUP_STYLES[step.group];
-        const isCurrent = step.passId === current;
+        const isCurrent = index === currentChip;
+        // Which time through, while the music plays in it: 2/4.
+        const time = isCurrent && playingId && chip.passIds.length > 1 ? chip.passIds.indexOf(playingId) + 1 : 0;
         return (
           <button
             key={step.passId}
@@ -133,13 +213,15 @@ export function StructureBar({ steps, chart, current, onPick, className }: { ste
             onClick={() => onPick(step.passId)}
             aria-label={t("live.goToPass", { name })}
             aria-current={isCurrent ? "step" : undefined}
-            title={name}
+            title={chip.passIds.length > 1 ? `${name} ${times(chip)}` : name}
             data-group={step.group}
+            data-times={chip.passIds.length > 1 ? chip.passIds.length : undefined}
             className={cn(
               pill,
               "transition-colors",
               full && "px-2.5",
-              index <= reached ? style.filled : style.outlined,
+              // No band behind the bar (the page's beat shows through): the badges ahead are backed on their own, readable over the chart scrolling under them.
+              index <= reached ? style.filled : cn(style.outlined, "bg-background/80 backdrop-blur-sm"),
               index < reached && "opacity-60",
               isCurrent && "ring-2 ring-foreground ring-offset-2 ring-offset-background",
             )}
@@ -152,13 +234,23 @@ export function StructureBar({ steps, chart, current, onPick, className }: { ste
                 {step.number ?? ""}
               </>
             )}
+            {chip.passIds.length > 1 ? (
+              time > 0 ? (
+                <span key={time} className="structure-count font-bold tabular-nums" data-testid="structure-count">
+                  {time}/{chip.passIds.length}
+                </span>
+              ) : (
+                <span className="font-medium opacity-80" data-testid="structure-times">
+                  {times(chip)}
+                </span>
+              )
+            ) : null}
           </button>
         );
       })}
     </nav>
   );
 }
-
 
 /**
  * The pass being read on a page that scrolls as a whole (Practice, issue

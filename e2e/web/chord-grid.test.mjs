@@ -65,17 +65,17 @@ try {
     await page.getByTestId("bars-row").waitFor();
     await chooseView(page, "grid");
     await page.getByTestId("bars-row").waitFor({ state: "detached" });
-    // A phone in portrait: one 4/4 bar a row in Practice; two when asked.
+    // A phone in portrait: two 4/4 bars a row in Practice, now the grid has no box around it (the whole width); one when asked.
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.locator('[data-testid="chord-grid-bars"][data-per-row="1"]').first().waitFor();
+    await page.locator('[data-testid="chord-grid-bars"][data-per-row="2"]').first().waitFor();
     await page.getByTestId("display-open").first().click();
     if ((await page.getByTestId("display-section").innerText()).trim() !== "Grid") throw new Error(`the panel opened on ${await page.getByTestId("display-section").innerText()}`);
-    await page.getByTestId("display-gridBarsPerRow-2").click();
+    await page.getByTestId("display-gridBarsPerRow-1").click();
     await page.getByTestId("display-close").click();
-    await page.locator('[data-testid="chord-grid-bars"][data-per-row="2"]').first().waitFor();
+    await page.locator('[data-testid="chord-grid-bars"][data-per-row="1"]').first().waitFor();
     await page.screenshot({ path: `${SP}/chord-grid-phone.png` });
     await fromDisplay("display-gridBarsPerRow-auto");
-    await page.locator('[data-testid="chord-grid-bars"][data-per-row="1"]').first().waitFor();
+    await page.locator('[data-testid="chord-grid-bars"][data-per-row="2"]').first().waitFor();
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.locator('[data-testid="chord-grid-bars"][data-per-row="4"]').first().waitFor();
   });

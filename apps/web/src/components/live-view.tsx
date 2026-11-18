@@ -489,7 +489,7 @@ export function LiveView({
       {/* The metronome's beat as the player chose (issue #443). */}
       {chart && !pdf ? <SongBeatDisplay songId={song.id} chart={chart} document={song.notes?.document} settings={display.metronome} /> : null}
       <SongGroove songId={song.id} chart={chart} document={song.notes?.document} />
-      {steps.length > 0 && !pdf && !drumsOnScreen && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} /> : null}
+      {steps.length > 0 && !pdf && !drumsOnScreen && shows("structure") ? <StructureBar steps={steps} chart={chart} current={current} onPick={goToPass} music={{ bars, position: clock.position }} /> : null}
 
       <main ref={scroller} className="flex-1 overflow-y-auto" data-testid="live-scroll" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {/* The whole screen's width (issue #177): a long song flows into columns rather than down. */}

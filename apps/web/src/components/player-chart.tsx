@@ -1,4 +1,4 @@
-import { chartNotation, renderChart, structureOf, type ChartPreferences, type RenderedChart, type ChordNotationValue, type CapoDisplayModeValue, type SetlistSongView } from "@oneverse/core";
+import { chartBars, chartNotation, renderChart, structureOf, type ChartPreferences, type RenderedChart, type ChordNotationValue, type CapoDisplayModeValue, type SetlistSongView } from "@oneverse/core";
 import { EyeOff, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSungLine } from "#/lib/sung-line";
@@ -10,6 +10,7 @@ import { ChartWithDiagrams } from "#/components/chord-diagrams";
 import { ChordGrid } from "#/components/chord-grid";
 import { WordsView } from "#/components/words-view";
 import { StructureBar, usePagePass } from "#/components/structure-bar";
+import { useBarsClock } from "#/lib/bars-clock";
 import { apiClient } from "#/lib/api-client";
 import { useChartNotes } from "#/components/notes";
 import { useSongNotes } from "#/lib/notes";
@@ -91,6 +92,8 @@ export function PlayerChart({ view, openNoteId, grid = false, words = false, dru
   // The sections bar over the grid and the words (issue #416).
   const steps = useMemo(() => structureOf(chart), [chart]);
   const [currentPass, pickPass] = usePagePass(chartArea, steps, 56 + 48);
+  const bars = useMemo(() => chartBars(chart, song.document), [chart, song.document]);
+  const music = useBarsClock(song.id, bars);
   const hiddenCount = preferences.hiddenChordIds.length;
   const capoIsSuggestion = !view.arrangement?.document.defaults.capo && !!song.suggestedCapo;
   return (
@@ -141,7 +144,7 @@ export function PlayerChart({ view, openNoteId, grid = false, words = false, dru
         </FieldError>
       ) : null}
       {notes.top}
-      {(grid || words) && display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} className="sticky top-14 z-20 -mx-4 rounded-none bg-background sm:mx-0 sm:rounded-lg sm:border" /> : null}
+      {(grid || words) && display.structureBar && steps.length > 0 ? <StructureBar steps={steps} chart={chart} current={currentPass} onPick={pickPass} music={{ bars, position: music.position }} className="sticky top-14 z-20 -mx-4 px-4 sm:px-4" /> : null}
       {/* The metronome's beat as the player chose (issue #443). */}
       <SongBeatDisplay songId={song.id} chart={chart} document={song.document} settings={display.metronome} />
       <SongGroove songId={song.id} chart={chart} document={song.document} />
