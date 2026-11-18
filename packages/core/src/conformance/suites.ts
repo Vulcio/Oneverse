@@ -47,7 +47,7 @@ import { calendarFeed } from "../calendar/ical.js";
 import { isPushEndpoint, notificationEmail, notificationPush, notificationPreferences, quietHoursEnd, notificationText, withNotificationChanges, type NotificationData, type NotificationKind } from "../notifications/index.js";
 import enMessages from "../i18n/locales/en.js";
 import frMessages from "../i18n/locales/fr.js";
-import { coversPart, partCoverage, signedUpPeople, swapCandidates, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
+import { coversPart, partCoverage, signedUpPeople, swapCandidates, wishOptions, setLeaders, dayBeforeReminderDue, deadlineReminderDue, effectiveAnswer, eventDates, rehearsalDates, setListing, isPastDate, localDate, zonedInstant } from "../calendar/index.js";
 import { notePasses, notePresetOf, resolveNoteAnchor, shownNotes } from "../notes/index.js";
 import { CreateNoteSchema, UpdateNoteSchema } from "../requests/notes.js";
 import type { z } from "zod";
@@ -2885,6 +2885,35 @@ export const CONFORMANCE: ConformanceArea[] = [
           { name: "a named part: anyone", args: [{ instruments: [], techRoles: [] }, { name: "Worship leader", count: 1 }] },
           { name: "a group's position they ticked (issue #241)", args: [{ instruments: [], techRoles: [], positionIds: ["pos_greeter"] }, { position: "pos_greeter", count: 2 }] },
           { name: "a group's position they didn't", args: [{ instruments: ["DRUMS"], techRoles: [], positionIds: ["pos_coffee"] }, { position: "pos_greeter", count: 1 }] },
+        ],
+      },
+      wishOptions: {
+        about: "What someone may say they'd like to play on a date (issue #520): the date's parts when its event lists any, else their own instruments and roles. Wishes are kept by partKey().",
+        params: ["parts", "member"],
+        run: wishOptions,
+        cases: [
+          { name: "the date's parts", args: [[{ part: "DRUMS", count: 1 }, { part: "HOST", count: 1 }, { name: "Greeter", count: 2 }], { instruments: ["PIANO"], techRoles: [] }] },
+          { name: "no parts: what they play", args: [[], { instruments: ["PIANO", "LEAD_VOCALS"], techRoles: ["MUSIC_LEADER"] }] },
+          { name: "no parts, nothing listed", args: [[], { instruments: [], techRoles: [] }] },
+        ],
+      },
+      setLeaders: {
+        about: "Who's on a date's line-up as its host or music leader, not declining (issue #520): they edit the date's set. Hosts first.",
+        params: ["lineup"],
+        run: setLeaders,
+        cases: [
+          {
+            name: "host and music leader",
+            args: [
+              [
+                { userId: "sam", partKey: "MUSIC_LEADER", status: "ACCEPTED" },
+                { userId: "ana", partKey: "HOST", status: "PENDING" },
+                { userId: "lou", partKey: "DRUMS", status: "ACCEPTED" },
+                { userId: "max", partKey: "HOST", status: "DECLINED" },
+                { userId: null, partKey: "MUSIC_LEADER", status: "ACCEPTED" },
+              ],
+            ],
+          },
         ],
       },
       swapCandidates: {

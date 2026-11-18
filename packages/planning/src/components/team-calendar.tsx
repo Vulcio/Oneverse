@@ -15,7 +15,7 @@ import { Input } from "@oneverse/ui/components/input";
 import { Label } from "@oneverse/ui/components/label";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { Textarea } from "@oneverse/ui/components/textarea";
-import { LineupDialog, LineupLine, usePartLabel } from "./lineup";
+import { LineupDialog, LineupLine, partOf, usePartLabel } from "./lineup";
 import { LocationField, useLocations } from "./locations";
 import { HostLink, usePlanning } from "../host";
 import { formatSetDate } from "@oneverse/ui/lib/dates";
@@ -233,7 +233,9 @@ export function TeamCalendar({
                         <EventAnswer
                           value={date.myAnswer}
                           label={t("teamCalendar.yourAnswer")}
-                          onAnswer={(answer, note) => act(() => api.answerTeamEventDate(teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }) }))}
+                          onAnswer={(answer, note, wishes) => act(() => api.answerTeamEventDate(teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }), ...(wishes !== undefined && { wishes }) }))}
+                          wishOptions={date.wishOptions}
+                          partLabel={partLabel}
                           onClear={() => act(() => api.clearTeamEventDateAnswer(teamId, date.eventId, date.date))}
                         />
                         {date.counts ? <AnswerCounts counts={date.counts} onOpen={() => setAnswersOf(date)} /> : null}
@@ -456,6 +458,12 @@ function AnswersDialog({ teamId, date, title, partLabel, onClose }: { teamId: st
                 <span className="text-sm font-medium">{member.displayName}</span>
                 {member.answeredBy ? <span className="text-xs text-muted-foreground italic">{t("teamCalendar.answeredBy", { name: member.answeredBy })}</span> : null}
               </div>
+              {/* What they'd like to play (issue #520). */}
+              {member.wishes?.length ? (
+                <span className="text-xs text-muted-foreground" data-testid="answers-wishes">
+                  {t("teamCalendar.wishesOf", { parts: member.wishes.map((wish) => partLabel(partOf(date.parts, wish))).join(", ") })}
+                </span>
+              ) : null}
               <EventAnswer
                 value={{ answer: member.answer, away: member.away, note: member.note, byAdmin: false }}
                 label={t("teamCalendar.answerFor", { name: member.displayName })}

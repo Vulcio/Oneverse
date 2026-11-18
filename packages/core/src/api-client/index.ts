@@ -364,6 +364,8 @@ export interface SetlistItem {
 
 export interface SetlistDetail extends SetlistSummary {
   items: SetlistItem[];
+  /** Deletes it or gives it to another owner (issue #520): false for the date's music leader, who only edits it. Left out: as canEdit. */
+  canManage?: boolean;
 }
 
 /** One song of a set, as anyone who can open the set sees it. */
@@ -1685,6 +1687,8 @@ export interface TeamEventDateSummary extends EventDate {
   /** For the team's admins: how its parts are covered by the answers. */
   coverage: PartCoverage[] | null;
   parts: EventPart[];
+  /** The parts the viewer may say they'd like to play (issue #520): wishOptions(). */
+  wishOptions?: EventPart[];
   /** Who's on which part (issue #235, phase 7). */
   lineup: LineupPlace[];
   /** A rehearsal's date: the event's date it's for. */
@@ -1698,6 +1702,8 @@ export interface MyEventAnswer {
   note: string | null;
   /** Given by one of the team's admins for them. */
   byAdmin: boolean;
+  /** The parts they'd like to play (issue #520), by partKey(); left out by older servers. */
+  wishes?: string[];
 }
 
 /** A member's answer for a date, as the team's admins see it. */
@@ -1715,6 +1721,25 @@ export interface MemberEventAnswer {
   note: string | null;
   /** The admin who answered for them. */
   answeredBy: string | null;
+  /** The parts they'd like to play (issue #520), by partKey(). */
+  wishes?: string[];
+}
+
+/**
+ * Who can play on the date a set was made for (issue #520), for those who
+ * can edit the set: each member's answer and wished parts, and who's on the
+ * line-up. Notes only for the team's admins.
+ */
+export interface SetAvailability {
+  teamId: string;
+  eventId: string;
+  date: string;
+  title: string;
+  parts: EventPart[];
+  members: MemberEventAnswer[];
+  lineup: { userId: string | null; displayName: string; partKey: string; status: AssignmentStatus }[];
+  /** Whoever's on the line-up as host or music leader (setLeaders()): they edit the set too. */
+  leaders: { userId: string; partKey: string }[];
 }
 
 /** A date of one of someone's teams, on their own calendar. */
@@ -1753,6 +1778,8 @@ export interface MyEventDate extends EventDate {
   songCount: number;
   myAnswer: MyEventAnswer;
   parts: EventPart[];
+  /** The parts they may say they'd like to play (issue #520): wishOptions(). */
+  wishOptions?: EventPart[];
   lineup: LineupPlace[];
   /** On another team's line-up, as a guest. */
   guest: boolean;
@@ -3440,6 +3467,8 @@ export function createApiClient({ baseUrl, getToken, onUnauthorized, onChange, r
     createSetlist: (data: { name?: string; eventDate?: string; teamId?: string }) =>
       request<SetlistSummary>("/setlists", { method: "POST", body: JSON.stringify(data) }),
     getSetlist: (setlistId: string) => request<SetlistDetail>(`/setlists/${setlistId}`),
+    /** Who can play on the date the set was made for (issue #520); 404 for a set not made for a calendar date. */
+    getSetAvailability: (setlistId: string) => request<SetAvailability>(`/setlists/${setlistId}/availability`),
     /** `teamId` moves the set to that team, or (null) makes it the current user's personal set. */
     updateSetlist: (setlistId: string, data: { name?: string | null; eventDate?: string | null; teamId?: string | null }) =>
       request<SetlistDetail>(`/setlists/${setlistId}`, { method: "PATCH", body: JSON.stringify(data) }),

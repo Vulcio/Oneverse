@@ -129,7 +129,9 @@ export function MyCalendarPage() {
                             value={date.myAnswer}
                             labels
                             label={t("teamCalendar.yourAnswer")}
-                            onAnswer={(answer, note) => act(() => api.answerTeamEventDate(date.teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }) }))}
+                            onAnswer={(answer, note, wishes) => act(() => api.answerTeamEventDate(date.teamId, date.eventId, date.date, { answer, ...(note !== undefined && { note }), ...(wishes !== undefined && { wishes }) }))}
+                            wishOptions={date.wishOptions}
+                            partLabel={partLabel}
                             onClear={() => act(() => api.clearTeamEventDateAnswer(date.teamId, date.eventId, date.date))}
                           />
                         </div>

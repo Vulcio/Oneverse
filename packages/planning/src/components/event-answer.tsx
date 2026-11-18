@@ -1,5 +1,5 @@
-import type { AvailabilityAnswer, MyEventAnswer } from "@oneverse/core";
-import { Check, CircleHelp, MessageSquareText, Plane, X } from "lucide-react";
+import { partKey, type AvailabilityAnswer, type EventPart, type MyEventAnswer } from "@oneverse/core";
+import { Check, CircleHelp, Hand, MessageSquareText, Plane, X } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@oneverse/ui/components/button";
@@ -22,7 +22,8 @@ export function answerLabel(answer: AvailabilityAnswer | null, t: (key: string) 
  * Someone's answer for a date (issue #235): Available, If needed or Not
  * available, pressed again to take it back; a note for the team's admins.
  * A date in days they're away shows Not available, marked Away, until they
- * answer it. `labels` shows the words beside the icons.
+ * answer it. `labels` shows the words beside the icons. With `wishOptions`,
+ * Available or If needed also says which parts they'd like to play (#520).
  */
 export function EventAnswer({
   value,
@@ -31,18 +32,25 @@ export function EventAnswer({
   labels = false,
   label,
   disabled = false,
+  wishOptions = [],
+  partLabel,
 }: {
   value: MyEventAnswer;
-  onAnswer: (answer: AvailabilityAnswer, note?: string | null) => Promise<unknown>;
+  onAnswer: (answer: AvailabilityAnswer, note?: string | null, wishes?: string[]) => Promise<unknown>;
   onClear: () => Promise<unknown>;
   labels?: boolean;
   /** What it's the answer for, for screen readers ("Your answer", "Answer for Sam"). */
   label: string;
   disabled?: boolean;
+  /** The parts they may say they'd like to play (issue #520), and their names. */
+  wishOptions?: readonly EventPart[];
+  partLabel?: (part: EventPart) => string;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const wishes = value.wishes ?? [];
+  const wished = wishOptions.filter((part) => wishes.includes(partKey(part)));
   const [note, setNote] = useState(value.note ?? "");
   const run = async (work: () => Promise<unknown>) => {
     setBusy(true);
@@ -132,6 +140,49 @@ export function EventAnswer({
             >
               {t("teamCalendar.saveNote")}
             </Button>
+          </PopoverContent>
+        </Popover>
+      ) : null}
+      {/* What they'd like to play (issue #520): with Available or If needed. */}
+      {(value.answer === "AVAILABLE" || value.answer === "IF_NEEDED") && !value.away && wishOptions.length > 0 && partLabel ? (
+        <Popover>
+          <PopoverTrigger
+            render={
+              <button
+                type="button"
+                className={cn("flex h-7 items-center gap-1 rounded-md px-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground [&_svg]:size-3.5", wished.length > 0 && "text-foreground")}
+                aria-label={t("teamCalendar.wishes")}
+                title={wished.length > 0 ? wished.map(partLabel).join(", ") : t("teamCalendar.wishes")}
+                data-testid="answer-wishes"
+              />
+            }
+          >
+            <Hand />
+            <span className="max-w-40 truncate">{wished.length > 0 ? wished.map(partLabel).join(", ") : t("teamCalendar.wishesNone")}</span>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="flex w-72 flex-col gap-2">
+            <span className="text-xs font-medium">{t("teamCalendar.wishes")}</span>
+            <p className="text-xs text-muted-foreground">{t("teamCalendar.wishesHint")}</p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("teamCalendar.wishes")}>
+              {wishOptions.map((part) => {
+                const key = partKey(part);
+                const on = wishes.includes(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    disabled={disabled || busy}
+                    aria-pressed={on}
+                    onClick={() => void run(() => onAnswer(value.answer!, undefined, on ? wishes.filter((one) => one !== key) : [...wishes, key]))}
+                    className={cn("flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs transition-colors disabled:opacity-50 [&_svg]:size-3", on ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted")}
+                    data-wish={key}
+                  >
+                    {on ? <Check /> : null}
+                    {partLabel(part)}
+                  </button>
+                );
+              })}
+            </div>
           </PopoverContent>
         </Popover>
       ) : null}

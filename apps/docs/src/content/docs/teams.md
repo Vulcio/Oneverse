@@ -21,6 +21,8 @@ The team's page starts with its **Calendar**: its services, rehearsals and other
 
 Under each date, say whether you can play: **Available**, **If needed** (free if asked, not first choice) or **Not available**. Press your answer again to take it back. Once you've answered, add a note for the team's admins ("Keys only", "arriving late"); only you and they see it. Not answering is never taken as available.
 
+With **Available** or **If needed**, the hand button beside your answer opens **What I'd like to play**: pick the parts you'd like that date - the parts the event asks for, or, when it lists none, the instruments and roles on your dashboard. The team's admins see them in **Who can play**, and those who edit the date's set see them on the set (see [Who can play](/sets/#who-can-play)). Answering **Not available** clears them.
+
 **My calendar**, in the sidebar, lists the coming dates of all your teams, to answer them in one place. Under **Days away**, **Add days away** opens a calendar: pick the first day, then the last, add a note if you like, and **Add**. Every date in them reads **Not available**, marked **Away**, for all your teams - unless you answer that date yourself. Each range can be changed (**Edit**: pick the days again, change the note, **Save**) or removed; your other ranges show struck through on the calendar.
 
 The team's admins see, beside each date, how many members are available, if needed, not available, and haven't answered. Clicking it opens **Who can play**: everyone's answer, with their notes and days away. An admin can answer there for a member who doesn't use Songverse; it shows as answered by them.
@@ -36,6 +38,8 @@ The team's admins then see, beside each coming date, what's short: **Short: Drum
 Once a date's parts are set, its admins choose who plays what: **Line-up** beside the date lists each part with the people on it, and **Add someone** puts a member on it - those who play it first, with their answer, then the others. Each person is told and answers on the team's calendar or **My calendar**: **You're on Drums**, **Accept** or **Decline** (an admin putting themselves on a part is accepted at once). Accepting also answers **Available** for that date; declining tells the team's admins. An admin can take someone off a part; they're told.
 
 The line-up flags what clashes: someone **Away**, who **Said not available**, or **Playing elsewhere then** - on another event at the same time, of any of their teams. Each part shows how many it has of how many it needs, and **Short** counts those on the line-up once a date has one.
+
+**Host** and **Music leader** are roles like the others (list them under **Roles** on your dashboard, ask for them in **Parts needed**), with one more right: whoever is on a date's line-up as its **Host** or **Music leader**, and hasn't declined, can change that date's set - its songs, passages and texts - like the team's admins. They can't delete the set or give it to someone else.
 
 **Guests**: **Add someone** also lists **Your People (guests)** - people you're connected with on [People](/people/) who aren't in the team. A guest is told and answers like a member, sees that date on their **My calendar** and its set (read-only), and loses it when taken off. **Someone without an account…** adds a name for reference: they're on the line-up, marked **No account**, but never told anything.
 

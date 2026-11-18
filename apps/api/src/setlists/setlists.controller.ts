@@ -15,6 +15,7 @@ import { SetChartPreferencesDto } from "../arrangements/dto/arrangement.dto.js";
 import { SetlistSharingService } from "./setlist-sharing.service.js";
 import { SetlistsService } from "./setlists.service.js";
 import { SongOwnershipService } from "./song-ownership.service.js";
+import { SetAvailabilityService } from "./set-availability.service.js";
 
 /** Item-changing endpoints return the whole updated set, so the client never has to re-fetch. */
 @ApiTags("setlists")
@@ -25,6 +26,7 @@ export class SetlistsController {
     private readonly setlists: SetlistsService,
     private readonly sharing: SetlistSharingService,
     private readonly ownership: SongOwnershipService,
+    private readonly availabilityOf: SetAvailabilityService,
   ) {}
 
   @Get()
@@ -45,6 +47,12 @@ export class SetlistsController {
   @Post()
   create(@SignedIn() user: AuthenticatedUser, @Body() dto: CreateSetlistDto) {
     return this.setlists.create(user, dto);
+  }
+
+  /** Who can play on the date the set was made for (issue #520): for those who can edit it. */
+  @Get(":setlistId/availability")
+  availability(@SignedIn() user: AuthenticatedUser, @Param("setlistId") setlistId: string) {
+    return this.availabilityOf.forSet(user, setlistId);
   }
 
   @Get(":setlistId")

@@ -1577,6 +1577,9 @@ model TeamEventAnswer {
   userId           String
   answer           AvailabilityAnswer
   note             String?
+  // The parts they'd like to play that date (issue #520), by partKey: the
+  // date's parts, or their own instruments and roles when it lists none.
+  wishes           String[]           @default([])
   answeredByUserId String?
   updatedAt        DateTime           @updatedAt
 

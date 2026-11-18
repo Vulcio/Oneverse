@@ -41,6 +41,32 @@ export function partKey(part: EventPart): string {
   return part.part ? part.part : `name:${(part.name ?? "").trim().toLowerCase()}`;
 }
 
+/**
+ * The parts someone may say they'd like to play on a date (issue #520): the
+ * date's own parts, when its event lists any; else what they play - their
+ * instruments and roles. Wishes are kept by partKey().
+ */
+export function wishOptions(parts: readonly EventPart[], member: PartMember): EventPart[] {
+  if (parts.length > 0) return [...parts];
+  return [...member.instruments, ...member.techRoles].map((part) => ({ part, count: 1 }));
+}
+
+/** The longest list of wishes kept with an answer. */
+export const WISHES_LIMIT = 30;
+
+/** Who takes charge of the music (issue #520): the role, and the part an event asks for. */
+export const MUSIC_LEADER = "MUSIC_LEADER";
+/** Who hosts it ("Présidence", issue #520): picks its songs, passages and announcements. */
+export const HOST = "HOST";
+/** The parts whose people edit the date's set (issue #520), in the order they're shown. */
+export const SET_LEADING_PARTS: readonly string[] = [HOST, MUSIC_LEADER];
+
+/** Whoever's on a date's line-up as its host or music leader, not declining (issue #520): they edit the date's set. */
+export function setLeaders(lineup: readonly { userId: string | null; partKey: string; status: AssignmentStatus }[]): { userId: string; partKey: string }[] {
+  const leading = lineup.filter((one) => SET_LEADING_PARTS.includes(one.partKey) && one.status !== "DECLINED" && one.userId);
+  return leading.map((one) => ({ userId: one.userId!, partKey: one.partKey })).sort((a, b) => SET_LEADING_PARTS.indexOf(a.partKey) - SET_LEADING_PARTS.indexOf(b.partKey));
+}
+
 /** Someone scheduled on a part for a date (issue #235, phase 7): asked, then accepted or declined. */
 export const ASSIGNMENT_STATUSES = ["PENDING", "ACCEPTED", "DECLINED"] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number];

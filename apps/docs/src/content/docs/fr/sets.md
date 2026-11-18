@@ -11,7 +11,11 @@ Choisissez **Listes de chants** > **Nouvelle liste** :
 
 - **Date (facultatif)** - sans nom, la liste porte le nom de sa date.
 - **Nom (facultatif)** - « Culte du dimanche », « Soirée jeunes ».
-- **Propriétaire** - **Moi seulement**, ou une équipe dont vous êtes administrateur. Une liste d'équipe est vue par ses membres et modifiée par ses administrateurs.
+- **Propriétaire** - **Moi seulement**, ou une équipe dont vous êtes administrateur. Une liste d'équipe est vue par ses membres et modifiée par ses administrateurs - et, pour une liste faite pour une date du calendrier de l'équipe, par la **Présidence** et le **Responsable musique** de l'équipe du jour (voir [Équipe du jour](/fr/teams/#équipe-du-jour)).
+
+### Qui peut jouer
+
+Une liste faite pour une date du calendrier de l'équipe montre, à ceux qui peuvent la modifier, **Qui peut jouer** ce jour-là : les membres de l'équipe sous **Disponible**, **Si besoin**, **Pas disponible** (avec **Absent** pour les absences) et **Pas de réponse**, chacun avec ce qu'il aimerait jouer et sa place dans l'équipe du jour. La **Présidence** et le **Responsable musique** de la date sont nommés en haut, ou, tant que personne n'y est placé, ceux qui aimeraient l'être. Les notes ne sont montrées qu'aux administrateurs de l'équipe. **Ouvrir le calendrier** mène au calendrier de l'équipe.
 
 ## Les chants d'une liste
 

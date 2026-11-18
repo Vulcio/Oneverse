@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@oneverse/db";
-import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes, type RecentPlays } from "@oneverse/core";
+import { type SavedDisplaySettings, type SetItemPassage, type SetItemTemplate, type SetlistItemScreenTemplate, chartEdgeChords, readItemPassage, readItemScreenTemplate, readItemText, readItemTimer, screenBuiltInTemplate, isPastDate, readArrangementDocument, readSongDocument, renderChart, transposeKey, type SetTransitionValue, type SongNotes, type RecentPlays, SET_LEADING_PARTS } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -114,13 +114,25 @@ export class SetlistsService {
     const people = await signedUpFor(this.prisma.client, eventDates.map((date) => ({ eventId: date.eventId, date: date.date.toISOString().slice(0, 10) })));
     const now = new Date();
     const adminTeams = new Set(memberships.filter((m) => m.role === "ADMIN").map((m) => m.teamId));
+    // The dates they host or lead the music on (issue #520): they edit those sets.
+    const leading = eventDates.length
+      ? await this.prisma.client.teamEventAssignment.findMany({
+          where: { userId: user.id, partKey: { in: [...SET_LEADING_PARTS] }, status: { not: "DECLINED" }, OR: eventDates.map((date) => ({ eventId: date.eventId, date: date.date })) },
+          select: { eventId: true, date: true },
+        })
+      : [];
+    const leads = new Set(leading.map((row) => signupKey(row.eventId, row.date.toISOString().slice(0, 10))));
 
     return sortForDisplay(rows).map((set) => {
       const isGuest = set.ownerUserId !== user.id && !(set.ownerTeamId && memberTeams.has(set.ownerTeamId));
       return {
         ...summarize(set),
         itemCount: set._count.items,
-        canEdit: user.isGlobalAdmin || set.ownerUserId === user.id || (!!set.ownerTeamId && adminTeams.has(set.ownerTeamId)),
+        canEdit:
+          user.isGlobalAdmin ||
+          set.ownerUserId === user.id ||
+          (!!set.ownerTeamId && adminTeams.has(set.ownerTeamId)) ||
+          (!!set.eventDateOf && leads.has(signupKey(set.eventDateOf.eventId, set.eventDateOf.date.toISOString().slice(0, 10)))),
         isGuest,
         ...(set.eventDateOf && {
           signedUp: !!people.get(signupKey(set.eventDateOf.eventId, set.eventDateOf.date.toISOString().slice(0, 10)))?.includes(user.id),
@@ -268,6 +280,8 @@ export class SetlistsService {
       ...summarize(set),
       itemCount: set.items.length,
       canEdit: access.canEdit,
+      // False for the date's host or music leader (issue #520): they edit it, but don't delete it or give it away.
+      canManage: access.canManage,
       isGuest: access.isGuest,
       items: set.items.map((item) => {
         if (!hasSong(item)) return otherItem(item, passages.get(item.id) ?? null);
@@ -320,6 +334,7 @@ export class SetlistsService {
   async update(user: AuthenticatedUser, setlistId: string, dto: UpdateSetlistDto) {
     const set = await this.sets.findEditable(user, setlistId);
     if (dto.teamId !== undefined && dto.teamId !== set.ownerTeamId) {
+      await this.sets.findManageable(user, setlistId);
       await this.moveTo(user, set, dto.teamId);
     }
     await this.prisma.client.setlist.update({
@@ -375,7 +390,7 @@ export class SetlistsService {
   }
 
   async remove(user: AuthenticatedUser, setlistId: string): Promise<void> {
-    await this.sets.findEditable(user, setlistId);
+    await this.sets.findManageable(user, setlistId);
     await this.prisma.client.setlist.delete({ where: { id: setlistId } });
     await announceSetChanged(setlistId);
   }

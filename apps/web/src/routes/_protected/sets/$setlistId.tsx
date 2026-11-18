@@ -23,6 +23,7 @@ import { ShareCard } from "./-share-card";
 import { NativeSelect } from "@oneverse/ui/components/native-select";
 import { OfflinePinButton } from "#/components/offline-pin-button";
 import { FieldError } from "@oneverse/ui/components/field";
+import { SetAvailabilityCard } from "@oneverse/planning/components/set-availability";
 
 export const Route = createFileRoute("/_protected/sets/$setlistId")({
   // Null when the set doesn't exist or isn't visible to this user (the API
@@ -202,6 +203,8 @@ function SetPage({ loaded }: { loaded: SetlistDetail }) {
 
       {set.canEdit ? (
         <div className="flex flex-col gap-6">
+          {/* Who can play on the date it was made for (issue #520). */}
+          {set.fromEvent && set.teamId ? <SetAvailabilityCard setlistId={set.id} /> : null}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">{t("sets.addSongs")}</CardTitle>
@@ -432,7 +435,8 @@ function DetailsCard({
               />
             </div>
           </div>
-          <OwnerField set={set} teams={teams} onMoved={onSaved} />
+          {/* The date's host or music leader edits the set, but doesn't give it away or delete it (issue #520). */}
+          {set.canManage !== false ? <OwnerField set={set} teams={teams} onMoved={onSaved} /> : null}
           {message ? (
             <p className={message.kind === "error" ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{message.text}</p>
           ) : null}
@@ -440,9 +444,11 @@ function DetailsCard({
             <Button type="submit" disabled={pending || !dirty}>
               {pending ? t("sets.saving") : t("sets.save")}
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setConfirmingDelete(true)}>
-              {t("sets.deleteSet")}
-            </Button>
+            {set.canManage !== false ? (
+              <Button type="button" variant="outline" size="sm" onClick={() => setConfirmingDelete(true)}>
+                {t("sets.deleteSet")}
+              </Button>
+            ) : null}
           </div>
         </form>
       </CardContent>

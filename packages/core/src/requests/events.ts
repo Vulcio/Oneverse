@@ -1,6 +1,6 @@
 import "../zod-config.js";
 import { z } from "zod";
-import { ASSIGNMENT_STATUSES, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS } from "../calendar/index.js";
+import { ASSIGNMENT_STATUSES, AVAILABILITY_ANSWERS, CALL_MINUTES_MAX, EVENT_PART_COUNT_MAX, REHEARSAL_DAYS_BEFORE_MAX, EVENT_PARTS_LIMIT, isCalendarDate, isTimeOfDay, isTimeZone, partKey, SETS_AHEAD_WEEKS, WISHES_LIMIT } from "../calendar/index.js";
 import { clearableText, optional, requiredText } from "./fields.js";
 
 /** A team's calendar (issue #235): its events and their dates. */
@@ -100,6 +100,9 @@ export type UpdateTeamCalendarRequest = z.input<typeof UpdateTeamCalendarSchema>
 export const AnswerEventDateSchema = z.strictObject({
   answer: z.enum(AVAILABILITY_ANSWERS).describe("AVAILABLE, IF_NEEDED (free if asked) or UNAVAILABLE"),
   note: clearableText(300).describe('"Can only play keys", "arriving late"; seen by the team\'s admins'),
+  wishes: optional(z.array(z.string().trim().min(1).max(200)).max(WISHES_LIMIT)).describe(
+    "The parts they'd like to play that date (issue #520), by key: the date's parts, or, when its event lists none, their own instruments and roles. Left out, kept; dropped on UNAVAILABLE",
+  ),
 });
 export type AnswerEventDateRequest = z.input<typeof AnswerEventDateSchema>;
 

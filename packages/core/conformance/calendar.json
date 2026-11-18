@@ -1209,6 +1209,144 @@
         }
       ]
     },
+    "wishOptions": {
+      "about": "What someone may say they'd like to play on a date (issue #520): the date's parts when its event lists any, else their own instruments and roles. Wishes are kept by partKey().",
+      "params": [
+        "parts",
+        "member"
+      ],
+      "cases": [
+        {
+          "name": "the date's parts",
+          "args": [
+            [
+              {
+                "part": "DRUMS",
+                "count": 1
+              },
+              {
+                "part": "HOST",
+                "count": 1
+              },
+              {
+                "name": "Greeter",
+                "count": 2
+              }
+            ],
+            {
+              "instruments": [
+                "PIANO"
+              ],
+              "techRoles": []
+            }
+          ],
+          "expected": [
+            {
+              "part": "DRUMS",
+              "count": 1
+            },
+            {
+              "part": "HOST",
+              "count": 1
+            },
+            {
+              "name": "Greeter",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "name": "no parts: what they play",
+          "args": [
+            [],
+            {
+              "instruments": [
+                "PIANO",
+                "LEAD_VOCALS"
+              ],
+              "techRoles": [
+                "MUSIC_LEADER"
+              ]
+            }
+          ],
+          "expected": [
+            {
+              "part": "PIANO",
+              "count": 1
+            },
+            {
+              "part": "LEAD_VOCALS",
+              "count": 1
+            },
+            {
+              "part": "MUSIC_LEADER",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "name": "no parts, nothing listed",
+          "args": [
+            [],
+            {
+              "instruments": [],
+              "techRoles": []
+            }
+          ],
+          "expected": []
+        }
+      ]
+    },
+    "setLeaders": {
+      "about": "Who's on a date's line-up as its host or music leader, not declining (issue #520): they edit the date's set. Hosts first.",
+      "params": [
+        "lineup"
+      ],
+      "cases": [
+        {
+          "name": "host and music leader",
+          "args": [
+            [
+              {
+                "userId": "sam",
+                "partKey": "MUSIC_LEADER",
+                "status": "ACCEPTED"
+              },
+              {
+                "userId": "ana",
+                "partKey": "HOST",
+                "status": "PENDING"
+              },
+              {
+                "userId": "lou",
+                "partKey": "DRUMS",
+                "status": "ACCEPTED"
+              },
+              {
+                "userId": "max",
+                "partKey": "HOST",
+                "status": "DECLINED"
+              },
+              {
+                "userId": null,
+                "partKey": "MUSIC_LEADER",
+                "status": "ACCEPTED"
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "userId": "ana",
+              "partKey": "HOST"
+            },
+            {
+              "userId": "sam",
+              "partKey": "MUSIC_LEADER"
+            }
+          ]
+        }
+      ]
+    },
     "swapCandidates": {
       "about": "Who's offered someone's place when they ask for a replacement: members who cover its part, not the one asking, not already on it, not unavailable (or away) that date.",
       "params": [

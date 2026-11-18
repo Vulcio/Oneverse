@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@oneverse/db";
+import { SET_LEADING_PARTS } from "@oneverse/core";
 import type { AuthenticatedUser } from "../common/types/authenticated-request.js";
 import { AccessPolicyService, type Viewer } from "../access/access-policy.service.js";
 import { PrismaService } from "../prisma/prisma.service.js";
@@ -31,18 +32,22 @@ export type SetRow = { id: string; ownerUserId: string | null; ownerTeamId: stri
 export interface SetAccess {
   canView: boolean;
   canEdit: boolean;
+  /** Deletes it or hands it to another owner: its owner, the team's admins - not the date's host or music leader (issue #520). */
+  canManage: boolean;
   /** Joined through the set's share link, rather than owning it or being on its team. */
   isGuest: boolean;
 }
 
-const NO_ACCESS: SetAccess = { canView: false, canEdit: false, isGuest: false };
+const NO_ACCESS: SetAccess = { canView: false, canEdit: false, canManage: false, isGuest: false };
 
 
 /**
  * Who can open or change a set, and which of its songs they can read.
  *
  * - The owner of a personal set, and admins of a team set's team, edit it;
- *   other team members view it. Global admins can do anything.
+ *   other team members view it. Global admins can do anything. The host and
+ *   music leader on the line-up of the date it was made for edit it too,
+ *   without deleting it or giving it away (#520).
  * - Guests (joined through the share link) view it.
  * - Everyone who can open a set can read every song in it that its owner
  *   could put there today (see addableWhere) - so a guest sees songs that
@@ -58,16 +63,32 @@ export class SetlistAccessService {
   ) {}
 
   async access(user: AuthenticatedUser, set: SetRow): Promise<SetAccess> {
-    if (user.isGlobalAdmin || set.ownerUserId === user.id) return { canView: true, canEdit: true, isGuest: false };
+    if (user.isGlobalAdmin || set.ownerUserId === user.id) return { canView: true, canEdit: true, canManage: true, isGuest: false };
     if (set.ownerTeamId) {
       const role = await this.policy.teamRole(user.id, set.ownerTeamId);
-      if (role) return { canView: true, canEdit: role === "ADMIN", isGuest: false };
+      if (role === "ADMIN") return { canView: true, canEdit: true, canManage: true, isGuest: false };
+      // The host or music leader on the line-up of the date it was made for edits it too (issue #520), even as a guest there.
+      const leads = await this.leadsMusic(user.id, set.id);
+      if (role || leads) return { canView: true, canEdit: leads, canManage: false, isGuest: false };
     }
     const guest = await this.prisma.client.setlistGuest.findUnique({
       where: { setlistId_userId: { setlistId: set.id, userId: user.id } },
       select: { id: true },
     });
-    return guest ? { canView: true, canEdit: false, isGuest: true } : NO_ACCESS;
+    return guest ? { canView: true, canEdit: false, canManage: false, isGuest: true } : NO_ACCESS;
+  }
+
+  /** Whether someone is on the line-up of the date a set was made for as its host or music leader, not declining (issue #520). */
+  async leadsMusic(userId: string, setlistId: string): Promise<boolean> {
+    return requestMemo(`leadsMusic:${setlistId}:${userId}`, async () => {
+      const date = await this.prisma.client.teamEventDate.findUnique({ where: { setlistId }, select: { eventId: true, date: true } });
+      if (!date) return false;
+      const place = await this.prisma.client.teamEventAssignment.findFirst({
+        where: { eventId: date.eventId, date: date.date, userId, partKey: { in: [...SET_LEADING_PARTS] }, status: { not: "DECLINED" } },
+        select: { id: true },
+      });
+      return !!place;
+    });
   }
 
   /** 404 unless the user can open the set (not telling apart "doesn't exist" and "not yours"). */
@@ -87,7 +108,14 @@ export class SetlistAccessService {
 
   async findEditable(user: AuthenticatedUser, setlistId: string): Promise<SetRow> {
     const { set, access } = await this.findViewable(user, setlistId);
-    if (!access.canEdit) throw new ForbiddenException("Only the set's owner or a team admin can change it");
+    if (!access.canEdit) throw new ForbiddenException("Only the set's owner, a team admin, or the date's host or music leader can change it");
+    return set;
+  }
+
+  /** Deleting a set or handing it to another owner (issue #520): not for the date's host or music leader. */
+  async findManageable(user: AuthenticatedUser, setlistId: string): Promise<SetRow> {
+    const { set, access } = await this.findViewable(user, setlistId);
+    if (!access.canManage) throw new ForbiddenException("Only the set's owner or a team admin can delete it or give it to someone else");
     return set;
   }
 
